@@ -71,6 +71,10 @@ dependencies {
     implementation Libs.dagger
     kapt Libs.dagger_compiler
 
+    testImplementation Libs.mockk_android
+    testImplementation Libs.mockk
+    testImplementation Libs.core_testing
+    testImplementation Libs.kotlinx_coroutines_test
     testImplementation Libs.kluent
     testImplementation Libs.mockwebserver
     testImplementation Libs.junit

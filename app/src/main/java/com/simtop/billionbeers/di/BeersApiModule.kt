@@ -13,9 +13,9 @@ object BeersApiModule {
     @JvmStatic
     @Provides
     @Singleton
-    fun moviesApi() = createMoviesApi()
+    fun beersApi() = createBeersApi()
 
-    private fun createMoviesApi(): BeersService {
+    private fun createBeersApi(): BeersService {
         val beersApiFactory = BeersApiFactory(
             enableHttpLogging = BuildConfig.DEBUG
         )

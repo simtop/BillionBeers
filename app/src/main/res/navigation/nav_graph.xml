@@ -14,17 +14,6 @@
         <action
             android:id="@+id/action_FirstFragment_to_SecondFragment"
             app:destination="@id/SecondFragment" />
-        <!--        We need to specify one strarting with www and one starting with example, it automaticall detects http or https -->
-        <deepLink
-            android:id="@+id/deepLink"
-            app:uri="example.com/simtop/{id_dl}" />
-        <deepLink
-            android:id="@+id/deepLink2"
-            app:uri="www.example.com/simtop/{id_dl}" />
-        <!--        TODO: I did not manage to make this work-->
-        <deepLink
-            android:id="@+id/deepLink3"
-            app:uri="simmovies://simtop/{id_dl}" />
     </fragment>
     <fragment
         android:id="@+id/SecondFragment"
