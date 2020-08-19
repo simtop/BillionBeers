@@ -216,4 +216,6 @@ object Libs {
      * http://junit.org
      */
     const val junit: String = "junit:junit:" + Versions.junit
+
+    const val gson: String = "com.squareup.retrofit2:converter-gson:" + Versions.com_squareup_retrofit2
 }

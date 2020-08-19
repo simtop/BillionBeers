@@ -65,6 +65,8 @@ dependencies {
     implementation Libs.navigation_ui
     implementation Libs.glide
     implementation Libs.lifecycle_extensions
+    implementation Libs.gson
+    implementation Libs.logging_interceptor
 
     implementation Libs.dagger
     kapt Libs.dagger_compiler
