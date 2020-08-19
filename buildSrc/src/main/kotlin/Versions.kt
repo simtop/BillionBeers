@@ -62,6 +62,10 @@ object Versions {
 
     const val junit: String = "4.13"
 
+    const val room: String = "2.2.5"
+
+    const val paging: String = "3.0.0-alpha03"
+
     /**
      * Current version: "6.1.1"
      * See issue 19: How to update Gradle itself?

@@ -218,4 +218,11 @@ object Libs {
     const val junit: String = "junit:junit:" + Versions.junit
 
     const val gson: String = "com.squareup.retrofit2:converter-gson:" + Versions.com_squareup_retrofit2
+
+    const val room_runtime = "androidx.room:room-runtime:" + Versions.room
+    const val room_ktx = "androidx.room:room-ktx:" + Versions.room
+    const val room_compiler = "androidx.room:room-compiler:" + Versions.room
+
+    const val paging = "androidx.paging:paging-runtime:" + Versions.paging
+
 }

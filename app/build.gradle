@@ -67,6 +67,10 @@ dependencies {
     implementation Libs.lifecycle_extensions
     implementation Libs.gson
     implementation Libs.logging_interceptor
+    implementation Libs.room_compiler
+    implementation Libs.room_ktx
+    implementation Libs.room_runtime
+    implementation Libs.paging
 
     implementation Libs.dagger
     kapt Libs.dagger_compiler
