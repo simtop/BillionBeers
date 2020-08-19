@@ -7,6 +7,7 @@ object BeersMapper {
 
     fun fromBeersApiResponseItemToBeer(response: BeersApiResponseItem?): Beer =
         Beer(
+            response?.id ?: 0,
             response?.name ?: "",
             response?.tagline ?: "",
             response?.description ?: "",

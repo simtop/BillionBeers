@@ -6,20 +6,24 @@ import androidx.fragment.app.Fragment
 import android.view.View
 import androidx.navigation.fragment.findNavController
 import com.simtop.billionbeers.databinding.FragmentFirstBinding
+import com.simtop.billionbeers.di.DaggerApplicationComponent
 
 class FirstFragment : Fragment(R.layout.fragment_first) {
 
     private lateinit var firstFragmentBinding: FragmentFirstBinding
 
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        DaggerApplicationComponent.factory().create().inject(this)
+
 
         val binding = FragmentFirstBinding.bind(view)
         firstFragmentBinding = binding
 
 
         (requireActivity() as MainActivity).setupToolbar("FirstFragment", false)
-
 
         binding.buttonFirst.setOnClickListener {
             val action =
@@ -29,4 +33,5 @@ class FirstFragment : Fragment(R.layout.fragment_first) {
             findNavController().navigate(action)
         }
     }
+
 }

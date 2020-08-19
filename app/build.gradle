@@ -71,6 +71,8 @@ dependencies {
     implementation Libs.dagger
     kapt Libs.dagger_compiler
 
+    testImplementation Libs.kluent
+    testImplementation Libs.mockwebserver
     testImplementation Libs.junit
 
 }
