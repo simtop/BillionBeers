@@ -1,5 +1,6 @@
 package com.simtop.billionbeers.di
 
+import android.app.Application
 import android.content.Context
 import androidx.room.Room
 import com.simtop.billionbeers.core.BEERS_DB_NAME
@@ -14,9 +15,9 @@ class BeersDatabaseModule {
 
     @Provides
     @Singleton
-    fun provideDatabase(context: Context): BeersDatabase =
+    fun provideDatabase(app: Application): BeersDatabase =
         Room.databaseBuilder(
-            context,
+            app,
             BeersDatabase::class.java,
             BEERS_DB_NAME
         ).build()

@@ -1,6 +1,8 @@
 package com.simtop.billionbeers.di
 
-import com.simtop.billionbeers.FirstFragment
+import android.app.Application
+import com.simtop.billionbeers.BeersListFragment
+import dagger.BindsInstance
 import dagger.Component
 import javax.inject.Singleton
 
@@ -14,10 +16,15 @@ import javax.inject.Singleton
     ]
 )
 interface ApplicationComponent {
-    @Component.Factory
-    interface Factory {
-        fun create(): ApplicationComponent
+
+    @Component.Builder
+    interface Builder {
+
+        @BindsInstance
+        fun application(application: Application): Builder
+
+        fun build(): ApplicationComponent
     }
 
-    fun inject(firstFragment: FirstFragment)
+    fun inject(beersListFragment: BeersListFragment)
 }

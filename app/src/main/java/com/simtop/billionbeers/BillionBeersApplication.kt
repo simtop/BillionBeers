@@ -16,7 +16,9 @@ class BillionBeersApplication : Application() {
     }
 
     private fun buildApiComponent() {
-        appComponent = DaggerApplicationComponent.factory().create()
+        appComponent = DaggerApplicationComponent.builder()
+            .application(this)
+            .build()
     }
 }
 

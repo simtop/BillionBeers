@@ -5,29 +5,28 @@ import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.View
 import androidx.navigation.fragment.findNavController
-import com.simtop.billionbeers.databinding.FragmentFirstBinding
-import com.simtop.billionbeers.di.DaggerApplicationComponent
+import com.simtop.billionbeers.databinding.FragmentListBeersBinding
 
-class FirstFragment : Fragment(R.layout.fragment_first) {
+class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
 
-    private lateinit var firstFragmentBinding: FragmentFirstBinding
+    private lateinit var fragmentListBeersBinding: FragmentListBeersBinding
 
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        DaggerApplicationComponent.factory().create().inject(this)
+        appComponent.inject(this)
 
 
-        val binding = FragmentFirstBinding.bind(view)
-        firstFragmentBinding = binding
+        val binding = FragmentListBeersBinding.bind(view)
+        fragmentListBeersBinding = binding
 
 
         (requireActivity() as MainActivity).setupToolbar("FirstFragment", false)
 
         binding.buttonFirst.setOnClickListener {
             val action =
-                FirstFragmentDirections.actionFirstFragmentToSecondFragment(
+                BeersListFragmentDirections.actionFirstFragmentToSecondFragment(
                     "From FirstFragment"
                 )
             findNavController().navigate(action)
