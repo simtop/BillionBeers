@@ -16,11 +16,11 @@ class BeersRepositoryImpl @Inject constructor(
             .map { BeersMapper.fromBeersApiResponseItemToBeer(it) }
 
     override suspend fun getQuantityOfBeerFromApi(quantity: Int): List<Beer> {
-        lateinit var totalList: MutableList<Beer>
+        var totalList = mutableListOf<Beer>()
         for (page in 1..quantity) {
             totalList.addAll(getListOfBeerFromApi(page))
         }
-        return totalList.toList()
+        return totalList
     }
 
     //TODO: Remeber to do !beer.availability
@@ -41,5 +41,4 @@ class BeersRepositoryImpl @Inject constructor(
         }
         return getAllBeersFromDB()
     }
-
 }

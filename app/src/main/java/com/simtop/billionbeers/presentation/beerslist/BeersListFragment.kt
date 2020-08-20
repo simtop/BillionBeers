@@ -7,9 +7,14 @@ import android.view.View
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.simtop.billionbeers.R
 import com.simtop.billionbeers.appComponent
+import com.simtop.billionbeers.core.ViewState
+import com.simtop.billionbeers.core.observe
+import com.simtop.billionbeers.core.showToast
 import com.simtop.billionbeers.databinding.FragmentListBeersBinding
+import com.simtop.billionbeers.domain.models.Beer
 import com.simtop.billionbeers.presentation.MainActivity
 import javax.inject.Inject
 
@@ -17,10 +22,13 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
 
     @Inject
     lateinit var viewModelFactory: ViewModelProvider.Factory
+
     //TODO: Decide if they will share the view model or not
     private val beersViewModel by activityViewModels<BeersViewModel> { viewModelFactory }
 
     private lateinit var fragmentListBeersBinding: FragmentListBeersBinding
+
+    lateinit var beersAdapter: BeersAdapter
 
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -33,6 +41,10 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
 
         (requireActivity() as MainActivity).setupToolbar("FirstFragment", false)
 
+        beersViewModel.getAllBeers()
+
+        observe(beersViewModel.myViewState, { viewState -> viewState?.let { treatViewState(viewState) } })
+
         binding.buttonFirst.setOnClickListener {
             val action =
                 BeersListFragmentDirections.actionFirstFragmentToSecondFragment(
@@ -42,4 +54,34 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
         }
     }
 
+    private fun treatViewState(viewState: ViewState<Exception, List<Beer>>) {
+        when (viewState) {
+            is ViewState.Result -> viewState.result.either(::treatError, ::treatSuccess)
+            ViewState.Loading -> {
+                requireActivity().showToast("WIP Loading")
+            }
+            ViewState.EmptyState -> {
+                requireActivity().showToast("WIP Empty")
+            }
+        }
+    }
+
+    private fun treatSuccess(list: List<Beer>) {
+        beersAdapter = BeersAdapter(
+            items = list.toMutableList(),
+            listener = ::onBeerClicked
+        )
+        fragmentListBeersBinding.beersRecyclerview.apply {
+            adapter = beersAdapter
+            layoutManager = LinearLayoutManager(requireContext())
+        }
+    }
+
+    private fun onBeerClicked(beer: Beer) {
+        requireActivity().showToast(beer.toString())
+    }
+
+    private fun treatError(exception: Exception) {
+        exception.message?.let { requireActivity().showToast(it) }
+    }
 }

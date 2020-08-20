@@ -8,6 +8,20 @@ data class Beer(
     val imageUrl: String,
     val abv: Double,
     val ibu: Double,
-    val foodPairing : List<String>,
-    val availability : Boolean = true
-)
+    val foodPairing: List<String>,
+    val availability: Boolean = true
+) {
+    companion object {
+        val empty = Beer(
+            1,
+            "",
+            "",
+            "",
+            "",
+            0.0,
+            0.0,
+            emptyList(),
+            true
+        )
+    }
+}
