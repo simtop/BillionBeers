@@ -1,4 +1,4 @@
-package com.simtop.billionbeers
+package com.simtop.billionbeers.presentation
 
 import android.os.Bundle
 import android.view.Menu

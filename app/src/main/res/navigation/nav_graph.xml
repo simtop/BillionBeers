@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/FirstFragment"
-        android:name="com.simtop.billionbeers.BeersListFragment"
+        android:name="com.simtop.billionbeers.presentation.beerslist.BeersListFragment"
         android:label="@string/first_fragment_label"
         tools:layout="@layout/fragment_list_beers">
 
@@ -17,9 +17,9 @@
     </fragment>
     <fragment
         android:id="@+id/SecondFragment"
-        android:name="com.simtop.billionbeers.SecondFragment"
+        android:name="com.simtop.billionbeers.presentation.beerdetail.BeerDetailFragment"
         android:label="@string/second_fragment_label"
-        tools:layout="@layout/fragment_second">
+        tools:layout="@layout/fragment_detail_beer">
 
         <action
             android:id="@+id/action_SecondFragment_to_FirstFragment"

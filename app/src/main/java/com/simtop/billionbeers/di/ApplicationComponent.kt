@@ -1,7 +1,7 @@
 package com.simtop.billionbeers.di
 
 import android.app.Application
-import com.simtop.billionbeers.BeersListFragment
+import com.simtop.billionbeers.presentation.beerslist.BeersListFragment
 import dagger.BindsInstance
 import dagger.Component
 import javax.inject.Singleton
@@ -12,7 +12,8 @@ import javax.inject.Singleton
         AppModule::class,
         BeersApiModule::class,
         BeersRepositoryModule::class,
-        BeersDatabaseModule::class
+        BeersDatabaseModule::class,
+        ViewModelsModule::class
     ]
 )
 interface ApplicationComponent {

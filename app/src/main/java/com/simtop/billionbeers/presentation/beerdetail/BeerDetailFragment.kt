@@ -1,27 +1,28 @@
-package com.simtop.billionbeers
+package com.simtop.billionbeers.presentation.beerdetail
 
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.View
 import android.widget.Button
-import android.widget.TextView
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
-import com.simtop.billionbeers.databinding.FragmentSecondBinding
+import com.simtop.billionbeers.R
+import com.simtop.billionbeers.databinding.FragmentDetailBeerBinding
+import com.simtop.billionbeers.presentation.MainActivity
 
 
-class SecondFragment : Fragment(R.layout.fragment_second) {
+class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
 
-    private lateinit var secondFragmentBinding: FragmentSecondBinding
+    private lateinit var beersDetailFragmentBinding: FragmentDetailBeerBinding
 
-    private val args: SecondFragmentArgs by navArgs()
+    private val args: BeerDetailFragmentArgs by navArgs()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         //Setting view binding for Fragments
-        val binding = FragmentSecondBinding.bind(view)
-        secondFragmentBinding = binding
+        val binding = FragmentDetailBeerBinding.bind(view)
+        beersDetailFragmentBinding = binding
 
 
         (requireActivity() as MainActivity).setupToolbar("SecondFragment", true)
@@ -30,7 +31,7 @@ class SecondFragment : Fragment(R.layout.fragment_second) {
         binding.textviewSecond.text =
                 getString(R.string.hello_second_fragment, args.myArg)
 
-        binding.buttonSecond.findViewById<Button>(R.id.button_second).setOnClickListener {
+        binding.buttonSecond.setOnClickListener {
             findNavController().navigate(R.id.action_SecondFragment_to_FirstFragment)
         }
     }
