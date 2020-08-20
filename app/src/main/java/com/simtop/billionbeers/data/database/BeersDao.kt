@@ -1,6 +1,5 @@
 package com.simtop.billionbeers.data.database
 
-import androidx.paging.DataSource
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -11,10 +10,10 @@ import com.simtop.billionbeers.data.models.BeerDbModel
 abstract class BeersDao {
 
     @Query("SELECT * FROM beers")
-    abstract fun getAllBeers(): DataSource.Factory<Int, BeerDbModel>
+    abstract fun getAllBeers(): List<BeerDbModel>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    abstract suspend fun insertAll(news: List<BeerDbModel>)
+    abstract suspend fun insertAll(beers: List<BeerDbModel>)
 
     @Query("""
         UPDATE beers 
@@ -22,11 +21,14 @@ abstract class BeersDao {
         availability = :availability
         WHERE id = :primaryKey
         """)
-    abstract suspend fun updateBeer(
-        primaryKey: String,
+    abstract fun updateBeer(
+        primaryKey: Int,
         availability: Boolean
     )
 
     @Query("DELETE FROM beers")
-    abstract suspend fun deleteAll()
+    abstract fun deleteAll()
+
+    @Query("SELECT COUNT(id) FROM beers")
+    abstract fun getCount(): Int
 }
