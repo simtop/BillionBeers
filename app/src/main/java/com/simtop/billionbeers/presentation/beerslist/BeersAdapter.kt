@@ -1,6 +1,7 @@
 package com.simtop.billionbeers.presentation.beerslist
 
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import com.simtop.billionbeers.core.BaseBindView
 import com.simtop.billionbeers.core.BaseRecyclerViewAdapter
 import com.simtop.billionbeers.core.ViewWrapper
@@ -11,7 +12,12 @@ class BeersAdapter(
     val listener: ((Beer) -> Unit)? = null
 ) : BaseRecyclerViewAdapter<Beer, BaseBindView<Beer>>(items) {
     override fun onCreateItemView(parent: ViewGroup, viewType: Int): BaseBindView<Beer> {
-        return BeersItemView(parent.context)
+        return BeersItemView(parent.context).apply {
+                layoutParams = ViewGroup.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
     }
 
     override fun areItemsTheSame(oldItem: Beer, newItem: Beer): Boolean {

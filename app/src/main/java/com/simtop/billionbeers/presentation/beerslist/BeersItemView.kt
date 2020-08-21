@@ -1,6 +1,7 @@
 package com.simtop.billionbeers.presentation.beerslist
 
 import android.content.Context
+import android.graphics.Color
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import com.simtop.billionbeers.core.BaseBindView
@@ -27,8 +28,12 @@ class BeersItemView @JvmOverloads constructor(
     }
 
     override fun bind(beer: Beer) {
-        var test = ""
-        if(beer.availability) test = "  av"
-        rowBeerListBinding.textId.text = beer.id.toString() + test
+        if(beer.availability) {
+            rowBeerListBinding.cardView.setCardBackgroundColor(Color.WHITE)
+        } else {
+            rowBeerListBinding.cardView.setCardBackgroundColor(Color.GRAY)
+        }
+        rowBeerListBinding.beerName.text = beer.name
+        rowBeerListBinding.beerTagline.text = beer.tagline
     }
 }
