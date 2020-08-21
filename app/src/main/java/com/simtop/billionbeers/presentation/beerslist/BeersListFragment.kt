@@ -32,6 +32,11 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
     lateinit var beersAdapter: BeersAdapter
 
 
+    override fun onResume() {
+        if(beersViewModel.myViewState.value == ViewState.EmptyState) beersViewModel.getAllBeers()
+        super.onResume()
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
