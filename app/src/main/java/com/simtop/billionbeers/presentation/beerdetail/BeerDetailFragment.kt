@@ -40,7 +40,11 @@ class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
         beersDetailFragmentBinding = binding
 
 
-        (requireActivity() as MainActivity).setupToolbar("Beer Detail", true)
+        (requireActivity() as MainActivity)
+            .setupToolbar(
+                requireContext()
+                    .getString(R.string.beer_detail), true
+            )
 
         observe(beersViewModel.detailBeer, { detailBeer -> detailBeer?.let { treatViewState(it) } })
 

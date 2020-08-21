@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <dimen name="super_big_text">64sp</dimen>
     <dimen name="big_text">32sp</dimen>
     <dimen name="normal_text">16sp</dimen>
 

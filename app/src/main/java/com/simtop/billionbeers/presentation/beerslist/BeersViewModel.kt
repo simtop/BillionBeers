@@ -20,7 +20,7 @@ class BeersViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _myViewState =
-        MutableLiveData<ViewState<Exception, List<Beer>>>(ViewState.Loading)
+        MutableLiveData<ViewState<Exception, List<Beer>>>()
     val myViewState: LiveData<ViewState<Exception, List<Beer>>>
         get() = _myViewState
 
@@ -29,7 +29,8 @@ class BeersViewModel @Inject constructor(
     val detailBeer: LiveData<Beer>
         get() = _detailBeer
 
-    fun getAllBeers(quantity : Int = MAX_PAGES_FOR_PAGINATION) {
+    fun getAllBeers(quantity: Int = MAX_PAGES_FOR_PAGINATION) {
+        _myViewState.postValue(ViewState.Loading)
         viewModelScope.launch(Dispatchers.IO) {
             getAllBeersUseCase.execute(getAllBeersUseCase.Params(quantity))
                 .also(::process)
@@ -43,13 +44,17 @@ class BeersViewModel @Inject constructor(
     fun saveBeerDetail(beer: Beer) {
         _detailBeer.value = beer
     }
-    
-    fun updateAvailability(){
+
+    fun updateAvailability() {
         viewModelScope.launch(Dispatchers.IO) {
             changeAvailability()
             availabilityUseCase.execute(availabilityUseCase.Params(detailBeer.value!!))
                 .also(::updateListBeers)
         }
+    }
+
+    fun showEmptyState() {
+        _myViewState.postValue(ViewState.EmptyState)
     }
 
     private fun changeAvailability() {
@@ -58,10 +63,10 @@ class BeersViewModel @Inject constructor(
     }
 
     private fun updateListBeers(either: Either<Exception, Unit>) {
-            when(either){
-                is Either.Left -> _myViewState.postValue(ViewState.Result(either))
-                is Either.Right -> getAllBeers()
-            }
+        when (either) {
+            is Either.Left -> _myViewState.postValue(ViewState.Result(either))
+            is Either.Right -> getAllBeers()
+        }
     }
 
 }

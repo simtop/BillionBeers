@@ -34,8 +34,16 @@
 
     <style name="big_text_emergency">
         <item name="android:textSize">@dimen/big_text</item>
+        <item name="android:textAlignment">center</item>
         <item name="android:gravity">center</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textColor">@color/colorRed</item>
+    </style>
+
+    <style name="empty_warning">
+        <item name="android:textSize">@dimen/super_big_text</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/colorYellowy</item>
     </style>
 </resources>

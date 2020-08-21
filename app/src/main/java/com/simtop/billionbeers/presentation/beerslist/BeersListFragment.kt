@@ -4,6 +4,8 @@ package com.simtop.billionbeers.presentation.beerslist
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.View
+import android.view.View.GONE
+import android.view.View.VISIBLE
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
@@ -38,7 +40,11 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
         val binding = FragmentListBeersBinding.bind(view)
         fragmentListBeersBinding = binding
 
-        (requireActivity() as MainActivity).setupToolbar("Billion Beers List", false)
+        (requireActivity() as MainActivity)
+            .setupToolbar(
+                requireContext()
+                    .getString(R.string.billion_beers_list), false
+            )
 
         beersViewModel.getAllBeers()
 
@@ -48,12 +54,18 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
 
     private fun treatViewState(viewState: ViewState<Exception, List<Beer>>) {
         when (viewState) {
-            is ViewState.Result -> viewState.result.either(::treatError, ::treatSuccess)
+            is ViewState.Result -> {
+                viewState.result.either(::treatError, ::treatSuccess)
+            }
             ViewState.Loading -> {
-                requireActivity().showToast("WIP Loading")
+                fragmentListBeersBinding.progressBar.visibility = VISIBLE
+                fragmentListBeersBinding.beersRecyclerview.visibility = GONE
+                fragmentListBeersBinding.emptyState.visibility = GONE
             }
             ViewState.EmptyState -> {
-                requireActivity().showToast("WIP Empty")
+                fragmentListBeersBinding.beersRecyclerview.visibility = GONE
+                fragmentListBeersBinding.emptyState.visibility = VISIBLE
+                fragmentListBeersBinding.progressBar.visibility = GONE
             }
         }
     }
@@ -67,10 +79,12 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
             adapter = beersAdapter
             layoutManager = LinearLayoutManager(requireContext())
         }
+        fragmentListBeersBinding.progressBar.visibility = GONE
+        fragmentListBeersBinding.beersRecyclerview.visibility = VISIBLE
+        fragmentListBeersBinding.emptyState.visibility = GONE
     }
 
     private fun onBeerClicked(beer: Beer) {
-        requireActivity().showToast(beer.toString())
         beersViewModel.saveBeerDetail(beer)
 
         val action = BeersListFragmentDirections.actionBeersListFragmentToBeerDetailFragment(beer)
@@ -78,6 +92,7 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
     }
 
     private fun treatError(exception: Exception) {
+        if (fragmentListBeersBinding.beersRecyclerview.visibility != VISIBLE) beersViewModel.showEmptyState()
         exception.message?.let { requireActivity().showToast(it) }
     }
 }
