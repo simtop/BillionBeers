@@ -40,7 +40,7 @@ class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
         beersDetailFragmentBinding = binding
 
 
-        (requireActivity() as MainActivity).setupToolbar("SecondFragment", true)
+        (requireActivity() as MainActivity).setupToolbar("Beer Detail", true)
 
         observe(beersViewModel.detailBeer, { detailBeer -> detailBeer?.let { treatViewState(it) } })
 
@@ -48,10 +48,6 @@ class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
             beersViewModel.myViewState,
             { myViewState -> myViewState?.let { treatViewState2(it) } })
 
-
-        beersDetailFragmentBinding.buttonSecond.setOnClickListener {
-            beersViewModel.updateAvailability()
-        }
     }
 
     private fun treatViewState2(it: ViewState<Exception, List<Beer>>) {
@@ -73,7 +69,11 @@ class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
     }
 
     private fun treatViewState(beer: Beer) {
-        beersDetailFragmentBinding.textviewBeerDetail.text = beer.toString()
+        beersDetailFragmentBinding.singleBeer.bind(beer, ::updateAvailability)
 
+    }
+
+    private fun updateAvailability() {
+        beersViewModel.updateAvailability()
     }
 }

@@ -21,11 +21,21 @@
         <item name="android:gravity">center</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textColor">@color/colorBlack</item>
-
     </style>
 
     <style name="normal_text_regular">
         <item name="android:textSize">@dimen/normal_text</item>
         <item name="android:gravity">center</item>
+    </style>
+
+    <style name="normal_text_regular_not_centered">
+        <item name="android:textSize">@dimen/normal_text</item>
+    </style>
+
+    <style name="big_text_emergency">
+        <item name="android:textSize">@dimen/big_text</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/colorRed</item>
     </style>
 </resources>

@@ -23,7 +23,6 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
     @Inject
     lateinit var viewModelFactory: ViewModelProvider.Factory
 
-    //TODO: Decide if they will share the view model or not
     private val beersViewModel by activityViewModels<BeersViewModel> { viewModelFactory }
 
     private lateinit var fragmentListBeersBinding: FragmentListBeersBinding
@@ -39,7 +38,7 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
         val binding = FragmentListBeersBinding.bind(view)
         fragmentListBeersBinding = binding
 
-        (requireActivity() as MainActivity).setupToolbar("FirstFragment", false)
+        (requireActivity() as MainActivity).setupToolbar("Billion Beers List", false)
 
         beersViewModel.getAllBeers()
 
