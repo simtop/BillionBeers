@@ -3,15 +3,17 @@ package com.simtop.billionbeers.presentation.beerdetail
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.View
-import android.widget.Button
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
-import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.simtop.billionbeers.R
 import com.simtop.billionbeers.appComponent
+import com.simtop.billionbeers.core.Either
+import com.simtop.billionbeers.core.ViewState
+import com.simtop.billionbeers.core.observe
 import com.simtop.billionbeers.core.showToast
 import com.simtop.billionbeers.databinding.FragmentDetailBeerBinding
+import com.simtop.billionbeers.domain.models.Beer
 import com.simtop.billionbeers.presentation.MainActivity
 import com.simtop.billionbeers.presentation.beerslist.BeersViewModel
 import javax.inject.Inject
@@ -40,11 +42,38 @@ class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
 
         (requireActivity() as MainActivity).setupToolbar("SecondFragment", true)
 
-        //More than one way to do this, for this simple case with getting the beer from ViewModel was enough
-        binding.textviewBeerDetail.text = args.myArg.toString()//beersViewModel.detailBeer.toString()
+        observe(beersViewModel.detailBeer, { detailBeer -> detailBeer?.let { treatViewState(it) } })
 
-        binding.buttonSecond.setOnClickListener {
-            requireActivity().showToast("change availability")
+        observe(
+            beersViewModel.myViewState,
+            { myViewState -> myViewState?.let { treatViewState2(it) } })
+
+
+        beersDetailFragmentBinding.buttonSecond.setOnClickListener {
+            beersViewModel.updateAvailability()
         }
+    }
+
+    private fun treatViewState2(it: ViewState<Exception, List<Beer>>) {
+        when (it) {
+            is ViewState.Result -> when (it.result) {
+                is Either.Left -> showError(it.result.value)
+                is Either.Right -> {
+                }
+            }
+            ViewState.Loading -> {
+            }
+            ViewState.EmptyState -> {
+            }
+        }
+    }
+
+    private fun showError(value: Exception) {
+        value.message?.let { requireActivity().showToast(it) }
+    }
+
+    private fun treatViewState(beer: Beer) {
+        beersDetailFragmentBinding.textviewBeerDetail.text = beer.toString()
+
     }
 }

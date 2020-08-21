@@ -43,7 +43,7 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
 
         beersViewModel.getAllBeers()
 
-        observe(beersViewModel.myViewState, { viewState -> viewState?.let { treatViewState(viewState) } })
+        observe(beersViewModel.myViewState, { viewState -> viewState?.let { treatViewState(it) } })
 
     }
 

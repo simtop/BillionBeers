@@ -27,6 +27,8 @@ class BeersItemView @JvmOverloads constructor(
     }
 
     override fun bind(beer: Beer) {
-        rowBeerListBinding.textId.text = beer.id.toString()
+        var test = ""
+        if(beer.availability) test = "  av"
+        rowBeerListBinding.textId.text = beer.id.toString() + test
     }
 }
