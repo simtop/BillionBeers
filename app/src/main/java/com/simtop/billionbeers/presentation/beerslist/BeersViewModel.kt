@@ -21,6 +21,8 @@ class BeersViewModel @Inject constructor(
     val myViewState: LiveData<ViewState<Exception, List<Beer>>>
         get() = _myViewState
 
+    lateinit var detailBeer: Beer
+
     fun getAllBeers(quantity : Int = MAX_PAGES_FOR_PAGINATION) {
         viewModelScope.launch(Dispatchers.IO) {
             getAllBeersUseCase.execute(getAllBeersUseCase.Params(quantity))
@@ -30,5 +32,9 @@ class BeersViewModel @Inject constructor(
 
     private fun process(either: Either<Exception, List<Beer>>) {
         _myViewState.postValue(ViewState.Result(either))
+    }
+
+    fun saveBeerDetail(beer: Beer) {
+        detailBeer = beer
     }
 }

@@ -1,6 +1,7 @@
 package com.simtop.billionbeers.di
 
 import android.app.Application
+import com.simtop.billionbeers.presentation.beerdetail.BeerDetailFragment
 import com.simtop.billionbeers.presentation.beerslist.BeersListFragment
 import dagger.BindsInstance
 import dagger.Component
@@ -28,4 +29,5 @@ interface ApplicationComponent {
     }
 
     fun inject(beersListFragment: BeersListFragment)
+    fun inject(beersDetailFragment: BeerDetailFragment)
 }

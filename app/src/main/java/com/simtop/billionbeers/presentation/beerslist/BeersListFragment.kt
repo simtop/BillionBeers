@@ -45,13 +45,6 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
 
         observe(beersViewModel.myViewState, { viewState -> viewState?.let { treatViewState(viewState) } })
 
-        binding.buttonFirst.setOnClickListener {
-            val action =
-                BeersListFragmentDirections.actionFirstFragmentToSecondFragment(
-                    "From FirstFragment"
-                )
-            findNavController().navigate(action)
-        }
     }
 
     private fun treatViewState(viewState: ViewState<Exception, List<Beer>>) {
@@ -79,6 +72,10 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
 
     private fun onBeerClicked(beer: Beer) {
         requireActivity().showToast(beer.toString())
+        beersViewModel.saveBeerDetail(beer)
+
+        val action = BeersListFragmentDirections.actionBeersListFragmentToBeerDetailFragment(beer)
+        findNavController().navigate(action)
     }
 
     private fun treatError(exception: Exception) {

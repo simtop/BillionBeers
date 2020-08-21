@@ -1,5 +1,9 @@
 package com.simtop.billionbeers.domain.models
 
+import android.os.Parcelable
+import kotlinx.android.parcel.Parcelize
+
+@Parcelize
 data class Beer(
     val id: Int,
     val name: String,
@@ -10,7 +14,7 @@ data class Beer(
     val ibu: Double,
     val foodPairing: List<String>,
     val availability: Boolean = true
-) {
+): Parcelable {
     companion object {
         val empty = Beer(
             1,

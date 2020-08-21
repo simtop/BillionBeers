@@ -3,30 +3,26 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/FirstFragment">
+    app:startDestination="@id/BeersListFragment">
 
     <fragment
-        android:id="@+id/FirstFragment"
+        android:id="@+id/BeersListFragment"
         android:name="com.simtop.billionbeers.presentation.beerslist.BeersListFragment"
-        android:label="@string/first_fragment_label"
+        android:label="@string/beers_list_fragment_label"
         tools:layout="@layout/fragment_list_beers">
 
         <action
-            android:id="@+id/action_FirstFragment_to_SecondFragment"
-            app:destination="@id/SecondFragment" />
+            android:id="@+id/action_BeersListFragment_to_BeerDetailFragment"
+            app:destination="@id/BeerDetailFragment" />
     </fragment>
     <fragment
-        android:id="@+id/SecondFragment"
+        android:id="@+id/BeerDetailFragment"
         android:name="com.simtop.billionbeers.presentation.beerdetail.BeerDetailFragment"
-        android:label="@string/second_fragment_label"
+        android:label="@string/beer_detail_fragment_label"
         tools:layout="@layout/fragment_detail_beer">
-
-        <action
-            android:id="@+id/action_SecondFragment_to_FirstFragment"
-            app:destination="@id/FirstFragment" />
 
         <argument
             android:name="myArg"
-            app:argType="string" />
+            app:argType="com.simtop.billionbeers.domain.models.Beer" />
     </fragment>
 </navigation>
