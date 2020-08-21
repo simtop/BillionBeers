@@ -6,6 +6,7 @@ import com.simtop.billionbeers.core.Either
 import com.simtop.billionbeers.core.ViewState
 import com.simtop.billionbeers.domain.models.Beer
 import com.simtop.billionbeers.domain.usecases.GetAllBeersUseCase
+import com.simtop.billionbeers.domain.usecases.UpdateAvailabilityUseCase
 import com.simtop.billionbeers.fakeBeerListModel
 import com.simtop.billionbeers.getValueForTest
 import com.simtop.billionbeers.presentation.beerslist.BeersViewModel
@@ -30,8 +31,10 @@ internal class BeersViewModelTest {
 
     private val getAllBeersUseCase: GetAllBeersUseCase = mockk()
 
+    private val availabilityUseCase: UpdateAvailabilityUseCase = mockk()
+
     private val beersViewModel: BeersViewModel by lazy {
-        BeersViewModel(getAllBeersUseCase)
+        BeersViewModel(getAllBeersUseCase,availabilityUseCase)
     }
 
     @Test
