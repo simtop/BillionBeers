@@ -1,39 +1,45 @@
 package com.simtop.billionbeers.core
 
 sealed class Either<out L, out R> {
-    /** * Represents the left side of [Either] class which by convention is a "Failure". */
-    data class Left<out L>(val a: L) : Either<L, Nothing>() {
-        val value: L get() = a
-    }
+    data class Left<T>(val value: T) : Either<T, Nothing>()
+    data class Right<T>(val value: T) : Either<Nothing, T>()
 
-    /** * Represents the right side of [Either] class which by convention is a "Success". */
-    data class Right<out R>(val b: R) : Either<Nothing, R>() {
-        val value: R get() = b
-    }
+    val isRight: Boolean get() = this is Right
+    val isLeft: Boolean get() = this is Left
 
-    val isRight get() = this is Right<R>
-    val isLeft get() = this is Left<L>
-
-    fun <L> left(a: L) = Left(a)
-    fun <R> right(b: R) = Right(b)
-
-    fun either(fnL: (L) -> Any, fnR: (R) -> Any): Any =
+    inline fun <T> either(fnL: (L) -> T, fnR: (R) -> T): T =
         when (this) {
-            is Left -> fnL(a)
-            is Right -> fnR(b)
+            is Left -> fnL(value)
+            is Right -> fnR(value)
         }
 }
 
-fun <A, B, C> ((A) -> B).c(f: (B) -> C): (A) -> C = {
-    f(this(it))
-}
-
-fun <T, L, R> Either<L, R>.flatMap(fn: (R) -> Either<L, T>): Either<L, T> =
-    when (this) {
-        is Either.Left -> Either.Left(
-            a
-        )
-        is Either.Right -> fn(b)
+inline fun <T> either(f: () -> T): Either<Exception, T> =
+    try {
+        Either.Right(f())
+    } catch (e: Exception) {
+        Either.Left(e)
     }
 
-fun <T, L, R> Either<L, R>.map(fn: (R) -> (T)): Either<L, T> = this.flatMap(fn.c(::right))
+inline infix fun <A, B, C> Either<A, B>.mapRight(f: (B) -> C): Either<A, C> = when(this) {
+    is Either.Left -> this
+    is Either.Right -> Either.Right(f(this.value))
+}
+
+inline infix fun <A, B, C> Either<A, B>.flatMap(f: (B) -> Either<A, C>): Either<A, C> = when(this) {
+    is Either.Left -> this
+    is Either.Right -> f(value)
+}
+
+inline infix fun <A, B, C> Either<A, C>.mapLeft(f: (A) -> B): Either<B, C> = when(this) {
+    is Either.Left -> Either.Left(f(value))
+    is Either.Right -> this
+}
+
+inline fun <A, B, C> Either<A, B>.fold(left: (A) -> C, right: (B) -> C): C = when(this) {
+    is Either.Left -> left(this.value)
+    is Either.Right -> right(this.value)
+}
+
+fun <T> T.asLeft(): Either.Left<T> = Either.Left(this)
+fun <T> T.asRight(): Either.Right<T> = Either.Right(this)

@@ -1,6 +1,7 @@
 package com.simtop.billionbeers.data.repository
 
 import com.simtop.billionbeers.data.database.BeersDao
+import com.simtop.billionbeers.data.localsource.BeersLocalSource
 import com.simtop.billionbeers.data.mappers.BeersMapper
 import com.simtop.billionbeers.data.remotesources.BeersRemoteSource
 import com.simtop.billionbeers.domain.models.Beer
@@ -9,14 +10,14 @@ import javax.inject.Inject
 
 class BeersRepositoryImpl @Inject constructor(
     private val beersRemoteSource: BeersRemoteSource,
-    private val dao: BeersDao
+    private val beersLocalSource: BeersLocalSource
 ) : BeersRepository {
     override suspend fun getListOfBeerFromApi(page: Int): List<Beer> =
         beersRemoteSource.getListOfBeers(page)
             .map { BeersMapper.fromBeersApiResponseItemToBeer(it) }
 
     override suspend fun getQuantityOfBeerFromApi(quantity: Int): List<Beer> {
-        var totalList = mutableListOf<Beer>()
+        val totalList = mutableListOf<Beer>()
         for (page in 1..quantity) {
             totalList.addAll(getListOfBeerFromApi(page))
         }
@@ -24,15 +25,15 @@ class BeersRepositoryImpl @Inject constructor(
     }
 
     //TODO: Remeber to do !beer.availability
-    override suspend fun updateAvailability(beer: Beer) = dao.updateBeer(beer.id, beer.availability)
+    override suspend fun updateAvailability(beer: Beer) = beersLocalSource.updateBeer(beer.id, beer.availability)
 
     override suspend fun insertAllToDB(beers: List<Beer>) =
-        dao.insertAll(beers.map { BeersMapper.fromBeerToBeerDbModel(it) })
+        beersLocalSource.insertAllToDB(beers.map { BeersMapper.fromBeerToBeerDbModel(it) })
 
     override suspend fun getAllBeersFromDB() =
-        dao.getAllBeers().map { BeersMapper.fromBeerDbModelToBeer(it) }
+        beersLocalSource.getAllBeersFromDB().map { BeersMapper.fromBeerDbModelToBeer(it) }
 
-    override suspend fun countDBEntries() = dao.getCount()
+    override suspend fun countDBEntries() = beersLocalSource.getCountFromDB()
 
     override suspend fun getBeersFromSingleSource(quantity: Int): List<Beer> {
         if (countDBEntries() == 0) {

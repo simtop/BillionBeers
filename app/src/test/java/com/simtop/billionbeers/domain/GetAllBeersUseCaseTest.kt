@@ -3,6 +3,8 @@ package com.simtop.billionbeers.domain
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.simtop.billionbeers.MainCoroutineScopeRule
 import com.simtop.billionbeers.core.Either
+import com.simtop.billionbeers.core.mapLeft
+import com.simtop.billionbeers.core.mapRight
 import com.simtop.billionbeers.domain.repository.BeersRepository
 import com.simtop.billionbeers.domain.usecases.GetAllBeersUseCase
 import com.simtop.billionbeers.fakeBeerListModel
@@ -35,12 +37,12 @@ internal class GetAllBeersUseCaseTest {
 
             val getAllBeersUseCase = GetAllBeersUseCase(beersRepository)
 
-            val result = getAllBeersUseCase.execute(getAllBeersUseCase.Params(any()))
+            val response = getAllBeersUseCase.execute(getAllBeersUseCase.Params(any()))
 
             coVerify(exactly = 1) { beersRepository.getBeersFromSingleSource(any()) }
 
-            if (result is Either.Right) {
-                result.value shouldBeEqualTo fakeBeerListModel
+            response.mapRight {
+                it shouldBeEqualTo fakeBeerListModel
             }
         }
     }

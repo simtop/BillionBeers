@@ -2,7 +2,8 @@ package com.simtop.billionbeers.di
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.simtop.billionbeers.presentation.beerslist.BeersViewModel
+import com.simtop.billionbeers.presentation.beerdetail.BeerDetailViewModel
+import com.simtop.billionbeers.presentation.beerslist.BeersListViewModel
 import dagger.Binds
 import dagger.Module
 import dagger.multibindings.IntoMap
@@ -15,7 +16,12 @@ abstract class ViewModelsModule {
 
     @Binds
     @IntoMap
-    @ViewModelKey(BeersViewModel::class)
-    abstract fun bindBaseViewModel(viewModel: BeersViewModel): ViewModel
+    @ViewModelKey(BeersListViewModel::class)
+    abstract fun bindBeersListViewModel(viewModel: BeersListViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(BeerDetailViewModel::class)
+    abstract fun bindBeerDetailViewModel(viewModel: BeerDetailViewModel): ViewModel
 
 }

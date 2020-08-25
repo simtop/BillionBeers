@@ -6,13 +6,12 @@ import androidx.fragment.app.Fragment
 import android.view.View
 import android.view.View.GONE
 import android.view.View.VISIBLE
-import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.simtop.billionbeers.R
 import com.simtop.billionbeers.appComponent
-import com.simtop.billionbeers.core.ViewState
 import com.simtop.billionbeers.core.observe
 import com.simtop.billionbeers.core.showToast
 import com.simtop.billionbeers.databinding.FragmentListBeersBinding
@@ -25,7 +24,7 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
     @Inject
     lateinit var viewModelFactory: ViewModelProvider.Factory
 
-    private val beersViewModel by activityViewModels<BeersViewModel> { viewModelFactory }
+    private val beersViewModel by viewModels<BeersListViewModel> { viewModelFactory }
 
     private lateinit var fragmentListBeersBinding: FragmentListBeersBinding
 
@@ -33,7 +32,7 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
 
 
     override fun onResume() {
-        if(beersViewModel.myViewState.value == ViewState.EmptyState) beersViewModel.getAllBeers()
+        if (beersViewModel.beerListViewState.value is BeersListViewState.EmptyState) beersViewModel.getAllBeers()
         super.onResume()
     }
 
@@ -53,21 +52,22 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
 
         beersViewModel.getAllBeers()
 
-        observe(beersViewModel.myViewState, { viewState -> viewState?.let { treatViewState(it) } })
+        observe(
+            beersViewModel.beerListViewState,
+            { viewState -> viewState?.let { treatViewState2(it) } })
 
     }
 
-    private fun treatViewState(viewState: ViewState<Exception, List<Beer>>) {
-        when (viewState) {
-            is ViewState.Result -> {
-                viewState.result.either(::treatError, ::treatSuccess)
-            }
-            ViewState.Loading -> {
+    private fun treatViewState2(it: BeersListViewState<List<Beer>>) {
+        when (it) {
+            is BeersListViewState.Success -> treatSuccess(it.result)
+            is BeersListViewState.Error -> treatError(it.result)
+            BeersListViewState.Loading -> {
                 fragmentListBeersBinding.progressBar.visibility = VISIBLE
                 fragmentListBeersBinding.beersRecyclerview.visibility = GONE
                 fragmentListBeersBinding.emptyState.visibility = GONE
             }
-            ViewState.EmptyState -> {
+            BeersListViewState.EmptyState -> {
                 fragmentListBeersBinding.beersRecyclerview.visibility = GONE
                 fragmentListBeersBinding.emptyState.visibility = VISIBLE
                 fragmentListBeersBinding.progressBar.visibility = GONE
@@ -90,8 +90,6 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
     }
 
     private fun onBeerClicked(beer: Beer) {
-        beersViewModel.saveBeerDetail(beer)
-
         val action = BeersListFragmentDirections.actionBeersListFragmentToBeerDetailFragment(beer)
         findNavController().navigate(action)
     }

@@ -3,13 +3,11 @@ package com.simtop.billionbeers.presentation
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.simtop.billionbeers.MainCoroutineScopeRule
 import com.simtop.billionbeers.core.Either
-import com.simtop.billionbeers.core.ViewState
-import com.simtop.billionbeers.domain.models.Beer
 import com.simtop.billionbeers.domain.usecases.GetAllBeersUseCase
-import com.simtop.billionbeers.domain.usecases.UpdateAvailabilityUseCase
 import com.simtop.billionbeers.fakeBeerListModel
 import com.simtop.billionbeers.getValueForTest
-import com.simtop.billionbeers.presentation.beerslist.BeersViewModel
+import com.simtop.billionbeers.presentation.beerslist.BeersListViewModel
+import com.simtop.billionbeers.presentation.beerslist.BeersListViewState
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -21,7 +19,7 @@ import org.junit.Test
 import org.junit.rules.TestRule
 
 @ExperimentalCoroutinesApi
-internal class BeersViewModelTest {
+internal class BeersListViewModelTest {
 
     @get:Rule
     var rule: TestRule = InstantTaskExecutorRule()
@@ -31,10 +29,8 @@ internal class BeersViewModelTest {
 
     private val getAllBeersUseCase: GetAllBeersUseCase = mockk()
 
-    private val availabilityUseCase: UpdateAvailabilityUseCase = mockk()
-
-    private val beersViewModel: BeersViewModel by lazy {
-        BeersViewModel(getAllBeersUseCase,availabilityUseCase)
+    private val beersListViewModel: BeersListViewModel by lazy {
+        BeersListViewModel(getAllBeersUseCase)
     }
 
     @Test
@@ -45,9 +41,9 @@ internal class BeersViewModelTest {
         } returns Either.Right(fakeBeerListModel)
 
         coroutineScope.runBlockingTest {
-            beersViewModel.getAllBeers()
+            beersListViewModel.getAllBeers()
 
-            beersViewModel.myViewState.getValueForTest() shouldBeEqualTo ViewState.Loading
+            beersListViewModel.beerListViewState.getValueForTest() shouldBeEqualTo BeersListViewState.Loading
 
             Thread.sleep(1000)
 
@@ -55,13 +51,10 @@ internal class BeersViewModelTest {
                 getAllBeersUseCase.execute(any())
             }
         }
+        val response = beersListViewModel.beerListViewState.getValueForTest()
 
-        if (beersViewModel.myViewState.value is ViewState.Result) {
-            val result = beersViewModel.myViewState.getValueForTest() as ViewState.Result
-            if (result.result is Either.Right) {
-                (result.result as Either.Right<List<Beer>>).value shouldBeEqualTo fakeBeerListModel
-            }
-
+        if(response is BeersListViewState.Success)  {
+            response.result shouldBeEqualTo fakeBeerListModel
         }
     }
 
@@ -73,7 +66,7 @@ internal class BeersViewModelTest {
         } returns Either.Left(Exception("Error getting list of beers"))
 
         coroutineScope.runBlockingTest {
-            beersViewModel.getAllBeers()
+            beersListViewModel.getAllBeers()
 
             Thread.sleep(1000)
 
@@ -81,13 +74,11 @@ internal class BeersViewModelTest {
                 getAllBeersUseCase.execute(any())
             }
         }
-        if (beersViewModel.myViewState.value is ViewState.Result) {
-            val result = beersViewModel.myViewState.getValueForTest() as ViewState.Result
-            if (result.result is Either.Left) {
-                (result.result as Either.Left<Throwable>)
-                    .value.message shouldBeEqualTo "Error getting list of beers"
 
-            }
+        val response = beersListViewModel.beerListViewState.getValueForTest()
+
+        if(response is BeersListViewState.Error)  {
+            response.result.message shouldBeEqualTo "Error getting list of beers"
         }
     }
 }
