@@ -33,7 +33,7 @@ internal class GetAllBeersUseCaseTest {
     @Test
     fun `should get data from repository`() {
         coroutineScope.runBlockingTest {
-            coEvery { beersRepository.getBeersFromSingleSource(any()) } returns fakeBeerListModel
+            coEvery { beersRepository.getBeersFromSingleSource(any()) } returns Either.Right(fakeBeerListModel)
 
             val getAllBeersUseCase = GetAllBeersUseCase(beersRepository)
 

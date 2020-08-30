@@ -1,9 +1,14 @@
 package com.simtop.billionbeers.data.network
 
+import okhttp3.Interceptor
 import okhttp3.OkHttpClient
+import okhttp3.Response
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.io.IOException
+import java.lang.Exception
+import java.net.HttpURLConnection
 
 class BeersApiFactory(
     private val enableHttpLogging: Boolean

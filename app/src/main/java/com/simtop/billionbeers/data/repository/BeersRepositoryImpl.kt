@@ -1,11 +1,15 @@
 package com.simtop.billionbeers.data.repository
 
-import com.simtop.billionbeers.data.database.BeersDao
+import com.simtop.billionbeers.core.Either
 import com.simtop.billionbeers.data.localsource.BeersLocalSource
 import com.simtop.billionbeers.data.mappers.BeersMapper
 import com.simtop.billionbeers.data.remotesources.BeersRemoteSource
 import com.simtop.billionbeers.domain.models.Beer
 import com.simtop.billionbeers.domain.repository.BeersRepository
+import retrofit2.HttpException
+import java.io.IOException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import javax.inject.Inject
 
 class BeersRepositoryImpl @Inject constructor(
@@ -24,8 +28,8 @@ class BeersRepositoryImpl @Inject constructor(
         return totalList
     }
 
-    //TODO: Remeber to do !beer.availability
-    override suspend fun updateAvailability(beer: Beer) = beersLocalSource.updateBeer(beer.id, beer.availability)
+    override suspend fun updateAvailability(beer: Beer) =
+        beersLocalSource.updateBeer(beer.id, beer.availability)
 
     override suspend fun insertAllToDB(beers: List<Beer>) =
         beersLocalSource.insertAllToDB(beers.map { BeersMapper.fromBeerToBeerDbModel(it) })
@@ -35,11 +39,42 @@ class BeersRepositoryImpl @Inject constructor(
 
     override suspend fun countDBEntries() = beersLocalSource.getCountFromDB()
 
-    override suspend fun getBeersFromSingleSource(quantity: Int): List<Beer> {
-        if (countDBEntries() == 0) {
-            val apiResults = getQuantityOfBeerFromApi(quantity)
-            insertAllToDB(apiResults)
+    override suspend fun getBeersFromSingleSource(quantity: Int): Either<Exception, List<Beer>> {
+
+        return safeApiCall {
+            if (countDBEntries() == 0) {
+                val apiResults = getQuantityOfBeerFromApi(quantity)
+                insertAllToDB(apiResults)
+            }
+            getAllBeersFromDB()
         }
-        return getAllBeersFromDB()
+    }
+}
+
+//TODO: move to core
+fun processErrors(exception: Exception): Exception {
+    return when (exception) {
+        is HttpException -> {
+            when (exception.code()) {
+                404 -> {
+                    Exception("No Connection $exception")
+                }
+                else -> {
+                    Exception("Hola")
+                }
+            }
+        }
+        else -> {
+            Exception("Hola2 ${exception.message}")
+        }
+    }
+}
+
+//TODO: move to core
+suspend fun <T> safeApiCall(apiCall: suspend () -> T) : Either<Exception,T> {
+    return try {
+        Either.Right(apiCall.invoke())
+    } catch (exception: Exception) {
+        Either.Left(processErrors(exception))
     }
 }
