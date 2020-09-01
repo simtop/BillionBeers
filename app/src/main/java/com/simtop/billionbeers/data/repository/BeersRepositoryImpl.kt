@@ -78,3 +78,13 @@ suspend fun <T> safeApiCall(apiCall: suspend () -> T) : Either<Exception,T> {
         Either.Left(processErrors(exception))
     }
 }
+
+//TODO try this
+sealed class Failure{
+    sealed class SignInError {
+        sealed class SocialError(val message: String) : SignInError() {
+            class GoogleError(message: String) : SocialError(message)
+            class FacebookError(message: String) : SocialError(message)
+        }
+    }
+}
