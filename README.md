@@ -8,6 +8,10 @@ The apps tech stack is: LiveData, Room, ViewModels, Dagger, constraint layout, v
 
 WIP: centralizing errors in the repository and paging 3.0.
 
+Architecture Summary:
+
+![Example1](imagesForReadme/ArchitectureSummary.png)
+
 Here are images of the app:
 
 ![Example1](imagesForReadme/FirstScreen.png)
