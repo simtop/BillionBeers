@@ -1,6 +1,6 @@
 package com.simtop.billionbeers.di
 
-import android.app.Application
+import com.simtop.billionbeers.BillionBeersApplication
 import com.simtop.billionbeers.presentation.beerdetail.BeerDetailFragment
 import com.simtop.billionbeers.presentation.beerslist.BeersListFragment
 import dagger.BindsInstance
@@ -19,13 +19,10 @@ import javax.inject.Singleton
 )
 interface ApplicationComponent {
 
-    @Component.Builder
-    interface Builder {
+    @Component.Factory
+    interface Factory{
 
-        @BindsInstance
-        fun application(application: Application): Builder
-
-        fun build(): ApplicationComponent
+        fun create(@BindsInstance app: BillionBeersApplication): ApplicationComponent
     }
 
     fun inject(beersListFragment: BeersListFragment)

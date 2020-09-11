@@ -10,27 +10,26 @@ object Libs {
     /**
      * https://github.com/Kotlin/kotlinx.coroutines
      */
-    const val kotlinx_coroutines_android: String =
-            "org.jetbrains.kotlinx:kotlinx-coroutines-android:" +
-            Versions.org_jetbrains_kotlinx_kotlinx_coroutines
-
-    /**
-     * https://github.com/Kotlin/kotlinx.coroutines
-     */
     const val kotlinx_coroutines_test: String = "org.jetbrains.kotlinx:kotlinx-coroutines-test:" +
             Versions.org_jetbrains_kotlinx_kotlinx_coroutines
 
     /**
-     * https://github.com/square/retrofit
+     * https://developer.android.com/testing
      */
-    const val converter_moshi: String = "com.squareup.retrofit2:converter-moshi:" +
-            Versions.com_squareup_retrofit2
+    const val espresso_contrib: String = "androidx.test.espresso:espresso-contrib:" +
+            Versions.androidx_test_espresso
 
     /**
-     * https://github.com/square/retrofit
+     * https://developer.android.com/testing
      */
-    const val retrofit: String = "com.squareup.retrofit2:retrofit:" +
-            Versions.com_squareup_retrofit2
+    const val espresso_core: String = "androidx.test.espresso:espresso-core:" +
+            Versions.androidx_test_espresso
+
+    /**
+     * https://developer.android.com/testing
+     */
+    const val espresso_idling_resource: String =
+            "androidx.test.espresso:espresso-idling-resource:" + Versions.androidx_test_espresso
 
     /**
      * https://square.github.io/okhttp/
@@ -67,20 +66,20 @@ object Libs {
     /**
      * https://kotlinlang.org/
      */
-    const val kotlin_gradle_plugin: String = "org.jetbrains.kotlin:kotlin-gradle-plugin:" +
+    const val kotlin_stdlib_jdk7: String = "org.jetbrains.kotlin:kotlin-stdlib-jdk7:" +
             Versions.org_jetbrains_kotlin
 
     /**
      * https://kotlinlang.org/
      */
-    const val kotlin_stdlib_jdk7: String = "org.jetbrains.kotlin:kotlin-stdlib-jdk7:" +
+    const val kotlin_test_junit: String = "org.jetbrains.kotlin:kotlin-test-junit:" +
             Versions.org_jetbrains_kotlin
 
     /**
-     * https://developer.android.com/topic/libraries/architecture/index.html
+     * https://kotlinlang.org/
      */
-    const val navigation_fragment: String = "androidx.navigation:navigation-fragment:" +
-            Versions.androidx_navigation
+    const val kotlin_gradle_plugin: String = "org.jetbrains.kotlin:kotlin-gradle-plugin:" +
+            Versions.org_jetbrains_kotlin
 
     /**
      * https://developer.android.com/topic/libraries/architecture/index.html
@@ -97,19 +96,14 @@ object Libs {
     /**
      * https://developer.android.com/topic/libraries/architecture/index.html
      */
-    const val navigation_ui: String = "androidx.navigation:navigation-ui:" +
+    const val navigation_testing: String = "androidx.navigation:navigation-testing:" +
             Versions.androidx_navigation
 
     /**
-     * https://github.com/square/moshi
+     * https://developer.android.com/topic/libraries/architecture/index.html
      */
-    const val moshi: String = "com.squareup.moshi:moshi:" + Versions.com_squareup_moshi
-
-    /**
-     * https://github.com/square/moshi
-     */
-    const val moshi_kotlin_codegen: String = "com.squareup.moshi:moshi-kotlin-codegen:" +
-            Versions.com_squareup_moshi
+    const val navigation_ui: String = "androidx.navigation:navigation-ui:" +
+            Versions.androidx_navigation
 
     /**
      * https://github.com/google/dagger
@@ -123,16 +117,34 @@ object Libs {
             Versions.com_google_dagger
 
     /**
-     * https://junit.org/junit5/
+     * https://developer.android.com/topic/libraries/architecture/index.html
      */
-    const val junit_jupiter_api: String = "org.junit.jupiter:junit-jupiter-api:" +
-            Versions.org_junit_jupiter
+    const val room_compiler: String = "androidx.room:room-compiler:" + Versions.androidx_room
 
     /**
-     * https://junit.org/junit5/
+     * https://developer.android.com/topic/libraries/architecture/index.html
      */
-    const val junit_jupiter_params: String = "org.junit.jupiter:junit-jupiter-params:" +
-            Versions.org_junit_jupiter
+    const val room_ktx: String = "androidx.room:room-ktx:" + Versions.androidx_room
+
+    /**
+     * https://developer.android.com/topic/libraries/architecture/index.html
+     */
+    const val room_runtime: String = "androidx.room:room-runtime:" + Versions.androidx_room
+
+    /**
+     * https://developer.android.com/testing
+     */
+    const val androidx_test_core_ktx: String = "androidx.test:core-ktx:" + Versions.androidx_test
+
+    /**
+     * https://developer.android.com/testing
+     */
+    const val androidx_test_rules: String = "androidx.test:rules:" + Versions.androidx_test
+
+    /**
+     * https://developer.android.com/testing
+     */
+    const val androidx_test_runner: String = "androidx.test:runner:" + Versions.androidx_test
 
     /**
      * http://mockk.io
@@ -149,6 +161,12 @@ object Libs {
      */
     const val com_android_tools_build_gradle: String = "com.android.tools.build:gradle:" +
             Versions.com_android_tools_build_gradle
+
+    /**
+     * https://developer.android.com/jetpack/androidx
+     */
+    const val androidx_core_core_ktx: String = "androidx.core:core-ktx:" +
+            Versions.androidx_core_core_ktx
 
     const val de_fayard_buildsrcversions_gradle_plugin: String =
             "de.fayard.buildSrcVersions:de.fayard.buildSrcVersions.gradle.plugin:" +
@@ -167,14 +185,21 @@ object Libs {
             Versions.constraintlayout
 
     /**
+     * https://developer.android.com/jetpack/androidx
+     */
+    const val fragment_testing: String = "androidx.fragment:fragment-testing:" +
+            Versions.fragment_testing
+
+    /**
+     * https://github.com/square/retrofit
+     */
+    const val converter_gson: String = "com.squareup.retrofit2:converter-gson:" +
+            Versions.converter_gson
+
+    /**
      * https://developer.android.com/topic/libraries/architecture/index.html
      */
     const val core_testing: String = "androidx.arch.core:core-testing:" + Versions.core_testing
-
-    /**
-     * https://developer.android.com/jetpack/androidx
-     */
-    const val fragment_ktx: String = "androidx.fragment:fragment-ktx:" + Versions.fragment_ktx
 
     /**
      * https://developer.android.com/studio
@@ -189,16 +214,14 @@ object Libs {
     const val appcompat: String = "androidx.appcompat:appcompat:" + Versions.appcompat
 
     /**
-     * https://developer.android.com/jetpack/androidx
+     * https://developer.android.com/testing
      */
-    const val core_ktx: String = "androidx.core:core-ktx:" + Versions.core_ktx
+    const val junit_ktx: String = "androidx.test.ext:junit-ktx:" + Versions.junit_ktx
 
     /**
-     * http://developer.android.com/tools/extras/support-library.html
+     * https://github.com/material-components/material-components-android
      */
     const val material: String = "com.google.android.material:material:" + Versions.material
-
-    const val multidex: String = "androidx.multidex:multidex:" + Versions.multidex
 
     const val kluent: String = "org.amshove.kluent:kluent:" + Versions.kluent
 
@@ -216,13 +239,4 @@ object Libs {
      * http://junit.org
      */
     const val junit: String = "junit:junit:" + Versions.junit
-
-    const val gson: String = "com.squareup.retrofit2:converter-gson:" + Versions.com_squareup_retrofit2
-
-    const val room_runtime = "androidx.room:room-runtime:" + Versions.room
-    const val room_ktx = "androidx.room:room-ktx:" + Versions.room
-    const val room_compiler = "androidx.room:room-compiler:" + Versions.room
-
-    const val paging = "androidx.paging:paging-runtime:" + Versions.paging
-
 }

@@ -6,7 +6,7 @@ import androidx.fragment.app.Fragment
 import com.simtop.billionbeers.di.ApplicationComponent
 import com.simtop.billionbeers.di.DaggerApplicationComponent
 
-class BillionBeersApplication : Application() {
+open class BillionBeersApplication : Application() {
 
     lateinit var appComponent: ApplicationComponent
 
@@ -15,10 +15,10 @@ class BillionBeersApplication : Application() {
         buildApiComponent()
     }
 
-    private fun buildApiComponent() {
-        appComponent = DaggerApplicationComponent.builder()
-            .application(this)
-            .build()
+    open fun buildApiComponent() {
+        appComponent = DaggerApplicationComponent
+            .factory()
+            .create(this)
     }
 }
 

@@ -16,7 +16,7 @@ android {
 
         multiDexEnabled true
 
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "com.simtop.billionbeers.di.MockTestRunner"
     }
 
     buildTypes {
@@ -52,12 +52,24 @@ android {
     buildFeatures {
         viewBinding = true
     }
+
+    kapt {
+        generateStubs = true
+    }
+
+    //Solves some problems for compilation for UI Test
+    packagingOptions {
+        pickFirst  "**/attach_hotspot_windows.dll"
+        exclude 'META-INF/AL2.0'
+        exclude 'META-INF/LGPL2.1'
+        exclude 'META-INF/licenses/ASM'
+    }
 }
 
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
     implementation Libs.kotlin_stdlib_jdk7
-    implementation Libs.core_ktx
+    implementation Libs.androidx_core_core_ktx
     implementation Libs.appcompat
     implementation Libs.material
     implementation Libs.constraintlayout
@@ -65,7 +77,7 @@ dependencies {
     implementation Libs.navigation_ui
     implementation Libs.glide
     implementation Libs.lifecycle_extensions
-    implementation Libs.gson
+    implementation Libs.converter_gson
     implementation Libs.logging_interceptor
     implementation Libs.room_compiler
     implementation Libs.room_ktx
@@ -82,4 +94,19 @@ dependencies {
     testImplementation Libs.mockwebserver
     testImplementation Libs.junit
 
+    androidTestImplementation Libs.kotlin_test_junit
+    androidTestImplementation Libs.kotlinx_coroutines_test
+    androidTestImplementation Libs.espresso_core
+    androidTestImplementation Libs.espresso_contrib
+    androidTestImplementation Libs.espresso_idling_resource
+    androidTestImplementation Libs.androidx_test_runner
+    androidTestImplementation Libs.androidx_test_rules
+    androidTestImplementation Libs.androidx_test_core_ktx
+    androidTestImplementation Libs.mockk_android
+    androidTestImplementation Libs.mockk
+    androidTestImplementation Libs.junit_ktx
+    androidTestImplementation Libs.navigation_testing
+    androidTestImplementation Libs.dagger
+    kaptAndroidTest Libs.dagger_compiler
+    androidTestImplementation Libs.core_testing
 }
