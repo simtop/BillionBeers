@@ -4,7 +4,7 @@ This is a base simple app that showcases my base Architecture and testing practi
 
 This app follows the Clean Architecture and using MVVM architecture for the presentation layer. The app uses kotlin dsl for dependency management and I use de_fayard_buildsrcversions_gradle_plugin plugin to manage the latest versions of the libraries I use.
 
-The apps tech stack is: LiveData, Room, ViewModels, Dagger, constraint layout, view binding, glide, Coroutines, Jetpack Navigation and safe args, Retrofit, okHttp, GSON, Material Design, webmockserver, mockk, junit4 (I stopped using junit5 because there were no logs in CI server), kluent, espresso
+The apps tech stack is: LiveData, Room, ViewModels, Dagger, constraint layout, motion layout, view binding, glide, Coroutines, Jetpack Navigation and safe args, Retrofit, okHttp, GSON, Material Design, webmockserver, mockk, junit4 (I stopped using junit5 because there were no logs in CI server), kluent, espresso
 
 WIP: centralizing errors in the repository and paging 3.0.
 
