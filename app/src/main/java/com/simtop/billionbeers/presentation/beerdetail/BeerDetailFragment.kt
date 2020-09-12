@@ -5,6 +5,7 @@ import androidx.fragment.app.Fragment
 import android.view.View
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.simtop.billionbeers.R
 import com.simtop.billionbeers.appComponent
@@ -36,13 +37,10 @@ class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
         val binding = FragmentDetailBeerBinding.bind(view)
         beersDetailFragmentBinding = binding
 
+        (requireActivity() as MainActivity).showToolbar(false)
 
-        (requireActivity() as MainActivity)
-            .setupToolbar(
-                requireContext()
-                    .getString(R.string.beer_detail), true
-            )
         beersViewModel.setBeer(args.myArg)
+
         observe(
             beersViewModel.beerDetailViewState,
             { beerDetailViewState -> beerDetailViewState?.let { treatViewState(it) } })
@@ -62,14 +60,16 @@ class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
     }
 
     private fun treatSuccess(beer: Beer) {
-        beersDetailFragmentBinding.singleBeer.bind(beer, ::updateAvailability)
+        beersDetailFragmentBinding.singleBeer.bind(beer, ::updateAvailability, ::onBackClicked)
 
+    }
+
+    private fun onBackClicked() {
+        findNavController().popBackStack()
     }
 
     private fun updateAvailability() {
         val beer = beersViewModel.beerDetailViewState.value
         if (beer is BeersDetailViewState.Success) beersViewModel.updateAvailability(beer.result)
-
-
     }
 }

@@ -14,4 +14,5 @@
     <string name="please_try_again_when_you_connect_to_the_internet">PLEASE TRY AGAIN WHEN YOU CONNECT TO THE INTERNET</string>
     <string name="billion_beers_list">"Billion Beers List"</string>
     <string name="beer_detail">Beer Detail</string>
+    <string name="beer_detail_text">Beer Detail</string>
 </resources>

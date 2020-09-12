@@ -27,13 +27,13 @@ class BeersItemView @JvmOverloads constructor(
         }
     }
 
-    override fun bind(beer: Beer) {
-        if(beer.availability) {
+    override fun bind(value: Beer) {
+        if(value.availability) {
             rowBeerListBinding.cardView.setCardBackgroundColor(Color.WHITE)
         } else {
             rowBeerListBinding.cardView.setCardBackgroundColor(Color.GRAY)
         }
-        rowBeerListBinding.beerName.text = beer.name
-        rowBeerListBinding.beerTagline.text = beer.tagline
+        rowBeerListBinding.beerName.text = value.name
+        rowBeerListBinding.beerTagline.text = value.tagline
     }
 }

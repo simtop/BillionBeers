@@ -5,6 +5,7 @@ import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.snackbar.Snackbar
+import com.simtop.billionbeers.core.selectVisibility
 import com.simtop.billionbeers.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -23,6 +24,10 @@ class MainActivity : AppCompatActivity() {
         binding.toolbar.title = title
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(activate)
+    }
+
+    fun showToolbar(show: Boolean) {
+        binding.toolbar.selectVisibility(show)
     }
 
     override fun onSupportNavigateUp(): Boolean {

@@ -21,10 +21,12 @@ class SingleBeerItemView @JvmOverloads constructor(
 
     fun bind(
         beer: Beer,
-        onClick: (() -> Unit)? = null
+        onClick: (() -> Unit)? = null,
+        onBack: (() -> Unit)? = null
     ) {
         singleBeerItemBinding.apply {
             singleBeerName.text = beer.name
+            title.text = beer.name
             beerDescription.text = beer.description
             beerAbv.text = context.getString(R.string.abv) + beer.abv.toString()
             beerIbu.text = context.getString(R.string.ibu) + beer.ibu.toString()
@@ -37,6 +39,7 @@ class SingleBeerItemView @JvmOverloads constructor(
                 toggleAvailability.text = context.getString(R.string.refill_barrels)
                 emergencyText.visibility = View.VISIBLE
             }
+            home.setOnClickListener { onBack?.invoke() }
         }
 
         if (beer.imageUrl.isNotEmpty()) {
@@ -44,6 +47,11 @@ class SingleBeerItemView @JvmOverloads constructor(
                 .load(beer.imageUrl)
                 .error(R.drawable.blue_image)
                 .into(singleBeerItemBinding.beerImage)
+
+            Glide.with(context)
+                .load(beer.imageUrl)
+                .error(R.drawable.blue_image)
+                .into(singleBeerItemBinding.toolbarImage)
         }
     }
 }

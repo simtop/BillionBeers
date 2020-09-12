@@ -4,8 +4,6 @@ import android.view.View
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.IdlingPolicies
 import androidx.test.espresso.IdlingRegistry
-import androidx.test.espresso.NoMatchingViewException
-import androidx.test.espresso.ViewInteraction
 import androidx.test.espresso.action.ViewActions.*
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.contrib.RecyclerViewActions
@@ -19,12 +17,12 @@ import com.simtop.billionbeers.presentation.MainActivity
 import com.simtop.billionbeers.utils.RecyclerViewMatchers.withItemCount
 import com.simtop.billionbeers.utils.ViewVisibilityIdlingResource
 import com.simtop.billionbeers.utils.waitUntilVisible
-import org.hamcrest.Matchers.not
+import org.hamcrest.CoreMatchers.allOf
+import org.hamcrest.CoreMatchers.containsString
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeoutException
 
 /*
 Remember to turn off:
@@ -61,8 +59,9 @@ class MainActivityE2ETest {
                 )
             )
 
-        onView(withText("Buzz"))
+        onView(withId(R.id.single_beer_name))
             .check(matches(isDisplayed()))
+            .check(matches(withText(containsString("Buzz"))));
     }
 
     @Test
@@ -101,9 +100,10 @@ class MainActivityE2ETest {
 
         onView(withId(R.id.single_beer_name))
             .check(matches(isDisplayed()))
-        onView(withText("Trashy Blonde"))
+        onView(withId(R.id.single_beer_name))
             .check(matches(isDisplayed()))
-        onView(withId(R.id.detailScrollView))
+            .check(matches(withText(containsString("Trashy Blonde"))));
+        onView(withId(R.id.detail_scroll_view))
             .perform(swipeUp(), click())
         onView((withId(R.id.toggle_availability)))
             .waitUntilVisible(2000)
@@ -111,7 +111,7 @@ class MainActivityE2ETest {
 
         //TODO: for some emulators we need to use multiple scroll downs, report the issue too google
         // for now only adding multiple scrolldowns fixes this bug
-        onView(withId(R.id.detailScrollView))
+        onView(withId(R.id.detail_scroll_view))
             .perform(swipeUp(), click())
 
         //This comprobation is flaky
