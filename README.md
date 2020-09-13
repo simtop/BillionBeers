@@ -16,9 +16,11 @@ Here are images of the app:
 
 ![Example1](imagesForReadme/FirstScreen.png)
 
-![Example1](imagesForReadme/SecondScreen.png)
+![Example1](imagesForReadme/FifthScreen.jpg)
 
-![Example1](imagesForReadme/ThirdScreen.png)
+![Example1](imagesForReadme/SixthScreen.jpg)
+
+![Example1](imagesForReadme/SeventhScreen.jpg)
 
 ![Example1](imagesForReadme/FourthScreen.png)
 
