@@ -1,28 +1,14 @@
 package com.simtop.billionbeers
 
 import android.view.View
-import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.IdlingPolicies
-import androidx.test.espresso.IdlingRegistry
-import androidx.test.espresso.action.ViewActions.*
-import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.contrib.RecyclerViewActions
-import androidx.test.espresso.matcher.ViewMatchers.*
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
-import com.simtop.billionbeers.core.BaseBindView
-import com.simtop.billionbeers.core.ViewWrapper
-import com.simtop.billionbeers.domain.models.Beer
+import com.simtop.billionbeers.robots.homeScreen
 import com.simtop.billionbeers.presentation.MainActivity
-import com.simtop.billionbeers.utils.RecyclerViewMatchers.withItemCount
 import com.simtop.billionbeers.utils.ViewVisibilityIdlingResource
-import com.simtop.billionbeers.utils.waitUntilVisible
-import org.hamcrest.CoreMatchers.allOf
-import org.hamcrest.CoreMatchers.containsString
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.concurrent.TimeUnit
 
 /*
 Remember to turn off:
@@ -45,77 +31,43 @@ class MainActivityE2ETest {
 
     @Test
     fun shouldDisplayListOfBeersWith100ItemsAndOpensDetail() {
-        IdlingPolicies.setIdlingResourceTimeout(2, TimeUnit.SECONDS)
-        IdlingRegistry.getInstance().register(progressBarVisibility)
-
         homeScreen {
-            matchListCount(R.id.beers_recyclerview,100)
+            setIdlingTimeout(2)
+            registerIdling(progressBarVisibility)
+            matchListCount(R.id.beers_recyclerview, 100)
+            unregisterIdling(progressBarVisibility)
+            clickRecycler(R.id.beers_recyclerview, 0)
+            matchViewWithText(R.id.single_beer_name, "Buzz")
         }
-
-        IdlingRegistry.getInstance().unregister(progressBarVisibility)
-
-        homeScreen {
-            click(R.id.beers_recyclerview,0)
-        }
-
-        onView(withId(R.id.single_beer_name))
-            .check(matches(isDisplayed()))
-            .check(matches(withText(containsString("Buzz"))));
     }
 
     @Test
     fun shouldDisplayListOfBeersWith100Items() {
-        IdlingPolicies.setIdlingResourceTimeout(2, TimeUnit.SECONDS)
-        IdlingRegistry.getInstance().register(progressBarVisibility)
-        onView(withId(R.id.beers_recyclerview))
-            .check(matches(withItemCount(100)))
-
-        IdlingRegistry.getInstance().unregister(progressBarVisibility)
-        onView(withId(R.id.beers_recyclerview))
-            .perform(
-                RecyclerViewActions.actionOnItemAtPosition<ViewWrapper<BaseBindView<Beer>>>(
-                    0,
-                    click()
-                )
-            )
-
+        homeScreen {
+            setIdlingTimeout(2)
+            registerIdling(progressBarVisibility)
+            matchListCount(R.id.beers_recyclerview, 100)
+            unregisterIdling(progressBarVisibility)
+        }
     }
 
     @Test
     fun shouldOpenDetailToggleAvailabilityAndShowWarningText() {
-        IdlingPolicies.setIdlingResourceTimeout(2, TimeUnit.SECONDS)
-        IdlingRegistry.getInstance().register(progressBarVisibility)
-        onView(withId(R.id.beers_recyclerview))
-            .check(matches(withItemCount(100)))
 
-        IdlingRegistry.getInstance().unregister(progressBarVisibility)
-        onView(withId(R.id.beers_recyclerview))
-            .perform(
-                RecyclerViewActions.actionOnItemAtPosition<ViewWrapper<BaseBindView<Beer>>>(
-                    1,
-                    click()
-                )
-            )
-
-        onView(withId(R.id.single_beer_name))
-            .check(matches(isDisplayed()))
-        onView(withId(R.id.single_beer_name))
-            .check(matches(isDisplayed()))
-            .check(matches(withText(containsString("Trashy Blonde"))));
-        onView(withId(R.id.detail_scroll_view))
-            .perform(swipeUp(), click())
-        onView((withId(R.id.toggle_availability)))
-            .waitUntilVisible(2000)
-            .perform(click())
-
-        //TODO: for some emulators we need to use multiple scroll downs, report the issue too google
-        // for now only adding multiple scrolldowns fixes this bug
-        onView(withId(R.id.detail_scroll_view))
-            .perform(swipeUp(), click())
-
-        //This comprobation is flaky
-        onView(withId(R.id.emergency_text))
-            .waitUntilVisible(5000)
-            .check(matches(isDisplayed()))
+        homeScreen {
+            setIdlingTimeout(2)
+            registerIdling(progressBarVisibility)
+            matchListCount(R.id.beers_recyclerview, 100)
+            unregisterIdling(progressBarVisibility)
+            clickRecycler(R.id.beers_recyclerview, 1) {
+                matchViewWithText(R.id.single_beer_name, "Trashy Blonde")
+                swipeUp(R.id.detail_scroll_view)
+                //TODO: for some emulators we need to use multiple scroll downs, report the issue too google
+                // for now only adding multiple scrolldowns fixes this bug, is Displayed is Flaky
+                clickAndWait(R.id.toggle_availability)
+                swipeUp(R.id.detail_scroll_view)
+                isDisplayedAfterWaiting(R.id.emergency_text, 5000)
+            }
+        }
     }
 }
