@@ -109,4 +109,5 @@ dependencies {
     androidTestImplementation Libs.dagger
     kaptAndroidTest Libs.dagger_compiler
     androidTestImplementation Libs.core_testing
+    androidTestImplementation Libs.fragment_testing
 }
