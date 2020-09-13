@@ -5,6 +5,7 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
 import com.simtop.billionbeers.robots.homeScreen
 import com.simtop.billionbeers.presentation.MainActivity
+import com.simtop.billionbeers.robots.detailScreen
 import com.simtop.billionbeers.utils.ViewVisibilityIdlingResource
 import org.junit.Rule
 import org.junit.Test
@@ -59,15 +60,16 @@ class MainActivityE2ETest {
             registerIdling(progressBarVisibility)
             matchListCount(R.id.beers_recyclerview, 100)
             unregisterIdling(progressBarVisibility)
-            clickRecycler(R.id.beers_recyclerview, 1) {
-                matchViewWithText(R.id.single_beer_name, "Trashy Blonde")
-                swipeUp(R.id.detail_scroll_view)
-                //TODO: for some emulators we need to use multiple scroll downs, report the issue too google
-                // for now only adding multiple scrolldowns fixes this bug, is Displayed is Flaky
-                clickAndWait(R.id.toggle_availability)
-                swipeUp(R.id.detail_scroll_view)
-                isDisplayedAfterWaiting(R.id.emergency_text, 5000)
-            }
+            clickRecycler(R.id.beers_recyclerview, 1)
+        }
+        detailScreen {
+            matchViewWithText(R.id.single_beer_name, "Trashy Blonde")
+            swipeUp(R.id.detail_scroll_view)
+            //TODO: for some emulators we need to use multiple scroll downs, report the issue too google
+            // for now only adding multiple scrolldowns fixes this bug, is Displayed is Flaky
+            clickAndWait(R.id.toggle_availability)
+            swipeUp(R.id.detail_scroll_view)
+            isDisplayedAfterWaiting(R.id.emergency_text, 5000)
         }
     }
 }
