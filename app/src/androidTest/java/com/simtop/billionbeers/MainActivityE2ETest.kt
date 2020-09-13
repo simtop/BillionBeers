@@ -47,17 +47,16 @@ class MainActivityE2ETest {
     fun shouldDisplayListOfBeersWith100ItemsAndOpensDetail() {
         IdlingPolicies.setIdlingResourceTimeout(2, TimeUnit.SECONDS)
         IdlingRegistry.getInstance().register(progressBarVisibility)
-        onView(withId(R.id.beers_recyclerview))
-            .check(matches(withItemCount(100)))
+
+        homeScreen {
+            matchListCount(R.id.beers_recyclerview,100)
+        }
 
         IdlingRegistry.getInstance().unregister(progressBarVisibility)
-        onView(withId(R.id.beers_recyclerview))
-            .perform(
-                RecyclerViewActions.actionOnItemAtPosition<ViewWrapper<BaseBindView<Beer>>>(
-                    0,
-                    click()
-                )
-            )
+
+        homeScreen {
+            click(R.id.beers_recyclerview,0)
+        }
 
         onView(withId(R.id.single_beer_name))
             .check(matches(isDisplayed()))
