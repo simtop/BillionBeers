@@ -8,6 +8,8 @@ The apps tech stack is: LiveData, Room, ViewModels, Dagger, constraint layout, m
 
 WIP: centralizing errors in the repository and paging 3.0.
 
+For UI Testing I used the Robot Pattern.
+
 Architecture Summary:
 
 ![Example1](imagesForReadme/ArchitectureSummary.png)
