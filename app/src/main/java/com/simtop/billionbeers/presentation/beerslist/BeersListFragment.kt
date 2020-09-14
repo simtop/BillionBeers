@@ -52,10 +52,22 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
 
         beersViewModel.getAllBeers()
 
+        setUpBeersRecyclerView()
+
         observe(
             beersViewModel.beerListViewState,
             { viewState -> viewState?.let { treatViewState2(it) } })
 
+    }
+
+    private fun setUpBeersRecyclerView() {
+        beersAdapter = BeersAdapter(
+            listener = ::onBeerClicked
+        )
+        fragmentListBeersBinding.beersRecyclerview.apply {
+            adapter = beersAdapter
+            layoutManager = LinearLayoutManager(requireContext())
+        }
     }
 
     private fun treatViewState2(it: BeersListViewState<List<Beer>>) {
@@ -76,14 +88,9 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
     }
 
     private fun treatSuccess(list: List<Beer>) {
-        beersAdapter = BeersAdapter(
-            items = list.toMutableList(),
-            listener = ::onBeerClicked
-        )
-        fragmentListBeersBinding.beersRecyclerview.apply {
-            adapter = beersAdapter
-            layoutManager = LinearLayoutManager(requireContext())
-        }
+
+        beersAdapter.submitList(list)
+
         fragmentListBeersBinding.progressBar.visibility = GONE
         fragmentListBeersBinding.beersRecyclerview.visibility = VISIBLE
         fragmentListBeersBinding.emptyState.visibility = GONE

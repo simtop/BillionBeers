@@ -28,8 +28,8 @@ class SingleBeerItemView @JvmOverloads constructor(
             singleBeerName.text = beer.name
             title.text = beer.name
             beerDescription.text = beer.description
-            beerAbv.text = context.getString(R.string.abv) + beer.abv.toString()
-            beerIbu.text = context.getString(R.string.ibu) + beer.ibu.toString()
+            beerAbv.text = context.getString(R.string.abv, beer.abv.toString())
+            beerIbu.text = context.getString(R.string.ibu, beer.ibu.toString())
             foodPairing.text = beer.foodPairing.toString()
             toggleAvailability.setOnClickListener { onClick?.invoke() }
             if (beer.availability) {
@@ -47,11 +47,6 @@ class SingleBeerItemView @JvmOverloads constructor(
                 .load(beer.imageUrl)
                 .error(R.drawable.blue_image)
                 .into(singleBeerItemBinding.beerImage)
-
-            Glide.with(context)
-                .load(beer.imageUrl)
-                .error(R.drawable.blue_image)
-                .into(singleBeerItemBinding.toolbarImage)
         }
     }
 }
