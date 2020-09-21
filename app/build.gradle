@@ -83,6 +83,11 @@ dependencies {
     implementation Libs.room_ktx
     implementation Libs.room_runtime
 
+    implementation Libs.paging_runtime_ktx
+    implementation Libs.recyclerview
+    implementation Libs.kotlinx_coroutines_android
+    implementation Libs.kotlinx_coroutines_core
+
     implementation Libs.dagger
     kapt Libs.dagger_compiler
 

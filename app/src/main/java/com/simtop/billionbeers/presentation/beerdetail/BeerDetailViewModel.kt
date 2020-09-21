@@ -7,7 +7,6 @@ import androidx.lifecycle.viewModelScope
 import com.simtop.billionbeers.core.Either
 import com.simtop.billionbeers.domain.models.Beer
 import com.simtop.billionbeers.domain.usecases.UpdateAvailabilityUseCase
-import com.simtop.billionbeers.presentation.beerslist.BeersListViewState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import javax.inject.Inject

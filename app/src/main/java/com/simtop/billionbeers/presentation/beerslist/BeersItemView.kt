@@ -27,7 +27,7 @@ class BeersItemView @JvmOverloads constructor(
         }
     }
 
-    override fun bind(value: Beer) {
+    override fun bind(value: Beer, listener: (() -> Unit?)?) {
         if(value.availability) {
             rowBeerListBinding.cardView.setCardBackgroundColor(Color.WHITE)
         } else {

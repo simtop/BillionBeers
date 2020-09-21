@@ -10,6 +10,19 @@ object Libs {
     /**
      * https://github.com/Kotlin/kotlinx.coroutines
      */
+    const val kotlinx_coroutines_android: String =
+            "org.jetbrains.kotlinx:kotlinx-coroutines-android:" +
+            Versions.org_jetbrains_kotlinx_kotlinx_coroutines
+
+    /**
+     * https://github.com/Kotlin/kotlinx.coroutines
+     */
+    const val kotlinx_coroutines_core: String = "org.jetbrains.kotlinx:kotlinx-coroutines-core:" +
+            Versions.org_jetbrains_kotlinx_kotlinx_coroutines
+
+    /**
+     * https://github.com/Kotlin/kotlinx.coroutines
+     */
     const val kotlinx_coroutines_test: String = "org.jetbrains.kotlinx:kotlinx-coroutines-test:" +
             Versions.org_jetbrains_kotlinx_kotlinx_coroutines
 
@@ -66,6 +79,12 @@ object Libs {
     /**
      * https://kotlinlang.org/
      */
+    const val kotlin_gradle_plugin: String = "org.jetbrains.kotlin:kotlin-gradle-plugin:" +
+            Versions.org_jetbrains_kotlin
+
+    /**
+     * https://kotlinlang.org/
+     */
     const val kotlin_stdlib_jdk7: String = "org.jetbrains.kotlin:kotlin-stdlib-jdk7:" +
             Versions.org_jetbrains_kotlin
 
@@ -73,12 +92,6 @@ object Libs {
      * https://kotlinlang.org/
      */
     const val kotlin_test_junit: String = "org.jetbrains.kotlin:kotlin-test-junit:" +
-            Versions.org_jetbrains_kotlin
-
-    /**
-     * https://kotlinlang.org/
-     */
-    const val kotlin_gradle_plugin: String = "org.jetbrains.kotlin:kotlin-gradle-plugin:" +
             Versions.org_jetbrains_kotlin
 
     /**
@@ -179,6 +192,12 @@ object Libs {
             Versions.lifecycle_extensions
 
     /**
+     * http://developer.android.com/tools/extras/support-library.html
+     */
+    const val paging_runtime_ktx: String = "androidx.paging:paging-runtime-ktx:" +
+            Versions.paging_runtime_ktx
+
+    /**
      * http://tools.android.com
      */
     const val constraintlayout: String = "androidx.constraintlayout:constraintlayout:" +
@@ -200,6 +219,11 @@ object Libs {
      * https://developer.android.com/topic/libraries/architecture/index.html
      */
     const val core_testing: String = "androidx.arch.core:core-testing:" + Versions.core_testing
+
+    /**
+     * https://developer.android.com/jetpack/androidx
+     */
+    const val recyclerview: String = "androidx.recyclerview:recyclerview:" + Versions.recyclerview
 
     /**
      * https://developer.android.com/studio

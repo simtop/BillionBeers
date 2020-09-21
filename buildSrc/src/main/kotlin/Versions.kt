@@ -16,13 +16,13 @@ object Versions {
 
     const val androidx_test_espresso: String = "3.3.0"
 
-    const val com_squareup_okhttp3: String = "4.8.1"
+    const val com_squareup_okhttp3: String = "4.8.1" // available: "4.9.0"
 
-    const val org_jetbrains_kotlin: String = "1.4.0"
+    const val org_jetbrains_kotlin: String = "1.4.0" // available: "1.4.10"
 
     const val androidx_navigation: String = "2.3.0"
 
-    const val com_google_dagger: String = "2.28.3"
+    const val com_google_dagger: String = "2.28.3" // available: "2.29.1"
 
     const val androidx_room: String = "2.2.5"
 
@@ -38,6 +38,8 @@ object Versions {
 
     const val lifecycle_extensions: String = "2.2.0"
 
+    const val paging_runtime_ktx: String = "3.0.0-alpha06"
+
     const val constraintlayout: String = "2.0.1"
 
     const val fragment_testing: String = "1.2.5"
@@ -45,6 +47,8 @@ object Versions {
     const val converter_gson: String = "2.9.0"
 
     const val core_testing: String = "2.1.0"
+
+    const val recyclerview: String = "1.2.0-alpha05"
 
     const val lint_gradle: String = "27.0.1"
 

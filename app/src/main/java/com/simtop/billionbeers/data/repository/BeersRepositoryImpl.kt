@@ -1,6 +1,5 @@
 package com.simtop.billionbeers.data.repository
 
-import com.simtop.billionbeers.data.database.BeersDao
 import com.simtop.billionbeers.data.localsource.BeersLocalSource
 import com.simtop.billionbeers.data.mappers.BeersMapper
 import com.simtop.billionbeers.data.remotesources.BeersRemoteSource
@@ -24,8 +23,8 @@ class BeersRepositoryImpl @Inject constructor(
         return totalList
     }
 
-    //TODO: Remeber to do !beer.availability
-    override suspend fun updateAvailability(beer: Beer) = beersLocalSource.updateBeer(beer.id, beer.availability)
+    override suspend fun updateAvailability(beer: Beer) =
+        beersLocalSource.updateBeer(beer.id, beer.availability)
 
     override suspend fun insertAllToDB(beers: List<Beer>) =
         beersLocalSource.insertAllToDB(beers.map { BeersMapper.fromBeerToBeerDbModel(it) })
