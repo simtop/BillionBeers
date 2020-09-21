@@ -12,6 +12,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import androidx.paging.ExperimentalPagingApi
 import androidx.paging.LoadState
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.simtop.billionbeers.R
@@ -38,6 +39,7 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
 
     lateinit var beersAdapter: PagedBeersAdapter
 
+    @ExperimentalPagingApi
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -49,7 +51,7 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
         setUpBeersRecyclerView()
 
         lifecycleScope.launch {
-            beersViewModel.getPaginatedBeers().collectLatest {
+            beersViewModel.getData().collectLatest {
                 beersAdapter.submitData(it)
             }
         }

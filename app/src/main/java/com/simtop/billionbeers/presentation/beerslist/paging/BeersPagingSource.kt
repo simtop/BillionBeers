@@ -5,7 +5,7 @@ import com.simtop.billionbeers.domain.models.Beer
 import com.simtop.billionbeers.domain.usecases.GetBeersFromApiUseCase
 
 
-private const val GITHUB_STARTING_PAGE_INDEX = 1
+private const val PAGING_STARTING_INDEX = 1
 
 class BeersPagingSource(
     private val getBeersFromApiUseCase: GetBeersFromApiUseCase
@@ -23,7 +23,7 @@ class BeersPagingSource(
                 {
                     LoadResult.Page(
                         data = it,
-                        prevKey = if (nextPageNumber == GITHUB_STARTING_PAGE_INDEX) null else nextPageNumber - 1,
+                        prevKey = if (nextPageNumber == PAGING_STARTING_INDEX) null else nextPageNumber - 1,
                         nextKey = if (it.isEmpty()) null else nextPageNumber + 1
                     )
                 })

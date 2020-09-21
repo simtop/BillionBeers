@@ -64,6 +64,12 @@ android {
         exclude 'META-INF/LGPL2.1'
         exclude 'META-INF/licenses/ASM'
     }
+
+    //Solves a problem of duplication while using last version of room with pagination
+//    configurations {
+//        cleanedAnnotations
+//        compile.exclude group: 'org.jetbrains' , module:'annotations'
+//    }
 }
 
 dependencies {
@@ -79,7 +85,7 @@ dependencies {
     implementation Libs.lifecycle_extensions
     implementation Libs.converter_gson
     implementation Libs.logging_interceptor
-    implementation Libs.room_compiler
+    kapt Libs.room_compiler
     implementation Libs.room_ktx
     implementation Libs.room_runtime
 

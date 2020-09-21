@@ -1,6 +1,9 @@
 package com.simtop.billionbeers.domain.repository
 
+import androidx.paging.ExperimentalPagingApi
+import androidx.paging.PagingData
 import com.simtop.billionbeers.domain.models.Beer
+import kotlinx.coroutines.flow.Flow
 
 interface BeersRepository {
     suspend fun countDBEntries(): Int
@@ -10,4 +13,6 @@ interface BeersRepository {
     suspend fun getBeersFromSingleSource(quantity: Int): List<Beer>
     suspend fun getListOfBeerFromApi(page: Int): List<Beer>
     suspend fun getQuantityOfBeerFromApi(quantity: Int): List<Beer>
+    @ExperimentalPagingApi
+    fun getPaginatedBeers(): Flow<PagingData<Beer>>
 }

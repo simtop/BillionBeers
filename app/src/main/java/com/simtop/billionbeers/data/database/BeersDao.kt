@@ -1,5 +1,6 @@
 package com.simtop.billionbeers.data.database
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -31,4 +32,7 @@ abstract class BeersDao {
 
     @Query("SELECT COUNT(id) FROM beers")
     abstract fun getCount(): Int
+
+    @Query("SELECT * FROM beers")
+    abstract fun getPaginatedBeers(): PagingSource<Int, BeerDbModel>
 }

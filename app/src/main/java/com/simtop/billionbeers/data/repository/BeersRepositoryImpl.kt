@@ -1,15 +1,20 @@
 package com.simtop.billionbeers.data.repository
 
+import androidx.paging.*
+import com.simtop.billionbeers.data.database.BeersDatabase
 import com.simtop.billionbeers.data.localsource.BeersLocalSource
 import com.simtop.billionbeers.data.mappers.BeersMapper
 import com.simtop.billionbeers.data.remotesources.BeersRemoteSource
 import com.simtop.billionbeers.domain.models.Beer
 import com.simtop.billionbeers.domain.repository.BeersRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class BeersRepositoryImpl @Inject constructor(
     private val beersRemoteSource: BeersRemoteSource,
-    private val beersLocalSource: BeersLocalSource
+    private val beersLocalSource: BeersLocalSource,
+    private val beersDatabase: BeersDatabase
 ) : BeersRepository {
     override suspend fun getListOfBeerFromApi(page: Int): List<Beer> =
         beersRemoteSource.getListOfBeers(page)
@@ -40,5 +45,20 @@ class BeersRepositoryImpl @Inject constructor(
             insertAllToDB(apiResults)
         }
         return getAllBeersFromDB()
+    }
+
+    @ExperimentalPagingApi
+    override fun getPaginatedBeers(): Flow<PagingData<Beer>> {
+
+        val pagingSourceFactory = { beersDatabase.beersDao().getPaginatedBeers() }
+
+        return Pager(
+            config = PagingConfig(pageSize = 25, enablePlaceholders = false),
+            remoteMediator = RemoteBeersMediator(
+                beersRemoteSource,
+                beersDatabase
+            ),
+            pagingSourceFactory = pagingSourceFactory
+        ).flow.map { it.map { beer -> BeersMapper.fromBeerDbModelToBeer(beer) } }
     }
 }

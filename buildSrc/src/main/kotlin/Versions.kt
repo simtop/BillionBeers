@@ -24,7 +24,7 @@ object Versions {
 
     const val com_google_dagger: String = "2.28.3" // available: "2.29.1"
 
-    const val androidx_room: String = "2.2.5"
+    const val androidx_room: String = "2.3.0-alpha02"
 
     const val androidx_test: String = "1.3.0"
 
