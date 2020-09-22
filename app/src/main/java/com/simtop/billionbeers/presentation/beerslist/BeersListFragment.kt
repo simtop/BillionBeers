@@ -87,9 +87,6 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
         )
 
         beersAdapter.addLoadStateListener { loadState ->
-            // Only show the list if refresh succeeds.
-            fragmentListBeersBinding.beersRecyclerview.isVisible =
-                loadState.source.refresh is LoadState.NotLoading
             // Show loading spinner during initial load or refresh.
             fragmentListBeersBinding.progressBar.isVisible =
                 loadState.source.refresh is LoadState.Loading
