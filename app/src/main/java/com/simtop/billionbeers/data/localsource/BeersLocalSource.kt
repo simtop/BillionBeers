@@ -7,7 +7,7 @@ import javax.inject.Inject
 //TODO check if we can do pagination without db, if we can then inject Daos
 class BeersLocalSource @Inject constructor(private val db: BeersDatabase) {
 
-    fun getAllBeersFromDB() = db.beersDao().getAllBeers()
+    suspend fun getAllBeersFromDB() = db.beersDao().getAllBeers()
 
     suspend fun insertAllToDB(beers: List<BeerDbModel>) = db.beersDao().insertAll(beers)
 

@@ -11,7 +11,7 @@ import com.simtop.billionbeers.data.models.BeerDbModel
 abstract class BeersDao {
 
     @Query("SELECT * FROM beers")
-    abstract fun getAllBeers(): List<BeerDbModel>
+    abstract suspend fun getAllBeers(): List<BeerDbModel>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun insertAll(beers: List<BeerDbModel>)

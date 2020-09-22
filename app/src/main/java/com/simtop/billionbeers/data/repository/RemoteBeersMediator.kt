@@ -5,6 +5,7 @@ import androidx.paging.LoadType
 import androidx.paging.PagingState
 import androidx.paging.RemoteMediator
 import androidx.room.withTransaction
+import com.simtop.billionbeers.core.intersects
 import com.simtop.billionbeers.data.database.BeersDatabase
 import com.simtop.billionbeers.data.mappers.BeersMapper
 import com.simtop.billionbeers.data.models.BeerDbModel
@@ -58,7 +59,15 @@ class RemoteBeersMediator(
             val apiResponse = beersRemoteSource.getListOfBeers(page)
 
             val repos = apiResponse.map { BeersMapper.fromBeersApiResponseItemToBeer(it) }
+
+            val dbBeers = repoDatabase.beersDao().getAllBeers().map { BeersMapper.fromBeerDbModelToBeer(it) }
+
             val endOfPaginationReached = repos.isEmpty()
+
+            if(dbBeers.intersects(repos)){
+                return MediatorResult.Success(endOfPaginationReached = endOfPaginationReached)
+            }
+
             repoDatabase.withTransaction {
                 // clear all tables in the database
                 if (loadType == LoadType.REFRESH) {
