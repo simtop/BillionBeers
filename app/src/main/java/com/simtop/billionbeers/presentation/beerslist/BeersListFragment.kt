@@ -4,8 +4,6 @@ import android.content.Context
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.View
-import android.view.View.GONE
-import android.view.View.VISIBLE
 import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
@@ -51,7 +49,7 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
         setUpBeersRecyclerView()
 
         lifecycleScope.launch {
-            beersViewModel.getData().collectLatest {
+            beersViewModel.getPagedBeerListFlow().collectLatest {
                 beersAdapter.submitData(it)
             }
         }

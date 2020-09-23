@@ -3,6 +3,7 @@ package com.simtop.billionbeers.data
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.simtop.billionbeers.MainCoroutineScopeRule
 import com.simtop.billionbeers.data.database.BeersDao
+import com.simtop.billionbeers.data.database.BeersDatabase
 import com.simtop.billionbeers.data.localsource.BeersLocalSource
 import com.simtop.billionbeers.data.remotesources.BeersRemoteSource
 import com.simtop.billionbeers.data.repository.BeersRepositoryImpl
@@ -32,11 +33,13 @@ internal class BeersRepositoryImplTest {
 
     private val beersLocalSource : BeersLocalSource = mockk()
 
+    private val beersDatabase: BeersDatabase = mockk()
+
     @Test
     fun `should get data from repository`() {
         coroutineScope.runBlockingTest {
 
-            val getBeers = BeersRepositoryImpl(beersRemoteSource, beersLocalSource)
+            val getBeers = BeersRepositoryImpl(beersRemoteSource, beersLocalSource, beersDatabase)
 
             coEvery { beersRemoteSource.getListOfBeers(any()) } returns fakeBeerApiResponse
 

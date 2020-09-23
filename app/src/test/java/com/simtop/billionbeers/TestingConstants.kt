@@ -1,7 +1,9 @@
 package com.simtop.billionbeers
 
+import androidx.paging.PagingData
 import com.simtop.billionbeers.data.models.BeersApiResponseItem
 import com.simtop.billionbeers.domain.models.Beer
+import kotlinx.coroutines.flow.flowOf
 
 const val FAKE_JSON = "fake_json_response.json"
 
@@ -30,3 +32,6 @@ val fakeBeerModel = Beer(
 )
 
 val fakeBeerListModel = listOf(fakeBeerModel.copy())
+
+val fakePagingBeer = PagingData.from(fakeBeerListModel)
+val fakeFlowPagingBeer = flowOf(fakePagingBeer)

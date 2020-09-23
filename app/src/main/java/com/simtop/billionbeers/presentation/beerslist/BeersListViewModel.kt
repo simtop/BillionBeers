@@ -11,14 +11,10 @@ import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class BeersListViewModel @Inject constructor(
-    private val getBeersFromApiUseCase: GetBeersFromApiUseCase,
     private val repository: BeersRepository
 ) : ViewModel() {
 
-    fun getPaginatedBeers(): Flow<PagingData<Beer>> = Pager(PagingConfig(pageSize = 25)) {
-        BeersPagingSource(getBeersFromApiUseCase)
-    }.flow.cachedIn(viewModelScope)
-
     @ExperimentalPagingApi
-    fun getData(): Flow<PagingData<Beer>> = repository.getPaginatedBeers().cachedIn(viewModelScope)
+    fun getPagedBeerListFlow(): Flow<PagingData<Beer>> =
+        repository.getPaginatedBeers().cachedIn(viewModelScope)
 }
