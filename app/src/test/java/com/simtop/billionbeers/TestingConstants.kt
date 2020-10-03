@@ -31,7 +31,20 @@ val fakeBeerModel = Beer(
     emptyList()
 )
 
+val fakeBeerModel2 = Beer(
+    2,
+    "Buzz2",
+    "A Real Bitter Experience.2",
+    "",
+    "",
+    0.0,
+    0.0,
+    emptyList()
+)
+
 val fakeBeerListModel = listOf(fakeBeerModel.copy())
+
+val fakeBeerListModel2 = listOf(fakeBeerModel.copy(),fakeBeerModel2.copy())
 
 val fakePagingBeer = PagingData.from(fakeBeerListModel)
 val fakeFlowPagingBeer = flowOf(fakePagingBeer)
