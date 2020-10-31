@@ -30,8 +30,12 @@ class BeersRepositoryImpl @Inject constructor(
         return totalList
     }
 
-    override suspend fun updateAvailability(beer: Beer) =
-        beersLocalSource.updateBeer(beer.id, beer.availability)
+    override suspend fun updateAvailability(beer: Beer): Flow<Either<Exception, Unit>> {
+        return safeCall {
+            beersLocalSource.updateBeer(beer.id, beer.availability)
+        }
+    }
+
 
     override suspend fun insertAllToDB(beers: List<Beer>) =
         beersLocalSource.insertAllToDB(beers.map { BeersMapper.fromBeerToBeerDbModel(it) })

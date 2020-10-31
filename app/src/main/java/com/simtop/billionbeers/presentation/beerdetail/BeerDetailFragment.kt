@@ -5,6 +5,7 @@ import androidx.fragment.app.Fragment
 import android.view.View
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.navArgs
 import com.simtop.billionbeers.R
 import com.simtop.billionbeers.appComponent
@@ -13,6 +14,7 @@ import com.simtop.billionbeers.core.showToast
 import com.simtop.billionbeers.databinding.FragmentDetailBeerBinding
 import com.simtop.billionbeers.domain.models.Beer
 import com.simtop.billionbeers.presentation.MainActivity
+import kotlinx.coroutines.flow.collect
 import javax.inject.Inject
 
 
@@ -43,16 +45,19 @@ class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
                     .getString(R.string.beer_detail), true
             )
         beersViewModel.setBeer(args.myArg)
-        observe(
-            beersViewModel.beerDetailViewState,
-            { beerDetailViewState -> beerDetailViewState?.let { treatViewState(it) } })
 
+        lifecycleScope.launchWhenCreated {
+            beersViewModel.beerDetailViewState.collect {
+                renderBeersDetailViewState(it)
+            }
+        }
     }
 
-    private fun treatViewState(result: BeersDetailViewState<Beer>) {
+    private fun renderBeersDetailViewState(result: BeersDetailViewState<Beer>) {
         when (result) {
             is BeersDetailViewState.Success -> treatSuccess(result.result)
             is BeersDetailViewState.Error -> showError(result.result)
+            BeersDetailViewState.Loading -> throw NotImplementedError()
         }
 
     }
@@ -69,7 +74,5 @@ class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
     private fun updateAvailability() {
         val beer = beersViewModel.beerDetailViewState.value
         if (beer is BeersDetailViewState.Success) beersViewModel.updateAvailability(beer.result)
-
-
     }
 }

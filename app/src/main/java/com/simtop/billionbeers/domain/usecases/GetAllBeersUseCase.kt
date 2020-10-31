@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class GetAllBeersUseCase @Inject constructor(private val beersRepository: BeersRepository) :
-    FlowBaseUseCase<Flow<List<Beer>>, GetAllBeersUseCase.Params>() {
+    FlowBaseUseCase<List<Beer>, GetAllBeersUseCase.Params>() {
 
     inner class Params(val quantity: Int)
 
