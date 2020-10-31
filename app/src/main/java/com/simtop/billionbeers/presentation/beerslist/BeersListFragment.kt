@@ -8,15 +8,16 @@ import android.view.View.GONE
 import android.view.View.VISIBLE
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.simtop.billionbeers.R
 import com.simtop.billionbeers.appComponent
-import com.simtop.billionbeers.core.observe
 import com.simtop.billionbeers.core.showToast
 import com.simtop.billionbeers.databinding.FragmentListBeersBinding
 import com.simtop.billionbeers.domain.models.Beer
 import com.simtop.billionbeers.presentation.MainActivity
+import kotlinx.coroutines.flow.collect
 import javax.inject.Inject
 
 class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
@@ -52,13 +53,14 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
 
         beersViewModel.getAllBeers()
 
-        observe(
-            beersViewModel.beerListViewState,
-            { viewState -> viewState?.let { treatViewState2(it) } })
-
+        lifecycleScope.launchWhenCreated {
+            beersViewModel.beerListViewState.collect {
+                renderBeersListViewState(it)
+            }
+        }
     }
 
-    private fun treatViewState2(it: BeersListViewState<List<Beer>>) {
+    private fun renderBeersListViewState(it: BeersListViewState<List<Beer>>) {
         when (it) {
             is BeersListViewState.Success -> treatSuccess(it.result)
             is BeersListViewState.Error -> treatError(it.result)

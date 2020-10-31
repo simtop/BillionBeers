@@ -65,11 +65,13 @@ dependencies {
     implementation Libs.navigation_ui
     implementation Libs.glide
     implementation Libs.lifecycle_extensions
-    implementation Libs.gson
+    implementation Libs.converter_gson
     implementation Libs.logging_interceptor
     implementation Libs.room_compiler
     implementation Libs.room_ktx
     implementation Libs.room_runtime
+    implementation Libs.kotlinx_coroutines_android
+    implementation Libs.kotlinx_coroutines_core
 
     implementation Libs.dagger
     kapt Libs.dagger_compiler

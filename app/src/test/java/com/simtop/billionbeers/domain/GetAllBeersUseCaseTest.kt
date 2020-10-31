@@ -12,6 +12,8 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.runBlockingTest
 import org.amshove.kluent.any
 import org.amshove.kluent.shouldBeEqualTo
@@ -33,7 +35,9 @@ internal class GetAllBeersUseCaseTest {
     @Test
     fun `should get data from repository`() {
         coroutineScope.runBlockingTest {
-            coEvery { beersRepository.getBeersFromSingleSource(any()) } returns Either.Right(fakeBeerListModel)
+            coEvery {
+                beersRepository.getBeersFromSingleSource(any())
+            } returns flow { Either.Right(fakeBeerListModel) }
 
             val getAllBeersUseCase = GetAllBeersUseCase(beersRepository)
 
@@ -41,8 +45,10 @@ internal class GetAllBeersUseCaseTest {
 
             coVerify(exactly = 1) { beersRepository.getBeersFromSingleSource(any()) }
 
-            response.mapRight {
-                it shouldBeEqualTo fakeBeerListModel
+            response.collect { flow->
+                flow.mapRight {
+                    it shouldBeEqualTo fakeBeerListModel
+                }
             }
         }
     }

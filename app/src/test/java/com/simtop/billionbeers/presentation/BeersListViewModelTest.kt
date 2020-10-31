@@ -12,6 +12,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.runBlockingTest
 import org.amshove.kluent.shouldBeEqualTo
 import org.junit.Rule
@@ -38,12 +39,12 @@ internal class BeersListViewModelTest {
 
         coEvery {
             getAllBeersUseCase.execute(any())
-        } returns Either.Right(fakeBeerListModel)
+        } returns flow {Either.Right(fakeBeerListModel) }
 
         coroutineScope.runBlockingTest {
             beersListViewModel.getAllBeers()
 
-            beersListViewModel.beerListViewState.getValueForTest() shouldBeEqualTo BeersListViewState.Loading
+            beersListViewModel.beerListViewState.value shouldBeEqualTo BeersListViewState.Loading
 
             Thread.sleep(1000)
 
@@ -51,7 +52,7 @@ internal class BeersListViewModelTest {
                 getAllBeersUseCase.execute(any())
             }
         }
-        val response = beersListViewModel.beerListViewState.getValueForTest()
+        val response = beersListViewModel.beerListViewState.value
 
         if(response is BeersListViewState.Success)  {
             response.result shouldBeEqualTo fakeBeerListModel
@@ -63,7 +64,7 @@ internal class BeersListViewModelTest {
 
         coEvery {
             getAllBeersUseCase.execute(any())
-        } returns Either.Left(Exception("Error getting list of beers"))
+        } returns flow { Either.Left(Exception("Error getting list of beers")) }
 
         coroutineScope.runBlockingTest {
             beersListViewModel.getAllBeers()
@@ -75,7 +76,7 @@ internal class BeersListViewModelTest {
             }
         }
 
-        val response = beersListViewModel.beerListViewState.getValueForTest()
+        val response = beersListViewModel.beerListViewState.value
 
         if(response is BeersListViewState.Error)  {
             response.result.message shouldBeEqualTo "Error getting list of beers"

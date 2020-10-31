@@ -1,14 +1,13 @@
 package com.simtop.billionbeers.presentation.beerslist
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.simtop.billionbeers.core.*
 import com.simtop.billionbeers.domain.models.Beer
 import com.simtop.billionbeers.domain.usecases.GetAllBeersUseCase
-import com.simtop.billionbeers.domain.usecases.UpdateAvailabilityUseCase
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -17,32 +16,33 @@ class BeersListViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _beerListViewState =
-        MutableLiveData<BeersListViewState<List<Beer>>>()
-    val beerListViewState: LiveData<BeersListViewState<List<Beer>>>
+        MutableStateFlow<BeersListViewState<List<Beer>>>(BeersListViewState.Loading)
+    val beerListViewState: StateFlow<BeersListViewState<List<Beer>>>
         get() = _beerListViewState
 
     fun getAllBeers(quantity: Int = MAX_PAGES_FOR_PAGINATION) {
-        _beerListViewState.postValue(BeersListViewState.Loading)
+        _beerListViewState.value = BeersListViewState.Loading
         viewModelScope.launch(Dispatchers.IO) {
-            getAllBeersUseCase.execute(getAllBeersUseCase.Params(quantity))
-                .also(::process)
+            getAllBeersUseCase.execute(getAllBeersUseCase.Params(quantity)).collect {
+                process(it)
+            }
         }
     }
 
     private fun process(result: Either<Exception, List<Beer>>) {
         result.either(
             {
-                _beerListViewState.postValue(BeersListViewState.Error(it))
+                _beerListViewState.value = BeersListViewState.Error(it)
             },
             {
-                if(it.isEmpty()) _beerListViewState.postValue(BeersListViewState.EmptyState)
-                else _beerListViewState.postValue(BeersListViewState.Success(it))
+                if(it.isEmpty()) _beerListViewState.value = BeersListViewState.EmptyState
+                else _beerListViewState.value = BeersListViewState.Success(it)
             }
         )
     }
 
     fun showEmptyState() {
-        _beerListViewState.postValue(BeersListViewState.EmptyState)
+        _beerListViewState.value = BeersListViewState.EmptyState
     }
 }
 

@@ -1,15 +1,17 @@
 package com.simtop.billionbeers.data.repository
 
 import com.simtop.billionbeers.core.Either
+import com.simtop.billionbeers.core.safeCall
 import com.simtop.billionbeers.data.localsource.BeersLocalSource
 import com.simtop.billionbeers.data.mappers.BeersMapper
+import com.simtop.billionbeers.data.mappers.DataErrorsMapper.processErrors
 import com.simtop.billionbeers.data.remotesources.BeersRemoteSource
 import com.simtop.billionbeers.domain.models.Beer
 import com.simtop.billionbeers.domain.repository.BeersRepository
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.*
 import retrofit2.HttpException
 import java.io.IOException
-import java.net.SocketTimeoutException
-import java.net.UnknownHostException
 import javax.inject.Inject
 
 class BeersRepositoryImpl @Inject constructor(
@@ -39,9 +41,9 @@ class BeersRepositoryImpl @Inject constructor(
 
     override suspend fun countDBEntries() = beersLocalSource.getCountFromDB()
 
-    override suspend fun getBeersFromSingleSource(quantity: Int): Either<Exception, List<Beer>> {
+    override suspend fun getBeersFromSingleSource(quantity: Int): Flow<Either<Exception, List<Beer>>> {
 
-        return safeApiCall {
+        return safeCall {
             if (countDBEntries() == 0) {
                 val apiResults = getQuantityOfBeerFromApi(quantity)
                 insertAllToDB(apiResults)
@@ -51,40 +53,3 @@ class BeersRepositoryImpl @Inject constructor(
     }
 }
 
-//TODO: move to core
-fun processErrors(exception: Exception): Exception {
-    return when (exception) {
-        is HttpException -> {
-            when (exception.code()) {
-                404 -> {
-                    Exception("No Connection $exception")
-                }
-                else -> {
-                    Exception("Hola")
-                }
-            }
-        }
-        else -> {
-            Exception("Hola2 ${exception.message}")
-        }
-    }
-}
-
-//TODO: move to core
-suspend fun <T> safeApiCall(apiCall: suspend () -> T) : Either<Exception,T> {
-    return try {
-        Either.Right(apiCall.invoke())
-    } catch (exception: Exception) {
-        Either.Left(processErrors(exception))
-    }
-}
-
-//TODO try this
-sealed class Failure{
-    sealed class SignInError {
-        sealed class SocialError(val message: String) : SignInError() {
-            class GoogleError(message: String) : SocialError(message)
-            class FacebookError(message: String) : SocialError(message)
-        }
-    }
-}
