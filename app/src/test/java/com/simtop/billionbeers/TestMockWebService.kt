@@ -84,7 +84,8 @@ class ErrorInterceptor : Interceptor {
                 HttpURLConnection.HTTP_UNAVAILABLE -> throw Exception("ServerException.ServiceUnavailable")
                 HttpURLConnection.HTTP_NOT_FOUND -> throw Exception("ClientException.NotFound")
                 HttpURLConnection.HTTP_CLIENT_TIMEOUT -> throw Exception("ClientException.RequestTimeout")
-                else -> throw Exception(IllegalStateException("The status code ${response.code} was received but not handled!")
+                else -> throw Exception(
+                    IllegalStateException("The status code ${response.code} was received but not handled!")
                 )
             }
         }

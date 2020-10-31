@@ -24,5 +24,5 @@ class BeersDatabaseModule {
 
     @Provides
     @Singleton
-    fun provideBeersDao(db: BeersDatabase) : BeersDao = db.beersDao()
+    fun provideBeersDao(db: BeersDatabase): BeersDao = db.beersDao()
 }

@@ -35,7 +35,7 @@ class BeersListViewModel @Inject constructor(
                 _beerListViewState.value = BeersListViewState.Error(it)
             },
             {
-                if(it.isEmpty()) _beerListViewState.value = BeersListViewState.EmptyState
+                if (it.isEmpty()) _beerListViewState.value = BeersListViewState.EmptyState
                 else _beerListViewState.value = BeersListViewState.Success(it)
             }
         )
@@ -46,7 +46,7 @@ class BeersListViewModel @Inject constructor(
     }
 }
 
-sealed class BeersListViewState <out T> {
+sealed class BeersListViewState<out T> {
     data class Success<out T>(val result: T) : BeersListViewState<T>()
     data class Error<out T>(val result: Exception) : BeersListViewState<T>()
     object Loading : BeersListViewState<Nothing>()

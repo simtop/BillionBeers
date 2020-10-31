@@ -21,22 +21,23 @@ inline fun <T> either(f: () -> T): Either<Exception, T> =
         Either.Left(e)
     }
 
-inline infix fun <A, B, C> Either<A, B>.mapRight(f: (B) -> C): Either<A, C> = when(this) {
+inline infix fun <A, B, C> Either<A, B>.mapRight(f: (B) -> C): Either<A, C> = when (this) {
     is Either.Left -> this
     is Either.Right -> Either.Right(f(this.value))
 }
 
-inline infix fun <A, B, C> Either<A, B>.flatMap(f: (B) -> Either<A, C>): Either<A, C> = when(this) {
-    is Either.Left -> this
-    is Either.Right -> f(value)
-}
+inline infix fun <A, B, C> Either<A, B>.flatMap(f: (B) -> Either<A, C>): Either<A, C> =
+    when (this) {
+        is Either.Left -> this
+        is Either.Right -> f(value)
+    }
 
-inline infix fun <A, B, C> Either<A, C>.mapLeft(f: (A) -> B): Either<B, C> = when(this) {
+inline infix fun <A, B, C> Either<A, C>.mapLeft(f: (A) -> B): Either<B, C> = when (this) {
     is Either.Left -> Either.Left(f(value))
     is Either.Right -> this
 }
 
-inline fun <A, B, C> Either<A, B>.fold(left: (A) -> C, right: (B) -> C): C = when(this) {
+inline fun <A, B, C> Either<A, B>.fold(left: (A) -> C, right: (B) -> C): C = when (this) {
     is Either.Left -> left(this.value)
     is Either.Right -> right(this.value)
 }

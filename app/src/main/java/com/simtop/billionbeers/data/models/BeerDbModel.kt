@@ -22,7 +22,7 @@ data class BeerDbModel(
     @ColumnInfo(name = "ibu")
     val ibu: Double,
     @ColumnInfo(name = "food_pairing")
-    val foodPairing : String,
+    val foodPairing: String,
     @ColumnInfo(name = "availability")
-    val availability : Boolean = true
+    val availability: Boolean = true
 )

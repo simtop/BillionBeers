@@ -13,6 +13,6 @@ class GetAllBeersUseCase @Inject constructor(private val beersRepository: BeersR
     inner class Params(val quantity: Int)
 
     override suspend fun buildUseCase(params: Params): Flow<Either<Exception, List<Beer>>> {
-           return beersRepository.getBeersFromSingleSource(params.quantity)
+        return beersRepository.getBeersFromSingleSource(params.quantity)
     }
 }

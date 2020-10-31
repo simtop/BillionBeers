@@ -35,6 +35,7 @@ val fakeBeerModel = Beer(
 val fakeBeerListModel = listOf(fakeBeerModel.copy())
 
 val fakeDBList = fakeBeerListModel.map {
-    BeersMapper.fromBeerToBeerDbModel(it) }
+    BeersMapper.fromBeerToBeerDbModel(it)
+}
 
 val fakeDB = BeersMapper.fromBeerToBeerDbModel(fakeBeerModel)

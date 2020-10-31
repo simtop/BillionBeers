@@ -19,7 +19,7 @@ object BeersMapper {
             response?.foodPairing ?: emptyList()
         )
 
-    fun fromBeerToBeerDbModel(beer : Beer) =
+    fun fromBeerToBeerDbModel(beer: Beer) =
         BeerDbModel(
             beer.id,
             beer.name,

@@ -39,7 +39,7 @@ internal class BeersListViewModelTest {
 
         coEvery {
             getAllBeersUseCase.execute(any())
-        } returns flow {Either.Right(fakeBeerListModel) }
+        } returns flow { Either.Right(fakeBeerListModel) }
 
         coroutineScope.runBlockingTest {
             beersListViewModel.getAllBeers()
@@ -54,7 +54,7 @@ internal class BeersListViewModelTest {
         }
         val response = beersListViewModel.beerListViewState.value
 
-        if(response is BeersListViewState.Success)  {
+        if (response is BeersListViewState.Success) {
             response.result shouldBeEqualTo fakeBeerListModel
         }
     }
@@ -78,7 +78,7 @@ internal class BeersListViewModelTest {
 
         val response = beersListViewModel.beerListViewState.value
 
-        if(response is BeersListViewState.Error)  {
+        if (response is BeersListViewState.Error) {
             response.result.message shouldBeEqualTo "Error getting list of beers"
         }
     }

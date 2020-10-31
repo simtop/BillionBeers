@@ -15,12 +15,14 @@ abstract class BeersDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun insertAll(beers: List<BeerDbModel>)
 
-    @Query("""
+    @Query(
+        """
         UPDATE beers 
         SET 
         availability = :availability
         WHERE id = :primaryKey
-        """)
+        """
+    )
     abstract fun updateBeer(
         primaryKey: Int,
         availability: Boolean

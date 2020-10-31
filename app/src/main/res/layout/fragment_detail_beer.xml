@@ -9,6 +9,5 @@
     <com.simtop.billionbeers.presentation.beerdetail.SingleBeerItemView
         android:id="@+id/single_beer"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-    </com.simtop.billionbeers.presentation.beerdetail.SingleBeerItemView>
+        android:layout_height="match_parent"></com.simtop.billionbeers.presentation.beerdetail.SingleBeerItemView>
 </androidx.constraintlayout.widget.ConstraintLayout>

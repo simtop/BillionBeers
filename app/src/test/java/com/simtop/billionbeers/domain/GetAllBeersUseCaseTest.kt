@@ -45,7 +45,7 @@ internal class GetAllBeersUseCaseTest {
 
             coVerify(exactly = 1) { beersRepository.getBeersFromSingleSource(any()) }
 
-            response.collect { flow->
+            response.collect { flow ->
                 flow.mapRight {
                     it shouldBeEqualTo fakeBeerListModel
                 }

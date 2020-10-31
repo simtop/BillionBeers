@@ -30,7 +30,7 @@ internal class BeersRepositoryImplTest {
 
     private val beersRemoteSource: BeersRemoteSource = mockk()
 
-    private val beersLocalSource : BeersLocalSource = mockk()
+    private val beersLocalSource: BeersLocalSource = mockk()
 
     @Test
     fun `should get data from repository`() {
@@ -42,7 +42,7 @@ internal class BeersRepositoryImplTest {
 
             val result = getBeers.getListOfBeerFromApi(any())
 
-            coVerify(exactly = 1) { beersRemoteSource.getListOfBeers(any())  }
+            coVerify(exactly = 1) { beersRemoteSource.getListOfBeers(any()) }
 
             result shouldBeEqualTo fakeBeerListModel
 

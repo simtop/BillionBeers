@@ -13,9 +13,9 @@ class BeersAdapter(
 ) : BaseRecyclerViewAdapter<Beer, BaseBindView<Beer>>(items) {
     override fun onCreateItemView(parent: ViewGroup, viewType: Int): BaseBindView<Beer> {
         return BeersItemView(parent.context).apply {
-                layoutParams = ViewGroup.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
+            layoutParams = ViewGroup.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
             )
         }
     }

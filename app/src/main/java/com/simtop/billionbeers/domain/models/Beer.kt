@@ -14,7 +14,7 @@ data class Beer(
     val ibu: Double,
     val foodPairing: List<String>,
     var availability: Boolean = true
-): Parcelable {
+) : Parcelable {
     companion object {
         val empty = Beer(
             1,

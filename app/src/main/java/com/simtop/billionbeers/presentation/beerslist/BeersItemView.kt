@@ -28,7 +28,7 @@ class BeersItemView @JvmOverloads constructor(
     }
 
     override fun bind(beer: Beer) {
-        if(beer.availability) {
+        if (beer.availability) {
             rowBeerListBinding.cardView.setCardBackgroundColor(Color.WHITE)
         } else {
             rowBeerListBinding.cardView.setCardBackgroundColor(Color.GRAY)

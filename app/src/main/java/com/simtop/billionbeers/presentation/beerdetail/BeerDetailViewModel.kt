@@ -28,7 +28,7 @@ class BeerDetailViewModel @Inject constructor(private val availabilityUseCase: U
         }
     }
 
-    fun setBeer(beer: Beer){
+    fun setBeer(beer: Beer) {
         _myViewState3.postValue(BeersDetailViewState.Success(beer))
     }
 

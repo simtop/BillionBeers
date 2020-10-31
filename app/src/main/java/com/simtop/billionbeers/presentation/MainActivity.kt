@@ -19,7 +19,7 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    fun setupToolbar(title : String, activate : Boolean){
+    fun setupToolbar(title: String, activate: Boolean) {
         binding.toolbar.title = title
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(activate)
