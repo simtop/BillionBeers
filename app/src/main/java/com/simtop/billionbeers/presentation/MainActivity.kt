@@ -20,16 +20,6 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    fun setupToolbar(title : String, activate : Boolean){
-        binding.toolbar.title = title
-        setSupportActionBar(binding.toolbar)
-        supportActionBar?.setDisplayHomeAsUpEnabled(activate)
-    }
-
-    fun showToolbar(show: Boolean) {
-        binding.toolbar.selectVisibility(show)
-    }
-
     override fun onSupportNavigateUp(): Boolean {
         onBackPressed()
         return true

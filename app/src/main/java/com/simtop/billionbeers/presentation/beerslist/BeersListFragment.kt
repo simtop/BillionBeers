@@ -2,10 +2,12 @@ package com.simtop.billionbeers.presentation.beerslist
 
 
 import android.os.Bundle
+import android.view.LayoutInflater
 import androidx.fragment.app.Fragment
 import android.view.View
 import android.view.View.GONE
 import android.view.View.VISIBLE
+import android.view.ViewGroup
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
@@ -14,6 +16,7 @@ import com.simtop.billionbeers.R
 import com.simtop.billionbeers.appComponent
 import com.simtop.billionbeers.core.observe
 import com.simtop.billionbeers.core.showToast
+import com.simtop.billionbeers.core.visible
 import com.simtop.billionbeers.databinding.FragmentListBeersBinding
 import com.simtop.billionbeers.domain.models.Beer
 import com.simtop.billionbeers.presentation.MainActivity
@@ -26,7 +29,8 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
 
     private val beersViewModel by viewModels<BeersListViewModel> { viewModelFactory }
 
-    private lateinit var fragmentListBeersBinding: FragmentListBeersBinding
+    private var _fragmentListBeersBinding: FragmentListBeersBinding? = null
+    private val fragmentListBeersBinding get() = _fragmentListBeersBinding
 
     lateinit var beersAdapter: BeersAdapter
 
@@ -42,13 +46,15 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
         appComponent.inject(this)
 
         val binding = FragmentListBeersBinding.bind(view)
-        fragmentListBeersBinding = binding
+        _fragmentListBeersBinding = binding
 
-        (requireActivity() as MainActivity)
-            .setupToolbar(
-                requireContext()
-                    .getString(R.string.billion_beers_list), false
-            )
+        fragmentListBeersBinding?.toolbar?.title = requireContext().getString(R.string.billion_beers_list)
+        //fragmentListBeersBinding?.toolbar?.visible()
+//        (requireActivity() as MainActivity)
+//            .setupToolbar(
+//                requireContext()
+//                    .getString(R.string.billion_beers_list), false
+//            )
 
         setUpBeersRecyclerView()
 
@@ -58,11 +64,12 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
 
     }
 
+
     private fun setUpBeersRecyclerView() {
         beersAdapter = BeersAdapter(
             listener = ::onBeerClicked
         )
-        fragmentListBeersBinding.beersRecyclerview.apply {
+        fragmentListBeersBinding?.beersRecyclerview?.apply {
             adapter = beersAdapter
             layoutManager = LinearLayoutManager(requireContext())
         }
@@ -73,14 +80,14 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
             is BeersListViewState.Success -> treatSuccess(it.result)
             is BeersListViewState.Error -> treatError(it.result)
             BeersListViewState.Loading -> {
-                fragmentListBeersBinding.progressBar.visibility = VISIBLE
-                fragmentListBeersBinding.beersRecyclerview.visibility = GONE
-                fragmentListBeersBinding.emptyState.visibility = GONE
+                fragmentListBeersBinding?.progressBar?.visibility = VISIBLE
+                fragmentListBeersBinding?.beersRecyclerview?.visibility = GONE
+                fragmentListBeersBinding?.emptyState?.visibility = GONE
             }
             BeersListViewState.EmptyState -> {
-                fragmentListBeersBinding.beersRecyclerview.visibility = GONE
-                fragmentListBeersBinding.emptyState.visibility = VISIBLE
-                fragmentListBeersBinding.progressBar.visibility = GONE
+                fragmentListBeersBinding?.beersRecyclerview?.visibility = GONE
+                fragmentListBeersBinding?.emptyState?.visibility = VISIBLE
+                fragmentListBeersBinding?.progressBar?.visibility = GONE
             }
         }
     }
@@ -89,9 +96,9 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
 
         beersAdapter.submitList(list)
 
-        fragmentListBeersBinding.progressBar.visibility = GONE
-        fragmentListBeersBinding.beersRecyclerview.visibility = VISIBLE
-        fragmentListBeersBinding.emptyState.visibility = GONE
+        fragmentListBeersBinding?.progressBar?.visibility = GONE
+        fragmentListBeersBinding?.beersRecyclerview?.visibility = VISIBLE
+        fragmentListBeersBinding?.emptyState?.visibility = GONE
     }
 
     private fun onBeerClicked(beer: Beer) {
@@ -100,7 +107,12 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
     }
 
     private fun treatError(exception: String) {
-        if (fragmentListBeersBinding.beersRecyclerview.visibility != VISIBLE) beersViewModel.showEmptyState()
+        if (fragmentListBeersBinding?.beersRecyclerview?.visibility != VISIBLE) beersViewModel.showEmptyState()
         exception.let { requireActivity().showToast(it) }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _fragmentListBeersBinding = null
     }
 }

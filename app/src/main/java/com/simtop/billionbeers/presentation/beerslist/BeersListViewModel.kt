@@ -1,6 +1,5 @@
 package com.simtop.billionbeers.presentation.beerslist
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -8,7 +7,6 @@ import androidx.lifecycle.viewModelScope
 import com.simtop.billionbeers.core.*
 import com.simtop.billionbeers.domain.models.Beer
 import com.simtop.billionbeers.domain.usecases.GetAllBeersUseCase
-import com.simtop.billionbeers.domain.usecases.UpdateAvailabilityUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import javax.inject.Inject

@@ -37,8 +37,6 @@ class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
         val binding = FragmentDetailBeerBinding.bind(view)
         beersDetailFragmentBinding = binding
 
-        (requireActivity() as MainActivity).showToolbar(false)
-
         beersViewModel.setBeer(args.myArg)
 
         observe(
