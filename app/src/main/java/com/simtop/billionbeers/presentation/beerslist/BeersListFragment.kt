@@ -50,8 +50,6 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
                     .getString(R.string.billion_beers_list), false
             )
 
-        beersViewModel.getAllBeers()
-
         setUpBeersRecyclerView()
 
         observe(
@@ -101,8 +99,8 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
         findNavController().navigate(action)
     }
 
-    private fun treatError(exception: Exception) {
+    private fun treatError(exception: String) {
         if (fragmentListBeersBinding.beersRecyclerview.visibility != VISIBLE) beersViewModel.showEmptyState()
-        exception.message?.let { requireActivity().showToast(it) }
+        exception.let { requireActivity().showToast(it) }
     }
 }

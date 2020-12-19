@@ -1,5 +1,6 @@
 package com.simtop.billionbeers.presentation.beerslist
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -21,6 +22,10 @@ class BeersListViewModel @Inject constructor(
     val beerListViewState: LiveData<BeersListViewState<List<Beer>>>
         get() = _beerListViewState
 
+    init{
+        getAllBeers()
+    }
+
     fun getAllBeers(quantity: Int = MAX_PAGES_FOR_PAGINATION) {
         _beerListViewState.postValue(BeersListViewState.Loading)
         viewModelScope.launch(Dispatchers.IO) {
@@ -32,7 +37,7 @@ class BeersListViewModel @Inject constructor(
     private fun process(result: Either<Exception, List<Beer>>) {
         result.either(
             {
-                _beerListViewState.postValue(BeersListViewState.Error(it))
+                _beerListViewState.postValue(BeersListViewState.Error(it.message ?: "Default Error"))
             },
             {
                 if(it.isEmpty()) _beerListViewState.postValue(BeersListViewState.EmptyState)
@@ -48,7 +53,7 @@ class BeersListViewModel @Inject constructor(
 
 sealed class BeersListViewState <out T> {
     data class Success<out T>(val result: T) : BeersListViewState<T>()
-    data class Error<out T>(val result: Exception) : BeersListViewState<T>()
+    data class Error(val result: String) : BeersListViewState<Nothing>()
     object Loading : BeersListViewState<Nothing>()
     object EmptyState : BeersListViewState<Nothing>()
 }

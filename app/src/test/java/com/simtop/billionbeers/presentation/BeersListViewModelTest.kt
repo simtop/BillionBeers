@@ -5,9 +5,9 @@ import com.simtop.billionbeers.MainCoroutineScopeRule
 import com.simtop.billionbeers.core.Either
 import com.simtop.billionbeers.domain.usecases.GetAllBeersUseCase
 import com.simtop.billionbeers.fakeBeerListModel
-import com.simtop.billionbeers.getValueForTest
 import com.simtop.billionbeers.presentation.beerslist.BeersListViewModel
 import com.simtop.billionbeers.presentation.beerslist.BeersListViewState
+import com.simtop.billionbeers.testObserver
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -29,56 +29,44 @@ internal class BeersListViewModelTest {
 
     private val getAllBeersUseCase: GetAllBeersUseCase = mockk()
 
-    private val beersListViewModel: BeersListViewModel by lazy {
-        BeersListViewModel(getAllBeersUseCase)
-    }
-
     @Test
-    fun `when we get list of beer it succeeds and shows loader`() {
-
+    fun `when we get list of beer it succeeds and shows loader`() = coroutineScope.runBlockingTest {
         coEvery {
             getAllBeersUseCase.execute(any())
         } returns Either.Right(fakeBeerListModel)
 
-        coroutineScope.runBlockingTest {
-            beersListViewModel.getAllBeers()
+        val beersListViewModel = BeersListViewModel(getAllBeersUseCase)
 
-            beersListViewModel.beerListViewState.getValueForTest() shouldBeEqualTo BeersListViewState.Loading
+        val liveDataUnderTest = beersListViewModel.beerListViewState.testObserver()
 
-            Thread.sleep(1000)
-
-            coVerify(exactly = 1) {
-                getAllBeersUseCase.execute(any())
-            }
+        coVerify(exactly = 1) {
+            getAllBeersUseCase.execute(any())
         }
-        val response = beersListViewModel.beerListViewState.getValueForTest()
 
-        if(response is BeersListViewState.Success)  {
-            response.result shouldBeEqualTo fakeBeerListModel
-        }
+
+        liveDataUnderTest.observedValues.size shouldBeEqualTo 2
+        liveDataUnderTest.observedValues[0] shouldBeEqualTo BeersListViewState.Loading
+        liveDataUnderTest.observedValues[1] shouldBeEqualTo BeersListViewState.Success(
+            fakeBeerListModel
+        )
     }
 
     @Test
-    fun `when we get list of beer it fails and shows error`() {
-
+    fun `when we get list of beer it fails and shows error`() = coroutineScope.runBlockingTest {
         coEvery {
             getAllBeersUseCase.execute(any())
         } returns Either.Left(Exception("Error getting list of beers"))
+        val beersListViewModel = BeersListViewModel(getAllBeersUseCase)
 
-        coroutineScope.runBlockingTest {
-            beersListViewModel.getAllBeers()
+        val liveDataUnderTest = beersListViewModel.beerListViewState.testObserver()
 
-            Thread.sleep(1000)
-
-            coVerify(exactly = 1) {
-                getAllBeersUseCase.execute(any())
-            }
+        coVerify(exactly = 1) {
+            getAllBeersUseCase.execute(any())
         }
 
-        val response = beersListViewModel.beerListViewState.getValueForTest()
-
-        if(response is BeersListViewState.Error)  {
-            response.result.message shouldBeEqualTo "Error getting list of beers"
-        }
+        println(liveDataUnderTest.observedValues.toString())
+        liveDataUnderTest.observedValues.size shouldBeEqualTo 2
+        liveDataUnderTest.observedValues[0] shouldBeEqualTo BeersListViewState.Loading
+        liveDataUnderTest.observedValues[1] shouldBeEqualTo BeersListViewState.Error("Error getting list of beers")
     }
 }
