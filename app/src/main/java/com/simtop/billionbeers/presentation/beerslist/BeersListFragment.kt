@@ -2,12 +2,10 @@ package com.simtop.billionbeers.presentation.beerslist
 
 
 import android.os.Bundle
-import android.view.LayoutInflater
 import androidx.fragment.app.Fragment
 import android.view.View
 import android.view.View.GONE
 import android.view.View.VISIBLE
-import android.view.ViewGroup
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
@@ -16,10 +14,8 @@ import com.simtop.billionbeers.R
 import com.simtop.billionbeers.appComponent
 import com.simtop.billionbeers.core.observe
 import com.simtop.billionbeers.core.showToast
-import com.simtop.billionbeers.core.visible
 import com.simtop.billionbeers.databinding.FragmentListBeersBinding
 import com.simtop.billionbeers.domain.models.Beer
-import com.simtop.billionbeers.presentation.MainActivity
 import javax.inject.Inject
 
 class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
@@ -48,13 +44,7 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
         val binding = FragmentListBeersBinding.bind(view)
         _fragmentListBeersBinding = binding
 
-        fragmentListBeersBinding?.toolbar?.title = requireContext().getString(R.string.billion_beers_list)
-        //fragmentListBeersBinding?.toolbar?.visible()
-//        (requireActivity() as MainActivity)
-//            .setupToolbar(
-//                requireContext()
-//                    .getString(R.string.billion_beers_list), false
-//            )
+        setUpToolbar()
 
         setUpBeersRecyclerView()
 
@@ -62,6 +52,11 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
             beersViewModel.beerListViewState,
             { viewState -> viewState?.let { treatViewState2(it) } })
 
+    }
+
+    private fun setUpToolbar() {
+        fragmentListBeersBinding?.toolbar?.title =
+            requireContext().getString(R.string.billion_beers_list)
     }
 
 

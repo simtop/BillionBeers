@@ -13,7 +13,6 @@ import com.simtop.billionbeers.core.observe
 import com.simtop.billionbeers.core.showToast
 import com.simtop.billionbeers.databinding.FragmentDetailBeerBinding
 import com.simtop.billionbeers.domain.models.Beer
-import com.simtop.billionbeers.presentation.MainActivity
 import javax.inject.Inject
 
 
@@ -24,7 +23,8 @@ class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
 
     private val beersViewModel by viewModels<BeerDetailViewModel> { viewModelFactory }
 
-    private lateinit var beersDetailFragmentBinding: FragmentDetailBeerBinding
+    private var _beersDetailFragmentBinding: FragmentDetailBeerBinding? = null
+    private val beersDetailFragmentBinding get() = _beersDetailFragmentBinding
 
     private val args: BeerDetailFragmentArgs by navArgs()
 
@@ -35,7 +35,7 @@ class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
 
         //Setting view binding for Fragments
         val binding = FragmentDetailBeerBinding.bind(view)
-        beersDetailFragmentBinding = binding
+        _beersDetailFragmentBinding = binding
 
         beersViewModel.setBeer(args.myArg)
 
@@ -58,7 +58,7 @@ class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
     }
 
     private fun treatSuccess(beer: Beer) {
-        beersDetailFragmentBinding.singleBeer.bind(beer, ::updateAvailability, ::onBackClicked)
+        beersDetailFragmentBinding?.singleBeer?.bind(beer, ::updateAvailability, ::onBackClicked)
 
     }
 
