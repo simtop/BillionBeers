@@ -53,8 +53,8 @@ class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
 
     }
 
-    private fun showError(value: Exception) {
-        value.message?.let { requireActivity().showToast(it) }
+    private fun showError(exception: String?) {
+        exception?.let { requireActivity().showToast(it) }
     }
 
     private fun treatSuccess(beer: Beer) {

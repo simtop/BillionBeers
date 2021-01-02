@@ -12,7 +12,8 @@ import javax.inject.Singleton
         TestModule::class,
         BeersApiModule::class,
         BeersRepositoryModule::class,
-        ViewModelsModule::class
+        ViewModelsModule::class,
+        CoroutineDispatchersModule::class
     ]
 )
 interface TestApplicationComponent : ApplicationComponent {

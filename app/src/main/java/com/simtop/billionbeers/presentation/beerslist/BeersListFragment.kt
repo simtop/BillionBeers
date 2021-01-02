@@ -50,7 +50,7 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
 
         observe(
             beersViewModel.beerListViewState,
-            { viewState -> viewState?.let { treatViewState2(it) } })
+            { viewState -> viewState?.let { treatViewState(it) } })
 
     }
 
@@ -70,7 +70,7 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
         }
     }
 
-    private fun treatViewState2(it: BeersListViewState<List<Beer>>) {
+    private fun treatViewState(it: BeersListViewState<List<Beer>>) {
         when (it) {
             is BeersListViewState.Success -> treatSuccess(it.result)
             is BeersListViewState.Error -> treatError(it.result)
@@ -101,9 +101,9 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
         findNavController().navigate(action)
     }
 
-    private fun treatError(exception: String) {
+    private fun treatError(exception: String?) {
         if (fragmentListBeersBinding?.beersRecyclerview?.visibility != VISIBLE) beersViewModel.showEmptyState()
-        exception.let { requireActivity().showToast(it) }
+        exception?.let { requireActivity().showToast(it) }
     }
 
     override fun onDestroyView() {

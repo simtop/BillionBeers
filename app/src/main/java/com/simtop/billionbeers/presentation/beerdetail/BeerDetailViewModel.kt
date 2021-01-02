@@ -8,6 +8,7 @@ import com.simtop.billionbeers.core.CoroutineDispatcherProvider
 import com.simtop.billionbeers.core.Either
 import com.simtop.billionbeers.domain.models.Beer
 import com.simtop.billionbeers.domain.usecases.UpdateAvailabilityUseCase
+import com.simtop.billionbeers.presentation.beerslist.BeersListViewState
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -36,7 +37,7 @@ class BeerDetailViewModel @Inject constructor(
     private fun treatResponse(result: Either<Exception, Unit>) {
         result.either(
                 {
-                    _myViewState3.postValue(BeersDetailViewState.Error(it))
+                    _myViewState3.postValue(BeersDetailViewState.Error(it.message))
                 },
                 {
                 }
@@ -51,5 +52,6 @@ class BeerDetailViewModel @Inject constructor(
 
 sealed class BeersDetailViewState<out T> {
     data class Success<out T>(val result: T) : BeersDetailViewState<T>()
-    data class Error<out T>(val result: Exception) : BeersDetailViewState<T>()
+    data class Error(val result: String?) : BeersDetailViewState<Nothing>()
+
 }

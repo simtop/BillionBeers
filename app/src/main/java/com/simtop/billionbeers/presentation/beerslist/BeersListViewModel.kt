@@ -35,8 +35,7 @@ class BeersListViewModel @Inject constructor(
     private fun process(result: Either<Exception, List<Beer>>) {
         result.either(
                 {
-                    _beerListViewState.postValue(BeersListViewState.Error(it.message
-                            ?: "Default Error"))
+                    _beerListViewState.postValue(BeersListViewState.Error(it.message))
                 },
                 {
                     if (it.isEmpty()) _beerListViewState.postValue(BeersListViewState.EmptyState)
@@ -52,7 +51,7 @@ class BeersListViewModel @Inject constructor(
 
 sealed class BeersListViewState<out T> {
     data class Success<out T>(val result: T) : BeersListViewState<T>()
-    data class Error(val result: String) : BeersListViewState<Nothing>()
+    data class Error(val result: String?) : BeersListViewState<Nothing>()
     object Loading : BeersListViewState<Nothing>()
     object EmptyState : BeersListViewState<Nothing>()
 }
