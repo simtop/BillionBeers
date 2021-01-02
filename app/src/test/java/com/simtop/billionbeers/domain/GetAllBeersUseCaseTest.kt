@@ -2,17 +2,15 @@ package com.simtop.billionbeers.domain
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.simtop.billionbeers.MainCoroutineScopeRule
-import com.simtop.billionbeers.core.Either
-import com.simtop.billionbeers.core.mapLeft
 import com.simtop.billionbeers.core.mapRight
 import com.simtop.billionbeers.domain.repository.BeersRepository
 import com.simtop.billionbeers.domain.usecases.GetAllBeersUseCase
 import com.simtop.billionbeers.fakeBeerListModel
+import com.simtop.billionbeers.runBlocking
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
 import org.amshove.kluent.any
 import org.amshove.kluent.shouldBeEqualTo
 import org.junit.Rule
@@ -32,7 +30,7 @@ internal class GetAllBeersUseCaseTest {
 
     @Test
     fun `should get data from repository`() {
-        coroutineScope.runBlockingTest {
+        coroutineScope.runBlocking {
             coEvery { beersRepository.getBeersFromSingleSource(any()) } returns fakeBeerListModel
 
             val getAllBeersUseCase = GetAllBeersUseCase(beersRepository)

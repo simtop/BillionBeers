@@ -8,6 +8,7 @@ import com.simtop.billionbeers.data.remotesources.BeersRemoteSource
 import com.simtop.billionbeers.data.repository.BeersRepositoryImpl
 import com.simtop.billionbeers.fakeBeerApiResponse
 import com.simtop.billionbeers.fakeBeerListModel
+import com.simtop.billionbeers.runBlocking
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -34,7 +35,7 @@ internal class BeersRepositoryImplTest {
 
     @Test
     fun `should get data from repository`() {
-        coroutineScope.runBlockingTest {
+        coroutineScope.runBlocking {
 
             val getBeers = BeersRepositoryImpl(beersRemoteSource, beersLocalSource)
 

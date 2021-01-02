@@ -14,7 +14,8 @@ import javax.inject.Singleton
         BeersApiModule::class,
         BeersRepositoryModule::class,
         BeersDatabaseModule::class,
-        ViewModelsModule::class
+        ViewModelsModule::class,
+        CoroutineDispatchersModule::class
     ]
 )
 interface ApplicationComponent {
