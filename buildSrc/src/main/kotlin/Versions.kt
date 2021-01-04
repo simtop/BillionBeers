@@ -22,6 +22,8 @@ object Versions {
 
     const val androidx_navigation: String = "2.3.0" // available: "2.3.2"
 
+    const val com_google_dagger: String = "2.28.1-alpha"
+
     const val androidx_hilt: String = "1.0.0-alpha01"
 
     const val androidx_room: String = "2.2.5" // available: "2.2.6"
@@ -36,23 +38,15 @@ object Versions {
 
     const val de_fayard_buildsrcversions_gradle_plugin: String = "0.7.0"
 
-    const val hilt_android_gradle_plugin: String = "2.28.1-alpha"
-
-    const val hilt_android_compiler: String = "2.28.1-alpha"
-
     const val lifecycle_extensions: String = "2.2.0"
 
     const val constraintlayout: String = "2.0.1" // available: "2.0.4"
 
     const val fragment_testing: String = "1.2.5"
 
-    const val dagger_compiler: String = "2.28.3" // available: "2.30.1"
-
     const val converter_gson: String = "2.9.0"
 
     const val core_testing: String = "2.1.0"
-
-    const val hilt_android: String = "2.28.1-alpha"
 
     const val lint_gradle: String = "27.0.1" // available: "27.1.1"
 
@@ -63,8 +57,6 @@ object Versions {
     const val junit_ktx: String = "1.1.2"
 
     const val material: String = "1.2.1"
-
-    const val dagger: String = "2.28.3" // available: "2.30.1"
 
     const val kluent: String = "1.61" // available: "1.64"
 

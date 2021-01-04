@@ -105,6 +105,17 @@ object Libs {
     const val navigation_ui: String = "androidx.navigation:navigation-ui:" +
             Versions.androidx_navigation
 
+    const val hilt_android: String = "com.google.dagger:hilt-android:" + Versions.com_google_dagger
+
+    const val hilt_android_compiler: String = "com.google.dagger:hilt-android-compiler:" +
+            Versions.com_google_dagger
+
+    const val hilt_android_gradle_plugin: String = "com.google.dagger:hilt-android-gradle-plugin:" +
+            Versions.com_google_dagger
+
+    const val hilt_android_testing: String = "com.google.dagger:hilt-android-testing:" +
+            Versions.com_google_dagger
+
     const val hilt_compiler: String = "androidx.hilt:hilt-compiler:" + Versions.androidx_hilt
 
     const val hilt_lifecycle_viewmodel: String = "androidx.hilt:hilt-lifecycle-viewmodel:" +
@@ -166,12 +177,6 @@ object Libs {
             "de.fayard.buildSrcVersions:de.fayard.buildSrcVersions.gradle.plugin:" +
             Versions.de_fayard_buildsrcversions_gradle_plugin
 
-    const val hilt_android_gradle_plugin: String = "com.google.dagger:hilt-android-gradle-plugin:" +
-            Versions.hilt_android_gradle_plugin
-
-    const val hilt_android_compiler: String = "com.google.dagger:hilt-android-compiler:" +
-            Versions.hilt_android_compiler
-
     /**
      * https://developer.android.com/topic/libraries/architecture/index.html
      */
@@ -191,12 +196,6 @@ object Libs {
             Versions.fragment_testing
 
     /**
-     * https://github.com/google/dagger
-     */
-    const val dagger_compiler: String = "com.google.dagger:dagger-compiler:" +
-            Versions.dagger_compiler
-
-    /**
      * https://github.com/square/retrofit
      */
     const val converter_gson: String = "com.squareup.retrofit2:converter-gson:" +
@@ -206,8 +205,6 @@ object Libs {
      * https://developer.android.com/topic/libraries/architecture/index.html
      */
     const val core_testing: String = "androidx.arch.core:core-testing:" + Versions.core_testing
-
-    const val hilt_android: String = "com.google.dagger:hilt-android:" + Versions.hilt_android
 
     /**
      * https://developer.android.com/studio
@@ -230,11 +227,6 @@ object Libs {
      * https://github.com/material-components/material-components-android
      */
     const val material: String = "com.google.android.material:material:" + Versions.material
-
-    /**
-     * https://github.com/google/dagger
-     */
-    const val dagger: String = "com.google.dagger:dagger:" + Versions.dagger
 
     const val kluent: String = "org.amshove.kluent:kluent:" + Versions.kluent
 

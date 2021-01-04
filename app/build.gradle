@@ -83,16 +83,10 @@ dependencies {
     implementation Libs.room_ktx
     implementation Libs.room_runtime
 
-    //implementation Libs.dagger
-    //kapt Libs.dagger_compiler
-
-    implementation "com.google.dagger:hilt-android:2.28.1-alpha"
-    kapt "com.google.dagger:hilt-android-compiler:2.28.1-alpha"
-
-    implementation "androidx.hilt:hilt-lifecycle-viewmodel:1.0.0-alpha01"
-    kapt "androidx.hilt:hilt-compiler:1.0.0-alpha01"
-
-
+    implementation Libs.hilt_android
+    kapt Libs.hilt_android_compiler
+    implementation Libs.hilt_lifecycle_viewmodel
+    kapt Libs.hilt_compiler
 
     testImplementation Libs.mockk_android
     testImplementation Libs.mockk
@@ -102,8 +96,8 @@ dependencies {
     testImplementation Libs.mockwebserver
     testImplementation Libs.junit
 
-    androidTestImplementation 'com.google.dagger:hilt-android-testing:2.28.1-alpha'
-    kaptAndroidTest 'com.google.dagger:hilt-android-compiler:2.28.1-alpha'
+    androidTestImplementation Libs.hilt_android_testing
+    kaptAndroidTest Libs.hilt_android_compiler
 
     androidTestImplementation Libs.junit
     androidTestImplementation Libs.kotlin_test_junit
