@@ -7,23 +7,19 @@ import android.view.View
 import android.view.View.GONE
 import android.view.View.VISIBLE
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.simtop.billionbeers.R
-import com.simtop.billionbeers.appComponent
 import com.simtop.billionbeers.core.observe
 import com.simtop.billionbeers.core.showToast
 import com.simtop.billionbeers.databinding.FragmentListBeersBinding
 import com.simtop.billionbeers.domain.models.Beer
-import javax.inject.Inject
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
 
-    @Inject
-    lateinit var viewModelFactory: ViewModelProvider.Factory
-
-    private val beersViewModel by viewModels<BeersListViewModel> { viewModelFactory }
+    private val beersViewModel : BeersListViewModel by viewModels()
 
     private var _fragmentListBeersBinding: FragmentListBeersBinding? = null
     private val fragmentListBeersBinding get() = _fragmentListBeersBinding
@@ -38,8 +34,6 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        appComponent.inject(this)
 
         val binding = FragmentListBeersBinding.bind(view)
         _fragmentListBeersBinding = binding

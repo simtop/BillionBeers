@@ -3,7 +3,7 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-kapt'
 apply plugin: 'androidx.navigation.safeargs'
-
+apply plugin: 'dagger.hilt.android.plugin'
 
 android {
     compileSdkVersion ApplicationConfig.compileSdk
@@ -83,8 +83,16 @@ dependencies {
     implementation Libs.room_ktx
     implementation Libs.room_runtime
 
-    implementation Libs.dagger
-    kapt Libs.dagger_compiler
+    //implementation Libs.dagger
+    //kapt Libs.dagger_compiler
+
+    implementation "com.google.dagger:hilt-android:2.28.1-alpha"
+    kapt "com.google.dagger:hilt-android-compiler:2.28.1-alpha"
+
+    implementation "androidx.hilt:hilt-lifecycle-viewmodel:1.0.0-alpha01"
+    kapt "androidx.hilt:hilt-compiler:1.0.0-alpha01"
+
+
 
     testImplementation Libs.mockk_android
     testImplementation Libs.mockk
@@ -94,6 +102,10 @@ dependencies {
     testImplementation Libs.mockwebserver
     testImplementation Libs.junit
 
+    androidTestImplementation 'com.google.dagger:hilt-android-testing:2.28.1-alpha'
+    kaptAndroidTest 'com.google.dagger:hilt-android-compiler:2.28.1-alpha'
+
+    androidTestImplementation Libs.junit
     androidTestImplementation Libs.kotlin_test_junit
     androidTestImplementation Libs.kotlinx_coroutines_test
     androidTestImplementation Libs.espresso_core
@@ -106,8 +118,7 @@ dependencies {
     androidTestImplementation Libs.mockk
     androidTestImplementation Libs.junit_ktx
     androidTestImplementation Libs.navigation_testing
-    androidTestImplementation Libs.dagger
-    kaptAndroidTest Libs.dagger_compiler
+
     androidTestImplementation Libs.core_testing
     androidTestImplementation Libs.fragment_testing
 }

@@ -12,43 +12,51 @@ import org.gradle.plugin.use.PluginDependencySpec
  * YOU are responsible for updating manually the dependency version.
  */
 object Versions {
-    const val org_jetbrains_kotlinx_kotlinx_coroutines: String = "1.3.9"
+    const val org_jetbrains_kotlinx_kotlinx_coroutines: String = "1.3.9" // available: "1.4.2"
 
     const val androidx_test_espresso: String = "3.3.0"
 
-    const val com_squareup_okhttp3: String = "4.8.1"
+    const val com_squareup_okhttp3: String = "4.8.1" // available: "4.9.0"
 
-    const val org_jetbrains_kotlin: String = "1.4.0"
+    const val org_jetbrains_kotlin: String = "1.4.0" // available: "1.4.21-2"
 
-    const val androidx_navigation: String = "2.3.0"
+    const val androidx_navigation: String = "2.3.0" // available: "2.3.2"
 
-    const val com_google_dagger: String = "2.28.3"
+    const val androidx_hilt: String = "1.0.0-alpha01"
 
-    const val androidx_room: String = "2.2.5"
+    const val androidx_room: String = "2.2.5" // available: "2.2.6"
 
     const val androidx_test: String = "1.3.0"
 
-    const val io_mockk: String = "1.10.0"
+    const val io_mockk: String = "1.10.0" // available: "1.10.4"
 
-    const val com_android_tools_build_gradle: String = "4.0.1"
+    const val com_android_tools_build_gradle: String = "4.0.1" // available: "4.1.1"
 
-    const val androidx_core_core_ktx: String = "1.3.1"
+    const val androidx_core_core_ktx: String = "1.3.1" // available: "1.3.2"
 
     const val de_fayard_buildsrcversions_gradle_plugin: String = "0.7.0"
 
+    const val hilt_android_gradle_plugin: String = "2.28.1-alpha"
+
+    const val hilt_android_compiler: String = "2.28.1-alpha"
+
     const val lifecycle_extensions: String = "2.2.0"
 
-    const val constraintlayout: String = "2.0.1"
+    const val constraintlayout: String = "2.0.1" // available: "2.0.4"
 
     const val fragment_testing: String = "1.2.5"
+
+    const val dagger_compiler: String = "2.28.3" // available: "2.30.1"
 
     const val converter_gson: String = "2.9.0"
 
     const val core_testing: String = "2.1.0"
 
-    const val lint_gradle: String = "27.0.1"
+    const val hilt_android: String = "2.28.1-alpha"
 
-    const val viewbinding: String = "4.0.1"
+    const val lint_gradle: String = "27.0.1" // available: "27.1.1"
+
+    const val viewbinding: String = "4.0.1" // available: "4.1.1"
 
     const val appcompat: String = "1.2.0"
 
@@ -56,20 +64,22 @@ object Versions {
 
     const val material: String = "1.2.1"
 
-    const val kluent: String = "1.61"
+    const val dagger: String = "2.28.3" // available: "2.30.1"
 
-    const val aapt2: String = "4.0.1-6197926"
+    const val kluent: String = "1.61" // available: "1.64"
+
+    const val aapt2: String = "4.0.1-6197926" // available: "4.1.1-6503028"
 
     const val glide: String = "4.11.0"
 
-    const val junit: String = "4.13"
+    const val junit: String = "4.13" // available: "4.13.1"
 
     /**
-     * Current version: "6.1.1"
+     * Current version: "6.3"
      * See issue 19: How to update Gradle itself?
      * https://github.com/jmfayard/buildSrcVersions/issues/19
      */
-    const val gradleLatestVersion: String = "6.6.1"
+    const val gradleLatestVersion: String = "6.7.1"
 }
 
 /**

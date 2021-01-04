@@ -1,22 +1,25 @@
 package com.simtop.billionbeers.di
 
-import android.app.Application
+
 import android.content.Context
 import androidx.room.Room
-import com.simtop.billionbeers.BillionBeersApplication
 import com.simtop.billionbeers.core.BEERS_DB_NAME
 import com.simtop.billionbeers.data.database.BeersDao
 import com.simtop.billionbeers.data.database.BeersDatabase
 import dagger.Module
 import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.components.ApplicationComponent
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Singleton
 
 @Module
+@InstallIn(ApplicationComponent::class)
 object BeersDatabaseModule {
 
     @Provides
     @Singleton
-    fun provideDatabase(app: BillionBeersApplication): BeersDatabase =
+    fun provideDatabase(@ApplicationContext app: Context): BeersDatabase =
         Room.databaseBuilder(
             app,
             BeersDatabase::class.java,

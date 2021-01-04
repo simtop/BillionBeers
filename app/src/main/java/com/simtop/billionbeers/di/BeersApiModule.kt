@@ -5,12 +5,14 @@ import com.simtop.billionbeers.data.network.BeersApiFactory
 import com.simtop.billionbeers.data.network.BeersService
 import dagger.Module
 import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.components.ApplicationComponent
 import javax.inject.Singleton
 
 @Module
+@InstallIn(ApplicationComponent::class)
 object BeersApiModule {
 
-    @JvmStatic
     @Provides
     @Singleton
     fun beersApi() = createBeersApi()

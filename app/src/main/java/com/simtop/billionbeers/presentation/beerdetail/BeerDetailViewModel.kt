@@ -1,5 +1,6 @@
 package com.simtop.billionbeers.presentation.beerdetail
 
+import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -9,9 +10,8 @@ import com.simtop.billionbeers.core.Either
 import com.simtop.billionbeers.domain.models.Beer
 import com.simtop.billionbeers.domain.usecases.UpdateAvailabilityUseCase
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
-class BeerDetailViewModel @Inject constructor(
+class BeerDetailViewModel @ViewModelInject constructor(
         private val coroutineDispatcher: CoroutineDispatcherProvider,
         private val availabilityUseCase: UpdateAvailabilityUseCase
 ) : ViewModel() {

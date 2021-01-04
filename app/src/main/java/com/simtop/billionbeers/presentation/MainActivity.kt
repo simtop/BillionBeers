@@ -1,13 +1,12 @@
 package com.simtop.billionbeers.presentation
 
 import android.os.Bundle
-import android.view.Menu
-import android.view.MenuItem
-import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.snackbar.Snackbar
-import com.simtop.billionbeers.core.selectVisibility
-import com.simtop.billionbeers.databinding.ActivityMainBinding
 
+import androidx.appcompat.app.AppCompatActivity
+import com.simtop.billionbeers.databinding.ActivityMainBinding
+import dagger.hilt.android.AndroidEntryPoint
+
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding

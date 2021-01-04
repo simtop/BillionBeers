@@ -1,33 +1,49 @@
 package com.simtop.billionbeers.di
 
 
+import android.content.Context
 import android.database.sqlite.SQLiteConstraintException
+import androidx.room.Room
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
+import com.simtop.billionbeers.data.database.BeersDao
 import com.simtop.billionbeers.data.database.BeersDatabase
 import com.simtop.billionbeers.data.localsource.BeersLocalSource
 import com.simtop.billionbeers.data.mappers.BeersMapper
 import com.simtop.billionbeers.data.models.BeersApiResponseItem
 import com.simtop.billionbeers.domain.models.Beer
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.AndroidEntryPoint
+import dagger.hilt.android.components.ApplicationComponent
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.android.testing.HiltAndroidRule
+import dagger.hilt.android.testing.HiltAndroidTest
+import dagger.hilt.android.testing.UninstallModules
 import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.runBlocking
 import org.junit.*
 import org.junit.runner.RunWith
 import javax.inject.Inject
+import javax.inject.Singleton
 
 @RunWith(AndroidJUnit4ClassRunner::class)
-class LocalDataSourceTest : BaseTest() {
+@HiltAndroidTest
+@UninstallModules(BeersDatabaseModule::class)
+class LocalDataSourceTest {
+
+    @get:Rule
+    var hiltRule = HiltAndroidRule(this)
 
     private lateinit var localSource: BeersLocalSource
 
     @Inject
     lateinit var db: BeersDatabase
 
-    init {
-        injectTest()
-    }
 
     @Before
     fun setUp() {
+        hiltRule.inject()
         localSource = BeersLocalSource(db)
     }
 
@@ -84,9 +100,22 @@ class LocalDataSourceTest : BaseTest() {
         }
     }
 
-    override fun injectTest() {
-        (application.appComponent as TestApplicationComponent)
-            .inject(this)
+    @Module
+    @InstallIn(ApplicationComponent::class)
+    object TestModule {
+
+        @Provides
+        @Singleton
+        fun provideBeersDao(db: BeersDatabase) : BeersDao = db.beersDao()
+
+        @Singleton
+        @Provides
+        fun provideDatabase(@ApplicationContext app: Context): BeersDatabase {
+            return Room
+                .inMemoryDatabaseBuilder(app, BeersDatabase::class.java)
+                .fallbackToDestructiveMigration()
+                .build()
+        }
     }
 }
 
