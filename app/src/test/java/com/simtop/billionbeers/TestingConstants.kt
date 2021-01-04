@@ -30,3 +30,7 @@ val fakeBeerModel = Beer(
 )
 
 val fakeBeerListModel = listOf(fakeBeerModel.copy())
+
+val fakeErrorName = "Error getting list of beers"
+
+val fakeException = Exception(fakeErrorName)

@@ -4,7 +4,6 @@ import org.amshove.kluent.shouldBeEqualTo
 import org.amshove.kluent.shouldBeInstanceOf
 import org.junit.Test
 
-//TODO test everything
 class EitherTest {
 
     @Test

@@ -2,10 +2,12 @@ package com.simtop.billionbeers.domain
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.simtop.billionbeers.MainCoroutineScopeRule
+import com.simtop.billionbeers.core.mapLeft
 import com.simtop.billionbeers.core.mapRight
 import com.simtop.billionbeers.domain.repository.BeersRepository
 import com.simtop.billionbeers.domain.usecases.GetAllBeersUseCase
 import com.simtop.billionbeers.fakeBeerListModel
+import com.simtop.billionbeers.fakeException
 import com.simtop.billionbeers.runBlocking
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -29,19 +31,44 @@ internal class GetAllBeersUseCaseTest {
     private val beersRepository: BeersRepository = mockk()
 
     @Test
-    fun `should get data from repository`() {
-        coroutineScope.runBlocking {
-            coEvery { beersRepository.getBeersFromSingleSource(any()) } returns fakeBeerListModel
+    fun `when repository succeeds we get success response`() = coroutineScope.runBlocking {
+        // Arrange
 
-            val getAllBeersUseCase = GetAllBeersUseCase(beersRepository)
+        coEvery { beersRepository.getBeersFromSingleSource(any()) } returns fakeBeerListModel
 
-            val response = getAllBeersUseCase.execute(getAllBeersUseCase.Params(any()))
+        val getAllBeersUseCase = GetAllBeersUseCase(beersRepository)
 
-            coVerify(exactly = 1) { beersRepository.getBeersFromSingleSource(any()) }
+        // Act
 
-            response.mapRight {
-                it shouldBeEqualTo fakeBeerListModel
-            }
+        val response = getAllBeersUseCase.execute(getAllBeersUseCase.Params(any()))
+
+        // Assert
+
+        coVerify(exactly = 1) { beersRepository.getBeersFromSingleSource(any()) }
+
+        response.mapRight {
+            it shouldBeEqualTo fakeBeerListModel
+        }
+    }
+
+    @Test
+    fun `when repository fails we get error response`() = coroutineScope.runBlocking {
+        // Arrange
+
+        coEvery { beersRepository.getBeersFromSingleSource(any()) } throws fakeException
+
+        val getAllBeersUseCase = GetAllBeersUseCase(beersRepository)
+
+        // Act
+
+        val response = getAllBeersUseCase.execute(getAllBeersUseCase.Params(any()))
+
+        //Assert
+
+        coVerify(exactly = 1) { beersRepository.getBeersFromSingleSource(any()) }
+
+        response.mapLeft {
+            it shouldBeEqualTo fakeException
         }
     }
 }

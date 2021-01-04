@@ -6,29 +6,40 @@ import com.simtop.billionbeers.fakeBeerApiResponse
 import kotlinx.coroutines.runBlocking
 import org.amshove.kluent.shouldBeEqualTo
 import org.junit.Test
-import java.lang.Exception
 import java.net.HttpURLConnection
 
 class BeersRemoteSourceTest : TestMockWebService() {
 
     @Test
-    fun `when we make the api call it returns success when we get a success`() {
+    fun `when service succeeds we get a success response`() {
+        // Arrange
+
         val expectedResult = fakeBeerApiResponse
         mockHttpResponse(FAKE_JSON, HttpURLConnection.HTTP_OK)
+
+        // Act
 
         val response = runBlocking {
             apiService.getListOfBeers(1)
         }
 
+        // Assert
+
         response.toString() shouldBeEqualTo expectedResult.toString()
     }
 
     @Test(expected = Exception::class)
-    fun `when we make the api call it returns failure when we get a failure`() {
+    fun `when service fails succeeds we throw an exception`() {
+        // Arrange
+
         mockHttpResponse(FAKE_JSON, HttpURLConnection.HTTP_UNAVAILABLE)
+
+        // Act
 
         runBlocking {
             apiService.getListOfBeers(1)
         }
+
+        // Assert
     }
 }

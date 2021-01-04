@@ -8,7 +8,6 @@ import com.simtop.billionbeers.core.CoroutineDispatcherProvider
 import com.simtop.billionbeers.core.Either
 import com.simtop.billionbeers.domain.models.Beer
 import com.simtop.billionbeers.domain.usecases.UpdateAvailabilityUseCase
-import com.simtop.billionbeers.presentation.beerslist.BeersListViewState
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -17,10 +16,10 @@ class BeerDetailViewModel @Inject constructor(
         private val availabilityUseCase: UpdateAvailabilityUseCase
 ) : ViewModel() {
 
-    private val _myViewState3 =
+    private val _beerDetailViewState =
             MutableLiveData<BeersDetailViewState<Beer>>()
     val beerDetailViewState: LiveData<BeersDetailViewState<Beer>>
-        get() = _myViewState3
+        get() = _beerDetailViewState
 
     fun updateAvailability(beer: Beer) {
         viewModelScope.launch(coroutineDispatcher.io) {
@@ -31,13 +30,13 @@ class BeerDetailViewModel @Inject constructor(
     }
 
     fun setBeer(beer: Beer) {
-        _myViewState3.postValue(BeersDetailViewState.Success(beer))
+        _beerDetailViewState.postValue(BeersDetailViewState.Success(beer))
     }
 
     private fun treatResponse(result: Either<Exception, Unit>) {
         result.either(
                 {
-                    _myViewState3.postValue(BeersDetailViewState.Error(it.message))
+                    _beerDetailViewState.postValue(BeersDetailViewState.Error(it.message))
                 },
                 {
                 }
@@ -46,12 +45,11 @@ class BeerDetailViewModel @Inject constructor(
 
     private fun changeAvailability(beer: Beer) {
         beer.availability = !beer.availability
-        _myViewState3.postValue(BeersDetailViewState.Success(beer))
+        _beerDetailViewState.postValue(BeersDetailViewState.Success(beer))
     }
 }
 
 sealed class BeersDetailViewState<out T> {
     data class Success<out T>(val result: T) : BeersDetailViewState<T>()
     data class Error(val result: String?) : BeersDetailViewState<Nothing>()
-
 }

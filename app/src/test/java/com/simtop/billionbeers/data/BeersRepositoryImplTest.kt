@@ -1,19 +1,14 @@
 package com.simtop.billionbeers.data
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
-import com.simtop.billionbeers.MainCoroutineScopeRule
-import com.simtop.billionbeers.data.database.BeersDao
+import com.simtop.billionbeers.*
 import com.simtop.billionbeers.data.localsource.BeersLocalSource
 import com.simtop.billionbeers.data.remotesources.BeersRemoteSource
 import com.simtop.billionbeers.data.repository.BeersRepositoryImpl
-import com.simtop.billionbeers.fakeBeerApiResponse
-import com.simtop.billionbeers.fakeBeerListModel
-import com.simtop.billionbeers.runBlocking
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
 import org.amshove.kluent.any
 import org.amshove.kluent.shouldBeEqualTo
 import org.junit.Rule
@@ -31,22 +26,38 @@ internal class BeersRepositoryImplTest {
 
     private val beersRemoteSource: BeersRemoteSource = mockk()
 
-    private val beersLocalSource : BeersLocalSource = mockk()
+    private val beersLocalSource: BeersLocalSource = mockk()
 
     @Test
-    fun `should get data from repository`() {
-        coroutineScope.runBlocking {
+    fun `when remote source succeeds we get a success response`() = coroutineScope.runBlocking {
+        // Arrange
 
-            val getBeers = BeersRepositoryImpl(beersRemoteSource, beersLocalSource)
+        val getBeers = BeersRepositoryImpl(beersRemoteSource, beersLocalSource)
 
-            coEvery { beersRemoteSource.getListOfBeers(any()) } returns fakeBeerApiResponse
+        coEvery { beersRemoteSource.getListOfBeers(any()) } returns fakeBeerApiResponse
 
-            val result = getBeers.getListOfBeerFromApi(any())
+        // Act
 
-            coVerify(exactly = 1) { beersRemoteSource.getListOfBeers(any())  }
+        val result = getBeers.getListOfBeerFromApi(any())
 
-            result shouldBeEqualTo fakeBeerListModel
+        // Assert
 
-        }
+        coVerify(exactly = 1) { beersRemoteSource.getListOfBeers(any()) }
+
+        result shouldBeEqualTo fakeBeerListModel
+    }
+
+    @Test(expected = Exception::class)
+    fun `when remote source fails we throw an exception`() = coroutineScope.runBlocking {
+        // Arrange
+        val getBeers = BeersRepositoryImpl(beersRemoteSource, beersLocalSource)
+
+        coEvery { beersRemoteSource.getListOfBeers(any()) } throws fakeException
+
+        // Act
+
+        getBeers.getListOfBeerFromApi(any())
+
+        // Assert
     }
 }

@@ -27,10 +27,14 @@ internal class BeersListViewModelTest {
     private val getAllBeersUseCase: GetAllBeersUseCase = mockk()
 
     @Test
-    fun `when we get list of beer it succeeds and shows loader`() = coroutineScope.runBlocking {
+    fun `when usecase succeeds we get success state`() = coroutineScope.runBlocking {
+        // Arrange
+
         coEvery {
             getAllBeersUseCase.execute(any())
         } returns Either.Right(fakeBeerListModel)
+
+        // Act
 
         coroutineScope.dispatcher.pauseDispatcher()
 
@@ -39,6 +43,8 @@ internal class BeersListViewModelTest {
         val liveDataUnderTest = beersListViewModel.beerListViewState.testObserver()
 
         coroutineScope.dispatcher.resumeDispatcher()
+
+        // Assert
 
         coVerify(exactly = 1) {
             getAllBeersUseCase.execute(any())
@@ -47,15 +53,19 @@ internal class BeersListViewModelTest {
         liveDataUnderTest.observedValues.size shouldBeEqualTo 2
         liveDataUnderTest.observedValues[0] shouldBeEqualTo BeersListViewState.Loading
         liveDataUnderTest.observedValues[1] shouldBeEqualTo BeersListViewState.Success(
-            fakeBeerListModel
+                fakeBeerListModel
         )
     }
 
     @Test
-    fun `when we get list of beer it fails and shows error`() = coroutineScope.runBlocking {
+    fun `when usecase fails we get error state`() = coroutineScope.runBlocking {
+        // Arrange
+
         coEvery {
             getAllBeersUseCase.execute(any())
-        } returns Either.Left(Exception("Error getting list of beers"))
+        } returns Either.Left(fakeException)
+
+        // Act
 
         coroutineScope.dispatcher.pauseDispatcher()
 
@@ -65,12 +75,14 @@ internal class BeersListViewModelTest {
 
         coroutineScope.dispatcher.resumeDispatcher()
 
+        // Assert
+
         coVerify(exactly = 1) {
             getAllBeersUseCase.execute(any())
         }
 
         liveDataUnderTest.observedValues.size shouldBeEqualTo 2
         liveDataUnderTest.observedValues[0] shouldBeEqualTo BeersListViewState.Loading
-        liveDataUnderTest.observedValues[1] shouldBeEqualTo BeersListViewState.Error("Error getting list of beers")
+        liveDataUnderTest.observedValues[1] shouldBeEqualTo BeersListViewState.Error(fakeErrorName)
     }
 }
