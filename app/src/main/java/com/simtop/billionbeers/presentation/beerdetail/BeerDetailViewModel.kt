@@ -5,10 +5,10 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.simtop.beerdomain.core.Either
+import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.beerdomain.domain.usecases.UpdateAvailabilityUseCase
 import com.simtop.billionbeers.core.CoroutineDispatcherProvider
-import com.simtop.billionbeers.core.Either
-import com.simtop.billionbeers.domain.models.Beer
-import com.simtop.billionbeers.domain.usecases.UpdateAvailabilityUseCase
 import kotlinx.coroutines.launch
 
 class BeerDetailViewModel @ViewModelInject constructor(

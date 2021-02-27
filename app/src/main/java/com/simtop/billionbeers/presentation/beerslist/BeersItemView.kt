@@ -4,9 +4,9 @@ import android.content.Context
 import android.graphics.Color
 import android.util.AttributeSet
 import android.view.LayoutInflater
+import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.core.BaseBindView
 import com.simtop.billionbeers.databinding.RowBeerListBinding
-import com.simtop.billionbeers.domain.models.Beer
 
 class BeersItemView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
@@ -20,9 +20,8 @@ class BeersItemView @JvmOverloads constructor(
         )
 
     init {
-        val beer: Beer
         if (isInEditMode) {
-            beer = Beer.empty
+            val beer = Beer.empty
             bind(beer)
         }
     }

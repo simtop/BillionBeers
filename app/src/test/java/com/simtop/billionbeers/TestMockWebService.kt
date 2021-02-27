@@ -1,6 +1,6 @@
 package com.simtop.billionbeers
 
-import com.simtop.billionbeers.data.network.BeersService
+import com.simtop.beerdomain.data.network.BeersService
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
@@ -20,7 +20,7 @@ abstract class TestMockWebService {
 
     lateinit var mockServer: MockWebServer
 
-    lateinit var apiService: BeersService
+    lateinit var apiService: com.simtop.beerdomain.data.network.BeersService
 
     @Before
     open fun setUp() {
@@ -59,7 +59,7 @@ abstract class TestMockWebService {
             .client(generateOkHttpClient())
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-            .create(BeersService::class.java)
+            .create(com.simtop.beerdomain.data.network.BeersService::class.java)
     }
 
     private fun generateOkHttpClient() = OkHttpClient()

@@ -8,7 +8,6 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import com.bumptech.glide.Glide
 import com.simtop.billionbeers.R
 import com.simtop.billionbeers.databinding.SingleBeerItemBinding
-import com.simtop.billionbeers.domain.models.Beer
 
 class SingleBeerItemView @JvmOverloads constructor(
     context: Context,
@@ -20,7 +19,7 @@ class SingleBeerItemView @JvmOverloads constructor(
         SingleBeerItemBinding.inflate(LayoutInflater.from(context), this, true)
 
     fun bind(
-        beer: Beer,
+        beer: com.simtop.beerdomain.domain.models.Beer,
         onClick: (() -> Unit)? = null,
         onBack: (() -> Unit)? = null
     ) {

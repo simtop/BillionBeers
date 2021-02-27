@@ -2,15 +2,14 @@ package com.simtop.billionbeers.data
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.simtop.billionbeers.*
-import com.simtop.billionbeers.data.localsource.BeersLocalSource
-import com.simtop.billionbeers.data.remotesources.BeersRemoteSource
-import com.simtop.billionbeers.data.repository.BeersRepositoryImpl
+import com.simtop.beerdomain.data.localsources.BeersLocalSource
+import com.simtop.beerdomain.data.remotesources.BeersRemoteSource
+import com.simtop.beerdomain.data.repositories.BeersRepositoryImpl
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.amshove.kluent.any
-import org.amshove.kluent.shouldBeEqualTo
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestRule
@@ -24,15 +23,18 @@ internal class BeersRepositoryImplTest {
     @get:Rule
     val coroutineScope = MainCoroutineScopeRule()
 
-    private val beersRemoteSource: BeersRemoteSource = mockk()
+    private val beersRemoteSource: com.simtop.beerdomain.data.remotesources.BeersRemoteSource = mockk()
 
-    private val beersLocalSource: BeersLocalSource = mockk()
+    private val beersLocalSource: com.simtop.beerdomain.data.localsources.BeersLocalSource = mockk()
 
     @Test
     fun `when remote source succeeds we get a success response`() = coroutineScope.runBlocking {
         // Arrange
 
-        val getBeers = BeersRepositoryImpl(beersRemoteSource, beersLocalSource)
+        val getBeers = com.simtop.beerdomain.data.repositories.BeersRepositoryImpl(
+            beersRemoteSource,
+            beersLocalSource
+        )
 
         coEvery { beersRemoteSource.getListOfBeers(any()) } returns fakeBeerApiResponse
 
@@ -50,7 +52,10 @@ internal class BeersRepositoryImplTest {
     @Test(expected = Exception::class)
     fun `when remote source fails we throw an exception`() = coroutineScope.runBlocking {
         // Arrange
-        val getBeers = BeersRepositoryImpl(beersRemoteSource, beersLocalSource)
+        val getBeers = com.simtop.beerdomain.data.repositories.BeersRepositoryImpl(
+            beersRemoteSource,
+            beersLocalSource
+        )
 
         coEvery { beersRemoteSource.getListOfBeers(any()) } throws fakeException
 

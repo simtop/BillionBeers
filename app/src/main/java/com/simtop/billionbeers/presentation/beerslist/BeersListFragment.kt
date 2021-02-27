@@ -1,19 +1,17 @@
 package com.simtop.billionbeers.presentation.beerslist
-
-
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.View
 import android.view.View.GONE
 import android.view.View.VISIBLE
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.R
 import com.simtop.billionbeers.core.observe
 import com.simtop.billionbeers.core.showToast
 import com.simtop.billionbeers.databinding.FragmentListBeersBinding
-import com.simtop.billionbeers.domain.models.Beer
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint

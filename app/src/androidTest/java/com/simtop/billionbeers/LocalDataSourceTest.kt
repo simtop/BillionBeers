@@ -5,8 +5,8 @@ import android.database.sqlite.SQLiteConstraintException
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
-import com.simtop.billionbeers.data.database.BeersDatabase
-import com.simtop.billionbeers.data.localsource.BeersLocalSource
+import com.simtop.beerdomain.data.databases.BeersDatabase
+import com.simtop.beerdomain.data.localsources.BeersLocalSource
 import com.simtop.billionbeers.di.fakeBeerModel2
 import com.simtop.billionbeers.di.fakeDbBeerList
 import kotlinx.coroutines.runBlocking
@@ -17,16 +17,16 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4ClassRunner::class)
 class LocalDataSourceTest {
 
-    private lateinit var localSource: BeersLocalSource
-    private lateinit var db: BeersDatabase
+    private lateinit var localSource: com.simtop.beerdomain.data.localsources.BeersLocalSource
+    private lateinit var db: com.simtop.beerdomain.data.databases.BeersDatabase
 
     @Before
     fun setUp() {
         val context: Context = ApplicationProvider.getApplicationContext()
-        db = Room.inMemoryDatabaseBuilder(context, BeersDatabase::class.java)
+        db = Room.inMemoryDatabaseBuilder(context, com.simtop.beerdomain.data.databases.BeersDatabase::class.java)
             .allowMainThreadQueries()
             .build()
-        localSource = BeersLocalSource(db)
+        localSource = com.simtop.beerdomain.data.localsources.BeersLocalSource(db)
     }
 
     @After

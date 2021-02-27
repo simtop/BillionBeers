@@ -1,2 +1,3 @@
+include ':beerdomain'
 include ':app'
 rootProject.name = "BillionBeers"

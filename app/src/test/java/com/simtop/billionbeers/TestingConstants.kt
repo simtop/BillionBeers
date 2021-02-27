@@ -1,11 +1,11 @@
 package com.simtop.billionbeers
 
-import com.simtop.billionbeers.data.models.BeersApiResponseItem
-import com.simtop.billionbeers.domain.models.Beer
+import com.simtop.beerdomain.data.models.BeersApiResponseItem
+import com.simtop.beerdomain.domain.models.Beer
 
 const val FAKE_JSON = "fake_json_response.json"
 
-val fakeBeersApiResponseItem = BeersApiResponseItem(
+val fakeBeersApiResponseItem = com.simtop.beerdomain.data.models.BeersApiResponseItem(
     1,
     "Buzz",
     "A Real Bitter Experience.",
@@ -18,7 +18,7 @@ val fakeBeersApiResponseItem = BeersApiResponseItem(
 
 val fakeBeerApiResponse = listOf(fakeBeersApiResponseItem.copy())
 
-val fakeBeerModel = Beer(
+val fakeBeerModel = com.simtop.beerdomain.domain.models.Beer(
     1,
     "Buzz",
     "A Real Bitter Experience.",

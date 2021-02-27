@@ -23,6 +23,6 @@
 
         <argument
             android:name="myArg"
-            app:argType="com.simtop.billionbeers.domain.models.Beer" />
+            app:argType="com.simtop.beerdomain.domain.models.Beer" />
     </fragment>
 </navigation>

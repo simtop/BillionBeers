@@ -5,9 +5,11 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.simtop.billionbeers.core.*
-import com.simtop.billionbeers.domain.models.Beer
-import com.simtop.billionbeers.domain.usecases.GetAllBeersUseCase
+import com.simtop.beerdomain.core.Either
+import com.simtop.beerdomain.core.MAX_PAGES_FOR_PAGINATION
+import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.beerdomain.domain.usecases.GetAllBeersUseCase
+import com.simtop.billionbeers.core.CoroutineDispatcherProvider
 import kotlinx.coroutines.launch
 
 class BeersListViewModel @ViewModelInject constructor(

@@ -2,10 +2,10 @@ package com.simtop.billionbeers.domain
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.simtop.billionbeers.MainCoroutineScopeRule
-import com.simtop.billionbeers.core.mapLeft
-import com.simtop.billionbeers.core.mapRight
-import com.simtop.billionbeers.domain.repository.BeersRepository
-import com.simtop.billionbeers.domain.usecases.GetAllBeersUseCase
+import com.simtop.beerdomain.core.mapLeft
+import com.simtop.beerdomain.core.mapRight
+import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.beerdomain.domain.usecases.GetAllBeersUseCase
 import com.simtop.billionbeers.fakeBeerListModel
 import com.simtop.billionbeers.fakeException
 import com.simtop.billionbeers.runBlocking
@@ -14,7 +14,6 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.amshove.kluent.any
-import org.amshove.kluent.shouldBeEqualTo
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestRule
@@ -28,7 +27,7 @@ internal class GetAllBeersUseCaseTest {
     @get:Rule
     val coroutineScope = MainCoroutineScopeRule()
 
-    private val beersRepository: BeersRepository = mockk()
+    private val beersRepository: com.simtop.beerdomain.domain.repositories.BeersRepository = mockk()
 
     @Test
     fun `when repository succeeds we get success response`() = coroutineScope.runBlocking {
@@ -36,7 +35,8 @@ internal class GetAllBeersUseCaseTest {
 
         coEvery { beersRepository.getBeersFromSingleSource(any()) } returns fakeBeerListModel
 
-        val getAllBeersUseCase = GetAllBeersUseCase(beersRepository)
+        val getAllBeersUseCase =
+            com.simtop.beerdomain.domain.usecases.GetAllBeersUseCase(beersRepository)
 
         // Act
 
@@ -57,7 +57,8 @@ internal class GetAllBeersUseCaseTest {
 
         coEvery { beersRepository.getBeersFromSingleSource(any()) } throws fakeException
 
-        val getAllBeersUseCase = GetAllBeersUseCase(beersRepository)
+        val getAllBeersUseCase =
+            com.simtop.beerdomain.domain.usecases.GetAllBeersUseCase(beersRepository)
 
         // Act
 

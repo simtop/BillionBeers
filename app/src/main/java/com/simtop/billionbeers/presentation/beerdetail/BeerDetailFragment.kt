@@ -1,8 +1,8 @@
 package com.simtop.billionbeers.presentation.beerdetail
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.View
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
@@ -10,7 +10,6 @@ import com.simtop.billionbeers.R
 import com.simtop.billionbeers.core.observe
 import com.simtop.billionbeers.core.showToast
 import com.simtop.billionbeers.databinding.FragmentDetailBeerBinding
-import com.simtop.billionbeers.domain.models.Beer
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -38,7 +37,7 @@ class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
 
     }
 
-    private fun treatViewState(result: BeersDetailViewState<Beer>) {
+    private fun treatViewState(result: BeersDetailViewState<com.simtop.beerdomain.domain.models.Beer>) {
         when (result) {
             is BeersDetailViewState.Success -> treatSuccess(result.result)
             is BeersDetailViewState.Error -> showError(result.result)
@@ -50,7 +49,7 @@ class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
         exception?.let { requireActivity().showToast(it) }
     }
 
-    private fun treatSuccess(beer: Beer) {
+    private fun treatSuccess(beer: com.simtop.beerdomain.domain.models.Beer) {
         beersDetailFragmentBinding?.singleBeer?.bind(beer, ::updateAvailability, ::onBackClicked)
 
     }
