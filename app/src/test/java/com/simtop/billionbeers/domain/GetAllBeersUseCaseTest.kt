@@ -14,6 +14,7 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.amshove.kluent.any
+import org.amshove.kluent.shouldBeEqualTo
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestRule
@@ -27,7 +28,7 @@ internal class GetAllBeersUseCaseTest {
     @get:Rule
     val coroutineScope = MainCoroutineScopeRule()
 
-    private val beersRepository: com.simtop.beerdomain.domain.repositories.BeersRepository = mockk()
+    private val beersRepository: BeersRepository = mockk()
 
     @Test
     fun `when repository succeeds we get success response`() = coroutineScope.runBlocking {
@@ -36,7 +37,7 @@ internal class GetAllBeersUseCaseTest {
         coEvery { beersRepository.getBeersFromSingleSource(any()) } returns fakeBeerListModel
 
         val getAllBeersUseCase =
-            com.simtop.beerdomain.domain.usecases.GetAllBeersUseCase(beersRepository)
+            GetAllBeersUseCase(beersRepository)
 
         // Act
 
@@ -58,7 +59,7 @@ internal class GetAllBeersUseCaseTest {
         coEvery { beersRepository.getBeersFromSingleSource(any()) } throws fakeException
 
         val getAllBeersUseCase =
-            com.simtop.beerdomain.domain.usecases.GetAllBeersUseCase(beersRepository)
+            GetAllBeersUseCase(beersRepository)
 
         // Act
 

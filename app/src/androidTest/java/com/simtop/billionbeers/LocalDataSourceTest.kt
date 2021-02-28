@@ -17,16 +17,16 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4ClassRunner::class)
 class LocalDataSourceTest {
 
-    private lateinit var localSource: com.simtop.beerdomain.data.localsources.BeersLocalSource
-    private lateinit var db: com.simtop.beerdomain.data.databases.BeersDatabase
+    private lateinit var localSource: BeersLocalSource
+    private lateinit var db: BeersDatabase
 
     @Before
     fun setUp() {
         val context: Context = ApplicationProvider.getApplicationContext()
-        db = Room.inMemoryDatabaseBuilder(context, com.simtop.beerdomain.data.databases.BeersDatabase::class.java)
+        db = Room.inMemoryDatabaseBuilder(context, BeersDatabase::class.java)
             .allowMainThreadQueries()
             .build()
-        localSource = com.simtop.beerdomain.data.localsources.BeersLocalSource(db)
+        localSource = BeersLocalSource(db)
     }
 
     @After

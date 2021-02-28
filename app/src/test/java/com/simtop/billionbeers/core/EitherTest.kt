@@ -1,16 +1,19 @@
 package com.simtop.billionbeers.core
 
+import com.simtop.beerdomain.core.Either
 import com.simtop.beerdomain.core.mapLeft
 import com.simtop.beerdomain.core.mapRight
+import org.amshove.kluent.shouldBeEqualTo
+import org.amshove.kluent.shouldBeInstanceOf
 import org.junit.Test
 
 class EitherTest {
 
     @Test
     fun `Either Right should return correct type`() {
-        val result: com.simtop.beerdomain.core.Either.Right<String> = com.simtop.beerdomain.core.Either.Right("asdf")
+        val result: Either.Right<String> = Either.Right("asdf")
 
-        result shouldBeInstanceOf com.simtop.beerdomain.core.Either::class.java
+        result shouldBeInstanceOf Either::class.java
         result.isRight shouldBeEqualTo true
         result.isLeft shouldBeEqualTo false
 
@@ -27,7 +30,7 @@ class EitherTest {
     @Test
     fun `test onSuccess extension function`() {
 
-        val either: com.simtop.beerdomain.core.Either.Right<String> = com.simtop.beerdomain.core.Either.Right("aaaaaaaa")
+        val either: Either.Right<String> = Either.Right("aaaaaaaa")
 
         either
             .mapRight {
@@ -38,7 +41,7 @@ class EitherTest {
     @Test
     fun `test onError extension function`() {
 
-        val either: com.simtop.beerdomain.core.Either.Left<String> = com.simtop.beerdomain.core.Either.Left("bbbbbbbb")
+        val either: Either.Left<String> = Either.Left("bbbbbbbb")
 
         either
             .mapLeft {

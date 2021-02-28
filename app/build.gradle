@@ -5,5 +5,8 @@ apply plugin: 'androidx.navigation.safeargs'
 dependencies {
     implementation Libs.navigation_fragment_ktx
     implementation Libs.navigation_ui
-    implementation project(":beerdomain")
+    //TODO: break domain to core, commonui, beerdatabase, beerdatasource and maybe network
+    implementation project(Modules.beer_domain)
+    implementation project(Modules.beers_list)
+    implementation project(Modules.beer_detail)
 }

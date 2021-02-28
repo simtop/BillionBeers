@@ -1,3 +1,5 @@
+include ':feature:beerslist'
+include ':feature:beerdetail'
 include ':beerdomain'
 include ':app'
 rootProject.name = "BillionBeers"

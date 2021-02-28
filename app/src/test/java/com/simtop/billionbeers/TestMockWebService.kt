@@ -20,7 +20,7 @@ abstract class TestMockWebService {
 
     lateinit var mockServer: MockWebServer
 
-    lateinit var apiService: com.simtop.beerdomain.data.network.BeersService
+    lateinit var apiService: BeersService
 
     @Before
     open fun setUp() {
@@ -59,7 +59,7 @@ abstract class TestMockWebService {
             .client(generateOkHttpClient())
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-            .create(com.simtop.beerdomain.data.network.BeersService::class.java)
+            .create(BeersService::class.java)
     }
 
     private fun generateOkHttpClient() = OkHttpClient()

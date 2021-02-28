@@ -10,6 +10,7 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.amshove.kluent.any
+import org.amshove.kluent.shouldBeEqualTo
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestRule
@@ -23,15 +24,15 @@ internal class BeersRepositoryImplTest {
     @get:Rule
     val coroutineScope = MainCoroutineScopeRule()
 
-    private val beersRemoteSource: com.simtop.beerdomain.data.remotesources.BeersRemoteSource = mockk()
+    private val beersRemoteSource: BeersRemoteSource = mockk()
 
-    private val beersLocalSource: com.simtop.beerdomain.data.localsources.BeersLocalSource = mockk()
+    private val beersLocalSource: BeersLocalSource = mockk()
 
     @Test
     fun `when remote source succeeds we get a success response`() = coroutineScope.runBlocking {
         // Arrange
 
-        val getBeers = com.simtop.beerdomain.data.repositories.BeersRepositoryImpl(
+        val getBeers = BeersRepositoryImpl(
             beersRemoteSource,
             beersLocalSource
         )
@@ -52,7 +53,7 @@ internal class BeersRepositoryImplTest {
     @Test(expected = Exception::class)
     fun `when remote source fails we throw an exception`() = coroutineScope.runBlocking {
         // Arrange
-        val getBeers = com.simtop.beerdomain.data.repositories.BeersRepositoryImpl(
+        val getBeers = BeersRepositoryImpl(
             beersRemoteSource,
             beersLocalSource
         )
