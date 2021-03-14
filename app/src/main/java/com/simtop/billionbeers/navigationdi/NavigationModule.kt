@@ -1,5 +1,6 @@
 package com.simtop.billionbeers.navigationdi
 
+import com.simtop.feature.beerdetail.presentation.navigation.BeerDetailNavigation
 import com.simtop.feature.beerdetail.presentation.navigation.BeerDetailNavigationArgs
 import com.simtop.feature.beerslist.navigation.BeerListNavigation
 import dagger.Binds
@@ -11,7 +12,10 @@ import dagger.hilt.android.components.ApplicationComponent
 @InstallIn(ApplicationComponent::class)
 abstract class NavigationModule {
     @Binds
-    abstract fun getNavigator(navigator: NavigationImpl): BeerListNavigation
+    abstract fun getListNavigator(navigator: NavigationImpl): BeerListNavigation
+
+    @Binds
+    abstract fun getDetailNavigator(navigator: NavigationImpl): BeerDetailNavigation
 
     @Binds
     abstract fun getArgs(args: ArgsImpl): BeerDetailNavigationArgs

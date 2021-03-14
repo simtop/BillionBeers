@@ -10,6 +10,7 @@ import com.simtop.billionbeers.core.observe
 import com.simtop.billionbeers.core.showToast
 import com.simtop.feature.beerdetail.R
 import com.simtop.feature.beerdetail.databinding.FragmentDetailBeerBinding
+import com.simtop.feature.beerdetail.presentation.navigation.BeerDetailNavigation
 import com.simtop.feature.beerdetail.presentation.navigation.BeerDetailNavigationArgs
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -24,6 +25,9 @@ class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
 
     @Inject
     lateinit var beerDetailNavigationArgs: BeerDetailNavigationArgs
+
+    @Inject
+    lateinit var navigatior: BeerDetailNavigation
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -61,9 +65,8 @@ class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
 
     }
 
-    //TODO: think if I need to have it declared in navigation interface
     private fun onBackClicked() {
-        findNavController().popBackStack()
+        navigatior.fromBeersListToBeerDetail(this)
     }
 
     private fun updateAvailability() {
