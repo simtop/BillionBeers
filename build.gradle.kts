@@ -2,7 +2,6 @@ buildscript {
     project.apply {
         from("$rootDir/common.gradle")
     }
-    val kotlin_version by extra("1.4.30")
     repositories {
         google()
         jcenter()
@@ -12,7 +11,6 @@ buildscript {
         classpath(Libs.kotlin_gradle_plugin)
         classpath(Libs.navigation_safe_args_gradle_plugin)
         classpath (Libs.hilt_android_gradle_plugin)
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version")
     }
 }
 

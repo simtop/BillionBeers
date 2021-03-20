@@ -1,7 +1,7 @@
 package com.simtop.beerdomain.di
 
-import com.simtop.billionbeers.core.CoroutineDispatcherProvider
-import com.simtop.billionbeers.core.DefaultCoroutineDispatcherProvider
+import com.simtop.beerdomain.core.CoroutineDispatcherProvider
+import com.simtop.beerdomain.core.DefaultCoroutineDispatcherProvider
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

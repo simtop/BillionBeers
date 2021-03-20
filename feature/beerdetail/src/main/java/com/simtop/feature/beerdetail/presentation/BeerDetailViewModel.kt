@@ -15,7 +15,6 @@ class BeerDetailViewModel @AssistedInject constructor(
     @Assisted private val beer: Beer
 ) : ViewModel() {
 
-
     private val _beerDetailViewState =
             MutableLiveData<BeersDetailViewState<Beer>>()
     val beerDetailViewState: LiveData<BeersDetailViewState<Beer>>
