@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.navigation.fragment.findNavController
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.core.observe
 import com.simtop.billionbeers.core.showToast
@@ -29,11 +28,11 @@ class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
 
     @Inject lateinit var beerViewModelAssistedFactory: BeerDetailViewModel.AssistedFactory
 
-    //val args = beerDetailNavigationArgs.getBeerDetailArgs(this)
+    lateinit var assistedBeer : Beer
 
     private val beersViewModel: BeerDetailViewModel by viewModels {
         BeerDetailViewModel.provideFactory(
-            beerViewModelAssistedFactory, Beer.empty
+            beerViewModelAssistedFactory, assistedBeer
         )
     }
 
@@ -45,8 +44,7 @@ class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
         _beersDetailFragmentBinding = binding
 
         val args = beerDetailNavigationArgs.getBeerDetailArgs(this)
-//TODO
-//        beersViewModel.setBeer(args.beer)
+        assistedBeer = args.beer
 
         observe(
             beersViewModel.beerDetailViewState, { beerDetailViewState ->
