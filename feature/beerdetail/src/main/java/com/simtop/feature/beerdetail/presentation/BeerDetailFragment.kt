@@ -18,16 +18,24 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
 
-    private val beersViewModel: BeerDetailViewModel by viewModels()
-
     private var _beersDetailFragmentBinding: FragmentDetailBeerBinding? = null
-    private val beersDetailFragmentBinding get() = _beersDetailFragmentBinding
+    private val beersDetailFragmentBinding get() = _beersDetailFragmentBinding!!
 
     @Inject
     lateinit var beerDetailNavigationArgs: BeerDetailNavigationArgs
 
     @Inject
     lateinit var navigatior: BeerDetailNavigation
+
+    @Inject lateinit var beerViewModelAssistedFactory: BeerDetailViewModel.AssistedFactory
+
+    //val args = beerDetailNavigationArgs.getBeerDetailArgs(this)
+
+    private val beersViewModel: BeerDetailViewModel by viewModels {
+        BeerDetailViewModel.provideFactory(
+            beerViewModelAssistedFactory, Beer.empty
+        )
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -37,8 +45,8 @@ class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
         _beersDetailFragmentBinding = binding
 
         val args = beerDetailNavigationArgs.getBeerDetailArgs(this)
-
-        beersViewModel.setBeer(args.beer)
+//TODO
+//        beersViewModel.setBeer(args.beer)
 
         observe(
             beersViewModel.beerDetailViewState, { beerDetailViewState ->
@@ -61,7 +69,7 @@ class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
     }
 
     private fun treatSuccess(beer: Beer) {
-        beersDetailFragmentBinding?.singleBeer?.bind(beer, ::updateAvailability, ::onBackClicked)
+        beersDetailFragmentBinding.singleBeer.bind(beer, ::updateAvailability, ::onBackClicked)
 
     }
 

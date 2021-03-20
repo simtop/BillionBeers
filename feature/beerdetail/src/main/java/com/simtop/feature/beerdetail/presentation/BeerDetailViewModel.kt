@@ -1,25 +1,29 @@
 package com.simtop.feature.beerdetail.presentation
 
-import androidx.hilt.lifecycle.ViewModelInject
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import com.simtop.beerdomain.core.Either
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.usecases.UpdateAvailabilityUseCase
-import com.simtop.billionbeers.core.CoroutineDispatcherProvider
+import com.simtop.beerdomain.core.CoroutineDispatcherProvider
+import com.squareup.inject.assisted.Assisted
+import com.squareup.inject.assisted.AssistedInject
 import kotlinx.coroutines.launch
 
-class BeerDetailViewModel @ViewModelInject constructor(
-        private val coroutineDispatcher: CoroutineDispatcherProvider,
-        private val availabilityUseCase: UpdateAvailabilityUseCase
+class BeerDetailViewModel @AssistedInject constructor(
+    private val coroutineDispatcher: CoroutineDispatcherProvider,
+    private val availabilityUseCase: UpdateAvailabilityUseCase,
+    @Assisted private val beer: Beer
 ) : ViewModel() {
+
 
     private val _beerDetailViewState =
             MutableLiveData<BeersDetailViewState<Beer>>()
     val beerDetailViewState: LiveData<BeersDetailViewState<Beer>>
         get() = _beerDetailViewState
+
+    init {
+        setBeer(beer)
+    }
 
     fun updateAvailability(beer: Beer) {
         viewModelScope.launch(coroutineDispatcher.io) {
@@ -46,6 +50,22 @@ class BeerDetailViewModel @ViewModelInject constructor(
     private fun changeAvailability(beer: Beer) {
         beer.availability = !beer.availability
         _beerDetailViewState.postValue(BeersDetailViewState.Success(beer))
+    }
+
+    @AssistedInject.Factory
+    interface AssistedFactory {
+        fun create(beer: Beer): BeerDetailViewModel
+    }
+
+    companion object {
+        fun provideFactory(
+            assistedFactory: AssistedFactory,
+            beer: Beer
+        ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
+            override fun <T : ViewModel?> create(modelClass: Class<T>): T {
+                return assistedFactory.create(beer) as T
+            }
+        }
     }
 }
 
