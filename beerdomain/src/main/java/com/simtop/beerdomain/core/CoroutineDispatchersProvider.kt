@@ -1,4 +1,4 @@
-package com.simtop.billionbeers.core
+package com.simtop.beerdomain.core
 
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers

@@ -6,9 +6,9 @@ import android.view.LayoutInflater
 import android.view.View
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.bumptech.glide.Glide
+import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.feature.beerdetail.R
 import com.simtop.feature.beerdetail.databinding.SingleBeerItemBinding
-
 
 class SingleBeerItemView @JvmOverloads constructor(
     context: Context,
@@ -24,7 +24,7 @@ class SingleBeerItemView @JvmOverloads constructor(
         )
 
     fun bind(
-        beer: com.simtop.beerdomain.domain.models.Beer,
+        beer: Beer,
         onClick: (() -> Unit)? = null,
         onBack: (() -> Unit)? = null
     ) {

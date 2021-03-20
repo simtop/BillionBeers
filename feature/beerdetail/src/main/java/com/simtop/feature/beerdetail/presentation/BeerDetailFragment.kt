@@ -21,7 +21,7 @@ class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
     private val beersViewModel: BeerDetailViewModel by viewModels()
 
     private var _beersDetailFragmentBinding: FragmentDetailBeerBinding? = null
-    private val beersDetailFragmentBinding get() = _beersDetailFragmentBinding
+    private val beersDetailFragmentBinding get() = _beersDetailFragmentBinding!!
 
     @Inject
     lateinit var beerDetailNavigationArgs: BeerDetailNavigationArgs
@@ -61,7 +61,7 @@ class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
     }
 
     private fun treatSuccess(beer: Beer) {
-        beersDetailFragmentBinding?.singleBeer?.bind(beer, ::updateAvailability, ::onBackClicked)
+        beersDetailFragmentBinding.singleBeer.bind(beer, ::updateAvailability, ::onBackClicked)
 
     }
 

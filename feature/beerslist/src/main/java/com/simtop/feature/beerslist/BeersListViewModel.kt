@@ -9,12 +9,12 @@ import com.simtop.beerdomain.core.Either
 import com.simtop.beerdomain.core.MAX_PAGES_FOR_PAGINATION
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.usecases.GetAllBeersUseCase
-import com.simtop.billionbeers.core.CoroutineDispatcherProvider
+import com.simtop.beerdomain.core.CoroutineDispatcherProvider
 import kotlinx.coroutines.launch
 
 class BeersListViewModel @ViewModelInject constructor(
-        private val coroutineDispatcher: CoroutineDispatcherProvider,
-        private val getAllBeersUseCase: GetAllBeersUseCase
+    private val coroutineDispatcher: CoroutineDispatcherProvider,
+    private val getAllBeersUseCase: GetAllBeersUseCase
 ) : ViewModel() {
 
     private val _beerListViewState =
