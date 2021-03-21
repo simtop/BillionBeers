@@ -18,13 +18,13 @@ object Versions {
 
     const val com_squareup_okhttp3: String = "4.9.0"
 
-    const val org_jetbrains_kotlin: String = "1.4.21-2"
+    const val org_jetbrains_kotlin: String = "1.4.30"
 
     const val androidx_navigation: String = "2.3.2"
 
-    const val com_google_dagger: String = "2.28.1-alpha"
+    const val com_google_dagger: String = "2.33-beta"
 
-    const val androidx_hilt: String = "1.0.0-alpha01"
+    const val androidx_hilt: String = "1.0.0-beta01"
 
     const val androidx_room: String = "2.2.6"
 
