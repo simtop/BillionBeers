@@ -1,6 +1,8 @@
 package com.simtop.billionbeers.presentation
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import com.simtop.beerdomain.core.Either
+import com.simtop.beerdomain.domain.usecases.GetAllBeersUseCase
 import com.simtop.billionbeers.*
 import com.simtop.feature.beerslist.BeersListViewModel
 import com.simtop.feature.beerslist.BeersListViewState
@@ -22,7 +24,7 @@ internal class BeersListViewModelTest {
     @get:Rule
     val coroutineScope = MainCoroutineScopeRule()
 
-    private val getAllBeersUseCase: com.simtop.beerdomain.domain.usecases.GetAllBeersUseCase = mockk()
+    private val getAllBeersUseCase: GetAllBeersUseCase = mockk()
 
     @Test
     fun `when usecase succeeds we get success state`() = coroutineScope.runBlocking {
@@ -30,7 +32,7 @@ internal class BeersListViewModelTest {
 
         coEvery {
             getAllBeersUseCase.execute(any())
-        } returns com.simtop.beerdomain.core.Either.Right(fakeBeerListModel)
+        } returns Either.Right(fakeBeerListModel)
 
         // Act
 
@@ -61,7 +63,7 @@ internal class BeersListViewModelTest {
 
         coEvery {
             getAllBeersUseCase.execute(any())
-        } returns com.simtop.beerdomain.core.Either.Left(fakeException)
+        } returns Either.Left(fakeException)
 
         // Act
 

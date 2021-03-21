@@ -32,7 +32,7 @@ class BeerDetailViewModel @AssistedInject constructor(
         }
     }
 
-    fun setBeer(beer: Beer) {
+    private fun setBeer(beer: Beer) {
         _beerDetailViewState.postValue(BeersDetailViewState.Success(beer))
     }
 
