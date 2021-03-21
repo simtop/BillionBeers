@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/BeersListFragment"
-        android:name="com.simtop.billionbeers.presentation.beerslist.BeersListFragment"
+        android:name="com.simtop.feature.beerslist.BeersListFragment"
         android:label="@string/beers_list_fragment_label"
         tools:layout="@layout/fragment_list_beers">
 
@@ -17,12 +17,12 @@
     </fragment>
     <fragment
         android:id="@+id/BeerDetailFragment"
-        android:name="com.simtop.billionbeers.presentation.beerdetail.BeerDetailFragment"
+        android:name="com.simtop.feature.beerdetail.presentation.BeerDetailFragment"
         android:label="@string/beer_detail_fragment_label"
         tools:layout="@layout/fragment_detail_beer">
 
         <argument
             android:name="myArg"
-            app:argType="com.simtop.billionbeers.domain.models.Beer" />
+            app:argType="com.simtop.beerdomain.domain.models.Beer" />
     </fragment>
 </navigation>

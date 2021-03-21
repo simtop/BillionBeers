@@ -1,11 +1,11 @@
 package com.simtop.billionbeers.presentation
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import com.simtop.beerdomain.core.Either
+import com.simtop.beerdomain.domain.usecases.GetAllBeersUseCase
 import com.simtop.billionbeers.*
-import com.simtop.billionbeers.core.Either
-import com.simtop.billionbeers.domain.usecases.GetAllBeersUseCase
-import com.simtop.billionbeers.presentation.beerslist.BeersListViewModel
-import com.simtop.billionbeers.presentation.beerslist.BeersListViewState
+import com.simtop.feature.beerslist.BeersListViewModel
+import com.simtop.feature.beerslist.BeersListViewState
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk

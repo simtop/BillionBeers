@@ -1,6 +1,6 @@
 package com.simtop.billionbeers.robots
 
-import com.simtop.billionbeers.domain.models.Beer
+import com.simtop.beerdomain.domain.models.Beer
 
 fun homeScreen(func: HomeScreenRobot.() -> Unit) = HomeScreenRobot()
     .apply { func() }
@@ -14,7 +14,7 @@ open class HomeScreenRobot : BaseTestRobot() {
     ): DetailScreenRobot = clickRecyclerViewPosition(
         listRes,
         position,
-        Beer,
+        com.simtop.beerdomain.domain.models.Beer,
         detailScreenRobot,
         func as (BaseTestRobot.() -> Unit)?
     ) as DetailScreenRobot

@@ -5,8 +5,8 @@ import android.database.sqlite.SQLiteConstraintException
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
-import com.simtop.billionbeers.data.database.BeersDatabase
-import com.simtop.billionbeers.data.localsource.BeersLocalSource
+import com.simtop.beerdomain.data.databases.BeersDatabase
+import com.simtop.beerdomain.data.localsources.BeersLocalSource
 import com.simtop.billionbeers.di.fakeBeerModel2
 import com.simtop.billionbeers.di.fakeDbBeerList
 import kotlinx.coroutines.runBlocking

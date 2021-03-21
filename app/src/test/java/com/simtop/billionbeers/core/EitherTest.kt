@@ -1,5 +1,8 @@
 package com.simtop.billionbeers.core
 
+import com.simtop.beerdomain.core.Either
+import com.simtop.beerdomain.core.mapLeft
+import com.simtop.beerdomain.core.mapRight
 import org.amshove.kluent.shouldBeEqualTo
 import org.amshove.kluent.shouldBeInstanceOf
 import org.junit.Test

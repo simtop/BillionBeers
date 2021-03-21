@@ -1,4 +1,7 @@
 buildscript {
+    project.apply {
+        from("$rootDir/common.gradle")
+    }
     repositories {
         google()
         jcenter()
@@ -17,6 +20,9 @@ plugins {
 
 
 allprojects {
+    apply {
+        from("$rootDir/common.gradle")
+    }
     repositories {
         google()
         jcenter()

@@ -2,10 +2,10 @@ package com.simtop.billionbeers.domain
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.simtop.billionbeers.MainCoroutineScopeRule
-import com.simtop.billionbeers.core.mapLeft
-import com.simtop.billionbeers.core.mapRight
-import com.simtop.billionbeers.domain.repository.BeersRepository
-import com.simtop.billionbeers.domain.usecases.GetAllBeersUseCase
+import com.simtop.beerdomain.core.mapLeft
+import com.simtop.beerdomain.core.mapRight
+import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.beerdomain.domain.usecases.GetAllBeersUseCase
 import com.simtop.billionbeers.fakeBeerListModel
 import com.simtop.billionbeers.fakeException
 import com.simtop.billionbeers.runBlocking
@@ -36,7 +36,8 @@ internal class GetAllBeersUseCaseTest {
 
         coEvery { beersRepository.getBeersFromSingleSource(any()) } returns fakeBeerListModel
 
-        val getAllBeersUseCase = GetAllBeersUseCase(beersRepository)
+        val getAllBeersUseCase =
+            GetAllBeersUseCase(beersRepository)
 
         // Act
 
@@ -57,7 +58,8 @@ internal class GetAllBeersUseCaseTest {
 
         coEvery { beersRepository.getBeersFromSingleSource(any()) } throws fakeException
 
-        val getAllBeersUseCase = GetAllBeersUseCase(beersRepository)
+        val getAllBeersUseCase =
+            GetAllBeersUseCase(beersRepository)
 
         // Act
 

@@ -10,8 +10,8 @@ import androidx.test.espresso.assertion.ViewAssertions
 import androidx.test.espresso.contrib.RecyclerViewActions
 import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.espresso.matcher.ViewMatchers.withId
-import com.simtop.billionbeers.core.BaseBindView
-import com.simtop.billionbeers.core.ViewWrapper
+import com.simtop.beerdomain.core.BaseBindView
+import com.simtop.beerdomain.core.ViewWrapper
 import com.simtop.billionbeers.utils.RecyclerViewMatchers
 import com.simtop.billionbeers.utils.ViewVisibilityIdlingResource
 import com.simtop.billionbeers.utils.waitUntilVisible

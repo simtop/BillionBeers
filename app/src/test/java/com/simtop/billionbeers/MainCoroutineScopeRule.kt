@@ -1,6 +1,6 @@
 package com.simtop.billionbeers
 
-import com.simtop.billionbeers.core.CoroutineDispatcherProvider
+import com.simtop.beerdomain.core.CoroutineDispatcherProvider
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

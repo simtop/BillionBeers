@@ -5,16 +5,16 @@ import android.content.Context
 import android.database.sqlite.SQLiteConstraintException
 import androidx.room.Room
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
-import com.simtop.billionbeers.data.database.BeersDao
-import com.simtop.billionbeers.data.database.BeersDatabase
-import com.simtop.billionbeers.data.localsource.BeersLocalSource
-import com.simtop.billionbeers.data.mappers.BeersMapper
-import com.simtop.billionbeers.data.models.BeersApiResponseItem
-import com.simtop.billionbeers.domain.models.Beer
+import com.simtop.beerdomain.data.databases.BeersDao
+import com.simtop.beerdomain.data.databases.BeersDatabase
+import com.simtop.beerdomain.data.localsources.BeersLocalSource
+import com.simtop.beerdomain.data.mappers.BeersMapper
+import com.simtop.beerdomain.data.models.BeersApiResponseItem
+import com.simtop.beerdomain.di.BeersDatabaseModule
+import com.simtop.beerdomain.domain.models.Beer
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.components.ApplicationComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.testing.HiltAndroidRule
@@ -132,7 +132,7 @@ val fakeBeersApiResponseItem2 = BeersApiResponseItem(
 
 val fakeBeerApiResponse2 = listOf(fakeBeersApiResponseItem2.copy())
 
-val fakeBeerModel2 = Beer(
+val fakeBeerModel2 = com.simtop.beerdomain.domain.models.Beer(
     1,
     "Buzz",
     "A Real Bitter Experience.",
