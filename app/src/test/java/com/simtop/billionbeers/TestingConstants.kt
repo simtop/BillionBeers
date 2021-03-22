@@ -2,7 +2,7 @@ package com.simtop.billionbeers
 
 const val FAKE_JSON = "fake_json_response.json"
 
-val fakeBeersApiResponseItem = com.simtop.beerdomain.data.models.BeersApiResponseItem(
+val fakeBeersApiResponseItem = com.simtop.beer_network.models.BeersApiResponseItem(
     1,
     "Buzz",
     "A Real Bitter Experience.",

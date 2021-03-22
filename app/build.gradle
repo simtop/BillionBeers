@@ -10,5 +10,8 @@ dependencies {
     implementation project(Modules.beers_list)
     implementation project(Modules.beer_detail)
     implementation project(Modules.core)
+    implementation project(Modules.beer_data)
+    implementation project(Modules.beer_database)
+    implementation project(Modules.beer_network)
     //implementation project(Modules.presentation_utils)
 }

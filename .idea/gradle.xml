@@ -12,6 +12,9 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
+            <option value="$PROJECT_DIR$/beer_data" />
+            <option value="$PROJECT_DIR$/beer_database" />
+            <option value="$PROJECT_DIR$/beer_network" />
             <option value="$PROJECT_DIR$/beerdomain" />
             <option value="$PROJECT_DIR$/buildSrc" />
             <option value="$PROJECT_DIR$/core" />

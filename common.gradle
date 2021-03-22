@@ -22,7 +22,7 @@ ext.androidModule = { Boolean isApplication = false ->
 
             multiDexEnabled true
 
-            testInstrumentationRunner "com.simtop.billionbeers.di.MockTestRunner"
+            testInstrumentationRunner "com.simtop.billionbeers.com.simtop.beer_database.di.MockTestRunner"
         }
 
         buildTypes {
