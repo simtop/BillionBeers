@@ -1,4 +1,4 @@
-package com.simtop.billionbeers.core
+package com.simtop.presentation_utils.core
 
 import android.content.Context
 import android.widget.Toast

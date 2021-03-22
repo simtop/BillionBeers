@@ -3,9 +3,9 @@ package com.simtop.billionbeers
 import android.view.View
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
-import com.simtop.billionbeers.robots.homeScreen
 import com.simtop.billionbeers.presentation.MainActivity
 import com.simtop.billionbeers.robots.detailScreen
+import com.simtop.billionbeers.robots.homeScreen
 import com.simtop.billionbeers.utils.ViewVisibilityIdlingResource
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest

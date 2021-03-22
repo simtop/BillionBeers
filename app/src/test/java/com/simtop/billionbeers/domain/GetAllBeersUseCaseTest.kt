@@ -1,20 +1,19 @@
 package com.simtop.billionbeers.domain
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
-import com.simtop.billionbeers.MainCoroutineScopeRule
-import com.simtop.beerdomain.core.mapLeft
-import com.simtop.beerdomain.core.mapRight
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.beerdomain.domain.usecases.GetAllBeersUseCase
+import com.simtop.billionbeers.MainCoroutineScopeRule
 import com.simtop.billionbeers.fakeBeerListModel
 import com.simtop.billionbeers.fakeException
 import com.simtop.billionbeers.runBlocking
+import com.simtop.core.core.mapLeft
+import com.simtop.core.core.mapRight
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.amshove.kluent.any
-import org.amshove.kluent.shouldBeEqualTo
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestRule

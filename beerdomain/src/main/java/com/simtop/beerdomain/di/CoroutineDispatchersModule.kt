@@ -1,7 +1,8 @@
 package com.simtop.beerdomain.di
 
-import com.simtop.beerdomain.core.CoroutineDispatcherProvider
-import com.simtop.beerdomain.core.DefaultCoroutineDispatcherProvider
+
+import com.simtop.core.core.CoroutineDispatcherProvider
+import com.simtop.core.core.DefaultCoroutineDispatcherProvider
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -14,6 +15,7 @@ object CoroutineDispatchersModule {
 
     @Provides
     @Singleton
-    fun providesDispatcherProvider(): CoroutineDispatcherProvider = DefaultCoroutineDispatcherProvider()
+    fun providesDispatcherProvider(): CoroutineDispatcherProvider =
+        DefaultCoroutineDispatcherProvider()
 
 }

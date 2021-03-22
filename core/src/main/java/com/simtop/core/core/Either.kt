@@ -1,4 +1,4 @@
-package com.simtop.beerdomain.core
+package com.simtop.core.core
 
 sealed class Either<out L, out R> {
     data class Left<T>(val value: T) : Either<T, Nothing>()

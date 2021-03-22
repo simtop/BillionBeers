@@ -1,4 +1,4 @@
-package com.simtop.beerdomain.core
+package com.simtop.core.core
 
 const val BEERS_DB_NAME = "beers_databse.db"
 

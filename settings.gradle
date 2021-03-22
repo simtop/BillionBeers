@@ -1,3 +1,5 @@
+include ':presentation_utils'
+include ':core'
 include ':feature:beerslist'
 include ':feature:beerdetail'
 include ':beerdomain'

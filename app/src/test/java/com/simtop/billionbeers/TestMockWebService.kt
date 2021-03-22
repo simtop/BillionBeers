@@ -13,7 +13,6 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.io.File
 import java.io.IOException
-import java.lang.Exception
 import java.net.HttpURLConnection
 
 abstract class TestMockWebService {

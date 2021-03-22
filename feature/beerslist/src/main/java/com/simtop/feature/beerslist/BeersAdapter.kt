@@ -4,9 +4,9 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
-import com.simtop.beerdomain.core.BaseBindView
-import com.simtop.beerdomain.core.ViewWrapper
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.presentation_utils.core.BaseBindView
+import com.simtop.presentation_utils.core.ViewWrapper
 
 class BeersAdapter(private val listener: ((Beer) -> Unit)?): ListAdapter<Beer, ViewWrapper<BaseBindView<Beer>>>(
     DIFF_CALLBACK

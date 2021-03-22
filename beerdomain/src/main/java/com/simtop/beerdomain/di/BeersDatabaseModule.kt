@@ -3,7 +3,6 @@ package com.simtop.beerdomain.di
 
 import android.content.Context
 import androidx.room.Room
-import com.simtop.beerdomain.core.BEERS_DB_NAME
 import com.simtop.beerdomain.data.databases.BeersDao
 import com.simtop.beerdomain.data.databases.BeersDatabase
 import dagger.Module
@@ -23,7 +22,7 @@ object BeersDatabaseModule {
         Room.databaseBuilder(
             app,
             BeersDatabase::class.java,
-            BEERS_DB_NAME
+            com.simtop.core.core.BEERS_DB_NAME
         ).build()
 
     @Provides

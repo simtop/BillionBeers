@@ -5,12 +5,12 @@ import android.view.View
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.billionbeers.core.observe
-import com.simtop.billionbeers.core.showToast
 import com.simtop.feature.beerdetail.R
 import com.simtop.feature.beerdetail.databinding.FragmentDetailBeerBinding
 import com.simtop.feature.beerdetail.presentation.navigation.BeerDetailNavigation
 import com.simtop.feature.beerdetail.presentation.navigation.BeerDetailNavigationArgs
+import com.simtop.presentation_utils.core.observe
+import com.simtop.presentation_utils.core.showToast
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 

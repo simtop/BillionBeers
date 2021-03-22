@@ -1,4 +1,4 @@
-package com.simtop.feature.beerdetail.presentation
+package com.simtop.feature.beerdetail.presentation.di
 
 import com.squareup.inject.assisted.dagger2.AssistedModule
 import dagger.Module

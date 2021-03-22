@@ -11,7 +11,6 @@ import com.simtop.beerdomain.data.localsources.BeersLocalSource
 import com.simtop.beerdomain.data.mappers.BeersMapper
 import com.simtop.beerdomain.data.models.BeersApiResponseItem
 import com.simtop.beerdomain.di.BeersDatabaseModule
-import com.simtop.beerdomain.domain.models.Beer
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -22,7 +21,9 @@ import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.UninstallModules
 import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.runBlocking
-import org.junit.*
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
 import org.junit.runner.RunWith
 import javax.inject.Inject
 import javax.inject.Singleton

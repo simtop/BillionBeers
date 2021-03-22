@@ -1,10 +1,10 @@
 package com.simtop.feature.beerdetail.presentation
 
 import androidx.lifecycle.*
-import com.simtop.beerdomain.core.Either
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.usecases.UpdateAvailabilityUseCase
-import com.simtop.beerdomain.core.CoroutineDispatcherProvider
+import com.simtop.core.core.CoroutineDispatcherProvider
+import com.simtop.core.core.Either
 import com.squareup.inject.assisted.Assisted
 import com.squareup.inject.assisted.AssistedInject
 import kotlinx.coroutines.launch

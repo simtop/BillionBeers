@@ -5,15 +5,12 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.simtop.beerdomain.core.Either
-import com.simtop.beerdomain.core.MAX_PAGES_FOR_PAGINATION
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.usecases.GetAllBeersUseCase
-import com.simtop.beerdomain.core.CoroutineDispatcherProvider
 import kotlinx.coroutines.launch
 
 class BeersListViewModel @ViewModelInject constructor(
-    private val coroutineDispatcher: CoroutineDispatcherProvider,
+    private val coroutineDispatcher: com.simtop.core.core.CoroutineDispatcherProvider,
     private val getAllBeersUseCase: GetAllBeersUseCase
 ) : ViewModel() {
 
@@ -26,7 +23,7 @@ class BeersListViewModel @ViewModelInject constructor(
         getAllBeers()
     }
 
-    fun getAllBeers(quantity: Int = MAX_PAGES_FOR_PAGINATION) {
+    fun getAllBeers(quantity: Int = com.simtop.core.core.MAX_PAGES_FOR_PAGINATION) {
         _beerListViewState.postValue(BeersListViewState.Loading)
         viewModelScope.launch(coroutineDispatcher.io) {
             getAllBeersUseCase.execute(getAllBeersUseCase.Params(quantity))
@@ -34,7 +31,7 @@ class BeersListViewModel @ViewModelInject constructor(
         }
     }
 
-    private fun process(result: Either<Exception, List<Beer>>) {
+    private fun process(result: com.simtop.core.core.Either<Exception, List<Beer>>) {
         result.either(
                 {
                     _beerListViewState.postValue(BeersListViewState.Error(it.message))

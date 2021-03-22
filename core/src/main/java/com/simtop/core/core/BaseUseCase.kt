@@ -1,4 +1,4 @@
-package com.simtop.beerdomain.core
+package com.simtop.core.core
 
 abstract class BaseUseCase<T, PARAMS> protected constructor() {
 

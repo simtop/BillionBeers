@@ -1,9 +1,9 @@
 package com.simtop.billionbeers.presentation
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
-import com.simtop.beerdomain.core.Either
 import com.simtop.beerdomain.domain.usecases.UpdateAvailabilityUseCase
 import com.simtop.billionbeers.*
+import com.simtop.core.core.Either
 import com.simtop.feature.beerdetail.presentation.BeerDetailViewModel
 import com.simtop.feature.beerdetail.presentation.BeersDetailViewState
 import io.mockk.coEvery
@@ -56,7 +56,7 @@ internal class BeerDetailViewModelTest {
 
         coEvery {
             availabilityUseCase.execute(any())
-        } returns Either.Left(fakeException)
+        } returns com.simtop.core.core.Either.Left(fakeException)
 
         // Act
 
@@ -88,7 +88,7 @@ internal class BeerDetailViewModelTest {
 
         coEvery {
             availabilityUseCase.execute(any())
-        } returns Either.Right(Unit)
+        } returns com.simtop.core.core.Either.Right(Unit)
 
         val testExpectedResponse = fakeBeerModel.copy(availability = !fakeBeerModel.availability)
 

@@ -14,9 +14,11 @@
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/beerdomain" />
             <option value="$PROJECT_DIR$/buildSrc" />
+            <option value="$PROJECT_DIR$/core" />
             <option value="$PROJECT_DIR$/feature" />
             <option value="$PROJECT_DIR$/feature/beerdetail" />
             <option value="$PROJECT_DIR$/feature/beerslist" />
+            <option value="$PROJECT_DIR$/presentation_utils" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />

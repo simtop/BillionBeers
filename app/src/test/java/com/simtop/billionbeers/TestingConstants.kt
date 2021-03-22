@@ -1,8 +1,5 @@
 package com.simtop.billionbeers
 
-import com.simtop.beerdomain.data.models.BeersApiResponseItem
-import com.simtop.beerdomain.domain.models.Beer
-
 const val FAKE_JSON = "fake_json_response.json"
 
 val fakeBeersApiResponseItem = com.simtop.beerdomain.data.models.BeersApiResponseItem(

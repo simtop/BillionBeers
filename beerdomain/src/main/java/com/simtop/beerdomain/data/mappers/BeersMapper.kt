@@ -2,8 +2,8 @@ package com.simtop.beerdomain.data.mappers
 
 import com.simtop.beerdomain.data.models.BeerDbModel
 import com.simtop.beerdomain.data.models.BeersApiResponseItem
-import com.simtop.billionbeers.data.util.Converters
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.billionbeers.data.util.Converters
 
 object BeersMapper {
 

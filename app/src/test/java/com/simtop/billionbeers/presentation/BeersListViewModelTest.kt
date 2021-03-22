@@ -1,9 +1,9 @@
 package com.simtop.billionbeers.presentation
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
-import com.simtop.beerdomain.core.Either
 import com.simtop.beerdomain.domain.usecases.GetAllBeersUseCase
 import com.simtop.billionbeers.*
+import com.simtop.core.core.Either
 import com.simtop.feature.beerslist.BeersListViewModel
 import com.simtop.feature.beerslist.BeersListViewState
 import io.mockk.coEvery
@@ -32,7 +32,7 @@ internal class BeersListViewModelTest {
 
         coEvery {
             getAllBeersUseCase.execute(any())
-        } returns Either.Right(fakeBeerListModel)
+        } returns com.simtop.core.core.Either.Right(fakeBeerListModel)
 
         // Act
 
@@ -63,7 +63,7 @@ internal class BeersListViewModelTest {
 
         coEvery {
             getAllBeersUseCase.execute(any())
-        } returns Either.Left(fakeException)
+        } returns com.simtop.core.core.Either.Left(fakeException)
 
         // Act
 

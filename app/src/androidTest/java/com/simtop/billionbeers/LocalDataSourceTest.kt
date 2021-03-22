@@ -10,8 +10,10 @@ import com.simtop.beerdomain.data.localsources.BeersLocalSource
 import com.simtop.billionbeers.di.fakeBeerModel2
 import com.simtop.billionbeers.di.fakeDbBeerList
 import kotlinx.coroutines.runBlocking
-import org.junit.*
+import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Before
+import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4ClassRunner::class)

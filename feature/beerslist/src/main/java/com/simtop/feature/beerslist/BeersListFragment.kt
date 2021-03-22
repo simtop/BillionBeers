@@ -7,10 +7,10 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.billionbeers.core.observe
-import com.simtop.billionbeers.core.showToast
 import com.simtop.feature.beerslist.databinding.FragmentListBeersBinding
 import com.simtop.feature.beerslist.navigation.BeerListNavigation
+import com.simtop.presentation_utils.core.observe
+import com.simtop.presentation_utils.core.showToast
 
 
 import dagger.hilt.android.AndroidEntryPoint

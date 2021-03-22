@@ -1,4 +1,4 @@
-package com.simtop.beerdomain.core
+package com.simtop.presentation_utils.core
 
 import android.content.Context
 import android.util.AttributeSet

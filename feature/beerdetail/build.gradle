@@ -16,6 +16,8 @@ dependencies {
     implementation Libs.navigation_fragment_ktx
     implementation Libs.navigation_ui
     implementation project(Modules.beer_domain)
+    implementation project(Modules.presentation_utils)
+    implementation project(Modules.core)
     compileOnly "com.squareup.inject:assisted-inject-annotations-dagger2:0.5.2"
     kapt "com.squareup.inject:assisted-inject-processor-dagger2:0.5.2"
 }

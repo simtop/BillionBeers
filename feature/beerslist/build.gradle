@@ -6,4 +6,6 @@ dependencies {
     implementation Libs.navigation_fragment_ktx
     implementation Libs.navigation_ui
     implementation project(Modules.beer_domain)
+    implementation project(Modules.presentation_utils)
+    implementation project(Modules.core)
 }
