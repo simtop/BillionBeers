@@ -1,11 +1,11 @@
-package com.simtop.feature.beerslist
+package com.simtop.presentation_utils.custom_views
 
 import android.content.Context
 import android.graphics.Color
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.feature.beerslist.databinding.RowBeerListBinding
+import com.simtop.presentation_utils.databinding.RowBeerListBinding
 
 class BeersItemView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0

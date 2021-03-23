@@ -5,9 +5,9 @@
     android:layout_height="match_parent"
     tools:context="com.simtop.feature.beerdetail.presentation.BeerDetailFragment">
 
-    <com.simtop.feature.beerdetail.presentation.SingleBeerItemView
+    <com.simtop.presentation_utils.custom_views.SingleBeerItemView
         android:id="@+id/single_beer"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
-    </com.simtop.feature.beerdetail.presentation.SingleBeerItemView>
+    </com.simtop.presentation_utils.custom_views.SingleBeerItemView>
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,4 +1,4 @@
-package com.simtop.feature.beerslist
+package com.simtop.presentation_utils.adapters
 
 import android.view.ViewGroup
 import android.widget.LinearLayout
@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.ListAdapter
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.presentation_utils.core.BaseBindView
 import com.simtop.presentation_utils.core.ViewWrapper
+import com.simtop.presentation_utils.custom_views.BeersItemView
 
 class BeersAdapter(private val listener: ((Beer) -> Unit)?): ListAdapter<Beer, ViewWrapper<BaseBindView<Beer>>>(
     DIFF_CALLBACK

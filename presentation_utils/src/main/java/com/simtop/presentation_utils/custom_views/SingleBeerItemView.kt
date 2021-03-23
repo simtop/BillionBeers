@@ -1,4 +1,4 @@
-package com.simtop.feature.beerdetail.presentation
+package com.simtop.presentation_utils.custom_views
 
 import android.content.Context
 import android.util.AttributeSet
@@ -7,8 +7,8 @@ import android.view.View
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.bumptech.glide.Glide
 import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.feature.beerdetail.R
-import com.simtop.feature.beerdetail.databinding.SingleBeerItemBinding
+import com.simtop.presentation_utils.R
+import com.simtop.presentation_utils.databinding.SingleBeerItemBinding
 
 class SingleBeerItemView @JvmOverloads constructor(
     context: Context,

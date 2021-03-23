@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.feature.beerslist.databinding.FragmentListBeersBinding
 import com.simtop.feature.beerslist.navigation.BeerListNavigation
+import com.simtop.presentation_utils.adapters.BeersAdapter
 import com.simtop.presentation_utils.core.observe
 import com.simtop.presentation_utils.core.showToast
 
