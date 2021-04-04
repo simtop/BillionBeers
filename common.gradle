@@ -94,7 +94,7 @@ ext.androidModule = { Boolean isApplication = false ->
         kapt Libs.hilt_compiler
 
         testImplementation Libs.mockk_android
-        testImplementation Libs.mockk
+        testImplementation Libs.io_mockk_mockk
         testImplementation Libs.core_testing
         testImplementation Libs.kotlinx_coroutines_test
         testImplementation Libs.kluent
@@ -114,7 +114,7 @@ ext.androidModule = { Boolean isApplication = false ->
         androidTestImplementation Libs.androidx_test_rules
         androidTestImplementation Libs.androidx_test_core_ktx
         androidTestImplementation Libs.mockk_android
-        androidTestImplementation Libs.mockk
+        androidTestImplementation Libs.io_mockk_mockk
         androidTestImplementation Libs.junit_ktx
         androidTestImplementation Libs.navigation_testing
 

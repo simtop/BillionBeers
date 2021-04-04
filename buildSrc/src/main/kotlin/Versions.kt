@@ -1,3 +1,4 @@
+import kotlin.String
 import org.gradle.plugin.use.PluginDependenciesSpec
 import org.gradle.plugin.use.PluginDependencySpec
 
@@ -10,73 +11,89 @@ import org.gradle.plugin.use.PluginDependencySpec
  *
  * YOU are responsible for updating manually the dependency version.
  */
-object Versions {
-    const val org_jetbrains_kotlinx_kotlinx_coroutines: String = "1.4.2"
+public object Versions {
+    public const val org_jetbrains_kotlinx_kotlinx_coroutines: String = "1.4.2"
 
-    const val androidx_test_espresso: String = "3.3.0"
+    public const val androidx_test_espresso: String = "3.3.0"
 
-    const val com_squareup_okhttp3: String = "4.9.0"
+    public const val com_squareup_okhttp3: String = "4.9.1"
 
-    const val org_jetbrains_kotlin: String = "1.4.21-2"
+    public const val androidx_navigation: String = "2.3.4"
 
-    const val androidx_navigation: String = "2.3.2"
+    public const val com_squareup_inject: String = "0.5.2" // available: "0.8.1"
 
-    const val com_google_dagger: String = "2.28.1-alpha"
+    public const val com_google_dagger: String = "2.28.1-alpha"
 
-    const val androidx_hilt: String = "1.0.0-alpha01"
+    public const val androidx_hilt: String = "1.0.0-alpha01"
 
-    const val androidx_room: String = "2.2.6"
+    public const val androidx_room: String = "2.2.6"
 
-    const val androidx_test: String = "1.3.0"
+    public const val androidx_test: String = "1.3.0"
 
-    const val io_mockk: String = "1.10.4"
+    public const val com_android_tools_build_gradle: String = "4.1.3"
 
-    const val com_android_tools_build_gradle: String = "4.1.1"
+    public const val androidx_core_core_ktx: String = "1.3.2"
 
-    const val androidx_core_core_ktx: String = "1.3.2"
+    public const val io_mockk_mockk: String = "1.11.0"
 
-    const val de_fayard_buildsrcversions_gradle_plugin: String = "0.7.0"
+    public const val de_fayard_buildsrcversions_gradle_plugin: String = "0.7.0"
 
-    const val lifecycle_extensions: String = "2.2.0"
+    public const val kotlin_annotation_processing_gradle: String = "1.4.32"
 
-    const val constraintlayout: String = "2.0.4"
+    public const val kotlin_parcelize_compiler: String = "1.4.32"
 
-    const val fragment_testing: String = "1.2.5"
+    public const val kotlin_parcelize_runtime: String = "1.4.32"
 
-    const val converter_gson: String = "2.9.0"
+    public const val kotlin_gradle_plugin: String = "1.4.32"
 
-    const val core_testing: String = "2.1.0"
+    public const val lifecycle_extensions: String = "2.2.0"
 
-    const val lint_gradle: String = "27.1.1"
+    public const val kotlin_stdlib_jdk7: String = "1.4.32"
 
-    const val viewbinding: String = "4.1.1"
+    public const val kotlin_test_junit: String = "1.4.32"
 
-    const val appcompat: String = "1.2.0"
+    public const val constraintlayout: String = "2.0.4"
 
-    const val junit_ktx: String = "1.1.2"
+    public const val fragment_testing: String = "1.3.2"
 
-    const val material: String = "1.2.1"
+    public const val converter_gson: String = "2.9.0"
 
-    const val kluent: String = "1.64"
+    public const val mockk_android: String = "1.11.0"
 
-    const val aapt2: String = "4.1.1-6503028"
+    public const val core_testing: String = "2.1.0"
 
-    const val glide: String = "4.11.0"
+    public const val lint_gradle: String = "27.1.3"
 
-    const val junit: String = "4.13"
+    public const val strikt_core: String = "0.30.0"
+
+    public const val viewbinding: String = "4.1.3"
+
+    public const val appcompat: String = "1.2.0"
+
+    public const val junit_ktx: String = "1.1.2"
+
+    public const val material: String = "1.3.0"
+
+    public const val kluent: String = "1.65"
+
+    public const val aapt2: String = "4.1.3-6503028"
+
+    public const val glide: String = "4.12.0"
+
+    public const val junit: String = "4.13.2"
 
     /**
-     * Current version: "6.3"
+     * Current version: "6.5"
      * See issue 19: How to update Gradle itself?
      * https://github.com/jmfayard/buildSrcVersions/issues/19
      */
-    const val gradleLatestVersion: String = "6.7.1"
+    public const val gradleLatestVersion: String = "6.8.3"
 }
 
 /**
  * See issue #47: how to update buildSrcVersions itself
  * https://github.com/jmfayard/buildSrcVersions/issues/47
  */
-val PluginDependenciesSpec.buildSrcVersions: PluginDependencySpec
+public val PluginDependenciesSpec.buildSrcVersions: PluginDependencySpec
     inline get() =
             id("de.fayard.buildSrcVersions").version(Versions.de_fayard_buildsrcversions_gradle_plugin)
