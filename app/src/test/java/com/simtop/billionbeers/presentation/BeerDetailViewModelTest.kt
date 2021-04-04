@@ -13,6 +13,8 @@ import org.amshove.kluent.shouldBeEqualTo
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestRule
+import strikt.api.expect
+import strikt.assertions.isEqualTo
 
 @ExperimentalCoroutinesApi
 internal class BeerDetailViewModelTest {
@@ -44,10 +46,17 @@ internal class BeerDetailViewModelTest {
         coroutineScope.dispatcher.resumeDispatcher()
 
         // Assert
-        liveDataUnderTest.observedValues.size shouldBeEqualTo 1
-        liveDataUnderTest.observedValues[0] shouldBeEqualTo BeersDetailViewState.Success(
-            fakeBeerModel
-        )
+
+        expect {
+            that(liveDataUnderTest.observedValues) {
+                get { size }.isEqualTo(1)
+                get { get(0) }.isEqualTo(
+                    BeersDetailViewState.Success(
+                        fakeBeerModel
+                    )
+                )
+            }
+        }
     }
 
     @Test
@@ -56,7 +65,7 @@ internal class BeerDetailViewModelTest {
 
         coEvery {
             availabilityUseCase.execute(any())
-        } returns com.simtop.core.core.Either.Left(fakeException)
+        } returns Either.Left(fakeException)
 
         // Act
 
@@ -76,43 +85,57 @@ internal class BeerDetailViewModelTest {
 
         // Assert
 
-        liveDataUnderTest.observedValues.size shouldBeEqualTo 3
-        liveDataUnderTest.observedValues[2] shouldBeEqualTo BeersDetailViewState.Error(
-            fakeException.message
-        )
+        expect {
+            that(liveDataUnderTest.observedValues) {
+                get { size }.isEqualTo(3)
+                get { get(2) }.isEqualTo(
+                    BeersDetailViewState.Error(
+                        fakeException.message
+                    )
+                )
+            }
+        }
     }
 
     @Test
-    fun `when usecase succeeds we get success state with different availability`() = coroutineScope.runBlocking {
-        // Arrange
+    fun `when usecase succeeds we get success state with different availability`() =
+        coroutineScope.runBlocking {
+            // Arrange
 
-        coEvery {
-            availabilityUseCase.execute(any())
-        } returns com.simtop.core.core.Either.Right(Unit)
+            coEvery {
+                availabilityUseCase.execute(any())
+            } returns com.simtop.core.core.Either.Right(Unit)
 
-        val testExpectedResponse = fakeBeerModel.copy(availability = !fakeBeerModel.availability)
+            val testExpectedResponse =
+                fakeBeerModel.copy(availability = !fakeBeerModel.availability)
 
-        // Act
+            // Act
 
-        coroutineScope.dispatcher.pauseDispatcher()
+            coroutineScope.dispatcher.pauseDispatcher()
 
-        val beerDetailViewModel = BeerDetailViewModel(
-            coroutineScope.testDispatcherProvider,
-            availabilityUseCase,
-            fakeBeerModel
-        )
+            val beerDetailViewModel = BeerDetailViewModel(
+                coroutineScope.testDispatcherProvider,
+                availabilityUseCase,
+                fakeBeerModel
+            )
 
-        val liveDataUnderTest = beerDetailViewModel.beerDetailViewState.testObserver()
+            val liveDataUnderTest = beerDetailViewModel.beerDetailViewState.testObserver()
 
-        coroutineScope.dispatcher.resumeDispatcher()
-        beerDetailViewModel.updateAvailability(fakeBeerModel)
+            coroutineScope.dispatcher.resumeDispatcher()
+            beerDetailViewModel.updateAvailability(fakeBeerModel)
 
+            // Assert
 
-        // Assert
-        liveDataUnderTest.observedValues.size shouldBeEqualTo 2
-        liveDataUnderTest.observedValues[1] shouldBeEqualTo BeersDetailViewState.Success(
-            testExpectedResponse
-        )
-    }
+            expect {
+                that(liveDataUnderTest.observedValues) {
+                    get { size }.isEqualTo(2)
+                    get { get(0) }.isEqualTo(
+                        BeersDetailViewState.Success(
+                            testExpectedResponse
+                        )
+                    )
+                }
+            }
+        }
 }
 

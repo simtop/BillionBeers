@@ -11,7 +11,7 @@ import org.junit.runner.Description
 @ExperimentalCoroutinesApi
 class MainCoroutineScopeRule(val dispatcher: TestCoroutineDispatcher = TestCoroutineDispatcher()) : TestWatcher() {
 
-    val testDispatcherProvider = object : com.simtop.core.core.CoroutineDispatcherProvider {
+    val testDispatcherProvider = object : CoroutineDispatcherProvider {
         override val default: CoroutineDispatcher = dispatcher
         override val io: CoroutineDispatcher = dispatcher
         override val main: CoroutineDispatcher = dispatcher

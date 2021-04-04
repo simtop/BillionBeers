@@ -11,6 +11,7 @@ import com.simtop.beer_database.localsources.BeersLocalSource
 import com.simtop.beer_data.mappers.BeersMapper
 import com.simtop.beer_network.models.BeersApiResponseItem
 import com.simtop.beer_database.di.BeersDatabaseModule
+import com.simtop.beerdomain.domain.models.Beer
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -30,22 +31,22 @@ import javax.inject.Singleton
 
 @RunWith(AndroidJUnit4ClassRunner::class)
 @HiltAndroidTest
-@UninstallModules(com.simtop.beer_database.di.BeersDatabaseModule::class)
+@UninstallModules(BeersDatabaseModule::class)
 class LocalDataSourceTest {
 
     @get:Rule
     var hiltRule = HiltAndroidRule(this)
 
-    private lateinit var localSource: com.simtop.beer_database.localsources.BeersLocalSource
+    private lateinit var localSource: BeersLocalSource
 
     @Inject
-    lateinit var db: com.simtop.beer_database.database.BeersDatabase
+    lateinit var db: BeersDatabase
 
 
     @Before
     fun setUp() {
         hiltRule.inject()
-        localSource = com.simtop.beer_database.localsources.BeersLocalSource(db)
+        localSource = BeersLocalSource(db)
     }
 
     @Test
@@ -107,20 +108,20 @@ class LocalDataSourceTest {
 
         @Provides
         @Singleton
-        fun provideBeersDao(db: com.simtop.beer_database.database.BeersDatabase) : com.simtop.beer_database.database.BeersDao = db.beersDao()
+        fun provideBeersDao(db: BeersDatabase) : BeersDao = db.beersDao()
 
         @Singleton
         @Provides
-        fun provideDatabase(@ApplicationContext app: Context): com.simtop.beer_database.database.BeersDatabase {
+        fun provideDatabase(@ApplicationContext app: Context): BeersDatabase {
             return Room
-                .inMemoryDatabaseBuilder(app, com.simtop.beer_database.database.BeersDatabase::class.java)
+                .inMemoryDatabaseBuilder(app, BeersDatabase::class.java)
                 .fallbackToDestructiveMigration()
                 .build()
         }
     }
 }
 
-val fakeBeersApiResponseItem2 = com.simtop.beer_network.models.BeersApiResponseItem(
+val fakeBeersApiResponseItem2 = BeersApiResponseItem(
     1,
     "Buzz",
     "A Real Bitter Experience.",
@@ -133,7 +134,7 @@ val fakeBeersApiResponseItem2 = com.simtop.beer_network.models.BeersApiResponseI
 
 val fakeBeerApiResponse2 = listOf(fakeBeersApiResponseItem2.copy())
 
-val fakeBeerModel2 = com.simtop.beerdomain.domain.models.Beer(
+val fakeBeerModel2 = Beer(
     1,
     "Buzz",
     "A Real Bitter Experience.",
@@ -147,5 +148,5 @@ val fakeBeerModel2 = com.simtop.beerdomain.domain.models.Beer(
 
 val fakeBeerListModel2 = listOf(fakeBeerModel2.copy())
 
-val fakeDbBeerList = listOf(com.simtop.beer_data.mappers.BeersMapper.fromBeerToBeerDbModel(fakeBeerModel2))
+val fakeDbBeerList = listOf(BeersMapper.fromBeerToBeerDbModel(fakeBeerModel2))
 

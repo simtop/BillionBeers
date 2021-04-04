@@ -9,26 +9,29 @@ import com.simtop.beer_database.database.BeersDatabase
 import com.simtop.beer_database.localsources.BeersLocalSource
 import com.simtop.billionbeers.di.fakeBeerModel2
 import com.simtop.billionbeers.di.fakeDbBeerList
+import com.simtop.core.core.mapLeft
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import strikt.api.expect
+import strikt.assertions.isEqualTo
 
 @RunWith(AndroidJUnit4ClassRunner::class)
 class LocalDataSourceTest {
 
-    private lateinit var localSource: com.simtop.beer_database.localsources.BeersLocalSource
-    private lateinit var db: com.simtop.beer_database.database.BeersDatabase
+    private lateinit var localSource: BeersLocalSource
+    private lateinit var db: BeersDatabase
 
     @Before
     fun setUp() {
         val context: Context = ApplicationProvider.getApplicationContext()
-        db = Room.inMemoryDatabaseBuilder(context, com.simtop.beer_database.database.BeersDatabase::class.java)
+        db = Room.inMemoryDatabaseBuilder(context, BeersDatabase::class.java)
             .allowMainThreadQueries()
             .build()
-        localSource = com.simtop.beer_database.localsources.BeersLocalSource(db)
+        localSource = BeersLocalSource(db)
     }
 
     @After
@@ -57,6 +60,15 @@ class LocalDataSourceTest {
             val count = localSource.getCountFromDB()
             assertEquals(repositoriesByName.first().id, fakeDbBeerList[0].id)
             assertEquals(count, 1)
+
+            expect {
+                that(repositoriesByName.first()) {
+                    get { id }.isEqualTo(fakeDbBeerList[0].id)
+                }
+                that(count) {
+                    get { this }.isEqualTo(1)
+                }
+            }
         }
     }
 

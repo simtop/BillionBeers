@@ -33,9 +33,9 @@ open class BaseTestRobot {
                                             func: (BaseTestRobot.() -> Unit)?): BaseTestRobot {
         onView(withId(listRes))
             .perform(
-                RecyclerViewActions.actionOnItemAtPosition<com.simtop.presentation_utils.core.ViewWrapper<com.simtop.presentation_utils.core.BaseBindView<T>>>(
+                RecyclerViewActions.actionOnItemAtPosition<ViewWrapper<BaseBindView<T>>>(
                     position,
-                    ViewActions.click()
+                    click()
                 )
             )
         return detailScreenRobot.apply { func?.let { it() } }

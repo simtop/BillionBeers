@@ -9,11 +9,14 @@ import com.simtop.feature.beerslist.BeersListViewState
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.amshove.kluent.shouldBeEqualTo
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestRule
+import strikt.api.expect
+import strikt.assertions.isEqualTo
 
 @ExperimentalCoroutinesApi
 internal class BeersListViewModelTest {
@@ -30,15 +33,18 @@ internal class BeersListViewModelTest {
     fun `when usecase succeeds we get success state`() = coroutineScope.runBlocking {
         // Arrange
 
+        val captureSlot = slot<GetAllBeersUseCase.Params>()
+
         coEvery {
-            getAllBeersUseCase.execute(any())
-        } returns com.simtop.core.core.Either.Right(fakeBeerListModel)
+            getAllBeersUseCase.execute(capture(captureSlot))
+        } returns Either.Right(fakeBeerListModel)
 
         // Act
 
         coroutineScope.dispatcher.pauseDispatcher()
 
-        val beersListViewModel = BeersListViewModel(coroutineScope.testDispatcherProvider, getAllBeersUseCase)
+        val beersListViewModel =
+            BeersListViewModel(coroutineScope.testDispatcherProvider, getAllBeersUseCase)
 
         val liveDataUnderTest = beersListViewModel.beerListViewState.testObserver()
 
@@ -46,30 +52,38 @@ internal class BeersListViewModelTest {
 
         // Assert
 
-        coVerify(exactly = 1) {
-            getAllBeersUseCase.execute(any())
+        expect {
+            that(captureSlot) {
+                get { captured.quantity }.isEqualTo(4)
+            }
+            that(liveDataUnderTest.observedValues) {
+                get { size }.isEqualTo(2)
+                get { get(0) }.isEqualTo(BeersListViewState.Loading)
+                get { get(1) }.isEqualTo(
+                    BeersListViewState.Success(
+                        fakeBeerListModel
+                    )
+                )
+            }
         }
-
-        liveDataUnderTest.observedValues.size shouldBeEqualTo 2
-        liveDataUnderTest.observedValues[0] shouldBeEqualTo BeersListViewState.Loading
-        liveDataUnderTest.observedValues[1] shouldBeEqualTo BeersListViewState.Success(
-                fakeBeerListModel
-        )
     }
 
     @Test
     fun `when usecase fails we get error state`() = coroutineScope.runBlocking {
         // Arrange
 
+        val captureSlot = slot<GetAllBeersUseCase.Params>()
+
         coEvery {
-            getAllBeersUseCase.execute(any())
-        } returns com.simtop.core.core.Either.Left(fakeException)
+            getAllBeersUseCase.execute(capture(captureSlot))
+        } returns Either.Left(fakeException)
 
         // Act
 
         coroutineScope.dispatcher.pauseDispatcher()
 
-        val beersListViewModel = BeersListViewModel(coroutineScope.testDispatcherProvider, getAllBeersUseCase)
+        val beersListViewModel =
+            BeersListViewModel(coroutineScope.testDispatcherProvider, getAllBeersUseCase)
 
         val liveDataUnderTest = beersListViewModel.beerListViewState.testObserver()
 
@@ -77,12 +91,18 @@ internal class BeersListViewModelTest {
 
         // Assert
 
-        coVerify(exactly = 1) {
-            getAllBeersUseCase.execute(any())
+        expect {
+            that(captureSlot) {
+                get { captured.quantity }.isEqualTo(4)
+            }
+            that(liveDataUnderTest.observedValues) {
+                get { size }.isEqualTo(2)
+                get { get(0) }.isEqualTo(BeersListViewState.Loading)
+                get { get(1) }.isEqualTo(
+                    BeersListViewState.Error(fakeErrorName)
+                )
+            }
         }
 
-        liveDataUnderTest.observedValues.size shouldBeEqualTo 2
-        liveDataUnderTest.observedValues[0] shouldBeEqualTo BeersListViewState.Loading
-        liveDataUnderTest.observedValues[1] shouldBeEqualTo BeersListViewState.Error(fakeErrorName)
     }
 }

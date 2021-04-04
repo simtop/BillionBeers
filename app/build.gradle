@@ -13,4 +13,9 @@ dependencies {
     implementation project(Modules.beer_database)
     implementation project(Modules.beer_network)
     implementation project(Modules.presentation_utils)
+
+    testImplementation "io.mockk:mockk:1.11.0"
+    testImplementation "io.strikt:strikt-core:0.24.0"
+
+    androidTestImplementation "io.strikt:strikt-core:0.24.0"
 }

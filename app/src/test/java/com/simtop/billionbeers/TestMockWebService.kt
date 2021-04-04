@@ -1,5 +1,6 @@
 package com.simtop.billionbeers
 
+import com.simtop.beer_network.network.BeersService
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
