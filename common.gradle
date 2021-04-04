@@ -21,8 +21,7 @@ ext.androidModule = { Boolean isApplication = false ->
             versionName ApplicationConfig.versionName
 
             multiDexEnabled true
-
-            testInstrumentationRunner "com.simtop.billionbeers.com.simtop.beer_database.di.MockTestRunner"
+            testInstrumentationRunner "com.simtop.billionbeers.di.MockTestRunner"
         }
 
         buildTypes {
@@ -90,7 +89,7 @@ ext.androidModule = { Boolean isApplication = false ->
 
         implementation Libs.hilt_android
         kapt Libs.hilt_android_compiler
-        implementation Libs.hilt_lifecycle_viewmodel
+        //implementation Libs.hilt_lifecycle_viewmodel
         kapt Libs.hilt_compiler
 
         testImplementation Libs.mockk_android
@@ -103,6 +102,8 @@ ext.androidModule = { Boolean isApplication = false ->
 
         androidTestImplementation Libs.hilt_android_testing
         kaptAndroidTest Libs.hilt_android_compiler
+        //TODO check if I need it
+        kaptAndroidTest Libs.hilt_compiler
 
         androidTestImplementation Libs.junit
         androidTestImplementation Libs.kotlin_test_junit

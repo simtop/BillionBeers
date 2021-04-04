@@ -22,9 +22,9 @@ public object Versions {
 
     public const val com_squareup_inject: String = "0.5.2" // available: "0.8.1"
 
-    public const val com_google_dagger: String = "2.28.1-alpha"
+    public const val com_google_dagger: String = "2.33-beta"
 
-    public const val androidx_hilt: String = "1.0.0-alpha01"
+    public const val androidx_hilt: String = "1.0.0-beta01"
 
     public const val androidx_room: String = "2.2.6"
 

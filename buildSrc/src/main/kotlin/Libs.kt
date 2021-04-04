@@ -78,8 +78,6 @@ public object Libs {
     /**
      * https://github.com/square/AssistedInject/
      */
-    public const val assisted_inject_processor_dagger2: String =
-            "com.squareup.inject:assisted-inject-processor-dagger2:" + Versions.com_squareup_inject
 
     public const val hilt_android: String = "com.google.dagger:hilt-android:" +
             Versions.com_google_dagger
@@ -94,9 +92,6 @@ public object Libs {
             Versions.com_google_dagger
 
     public const val hilt_compiler: String = "androidx.hilt:hilt-compiler:" + Versions.androidx_hilt
-
-    public const val hilt_lifecycle_viewmodel: String = "androidx.hilt:hilt-lifecycle-viewmodel:" +
-            Versions.androidx_hilt
 
     /**
      * https://developer.android.com/topic/libraries/architecture/index.html

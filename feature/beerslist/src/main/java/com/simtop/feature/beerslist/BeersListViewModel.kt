@@ -1,15 +1,17 @@
 package com.simtop.feature.beerslist
 
-import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.usecases.GetAllBeersUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class BeersListViewModel @ViewModelInject constructor(
+@HiltViewModel
+class BeersListViewModel @Inject constructor(
     private val coroutineDispatcher: com.simtop.core.core.CoroutineDispatcherProvider,
     private val getAllBeersUseCase: GetAllBeersUseCase
 ) : ViewModel() {
