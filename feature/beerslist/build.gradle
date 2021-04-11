@@ -8,4 +8,6 @@ dependencies {
     implementation project(Modules.beer_domain)
     implementation project(Modules.presentation_utils)
     implementation project(Modules.core)
+
+    implementation "androidx.navigation:navigation-dynamic-features-fragment:2.3.5"
 }

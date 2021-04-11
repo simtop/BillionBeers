@@ -1,8 +1,22 @@
-androidModule()
-
+apply plugin: 'com.android.dynamic-feature'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-parcelize'
+apply plugin: 'kotlin-kapt'
+apply plugin: 'dagger.hilt.android.plugin'
 apply plugin: 'androidx.navigation.safeargs'
 
 android {
+    compileSdkVersion ApplicationConfig.compileSdk
+
+    defaultConfig {
+        minSdkVersion ApplicationConfig.minSdk
+        targetSdkVersion ApplicationConfig.targetSdk
+        versionCode ApplicationConfig.versionCode
+        versionName ApplicationConfig.versionName
+
+        testInstrumentationRunner "com.simtop.billionbeers.di.MockTestRunner"
+    }
+
     defaultConfig {
         javaCompileOptions {
             annotationProcessorOptions {
@@ -10,12 +24,114 @@ android {
             }
         }
     }
+
+    buildTypes {
+        debug {
+
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    // Always show the result of every unit test, even if it passes.
+    testOptions.unitTests {
+        includeAndroidResources = true
+
+        all {
+            testLogging {
+                events 'passed', 'skipped', 'failed', 'standardOut', 'standardError'
+            }
+            maxHeapSize = "1024m"
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8.toString()
+    }
+
+    buildFeatures {
+        viewBinding = true
+    }
+
+    kapt {
+        generateStubs = true
+    }
+
+    //Solves some problems for compilation for UI Test
+    packagingOptions {
+        pickFirst  "**/attach_hotspot_windows.dll"
+        exclude 'META-INF/AL2.0'
+        exclude 'META-INF/LGPL2.1'
+        exclude 'META-INF/licenses/ASM'
+    }
 }
 
 dependencies {
+    implementation fileTree(dir: "libs", include: ["*.jar"])
+    implementation Libs.kotlin_stdlib_jdk7
+    implementation Libs.androidx_core_core_ktx
+    implementation Libs.appcompat
+    implementation Libs.material
+    implementation Libs.constraintlayout
+
+    implementation Libs.glide
+    implementation Libs.lifecycle_extensions
+    implementation Libs.converter_gson
+    implementation Libs.logging_interceptor
+    implementation Libs.room_compiler
+    implementation Libs.room_ktx
+    implementation Libs.room_runtime
+
+    implementation Libs.hilt_android
+    kapt Libs.hilt_android_compiler
+    //implementation Libs.hilt_lifecycle_viewmodel
+    kapt Libs.hilt_compiler
+
+
     implementation Libs.navigation_fragment_ktx
     implementation Libs.navigation_ui
     implementation project(Modules.beer_domain)
     implementation project(Modules.presentation_utils)
     implementation project(Modules.core)
+
+    implementation project(Modules.app)
+    implementation "androidx.navigation:navigation-dynamic-features-fragment:2.3.5"
+
+
+
+    testImplementation Libs.mockk_android
+    testImplementation Libs.io_mockk_mockk
+    testImplementation Libs.core_testing
+    testImplementation Libs.kotlinx_coroutines_test
+    testImplementation Libs.kluent
+    testImplementation Libs.mockwebserver
+    testImplementation Libs.junit
+
+    androidTestImplementation Libs.hilt_android_testing
+    kaptAndroidTest Libs.hilt_android_compiler
+    //TODO check if I need it
+    kaptAndroidTest Libs.hilt_compiler
+
+    androidTestImplementation Libs.junit
+    androidTestImplementation Libs.kotlin_test_junit
+    androidTestImplementation Libs.kotlinx_coroutines_test
+    androidTestImplementation Libs.espresso_core
+    androidTestImplementation Libs.espresso_contrib
+    androidTestImplementation Libs.espresso_idling_resource
+    androidTestImplementation Libs.androidx_test_runner
+    androidTestImplementation Libs.androidx_test_rules
+    androidTestImplementation Libs.androidx_test_core_ktx
+    androidTestImplementation Libs.mockk_android
+    androidTestImplementation Libs.io_mockk_mockk
+    androidTestImplementation Libs.junit_ktx
+    androidTestImplementation Libs.navigation_testing
+
+    androidTestImplementation Libs.core_testing
+    androidTestImplementation Libs.fragment_testing
 }

@@ -18,7 +18,7 @@ public object Versions {
 
     public const val com_squareup_okhttp3: String = "4.9.1"
 
-    public const val androidx_navigation: String = "2.3.4"
+    public const val androidx_navigation: String = "2.3.5"
 
     public const val com_squareup_inject: String = "0.5.2" // available: "0.8.1"
 
