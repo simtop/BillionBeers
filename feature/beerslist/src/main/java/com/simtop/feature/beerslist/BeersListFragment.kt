@@ -23,7 +23,7 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
     private val beersViewModel : BeersListViewModel by viewModels()
 
     private var _fragmentListBeersBinding: FragmentListBeersBinding? = null
-    private val fragmentListBeersBinding get() = _fragmentListBeersBinding
+    private val fragmentListBeersBinding get() = _fragmentListBeersBinding!!
 
     lateinit var beersAdapter: BeersAdapter
 
@@ -53,7 +53,7 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
     }
 
     private fun setUpToolbar() {
-        fragmentListBeersBinding?.toolbar?.title =
+        fragmentListBeersBinding.toolbar.title =
             requireContext().getString(R.string.billion_beers_list)
     }
 
@@ -62,7 +62,7 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
         beersAdapter = BeersAdapter(
             listener = ::onBeerClicked
         )
-        fragmentListBeersBinding?.beersRecyclerview?.apply {
+        fragmentListBeersBinding.beersRecyclerview.apply {
             adapter = beersAdapter
             layoutManager = LinearLayoutManager(requireContext())
         }
@@ -73,14 +73,18 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
             is BeersListViewState.Success -> treatSuccess(it.result)
             is BeersListViewState.Error -> treatError(it.result)
             BeersListViewState.Loading -> {
-                fragmentListBeersBinding?.progressBar?.visibility = VISIBLE
-                fragmentListBeersBinding?.beersRecyclerview?.visibility = GONE
-                fragmentListBeersBinding?.emptyState?.visibility = GONE
+                fragmentListBeersBinding.apply {
+                    progressBar.visibility = VISIBLE
+                    beersRecyclerview.visibility = GONE
+                    emptyState.visibility = GONE
+                }
             }
             BeersListViewState.EmptyState -> {
-                fragmentListBeersBinding?.beersRecyclerview?.visibility = GONE
-                fragmentListBeersBinding?.emptyState?.visibility = VISIBLE
-                fragmentListBeersBinding?.progressBar?.visibility = GONE
+                fragmentListBeersBinding.apply {
+                    progressBar.visibility = GONE
+                    beersRecyclerview.visibility = VISIBLE
+                    emptyState.visibility = GONE
+                }
             }
         }
     }
@@ -89,9 +93,11 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
 
         beersAdapter.submitList(list)
 
-        fragmentListBeersBinding?.progressBar?.visibility = GONE
-        fragmentListBeersBinding?.beersRecyclerview?.visibility = VISIBLE
-        fragmentListBeersBinding?.emptyState?.visibility = GONE
+        fragmentListBeersBinding.apply {
+            progressBar.visibility = GONE
+            beersRecyclerview.visibility = VISIBLE
+            emptyState.visibility = GONE
+        }
     }
 
     private fun onBeerClicked(beer: Beer) {
@@ -99,7 +105,7 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
     }
 
     private fun treatError(exception: String?) {
-        if (fragmentListBeersBinding?.beersRecyclerview?.visibility != VISIBLE) beersViewModel.showEmptyState()
+        if (fragmentListBeersBinding.beersRecyclerview.visibility != VISIBLE) beersViewModel.showEmptyState()
         exception?.let { requireActivity().showToast(it) }
     }
 
