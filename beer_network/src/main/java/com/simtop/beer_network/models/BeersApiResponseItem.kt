@@ -1,8 +1,10 @@
 package com.simtop.beer_network.models
 
 
+import androidx.annotation.Keep
 import com.google.gson.annotations.SerializedName
 
+@Keep
 data class BeersApiResponseItem(
     val id: Int?,
     val name: String?,
