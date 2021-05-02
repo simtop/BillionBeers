@@ -1,4 +1,4 @@
-package com.simtop.billionbeers
+package com.simtop.billionbeers.testing_utils
 
 import com.simtop.core.core.CoroutineDispatcherProvider
 import kotlinx.coroutines.CoroutineDispatcher

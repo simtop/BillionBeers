@@ -20,8 +20,6 @@ public object Versions {
 
     public const val androidx_navigation: String = "2.3.5"
 
-    public const val com_squareup_inject: String = "0.5.2" // available: "0.8.1"
-
     public const val com_google_dagger: String = "2.33-beta"
 
     public const val androidx_hilt: String = "1.0.0-beta01"
@@ -74,7 +72,7 @@ public object Versions {
 
     public const val material: String = "1.3.0"
 
-    public const val kluent: String = "1.65"
+    public const val kluent: String = "1.64" // don't update to 1.65 because "any()" doesn't work
 
     public const val aapt2: String = "4.1.3-6503028"
 

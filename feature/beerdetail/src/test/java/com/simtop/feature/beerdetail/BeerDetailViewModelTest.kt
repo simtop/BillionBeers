@@ -1,15 +1,17 @@
-package com.simtop.billionbeers.presentation
+package com.simtop.feature.beerdetail
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.simtop.beerdomain.domain.usecases.UpdateAvailabilityUseCase
 import com.simtop.billionbeers.*
+import com.simtop.billionbeers.testing_utils.MainCoroutineScopeRule
+import com.simtop.billionbeers.testing_utils.runBlocking
+import com.simtop.billionbeers.testing_utils.testObserver
 import com.simtop.core.core.Either
 import com.simtop.feature.beerdetail.presentation.BeerDetailViewModel
 import com.simtop.feature.beerdetail.presentation.BeersDetailViewState
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import org.amshove.kluent.shouldBeEqualTo
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestRule

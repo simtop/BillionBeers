@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="beer_detail">Beer Detail</string>
+    <string name="beer_detail">beerdetail</string>
     <string name="emergency_emergency_we_run_out_of_this_beer">EMERGENCY!!\nEMERGENCY!!\nWE RUN OUT OF THIS BEER</string>
 </resources>

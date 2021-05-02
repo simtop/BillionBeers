@@ -9,6 +9,8 @@ android {
     compileSdkVersion ApplicationConfig.compileSdk
 
     defaultConfig {
+        //It's important to add the applicationId for dynamic features
+        applicationId "com.simtop.feature.beerdetail"
         minSdkVersion ApplicationConfig.minSdk
         targetSdkVersion ApplicationConfig.targetSdk
         versionCode ApplicationConfig.versionCode
@@ -30,8 +32,7 @@ android {
 
         }
         release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+
         }
     }
 
@@ -90,7 +91,6 @@ dependencies {
 
     implementation Libs.hilt_android
     kapt Libs.hilt_android_compiler
-    //implementation Libs.hilt_lifecycle_viewmodel
     kapt Libs.hilt_compiler
 
 
@@ -115,7 +115,6 @@ dependencies {
 
     androidTestImplementation Libs.hilt_android_testing
     kaptAndroidTest Libs.hilt_android_compiler
-    //TODO check if I need it
     kaptAndroidTest Libs.hilt_compiler
 
     androidTestImplementation Libs.junit
@@ -134,4 +133,8 @@ dependencies {
 
     androidTestImplementation Libs.core_testing
     androidTestImplementation Libs.fragment_testing
+
+    testImplementation Libs.strikt_core
+
+    androidTestImplementation Libs.strikt_core
 }

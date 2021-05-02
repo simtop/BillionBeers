@@ -71,13 +71,6 @@ public object Libs {
     /**
      * https://github.com/square/AssistedInject/
      */
-    public const val assisted_inject_annotations_dagger2: String =
-            "com.squareup.inject:assisted-inject-annotations-dagger2:" +
-            Versions.com_squareup_inject
-
-    /**
-     * https://github.com/square/AssistedInject/
-     */
 
     public const val hilt_android: String = "com.google.dagger:hilt-android:" +
             Versions.com_google_dagger
@@ -246,7 +239,7 @@ public object Libs {
      */
     public const val material: String = "com.google.android.material:material:" + Versions.material
 
-    public const val kluent: String = "org.amshove.kluent:kluent:" + Versions.kluent
+    public const val kluent: String = "org.amshove.kluent:kluent-android:" + Versions.kluent
 
     /**
      * https://developer.android.com/studio

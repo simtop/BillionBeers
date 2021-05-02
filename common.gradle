@@ -24,13 +24,46 @@ ext.androidModule = { Boolean isApplication = false ->
             testInstrumentationRunner "com.simtop.billionbeers.di.MockTestRunner"
         }
 
+        signingConfigs {
+            release {
+                //Load keystore
+                def keystorePropertiesFile = rootProject.file("keystore.properties")
+                def keystoreProperties = new Properties()
+                if (keystorePropertiesFile.exists()) {
+                    keystoreProperties.load(keystorePropertiesFile.newDataInputStream())
+                }
+
+                def localStoreFile = keystoreProperties.getProperty('STORE_FILE')
+                def ciStoreFile = System.getenv('STORE_FILE')
+
+                storeFile file(localStoreFile != null ? localStoreFile : ciStoreFile)
+
+                def localStorePassword = keystoreProperties.getProperty('STORE_PASSWORD')
+                def ciStorePassword = System.getenv('STORE_PASSWORD')
+
+                storePassword localStorePassword != null ? localStorePassword : ciStorePassword
+
+                def localAlias = keystoreProperties.getProperty('ALIAS')
+                def ciAlias = System.getenv('ALIAS')
+
+                keyAlias localAlias != null ? localAlias : ciAlias
+
+                def localPassword = keystoreProperties.getProperty('PASSWORD')
+                def ciPassword = System.getenv('PASSWORD')
+
+                keyPassword localPassword != null ? localPassword : ciPassword
+            }
+        }
+
         buildTypes {
             debug {
 
             }
             release {
-                minifyEnabled false
+                minifyEnabled true
+                debuggable false
                 proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+                signingConfig signingConfigs.release
             }
         }
 
@@ -85,11 +118,10 @@ ext.androidModule = { Boolean isApplication = false ->
         implementation Libs.logging_interceptor
         implementation Libs.room_compiler
         implementation Libs.room_ktx
-        implementation Libs.room_runtime
+        kapt Libs.room_runtime
 
         implementation Libs.hilt_android
         kapt Libs.hilt_android_compiler
-        //implementation Libs.hilt_lifecycle_viewmodel
         kapt Libs.hilt_compiler
 
         testImplementation Libs.mockk_android
@@ -102,7 +134,6 @@ ext.androidModule = { Boolean isApplication = false ->
 
         androidTestImplementation Libs.hilt_android_testing
         kaptAndroidTest Libs.hilt_android_compiler
-        //TODO check if I need it
         kaptAndroidTest Libs.hilt_compiler
 
         androidTestImplementation Libs.junit

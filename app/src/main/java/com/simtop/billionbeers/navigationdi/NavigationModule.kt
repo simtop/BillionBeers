@@ -12,10 +12,4 @@ import dagger.hilt.components.SingletonComponent
 abstract class NavigationModule {
     @Binds
     abstract fun getListNavigator(navigator: NavigationImpl): BeerListNavigation
-//
-//    @Binds
-//    abstract fun getDetailNavigator(navigator: NavigationImpl): BeerDetailNavigation
-//
-//    @Binds
-//    abstract fun getArgs(args: ArgsImpl): BeerDetailNavigationArgs
 }

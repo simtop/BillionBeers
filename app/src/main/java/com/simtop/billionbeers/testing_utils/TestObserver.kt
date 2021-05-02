@@ -1,4 +1,4 @@
-package com.simtop.billionbeers
+package com.simtop.billionbeers.testing_utils
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer

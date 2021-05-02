@@ -19,3 +19,5 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+#This didn't work so I used Keep in the model
+#-keep class com.simtop.beer_database.models*

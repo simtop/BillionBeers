@@ -1,5 +1,6 @@
 package com.simtop.beer_data.mappers
 
+import com.simtop.beer_database.models.BeerDbModel
 import com.simtop.beer_network.models.BeersApiResponseItem
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.data.util.Converters
@@ -19,7 +20,7 @@ object BeersMapper {
         )
 
     fun fromBeerToBeerDbModel(beer : Beer) =
-        com.simtop.beer_database.models.BeerDbModel(
+        BeerDbModel(
             beer.id,
             beer.name,
             beer.tagline,
@@ -31,7 +32,7 @@ object BeersMapper {
             beer.availability
         )
 
-    fun fromBeerDbModelToBeer(beerDbModel: com.simtop.beer_database.models.BeerDbModel) =
+    fun fromBeerDbModelToBeer(beerDbModel: BeerDbModel) =
         Beer(
             beerDbModel.id,
             beerDbModel.name,
