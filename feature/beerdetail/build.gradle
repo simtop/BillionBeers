@@ -106,16 +106,16 @@ dependencies {
 
 
     testImplementation Libs.mockk_android
-    testImplementation Libs.io_mockk_mockk
+    testImplementation Libs.mockk
     testImplementation Libs.core_testing
     testImplementation Libs.kotlinx_coroutines_test
-    testImplementation Libs.kluent
+    testImplementation Libs.kluent_android
     testImplementation Libs.mockwebserver
     testImplementation Libs.junit
 
     androidTestImplementation Libs.hilt_android_testing
     kaptAndroidTest Libs.hilt_android_compiler
-    kaptAndroidTest Libs.hilt_compiler
+    //kaptAndroidTest Libs.hilt_compiler
 
     androidTestImplementation Libs.junit
     androidTestImplementation Libs.kotlin_test_junit
@@ -127,7 +127,7 @@ dependencies {
     androidTestImplementation Libs.androidx_test_rules
     androidTestImplementation Libs.androidx_test_core_ktx
     androidTestImplementation Libs.mockk_android
-    androidTestImplementation Libs.io_mockk_mockk
+    androidTestImplementation Libs.mockk
     androidTestImplementation Libs.junit_ktx
     androidTestImplementation Libs.navigation_testing
 

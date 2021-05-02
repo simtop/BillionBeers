@@ -12,57 +12,47 @@ import org.gradle.plugin.use.PluginDependencySpec
  * YOU are responsible for updating manually the dependency version.
  */
 public object Versions {
-    public const val org_jetbrains_kotlinx_kotlinx_coroutines: String = "1.4.2"
+    public const val org_jetbrains_kotlinx_kotlinx_coroutines: String = "1.4.2" // available: "1.4.3"
 
     public const val androidx_test_espresso: String = "3.3.0"
 
     public const val com_squareup_okhttp3: String = "4.9.1"
 
+    public const val org_jetbrains_kotlin: String = "1.4.32" // available: "1.5.0"
+
     public const val androidx_navigation: String = "2.3.5"
 
-    public const val com_google_dagger: String = "2.33-beta"
+    public const val com_google_dagger: String = "2.35.1"
 
-    public const val androidx_hilt: String = "1.0.0-beta01"
-
-    public const val androidx_room: String = "2.2.6"
+    public const val androidx_room: String = "2.2.6" // available: "2.3.0"
 
     public const val androidx_test: String = "1.3.0"
+
+    public const val io_mockk: String = "1.11.0"
 
     public const val com_android_tools_build_gradle: String = "4.1.3"
 
     public const val androidx_core_core_ktx: String = "1.3.2"
 
-    public const val io_mockk_mockk: String = "1.11.0"
-
     public const val de_fayard_buildsrcversions_gradle_plugin: String = "0.7.0"
-
-    public const val kotlin_annotation_processing_gradle: String = "1.4.32"
-
-    public const val kotlin_parcelize_compiler: String = "1.4.32"
-
-    public const val kotlin_parcelize_runtime: String = "1.4.32"
-
-    public const val kotlin_gradle_plugin: String = "1.4.32"
 
     public const val lifecycle_extensions: String = "2.2.0"
 
-    public const val kotlin_stdlib_jdk7: String = "1.4.32"
-
-    public const val kotlin_test_junit: String = "1.4.32"
-
     public const val constraintlayout: String = "2.0.4"
 
-    public const val fragment_testing: String = "1.3.2"
+    public const val fragment_testing: String = "1.3.2" // available: "1.3.3"
 
     public const val converter_gson: String = "2.9.0"
 
-    public const val mockk_android: String = "1.11.0"
+    public const val kluent_android: String = "1.64" // available: "1.65"
+
+    public const val hilt_compiler: String = "1.0.0-beta01"
 
     public const val core_testing: String = "2.1.0"
 
     public const val lint_gradle: String = "27.1.3"
 
-    public const val strikt_core: String = "0.30.0"
+    public const val strikt_core: String = "0.30.0" // available: "0.31.0"
 
     public const val viewbinding: String = "4.1.3"
 
@@ -71,8 +61,6 @@ public object Versions {
     public const val junit_ktx: String = "1.1.2"
 
     public const val material: String = "1.3.0"
-
-    public const val kluent: String = "1.64" // don't update to 1.65 because "any()" doesn't work
 
     public const val aapt2: String = "4.1.3-6503028"
 
@@ -85,7 +73,7 @@ public object Versions {
      * See issue 19: How to update Gradle itself?
      * https://github.com/jmfayard/buildSrcVersions/issues/19
      */
-    public const val gradleLatestVersion: String = "6.8.3"
+    public const val gradleLatestVersion: String = "7.0"
 }
 
 /**

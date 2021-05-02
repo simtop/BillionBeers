@@ -3,7 +3,7 @@ package com.simtop.beer_data.mappers
 import com.simtop.beer_database.models.BeerDbModel
 import com.simtop.beer_network.models.BeersApiResponseItem
 import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.billionbeers.data.util.Converters
+import com.simtop.beer_database.utils.Converters
 
 object BeersMapper {
 

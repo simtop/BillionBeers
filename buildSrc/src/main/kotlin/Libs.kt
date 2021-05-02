@@ -6,7 +6,7 @@ import kotlin.String
  * Update this file with
  *   `$ ./gradlew buildSrcVersions`
  */
-public object Libs {
+object Libs {
     /**
      * https://github.com/Kotlin/kotlinx.coroutines
      */
@@ -45,6 +45,50 @@ public object Libs {
             Versions.com_squareup_okhttp3
 
     /**
+     * https://kotlinlang.org/
+     */
+    public const val kotlin_annotation_processing_gradle: String =
+            "org.jetbrains.kotlin:kotlin-annotation-processing-gradle:" +
+            Versions.org_jetbrains_kotlin
+
+    /**
+     * https://kotlinlang.org/
+     */
+    public const val kotlin_gradle_plugin: String = "org.jetbrains.kotlin:kotlin-gradle-plugin:" +
+            Versions.org_jetbrains_kotlin
+
+    /**
+     * https://kotlinlang.org/
+     */
+    public const val kotlin_parcelize_compiler: String =
+            "org.jetbrains.kotlin:kotlin-parcelize-compiler:" + Versions.org_jetbrains_kotlin
+
+    /**
+     * https://kotlinlang.org/
+     */
+    public const val kotlin_parcelize_runtime: String =
+            "org.jetbrains.kotlin:kotlin-parcelize-runtime:" + Versions.org_jetbrains_kotlin
+
+    /**
+     * https://kotlinlang.org/
+     */
+    public const val kotlin_stdlib_jdk7: String = "org.jetbrains.kotlin:kotlin-stdlib-jdk7:" +
+            Versions.org_jetbrains_kotlin
+
+    /**
+     * https://kotlinlang.org/
+     */
+    public const val kotlin_test_junit: String = "org.jetbrains.kotlin:kotlin-test-junit:" +
+            Versions.org_jetbrains_kotlin
+
+    /**
+     * https://developer.android.com/topic/libraries/architecture/index.html
+     */
+    public const val navigation_dynamic_features_fragment: String =
+            "androidx.navigation:navigation-dynamic-features-fragment:" +
+            Versions.androidx_navigation
+
+    /**
      * https://developer.android.com/topic/libraries/architecture/index.html
      */
     public const val navigation_fragment_ktx: String =
@@ -69,35 +113,41 @@ public object Libs {
             Versions.androidx_navigation
 
     /**
-     * https://github.com/square/AssistedInject/
+     * https://github.com/google/dagger
      */
-
     public const val hilt_android: String = "com.google.dagger:hilt-android:" +
             Versions.com_google_dagger
 
+    /**
+     * https://github.com/google/dagger
+     */
     public const val hilt_android_compiler: String = "com.google.dagger:hilt-android-compiler:" +
             Versions.com_google_dagger
 
+    /**
+     * https://github.com/google/dagger
+     */
     public const val hilt_android_gradle_plugin: String =
             "com.google.dagger:hilt-android-gradle-plugin:" + Versions.com_google_dagger
 
+    /**
+     * https://github.com/google/dagger
+     */
     public const val hilt_android_testing: String = "com.google.dagger:hilt-android-testing:" +
             Versions.com_google_dagger
 
-    public const val hilt_compiler: String = "androidx.hilt:hilt-compiler:" + Versions.androidx_hilt
-
     /**
-     * https://developer.android.com/topic/libraries/architecture/index.html
+     * https://developer.android.com/jetpack/androidx/releases/room#2.3.0
      */
     public const val room_compiler: String = "androidx.room:room-compiler:" + Versions.androidx_room
 
     /**
-     * https://developer.android.com/topic/libraries/architecture/index.html
+     * https://developer.android.com/jetpack/androidx/releases/room#2.3.0
      */
     public const val room_ktx: String = "androidx.room:room-ktx:" + Versions.androidx_room
 
     /**
-     * https://developer.android.com/topic/libraries/architecture/index.html
+     * https://developer.android.com/jetpack/androidx/releases/room#2.3.0
      */
     public const val room_runtime: String = "androidx.room:room-runtime:" + Versions.androidx_room
 
@@ -118,6 +168,16 @@ public object Libs {
     public const val androidx_test_runner: String = "androidx.test:runner:" + Versions.androidx_test
 
     /**
+     * http://mockk.io
+     */
+    public const val mockk: String = "io.mockk:mockk:" + Versions.io_mockk
+
+    /**
+     * http://mockk.io
+     */
+    public const val mockk_android: String = "io.mockk:mockk-android:" + Versions.io_mockk
+
+    /**
      * https://developer.android.com/studio
      */
     public const val com_android_tools_build_gradle: String = "com.android.tools.build:gradle:" +
@@ -129,39 +189,9 @@ public object Libs {
     public const val androidx_core_core_ktx: String = "androidx.core:core-ktx:" +
             Versions.androidx_core_core_ktx
 
-    /**
-     * http://mockk.io
-     */
-    public const val io_mockk_mockk: String = "io.mockk:mockk:" + Versions.io_mockk_mockk
-
     public const val de_fayard_buildsrcversions_gradle_plugin: String =
             "de.fayard.buildSrcVersions:de.fayard.buildSrcVersions.gradle.plugin:" +
             Versions.de_fayard_buildsrcversions_gradle_plugin
-
-    /**
-     * https://kotlinlang.org/
-     */
-    public const val kotlin_annotation_processing_gradle: String =
-            "org.jetbrains.kotlin:kotlin-annotation-processing-gradle:" +
-            Versions.kotlin_annotation_processing_gradle
-
-    /**
-     * https://kotlinlang.org/
-     */
-    public const val kotlin_parcelize_compiler: String =
-            "org.jetbrains.kotlin:kotlin-parcelize-compiler:" + Versions.kotlin_parcelize_compiler
-
-    /**
-     * https://kotlinlang.org/
-     */
-    public const val kotlin_parcelize_runtime: String =
-            "org.jetbrains.kotlin:kotlin-parcelize-runtime:" + Versions.kotlin_parcelize_runtime
-
-    /**
-     * https://kotlinlang.org/
-     */
-    public const val kotlin_gradle_plugin: String = "org.jetbrains.kotlin:kotlin-gradle-plugin:" +
-            Versions.kotlin_gradle_plugin
 
     /**
      * https://developer.android.com/topic/libraries/architecture/index.html
@@ -170,25 +200,13 @@ public object Libs {
             Versions.lifecycle_extensions
 
     /**
-     * https://kotlinlang.org/
-     */
-    public const val kotlin_stdlib_jdk7: String = "org.jetbrains.kotlin:kotlin-stdlib-jdk7:" +
-            Versions.kotlin_stdlib_jdk7
-
-    /**
-     * https://kotlinlang.org/
-     */
-    public const val kotlin_test_junit: String = "org.jetbrains.kotlin:kotlin-test-junit:" +
-            Versions.kotlin_test_junit
-
-    /**
      * http://tools.android.com
      */
     public const val constraintlayout: String = "androidx.constraintlayout:constraintlayout:" +
             Versions.constraintlayout
 
     /**
-     * https://developer.android.com/jetpack/androidx/releases/fragment#1.3.2
+     * https://developer.android.com/jetpack/androidx/releases/fragment#1.3.3
      */
     public const val fragment_testing: String = "androidx.fragment:fragment-testing:" +
             Versions.fragment_testing
@@ -200,9 +218,12 @@ public object Libs {
             Versions.converter_gson
 
     /**
-     * http://mockk.io
+     * https://github.com/MarkusAmshove/Kluent
      */
-    public const val mockk_android: String = "io.mockk:mockk-android:" + Versions.mockk_android
+    public const val kluent_android: String = "org.amshove.kluent:kluent-android:" +
+            Versions.kluent_android
+
+    public const val hilt_compiler: String = "androidx.hilt:hilt-compiler:" + Versions.hilt_compiler
 
     /**
      * https://developer.android.com/topic/libraries/architecture/index.html
@@ -238,8 +259,6 @@ public object Libs {
      * https://github.com/material-components/material-components-android
      */
     public const val material: String = "com.google.android.material:material:" + Versions.material
-
-    public const val kluent: String = "org.amshove.kluent:kluent-android:" + Versions.kluent
 
     /**
      * https://developer.android.com/studio

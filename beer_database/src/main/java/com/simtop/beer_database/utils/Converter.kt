@@ -1,4 +1,4 @@
-package com.simtop.billionbeers.data.util
+package com.simtop.beer_database.utils
 
 import androidx.room.TypeConverter
 import com.google.gson.Gson
