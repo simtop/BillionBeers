@@ -9,8 +9,6 @@ android {
     compileSdkVersion ApplicationConfig.compileSdk
 
     defaultConfig {
-        //It's important to add the applicationId for dynamic features
-        applicationId "com.simtop.feature.beerdetail"
         minSdkVersion ApplicationConfig.minSdk
         targetSdkVersion ApplicationConfig.targetSdk
         versionCode ApplicationConfig.versionCode
