@@ -4,9 +4,9 @@
 
     <dist:module
         dist:instant="false"
-        dist:title="@string/beer_detail">
+        dist:title="@string/title_dynamicfeature">
         <dist:delivery>
-            <dist:install-time />
+            <dist:on-demand/>
         </dist:delivery>
         <dist:fusing dist:include="true" />
     </dist:module>

@@ -134,7 +134,6 @@ ext.androidModule = { Boolean isApplication = false ->
 
         androidTestImplementation Libs.hilt_android_testing
         kaptAndroidTest Libs.hilt_android_compiler
-        //kaptAndroidTest Libs.hilt_compiler
 
         androidTestImplementation Libs.junit
         androidTestImplementation Libs.kotlin_test_junit

@@ -19,6 +19,8 @@ dependencies {
 
     implementation "androidx.navigation:navigation-dynamic-features-fragment:2.3.5"
 
+    implementation "com.google.android.play:core:1.10.0"
+
     testImplementation Libs.strikt_core
 
     androidTestImplementation Libs.strikt_core
