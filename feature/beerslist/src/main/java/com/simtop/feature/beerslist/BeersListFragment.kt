@@ -6,6 +6,7 @@ import android.view.View.GONE
 import android.view.View.VISIBLE
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Observer
 import androidx.navigation.dynamicfeatures.DynamicExtras
 import androidx.navigation.dynamicfeatures.DynamicInstallMonitor
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -112,7 +113,15 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
         val installMonitor = DynamicInstallMonitor()
         navigateTo(beer, DynamicExtras(installMonitor))
 
-        dialogProgressBinding = FragmentProgressBinding.inflate(LayoutInflater.from(requireContext()))
+        setUpInstallMonitorObserver(installMonitor, beer)
+    }
+
+    private fun setUpInstallMonitorObserver(
+        installMonitor: DynamicInstallMonitor,
+        beer: Beer
+    ) {
+        dialogProgressBinding =
+            FragmentProgressBinding.inflate(LayoutInflater.from(requireContext()))
 
         val dialog = getDialog(
             context = requireContext(),
@@ -122,7 +131,7 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
         if (installMonitor.isInstallRequired) {
             installMonitor.status.observe(
                 this,
-                object : androidx.lifecycle.Observer<SplitInstallSessionState> {
+                object : Observer<SplitInstallSessionState> {
                     override fun onChanged(sessionState: SplitInstallSessionState) {
                         when (sessionState.status()) {
                             SplitInstallSessionStatus.INSTALLED -> {
