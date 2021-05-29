@@ -83,3 +83,7 @@ public object Versions {
 public val PluginDependenciesSpec.buildSrcVersions: PluginDependencySpec
     inline get() =
             id("de.fayard.buildSrcVersions").version(Versions.de_fayard_buildsrcversions_gradle_plugin)
+
+public val PluginDependenciesSpec.sonarQube: PluginDependencySpec
+    inline get() =
+            id("org.sonarqube").version("3.2.0")

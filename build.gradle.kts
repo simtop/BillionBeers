@@ -17,8 +17,8 @@ buildscript {
 
 plugins {
     buildSrcVersions
+    sonarQube
 }
-
 
 allprojects {
     apply {
@@ -33,4 +33,3 @@ allprojects {
 tasks.register("clean", Delete::class) {
     delete(rootProject.buildDir)
 }
-
