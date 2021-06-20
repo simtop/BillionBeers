@@ -121,12 +121,6 @@ object Libs {
     /**
      * https://github.com/google/dagger
      */
-    public const val hilt_android_compiler: String = "com.google.dagger:hilt-android-compiler:" +
-            Versions.com_google_dagger
-
-    /**
-     * https://github.com/google/dagger
-     */
     public const val hilt_android_gradle_plugin: String =
             "com.google.dagger:hilt-android-gradle-plugin:" + Versions.com_google_dagger
 
@@ -223,7 +217,7 @@ object Libs {
     public const val kluent_android: String = "org.amshove.kluent:kluent-android:" +
             Versions.kluent_android
 
-    public const val hilt_compiler: String = "androidx.hilt:hilt-compiler:" + Versions.hilt_compiler
+    public const val hilt_compiler: String = "com.google.dagger:hilt-compiler:" + Versions.com_google_dagger
 
     /**
      * https://developer.android.com/topic/libraries/architecture/index.html

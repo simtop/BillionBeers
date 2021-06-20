@@ -3,8 +3,9 @@ package com.simtop.billionbeers.domain
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.beerdomain.domain.usecases.GetAllBeersUseCase
-import com.simtop.billionbeers.*
 import com.simtop.billionbeers.testing_utils.MainCoroutineScopeRule
+import com.simtop.billionbeers.testing_utils.fakeBeerListModel
+import com.simtop.billionbeers.testing_utils.fakeException
 import com.simtop.billionbeers.testing_utils.runBlocking
 import com.simtop.core.core.mapLeft
 import com.simtop.core.core.mapRight

@@ -18,11 +18,11 @@ public object Versions {
 
     public const val com_squareup_okhttp3: String = "4.9.1"
 
-    public const val org_jetbrains_kotlin: String = "1.4.32" // available: "1.5.0"
+    public const val org_jetbrains_kotlin: String = "1.5.0" // available: "1.5.0"
 
     public const val androidx_navigation: String = "2.3.5"
 
-    public const val com_google_dagger: String = "2.35.1"
+    public const val com_google_dagger: String = "2.37"
 
     public const val androidx_room: String = "2.2.6" // available: "2.3.0"
 
@@ -87,3 +87,7 @@ public val PluginDependenciesSpec.buildSrcVersions: PluginDependencySpec
 public val PluginDependenciesSpec.sonarQube: PluginDependencySpec
     inline get() =
             id("org.sonarqube").version("3.2.0")
+
+public val PluginDependenciesSpec.myJacoco: PluginDependencySpec
+    inline get() =
+        id("com.vanniktech:gradle-android-junit-jacoco-plugin").version("0.16.0")

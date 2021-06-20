@@ -1,11 +1,9 @@
 package com.simtop.billionbeers.core
 
-import com.simtop.billionbeers.fakeException
 import com.simtop.core.core.Either
 import com.simtop.core.core.mapLeft
 import com.simtop.core.core.mapRight
 import org.amshove.kluent.shouldBeEqualTo
-import org.amshove.kluent.shouldBeInstanceOf
 import org.junit.Test
 import strikt.api.expect
 import strikt.assertions.isEqualTo

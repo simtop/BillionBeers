@@ -10,6 +10,7 @@ ext.androidModule = { Boolean isApplication = false ->
     apply plugin: 'kotlin-parcelize'
     apply plugin: 'kotlin-kapt'
     apply plugin: 'dagger.hilt.android.plugin'
+    apply from: rootProject.file('coverage.gradle')
 
     android {
         compileSdkVersion ApplicationConfig.compileSdk
@@ -57,7 +58,7 @@ ext.androidModule = { Boolean isApplication = false ->
 
         buildTypes {
             debug {
-
+                testCoverageEnabled = true
             }
             release {
                 minifyEnabled true
@@ -65,6 +66,10 @@ ext.androidModule = { Boolean isApplication = false ->
                 proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
                 signingConfig signingConfigs.release
             }
+        }
+
+        kapt {
+            correctErrorTypes true
         }
 
         // Always show the result of every unit test, even if it passes.
@@ -101,6 +106,7 @@ ext.androidModule = { Boolean isApplication = false ->
             exclude 'META-INF/AL2.0'
             exclude 'META-INF/LGPL2.1'
             exclude 'META-INF/licenses/ASM'
+            exclude 'META-INF/*.kotlin_module'
         }
     }
 
@@ -121,7 +127,7 @@ ext.androidModule = { Boolean isApplication = false ->
         kapt Libs.room_runtime
 
         implementation Libs.hilt_android
-        kapt Libs.hilt_android_compiler
+        //kapt Libs.hilt_android_compiler
         kapt Libs.hilt_compiler
 
         testImplementation Libs.mockk_android
@@ -133,7 +139,7 @@ ext.androidModule = { Boolean isApplication = false ->
         testImplementation Libs.junit
 
         androidTestImplementation Libs.hilt_android_testing
-        kaptAndroidTest Libs.hilt_android_compiler
+        kaptAndroidTest Libs.hilt_compiler
 
         androidTestImplementation Libs.junit
         androidTestImplementation Libs.kotlin_test_junit
@@ -145,7 +151,7 @@ ext.androidModule = { Boolean isApplication = false ->
         androidTestImplementation Libs.androidx_test_rules
         androidTestImplementation Libs.androidx_test_core_ktx
         androidTestImplementation Libs.mockk_android
-        androidTestImplementation Libs.mockk
+        //androidTestImplementation Libs.mockk
         androidTestImplementation Libs.junit_ktx
         androidTestImplementation Libs.navigation_testing
 

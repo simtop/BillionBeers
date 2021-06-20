@@ -1,4 +1,4 @@
-package com.simtop.billionbeers
+package com.simtop.billionbeers.testing_utils
 
 import com.simtop.beer_network.models.BeersApiResponseItem
 import com.simtop.beerdomain.domain.models.Beer
