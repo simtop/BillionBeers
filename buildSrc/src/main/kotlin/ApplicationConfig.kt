@@ -5,6 +5,6 @@ object ApplicationConfig {
     const val minSdk = 21
     const val targetSdk = 30
 
-    const val versionCode = 24
-    const val versionName = "0.20"
+    const val versionCode = 25
+    const val versionName = "0.21"
 }
