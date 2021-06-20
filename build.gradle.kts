@@ -30,6 +30,8 @@ allprojects {
     }
 }
 
+apply(plugin = "android-reporting")
+
 tasks.register("clean", Delete::class) {
     delete(rootProject.buildDir)
 }

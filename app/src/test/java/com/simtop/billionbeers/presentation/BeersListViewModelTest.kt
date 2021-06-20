@@ -2,10 +2,7 @@ package com.simtop.billionbeers.presentation
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.simtop.beerdomain.domain.usecases.GetAllBeersUseCase
-import com.simtop.billionbeers.*
-import com.simtop.billionbeers.testing_utils.MainCoroutineScopeRule
-import com.simtop.billionbeers.testing_utils.runBlocking
-import com.simtop.billionbeers.testing_utils.testObserver
+import com.simtop.billionbeers.testing_utils.*
 import com.simtop.core.core.Either
 import com.simtop.feature.beerslist.BeersListViewModel
 import com.simtop.feature.beerslist.BeersListViewState

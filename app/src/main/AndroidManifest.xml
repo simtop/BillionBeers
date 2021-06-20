@@ -7,7 +7,7 @@
 
     <application
         android:name=".BillionBeersApplication"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:icon="@drawable/beer_launcher"
         android:label="@string/app_name"
         android:roundIcon="@drawable/beer_launcher_round"

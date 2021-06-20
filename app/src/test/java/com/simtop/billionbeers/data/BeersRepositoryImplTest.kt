@@ -3,9 +3,7 @@ package com.simtop.billionbeers.data
 import com.simtop.beer_database.localsources.BeersLocalSource
 import com.simtop.beer_network.remotesources.BeersRemoteSource
 import com.simtop.beer_data.repositories.BeersRepositoryImpl
-import com.simtop.billionbeers.*
-import com.simtop.billionbeers.testing_utils.MainCoroutineScopeRule
-import com.simtop.billionbeers.testing_utils.runBlocking
+import com.simtop.billionbeers.testing_utils.*
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
