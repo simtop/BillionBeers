@@ -35,6 +35,7 @@ ext.androidModule = { Boolean isApplication = false ->
 
                 def localStoreFile = keystoreProperties.getProperty('STORE_FILE')
                 def ciStoreFile = System.getenv('STORE_FILE')
+                if(localStoreFile == null && ciStoreFile == null) return
 
                 storeFile file(localStoreFile != null ? localStoreFile : ciStoreFile)
 
