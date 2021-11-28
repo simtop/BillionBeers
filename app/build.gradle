@@ -2,11 +2,30 @@ androidModule(true)
 
 apply plugin: 'androidx.navigation.safeargs'
 
+android {
+    dynamicFeatures = [':feature:beerdetail']
+}
+
 dependencies {
     implementation Libs.navigation_fragment_ktx
     implementation Libs.navigation_ui
-    //TODO: break domain to core, commonui, beerdatabase, beerdatasource and maybe network
     implementation project(Modules.beer_domain)
     implementation project(Modules.beers_list)
-    implementation project(Modules.beer_detail)
+    implementation project(Modules.core)
+    implementation project(Modules.beer_data)
+    implementation project(Modules.beer_database)
+    implementation project(Modules.beer_network)
+    implementation project(Modules.presentation_utils)
+
+    implementation "androidx.navigation:navigation-dynamic-features-fragment:2.3.5"
+
+    implementation "com.google.android.play:core:1.10.0"
+
+    testImplementation Libs.strikt_core
+
+    androidTestImplementation Libs.strikt_core
+
+    //TODO: move to another module when we create the test module
+    implementation Libs.junit
+    implementation Libs.kotlinx_coroutines_test
 }

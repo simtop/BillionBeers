@@ -2,9 +2,10 @@ buildscript {
     project.apply {
         from("$rootDir/common.gradle")
     }
+
     repositories {
         google()
-        jcenter()
+        mavenCentral()
     }
     dependencies {
         classpath(Libs.com_android_tools_build_gradle)
@@ -16,8 +17,8 @@ buildscript {
 
 plugins {
     buildSrcVersions
+    sonarQube
 }
-
 
 allprojects {
     apply {
@@ -25,11 +26,12 @@ allprojects {
     }
     repositories {
         google()
-        jcenter()
+        mavenCentral()
     }
 }
+
+apply(plugin = "android-reporting")
 
 tasks.register("clean", Delete::class) {
     delete(rootProject.buildDir)
 }
-

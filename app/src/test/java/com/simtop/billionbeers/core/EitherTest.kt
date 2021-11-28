@@ -1,11 +1,13 @@
 package com.simtop.billionbeers.core
 
-import com.simtop.beerdomain.core.Either
-import com.simtop.beerdomain.core.mapLeft
-import com.simtop.beerdomain.core.mapRight
+import com.simtop.core.core.Either
+import com.simtop.core.core.mapLeft
+import com.simtop.core.core.mapRight
 import org.amshove.kluent.shouldBeEqualTo
-import org.amshove.kluent.shouldBeInstanceOf
 import org.junit.Test
+import strikt.api.expect
+import strikt.assertions.isEqualTo
+import strikt.assertions.isSameInstanceAs
 
 class EitherTest {
 
@@ -13,18 +15,23 @@ class EitherTest {
     fun `Either Right should return correct type`() {
         val result: Either.Right<String> = Either.Right("asdf")
 
-        result shouldBeInstanceOf Either::class.java
-        result.isRight shouldBeEqualTo true
-        result.isLeft shouldBeEqualTo false
-
-        result.either(
-            {
-            },
-            { right ->
-                right shouldBeInstanceOf String::class.java
-                right shouldBeEqualTo "asdf"
+        expect {
+            that(result) {
+                get { this.javaClass }.isSameInstanceAs(Either.Right::class.java)
+                get { isRight }.isEqualTo(true)
+                get { isLeft }.isEqualTo(false)
             }
-        )
+            result.either(
+                {
+                },
+                { right ->
+                    that(right) {
+                        get { this.javaClass }.isSameInstanceAs(String::class.java)
+                        get { this }.isEqualTo("asdf")
+                    }
+                }
+            )
+        }
     }
 
     @Test

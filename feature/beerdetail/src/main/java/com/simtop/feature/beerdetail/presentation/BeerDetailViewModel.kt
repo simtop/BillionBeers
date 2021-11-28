@@ -1,12 +1,12 @@
 package com.simtop.feature.beerdetail.presentation
 
 import androidx.lifecycle.*
-import com.simtop.beerdomain.core.Either
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.usecases.UpdateAvailabilityUseCase
-import com.simtop.beerdomain.core.CoroutineDispatcherProvider
-import com.squareup.inject.assisted.Assisted
-import com.squareup.inject.assisted.AssistedInject
+import com.simtop.core.core.CoroutineDispatcherProvider
+import com.simtop.core.core.Either
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
 import kotlinx.coroutines.launch
 
 class BeerDetailViewModel @AssistedInject constructor(
@@ -51,7 +51,7 @@ class BeerDetailViewModel @AssistedInject constructor(
         _beerDetailViewState.postValue(BeersDetailViewState.Success(beer))
     }
 
-    @AssistedInject.Factory
+    @dagger.assisted.AssistedFactory
     interface AssistedFactory {
         fun create(beer: Beer): BeerDetailViewModel
     }

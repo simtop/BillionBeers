@@ -1,6 +1,6 @@
 package com.simtop.billionbeers
 
-import com.simtop.beerdomain.data.network.BeersService
+import com.simtop.beer_network.network.BeersService
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
@@ -13,7 +13,6 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.io.File
 import java.io.IOException
-import java.lang.Exception
 import java.net.HttpURLConnection
 
 abstract class TestMockWebService {

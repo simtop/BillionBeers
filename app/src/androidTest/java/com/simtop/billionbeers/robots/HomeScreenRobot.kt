@@ -1,7 +1,5 @@
 package com.simtop.billionbeers.robots
 
-import com.simtop.beerdomain.domain.models.Beer
-
 fun homeScreen(func: HomeScreenRobot.() -> Unit) = HomeScreenRobot()
     .apply { func() }
 

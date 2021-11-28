@@ -1,9 +1,9 @@
 package com.simtop.beerdomain.domain.usecases
 
-import com.simtop.beerdomain.core.BaseUseCase
-import com.simtop.beerdomain.core.Either
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.core.core.BaseUseCase
+import com.simtop.core.core.Either
 import javax.inject.Inject
 
 class UpdateAvailabilityUseCase @Inject constructor(private val beersRepository: BeersRepository) :

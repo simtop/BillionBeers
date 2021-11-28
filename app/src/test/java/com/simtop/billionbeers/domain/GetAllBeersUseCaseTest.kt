@@ -1,23 +1,24 @@
 package com.simtop.billionbeers.domain
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
-import com.simtop.billionbeers.MainCoroutineScopeRule
-import com.simtop.beerdomain.core.mapLeft
-import com.simtop.beerdomain.core.mapRight
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.beerdomain.domain.usecases.GetAllBeersUseCase
-import com.simtop.billionbeers.fakeBeerListModel
-import com.simtop.billionbeers.fakeException
-import com.simtop.billionbeers.runBlocking
+import com.simtop.billionbeers.testing_utils.MainCoroutineScopeRule
+import com.simtop.billionbeers.testing_utils.fakeBeerListModel
+import com.simtop.billionbeers.testing_utils.fakeException
+import com.simtop.billionbeers.testing_utils.runBlocking
+import com.simtop.core.core.mapLeft
+import com.simtop.core.core.mapRight
 import io.mockk.coEvery
-import io.mockk.coVerify
 import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.amshove.kluent.any
-import org.amshove.kluent.shouldBeEqualTo
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestRule
+import strikt.api.expect
+import strikt.assertions.isEqualTo
 
 @ExperimentalCoroutinesApi
 internal class GetAllBeersUseCaseTest {
@@ -34,7 +35,9 @@ internal class GetAllBeersUseCaseTest {
     fun `when repository succeeds we get success response`() = coroutineScope.runBlocking {
         // Arrange
 
-        coEvery { beersRepository.getBeersFromSingleSource(any()) } returns fakeBeerListModel
+        val captureSlot = slot<Int>()
+
+        coEvery { beersRepository.getBeersFromSingleSource(capture(captureSlot)) } returns fakeBeerListModel
 
         val getAllBeersUseCase =
             GetAllBeersUseCase(beersRepository)
@@ -45,10 +48,15 @@ internal class GetAllBeersUseCaseTest {
 
         // Assert
 
-        coVerify(exactly = 1) { beersRepository.getBeersFromSingleSource(any()) }
-
-        response.mapRight {
-            it shouldBeEqualTo fakeBeerListModel
+        expect {
+            that(captureSlot) {
+                get { captured }.isEqualTo(0)
+            }
+            response.mapRight {
+                that(it) {
+                    get { this }.isEqualTo(fakeBeerListModel)
+                }
+            }
         }
     }
 
@@ -56,7 +64,9 @@ internal class GetAllBeersUseCaseTest {
     fun `when repository fails we get error response`() = coroutineScope.runBlocking {
         // Arrange
 
-        coEvery { beersRepository.getBeersFromSingleSource(any()) } throws fakeException
+        val captureSlot = slot<Int>()
+
+        coEvery { beersRepository.getBeersFromSingleSource(capture(captureSlot)) } throws fakeException
 
         val getAllBeersUseCase =
             GetAllBeersUseCase(beersRepository)
@@ -67,10 +77,15 @@ internal class GetAllBeersUseCaseTest {
 
         //Assert
 
-        coVerify(exactly = 1) { beersRepository.getBeersFromSingleSource(any()) }
-
-        response.mapLeft {
-            it shouldBeEqualTo fakeException
+        expect {
+            that(captureSlot) {
+                get { captured }.isEqualTo(0)
+            }
+            response.mapLeft {
+                that(it) {
+                    get { this }.isEqualTo(fakeException)
+                }
+            }
         }
     }
 }

@@ -5,14 +5,19 @@ import android.database.sqlite.SQLiteConstraintException
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
-import com.simtop.beerdomain.data.databases.BeersDatabase
-import com.simtop.beerdomain.data.localsources.BeersLocalSource
+import com.simtop.beer_database.database.BeersDatabase
+import com.simtop.beer_database.localsources.BeersLocalSource
 import com.simtop.billionbeers.di.fakeBeerModel2
 import com.simtop.billionbeers.di.fakeDbBeerList
+import com.simtop.core.core.mapLeft
 import kotlinx.coroutines.runBlocking
-import org.junit.*
+import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Before
+import org.junit.Test
 import org.junit.runner.RunWith
+import strikt.api.expect
+import strikt.assertions.isEqualTo
 
 @RunWith(AndroidJUnit4ClassRunner::class)
 class LocalDataSourceTest {
@@ -55,6 +60,15 @@ class LocalDataSourceTest {
             val count = localSource.getCountFromDB()
             assertEquals(repositoriesByName.first().id, fakeDbBeerList[0].id)
             assertEquals(count, 1)
+
+            expect {
+                that(repositoriesByName.first()) {
+                    get { id }.isEqualTo(fakeDbBeerList[0].id)
+                }
+                that(count) {
+                    get { this }.isEqualTo(1)
+                }
+            }
         }
     }
 

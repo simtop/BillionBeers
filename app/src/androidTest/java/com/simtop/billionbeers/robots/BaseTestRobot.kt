@@ -10,11 +10,11 @@ import androidx.test.espresso.assertion.ViewAssertions
 import androidx.test.espresso.contrib.RecyclerViewActions
 import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.espresso.matcher.ViewMatchers.withId
-import com.simtop.beerdomain.core.BaseBindView
-import com.simtop.beerdomain.core.ViewWrapper
 import com.simtop.billionbeers.utils.RecyclerViewMatchers
 import com.simtop.billionbeers.utils.ViewVisibilityIdlingResource
 import com.simtop.billionbeers.utils.waitUntilVisible
+import com.simtop.presentation_utils.core.BaseBindView
+import com.simtop.presentation_utils.core.ViewWrapper
 import java.util.concurrent.TimeUnit
 
 open class BaseTestRobot {
@@ -35,7 +35,7 @@ open class BaseTestRobot {
             .perform(
                 RecyclerViewActions.actionOnItemAtPosition<ViewWrapper<BaseBindView<T>>>(
                     position,
-                    ViewActions.click()
+                    click()
                 )
             )
         return detailScreenRobot.apply { func?.let { it() } }

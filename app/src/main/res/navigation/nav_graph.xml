@@ -15,7 +15,9 @@
             android:id="@+id/action_BeersListFragment_to_BeerDetailFragment"
             app:destination="@id/BeerDetailFragment" />
     </fragment>
+
     <fragment
+        app:moduleName="@string/title_dynamicfeature"
         android:id="@+id/BeerDetailFragment"
         android:name="com.simtop.feature.beerdetail.presentation.BeerDetailFragment"
         android:label="@string/beer_detail_fragment_label"
