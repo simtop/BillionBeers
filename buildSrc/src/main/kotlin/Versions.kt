@@ -18,7 +18,7 @@ public object Versions {
 
     public const val com_squareup_okhttp3: String = "4.9.1"
 
-    public const val org_jetbrains_kotlin: String = "1.5.0" // available: "1.5.0"
+    public const val org_jetbrains_kotlin: String = "1.6.0"
 
     public const val androidx_navigation: String = "2.3.5"
 
