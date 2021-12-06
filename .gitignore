@@ -14,3 +14,5 @@
 .cxx
 keystore.properties
 /app/release/*
+/.idea/gradle.xml
+/.idea/misc.xml
