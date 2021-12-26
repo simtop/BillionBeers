@@ -77,66 +77,62 @@ android {
 
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
-    implementation Libs.kotlin_stdlib_jdk7
-    implementation Libs.androidx_core_core_ktx
-    implementation Libs.appcompat
-    implementation Libs.material
-    implementation Libs.constraintlayout
+    implementation libs.kotlinStdlibJdk7
+    implementation libs.coreKtx
+    implementation libs.appcompat
+    implementation libs.material
+    implementation libs.constraintlayout
 
-    implementation Libs.glide
-    implementation Libs.lifecycle_extensions
-    implementation Libs.converter_gson
-    implementation Libs.logging_interceptor
-    implementation Libs.room_compiler
-    implementation Libs.room_ktx
-    implementation Libs.room_runtime
-
-    implementation Libs.hilt_android
-    //kapt Libs.hilt_android_compiler
-    kapt Libs.hilt_compiler
+    implementation libs.glide
+    implementation libs.lifecycleExtensions
+    implementation libs.retrofit2ConverterGson
+    implementation libs.okhttp3LoggingInterceptor
+    implementation libs.roomCompiler
+    implementation libs.roomKtx
+    kapt libs.roomRuntime
+    implementation libs.hiltAndroid
+    kapt libs.hiltCompiler
 
 
-    implementation Libs.navigation_fragment_ktx
-    implementation Libs.navigation_ui
+    implementation libs.navigationFragmentKtx
+    implementation libs.navigationUi
     implementation project(Modules.beer_domain)
     implementation project(Modules.presentation_utils)
     implementation project(Modules.core)
 
     implementation project(Modules.app)
-    implementation "androidx.navigation:navigation-dynamic-features-fragment:2.3.5"
+    implementation libs.navigationDynamicFeaturesFragment
 
 
 
-    testImplementation Libs.mockk_android
-    testImplementation Libs.mockk
-    testImplementation Libs.core_testing
-    testImplementation Libs.kotlinx_coroutines_test
-    testImplementation Libs.kluent_android
-    testImplementation Libs.mockwebserver
-    testImplementation Libs.junit
+    testImplementation libs.mockkAndroid
+    testImplementation libs.mockk
+    testImplementation libs.coreTesting
+    testImplementation libs.coroutinesTest
+    testImplementation libs.kluentAndroid
+    testImplementation libs.okhttp3Mockwebserver
+    testImplementation libs.junit
 
-    androidTestImplementation Libs.hilt_android_testing
-    //kaptAndroidTest Libs.hilt_android_compiler
-    kaptAndroidTest Libs.hilt_compiler
+    androidTestImplementation libs.hiltAndroidTesting
+    kaptAndroidTest libs.hiltCompiler
 
-    androidTestImplementation Libs.junit
-    androidTestImplementation Libs.kotlin_test_junit
-    androidTestImplementation Libs.kotlinx_coroutines_test
-    androidTestImplementation Libs.espresso_core
-    androidTestImplementation Libs.espresso_contrib
-    androidTestImplementation Libs.espresso_idling_resource
-    androidTestImplementation Libs.androidx_test_runner
-    androidTestImplementation Libs.androidx_test_rules
-    androidTestImplementation Libs.androidx_test_core_ktx
-    androidTestImplementation Libs.mockk_android
-    //androidTestImplementation Libs.mockk
-    androidTestImplementation Libs.junit_ktx
-    androidTestImplementation Libs.navigation_testing
+    androidTestImplementation libs.junit
+    androidTestImplementation libs.kotlinTestJunit
+    androidTestImplementation libs.coroutinesTest
+    androidTestImplementation libs.espressoCore
+    androidTestImplementation libs.espressoContrib
+    androidTestImplementation libs.espressoIdlingResource
+    androidTestImplementation libs.testRunner
+    androidTestImplementation libs.testRules
+    androidTestImplementation libs.testCoreKtx
+    androidTestImplementation libs.mockkAndroid
+    androidTestImplementation libs.junitKtx
+    androidTestImplementation libs.navigationTesting
 
-    androidTestImplementation Libs.core_testing
-    androidTestImplementation Libs.fragment_testing
+    androidTestImplementation libs.coreTesting
+    androidTestImplementation libs.fragmentTesting
 
-    testImplementation Libs.strikt_core
+    testImplementation libs.striktCore
 
-    androidTestImplementation Libs.strikt_core
+    androidTestImplementation libs.striktCore
 }

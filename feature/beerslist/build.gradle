@@ -3,11 +3,11 @@ androidModule()
 apply plugin: 'androidx.navigation.safeargs'
 
 dependencies {
-    implementation Libs.navigation_fragment_ktx
-    implementation Libs.navigation_ui
+    implementation libs.navigationFragmentKtx
+    implementation libs.navigationUi
     implementation project(Modules.beer_domain)
     implementation project(Modules.presentation_utils)
     implementation project(Modules.core)
 
-    implementation "androidx.navigation:navigation-dynamic-features-fragment:2.3.5"
+    implementation libs.navigationDynamicFeaturesFragment
 }
