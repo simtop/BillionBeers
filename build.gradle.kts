@@ -21,8 +21,15 @@ buildscript {
 apply(plugin = "com.github.ben-manes.versions")
 apply(plugin = "nl.littlerobots.version-catalog-update")
 
+
+/*
+public val PluginDependenciesSpec.sonarQube: PluginDependencySpec
+    inline get() =
+            id("org.sonarqube").version("3.2.0")
+
+ */
 plugins {
-    sonarQube
+    id("org.sonarqube").version("3.2.0")
 }
 
 allprojects {

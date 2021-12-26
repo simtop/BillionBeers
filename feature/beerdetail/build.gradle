@@ -6,13 +6,13 @@ apply plugin: 'dagger.hilt.android.plugin'
 apply plugin: 'androidx.navigation.safeargs'
 
 android {
-    compileSdkVersion ApplicationConfig.compileSdk
+    compileSdkVersion 30
 
     defaultConfig {
-        minSdkVersion ApplicationConfig.minSdk
-        targetSdkVersion ApplicationConfig.targetSdk
-        versionCode ApplicationConfig.versionCode
-        versionName ApplicationConfig.versionName
+        minSdkVersion 21
+        targetSdkVersion 30
+        versionCode 25
+        versionName "0.21"
 
         testInstrumentationRunner "com.simtop.billionbeers.di.MockTestRunner"
     }
@@ -96,11 +96,11 @@ dependencies {
 
     implementation libs.navigationFragmentKtx
     implementation libs.navigationUi
-    implementation project(Modules.beer_domain)
-    implementation project(Modules.presentation_utils)
-    implementation project(Modules.core)
+    implementation project(":beerdomain")
+    implementation project(":presentation_utils")
+    implementation project(":core")
 
-    implementation project(Modules.app)
+    implementation project(":app")
     implementation libs.navigationDynamicFeaturesFragment
 
 

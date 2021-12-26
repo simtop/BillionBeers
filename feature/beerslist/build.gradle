@@ -5,9 +5,9 @@ apply plugin: 'androidx.navigation.safeargs'
 dependencies {
     implementation libs.navigationFragmentKtx
     implementation libs.navigationUi
-    implementation project(Modules.beer_domain)
-    implementation project(Modules.presentation_utils)
-    implementation project(Modules.core)
+    implementation project(":beerdomain")
+    implementation project(":presentation_utils")
+    implementation project(":core")
 
     implementation libs.navigationDynamicFeaturesFragment
 }

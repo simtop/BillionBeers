@@ -12,13 +12,13 @@ ext.androidModule = { Boolean isApplication = false ->
     apply plugin: 'dagger.hilt.android.plugin'
 
     android {
-        compileSdkVersion ApplicationConfig.compileSdk
+        compileSdkVersion 30
 
         defaultConfig {
-            minSdkVersion ApplicationConfig.minSdk
-            targetSdkVersion ApplicationConfig.targetSdk
-            versionCode ApplicationConfig.versionCode
-            versionName ApplicationConfig.versionName
+            minSdkVersion 21
+            targetSdkVersion 30
+            versionCode 25
+            versionName "0.21"
 
             multiDexEnabled true
             testInstrumentationRunner "com.simtop.billionbeers.di.MockTestRunner"
