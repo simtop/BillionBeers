@@ -94,10 +94,16 @@ ext.androidModule = { Boolean isApplication = false ->
 
         buildFeatures {
             viewBinding = true
+            compose = true
         }
 
         kapt {
             generateStubs = true
+        }
+
+        composeOptions {
+            kotlinCompilerVersion "1.6.0"
+            kotlinCompilerExtensionVersion "1.1.0-rc01"
         }
 
         //Solves some problems for compilation for UI Test
@@ -128,6 +134,15 @@ ext.androidModule = { Boolean isApplication = false ->
 
         implementation libs.hiltAndroid
         kapt libs.hiltCompiler
+
+        // Compose
+        implementation "androidx.compose.runtime:runtime:1.0.5"
+        implementation "androidx.compose.ui:ui:1.0.5"
+        implementation "androidx.compose.foundation:foundation:1.0.5"
+        implementation "androidx.compose.foundation:foundation-layout:1.0.5"
+        implementation "androidx.compose.material:material:1.0.5"
+        implementation "androidx.compose.runtime:runtime-livedata:1.0.5"
+        implementation "androidx.compose.ui:ui-tooling:1.0.5"
 
         testImplementation libs.mockkAndroid
         testImplementation libs.mockk

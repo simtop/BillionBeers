@@ -2,7 +2,6 @@ package com.simtop.billionbeers.presentation
 
 import android.content.Context
 import android.os.Bundle
-
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.play.core.splitcompat.SplitCompat
 import com.simtop.billionbeers.databinding.ActivityMainBinding

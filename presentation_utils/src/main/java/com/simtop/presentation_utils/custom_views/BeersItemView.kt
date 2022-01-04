@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Color
 import android.util.AttributeSet
 import android.view.LayoutInflater
+import androidx.compose.material.MaterialTheme
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.presentation_utils.core.BaseBindView
 import com.simtop.presentation_utils.databinding.RowBeerListBinding
@@ -32,7 +33,12 @@ class BeersItemView @JvmOverloads constructor(
         } else {
             rowBeerListBinding.cardView.setCardBackgroundColor(Color.GRAY)
         }
-        rowBeerListBinding.beerName.text = value.name
+        rowBeerListBinding
+            .beerName.setContent {
+            MaterialTheme {
+                ComposeTitle(value.name)
+            }
+        }
         rowBeerListBinding.beerTagline.text = value.tagline
     }
 }
