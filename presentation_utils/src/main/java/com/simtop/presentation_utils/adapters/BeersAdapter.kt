@@ -1,17 +1,18 @@
 package com.simtop.presentation_utils.adapters
 
 import android.view.ViewGroup
-import android.widget.LinearLayout
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
 import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.presentation_utils.core.BaseBindView
-import com.simtop.presentation_utils.core.ViewWrapper
-import com.simtop.presentation_utils.custom_views.BeersItemView
+import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 
-class BeersAdapter(private val listener: ((Beer) -> Unit)?): ListAdapter<Beer, ViewWrapper<BaseBindView<Beer>>>(
-    DIFF_CALLBACK
-) {
+class BeersAdapter(private val listener: ((Beer) -> Unit)?) :
+    ListAdapter<Beer, ComposeBeersListItemViewHolder>(
+        DIFF_CALLBACK
+    ) {
 
     companion object {
         private val DIFF_CALLBACK = object : DiffUtil.ItemCallback<Beer>() {
@@ -24,22 +25,31 @@ class BeersAdapter(private val listener: ((Beer) -> Unit)?): ListAdapter<Beer, V
         }
     }
 
-    private fun onCreateItemView(parent: ViewGroup, viewType: Int): BaseBindView<Beer> {
-        return BeersItemView(parent.context).apply {
-            layoutParams = ViewGroup.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
+    override fun onBindViewHolder(holder: ComposeBeersListItemViewHolder, position: Int) {
+        holder.bind(getItem(position), listener)
     }
 
-    override fun onBindViewHolder(holder: ViewWrapper<BaseBindView<Beer>>, position: Int) {
-        holder.view.bind(getItem(position))
-        holder.view.setOnClickListener {
-            listener?.invoke(getItem(position))
-        }
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int
+    ): ComposeBeersListItemViewHolder {
+        return ComposeBeersListItemViewHolder(ComposeView(parent.context))
+    }
+}
+
+class ComposeBeersListItemViewHolder(
+    val view: ComposeView
+) : RecyclerView.ViewHolder(view) {
+
+    init {
+        view.setViewCompositionStrategy(
+            ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed
+        )
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewWrapper<BaseBindView<Beer>> =
-        ViewWrapper(onCreateItemView(parent, viewType))
+    fun bind(beer: Beer, listener: ((Beer) -> Unit)?) {
+        view.setContent {
+            ComposeBeersListItem(beer, listener)
+        }
+    }
 }

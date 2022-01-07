@@ -1,5 +1,6 @@
 package com.simtop.presentation_utils.custom_views
 
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -16,8 +17,11 @@ fun ComposeTitle(name: String) {
         text = name, modifier = Modifier
             .padding(
                 start = 24.dp,
+                top = 8.dp,
+                bottom = 8.dp,
                 end = 24.dp
-            ),
+            )
+            .fillMaxWidth(),
         fontWeight = FontWeight.ExtraBold,
         textAlign = TextAlign.Center,
         fontSize = 24.sp
