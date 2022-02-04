@@ -1,6 +1,6 @@
 [versions]
 androidx-navigation = "2.3.5"
-androidx-room = "2.2.6"
+androidx-room = "2.4.1"
 androidx-test = "1.4.0"
 androidx-test-espresso = "3.3.0"
 com-google-dagger = "2.40.4"
@@ -57,7 +57,6 @@ kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", ver
 org-jetbrains-kotlin-kotlin-parcelize-compiler = { module = "org.jetbrains.kotlin:kotlin-parcelize-compiler", version.ref = "org-jetbrains-kotlin" }
 org-jetbrains-kotlin-kotlin-parcelize-runtime = { module = "org.jetbrains.kotlin:kotlin-parcelize-runtime", version.ref = "org-jetbrains-kotlin" }
 org-jetbrains-kotlin-kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "org-jetbrains-kotlin" }
-kotlinStdlibJdk7 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk7", version.ref = "org-jetbrains-kotlin" }
 kotlinTestJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "org-jetbrains-kotlin" }
 coroutinesTest = "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.4.2"
 

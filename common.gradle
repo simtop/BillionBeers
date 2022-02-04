@@ -12,11 +12,11 @@ ext.androidModule = { Boolean isApplication = false ->
     apply plugin: 'dagger.hilt.android.plugin'
 
     android {
-        compileSdkVersion 30
+        compileSdkVersion 31
 
         defaultConfig {
             minSdkVersion 21
-            targetSdkVersion 30
+            targetSdkVersion 31
             versionCode 25
             versionName "0.21"
 
@@ -72,7 +72,7 @@ ext.androidModule = { Boolean isApplication = false ->
             correctErrorTypes true
         }
 
-        // Always show the result of every unit test, even if it passes.
+    // Always show the result of every unit test, even if it passes.
         testOptions.unitTests {
             includeAndroidResources = true
 
@@ -118,7 +118,6 @@ ext.androidModule = { Boolean isApplication = false ->
 
     dependencies {
         implementation fileTree(dir: "libs", include: ["*.jar"])
-        implementation libs.kotlinStdlibJdk7
         implementation libs.coreKtx
         implementation libs.appcompat
         implementation libs.material
@@ -128,7 +127,7 @@ ext.androidModule = { Boolean isApplication = false ->
         implementation libs.lifecycleExtensions
         implementation libs.retrofit2ConverterGson
         implementation libs.okhttp3LoggingInterceptor
-        implementation libs.roomCompiler
+        kapt libs.roomCompiler
         implementation libs.roomKtx
         kapt libs.roomRuntime
 
