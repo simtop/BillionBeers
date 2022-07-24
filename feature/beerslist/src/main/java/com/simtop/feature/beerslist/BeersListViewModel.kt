@@ -10,6 +10,7 @@ import com.simtop.core.core.Either
 import com.simtop.core.core.MAX_PAGES_FOR_PAGINATION
 import com.simtop.core.core.CoroutineDispatcherProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -20,7 +21,7 @@ class BeersListViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _beerListViewState =
-            MutableLiveData<BeersListViewState<List<Beer>>>()
+        MutableLiveData<BeersListViewState<List<Beer>>>()
     val beerListViewState: LiveData<BeersListViewState<List<Beer>>>
         get() = _beerListViewState
 
@@ -32,29 +33,49 @@ class BeersListViewModel @Inject constructor(
         _beerListViewState.postValue(BeersListViewState.Loading)
         viewModelScope.launch(coroutineDispatcher.io) {
             getAllBeersUseCase.execute(getAllBeersUseCase.Params(quantity))
-                    .also(::process)
+                .also(::process)
         }
     }
 
     private fun process(result: Either<Exception, List<Beer>>) {
         result.either(
-                {
-                    _beerListViewState.postValue(BeersListViewState.Error(it.message))
-                },
-                {
-                    if (it.isEmpty()) _beerListViewState.postValue(BeersListViewState.EmptyState)
-                    else _beerListViewState.postValue(BeersListViewState.Success(it))
-                }
+            {
+                _beerListViewState.postValue(BeersListViewState.Error(it.message))
+            },
+            {
+                if (it.isEmpty()) _beerListViewState.postValue(BeersListViewState.EmptyState)
+                else _beerListViewState.postValue(BeersListViewState.Success(it))
+            }
         )
     }
 
     fun showEmptyState() {
         _beerListViewState.postValue(BeersListViewState.EmptyState)
     }
+
+    fun setProgress(showDialog: Boolean, progress: Float) {
+        beerListViewState.value?.let {
+            if (it is BeersListViewState.Success) {
+                _beerListViewState.postValue(
+                    BeersListViewState.Success(
+                        it.result,
+                        showDialog,
+                        progress
+                    )
+                )
+
+            }
+        }
+    }
 }
 
 sealed class BeersListViewState<out T> {
-    data class Success<out T>(val result: T) : BeersListViewState<T>()
+    data class Success<out T>(
+        val result: T,
+        val showDialog: Boolean = false,
+        val progress: Float = 0.0f
+    ) : BeersListViewState<T>()
+
     data class Error(val result: String?) : BeersListViewState<Nothing>()
     object Loading : BeersListViewState<Nothing>()
     object EmptyState : BeersListViewState<Nothing>()

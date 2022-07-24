@@ -13,10 +13,10 @@ import io.mockk.coEvery
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import org.amshove.kluent.any
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestRule
+import org.mockito.ArgumentMatchers.anyInt
 import strikt.api.expect
 import strikt.assertions.isEqualTo
 
@@ -44,7 +44,7 @@ internal class GetAllBeersUseCaseTest {
 
         // Act
 
-        val response = getAllBeersUseCase.execute(getAllBeersUseCase.Params(any()))
+        val response = getAllBeersUseCase.execute(getAllBeersUseCase.Params(anyInt()))
 
         // Assert
 
@@ -73,7 +73,7 @@ internal class GetAllBeersUseCaseTest {
 
         // Act
 
-        val response = getAllBeersUseCase.execute(getAllBeersUseCase.Params(any()))
+        val response = getAllBeersUseCase.execute(getAllBeersUseCase.Params(anyInt()))
 
         //Assert
 

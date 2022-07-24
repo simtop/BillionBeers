@@ -9,10 +9,10 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import org.amshove.kluent.any
 import org.amshove.kluent.shouldBeEqualTo
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.ArgumentMatchers.anyInt
 import strikt.api.expect
 import strikt.assertions.isEqualTo
 
@@ -41,7 +41,7 @@ internal class BeersRepositoryImplTest {
 
         // Act
 
-        val result = getBeers.getListOfBeerFromApi(any())
+        val result = getBeers.getListOfBeerFromApi(anyInt())
 
         // Assert
 
@@ -71,7 +71,7 @@ internal class BeersRepositoryImplTest {
 
         // Act
 
-        getBeers.getListOfBeerFromApi(any())
+        getBeers.getListOfBeerFromApi(anyInt())
 
         // Assert
     }

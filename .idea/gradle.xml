@@ -8,7 +8,7 @@
         <option name="distributionType" value="DEFAULT_WRAPPED" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="gradleHome" value="/usr/local/Cellar/gradle/7.3/libexec" />
-        <option name="gradleJvm" value="11" />
+        <option name="gradleJvm" value="azul-11" />
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
@@ -17,6 +17,7 @@
             <option value="$PROJECT_DIR$/beer_database" />
             <option value="$PROJECT_DIR$/beer_network" />
             <option value="$PROJECT_DIR$/beerdomain" />
+            <option value="$PROJECT_DIR$/buildSrc" />
             <option value="$PROJECT_DIR$/core" />
             <option value="$PROJECT_DIR$/feature" />
             <option value="$PROJECT_DIR$/feature/beerdetail" />
@@ -24,7 +25,6 @@
             <option value="$PROJECT_DIR$/presentation_utils" />
           </set>
         </option>
-        <option name="resolveModulePerSourceSet" value="false" />
       </GradleProjectSettings>
     </option>
   </component>

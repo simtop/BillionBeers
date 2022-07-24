@@ -17,8 +17,8 @@ ext.androidModule = { Boolean isApplication = false ->
         defaultConfig {
             minSdkVersion 21
             targetSdkVersion 31
-            versionCode 25
-            versionName "0.21"
+            versionCode 51
+            versionName "0.51"
 
             multiDexEnabled true
             testInstrumentationRunner "com.simtop.billionbeers.di.MockTestRunner"
