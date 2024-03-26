@@ -49,6 +49,7 @@ Master has the 7th Branch of Sonar Qube. I recommend to always compare old branc
 6. Dynamic Feature Module on Demand : https://github.com/simtop/BillionBeers/tree/feature/dynamic_feature_on_demand
 7. Sonar Qube : https://github.com/simtop/BillionBeers/tree/feature/sonar_qube
 8. Sonar Qube + Jacoco (Still work in progress) : https://github.com/simtop/BillionBeers/tree/feature/wip_jacoco_sonarqube
+9. Migration to Jetpack Compose : https://github.com/simtop/BillionBeers/tree/feature/compose
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
