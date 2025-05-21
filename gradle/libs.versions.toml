@@ -91,7 +91,7 @@ com-android-lint = "com.android.lint:7.0.3"
 com-android-reporting = "com.android.reporting:7.0.3"
 com-android-test = "com.android.test:7.0.3"
 benManesVersions = { id = "com.github.ben-manes.versions", version.ref = "benManesPlugin" }
-dagger-hilt-android-plugin = { id = "com.google.dagger.hilt.android", version.ref = "com-google-dagger" }
+hilt = { id = "com.google.dagger.hilt.android", version.ref = "com-google-dagger" }
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "org-jetbrains-kotlin" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "org-jetbrains-kotlin" }
 kotlin-android-extensions = "kotlin-android-extensions:1.6.0" # This plugin is deprecated and removed in Kotlin 1.8.0. Keep as is.

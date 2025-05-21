@@ -2,6 +2,12 @@ androidModule()
 
 apply plugin: 'androidx.navigation.safeargs'
 
+android {
+    namespace 'com.example.billionbeers.feature.beerslist'
+    buildFeatures {
+        compose true
+    }
+}
 dependencies {
     implementation libs.navigationFragmentKtx
     implementation libs.navigationUi

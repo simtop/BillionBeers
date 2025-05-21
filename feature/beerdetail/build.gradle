@@ -4,15 +4,13 @@ apply plugin: 'kotlin-parcelize'
 apply plugin: 'kotlin-kapt'
 apply plugin: 'dagger.hilt.android.plugin'
 apply plugin: 'androidx.navigation.safeargs'
+apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 
 android {
-    compileSdkVersion 31
+    namespace 'com.example.billionbeers.feature.beerdetail'
 
     defaultConfig {
         minSdkVersion 21
-        targetSdkVersion 31
-        versionCode 25
-        versionName "0.21"
 
         testInstrumentationRunner "com.simtop.billionbeers.di.MockTestRunner"
     }

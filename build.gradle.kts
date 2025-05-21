@@ -30,6 +30,7 @@ public val PluginDependenciesSpec.sonarQube: PluginDependencySpec
  */
 plugins {
     id("org.sonarqube").version("6.2.0.5505")
+    id("org.jetbrains.kotlin.plugin.compose").version(libs.versions.org.jetbrains.kotlin.get())
 }
 
 allprojects {

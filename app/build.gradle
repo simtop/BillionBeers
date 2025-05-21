@@ -1,9 +1,14 @@
 androidModule(true)
 
 apply plugin: 'androidx.navigation.safeargs'
+apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 
 android {
+    namespace 'com.example.billionbeers'
     dynamicFeatures = [':feature:beerdetail']
+    buildFeatures {
+        compose true
+    }
 }
 
 dependencies {
