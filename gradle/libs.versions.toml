@@ -7,7 +7,7 @@ com-google-dagger = "2.56.2"
 com-squareup-okhttp3 = "4.9.3"
 io-mockk = "1.12.1"
 org-jetbrains-kotlin = "2.1.20"
-androidToolsBuildGradle = "8.10.0"
+androidToolsBuildGradle = "8.2.0"
 benManesPlugin = "0.52.0"
 littlerobotsPlugin = "1.0.0"
 

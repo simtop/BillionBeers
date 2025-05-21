@@ -8,6 +8,7 @@ apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 
 android {
     namespace 'com.example.billionbeers.feature.beerdetail'
+    compileSdk 34
 
     defaultConfig {
         minSdkVersion 21
