@@ -10,49 +10,41 @@ fun getProperty(key: String): String? {
 
 plugins {
     // Plugins from convention (excluding the convention plugin itself)
-    id("com.android.application")
+    id("com.android.library")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.parcelize")
     id("org.jetbrains.kotlin.kapt")
     alias(libs.plugins.hilt)
 
-    // Existing plugins from app/build.gradle.kts
-    alias(libs.plugins.androidx.navigation.safeargs.kotlin) // Using the Kotlin-specific version
+    // Existing plugins from beerdomain/build.gradle.kts
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
 android {
-    namespace = "com.example.billionbeers" // App-specific
+    namespace = "com.example.billionbeers.beerdomain" // Module-specific
     compileSdkVersion(35)
 
     defaultConfig {
         minSdk = 21
-        targetSdk = 35
-        versionCode = 51
-        versionName = "0.51"
-
-        multiDexEnabled = true
+        targetSdk = 35 // As per common.gradle for libraries
         testInstrumentationRunner = "com.simtop.billionbeers.di.MockTestRunner"
+        // consumerProguardFile("consumer-rules.pro") // Good practice, but not in original common.gradle
     }
 
-    signingConfigs {
+    signingConfigs { // common.gradle applied this to libraries too
         maybeCreate("release").apply {
-            val storeFileValue = getProperty("STORE_FILE") // Assumes getProperty is defined at the top
-            if (storeFileValue != null) {
-                storeFile = project.file(storeFileValue)
-                val storePasswordValue = getProperty("STORE_PASSWORD")
-                val keyAliasValue = getProperty("ALIAS")
-                val keyPasswordValue = getProperty("PASSWORD")
+            val storeFileProp = getProperty("STORE_FILE") // Assumes getProperty is defined
+            val storePasswordProp = getProperty("STORE_PASSWORD")
+            val keyAliasProp = getProperty("ALIAS")
+            val keyPasswordProp = getProperty("PASSWORD")
 
-                if (storePasswordValue != null && keyAliasValue != null && keyPasswordValue != null) {
-                    storePassword = storePasswordValue
-                    keyAlias = keyAliasValue
-                    keyPassword = keyPasswordValue
-                } else {
-                    println("Warning: STORE_FILE was found, but other keystore properties (STORE_PASSWORD, ALIAS, PASSWORD) for release signing are not fully set. APK may not be signable.")
-                }
+            if (storeFileProp != null && storePasswordProp != null && keyAliasProp != null && keyPasswordProp != null) {
+                storeFile = project.file(storeFileProp)
+                storePassword = storePasswordProp
+                keyAlias = keyAliasProp
+                keyPassword = keyPasswordProp
             } else {
-                println("Warning: STORE_FILE property not found in keystore.properties or environment variables. Release signing will be skipped for application.")
+                println("Warning: Keystore properties for release signing are not fully set. Library variants may not be signable if this config is used by an app consuming it directly for signing.")
             }
         }
     }
@@ -62,14 +54,13 @@ android {
             isTestCoverageEnabled = true
         }
         getByName("release") {
-            isMinifyEnabled = true
-            isDebuggable = false
+            isMinifyEnabled = true // As per common.gradle
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = signingConfigs.getByName("release") // As per common.gradle
         }
     }
-
-    kapt {
+    
+    kapt { // Kapt configuration for libraries
         correctErrorTypes = true
         generateStubs = true
     }
@@ -94,8 +85,8 @@ android {
     }
 
     buildFeatures {
-        viewBinding = true
-        compose = true
+        viewBinding = true // common.gradle had this
+        compose = true     // common.gradle had this
     }
 
     composeOptions {
@@ -109,8 +100,6 @@ android {
         resources.excludes.add("META-INF/licenses/ASM")
         resources.excludes.add("META-INF/*.kotlin_module")
     }
-
-    dynamicFeatures.addAll(":feature:beerdetail") // App-specific
 }
 
 dependencies {
@@ -127,7 +116,7 @@ dependencies {
     implementation(libs.okhttp3LoggingInterceptor)
     kapt(libs.roomCompiler)
     implementation(libs.roomKtx)
-    kapt(libs.roomRuntime) // As per instruction, keeping kapt for roomRuntime
+    kapt(libs.roomRuntime)
 
     implementation(libs.hiltAndroid)
     kapt(libs.hiltCompiler)
@@ -147,47 +136,27 @@ dependencies {
     testImplementation(libs.coroutinesTest)
     testImplementation(libs.kluentAndroid)
     testImplementation(libs.okhttp3Mockwebserver)
-    // libs.junit is in both, will be listed once by convention, once by app-specific below
+    testImplementation(libs.junit)
 
     androidTestImplementation(libs.hiltAndroidTesting)
     kaptAndroidTest(libs.hiltCompiler)
 
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.kotlinTestJunit)
-    // libs.coroutinesTest is in both (testImplementation from convention, implementation from app-specific)
+    androidTestImplementation(libs.coroutinesTest)
     androidTestImplementation(libs.espressoCore)
     androidTestImplementation(libs.espressoContrib)
     androidTestImplementation(libs.espressoIdlingResource)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.testCoreKtx)
-    // libs.mockkAndroid is in both (testImplementation from convention, androidTestImplementation from app-specific)
+    androidTestImplementation(libs.mockkAndroid)
     androidTestImplementation(libs.junitKtx)
     androidTestImplementation(libs.navigationTesting)
 
-    androidTestImplementation(libs.coreTesting) // Already listed in convention testImplementation
+    androidTestImplementation(libs.coreTesting)
     androidTestImplementation(libs.fragmentTesting)
 
-    // Dependencies from the original app/build.gradle.kts
-    implementation(libs.navigationFragmentKtx)
-    implementation(libs.navigationUi)
-    implementation(project(":beerdomain"))
-    implementation(project(":feature:beerslist"))
-    implementation(project(":core")) // Already listed in convention implementation
-    implementation(project(":beer_data"))
-    implementation(project(":beer_database"))
-    implementation(project(":beer_network"))
-    implementation(project(":presentation_utils"))
-
-    implementation(libs.navigationDynamicFeaturesFragment)
-
-    implementation(libs.androidPlayCore)
-
-    testImplementation(libs.striktCore) // App-specific testImplementation
-
-    androidTestImplementation(libs.striktCore) // App-specific androidTestImplementation
-
-    //TODO: move to another module when we create the test module
-    implementation(libs.junit) // Already listed in convention testImplementation
-    implementation(libs.coroutinesTest) // Already listed in convention testImplementation
+    // Dependencies from the original beerdomain/build.gradle.kts
+    implementation(project(":core")) // This is distinct from libs.coreKtx and should be kept.
 }
