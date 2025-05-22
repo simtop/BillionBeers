@@ -1,16 +1,9 @@
 plugins {
-    id("org.jetbrains.kotlin.plugin.compose")
+    id("android-library-convention")
 }
-
-@Suppress("UNCHECKED_CAST")
-val androidModule = rootProject.ext["androidModule"] as groovy.lang.Closure<Any>
-androidModule.call(false)
 
 android {
     namespace = "com.example.billionbeers.beer_data"
-    buildFeatures {
-        compose = true
-    }
 }
 
 dependencies {

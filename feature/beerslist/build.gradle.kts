@@ -1,20 +1,10 @@
 plugins {
-    // com.android.library, kotlin-android, Hilt etc. are currently via androidModule.
-    id("androidx.navigation.safeargs.kotlin") // Added .kotlin suffix
-    id("org.jetbrains.kotlin.plugin.compose") // Added because compose is true
+    id("android-library-convention")
+    id("androidx.navigation.safeargs.kotlin") // Preserved
 }
-
-// Call Groovy closure from common.gradle (this will be removed later)
-@Suppress("UNCHECKED_CAST")
-val androidModule = rootProject.ext["androidModule"] as groovy.lang.Closure<Any>
-androidModule.call(false) // Parameter 'false' for library modules
 
 android {
     namespace = "com.example.billionbeers.feature.beerslist"
-    buildFeatures {
-        compose = true
-    }
-    // Other configurations like compileSdk, minSdk will come from common.gradle via androidModule
 }
 
 dependencies {

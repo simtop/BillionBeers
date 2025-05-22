@@ -14,7 +14,7 @@ buildscript {
     }
 }
 
-apply(from = "$rootDir/common.gradle") // This line is ADDED
+// apply(from = "$rootDir/common.gradle") // REMOVED by BillionBeersBot
 
 //gradlew versionCatalogUpdate --create //--create is just for starting it
 // apply(plugin = "com.github.ben-manes.versions") // Temporarily removed

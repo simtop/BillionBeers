@@ -1,24 +1,18 @@
 plugins {
-    // Assuming 'com.android.library' and 'kotlin-android' etc. are applied by androidModule for now.
-    // This will change with convention plugins.
-    // For now, we only list plugins explicitly applied in the Groovy script *besides* those in androidModule.
-    id("org.jetbrains.kotlin.plugin.compose")
+    id("android-library-convention") // Apply the library convention plugin
+    // org.jetbrains.kotlin.plugin.compose is now part of the convention plugin
 }
-
-// Call Groovy closure from common.gradle (this will be removed later)
-// 'false' indicates it's a library module.
-@Suppress("UNCHECKED_CAST")
-val androidModule = rootProject.ext["androidModule"] as groovy.lang.Closure<Any>
-androidModule.call(false) // Parameter 'false' for library modules
 
 android {
-    namespace = "com.example.billionbeers.core"
-    buildFeatures {
-        compose = true
-    }
-    // Other configurations like compileSdk, minSdk will come from common.gradle via androidModule
+    namespace = "com.example.billionbeers.core" // Module-specific
+    // buildFeatures { compose = true } is now handled by the convention plugin.
+    // compileSdk, minSdk, etc., are now handled by the convention plugin.
 }
 
+// The androidModule.call(false) lines are removed.
+
 dependencies {
-    // Dependencies are currently handled by common.gradle via androidModule()
+    // Specific dependencies for :core would go here if any.
+    // Common dependencies (Hilt, Kotlin stdlib, core-ktx, testing, Compose)
+    // are provided by the android-library-convention plugin.
 }
