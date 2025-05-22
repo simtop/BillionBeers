@@ -1,8 +1,5 @@
 buildscript {
-    project.apply {
-        from("$rootDir/common.gradle")
-    }
-
+    // project.apply { from("$rootDir/common.gradle") } // This line is commented out, effectively REMOVED
     repositories {
         google()
         mavenCentral()
@@ -17,17 +14,12 @@ buildscript {
     }
 }
 
+apply(from = "$rootDir/common.gradle") // This line is ADDED
+
 //gradlew versionCatalogUpdate --create //--create is just for starting it
-apply(plugin = "com.github.ben-manes.versions")
+// apply(plugin = "com.github.ben-manes.versions") // Temporarily removed
 apply(plugin = "nl.littlerobots.version-catalog-update")
 
-
-/*
-public val PluginDependenciesSpec.sonarQube: PluginDependencySpec
-    inline get() =
-            id("org.sonarqube").version("3.2.0")
-
- */
 plugins {
     id("org.sonarqube").version("6.2.0.5505")
     id("org.jetbrains.kotlin.plugin.compose").version(libs.versions.org.jetbrains.kotlin.get())
@@ -35,7 +27,7 @@ plugins {
 
 allprojects {
     apply {
-        from("$rootDir/common.gradle")
+        // from("$rootDir/common.gradle") // This line Stays commented out
     }
     repositories {
         google()
@@ -43,8 +35,8 @@ allprojects {
     }
 }
 
-apply(plugin = "android-reporting")
+// apply(plugin = "android-reporting") // Commented out
 
-tasks.register("clean", Delete::class) {
-    delete(rootProject.buildDir)
-}
+// tasks.register("clean", Delete::class) { // Commented out
+//     delete(rootProject.buildDir)
+// }
