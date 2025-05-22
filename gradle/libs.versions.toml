@@ -122,5 +122,7 @@ org-jetbrains-kotlin-platform-common = "org.jetbrains.kotlin.platform.common:1.6
 org-jetbrains-kotlin-platform-js = "org.jetbrains.kotlin.platform.js:1.6.0"
 org-jetbrains-kotlin-platform-jvm = "org.jetbrains.kotlin.platform.jvm:1.6.0"
 org-jetbrains-kotlin-plugin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "org-jetbrains-kotlin" }
-org-jetbrains-kotlin-plugin-scripting = "org.jetbrains.kotlin.plugin.scripting:1.6.0"
+org-jetbrains-kotlin-plugin-scripting = { id = "org.jetbrains.kotlin.plugin.scripting:1.6.0"
 sonarqube = "org.sonarqube:3.3" # Not in task, skip
+android-application-convention = { id = "android-application-convention" }
+android-library-convention = { id = "android-library-convention" }

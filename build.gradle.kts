@@ -1,7 +1,5 @@
 buildscript {
-    project.apply {
-        from("$rootDir/common.gradle")
-    }
+    // common.gradle application removed
     dependencies {
         classpath(libs.androidToolsBuildGradle)
         classpath(libs.kotlinGradlePlugin)
@@ -12,20 +10,11 @@ buildscript {
     }
 }
 
-/*
-public val PluginDependenciesSpec.sonarQube: PluginDependencySpec
-    inline get() =
-            id("org.sonarqube").version("3.2.0")
+// Commented-out sonarQube accessor removed
 
- */
+// allprojects block removed
 
-allprojects {
-    apply {
-        from("$rootDir/common.gradle")
-    }
-}
-
-apply(plugin = "android-reporting")
+apply(plugin = "android-reporting") // Kept as is
 
 tasks.register("clean", Delete::class) {
     delete(rootProject.buildDir)

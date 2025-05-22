@@ -19,13 +19,13 @@ dependencyResolutionManagement {
     }
 }
 
-include ':beer_data'
-include ':beer_database'
-include ':beer_network'
-include ':presentation_utils'
-include ':core'
-include ':feature:beerslist'
-include ':feature:beerdetail'
-include ':beerdomain'
-include ':app'
+include(":beer_data")
+include(":beer_database")
+include(":beer_network")
+include(":presentation_utils")
+include(":core")
+include(":feature:beerslist")
+include(":feature:beerdetail")
+include(":beerdomain")
+include(":app")
 rootProject.name = "BillionBeers"
