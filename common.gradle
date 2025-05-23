@@ -8,17 +8,17 @@ ext.androidModule = { Boolean isApplication = false ->
 
     apply plugin: 'kotlin-android'
     apply plugin: 'kotlin-parcelize'
-    apply plugin: 'kotlin-kapt'
+    //apply plugin: 'kotlin-kapt'
     apply plugin: 'dagger.hilt.android.plugin'
+    //apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 
     android {
-        compileSdkVersion 31
+        compileSdkVersion 36
 
         defaultConfig {
             minSdkVersion 21
-            targetSdkVersion 31
-            versionCode 51
-            versionName "0.51"
+            versionCode 52
+            versionName "0.52"
 
             multiDexEnabled true
             testInstrumentationRunner "com.simtop.billionbeers.di.MockTestRunner"
@@ -68,9 +68,9 @@ ext.androidModule = { Boolean isApplication = false ->
             }
         }
 
-        kapt {
-            correctErrorTypes true
-        }
+        //kapt {
+          //  correctErrorTypes true
+        //}
 
     // Always show the result of every unit test, even if it passes.
         testOptions.unitTests {
@@ -97,9 +97,9 @@ ext.androidModule = { Boolean isApplication = false ->
             compose = true
         }
 
-        kapt {
-            generateStubs = true
-        }
+        //kapt {
+          //  generateStubs = true
+        //}
 
   //      composeCompiler {
   //          enableStrongSkippingMode = true
@@ -126,12 +126,13 @@ ext.androidModule = { Boolean isApplication = false ->
         implementation libs.lifecycleExtensions
         implementation libs.retrofit2ConverterGson
         implementation libs.okhttp3LoggingInterceptor
-        kapt libs.roomCompiler
+        ksp libs.roomCompiler
         implementation libs.roomKtx
-        kapt libs.roomRuntime
+        ksp libs.roomRuntime
 
-        implementation libs.hiltAndroid
-        kapt libs.hiltCompiler
+        implementation libs.hilt.android
+        ksp libs.hilt.compiler
+        ksp libs.androidx.hilt.compiler
 
         // Compose
         implementation libs.androidxComposeBom
@@ -146,7 +147,7 @@ ext.androidModule = { Boolean isApplication = false ->
         testImplementation libs.junit
 
         androidTestImplementation libs.hiltAndroidTesting
-        kaptAndroidTest libs.hiltCompiler
+        kspAndroidTest libs.hilt.compiler
 
         androidTestImplementation libs.junit
         androidTestImplementation libs.kotlinTestJunit

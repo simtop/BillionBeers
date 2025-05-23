@@ -1,3 +1,7 @@
+plugins {
+    alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.com.google.devtools.ksp)
+}
 androidModule(true)
 
 apply plugin: 'androidx.navigation.safeargs'
@@ -21,6 +25,7 @@ dependencies {
     implementation libs.navigationDynamicFeaturesFragment
 
     implementation libs.androidPlayCore
+    implementation libs.androidPlayCoreKtx
 
     testImplementation libs.striktCore
 

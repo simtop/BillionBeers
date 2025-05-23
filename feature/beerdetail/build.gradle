@@ -1,9 +1,11 @@
-apply plugin: 'com.android.dynamic-feature'
-apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-parcelize'
-apply plugin: 'kotlin-kapt'
-apply plugin: 'dagger.hilt.android.plugin'
-apply plugin: 'androidx.navigation.safeargs'
+plugins {
+    id("com.android.dynamic-feature")
+    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.parcelize")
+    alias(libs.plugins.hilt)
+    id("androidx.navigation.safeargs")
+    alias(libs.plugins.com.google.devtools.ksp)
+}
 
 android {
     compileSdkVersion 31
@@ -32,9 +34,9 @@ android {
         }
     }
 
-    kapt {
-        correctErrorTypes true
-    }
+    //kapt {
+    //    correctErrorTypes true
+    //}
 
     // Always show the result of every unit test, even if it passes.
     testOptions.unitTests {
@@ -60,9 +62,9 @@ android {
         viewBinding = true
     }
 
-    kapt {
-        generateStubs = true
-    }
+    //kapt {
+      //  generateStubs = true
+    //}
     packagingOptions {
         resources {
             excludes += ['META-INF/AL2.0', 'META-INF/LGPL2.1', 'META-INF/licenses/ASM']
@@ -85,11 +87,12 @@ dependencies {
     implementation libs.lifecycleExtensions
     implementation libs.retrofit2ConverterGson
     implementation libs.okhttp3LoggingInterceptor
-    kapt libs.roomCompiler
+    ksp libs.roomCompiler
     implementation libs.roomKtx
-    kapt libs.roomRuntime
-    implementation libs.hiltAndroid
-    kapt libs.hiltCompiler
+    ksp libs.roomRuntime
+    implementation libs.hilt.android
+    ksp libs.hilt.compiler
+    ksp libs.androidx.hilt.compiler
 
 
     implementation libs.navigationFragmentKtx
@@ -112,7 +115,7 @@ dependencies {
     testImplementation libs.junit
 
     androidTestImplementation libs.hiltAndroidTesting
-    kaptAndroidTest libs.hiltCompiler
+    kspAndroidTest libs.hilt.compiler
 
     androidTestImplementation libs.junit
     androidTestImplementation libs.kotlinTestJunit

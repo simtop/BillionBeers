@@ -1,16 +1,22 @@
 package com.simtop.feature.beerslist
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.ProgressIndicatorDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
@@ -40,6 +46,7 @@ import com.simtop.presentation_utils.custom_views.ComposeTitle
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
+@OptIn(ExperimentalMaterial3Api::class)
 @AndroidEntryPoint
 class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
 
@@ -55,6 +62,7 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
         super.onResume()
     }
 
+    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "UnrememberedMutableState")
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -106,6 +114,13 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
                                     showDialog.value = it
                                 }, number = prog.value)
                             }
+                        }
+
+                        null -> {
+                            //TODO:
+                            // Handle initial null state, or do nothing.
+                            // A loading indicator might also be appropriate here.
+
                         }
                     }
                 }

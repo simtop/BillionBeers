@@ -4,7 +4,7 @@ import android.content.Context
 import android.graphics.Color
 import android.util.AttributeSet
 import android.view.LayoutInflater
-import androidx.compose.material.MaterialTheme
+import androidx.compose.material3.MaterialTheme
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.presentation_utils.core.BaseBindView
 import com.simtop.presentation_utils.databinding.RowBeerListBinding

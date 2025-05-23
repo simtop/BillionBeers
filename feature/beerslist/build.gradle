@@ -1,3 +1,7 @@
+plugins {
+    alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.com.google.devtools.ksp)
+}
 androidModule()
 
 apply plugin: 'androidx.navigation.safeargs'
@@ -10,6 +14,9 @@ dependencies {
     implementation project(":core")
 
     implementation libs.navigationDynamicFeaturesFragment
+    implementation libs.androidx.material3.android
+    implementation libs.androidx.runtime.livedata
+    implementation libs.androidx.ui.tooling.preview.android
 }
 android {
     namespace 'com.simtop.feature.beerslist'

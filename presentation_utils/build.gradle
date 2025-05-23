@@ -1,7 +1,14 @@
+plugins {
+    alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.com.google.devtools.ksp)
+}
 androidModule()
 
 dependencies {
     implementation project(":beerdomain")
+    implementation libs.androidx.foundation.android
+    implementation libs.androidx.material3.android
+    implementation libs.androidx.ui.tooling.preview.android
 }
 android {
     namespace 'com.simtop.presentation_utils'

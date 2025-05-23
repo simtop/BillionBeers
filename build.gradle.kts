@@ -12,15 +12,9 @@ buildscript {
         classpath(libs.kotlinGradlePlugin)
         classpath(libs.navigationSafeArgsPlugin)
         classpath (libs.hiltAndroidGradlePlugin)
-        classpath(libs.benManesPlugin)
-        classpath(libs.littlerobotsPlugin)
+        //classpath(libs.composeCompiler)
     }
 }
-
-//gradlew versionCatalogUpdate --create //--create is just for starting it
-apply(plugin = "com.github.ben-manes.versions")
-apply(plugin = "nl.littlerobots.version-catalog-update")
-
 
 /*
 public val PluginDependenciesSpec.sonarQube: PluginDependencySpec
@@ -30,6 +24,13 @@ public val PluginDependenciesSpec.sonarQube: PluginDependencySpec
  */
 plugins {
     id("org.sonarqube").version("3.2.0")
+    alias(libs.plugins.compose.compiler) apply false
+    alias(libs.plugins.com.google.devtools.ksp) apply false
+
+    alias(libs.plugins.kotlin.android) apply false
+    alias(libs.plugins.hilt) apply false
+
+    //alias(libs.plugins.android.application) apply false
 }
 
 allprojects {
