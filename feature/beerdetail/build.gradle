@@ -2,7 +2,6 @@ plugins {
     id("com.android.dynamic-feature")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.parcelize")
-    alias(libs.plugins.hilt)
     id("androidx.navigation.safeargs")
     alias(libs.plugins.com.google.devtools.ksp)
 }
@@ -84,6 +83,7 @@ dependencies {
     implementation libs.constraintlayout
 
     implementation libs.glide
+    ksp libs.glideCompiler
     implementation libs.lifecycleExtensions
     implementation libs.retrofit2ConverterGson
     implementation libs.okhttp3LoggingInterceptor

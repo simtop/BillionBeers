@@ -123,6 +123,7 @@ ext.androidModule = { Boolean isApplication = false ->
         implementation libs.constraintlayout
 
         implementation libs.glide
+        ksp libs.glideCompiler
         implementation libs.lifecycleExtensions
         implementation libs.retrofit2ConverterGson
         implementation libs.okhttp3LoggingInterceptor
