@@ -11,3 +11,6 @@ dependencies {
 
     implementation libs.navigationDynamicFeaturesFragment
 }
+android {
+    namespace 'com.simtop.feature.beerslist'
+}

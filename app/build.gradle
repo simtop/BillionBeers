@@ -4,6 +4,7 @@ apply plugin: 'androidx.navigation.safeargs'
 
 android {
     dynamicFeatures = [':feature:beerdetail']
+    namespace 'com.simtop.billionbeers'
 }
 
 dependencies {

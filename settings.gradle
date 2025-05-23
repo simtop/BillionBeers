@@ -16,5 +16,3 @@ include ':feature:beerdetail'
 include ':beerdomain'
 include ':app'
 rootProject.name = "BillionBeers"
-enableFeaturePreview("VERSION_CATALOGS")
-enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")

@@ -3,3 +3,6 @@ androidModule()
 dependencies {
     implementation project(":core")
 }
+android {
+    namespace 'com.simtop.beer_database'
+}

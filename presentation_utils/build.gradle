@@ -3,3 +3,6 @@ androidModule()
 dependencies {
     implementation project(":beerdomain")
 }
+android {
+    namespace 'com.simtop.presentation_utils'
+}

@@ -2,3 +2,6 @@ androidModule()
 
 dependencies {
 }
+android {
+    namespace 'com.simtop.core'
+}

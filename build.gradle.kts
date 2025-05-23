@@ -42,7 +42,16 @@ allprojects {
     }
 }
 
-apply(plugin = "android-reporting")
+//apply(plugin = "android-reporting")
+
+//tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+//    compilerOptions {
+//        freeCompilerArgs.addAll(
+//            "-P",
+//            "plugin:androidx.compose.compiler.plugins.kotlin:experimentalStrongSkipping=true"
+//        )
+//    }
+//}
 
 tasks.register("clean", Delete::class) {
     delete(rootProject.buildDir)
