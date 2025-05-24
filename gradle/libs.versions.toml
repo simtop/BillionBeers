@@ -9,7 +9,7 @@ io-mockk = "1.14.2"
 hiltCompiler = "1.3.0-alpha01"
 org-jetbrains-kotlin = "2.1.21"
 activityCompose = "1.10.1"
-composeBom = "2025.04.00"
+composeBom = "2025.05.01"
 com-google-devtools-ksp = "2.1.21-2.0.1"
 foundationAndroid = "1.8.2"
 material3Android = "1.3.2"
@@ -23,7 +23,6 @@ coreTesting = "androidx.arch.core:core-testing:2.2.0"
 constraintlayout = "androidx.constraintlayout:constraintlayout:2.2.1"
 coreKtx = "androidx.core:core-ktx:1.16.0"
 androidx-hilt-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "hiltCompiler" }
-androidx-databinding-viewbinding = "androidx.databinding:viewbinding:8.10.0"
 fragmentTesting = "androidx.fragment:fragment-testing:1.8.7"
 lifecycleExtensions = "androidx.lifecycle:lifecycle-extensions:2.2.0"
 navigationDynamicFeaturesFragment = { module = "androidx.navigation:navigation-dynamic-features-fragment", version.ref = "androidx-navigation" }
@@ -49,10 +48,8 @@ androidPlayCore = "com.google.android.play:feature-delivery:2.1.0"
 androidPlayCoreKtx = "com.google.android.play:feature-delivery-ktx:2.1.0"
 hiltAndroidGradlePlugin = { module = "com.google.dagger:hilt-android-gradle-plugin", version.ref = "com-google-dagger" }
 hiltAndroidTesting = { module = "com.google.dagger:hilt-android-testing", version.ref = "com-google-dagger" }
-
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "com-google-dagger" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "com-google-dagger" }
-
 androidxComposeBom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 androidxActivityCompose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 okhttp3LoggingInterceptor = { module = "com.squareup.okhttp3:logging-interceptor", version.ref = "com-squareup-okhttp3" }
@@ -62,16 +59,10 @@ mockk = { module = "io.mockk:mockk", version.ref = "io-mockk" }
 mockkAndroid = { module = "io.mockk:mockk-android", version.ref = "io-mockk" }
 striktCore = "io.strikt:strikt-core:0.35.1"
 junit = "junit:junit:4.13.2"
-littlerobotsPlugin = "nl.littlerobots.vcu:plugin:0.2.1"
 kluentAndroid = "org.amshove.kluent:kluent-android:1.73"
-org-jacoco-org-jacoco-agent = "org.jacoco:org.jacoco.agent:0.8.3"
-org-jacoco-org-jacoco-ant = "org.jacoco:org.jacoco.ant:0.8.7"
 kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "org-jetbrains-kotlin" }
 kotlinTestJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "org-jetbrains-kotlin" }
 coroutinesTest = "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.4.2"
-composeCompiler = "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:$org-jetbrains-kotlin"
-kotlinComposeCompilerGradlePlugin = { module = "org.jetbrains.kotlin:compose-compiler-gradle-plugin", version.ref = "org-jetbrains-kotlin" }
-kspGradlePlugin = { module = "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin", version.ref = "com-google-devtools-ksp" }
 androidx-foundation-android = { group = "androidx.compose.foundation", name = "foundation-android", version.ref = "foundationAndroid" }
 androidx-material3-android = { group = "androidx.compose.material3", name = "material3-android", version.ref = "material3Android" }
 androidx-ui-tooling-preview-android = { group = "androidx.compose.ui", name = "ui-tooling-preview-android", version.ref = "uiToolingPreviewAndroid" }
@@ -82,12 +73,5 @@ compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "
 com-google-devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "com-google-devtools-ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "com-google-dagger" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "org-jetbrains-kotlin" }
-android-application = { id = "com.android.application", version.ref = "agp" }
-
-android = "android:7.0.3"
-android-library = "android-library:7.0.3"
-android-reporting = "android-reporting:7.0.3"
-androidx-navigation-safeargs = "androidx.navigation.safeargs:2.3.5"
-androidx-navigation-safeargs-kotlin = "androidx.navigation.safeargs.kotlin:2.3.5"
-com-android-application = "com.android.application:7.0.3"
 sonarqube = "org.sonarqube:3.3"
+android-application = { id = "com.android.application", version.ref = "agp" }

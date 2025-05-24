@@ -7,20 +7,12 @@ plugins {
 }
 
 android {
-    compileSdkVersion 31
+    compileSdkVersion 36
 
     defaultConfig {
         minSdkVersion 21
 
         testInstrumentationRunner "com.simtop.billionbeers.di.MockTestRunner"
-    }
-
-    defaultConfig {
-        javaCompileOptions {
-            annotationProcessorOptions {
-                arguments["dagger.hilt.disableModulesHaveInstallInCheck"] = "true"
-            }
-        }
     }
 
     buildTypes {
@@ -94,6 +86,8 @@ dependencies {
     ksp libs.hilt.compiler
     ksp libs.androidx.hilt.compiler
 
+    //implementation libs.dagger
+    //ksp libs.dagger.compiler
 
     implementation libs.navigationFragmentKtx
     implementation libs.navigationUi
@@ -102,6 +96,7 @@ dependencies {
     implementation project(":core")
 
     implementation project(":app")
+    implementation project(":feature:beerslist")
     implementation libs.navigationDynamicFeaturesFragment
 
 
