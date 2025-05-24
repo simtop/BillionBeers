@@ -6,20 +6,19 @@ import com.simtop.beerdomain.domain.models.Beer
 const val FAKE_JSON = "fake_json_response.json"
 
 val fakeBeersApiResponseItem = BeersApiResponseItem(
-    1,
+    "1",
     "Buzz",
-    "A Real Bitter Experience.",
-    "",
-    "",
     0.0,
     0.0,
+    "",
+    translations = emptyList(),
     emptyList()
 )
 
 val fakeBeerApiResponse = listOf(fakeBeersApiResponseItem.copy())
 
 val fakeBeerModel = Beer(
-    1,
+    "1",
     "Buzz",
     "A Real Bitter Experience.",
     "",

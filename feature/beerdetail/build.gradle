@@ -96,7 +96,7 @@ dependencies {
     implementation project(":core")
 
     implementation project(":app")
-    implementation project(":feature:beerslist")
+    implementation project(":navigation")
     implementation libs.navigationDynamicFeaturesFragment
 
 

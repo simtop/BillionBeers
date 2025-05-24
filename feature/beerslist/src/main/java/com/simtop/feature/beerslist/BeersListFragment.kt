@@ -34,10 +34,11 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import androidx.navigation.dynamicfeatures.DynamicExtras
 import androidx.navigation.dynamicfeatures.DynamicInstallMonitor
+import androidx.navigation.fragment.findNavController
 import com.google.android.play.core.splitinstall.SplitInstallSessionState
 import com.google.android.play.core.splitinstall.model.SplitInstallSessionStatus
 import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.feature.beerslist.navigation.BeerListNavigation
+import com.simtop.navigation.BeerListNavigation
 import com.simtop.presentation_utils.core.*
 import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import com.simtop.presentation_utils.custom_views.ComposeTitle
@@ -174,7 +175,7 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
     fun navigateTo(beer: Beer, extras: DynamicExtras) {
         navigator.fromBeersListToBeerDetail(
             beer,
-            this@BeersListFragment,
+            this@BeersListFragment.findNavController(),
             extras
         )
     }

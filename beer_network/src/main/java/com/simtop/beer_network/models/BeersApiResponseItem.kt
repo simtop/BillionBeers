@@ -6,14 +6,25 @@ import com.google.gson.annotations.SerializedName
 
 @Keep
 data class BeersApiResponseItem(
-    val id: Int?,
+    val id: String?,
     val name: String?,
-    val tagline: String?,
-    val description: String?,
-    @SerializedName("image_url")
-    val imageUrl: String?,
     val abv: Double?,
     val ibu: Double?,
+    @SerializedName("image_id")
+    val imageId: String?,
+    val translations: List<Translation>?,
     @SerializedName("food_pairing")
     val foodPairing: List<String>?
+)
+
+@Keep
+data class Translation(
+    val language: Language,
+    val slogan: String?,
+    val description: String?
+)
+
+@Keep
+data class Language(
+    val code: String
 )

@@ -11,7 +11,7 @@ class BeersLocalSource @Inject constructor(private val db: BeersDatabase) {
 
     suspend fun insertAllToDB(beers: List<BeerDbModel>) = db.beersDao().insertAll(beers)
 
-    fun updateBeer(primaryKey: Int, availability: Boolean) = db.beersDao()
+    fun updateBeer(primaryKey: String, availability: Boolean) = db.beersDao()
         .updateBeer(primaryKey, availability)
 
     fun deleteAllFromDB() = db.beersDao().deleteAll()

@@ -1,13 +1,14 @@
-package com.simtop.feature.beerslist.navigation
+package com.simtop.navigation
 
+import androidx.fragment.app.Fragment
+import androidx.navigation.NavController
 import androidx.navigation.dynamicfeatures.DynamicExtras
 import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.feature.beerslist.BeersListFragment
 
 interface BeerListNavigation {
     fun fromBeersListToBeerDetail(
         beer: Beer,
-        fragment: BeersListFragment,
+        navController: NavController,
         dynamicExtras: DynamicExtras
     )
 }

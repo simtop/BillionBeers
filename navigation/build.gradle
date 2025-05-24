@@ -1,0 +1,14 @@
+plugins {
+    alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.com.google.devtools.ksp)
+}
+androidModule()
+
+dependencies {
+    implementation project(":beerdomain")
+    implementation libs.androidx.navigation.dynamic.features.runtime
+
+}
+android {
+    namespace 'com.simtop.navigation'
+}

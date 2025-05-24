@@ -1,7 +1,7 @@
 package com.simtop.billionbeers.navigationdi
 
 
-import com.simtop.feature.beerslist.navigation.BeerListNavigation
+import com.simtop.navigation.BeerListNavigation
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

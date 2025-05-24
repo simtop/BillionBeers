@@ -15,6 +15,6 @@ object BeersUrlModule {
     @Singleton
     @Named("baseUrl")
     fun provideBaseUrl(): String {
-        return "https://api.punkapi.com/v2/"
+        return "https://brewbuddy.dev/?translations.language.code=en"
     }
 }

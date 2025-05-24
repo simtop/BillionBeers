@@ -1,5 +1,8 @@
 package com.simtop.core.core
 
+import androidx.annotation.Keep
+
+@Keep
 sealed class Either<out L, out R> {
     data class Left<T>(val value: T) : Either<T, Nothing>()
     data class Right<T>(val value: T) : Either<Nothing, T>()

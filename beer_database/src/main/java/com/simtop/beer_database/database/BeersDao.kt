@@ -22,7 +22,7 @@ abstract class BeersDao {
         WHERE id = :primaryKey
         """)
     abstract fun updateBeer(
-        primaryKey: Int,
+        primaryKey: String,
         availability: Boolean
     )
 

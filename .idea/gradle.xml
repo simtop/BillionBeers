@@ -19,6 +19,7 @@
             <option value="$PROJECT_DIR$/feature" />
             <option value="$PROJECT_DIR$/feature/beerdetail" />
             <option value="$PROJECT_DIR$/feature/beerslist" />
+            <option value="$PROJECT_DIR$/navigation" />
             <option value="$PROJECT_DIR$/presentation_utils" />
           </set>
         </option>

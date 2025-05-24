@@ -12,6 +12,7 @@ dependencies {
     implementation project(":beerdomain")
     implementation project(":presentation_utils")
     implementation project(":core")
+    implementation project(":navigation")
 
     implementation libs.navigationDynamicFeaturesFragment
     implementation libs.androidx.material3.android
