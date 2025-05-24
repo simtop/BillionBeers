@@ -7,10 +7,13 @@ plugins {
 }
 
 android {
-    compileSdkVersion 36
+    namespace 'com.simtop.feature.beerdetail'
+
+    compileSdkVersion 35
 
     defaultConfig {
-        minSdkVersion 21
+        minSdkVersion 26
+        targetSdkVersion 35
 
         testInstrumentationRunner "com.simtop.billionbeers.di.MockTestRunner"
     }

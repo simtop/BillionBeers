@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -75,11 +76,9 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
                     TopAppBar(title = { Text(text = requireContext().getString(R.string.billion_beers_list)) })
                 }) {
 
-                    val showDialog = remember { mutableStateOf(false) }
-
-                    val prog = remember { mutableStateOf(0.0f) }
-
-                    var dataVisibility = mutableStateOf(false)
+                    val showDialog = rememberSaveable { mutableStateOf(false) }
+                    val prog = rememberSaveable { mutableFloatStateOf(0.0f) }
+                    val dataVisibility = rememberSaveable { mutableStateOf(false) }
 
                     val viewState by beersViewModel.beerListViewState.observeAsState()
                     //This is an important step to capture the instance of the variable
@@ -88,32 +87,35 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
                         BeersListViewState.EmptyState -> {
                             ComposeTitle(name = "Empty State")
                         }
+
                         is BeersListViewState.Error -> {
                             if (!dataVisibility.value) beersViewModel.showEmptyState()
                             state.result?.let { requireActivity().showToast(it) }
                         }
+
                         BeersListViewState.Loading -> {
                             LoadingIndicator()
                         }
+
                         is BeersListViewState.Success -> {
                             dataVisibility.value = true
                             showDialog.value = state.showDialog
                             prog.value = state.progress
 
                             val beers = state.result
-                            Box(modifier = Modifier.fillMaxSize()) {
+                            Box(modifier = Modifier.fillMaxSize().padding(
+                                WindowInsets.systemBars.asPaddingValues()
+                            )) {
                                 LazyColumn {
-                                    beers.forEach {
-                                        item {
-                                            ComposeBeersListItem(beer = it, ::onBeerClicked)
-                                        }
+                                    items(beers.count()) { index ->
+                                        ComposeBeersListItem(beer = beers[index], onClick = ::onBeerClicked)
                                     }
                                 }
                             }
                             if (showDialog.value) {
                                 DialogWithProgressBar(setShowDialog = {
                                     showDialog.value = it
-                                }, number = prog.value)
+                                }, number = prog.floatValue)
                             }
                         }
 
@@ -152,14 +154,28 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
                                 beersViewModel.setProgress(false, 1.0f)
                                 navigateTo(beer, DynamicExtras(installMonitor))
                             }
+
                             SplitInstallSessionStatus.DOWNLOADED -> {
                                 navigateTo(beer, DynamicExtras(installMonitor))
                             }
+
                             SplitInstallSessionStatus.DOWNLOADING -> {
-                                val percentage = (100 * sessionState.bytesDownloaded() / sessionState.totalBytesToDownload()).toFloat()
-                                progressNumber = percentage/100
-                                beersViewModel.setProgress(true, if(progressNumber > 0.25) progressNumber else 0.25f)
+                                val totalBytes = sessionState.totalBytesToDownload()
+                                val downloadedBytes = sessionState.bytesDownloaded()
+
+                                val progress = if (totalBytes > 0L) {
+                                    downloadedBytes.toFloat() / totalBytes.toFloat()
+                                } else {
+                                    0f
+                                }
+
+                                progressNumber = progress
+                                beersViewModel.setProgress(
+                                    true,
+                                    if (progressNumber > 0.25f) progressNumber else 0.25f
+                                )
                             }
+
                             SplitInstallSessionStatus.PENDING -> {
                                 beersViewModel.setProgress(true, 0.1f)
                             }
@@ -196,7 +212,9 @@ fun ProgressBar(progressValue: Float = 0.9f) {
             "Downloading Detail Feature", textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(10.dp))
-        LinearProgressIndicator(progress = animatedProgress)
+        LinearProgressIndicator(progress = {
+            animatedProgress
+        })
         Spacer(Modifier.height(30.dp))
     }
 }

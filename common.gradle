@@ -13,12 +13,13 @@ ext.androidModule = { Boolean isApplication = false ->
     //apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 
     android {
-        compileSdkVersion 36
+        compileSdkVersion 35
 
         defaultConfig {
-            minSdkVersion 21
-            versionCode 52
-            versionName "0.52"
+            minSdkVersion 26
+            targetSdkVersion 35
+            versionCode 54
+            versionName "0.54"
 
             multiDexEnabled true
             testInstrumentationRunner "com.simtop.billionbeers.di.MockTestRunner"
@@ -61,11 +62,18 @@ ext.androidModule = { Boolean isApplication = false ->
                 testCoverageEnabled = true
             }
             release {
+                // TODO: there is an issue with Dynamic features and minifyEnabled true
                 minifyEnabled true
                 debuggable false
                 proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
                 signingConfig signingConfigs.release
             }
+        }
+
+        // Fixes R8 problem related to java.lang.invoke.StringConcatFactory
+        kotlinOptions {
+            jvmTarget = "17"
+            freeCompilerArgs += ["-Xstring-concat=inline"]
         }
 
         //kapt {

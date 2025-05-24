@@ -36,3 +36,64 @@ dependencies {
     implementation libs.junit
     implementation libs.coroutinesTest
 }
+
+// TODO: extract into a gradle plugin shows duplicate dependencies
+// TODO: run ./gradlew :app:releasePrintDuplicateClasses
+// TODO: needed to fix R8 problem
+import com.android.build.api.artifact.ScopedArtifact
+import com.android.build.api.variant.ScopedArtifacts
+
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
+
+abstract class PrintClassesJars extends DefaultTask {
+
+    @InputFiles
+    abstract ListProperty<RegularFile> getAllJars()
+
+    @InputFiles
+    abstract ListProperty<Directory> getAllDirectories()
+
+    @TaskAction
+    void findDuplicateClasses() {
+        def classToJarMap = [:].withDefault { [] }
+
+        getAllJars().get().forEach { file ->
+            try (ZipFile zipFile = new ZipFile(file.asFile)) {
+                Enumeration<? extends ZipEntry> entries = zipFile.entries()
+                while (entries.hasMoreElements()) {
+                    ZipEntry entry = entries.nextElement()
+                    if (entry.getName().endsWith(".class")) {
+                        classToJarMap[entry.getName()] << file.asFile.absolutePath
+                    }
+                }
+            }
+        }
+
+        def duplicates = classToJarMap.findAll { it.value.size() > 1 }
+        if (duplicates) {
+            println "⚠️ Found duplicate classes:"
+            duplicates.each { className, jars ->
+                println " - $className in:"
+                jars.each { jar -> println "     → $jar" }
+            }
+        } else {
+            println "✅ No duplicate classes found"
+        }
+    }
+}
+
+androidComponents {
+    onVariants(selector().all(), { variant ->
+        TaskProvider taskProvider = project.tasks.register(
+                "${variant.name}PrintDuplicateClasses", PrintClassesJars.class
+        )
+        variant.artifacts.forScope(ScopedArtifacts.Scope.ALL)
+                .use(taskProvider)
+                .toGet(
+                        ScopedArtifact.CLASSES.INSTANCE,
+                        { it.allJars },
+                        { it.allDirectories }
+                )
+    })
+}

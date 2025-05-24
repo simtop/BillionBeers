@@ -2,6 +2,9 @@ package com.simtop.feature.beerdetail.presentation
 
 import android.os.Bundle
 import android.view.View
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
@@ -37,8 +40,10 @@ class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
         initInject()
         super.onViewCreated(view, savedInstanceState)
 
-        //Setting view binding for Fragments
         val binding = FragmentDetailBeerBinding.bind(view)
+
+        binding.root.enableEdgeToEdgeXMLFragment()
+
         _beersDetailFragmentBinding = binding
 
         assistedBeer = args.myArg
@@ -49,6 +54,22 @@ class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
             }
         )
 
+    }
+
+    private fun View.enableEdgeToEdgeXMLFragment() {
+        ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
+            val bars = insets.getInsets(
+                WindowInsetsCompat.Type.systemBars()
+                        or WindowInsetsCompat.Type.displayCutout()
+            )
+            v.updatePadding(
+                left = bars.left,
+                top = bars.top,
+                right = bars.right,
+                bottom = bars.bottom,
+            )
+            WindowInsetsCompat.CONSUMED
+        }
     }
 
     private fun initInject() {
