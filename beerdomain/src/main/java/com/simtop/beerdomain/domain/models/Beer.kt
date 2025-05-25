@@ -1,11 +1,13 @@
 package com.simtop.beerdomain.domain.models
 
 import android.os.Parcelable
+import androidx.annotation.Keep
 import kotlinx.parcelize.Parcelize
 
+//@Keep
 @Parcelize
 data class Beer(
-    val id: Int,
+    val id: String,
     val name: String,
     val tagline: String,
     val description: String,
@@ -17,7 +19,7 @@ data class Beer(
 ): Parcelable {
     companion object {
         val empty = Beer(
-            1,
+            "1",
             "",
             "",
             "",

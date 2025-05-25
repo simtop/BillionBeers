@@ -9,4 +9,10 @@ dependencies {
 }
 android {
     namespace 'com.simtop.beerdomain'
+
+    //Fixing R8 problems
+    packagingOptions {
+        exclude 'a/a.class'
+        exclude 'a/b.class'
+    }
 }

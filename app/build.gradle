@@ -9,6 +9,13 @@ apply plugin: 'androidx.navigation.safeargs'
 android {
     dynamicFeatures = [':feature:beerdetail']
     namespace 'com.simtop.billionbeers'
+
+    // Fixing R8 problems
+    packagingOptions {
+        exclude 'META-INF/versions/9/module-info.class'
+        exclude 'a/a.class'
+        exclude 'a/b.class'
+    }
 }
 
 dependencies {
@@ -42,7 +49,6 @@ dependencies {
 // TODO: needed to fix R8 problem
 import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.variant.ScopedArtifacts
-
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 
@@ -58,27 +64,64 @@ abstract class PrintClassesJars extends DefaultTask {
     void findDuplicateClasses() {
         def classToJarMap = [:].withDefault { [] }
 
+        def jarToModuleMap = buildJarToModuleMap()
+
         getAllJars().get().forEach { file ->
             try (ZipFile zipFile = new ZipFile(file.asFile)) {
                 Enumeration<? extends ZipEntry> entries = zipFile.entries()
                 while (entries.hasMoreElements()) {
                     ZipEntry entry = entries.nextElement()
                     if (entry.getName().endsWith(".class")) {
-                        classToJarMap[entry.getName()] << file.asFile.absolutePath
+                        classToJarMap[entry.getName()] << file.asFile
                     }
                 }
             }
         }
 
         def duplicates = classToJarMap.findAll { it.value.size() > 1 }
+
         if (duplicates) {
             println "⚠️ Found duplicate classes:"
             duplicates.each { className, jars ->
                 println " - $className in:"
-                jars.each { jar -> println "     → $jar" }
+                jars.each { jar ->
+                    def source = jarToModuleMap[jar] ?: identifyJar(jar)
+                    println "     → $jar   [source: $source]"
+                }
             }
         } else {
             println "✅ No duplicate classes found"
+        }
+    }
+
+    /**
+     * Attempts to map JAR file paths to local Gradle module names.
+     */
+    protected Map<File, String> buildJarToModuleMap() {
+        def map = [:]
+        project.rootProject.subprojects.each { sub ->
+            def pathPrefix = new File(sub.buildDir, "intermediates/runtime_library_classes_jar")
+            if (pathPrefix.exists()) {
+                pathPrefix.eachFileRecurse { f ->
+                    if (f.name == "classes.jar") {
+                        map[f] = sub.path
+                    }
+                }
+            }
+        }
+        return map
+    }
+
+    /**
+     * Fallback classifier for external jars (usually from Gradle caches)
+     */
+    protected String identifyJar(File jar) {
+        if (jar.absolutePath.contains(".gradle/caches/")) {
+            def fileName = jar.name
+            def parent = jar.parentFile?.name
+            return "$parent/$fileName".replace("jetified-", "")
+        } else {
+            return "unknown"
         }
     }
 }

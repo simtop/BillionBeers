@@ -1,16 +1,14 @@
+ext.androidModule = { isApplication = false ->
 
-ext.androidModule = { Boolean isApplication = false ->
-    if(isApplication) {
-        apply plugin: 'com.android.application'
-    } else {
+    if (!isApplication) {
         apply plugin: 'com.android.library'
+    } else {
+        apply plugin: 'com.android.application'
     }
 
     apply plugin: 'kotlin-android'
     apply plugin: 'kotlin-parcelize'
-    //apply plugin: 'kotlin-kapt'
     apply plugin: 'dagger.hilt.android.plugin'
-    //apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 
     android {
         compileSdkVersion 35
@@ -18,8 +16,8 @@ ext.androidModule = { Boolean isApplication = false ->
         defaultConfig {
             minSdkVersion 26
             targetSdkVersion 35
-            versionCode 54
-            versionName "0.54"
+            versionCode 55
+            versionName "0.55"
 
             multiDexEnabled true
             testInstrumentationRunner "com.simtop.billionbeers.di.MockTestRunner"
@@ -60,6 +58,8 @@ ext.androidModule = { Boolean isApplication = false ->
         buildTypes {
             debug {
                 testCoverageEnabled = true
+                // TODO: added just to find R8 solution
+                minifyEnabled true
             }
             release {
                 // TODO: there is an issue with Dynamic features and minifyEnabled true
