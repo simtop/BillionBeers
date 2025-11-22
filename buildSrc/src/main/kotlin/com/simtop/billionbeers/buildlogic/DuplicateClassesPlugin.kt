@@ -11,7 +11,6 @@ import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.TaskAction
-import java.io.File
 import java.util.zip.ZipFile
 
 abstract class PrintClassesJars : DefaultTask() {
@@ -33,13 +32,17 @@ abstract class PrintClassesJars : DefaultTask() {
                     val entries = zipFile.entries()
                     while (entries.hasMoreElements()) {
                         val entry = entries.nextElement()
-                        if (!entry.isDirectory && entry.name.endsWith(".class") && !entry.name.startsWith("META-INF")) {
+                        if (!entry.isDirectory && 
+                            entry.name.endsWith(".class") && 
+                            !entry.name.startsWith("META-INF") &&
+                            entry.name != "module-info.class"
+                        ) {
                             classToJarMap.computeIfAbsent(entry.name) { mutableListOf() }.add(file.asFile.absolutePath)
                         }
                     }
                 }
             } catch (e: Exception) {
-                println("Could not read jar: ${file.asFile.absolutePath}")
+                logger.warn("Could not read jar: ${file.asFile.absolutePath}", e)
             }
         }
 
@@ -56,15 +59,24 @@ abstract class PrintClassesJars : DefaultTask() {
         val duplicates = classToJarMap.filterValues { it.size > 1 }
 
         if (duplicates.isNotEmpty()) {
-            println("⚠️ Found duplicate classes:")
+            logger.error("⚠️ Found duplicate classes:")
             duplicates.forEach { (className, jars) ->
-                println(" - $className in:")
+                logger.error(" - $className in:")
                 jars.forEach { jar ->
-                    println("     → $jar")
+                    logger.error("     → ${prettifyPath(jar)}")
                 }
             }
         } else {
-            println("✅ No duplicate classes found")
+            logger.lifecycle("✅ No duplicate classes found")
+        }
+    }
+
+    private fun prettifyPath(path: String): String {
+        return if (path.contains("transforms")) {
+            // Try to extract a more readable name from transforms path
+            path.substringAfterLast("transformed/").substringAfter("/")
+        } else {
+            path
         }
     }
 }
