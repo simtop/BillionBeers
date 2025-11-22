@@ -10,9 +10,4 @@ dependencies {
 android {
     namespace 'com.simtop.beer_database'
 
-    //Fixing R8 problems
-    packagingOptions {
-        exclude 'a/a.class'
-        exclude 'a/b.class'
-    }
 }
