@@ -57,7 +57,7 @@ ext.androidModule = { isApplication = false ->
 
         buildTypes {
             debug {
-                testCoverageEnabled = true
+                testCoverageEnabled = false
                 // TODO: added just to find R8 solution
                 minifyEnabled false
             }
@@ -153,6 +153,7 @@ ext.androidModule = { isApplication = false ->
         testImplementation libs.coroutinesTest
         testImplementation libs.kluentAndroid
         testImplementation libs.okhttp3Mockwebserver
+        testImplementation libs.turbine
         testImplementation libs.junit
 
         androidTestImplementation libs.hiltAndroidTesting

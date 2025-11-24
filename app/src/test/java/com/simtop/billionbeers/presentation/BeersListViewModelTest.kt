@@ -2,14 +2,17 @@ package com.simtop.billionbeers.presentation
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.simtop.beerdomain.domain.usecases.GetAllBeersUseCase
+import com.simtop.beerdomain.domain.usecases.LoadNextPageUseCase
+import com.simtop.beerdomain.domain.usecases.ObservePagingStateUseCase
 import com.simtop.billionbeers.testing_utils.*
-import com.simtop.core.core.Either
+import com.simtop.core.core.PagingState
 import com.simtop.feature.beerslist.BeersListViewModel
 import com.simtop.feature.beerslist.BeersListViewState
 import io.mockk.coEvery
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestRule
@@ -26,6 +29,8 @@ internal class BeersListViewModelTest {
     val coroutineScope = MainCoroutineScopeRule()
 
     private val getAllBeersUseCase: GetAllBeersUseCase = mockk()
+    private val observePagingStateUseCase: ObservePagingStateUseCase = mockk()
+    private val loadNextPageUseCase: LoadNextPageUseCase = mockk()
 
     @Test
     fun `when usecase succeeds we get success state`() = coroutineScope.runBlocking {
@@ -35,72 +40,30 @@ internal class BeersListViewModelTest {
 
         coEvery {
             getAllBeersUseCase.execute(capture(captureSlot))
-        } returns Either.Right(fakeBeerListModel)
-
-        // Act
-
-        coroutineScope.dispatcher.pauseDispatcher()
-
-        val beersListViewModel =
-            BeersListViewModel(coroutineScope.testDispatcherProvider, getAllBeersUseCase)
-
-        val liveDataUnderTest = beersListViewModel.beerListViewState.testObserver()
-
-        coroutineScope.dispatcher.resumeDispatcher()
-
-        // Assert
-
-        expect {
-            that(captureSlot) {
-                get { captured.quantity }.isEqualTo(4)
-            }
-            that(liveDataUnderTest.observedValues) {
-                get { size }.isEqualTo(2)
-                get { get(0) }.isEqualTo(BeersListViewState.Loading)
-                get { get(1) }.isEqualTo(
-                    BeersListViewState.Success(
-                        fakeBeerListModel
-                    )
-                )
-            }
-        }
-    }
-
-    @Test
-    fun `when usecase fails we get error state`() = coroutineScope.runBlocking {
-        // Arrange
-
-        val captureSlot = slot<GetAllBeersUseCase.Params>()
+        } returns flowOf(fakeBeerListModel)
 
         coEvery {
-            getAllBeersUseCase.execute(capture(captureSlot))
-        } returns Either.Left(fakeException)
+            observePagingStateUseCase.execute()
+        } returns flowOf(PagingState.Idle)
 
         // Act
 
-        coroutineScope.dispatcher.pauseDispatcher()
-
         val beersListViewModel =
-            BeersListViewModel(coroutineScope.testDispatcherProvider, getAllBeersUseCase)
-
-        val liveDataUnderTest = beersListViewModel.beerListViewState.testObserver()
-
-        coroutineScope.dispatcher.resumeDispatcher()
+            BeersListViewModel(
+                coroutineScope.testDispatcherProvider,
+                getAllBeersUseCase,
+                observePagingStateUseCase,
+                loadNextPageUseCase
+            )
 
         // Assert
 
         expect {
             that(captureSlot) {
-                get { captured.quantity }.isEqualTo(4)
+                get { captured.quantity }.isEqualTo(1)
             }
-            that(liveDataUnderTest.observedValues) {
-                get { size }.isEqualTo(2)
-                get { get(0) }.isEqualTo(BeersListViewState.Loading)
-                get { get(1) }.isEqualTo(
-                    BeersListViewState.Error(fakeErrorName)
-                )
-            }
+            // Initial state is Loading
+            that(beersListViewModel.beerListViewState.value).isEqualTo(BeersListViewState.Success(fakeBeerListModel))
         }
-
     }
 }

@@ -10,6 +10,7 @@ import com.simtop.beer_database.localsources.BeersLocalSource
 import com.simtop.billionbeers.di.fakeBeerModel2
 import com.simtop.billionbeers.di.fakeDbBeerList
 import com.simtop.core.core.mapLeft
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -44,8 +45,8 @@ class LocalDataSourceTest {
         runBlocking {
             localSource.insertAllToDB(fakeDbBeerList)
 
-            val repositoriesByName = localSource.getAllBeersFromDB()
-            assertEquals(repositoriesByName.first().id, fakeDbBeerList[0].id)
+            val repositoriesByName = localSource.getAllBeersFromDB().first()
+            assertEquals(repositoriesByName[0].id, fakeDbBeerList[0].id)
         }
     }
 
@@ -55,14 +56,14 @@ class LocalDataSourceTest {
             localSource.insertAllToDB(fakeDbBeerList)
             localSource.insertAllToDB(fakeDbBeerList)
 
-            val repositoriesByName = localSource.getAllBeersFromDB()
+            val repositoriesByName = localSource.getAllBeersFromDB().first()
 
             val count = localSource.getCountFromDB()
-            assertEquals(repositoriesByName.first().id, fakeDbBeerList[0].id)
+            assertEquals(repositoriesByName[0].id, fakeDbBeerList[0].id)
             assertEquals(count, 1)
 
             expect {
-                that(repositoriesByName.first()) {
+                that(repositoriesByName[0]) {
                     get { id }.isEqualTo(fakeDbBeerList[0].id)
                 }
                 that(count) {
@@ -96,7 +97,7 @@ class LocalDataSourceTest {
         runBlocking {
             localSource.insertAllToDB(fakeDbBeerList)
             localSource.updateBeer(fakeBeerModel2.id, false)
-            val result = localSource.getAllBeersFromDB()
+            val result = localSource.getAllBeersFromDB().first()
             assertEquals(result[0].availability, false)
         }
     }

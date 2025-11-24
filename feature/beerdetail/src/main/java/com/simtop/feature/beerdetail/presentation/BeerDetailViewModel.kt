@@ -7,6 +7,9 @@ import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.Either
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class BeerDetailViewModel @AssistedInject constructor(
@@ -15,10 +18,8 @@ class BeerDetailViewModel @AssistedInject constructor(
     @Assisted private val beer: Beer
 ) : ViewModel() {
 
-    private val _beerDetailViewState =
-            MutableLiveData<BeersDetailViewState<Beer>>()
-    val beerDetailViewState: LiveData<BeersDetailViewState<Beer>>
-        get() = _beerDetailViewState
+    private val _beerDetailViewState = MutableStateFlow<BeersDetailViewState>(BeersDetailViewState.Loading)
+    val beerDetailViewState: StateFlow<BeersDetailViewState> = _beerDetailViewState.asStateFlow()
 
     init {
         setBeer(beer)
@@ -33,13 +34,13 @@ class BeerDetailViewModel @AssistedInject constructor(
     }
 
     private fun setBeer(beer: Beer) {
-        _beerDetailViewState.postValue(BeersDetailViewState.Success(beer))
+        _beerDetailViewState.value = BeersDetailViewState.Success(beer)
     }
 
     private fun treatResponse(result: Either<Exception, Unit>) {
         result.either(
                 {
-                    _beerDetailViewState.postValue(BeersDetailViewState.Error(it.message))
+                    _beerDetailViewState.value = BeersDetailViewState.Error(it.message)
                 },
                 {
                 }
@@ -47,8 +48,8 @@ class BeerDetailViewModel @AssistedInject constructor(
     }
 
     private fun changeAvailability(beer: Beer) {
-        beer.availability = !beer.availability
-        _beerDetailViewState.postValue(BeersDetailViewState.Success(beer))
+        val newBeer = beer.copy(availability = !beer.availability)
+        _beerDetailViewState.value = BeersDetailViewState.Success(newBeer)
     }
 
     @dagger.assisted.AssistedFactory
@@ -68,7 +69,8 @@ class BeerDetailViewModel @AssistedInject constructor(
     }
 }
 
-sealed class BeersDetailViewState<out T> {
-    data class Success<out T>(val result: T) : BeersDetailViewState<T>()
-    data class Error(val result: String?) : BeersDetailViewState<Nothing>()
+sealed class BeersDetailViewState {
+    object Loading : BeersDetailViewState()
+    data class Success(val result: Beer) : BeersDetailViewState()
+    data class Error(val result: String?) : BeersDetailViewState()
 }

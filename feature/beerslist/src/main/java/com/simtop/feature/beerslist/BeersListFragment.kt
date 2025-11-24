@@ -9,6 +9,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -25,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -74,13 +76,13 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
             setContent {
                 Scaffold(topBar = {
                     TopAppBar(title = { Text(text = requireContext().getString(R.string.billion_beers_list)) })
-                }) {
+                }) { paddingValues->
 
                     val showDialog = rememberSaveable { mutableStateOf(false) }
                     val prog = rememberSaveable { mutableFloatStateOf(0.0f) }
                     val dataVisibility = rememberSaveable { mutableStateOf(false) }
 
-                    val viewState by beersViewModel.beerListViewState.observeAsState()
+                    val viewState by beersViewModel.beerListViewState.collectAsState()
                     //This is an important step to capture the instance of the variable
                     //or the IDE will ask us to cast
                     when (val state = viewState) {
@@ -104,11 +106,58 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
 
                             val beers = state.result
                             Box(modifier = Modifier.fillMaxSize().padding(
-                                WindowInsets.systemBars.asPaddingValues()
+                                paddingValues
                             )) {
-                                LazyColumn {
+                                val listState = rememberLazyListState()
+                                
+                                // Trigger loading when we're near the bottom (last 3 items visible)
+                                val shouldLoadMore by remember(state) {
+                                    derivedStateOf {
+                                        val layoutInfo = listState.layoutInfo
+                                        val visibleItemsInfo = layoutInfo.visibleItemsInfo
+                                        val totalItemsCount = layoutInfo.totalItemsCount
+                                        
+                                        if (totalItemsCount == 0 || visibleItemsInfo.isEmpty()) {
+                                            false
+                                        } else {
+                                            val lastVisibleItemIndex = visibleItemsInfo.last().index
+                                            // Trigger when we're within 3 items of the end
+                                            // Subtract 1 if loading footer is showing to account for it
+                                            val threshold = if (state.isLoadingNextPage) 1 else 3
+                                            lastVisibleItemIndex >= totalItemsCount - threshold
+                                        }
+                                    }
+                                }
+                                
+                                LaunchedEffect(shouldLoadMore, state.isLoadingNextPage) {
+                                    if (shouldLoadMore && !state.isLoadingNextPage) {
+                                        beersViewModel.onScrollToBottom()
+                                    }
+                                }
+
+                                LazyColumn(
+                                    state = listState,
+                                    modifier = Modifier.testTag("beer_list"),
+                                    contentPadding = PaddingValues(bottom = 16.dp)
+                                ) {
                                     items(beers.count()) { index ->
                                         ComposeBeersListItem(beer = beers[index], onClick = ::onBeerClicked)
+                                    }
+                                    
+                                    if (state.isLoadingNextPage) {
+                                        item(key = "loading_footer") {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(24.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                CircularProgressIndicator(
+                                                    modifier = Modifier.size(32.dp),
+                                                    strokeWidth = 3.dp
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }

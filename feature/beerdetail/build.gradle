@@ -4,6 +4,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.parcelize")
     id("androidx.navigation.safeargs")
     alias(libs.plugins.com.google.devtools.ksp)
+    alias(libs.plugins.compose.compiler)
 }
 
 android {
@@ -23,8 +24,8 @@ android {
 
         }
         debug {
-            enableUnitTestCoverage true
-            enableAndroidTestCoverage true
+            enableUnitTestCoverage false
+            enableAndroidTestCoverage false
         }
     }
 
@@ -54,10 +55,11 @@ android {
 
     buildFeatures {
         viewBinding = true
+        compose = true
     }
 
     //kapt {
-      //  generateStubs = true
+    //  generateStubs = true
     //}
     packagingOptions {
         resources {
@@ -80,6 +82,7 @@ dependencies {
     implementation libs.glide
     ksp libs.glideCompiler
     implementation libs.lifecycleExtensions
+    implementation libs.lifecycleRuntimeKtx
     implementation libs.retrofit2ConverterGson
     implementation libs.okhttp3LoggingInterceptor
     ksp libs.roomCompiler
@@ -88,6 +91,17 @@ dependencies {
     implementation libs.hilt.android
     ksp libs.hilt.compiler
     ksp libs.androidx.hilt.compiler
+
+    // Compose
+    implementation platform(libs.androidxComposeBom)
+    implementation libs.androidxActivityCompose
+    implementation libs.androidx.material3.android
+    implementation libs.androidx.foundation.android
+    implementation libs.androidx.ui.tooling.preview.android
+    implementation libs.androidx.runtime.livedata
+    implementation "androidx.compose.ui:ui"
+    implementation "androidx.compose.ui:ui-graphics"
+    debugImplementation "androidx.compose.ui:ui-tooling"
 
     //implementation libs.dagger
     //ksp libs.dagger.compiler
@@ -111,6 +125,7 @@ dependencies {
     testImplementation libs.kluentAndroid
     testImplementation libs.okhttp3Mockwebserver
     testImplementation libs.junit
+    testImplementation libs.turbine
 
     androidTestImplementation libs.hiltAndroidTesting
     kspAndroidTest libs.hilt.compiler

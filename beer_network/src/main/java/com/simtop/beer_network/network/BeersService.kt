@@ -7,8 +7,8 @@ import retrofit2.http.Query
 interface BeersService {
     @GET("beers")
     suspend fun getListOfBeers(
-        @Query("page") page: Int,
-        @Query("per_page") perPage: Int = DEFAULT_ITEMS_PER_PAGE
+        @Query("_page") page: Int,
+        @Query("_limit") perPage: Int = DEFAULT_ITEMS_PER_PAGE
     ): List<BeersApiResponseItem>
 
     companion object {

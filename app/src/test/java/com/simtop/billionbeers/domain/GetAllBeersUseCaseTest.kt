@@ -7,12 +7,13 @@ import com.simtop.billionbeers.testing_utils.MainCoroutineScopeRule
 import com.simtop.billionbeers.testing_utils.fakeBeerListModel
 import com.simtop.billionbeers.testing_utils.fakeException
 import com.simtop.billionbeers.testing_utils.runBlocking
-import com.simtop.core.core.mapLeft
-import com.simtop.core.core.mapRight
 import io.mockk.coEvery
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestRule
@@ -37,14 +38,14 @@ internal class GetAllBeersUseCaseTest {
 
         val captureSlot = slot<Int>()
 
-        coEvery { beersRepository.getBeersFromSingleSource(capture(captureSlot)) } returns fakeBeerListModel
+        coEvery { beersRepository.getBeersFromSingleSource(capture(captureSlot)) } returns flowOf(fakeBeerListModel)
 
         val getAllBeersUseCase =
             GetAllBeersUseCase(beersRepository)
 
         // Act
 
-        val response = getAllBeersUseCase.execute(getAllBeersUseCase.Params(anyInt()))
+        val response = getAllBeersUseCase.execute(GetAllBeersUseCase.Params(anyInt()))
 
         // Assert
 
@@ -52,10 +53,8 @@ internal class GetAllBeersUseCaseTest {
             that(captureSlot) {
                 get { captured }.isEqualTo(0)
             }
-            response.mapRight {
-                that(it) {
-                    get { this }.isEqualTo(fakeBeerListModel)
-                }
+            that(response.first()) {
+                get { this }.isEqualTo(fakeBeerListModel)
             }
         }
     }
@@ -66,26 +65,20 @@ internal class GetAllBeersUseCaseTest {
 
         val captureSlot = slot<Int>()
 
-        coEvery { beersRepository.getBeersFromSingleSource(capture(captureSlot)) } throws fakeException
+        coEvery { beersRepository.getBeersFromSingleSource(capture(captureSlot)) } returns flow { throw fakeException }
 
         val getAllBeersUseCase =
             GetAllBeersUseCase(beersRepository)
 
         // Act
-
-        val response = getAllBeersUseCase.execute(getAllBeersUseCase.Params(anyInt()))
-
-        //Assert
-
-        expect {
-            that(captureSlot) {
-                get { captured }.isEqualTo(0)
-            }
-            response.mapLeft {
-                that(it) {
-                    get { this }.isEqualTo(fakeException)
-                }
-            }
+        // We expect the flow to throw the exception when collected
+        
+        try {
+             getAllBeersUseCase.execute(GetAllBeersUseCase.Params(anyInt())).first()
+        } catch (e: Exception) {
+             expect {
+                 that(e).isEqualTo(fakeException)
+             }
         }
     }
 }

@@ -5,12 +5,38 @@ import com.simtop.beer_database.localsources.BeersLocalSource
 import com.simtop.beer_network.remotesources.BeersRemoteSource
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.core.core.PagingMediator
 import javax.inject.Inject
 
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.onStart
+
+import javax.inject.Singleton
+
+@Singleton
 class BeersRepositoryImpl @Inject constructor(
     private val beersRemoteSource: BeersRemoteSource,
     private val beersLocalSource: BeersLocalSource
 ) : BeersRepository {
+
+    private val pagingMediator = PagingMediator<Int, Beer>(
+        initialKey = 1,
+        nextKey = { currentKey, _ -> currentKey + 1 },
+        fetchRemote = { page ->
+            beersRemoteSource.getListOfBeers(page)
+                .map { BeersMapper.fromBeersApiResponseItemToBeer(it) }
+        },
+        saveLocal = { beers ->
+            beersLocalSource.insertAllToDB(beers.map { BeersMapper.fromBeerToBeerDbModel(it) })
+        },
+        fetchLocal = {
+            beersLocalSource.getAllBeersFromDB()
+                .map { list -> list.map { BeersMapper.fromBeerDbModelToBeer(it) } }
+        }
+    )
+
     override suspend fun getListOfBeerFromApi(page: Int): List<Beer> =
         beersRemoteSource.getListOfBeers(page)
             .map { BeersMapper.fromBeersApiResponseItemToBeer(it) }
@@ -30,15 +56,26 @@ class BeersRepositoryImpl @Inject constructor(
         beersLocalSource.insertAllToDB(beers.map { BeersMapper.fromBeerToBeerDbModel(it) })
 
     override suspend fun getAllBeersFromDB() =
-        beersLocalSource.getAllBeersFromDB().map { BeersMapper.fromBeerDbModelToBeer(it) }
+        beersLocalSource.getAllBeersFromDB().first().map { BeersMapper.fromBeerDbModelToBeer(it) }
 
     override suspend fun countDBEntries() = beersLocalSource.getCountFromDB()
 
-    override suspend fun getBeersFromSingleSource(quantity: Int): List<Beer> {
-        if (countDBEntries() == 0) {
-            val apiResults = getQuantityOfBeerFromApi(quantity)
-            insertAllToDB(apiResults)
+    override fun getBeersFromSingleSource(quantity: Int): Flow<List<Beer>> {
+        return pagingMediator.data.onStart {
+             if (countDBEntries() == 0) {
+                 pagingMediator.loadFirstPage()
+             }
         }
-        return getAllBeersFromDB()
+    }
+
+    override fun observePagingState() = pagingMediator.pagingState
+
+    override suspend fun loadNextPage() {
+        pagingMediator.loadNextPage()
+    }
+    
+    // Helper to trigger initial load if needed
+    suspend fun refresh() {
+        pagingMediator.loadFirstPage()
     }
 }

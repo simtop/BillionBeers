@@ -1,140 +1,134 @@
 package com.simtop.feature.beerdetail
 
-import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import app.cash.turbine.test
 import com.simtop.beerdomain.domain.usecases.UpdateAvailabilityUseCase
-import com.simtop.billionbeers.testing_utils.*
+import com.simtop.billionbeers.testing_utils.fakeBeerModel
+import com.simtop.billionbeers.testing_utils.fakeException
+import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.Either
 import com.simtop.feature.beerdetail.presentation.BeerDetailViewModel
 import com.simtop.feature.beerdetail.presentation.BeersDetailViewState
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import org.junit.Rule
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
-import org.junit.rules.TestRule
-import strikt.api.expect
+import strikt.api.expectThat
+import strikt.assertions.isA
 import strikt.assertions.isEqualTo
 
 @ExperimentalCoroutinesApi
 internal class BeerDetailViewModelTest {
 
-    @get:Rule
-    var rule: TestRule = InstantTaskExecutorRule()
+    private val coroutineDispatcherProvider = mockk<CoroutineDispatcherProvider>()
+    private val availabilityUseCase = mockk<UpdateAvailabilityUseCase>()
+    private val testDispatcher = StandardTestDispatcher()
 
-    @get:Rule
-    val coroutineScope = MainCoroutineScopeRule()
+    @Before
+    fun setUp() {
+        Dispatchers.setMain(testDispatcher)
+        every { coroutineDispatcherProvider.io } returns testDispatcher
+        every { coroutineDispatcherProvider.main } returns testDispatcher
+    }
 
-    private val availabilityUseCase: UpdateAvailabilityUseCase = mockk()
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
 
     @Test
-    fun `when creating viewmodel we get success state`() = coroutineScope.runBlocking {
-        // Arrange
-
-        // Act
-
-        coroutineScope.dispatcher.pauseDispatcher()
-
+    fun `when creating viewmodel we get success state`() = runTest(testDispatcher) {
+        // Arrange & Act
         val beerDetailViewModel = BeerDetailViewModel(
-            coroutineScope.testDispatcherProvider,
+            coroutineDispatcherProvider,
             availabilityUseCase,
             fakeBeerModel
         )
 
-        val liveDataUnderTest = beerDetailViewModel.beerDetailViewState.testObserver()
-
-        coroutineScope.dispatcher.resumeDispatcher()
-
         // Assert
-
-        expect {
-            that(liveDataUnderTest.observedValues) {
-                get { size }.isEqualTo(1)
-                get { get(0) }.isEqualTo(
-                    BeersDetailViewState.Success(
-                        fakeBeerModel
-                    )
-                )
-            }
+        beerDetailViewModel.beerDetailViewState.test {
+            val item = awaitItem()
+            expectThat(item).isA<BeersDetailViewState.Success>()
+            expectThat((item as BeersDetailViewState.Success).result).isEqualTo(fakeBeerModel)
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
-    fun `when usecase fails we get error state`() = coroutineScope.runBlocking {
+    fun `when usecase fails we get error state`() = runTest(testDispatcher) {
         // Arrange
-
         coEvery {
             availabilityUseCase.execute(any())
         } returns Either.Left(fakeException)
 
-        // Act
-
-        coroutineScope.dispatcher.pauseDispatcher()
-
         val beerDetailViewModel = BeerDetailViewModel(
-            coroutineScope.testDispatcherProvider,
+            coroutineDispatcherProvider,
             availabilityUseCase,
             fakeBeerModel
         )
 
-        val liveDataUnderTest = beerDetailViewModel.beerDetailViewState.testObserver()
+        // Act
+        beerDetailViewModel.beerDetailViewState.test {
+            // Initial success state
+            expectThat(awaitItem()).isA<BeersDetailViewState.Success>()
 
-        coroutineScope.dispatcher.resumeDispatcher()
+            beerDetailViewModel.updateAvailability(fakeBeerModel)
 
-        beerDetailViewModel.updateAvailability(fakeBeerModel)
+            // Optimistic update
+            expectThat(awaitItem()).isA<BeersDetailViewState.Success>()
 
-        // Assert
-
-        expect {
-            that(liveDataUnderTest.observedValues) {
-                get { size }.isEqualTo(3)
-                get { get(2) }.isEqualTo(
-                    BeersDetailViewState.Error(
-                        fakeException.message
-                    )
-                )
-            }
+            // Error state
+            val errorItem = awaitItem()
+            expectThat(errorItem).isA<BeersDetailViewState.Error>()
+            expectThat((errorItem as BeersDetailViewState.Error).result).isEqualTo(fakeException.message)
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
-    fun `when usecase succeeds we get success state with different availability`() =
-        coroutineScope.runBlocking {
-            // Arrange
+    fun `when usecase succeeds we get success state with different availability`() = runTest(testDispatcher) {
+        // Arrange
+        coEvery {
+            availabilityUseCase.execute(any())
+        } returns Either.Right(Unit)
 
-            coEvery {
-                availabilityUseCase.execute(any())
-            } returns com.simtop.core.core.Either.Right(Unit)
+        val testExpectedResponse = fakeBeerModel.copy(availability = !fakeBeerModel.availability)
 
-            val testExpectedResponse =
-                fakeBeerModel.copy(availability = !fakeBeerModel.availability)
+        val beerDetailViewModel = BeerDetailViewModel(
+            coroutineDispatcherProvider,
+            availabilityUseCase,
+            fakeBeerModel
+        )
 
-            // Act
+        // Act
+        beerDetailViewModel.beerDetailViewState.test {
+            // Initial success state
+            expectThat(awaitItem()).isA<BeersDetailViewState.Success>()
 
-            coroutineScope.dispatcher.pauseDispatcher()
-
-            val beerDetailViewModel = BeerDetailViewModel(
-                coroutineScope.testDispatcherProvider,
-                availabilityUseCase,
-                fakeBeerModel
-            )
-
-            val liveDataUnderTest = beerDetailViewModel.beerDetailViewState.testObserver()
-
-            coroutineScope.dispatcher.resumeDispatcher()
             beerDetailViewModel.updateAvailability(fakeBeerModel)
 
-            // Assert
+            // Optimistic update (toggled availability)
+            val updatedItem = awaitItem()
+            expectThat(updatedItem).isA<BeersDetailViewState.Success>()
+            expectThat((updatedItem as BeersDetailViewState.Success).result.availability)
+                .isEqualTo(testExpectedResponse.availability)
 
-            expect {
-                that(liveDataUnderTest.observedValues) {
-                    get { size }.isEqualTo(2)
-                    get { get(0) }.isEqualTo(
-                        BeersDetailViewState.Success(
-                            testExpectedResponse
-                        )
-                    )
-                }
-            }
+            // Since usecase succeeds, we don't expect another emission because the optimistic update was correct
+            // and the usecase success doesn't trigger a new state emission in the current implementation
+            // (it only emits on error).
+            // However, if the usecase success *did* emit something, we'd check it here.
+            // In the current VM implementation:
+            // availabilityUseCase.execute(...).also(::treatResponse)
+            // treatResponse only handles Left (Error). Right does nothing.
+            
+            cancelAndIgnoreRemainingEvents()
         }
+    }
 }
-
