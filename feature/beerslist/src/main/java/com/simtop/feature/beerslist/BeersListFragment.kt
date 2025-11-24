@@ -110,30 +110,11 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
                             )) {
                                 val listState = rememberLazyListState()
                                 
-                                // Trigger loading when we're near the bottom (last 3 items visible)
-                                val shouldLoadMore by remember(state) {
-                                    derivedStateOf {
-                                        val layoutInfo = listState.layoutInfo
-                                        val visibleItemsInfo = layoutInfo.visibleItemsInfo
-                                        val totalItemsCount = layoutInfo.totalItemsCount
-                                        
-                                        if (totalItemsCount == 0 || visibleItemsInfo.isEmpty()) {
-                                            false
-                                        } else {
-                                            val lastVisibleItemIndex = visibleItemsInfo.last().index
-                                            // Trigger when we're within 3 items of the end
-                                            // Subtract 1 if loading footer is showing to account for it
-                                            val threshold = if (state.isLoadingNextPage) 1 else 3
-                                            lastVisibleItemIndex >= totalItemsCount - threshold
-                                        }
-                                    }
-                                }
-                                
-                                LaunchedEffect(shouldLoadMore, state.isLoadingNextPage) {
-                                    if (shouldLoadMore && !state.isLoadingNextPage) {
-                                        beersViewModel.onScrollToBottom()
-                                    }
-                                }
+                                InfiniteListHandler(
+                                    listState = listState,
+                                    isLoadingNextPage = state.isLoadingNextPage,
+                                    onLoadMore = { beersViewModel.onScrollToBottom() }
+                                )
 
                                 LazyColumn(
                                     state = listState,

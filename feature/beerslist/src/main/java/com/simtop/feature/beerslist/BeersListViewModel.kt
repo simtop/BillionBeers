@@ -7,12 +7,12 @@ import com.simtop.beerdomain.domain.usecases.GetAllBeersUseCase
 import com.simtop.beerdomain.domain.usecases.LoadNextPageUseCase
 import com.simtop.beerdomain.domain.usecases.ObservePagingStateUseCase
 import com.simtop.core.core.CoroutineDispatcherProvider
+import com.simtop.core.core.PagingHandler
 import com.simtop.core.core.PagingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -28,6 +28,39 @@ class BeersListViewModel @Inject constructor(
 
     private val _beerListViewState = MutableStateFlow<BeersListViewState>(BeersListViewState.Loading)
     val beerListViewState: StateFlow<BeersListViewState> = _beerListViewState.asStateFlow()
+
+    private val pagingHandler = PagingHandler(_beerListViewState) { currentState, pagingState ->
+        when (pagingState) {
+            is PagingState.Loading -> {
+                if (currentState !is BeersListViewState.Success) {
+                    BeersListViewState.Loading
+                } else currentState
+            }
+            is PagingState.LoadingNextPage -> {
+                if (currentState is BeersListViewState.Success) {
+                    currentState.copy(isLoadingNextPage = true)
+                } else currentState
+            }
+            is PagingState.Success -> {
+                if (currentState is BeersListViewState.Success) {
+                    currentState.copy(isLoadingNextPage = false)
+                } else currentState
+            }
+            is PagingState.Error -> {
+                if (currentState !is BeersListViewState.Success) {
+                    BeersListViewState.Error(pagingState.message)
+                } else {
+                    currentState.copy(isLoadingNextPage = false)
+                }
+            }
+            is PagingState.EndOfPagination -> {
+                if (currentState is BeersListViewState.Success) {
+                    currentState.copy(isLoadingNextPage = false)
+                } else currentState
+            }
+            else -> currentState
+        }
+    }
 
     init {
         getAllBeers()
@@ -57,42 +90,12 @@ class BeersListViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
     
+
+
     private fun observePaging() {
         observePagingStateUseCase.execute()
             .onEach { pagingState ->
-                val currentState = _beerListViewState.value
-                when (pagingState) {
-                    is PagingState.Loading -> {
-                        if (currentState !is BeersListViewState.Success) {
-                            _beerListViewState.value = BeersListViewState.Loading
-                        }
-                    }
-                    is PagingState.LoadingNextPage -> {
-                        if (currentState is BeersListViewState.Success) {
-                            _beerListViewState.value = currentState.copy(isLoadingNextPage = true)
-                        }
-                    }
-                    is PagingState.Success -> {
-                        if (currentState is BeersListViewState.Success) {
-                            _beerListViewState.value = currentState.copy(isLoadingNextPage = false)
-                        }
-                    }
-                    is PagingState.Error -> {
-                         if (currentState !is BeersListViewState.Success) {
-                            _beerListViewState.value = BeersListViewState.Error(pagingState.message)
-                        } else {
-                            // Show error as a toast or snackbar event? 
-                            // For now, we update state but maybe we should use a separate event flow
-                            _beerListViewState.value = currentState.copy(isLoadingNextPage = false)
-                        }
-                    }
-                    is PagingState.EndOfPagination -> {
-                        if (currentState is BeersListViewState.Success) {
-                            _beerListViewState.value = currentState.copy(isLoadingNextPage = false)
-                        }
-                    }
-                    else -> {}
-                }
+                pagingHandler.handlePagingState(pagingState)
             }
             .launchIn(viewModelScope)
     }
