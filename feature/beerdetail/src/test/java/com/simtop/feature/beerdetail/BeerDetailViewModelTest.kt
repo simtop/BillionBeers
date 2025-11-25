@@ -1,13 +1,14 @@
 package com.simtop.feature.beerdetail
 
 import app.cash.turbine.test
+import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.usecases.UpdateAvailabilityUseCase
 import com.simtop.billionbeers.testing_utils.fakeBeerModel
 import com.simtop.billionbeers.testing_utils.fakeException
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.Either
 import com.simtop.feature.beerdetail.presentation.BeerDetailViewModel
-import com.simtop.feature.beerdetail.presentation.BeersDetailViewState
+
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -23,6 +24,8 @@ import org.junit.Test
 import strikt.api.expectThat
 import strikt.assertions.isA
 import strikt.assertions.isEqualTo
+
+import com.simtop.core.core.CommonUiState
 
 @ExperimentalCoroutinesApi
 internal class BeerDetailViewModelTest {
@@ -55,8 +58,8 @@ internal class BeerDetailViewModelTest {
         // Assert
         beerDetailViewModel.beerDetailViewState.test {
             val item = awaitItem()
-            expectThat(item).isA<BeersDetailViewState.Success>()
-            expectThat((item as BeersDetailViewState.Success).result).isEqualTo(fakeBeerModel)
+            expectThat(item).isA<CommonUiState.Success<Beer>>()
+            expectThat((item as CommonUiState.Success).data).isEqualTo(fakeBeerModel)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -77,17 +80,17 @@ internal class BeerDetailViewModelTest {
         // Act
         beerDetailViewModel.beerDetailViewState.test {
             // Initial success state
-            expectThat(awaitItem()).isA<BeersDetailViewState.Success>()
+            expectThat(awaitItem()).isA<CommonUiState.Success<Beer>>()
 
             beerDetailViewModel.updateAvailability(fakeBeerModel)
 
             // Optimistic update
-            expectThat(awaitItem()).isA<BeersDetailViewState.Success>()
+            expectThat(awaitItem()).isA<CommonUiState.Success<Beer>>()
 
             // Error state
             val errorItem = awaitItem()
-            expectThat(errorItem).isA<BeersDetailViewState.Error>()
-            expectThat((errorItem as BeersDetailViewState.Error).result).isEqualTo(fakeException.message)
+            expectThat(errorItem).isA<CommonUiState.Error>()
+            expectThat((errorItem as CommonUiState.Error).message).isEqualTo(fakeException.message)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -110,23 +113,19 @@ internal class BeerDetailViewModelTest {
         // Act
         beerDetailViewModel.beerDetailViewState.test {
             // Initial success state
-            expectThat(awaitItem()).isA<BeersDetailViewState.Success>()
+            expectThat(awaitItem()).isA<CommonUiState.Success<Beer>>()
 
             beerDetailViewModel.updateAvailability(fakeBeerModel)
 
             // Optimistic update (toggled availability)
             val updatedItem = awaitItem()
-            expectThat(updatedItem).isA<BeersDetailViewState.Success>()
-            expectThat((updatedItem as BeersDetailViewState.Success).result.availability)
+            expectThat(updatedItem).isA<CommonUiState.Success<Beer>>()
+            expectThat((updatedItem as CommonUiState.Success).data.availability)
                 .isEqualTo(testExpectedResponse.availability)
 
             // Since usecase succeeds, we don't expect another emission because the optimistic update was correct
             // and the usecase success doesn't trigger a new state emission in the current implementation
             // (it only emits on error).
-            // However, if the usecase success *did* emit something, we'd check it here.
-            // In the current VM implementation:
-            // availabilityUseCase.execute(...).also(::treatResponse)
-            // treatResponse only handles Left (Error). Right does nothing.
             
             cancelAndIgnoreRemainingEvents()
         }

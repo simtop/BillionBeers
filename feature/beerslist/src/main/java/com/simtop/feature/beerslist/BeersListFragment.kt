@@ -45,10 +45,9 @@ import com.simtop.navigation.BeerListNavigation
 import com.simtop.presentation_utils.core.*
 import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import com.simtop.presentation_utils.custom_views.ComposeTitle
-
-
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import com.simtop.core.core.CommonUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @AndroidEntryPoint
@@ -62,7 +61,7 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
     var progressNumber = 0.0f
 
     override fun onResume() {
-        if (beersViewModel.beerListViewState.value is BeersListViewState.EmptyState) beersViewModel.getAllBeers()
+        if (beersViewModel.beerListViewState.value is CommonUiState.Empty) beersViewModel.getAllBeers()
         super.onResume()
     }
 
@@ -85,26 +84,27 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
                     val viewState by beersViewModel.beerListViewState.collectAsState()
                     //This is an important step to capture the instance of the variable
                     //or the IDE will ask us to cast
+
                     when (val state = viewState) {
-                        BeersListViewState.EmptyState -> {
+                        CommonUiState.Empty -> {
                             ComposeTitle(name = "Empty State")
                         }
 
-                        is BeersListViewState.Error -> {
+                        is CommonUiState.Error -> {
                             if (!dataVisibility.value) beersViewModel.showEmptyState()
-                            state.result?.let { requireActivity().showToast(it) }
+                            state.message?.let { requireActivity().showToast(it) }
                         }
 
-                        BeersListViewState.Loading -> {
+                        CommonUiState.Loading -> {
                             LoadingIndicator()
                         }
 
-                        is BeersListViewState.Success -> {
+                        is CommonUiState.Success -> {
                             dataVisibility.value = true
-                            showDialog.value = state.showDialog
-                            prog.value = state.progress
+                            showDialog.value = state.data.showDialog
+                            prog.value = state.data.progress
 
-                            val beers = state.result
+                            val beers = state.data.beers
                             Box(modifier = Modifier.fillMaxSize().padding(
                                 paddingValues
                             )) {
@@ -112,7 +112,7 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
                                 
                                 InfiniteListHandler(
                                     listState = listState,
-                                    isLoadingNextPage = state.isLoadingNextPage,
+                                    isLoadingNextPage = state.data.isLoadingNextPage,
                                     onLoadMore = { beersViewModel.onScrollToBottom() }
                                 )
 
@@ -125,7 +125,7 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
                                         ComposeBeersListItem(beer = beers[index], onClick = ::onBeerClicked)
                                     }
                                     
-                                    if (state.isLoadingNextPage) {
+                                    if (state.data.isLoadingNextPage) {
                                         item(key = "loading_footer") {
                                             Box(
                                                 modifier = Modifier
@@ -147,13 +147,6 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
                                     showDialog.value = it
                                 }, number = prog.floatValue)
                             }
-                        }
-
-                        null -> {
-                            //TODO:
-                            // Handle initial null state, or do nothing.
-                            // A loading indicator might also be appropriate here.
-
                         }
                     }
                 }

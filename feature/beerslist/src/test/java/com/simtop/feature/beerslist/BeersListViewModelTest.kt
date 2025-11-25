@@ -1,5 +1,6 @@
 package com.simtop.feature.beerslist
 
+import com.simtop.core.core.CommonUiState
 import app.cash.turbine.test
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.usecases.GetAllBeersUseCase
@@ -43,7 +44,7 @@ class BeersListViewModelTest {
         Dispatchers.setMain(testDispatcher)
         every { coroutineDispatcherProvider.io } returns testDispatcher
         every { coroutineDispatcherProvider.main } returns testDispatcher
-        
+
         every { getAllBeersUseCase.execute(any()) } returns beersFlow
         every { observePagingStateUseCase.execute() } returns pagingStateFlow
         coEvery { loadNextPageUseCase.execute() } returns Unit
@@ -62,35 +63,36 @@ class BeersListViewModelTest {
     }
 
     @Test
-    fun `when onScrollToBottom is called, isLoadingNextPage should be true`() = runTest(testDispatcher) {
-        val beer = mockk<Beer>(relaxed = true)
-        beersFlow.value = listOf(beer)
-        
-        viewModel.beerListViewState.test {
-            // Initial state (Loading)
-            assert(awaitItem() is BeersListViewState.Loading)
-            
-            // Success state from beersFlow
-            val successState = awaitItem() as BeersListViewState.Success
-            assert(successState.result.size == 1)
-            assert(!successState.isLoadingNextPage)
+    fun `when onScrollToBottom is called, isLoadingNextPage should be true`() =
+        runTest(testDispatcher) {
+            val beer = mockk<Beer>(relaxed = true)
+            beersFlow.value = listOf(beer)
 
-            // Trigger scroll to bottom
-            viewModel.onScrollToBottom()
-            
-            // Simulate PagingState update
-            pagingStateFlow.value = PagingState.LoadingNextPage
-            
-            // Expect update with isLoadingNextPage = true
-            val loadingNextPageState = awaitItem() as BeersListViewState.Success
-            assert(loadingNextPageState.isLoadingNextPage)
-            
-            // Simulate PagingState Success
-            pagingStateFlow.value = PagingState.Success
-            
-            // Expect update with isLoadingNextPage = false
-            val finalState = awaitItem() as BeersListViewState.Success
-            assert(!finalState.isLoadingNextPage)
+            viewModel.beerListViewState.test {
+                // Initial state (Loading)
+                assert(awaitItem() is CommonUiState.Loading)
+
+                // Success state from beersFlow
+                val successState = awaitItem() as CommonUiState.Success
+                assert(successState.data.beers.size == 1)
+                assert(!successState.data.isLoadingNextPage)
+
+                // Trigger scroll to bottom
+                viewModel.onScrollToBottom()
+
+                // Simulate PagingState update
+                pagingStateFlow.value = PagingState.LoadingNextPage
+
+                // Expect update with isLoadingNextPage = true
+                val loadingNextPageState = awaitItem() as CommonUiState.Success
+                assert(loadingNextPageState.data.isLoadingNextPage)
+
+                // Simulate PagingState Success
+                pagingStateFlow.value = PagingState.Success
+
+                // Expect update with isLoadingNextPage = false
+                val finalState = awaitItem() as CommonUiState.Success
+                assert(!finalState.data.isLoadingNextPage)
+            }
         }
-    }
 }

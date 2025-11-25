@@ -23,6 +23,7 @@ import com.simtop.feature.beerdetail.presentation.di.DaggerFeatureDetailComponen
 import com.simtop.presentation_utils.core.showToast
 import dagger.hilt.android.EntryPointAccessors
 import javax.inject.Inject
+import com.simtop.core.core.CommonUiState
 
 class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
 
@@ -46,24 +47,25 @@ class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
         return ComposeView(requireContext()).apply {
             setContent {
                 val viewState by beersViewModel.beerDetailViewState.collectAsState()
-                
+
                 when (val state = viewState) {
-                    is BeersDetailViewState.Success -> {
+                    is CommonUiState.Success -> {
                         ComposeBeerDetail(
-                            beer = state.result,
+                            beer = state.data,
                             onBackClick = { findNavController().popBackStack() },
-                            onToggleAvailability = { beersViewModel.updateAvailability(state.result) }
+                            onToggleAvailability = { beersViewModel.updateAvailability(state.data) }
                         )
                     }
-                    is BeersDetailViewState.Error -> {
+                    is CommonUiState.Error -> {
                         // Show error state or toast
-                        state.result?.let { requireActivity().showToast(it) }
+                        state.message?.let { requireActivity().showToast(it) }
                     }
-                    BeersDetailViewState.Loading -> {
+                    CommonUiState.Loading -> {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             CircularProgressIndicator()
                         }
                     }
+                    else -> {}
                 }
             }
         }

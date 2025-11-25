@@ -5,9 +5,10 @@ import com.simtop.beerdomain.domain.usecases.GetAllBeersUseCase
 import com.simtop.beerdomain.domain.usecases.LoadNextPageUseCase
 import com.simtop.beerdomain.domain.usecases.ObservePagingStateUseCase
 import com.simtop.billionbeers.testing_utils.*
+import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.PagingState
 import com.simtop.feature.beerslist.BeersListViewModel
-import com.simtop.feature.beerslist.BeersListViewState
+import com.simtop.feature.beerslist.BeersListUiModel
 import io.mockk.coEvery
 import io.mockk.mockk
 import io.mockk.slot
@@ -63,7 +64,7 @@ internal class BeersListViewModelTest {
                 get { captured.quantity }.isEqualTo(1)
             }
             // Initial state is Loading
-            that(beersListViewModel.beerListViewState.value).isEqualTo(BeersListViewState.Success(fakeBeerListModel))
+            that(beersListViewModel.beerListViewState.value).isEqualTo(CommonUiState.Success(BeersListUiModel(fakeBeerListModel)))
         }
     }
 }

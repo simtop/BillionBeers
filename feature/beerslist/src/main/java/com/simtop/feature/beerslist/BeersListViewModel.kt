@@ -18,6 +18,8 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+import com.simtop.core.core.CommonUiState
+
 @HiltViewModel
 class BeersListViewModel @Inject constructor(
     private val coroutineDispatcher: CoroutineDispatcherProvider,
@@ -26,39 +28,35 @@ class BeersListViewModel @Inject constructor(
     private val loadNextPageUseCase: LoadNextPageUseCase
 ) : ViewModel() {
 
-    private val _beerListViewState = MutableStateFlow<BeersListViewState>(BeersListViewState.Loading)
-    val beerListViewState: StateFlow<BeersListViewState> = _beerListViewState.asStateFlow()
+    private val _beerListViewState = MutableStateFlow<CommonUiState<BeersListUiModel>>(CommonUiState.Loading)
+    val beerListViewState: StateFlow<CommonUiState<BeersListUiModel>> = _beerListViewState.asStateFlow()
 
     private val pagingHandler = PagingHandler(_beerListViewState) { currentState, pagingState ->
-        when (pagingState) {
-            is PagingState.Loading -> {
-                if (currentState !is BeersListViewState.Success) {
-                    BeersListViewState.Loading
-                } else currentState
-            }
-            is PagingState.LoadingNextPage -> {
-                if (currentState is BeersListViewState.Success) {
-                    currentState.copy(isLoadingNextPage = true)
-                } else currentState
-            }
-            is PagingState.Success -> {
-                if (currentState is BeersListViewState.Success) {
-                    currentState.copy(isLoadingNextPage = false)
-                } else currentState
-            }
-            is PagingState.Error -> {
-                if (currentState !is BeersListViewState.Success) {
-                    BeersListViewState.Error(pagingState.message)
-                } else {
-                    currentState.copy(isLoadingNextPage = false)
+        if (currentState is CommonUiState.Success) {
+            val currentUiModel = currentState.data
+            when (pagingState) {
+                is PagingState.LoadingNextPage -> {
+                    CommonUiState.Success(currentUiModel.copy(isLoadingNextPage = true))
                 }
+                is PagingState.Success -> {
+                    CommonUiState.Success(currentUiModel.copy(isLoadingNextPage = false))
+                }
+                is PagingState.Error -> {
+                    // For pagination error, we might want to show a snackbar but keep the data
+                    // For now, just stop loading
+                    CommonUiState.Success(currentUiModel.copy(isLoadingNextPage = false))
+                }
+                is PagingState.EndOfPagination -> {
+                    CommonUiState.Success(currentUiModel.copy(isLoadingNextPage = false))
+                }
+                else -> currentState
             }
-            is PagingState.EndOfPagination -> {
-                if (currentState is BeersListViewState.Success) {
-                    currentState.copy(isLoadingNextPage = false)
-                } else currentState
-            }
-            else -> currentState
+        } else {
+             when (pagingState) {
+                 is PagingState.Loading -> CommonUiState.Loading
+                 is PagingState.Error -> CommonUiState.Error(pagingState.message)
+                 else -> currentState
+             }
         }
     }
 
@@ -76,22 +74,22 @@ class BeersListViewModel @Inject constructor(
                 } else {
                     val currentState = _beerListViewState.value
                     // Preserve isLoadingNextPage flag when updating the list
-                    val isLoadingNextPage = if (currentState is BeersListViewState.Success) {
-                        currentState.isLoadingNextPage
+                    val isLoadingNextPage = if (currentState is CommonUiState.Success) {
+                        currentState.data.isLoadingNextPage
                     } else {
                         false
                     }
-                    _beerListViewState.value = BeersListViewState.Success(
-                        result = beers,
-                        isLoadingNextPage = isLoadingNextPage
+                    _beerListViewState.value = CommonUiState.Success(
+                        BeersListUiModel(
+                            beers = beers,
+                            isLoadingNextPage = isLoadingNextPage
+                        )
                     )
                 }
             }
             .launchIn(viewModelScope)
     }
     
-
-
     private fun observePaging() {
         observePagingStateUseCase.execute()
             .onEach { pagingState ->
@@ -107,29 +105,25 @@ class BeersListViewModel @Inject constructor(
     }
 
     fun showEmptyState() {
-        _beerListViewState.value = BeersListViewState.EmptyState
+        _beerListViewState.value = CommonUiState.Empty
     }
 
     fun setProgress(showDialog: Boolean, progress: Float) {
         val currentState = _beerListViewState.value
-        if (currentState is BeersListViewState.Success) {
-            _beerListViewState.value = currentState.copy(
-                showDialog = showDialog,
-                progress = progress
+        if (currentState is CommonUiState.Success) {
+            _beerListViewState.value = CommonUiState.Success(
+                currentState.data.copy(
+                    showDialog = showDialog,
+                    progress = progress
+                )
             )
         }
     }
 }
 
-sealed class BeersListViewState {
-    data class Success(
-        val result: List<Beer>,
-        val showDialog: Boolean = false,
-        val progress: Float = 0.0f,
-        val isLoadingNextPage: Boolean = false
-    ) : BeersListViewState()
-
-    data class Error(val result: String?) : BeersListViewState()
-    object Loading : BeersListViewState()
-    object EmptyState : BeersListViewState()
-}
+data class BeersListUiModel(
+    val beers: List<Beer> = emptyList(),
+    val showDialog: Boolean = false,
+    val progress: Float = 0.0f,
+    val isLoadingNextPage: Boolean = false
+)
