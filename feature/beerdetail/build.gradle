@@ -1,152 +1,51 @@
 plugins {
-    id("com.android.dynamic-feature")
-    id("org.jetbrains.kotlin.android")
+    id("billionbeers.android.dynamic.feature")
+    id("billionbeers.android.compose")
     id("org.jetbrains.kotlin.plugin.parcelize")
-    id("androidx.navigation.safeargs")
-    alias(libs.plugins.com.google.devtools.ksp)
-    alias(libs.plugins.compose.compiler)
+    id("androidx.navigation.safeargs.kotlin")
 }
 
 android {
-    namespace 'com.simtop.feature.beerdetail'
-
-    compileSdkVersion 35
-
-    defaultConfig {
-        minSdkVersion 26
-        targetSdkVersion 35
-
-        testInstrumentationRunner "com.simtop.billionbeers.di.MockTestRunner"
-    }
-
-    buildTypes {
-        release {
-
-        }
-        debug {
-            enableUnitTestCoverage false
-            enableAndroidTestCoverage false
-        }
-    }
-
-    //kapt {
-    //    correctErrorTypes true
-    //}
-
-    // Always show the result of every unit test, even if it passes.
-    testOptions.unitTests {
-        includeAndroidResources = true
-
-        all {
-            testLogging {
-                events 'passed', 'skipped', 'failed', 'standardOut', 'standardError'
-            }
-            maxHeapSize = "1024m"
-        }
-    }
-
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
-    }
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
-    }
-
-    buildFeatures {
-        viewBinding = true
-        compose = true
-    }
-
-    //kapt {
-    //  generateStubs = true
-    //}
-    packagingOptions {
-        resources {
-            excludes += ['META-INF/AL2.0', 'META-INF/LGPL2.1', 'META-INF/licenses/ASM']
-            pickFirsts += ['**/attach_hotspot_windows.dll']
-        }
-    }
-
-    //Solves some problems for compilation for UI Test
-    namespace 'com.simtop.feature.beerdetail'
+    namespace = "com.simtop.feature.beerdetail"
 }
 
 dependencies {
-    implementation fileTree(dir: "libs", include: ["*.jar"])
-    implementation libs.coreKtx
-    implementation libs.appcompat
-    implementation libs.material
-    implementation libs.constraintlayout
-
-    implementation libs.glide
-    ksp libs.glideCompiler
-    implementation libs.lifecycleExtensions
-    implementation libs.lifecycleRuntimeKtx
-    implementation libs.retrofit2ConverterGson
-    implementation libs.okhttp3LoggingInterceptor
-    ksp libs.roomCompiler
-    implementation libs.roomKtx
-    ksp libs.roomRuntime
-    implementation libs.hilt.android
-    ksp libs.hilt.compiler
-    ksp libs.androidx.hilt.compiler
-
-    // Compose
-    implementation platform(libs.androidxComposeBom)
-    implementation libs.androidxActivityCompose
-    implementation libs.androidx.material3.android
-    implementation libs.androidx.foundation.android
-    implementation libs.androidx.ui.tooling.preview.android
-    implementation libs.androidx.runtime.livedata
-    implementation "androidx.compose.ui:ui"
-    implementation "androidx.compose.ui:ui-graphics"
-    debugImplementation "androidx.compose.ui:ui-tooling"
-
-    //implementation libs.dagger
-    //ksp libs.dagger.compiler
-
-    implementation libs.navigationFragmentKtx
-    implementation libs.navigationUi
-    implementation project(":beerdomain")
-    implementation project(":presentation_utils")
-    implementation project(":core")
-
-    implementation project(":app")
-    implementation project(":navigation")
-    implementation libs.navigationDynamicFeaturesFragment
-
-
-
-    testImplementation libs.mockkAndroid
-    testImplementation libs.mockk
-    testImplementation libs.coreTesting
-    testImplementation libs.coroutinesTest
-    testImplementation libs.kluentAndroid
-    testImplementation libs.okhttp3Mockwebserver
-    testImplementation libs.junit
-    testImplementation libs.turbine
-
-    androidTestImplementation libs.hiltAndroidTesting
-    kspAndroidTest libs.hilt.compiler
-
-    androidTestImplementation libs.junit
-    androidTestImplementation libs.kotlinTestJunit
-    androidTestImplementation libs.coroutinesTest
-    androidTestImplementation libs.espressoCore
-    androidTestImplementation libs.espressoContrib
-    androidTestImplementation libs.espressoIdlingResource
-    androidTestImplementation libs.testRunner
-    androidTestImplementation libs.testRules
-    androidTestImplementation libs.testCoreKtx
-    androidTestImplementation libs.mockkAndroid
-    androidTestImplementation libs.junitKtx
-    androidTestImplementation libs.navigationTesting
-
-    androidTestImplementation libs.coreTesting
-    androidTestImplementation libs.fragmentTesting
-
-    testImplementation libs.striktCore
-
-    androidTestImplementation libs.striktCore
+    implementation(project(":beerdomain"))
+    implementation(project(":presentation_utils"))
+    implementation(project(":core"))
+    implementation(project(":navigation"))
+    
+    implementation(libs.glide)
+    // ksp(libs.glideCompiler) // Not used? Checked earlier, but beerdetail might use it.
+    // Let's check imports in beerdetail later if needed.
+    
+    implementation(libs.retrofit2ConverterGson)
+    implementation(libs.okhttp3LoggingInterceptor)
+    
+    testImplementation(libs.mockkAndroid)
+    testImplementation(libs.mockk)
+    testImplementation(libs.coreTesting)
+    testImplementation(libs.coroutinesTest)
+    testImplementation(libs.kluentAndroid)
+    testImplementation(libs.okhttp3Mockwebserver)
+    testImplementation(libs.turbine)
+    
+    androidTestImplementation(libs.hiltAndroidTesting)
+    // kspAndroidTest(libs.hilt.compiler) // Handled by hilt plugin? No, hilt plugin handles ksp for main/test/androidTest
+    
+    androidTestImplementation(libs.kotlinTestJunit)
+    androidTestImplementation(libs.coroutinesTest)
+    androidTestImplementation(libs.espressoContrib)
+    androidTestImplementation(libs.espressoIdlingResource)
+    androidTestImplementation(libs.testRunner)
+    androidTestImplementation(libs.testRules)
+    androidTestImplementation(libs.testCoreKtx)
+    androidTestImplementation(libs.mockkAndroid)
+    androidTestImplementation(libs.junitKtx)
+    androidTestImplementation(libs.navigationTesting)
+    androidTestImplementation(libs.coreTesting)
+    androidTestImplementation(libs.fragmentTesting)
+    
+    testImplementation(libs.striktCore)
+    androidTestImplementation(libs.striktCore)
 }

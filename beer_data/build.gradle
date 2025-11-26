@@ -1,15 +1,18 @@
 plugins {
-    alias(libs.plugins.compose.compiler)
-    alias(libs.plugins.com.google.devtools.ksp)
+    id("billionbeers.android.library")
+    id("billionbeers.android.hilt")
 }
-androidModule()
+
+android {
+    namespace = "com.simtop.beer_data"
+}
 
 dependencies {
-    implementation project(":core")
-    implementation project(":beerdomain")
-    implementation project(":beer_database")
-    implementation project(":beer_network")
-}
-android {
-    namespace 'com.simtop.beer_data'
+    implementation(project(":core"))
+    implementation(project(":beerdomain"))
+    implementation(project(":beer_database"))
+    implementation(project(":beer_network"))
+    
+    implementation("javax.inject:javax.inject:1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 }

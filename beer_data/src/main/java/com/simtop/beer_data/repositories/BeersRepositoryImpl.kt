@@ -2,7 +2,7 @@ package com.simtop.beer_data.repositories
 
 import com.simtop.beer_data.mappers.BeersMapper
 import com.simtop.beer_database.localsources.BeersLocalSource
-import com.simtop.beer_network.remotesources.BeersRemoteSource
+import com.simtop.beer_network.remotesources.BeersRemoteSourceContract
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.PagingMediator
@@ -17,7 +17,7 @@ import javax.inject.Singleton
 
 @Singleton
 class BeersRepositoryImpl @Inject constructor(
-    private val beersRemoteSource: BeersRemoteSource,
+    private val beersRemoteSource: BeersRemoteSourceContract,
     private val beersLocalSource: BeersLocalSource
 ) : BeersRepository {
 

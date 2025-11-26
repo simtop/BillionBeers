@@ -32,15 +32,15 @@ class SingleBeerItemView @JvmOverloads constructor(
             singleBeerName.text = beer.name
             title.text = beer.name
             beerDescription.text = beer.description
-            beerAbv.text = context.getString(R.string.abv, beer.abv.toString())
-            beerIbu.text = context.getString(R.string.ibu, beer.ibu.toString())
+            beerAbv.text = context.getString(com.simtop.core.R.string.abv, beer.abv.toString())
+            beerIbu.text = context.getString(com.simtop.core.R.string.ibu, beer.ibu.toString())
             foodPairing.text = beer.foodPairing.toString()
             toggleAvailability.setOnClickListener { onClick?.invoke() }
             if (beer.availability) {
-                toggleAvailability.text = context.getString(R.string.empty_barrels)
+                toggleAvailability.text = context.getString(com.simtop.core.R.string.empty_barrels)
                 emergencyText.visibility = View.GONE
             } else {
-                toggleAvailability.text = context.getString(R.string.refill_barrels)
+                toggleAvailability.text = context.getString(com.simtop.core.R.string.refill_barrels)
                 emergencyText.visibility = View.VISIBLE
             }
             home.setOnClickListener { onBack?.invoke() }

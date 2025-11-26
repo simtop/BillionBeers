@@ -1,55 +1,55 @@
 plugins {
-    alias(libs.plugins.compose.compiler)
-    alias(libs.plugins.com.google.devtools.ksp)
+    id("billionbeers.android.application")
+    id("billionbeers.android.compose")
+    id("billionbeers.android.hilt")
+    id("androidx.navigation.safeargs.kotlin")
+    id("com.simtop.billionbeers.duplicate-classes")
 }
-androidModule(true)
-
-apply plugin: 'androidx.navigation.safeargs'
 
 android {
+    namespace = "com.simtop.billionbeers"
     dynamicFeatures = [':feature:beerdetail']
-    namespace 'com.simtop.billionbeers'
-
-    // Fixing R8 problems
-    packagingOptions {
-        exclude 'META-INF/versions/9/module-info.class'
-        exclude 'a/a.class'
-        exclude 'a/b.class'
-        exclude 'META-INF/LICENSE.md'
-        exclude 'META-INF/LICENSE-notice.md'
+    
+    packaging {
+        resources {
+            excludes += "META-INF/versions/9/module-info.class"
+            excludes += "a/a.class"
+            excludes += "a/b.class"
+            excludes += "META-INF/LICENSE.md"
+            excludes += "META-INF/LICENSE-notice.md"
+        }
     }
 }
 
 dependencies {
-    implementation libs.navigationFragmentKtx
-    implementation libs.navigationUi
-    implementation project(":beerdomain")
-    implementation project(":feature:beerslist")
-    implementation project(":core")
-    implementation project(":navigation")
-    implementation project(":beer_data")
-    implementation project(":beer_database")
-    implementation project(":beer_network")
-    implementation project(":presentation_utils")
-
-    implementation libs.navigationDynamicFeaturesFragment
-
-    implementation libs.androidPlayCore
-    implementation libs.androidPlayCoreKtx
-
-    testImplementation libs.striktCore
-
-    androidTestImplementation libs.striktCore
-
-    //TODO: move to another module when we create the test module
-    implementation libs.junit
-    implementation libs.coroutinesTest
-
-    implementation platform(libs.androidxComposeBom)
-    androidTestImplementation platform(libs.androidxComposeBom)
-    androidTestImplementation "androidx.compose.ui:ui-test-junit4"
-    debugImplementation "androidx.compose.ui:ui-test-manifest"
-    androidTestImplementation "org.hamcrest:hamcrest:2.2"
+    implementation(project(":beerdomain"))
+    implementation(project(":feature:beerslist"))
+    implementation(project(":core"))
+    implementation(project(":navigation"))
+    implementation(project(":beer_data"))
+    implementation(project(":beer_database"))
+    implementation(project(":beer_network"))
+    implementation(project(":presentation_utils"))
+    
+    implementation(libs.navigationFragmentKtx)
+    implementation(libs.navigationUi)
+    implementation(libs.navigationDynamicFeaturesFragment)
+    
+    implementation(libs.androidPlayCore)
+    implementation(libs.androidPlayCoreKtx)
+    
+    testImplementation(libs.striktCore)
+    androidTestImplementation(libs.striktCore)
+    
+    // TODO: move to another module when we create the test module
+    implementation(libs.junit)
+    implementation(libs.coroutinesTest)
+    
+    testImplementation(libs.okhttp3Mockwebserver)
+    testImplementation(libs.retrofit2ConverterGson)
+    testImplementation(libs.okhttp3LoggingInterceptor)
+    
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
+    androidTestImplementation("org.hamcrest:hamcrest:2.2")
 }
-
-apply plugin: 'com.simtop.billionbeers.duplicate-classes'

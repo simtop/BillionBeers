@@ -2,10 +2,7 @@
   {
     "id": 1,
     "name": "Buzz",
-    "tagline": "A Real Bitter Experience.",
-    "first_brewed": "09/2007",
-    "description": "",
-    "image_url": "",
+    "image_id": "",
     "abv": 0.0,
     "ibu": 0.0,
     "target_fg": 1010,
@@ -14,6 +11,15 @@
     "srm": 10,
     "ph": 4.4,
     "attenuation_level": 75,
+    "translations": [
+      {
+        "language": {
+          "code": "en"
+        },
+        "slogan": "A Real Bitter Experience.",
+        "description": ""
+      }
+    ],
     "volume": {
       "value": 20,
       "unit": "litres"

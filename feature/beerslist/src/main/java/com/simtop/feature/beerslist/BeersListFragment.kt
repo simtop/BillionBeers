@@ -74,7 +74,7 @@ class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
         return ComposeView(requireContext()).apply {
             setContent {
                 Scaffold(topBar = {
-                    TopAppBar(title = { Text(text = requireContext().getString(R.string.billion_beers_list)) })
+                    TopAppBar(title = { Text(text = requireContext().getString(com.simtop.core.R.string.billion_beers_list)) })
                 }) { paddingValues->
 
                     val showDialog = rememberSaveable { mutableStateOf(false) }

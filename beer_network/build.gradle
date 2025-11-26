@@ -1,12 +1,16 @@
 plugins {
-    alias(libs.plugins.compose.compiler)
-    alias(libs.plugins.com.google.devtools.ksp)
+    id("billionbeers.android.library")
+    id("billionbeers.android.hilt")
 }
-androidModule()
+
+android {
+    namespace = "com.simtop.beer_network"
+}
 
 dependencies {
-    implementation project(":core")
-}
-android {
-    namespace 'com.simtop.beer_network'
+    implementation(project(":core"))
+    
+    implementation(libs.retrofit2ConverterGson)
+    implementation(libs.okhttp3LoggingInterceptor)
+    implementation("androidx.annotation:annotation:1.7.0")
 }

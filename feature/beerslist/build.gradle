@@ -1,24 +1,18 @@
 plugins {
-    alias(libs.plugins.compose.compiler)
-    alias(libs.plugins.com.google.devtools.ksp)
+    id("billionbeers.android.feature")
+    id("billionbeers.android.compose")
+    id("androidx.navigation.safeargs.kotlin")
 }
-androidModule()
 
-apply plugin: 'androidx.navigation.safeargs'
+android {
+    namespace = "com.simtop.feature.beerslist"
+}
 
 dependencies {
-    implementation libs.navigationFragmentKtx
-    implementation libs.navigationUi
-    implementation project(":beerdomain")
-    implementation project(":presentation_utils")
-    implementation project(":core")
-    implementation project(":navigation")
-
-    implementation libs.navigationDynamicFeaturesFragment
-    implementation libs.androidx.material3.android
-    implementation libs.androidx.runtime.livedata
-    implementation libs.androidx.ui.tooling.preview.android
-}
-android {
-    namespace 'com.simtop.feature.beerslist'
+    implementation(project(":navigation"))
+    
+    implementation(libs.navigationDynamicFeaturesFragment)
+    implementation(libs.androidx.material3.android)
+    implementation(libs.androidx.runtime.livedata)
+    implementation(libs.androidx.ui.tooling.preview.android)
 }

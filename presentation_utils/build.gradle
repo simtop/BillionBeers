@@ -1,15 +1,26 @@
 plugins {
-    alias(libs.plugins.compose.compiler)
-    alias(libs.plugins.com.google.devtools.ksp)
+    id("billionbeers.android.library")
+    id("billionbeers.android.compose")
 }
-androidModule()
+
+android {
+    namespace = "com.simtop.presentation_utils"
+    buildFeatures {
+        viewBinding = true
+    }
+}
 
 dependencies {
-    implementation project(":beerdomain")
-    implementation libs.androidx.foundation.android
-    implementation libs.androidx.material3.android
-    implementation libs.androidx.ui.tooling.preview.android
-}
-android {
-    namespace 'com.simtop.presentation_utils'
+    implementation(project(":beerdomain"))
+    implementation(project(":core"))
+    
+    implementation(libs.androidx.foundation.android)
+    implementation(libs.androidx.material3.android)
+    implementation(libs.androidx.ui.tooling.preview.android)
+    
+    implementation(libs.appcompat)
+    implementation(libs.material)
+    implementation(libs.constraintlayout)
+    
+    implementation(libs.glide)
 }

@@ -1,13 +1,14 @@
 plugins {
-    alias(libs.plugins.compose.compiler)
-    alias(libs.plugins.com.google.devtools.ksp)
+    id("billionbeers.android.library")
+    id("billionbeers.room")
+    id("billionbeers.android.hilt")
 }
-androidModule()
+
+android {
+    namespace = "com.simtop.beer_database"
+}
 
 dependencies {
-    implementation project(":core")
-}
-android {
-    namespace 'com.simtop.beer_database'
-
+    implementation(project(":core"))
+    implementation(libs.retrofit2ConverterGson)
 }

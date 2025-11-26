@@ -1,11 +1,18 @@
 plugins {
-    alias(libs.plugins.compose.compiler)
-    alias(libs.plugins.com.google.devtools.ksp)
+    id("billionbeers.android.library")
+    id("billionbeers.android.hilt")
 }
-androidModule()
+
+android {
+    namespace = "com.simtop.core"
+}
 
 dependencies {
-}
-android {
-    namespace 'com.simtop.core'
+    api(project(":core-common"))
+    implementation(libs.coreKtx)
+    implementation(libs.appcompat)
+    implementation(libs.material)
+    
+    implementation(libs.retrofit2ConverterGson)
+    implementation(libs.okhttp3LoggingInterceptor)
 }

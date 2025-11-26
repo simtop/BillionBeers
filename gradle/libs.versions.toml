@@ -36,6 +36,7 @@ navigationUi = { module = "androidx.navigation:navigation-ui", version.ref = "an
 roomCompiler = { module = "androidx.room:room-compiler", version.ref = "androidx-room" }
 roomKtx = { module = "androidx.room:room-ktx", version.ref = "androidx-room" }
 roomRuntime = { module = "androidx.room:room-runtime", version.ref = "androidx-room" }
+roomGradlePlugin = { module = "androidx.room:room-gradle-plugin", version.ref = "androidx-room" }
 testCoreKtx = { module = "androidx.test:core-ktx", version.ref = "androidx-test" }
 espressoContrib = { module = "androidx.test.espresso:espresso-contrib", version.ref = "androidx-test-espresso" }
 espressoCore = { module = "androidx.test.espresso:espresso-core", version.ref = "androidx-test-espresso" }
