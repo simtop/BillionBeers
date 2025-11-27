@@ -63,8 +63,10 @@ retrofit2ConverterGson = "com.squareup.retrofit2:converter-gson:3.0.0"
 mockk = { module = "io.mockk:mockk", version.ref = "io-mockk" }
 mockkAndroid = { module = "io.mockk:mockk-android", version.ref = "io-mockk" }
 striktCore = "io.strikt:strikt-core:0.35.1"
+composeCompilerGradlePlugin = { module = "org.jetbrains.kotlin:compose-compiler-gradle-plugin", version.ref = "org-jetbrains-kotlin" }
 junit = "junit:junit:4.13.2"
 kluentAndroid = "org.amshove.kluent:kluent-android:1.73"
+kspGradlePlugin = { module = "com.google.devtools.ksp:symbol-processing-gradle-plugin", version.ref = "com-google-devtools-ksp" }
 kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "org-jetbrains-kotlin" }
 kotlinTestJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "org-jetbrains-kotlin" }
 coroutinesTest = "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3"
