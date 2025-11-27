@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "com.simtop.billionbeers"
-    dynamicFeatures = [':feature:beerdetail']
+    dynamicFeatures += setOf(":feature:beerdetail")
     
     packaging {
         resources {

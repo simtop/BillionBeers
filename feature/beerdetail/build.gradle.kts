@@ -16,8 +16,6 @@ dependencies {
     implementation(project(":navigation"))
     
     implementation(libs.glide)
-    // ksp(libs.glideCompiler) // Not used? Checked earlier, but beerdetail might use it.
-    // Let's check imports in beerdetail later if needed.
     
     implementation(libs.retrofit2ConverterGson)
     implementation(libs.okhttp3LoggingInterceptor)
@@ -31,7 +29,6 @@ dependencies {
     testImplementation(libs.turbine)
     
     androidTestImplementation(libs.hiltAndroidTesting)
-    // kspAndroidTest(libs.hilt.compiler) // Handled by hilt plugin? No, hilt plugin handles ksp for main/test/androidTest
     
     androidTestImplementation(libs.kotlinTestJunit)
     androidTestImplementation(libs.coroutinesTest)

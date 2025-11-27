@@ -24,16 +24,18 @@ appcompat = "androidx.appcompat:appcompat:1.7.0"
 coreTesting = "androidx.arch.core:core-testing:2.2.0"
 constraintlayout = "androidx.constraintlayout:constraintlayout:2.2.1"
 coreKtx = "androidx.core:core-ktx:1.16.0"
+androidx-annotation = "androidx.annotation:annotation:1.7.0"
+kotlinx-coroutines-core = "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3"
+javax-inject = "javax.inject:javax.inject:1"
 androidx-hilt-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "hiltCompiler" }
 fragmentTesting = "androidx.fragment:fragment-testing:1.8.7"
-lifecycleExtensions = "androidx.lifecycle:lifecycle-extensions:2.2.0"
-lifecycleRuntimeKtx = "androidx.lifecycle:lifecycle-runtime-ktx:2.6.1"
-navigationDynamicFeaturesFragment = { module = "androidx.navigation:navigation-dynamic-features-fragment", version.ref = "androidx-navigation" }
 navigationFragmentKtx = { module = "androidx.navigation:navigation-fragment-ktx", version.ref = "androidx-navigation" }
 navigationSafeArgsPlugin = { module = "androidx.navigation:navigation-safe-args-gradle-plugin", version.ref = "androidx-navigation" }
 navigationTesting = { module = "androidx.navigation:navigation-testing", version.ref = "androidx-navigation" }
 navigationUi = { module = "androidx.navigation:navigation-ui", version.ref = "androidx-navigation" }
 roomCompiler = { module = "androidx.room:room-compiler", version.ref = "androidx-room" }
+lifecycleRuntimeKtx = "androidx.lifecycle:lifecycle-runtime-ktx:2.6.1"
+navigationDynamicFeaturesFragment = { module = "androidx.navigation:navigation-dynamic-features-fragment", version.ref = "androidx-navigation" }
 roomKtx = { module = "androidx.room:room-ktx", version.ref = "androidx-room" }
 roomRuntime = { module = "androidx.room:room-runtime", version.ref = "androidx-room" }
 roomGradlePlugin = { module = "androidx.room:room-gradle-plugin", version.ref = "androidx-room" }
@@ -44,9 +46,8 @@ espressoIdlingResource = { module = "androidx.test.espresso:espresso-idling-reso
 junitKtx = "androidx.test.ext:junit-ktx:1.2.1"
 testRules = { module = "androidx.test:rules", version.ref = "androidx-test" }
 testRunner = { module = "androidx.test:runner", version.ref = "androidx-test" }
-androidToolsBuildGradle = "com.android.tools.build:gradle:8.10.0"
+androidToolsBuildGradle = "com.android.tools.build:gradle:8.13.1"
 glide = "com.github.bumptech.glide:glide:4.16.0"
-glideCompiler = "com.github.bumptech.glide:compiler:4.16.0"
 material = "com.google.android.material:material:1.12.0"
 androidPlayCore = "com.google.android.play:feature-delivery:2.1.0"
 androidPlayCoreKtx = "com.google.android.play:feature-delivery-ktx:2.1.0"
@@ -71,7 +72,6 @@ androidx-foundation-android = { group = "androidx.compose.foundation", name = "f
 androidx-material3-android = { group = "androidx.compose.material3", name = "material3-android", version.ref = "material3Android" }
 androidx-ui-tooling-preview-android = { group = "androidx.compose.ui", name = "ui-tooling-preview-android", version.ref = "uiToolingPreviewAndroid" }
 androidx-runtime-livedata = { group = "androidx.compose.runtime", name = "runtime-livedata", version.ref = "runtimeLivedata" }
-androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junit" }
 androidx-navigation-dynamic-features-runtime = { group = "androidx.navigation", name = "navigation-dynamic-features-runtime", version.ref = "navigationDynamicFeaturesRuntime" }
 turbine = "app.cash.turbine:turbine:1.2.1"
 
@@ -80,6 +80,3 @@ compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "
 com-google-devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "com-google-devtools-ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "com-google-dagger" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "org-jetbrains-kotlin" }
-sonarqube = "org.sonarqube:3.3"
-android-application = { id = "com.android.application", version.ref = "agp" }
-android-library = { id = "com.android.library", version.ref = "agp" }

@@ -4,11 +4,11 @@ import com.simtop.beer_network.models.BeersApiResponseItem
 import com.simtop.beer_network.network.BeersService
 import javax.inject.Inject
 
-interface BeersRemoteSourceContract {
+interface BeersRemoteSource {
     suspend fun getListOfBeers(page: Int): List<BeersApiResponseItem>
 }
 
-class BeersRemoteSourceImpl @Inject constructor(private val service: BeersService) : BeersRemoteSourceContract {
+class BeersRemoteSourceImpl @Inject constructor(private val service: BeersService) : BeersRemoteSource {
 
     override suspend fun getListOfBeers(
         page : Int

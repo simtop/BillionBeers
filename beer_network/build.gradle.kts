@@ -4,15 +4,13 @@ plugins {
 }
 
 android {
-    namespace = "com.simtop.core"
+    namespace = "com.simtop.beer_network"
 }
 
 dependencies {
-    api(project(":core-common"))
-    implementation(libs.coreKtx)
-    implementation(libs.appcompat)
-    implementation(libs.material)
+    implementation(project(":core"))
     
     implementation(libs.retrofit2ConverterGson)
     implementation(libs.okhttp3LoggingInterceptor)
+    implementation(libs.androidx.annotation)
 }

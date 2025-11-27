@@ -1,12 +1,10 @@
 package com.simtop.beer_data.repositories
 
 import app.cash.turbine.test
-import com.simtop.beer_data.mappers.BeersMapper
 import com.simtop.beer_database.localsources.BeersLocalSource
 import com.simtop.beer_database.models.BeerDbModel
 import com.simtop.beer_network.models.BeersApiResponseItem
-import com.simtop.beer_network.remotesources.BeersRemoteSourceContract
-import com.simtop.core.core.PagingState
+import com.simtop.beer_network.remotesources.BeersRemoteSource
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -22,7 +20,7 @@ import org.junit.Test
 @ExperimentalCoroutinesApi
 class BeersRepositoryTest {
 
-    private val beersRemoteSource = mockk<BeersRemoteSourceContract>(relaxed = true)
+    private val beersRemoteSource = mockk<BeersRemoteSource>(relaxed = true)
     private val beersLocalSource = mockk<BeersLocalSource>(relaxed = true)
     private lateinit var beersRepository: BeersRepositoryImpl
     private val testDispatcher = StandardTestDispatcher()

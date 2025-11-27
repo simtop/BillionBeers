@@ -12,8 +12,8 @@ repositories {
 }
 
 dependencies {
-    implementation("com.android.tools.build:gradle:8.10.0")
-    implementation("com.android.tools.build:gradle-api:8.10.0")
+    implementation("com.android.tools.build:gradle:8.13.1")
+    implementation("com.android.tools.build:gradle-api:8.13.1")
     //implementation("org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:2.1.21")
 }
 

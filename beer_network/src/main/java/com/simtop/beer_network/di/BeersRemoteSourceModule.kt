@@ -1,6 +1,6 @@
 package com.simtop.beer_network.di
 
-import com.simtop.beer_network.remotesources.BeersRemoteSourceContract
+import com.simtop.beer_network.remotesources.BeersRemoteSource
 import com.simtop.beer_network.remotesources.BeersRemoteSourceImpl
 import dagger.Binds
 import dagger.Module
@@ -14,5 +14,5 @@ abstract class BeersRemoteSourceModule {
     @Binds
     abstract fun bindBeersRemoteSource(
         beersRemoteSourceImpl: BeersRemoteSourceImpl
-    ): BeersRemoteSourceContract
+    ): BeersRemoteSource
 }
