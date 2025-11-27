@@ -1,17 +1,16 @@
-import org.gradle.api.artifacts.VersionCatalogsExtension
-import org.gradle.kotlin.dsl.getByType
+import org.gradle.accessors.dm.LibrariesForLibs
 
 plugins {
     id("dagger.hilt.android.plugin")
     id("com.google.devtools.ksp")
 }
 
-val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
+val libs = the<LibrariesForLibs>()
 
 dependencies {
-    "implementation"(libs.findLibrary("hilt.android").get())
-    "ksp"(libs.findLibrary("hilt.compiler").get())
-    "ksp"(libs.findLibrary("androidx.hilt.compiler").get())
-    "androidTestImplementation"(libs.findLibrary("hiltAndroidTesting").get())
-    "kspAndroidTest"(libs.findLibrary("hilt.compiler").get())
+    "implementation"(libs.hilt.android)
+    "ksp"(libs.hilt.compiler)
+    "ksp"(libs.androidx.hilt.compiler)
+    "androidTestImplementation"(libs.hiltAndroidTesting)
+    "kspAndroidTest"(libs.hilt.compiler)
 }

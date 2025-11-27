@@ -2,14 +2,13 @@ import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.dsl.DynamicFeatureExtension
-import org.gradle.api.artifacts.VersionCatalogsExtension
-import org.gradle.kotlin.dsl.getByType
+import org.gradle.accessors.dm.LibrariesForLibs
 
 plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
-val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
+val libs = the<LibrariesForLibs>()
 
 fun configureCompose(commonExtension: CommonExtension<*, *, *, *, *, *>) {
     commonExtension.buildFeatures {
@@ -17,15 +16,15 @@ fun configureCompose(commonExtension: CommonExtension<*, *, *, *, *, *>) {
     }
 
     dependencies {
-        val bom = libs.findLibrary("androidxComposeBom").get()
+        val bom = libs.androidxComposeBom
         add("implementation", platform(bom))
         add("androidTestImplementation", platform(bom))
         
-        add("implementation", libs.findLibrary("androidxActivityCompose").get())
-        add("implementation", libs.findLibrary("androidx-foundation-android").get())
-        add("implementation", libs.findLibrary("androidx-material3-android").get())
-        add("implementation", libs.findLibrary("androidx-ui-tooling-preview-android").get())
-        add("implementation", libs.findLibrary("androidx-runtime-livedata").get())
+        add("implementation", libs.androidxActivityCompose)
+        add("implementation", libs.androidx.foundation.android)
+        add("implementation", libs.androidx.material3.android)
+        add("implementation", libs.androidx.ui.tooling.preview.android)
+        add("implementation", libs.androidx.runtime.livedata)
     }
 }
 

@@ -1,20 +1,19 @@
 import androidx.room.gradle.RoomExtension
-import org.gradle.api.artifacts.VersionCatalogsExtension
-import org.gradle.kotlin.dsl.getByType
+import org.gradle.accessors.dm.LibrariesForLibs
 
 plugins {
     id("androidx.room")
     id("com.google.devtools.ksp")
 }
 
-val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
+val libs = the<LibrariesForLibs>()
 
 configure<RoomExtension> {
     schemaDirectory("$projectDir/schemas")
 }
 
 dependencies {
-    "implementation"(libs.findLibrary("roomRuntime").get())
-    "implementation"(libs.findLibrary("roomKtx").get())
-    "ksp"(libs.findLibrary("roomCompiler").get())
+    "implementation"(libs.roomRuntime)
+    "implementation"(libs.roomKtx)
+    "ksp"(libs.roomCompiler)
 }

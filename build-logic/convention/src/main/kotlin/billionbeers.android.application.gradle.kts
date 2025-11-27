@@ -1,8 +1,7 @@
 import com.android.build.api.dsl.ApplicationExtension
 import org.gradle.api.JavaVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.gradle.api.artifacts.VersionCatalogsExtension
-import org.gradle.kotlin.dsl.getByType
+import org.gradle.accessors.dm.LibrariesForLibs
 
 plugins {
     id("com.android.application")
@@ -10,7 +9,7 @@ plugins {
     id("kotlin-parcelize")
 }
 
-val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
+val libs = the<LibrariesForLibs>()
 
 configure<ApplicationExtension> {
     compileSdk = 35
@@ -40,23 +39,23 @@ configure<ApplicationExtension> {
 }
 
 dependencies {
-    "testImplementation"(libs.findLibrary("junit").get())
-    "testImplementation"(libs.findLibrary("mockk").get())
-    "testImplementation"(libs.findLibrary("coreTesting").get())
-    "testImplementation"(libs.findLibrary("coroutinesTest").get())
-    "testImplementation"(libs.findLibrary("kluentAndroid").get())
-    "testImplementation"(libs.findLibrary("turbine").get())
+    "testImplementation"(libs.junit)
+    "testImplementation"(libs.mockk)
+    "testImplementation"(libs.coreTesting)
+    "testImplementation"(libs.coroutinesTest)
+    "testImplementation"(libs.kluentAndroid)
+    "testImplementation"(libs.turbine)
 
-    "androidTestImplementation"(libs.findLibrary("junit").get())
-    "androidTestImplementation"(libs.findLibrary("kotlinTestJunit").get())
-    "androidTestImplementation"(libs.findLibrary("coroutinesTest").get())
-    "androidTestImplementation"(libs.findLibrary("espressoCore").get())
-    "androidTestImplementation"(libs.findLibrary("testRunner").get())
-    "androidTestImplementation"(libs.findLibrary("testRules").get())
-    "androidTestImplementation"(libs.findLibrary("testCoreKtx").get())
-    "androidTestImplementation"(libs.findLibrary("mockkAndroid").get())
-    "androidTestImplementation"(libs.findLibrary("junitKtx").get())
-    "androidTestImplementation"(libs.findLibrary("coreTesting").get())
+    "androidTestImplementation"(libs.junit)
+    "androidTestImplementation"(libs.kotlinTestJunit)
+    "androidTestImplementation"(libs.coroutinesTest)
+    "androidTestImplementation"(libs.espressoCore)
+    "androidTestImplementation"(libs.testRunner)
+    "androidTestImplementation"(libs.testRules)
+    "androidTestImplementation"(libs.testCoreKtx)
+    "androidTestImplementation"(libs.mockkAndroid)
+    "androidTestImplementation"(libs.junitKtx)
+    "androidTestImplementation"(libs.coreTesting)
 }
 
 tasks.withType<KotlinCompile>().configureEach {

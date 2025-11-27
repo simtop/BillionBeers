@@ -1,12 +1,11 @@
-import org.gradle.api.artifacts.VersionCatalogsExtension
-import org.gradle.kotlin.dsl.getByType
+import org.gradle.accessors.dm.LibrariesForLibs
 
 plugins {
     id("billionbeers.android.library")
     id("billionbeers.android.hilt")
 }
 
-val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
+val libs = the<LibrariesForLibs>()
 
 dependencies {
     "implementation"(project(":core"))
@@ -14,7 +13,7 @@ dependencies {
     "implementation"(project(":presentation_utils"))
     "implementation"(project(":beerdomain"))
 
-    "implementation"(libs.findLibrary("lifecycleRuntimeKtx").get())
-    "implementation"(libs.findLibrary("navigationFragmentKtx").get())
-    "implementation"(libs.findLibrary("navigationUi").get())
+    "implementation"(libs.lifecycleRuntimeKtx)
+    "implementation"(libs.navigationFragmentKtx)
+    "implementation"(libs.navigationUi)
 }

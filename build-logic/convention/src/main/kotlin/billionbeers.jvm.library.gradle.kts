@@ -1,19 +1,18 @@
-import org.gradle.api.artifacts.VersionCatalogsExtension
-import org.gradle.kotlin.dsl.getByType
+import org.gradle.accessors.dm.LibrariesForLibs
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("org.jetbrains.kotlin.jvm")
 }
 
-val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
+val libs = the<LibrariesForLibs>()
 
 dependencies {
-    "testImplementation"(libs.findLibrary("junit").get())
-    "testImplementation"(libs.findLibrary("mockk").get())
-    "testImplementation"(libs.findLibrary("coroutinesTest").get())
-    "testImplementation"(libs.findLibrary("kluentAndroid").get())
-    "testImplementation"(libs.findLibrary("turbine").get())
+    "testImplementation"(libs.junit)
+    "testImplementation"(libs.mockk)
+    "testImplementation"(libs.coroutinesTest)
+    "testImplementation"(libs.kluentAndroid)
+    "testImplementation"(libs.turbine)
 }
 
 tasks.withType<KotlinCompile>().configureEach {
