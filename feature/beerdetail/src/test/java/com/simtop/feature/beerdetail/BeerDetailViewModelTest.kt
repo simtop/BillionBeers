@@ -126,6 +126,9 @@ internal class BeerDetailViewModelTest {
             // and the usecase success doesn't trigger a new state emission in the current implementation
             // (it only emits on error).
             
+            val storedBeer = fakeBeersRepository.getBeers().first()
+            expectThat(storedBeer.availability).isEqualTo(testExpectedResponse.availability)
+
             cancelAndIgnoreRemainingEvents()
         }
     }

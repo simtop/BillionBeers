@@ -14,5 +14,4 @@ interface BeersRepository {
     suspend fun loadNextPage()
 
     suspend fun getListOfBeerFromApi(page: Int): List<Beer>
-    suspend fun getQuantityOfBeerFromApi(quantity: Int): List<Beer>
 }

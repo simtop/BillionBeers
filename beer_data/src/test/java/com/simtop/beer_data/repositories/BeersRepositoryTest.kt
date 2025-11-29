@@ -198,28 +198,6 @@ class BeersRepositoryTest {
     }
 
     @Test
-    fun `getQuantityOfBeerFromApi should call remote source`() = runTest(testDispatcher) {
-        // Arrange
-        val remoteBeer = BeersApiResponseItem(
-            id = "7",
-            name = "Beer 7",
-            abv = 0.0,
-            ibu = 0.0,
-            imageId = "url",
-            translations = emptyList(),
-            foodPairing = emptyList()
-        )
-        beersRemoteSource.setBeersResponse(listOf(remoteBeer))
-
-        // Act
-        val result = beersRepository.getQuantityOfBeerFromApi(1)
-
-        // Assert
-        assertEquals(1, result.size)
-        assertEquals("7", result[0].id)
-    }
-
-    @Test
     fun `observePagingState should return paging state from mediator`() = runTest(testDispatcher) {
         // Act
         val stateFlow = beersRepository.observePagingState()

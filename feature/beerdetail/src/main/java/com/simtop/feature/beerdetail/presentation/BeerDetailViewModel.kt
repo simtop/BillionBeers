@@ -28,8 +28,9 @@ class BeerDetailViewModel @AssistedInject constructor(
 
     fun updateAvailability(beer: Beer) {
         viewModelScope.launch(coroutineDispatcher.io) {
-            changeAvailability(beer)
-            availabilityUseCase.execute(availabilityUseCase.Params(beer))
+            val newBeer = beer.copy(availability = !beer.availability)
+            changeAvailability(newBeer)
+            availabilityUseCase.execute(availabilityUseCase.Params(newBeer))
                     .also(::treatResponse)
         }
     }
@@ -49,8 +50,7 @@ class BeerDetailViewModel @AssistedInject constructor(
     }
 
     private fun changeAvailability(beer: Beer) {
-        val newBeer = beer.copy(availability = !beer.availability)
-        _beerDetailViewState.value = CommonUiState.Success(newBeer)
+        _beerDetailViewState.value = CommonUiState.Success(beer)
     }
 
     @dagger.assisted.AssistedFactory

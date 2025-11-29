@@ -71,8 +71,4 @@ class FakeBeersRepository : BeersRepository {
     override suspend fun getListOfBeerFromApi(page: Int): List<Beer> {
         return emptyList()
     }
-
-    override suspend fun getQuantityOfBeerFromApi(quantity: Int): List<Beer> {
-        return emptyList()
-    }
 }

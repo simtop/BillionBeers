@@ -41,15 +41,6 @@ class BeersRepositoryImpl @Inject constructor(
         beersRemoteSource.getListOfBeers(page)
             .map { BeersMapper.fromBeersApiResponseItemToBeer(it) }
 
-    override suspend fun getQuantityOfBeerFromApi(quantity: Int): List<Beer> {
-        val totalList = mutableListOf<Beer>()
-        for (page in 1..quantity) {
-            totalList.addAll(getListOfBeerFromApi(page))
-        }
-        return totalList
-    }
-
-    //TODO: Remeber to do !beer.availability
     override suspend fun updateAvailability(beer: Beer) = beersLocalSource.updateBeer(beer.id, beer.availability)
 
     override suspend fun insertAllToDB(beers: List<Beer>) =
