@@ -1,21 +1,23 @@
 package com.simtop.beerdomain.domain.usecases
 
-import com.simtop.beerdomain.domain.repositories.BeersRepository
-import io.mockk.coVerify
-import io.mockk.mockk
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import com.simtop.beerdomain.fakes.FakeBeersRepository
+import com.simtop.core.core.PagingState
 import kotlinx.coroutines.test.runTest
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
-@ExperimentalCoroutinesApi
 class LoadNextPageUseCaseTest {
 
-    private val beersRepository = mockk<BeersRepository>(relaxed = true)
-    private val useCase = LoadNextPageUseCase(beersRepository)
+    private val fakeRepository = FakeBeersRepository()
+    private val useCase = LoadNextPageUseCase(fakeRepository)
 
     @Test
-    fun `execute should call loadNextPage on repository`() = runTest {
+    fun `execute should trigger loadNextPage on repository`() = runTest {
+        // Act
         useCase.execute()
-        coVerify(exactly = 1) { beersRepository.loadNextPage() }
+
+        // Assert
+        // Fake implementation sets state to Success after loading
+        assertEquals(PagingState.Success, fakeRepository.getPagingState())
     }
 }

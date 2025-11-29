@@ -1,18 +1,26 @@
 package com.simtop.beerdomain.domain.usecases
 
-import com.simtop.beerdomain.domain.repositories.BeersRepository
-import io.mockk.verify
-import io.mockk.mockk
-import org.junit.Test
+import app.cash.turbine.test
+import com.simtop.beerdomain.fakes.FakeBeersRepository
+import com.simtop.core.core.PagingState
+import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
 class ObservePagingStateUseCaseTest {
 
-    private val beersRepository = mockk<BeersRepository>(relaxed = true)
-    private val useCase = ObservePagingStateUseCase(beersRepository)
+    private val fakeRepository = FakeBeersRepository()
+    private val useCase = ObservePagingStateUseCase(fakeRepository)
 
     @Test
-    fun `execute should call observePagingState on repository`() {
-        useCase.execute()
-        verify(exactly = 1) { beersRepository.observePagingState() }
+    fun `execute should return paging state flow`() = runTest {
+        // Arrange
+        fakeRepository.setPagingState(PagingState.Loading)
+
+        // Act & Assert
+        useCase.execute().test {
+            assertEquals(PagingState.Loading, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 }

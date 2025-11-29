@@ -7,6 +7,8 @@ plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
     id("kotlin-parcelize")
+    id("billionbeers.jacoco")
+    id("de.mannodermaus.android-junit5")
 }
 
 val libs = the<LibrariesForLibs>()
@@ -35,12 +37,15 @@ configure<LibraryExtension> {
 }
 
 dependencies {
-    "testImplementation"(libs.junit)
+    testImplementation(libs.junit)
     "testImplementation"(libs.mockk)
     "testImplementation"(libs.coreTesting)
     "testImplementation"(libs.coroutinesTest)
     "testImplementation"(libs.kluentAndroid)
     "testImplementation"(libs.turbine)
+    "testImplementation"(libs.junit.jupiter.api)
+    "testImplementation"(libs.junit.jupiter.params)
+    "testRuntimeOnly"(libs.junit.jupiter.engine)
 
     "androidTestImplementation"(libs.junit)
     "androidTestImplementation"(libs.kotlinTestJunit)
@@ -59,4 +64,8 @@ tasks.withType<KotlinCompile>().configureEach {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         freeCompilerArgs.add("-Xstring-concat=inline")
     }
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform()
 }

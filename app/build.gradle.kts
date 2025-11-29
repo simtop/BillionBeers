@@ -52,4 +52,5 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     androidTestImplementation("org.hamcrest:hamcrest:2.2")
+    androidTestImplementation(libs.roomRuntime)
 }

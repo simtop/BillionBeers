@@ -1,53 +1,49 @@
 package com.simtop.feature.beerslist
 
-import com.simtop.core.core.CommonUiState
 import app.cash.turbine.test
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.usecases.GetAllBeersUseCase
 import com.simtop.beerdomain.domain.usecases.LoadNextPageUseCase
 import com.simtop.beerdomain.domain.usecases.ObservePagingStateUseCase
+import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.PagingState
-import io.mockk.coEvery
+import com.simtop.feature.beerslist.fakes.FakeBeersRepository
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
 @ExperimentalCoroutinesApi
 class BeersListViewModelTest {
 
     private val coroutineDispatcherProvider = mockk<CoroutineDispatcherProvider>()
-    private val getAllBeersUseCase = mockk<GetAllBeersUseCase>()
-    private val observePagingStateUseCase = mockk<ObservePagingStateUseCase>()
-    private val loadNextPageUseCase = mockk<LoadNextPageUseCase>()
+    private val fakeBeersRepository = FakeBeersRepository()
+    
+    // Real UseCases
+    private val getAllBeersUseCase = GetAllBeersUseCase(fakeBeersRepository)
+    private val observePagingStateUseCase = ObservePagingStateUseCase(fakeBeersRepository)
+    private val loadNextPageUseCase = LoadNextPageUseCase(fakeBeersRepository)
 
     private lateinit var testDispatcher: TestDispatcher
-
     private lateinit var viewModel: BeersListViewModel
 
-    private val beersFlow = MutableStateFlow<List<Beer>>(emptyList())
-    private val pagingStateFlow = MutableStateFlow<PagingState>(PagingState.Idle)
-
-    @Before
+    @BeforeEach
     fun setUp() {
-        testDispatcher = StandardTestDispatcher()
+        testDispatcher = UnconfinedTestDispatcher()
         Dispatchers.setMain(testDispatcher)
         every { coroutineDispatcherProvider.io } returns testDispatcher
         every { coroutineDispatcherProvider.main } returns testDispatcher
-
-        every { getAllBeersUseCase.execute(any()) } returns beersFlow
-        every { observePagingStateUseCase.execute() } returns pagingStateFlow
-        coEvery { loadNextPageUseCase.execute() } returns Unit
 
         viewModel = BeersListViewModel(
             coroutineDispatcherProvider,
@@ -57,7 +53,7 @@ class BeersListViewModelTest {
         )
     }
 
-    @After
+    @AfterEach
     fun tearDown() {
         Dispatchers.resetMain()
     }
@@ -65,14 +61,16 @@ class BeersListViewModelTest {
     @Test
     fun `when onScrollToBottom is called, isLoadingNextPage should be true`() =
         runTest(testDispatcher) {
-            val beer = mockk<Beer>(relaxed = true)
-            beersFlow.value = listOf(beer)
-
+            val beer = Beer.empty.copy(id = "1", name = "Test Beer")
+            
             viewModel.beerListViewState.test {
                 // Initial state (Loading)
                 assert(awaitItem() is CommonUiState.Loading)
 
-                // Success state from beersFlow
+                // Trigger data load
+                fakeBeersRepository.setBeers(listOf(beer))
+
+                // Success state from repository flow
                 val successState = awaitItem() as CommonUiState.Success
                 assert(successState.data.beers.size == 1)
                 assert(!successState.data.isLoadingNextPage)
@@ -80,15 +78,15 @@ class BeersListViewModelTest {
                 // Trigger scroll to bottom
                 viewModel.onScrollToBottom()
 
-                // Simulate PagingState update
-                pagingStateFlow.value = PagingState.LoadingNextPage
+                // Simulate PagingState update via Fake Repository
+                fakeBeersRepository.setPagingState(PagingState.LoadingNextPage)
 
                 // Expect update with isLoadingNextPage = true
                 val loadingNextPageState = awaitItem() as CommonUiState.Success
                 assert(loadingNextPageState.data.isLoadingNextPage)
 
                 // Simulate PagingState Success
-                pagingStateFlow.value = PagingState.Success
+                fakeBeersRepository.setPagingState(PagingState.Success)
 
                 // Expect update with isLoadingNextPage = false
                 val finalState = awaitItem() as CommonUiState.Success

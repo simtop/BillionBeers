@@ -1,3 +1,6 @@
+import org.gradle.testing.jacoco.tasks.JacocoReport
+import org.gradle.testing.jacoco.plugins.JacocoPluginExtension
+
 buildscript {
     repositories {
         google()
@@ -24,8 +27,40 @@ plugins {
 
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.hilt) apply false
+    id("jacoco")
 }
 
 tasks.register("clean", Delete::class) {
-    delete(rootProject.buildDir)
+    delete(rootProject.layout.buildDirectory)
+}
+
+tasks.register<JacocoReport>("jacocoRootReport") {
+    dependsOn(subprojects.map { it.tasks.withType<Test>() })
+    dependsOn(subprojects.map { it.tasks.withType<JacocoReport>() })
+
+    val subprojectsWithJacoco = subprojects.filter { it.plugins.hasPlugin("jacoco") }
+
+    additionalSourceDirs.setFrom(subprojectsWithJacoco.map { it.extensions.getByType<JacocoPluginExtension>().reportsDirectory })
+    sourceDirectories.setFrom(subprojectsWithJacoco.flatMap {
+        listOf(
+            file("${it.projectDir}/src/main/java"),
+            file("${it.projectDir}/src/main/kotlin")
+        )
+    })
+    classDirectories.setFrom(subprojectsWithJacoco.flatMap {
+        it.tasks.withType<JacocoReport>().matching { task -> task.name.contains("Debug") }.map { reportTask ->
+            reportTask.classDirectories
+        }
+    })
+    executionData.setFrom(subprojectsWithJacoco.flatMap {
+        it.tasks.withType<JacocoReport>().matching { task -> task.name.contains("Debug") }.map { reportTask ->
+            reportTask.executionData
+        }
+    })
+
+    reports {
+        html.required.set(true)
+        xml.required.set(false)
+        csv.required.set(false)
+    }
 }

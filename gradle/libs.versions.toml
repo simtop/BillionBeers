@@ -18,6 +18,8 @@ runtimeLivedata = "1.8.2"
 agp = "8.10.0"
 junit = "1.2.1"
 navigationDynamicFeaturesRuntime = "2.9.0"
+junit5 = "5.10.1"
+androidJunit5 = "1.10.0.0"
 
 [libraries]
 appcompat = "androidx.appcompat:appcompat:1.7.0"
@@ -76,9 +78,14 @@ androidx-ui-tooling-preview-android = { group = "androidx.compose.ui", name = "u
 androidx-runtime-livedata = { group = "androidx.compose.runtime", name = "runtime-livedata", version.ref = "runtimeLivedata" }
 androidx-navigation-dynamic-features-runtime = { group = "androidx.navigation", name = "navigation-dynamic-features-runtime", version.ref = "navigationDynamicFeaturesRuntime" }
 turbine = "app.cash.turbine:turbine:1.2.1"
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit5" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit5" }
+junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit5" }
+android-junit5-plugin = { module = "de.mannodermaus.gradle.plugins:android-junit5", version.ref = "androidJunit5" }
 
 [plugins]
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "org-jetbrains-kotlin" }
 com-google-devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "com-google-devtools-ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "com-google-dagger" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "org-jetbrains-kotlin" }
+android-junit5 = { id = "de.mannodermaus.android-junit5", version.ref = "androidJunit5" }

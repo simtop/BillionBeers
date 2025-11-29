@@ -18,9 +18,9 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import strikt.api.expectThat
 import strikt.assertions.isA
 import strikt.assertions.isEqualTo
@@ -31,17 +31,18 @@ import com.simtop.core.core.CommonUiState
 internal class BeerDetailViewModelTest {
 
     private val coroutineDispatcherProvider = mockk<CoroutineDispatcherProvider>()
-    private val availabilityUseCase = mockk<UpdateAvailabilityUseCase>()
+    private val fakeBeersRepository = com.simtop.feature.beerdetail.fakes.FakeBeersRepository()
+    private val availabilityUseCase = UpdateAvailabilityUseCase(fakeBeersRepository)
     private val testDispatcher = StandardTestDispatcher()
 
-    @Before
+    @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         every { coroutineDispatcherProvider.io } returns testDispatcher
         every { coroutineDispatcherProvider.main } returns testDispatcher
     }
 
-    @After
+    @AfterEach
     fun tearDown() {
         Dispatchers.resetMain()
     }
@@ -67,9 +68,7 @@ internal class BeerDetailViewModelTest {
     @Test
     fun `when usecase fails we get error state`() = runTest(testDispatcher) {
         // Arrange
-        coEvery {
-            availabilityUseCase.execute(any())
-        } returns Either.Left(fakeException)
+        fakeBeersRepository.setExceptionToThrow(fakeException)
 
         val beerDetailViewModel = BeerDetailViewModel(
             coroutineDispatcherProvider,
@@ -98,9 +97,8 @@ internal class BeerDetailViewModelTest {
     @Test
     fun `when usecase succeeds we get success state with different availability`() = runTest(testDispatcher) {
         // Arrange
-        coEvery {
-            availabilityUseCase.execute(any())
-        } returns Either.Right(Unit)
+        fakeBeersRepository.setExceptionToThrow(null)
+        fakeBeersRepository.setBeers(listOf(fakeBeerModel))
 
         val testExpectedResponse = fakeBeerModel.copy(availability = !fakeBeerModel.availability)
 
