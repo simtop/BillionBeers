@@ -26,12 +26,13 @@ import strikt.assertions.isA
 import strikt.assertions.isEqualTo
 
 import com.simtop.core.core.CommonUiState
+import com.simtop.beerdomain.test.fakes.FakeBeersRepository
 
 @ExperimentalCoroutinesApi
 internal class BeerDetailViewModelTest {
 
     private val coroutineDispatcherProvider = mockk<CoroutineDispatcherProvider>()
-    private val fakeBeersRepository = com.simtop.feature.beerdetail.fakes.FakeBeersRepository()
+    private val fakeBeersRepository = FakeBeersRepository()
     private val availabilityUseCase = UpdateAvailabilityUseCase(fakeBeersRepository)
     private val testDispatcher = StandardTestDispatcher()
 

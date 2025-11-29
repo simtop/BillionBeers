@@ -15,4 +15,6 @@ dependencies {
     implementation(libs.androidx.material3.android)
     implementation(libs.androidx.runtime.livedata)
     implementation(libs.androidx.ui.tooling.preview.android)
+    
+    testImplementation(project(":beerdomain:test"))
 }

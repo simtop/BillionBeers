@@ -1,4 +1,4 @@
-package com.simtop.feature.beerdetail.fakes
+package com.simtop.beerdomain.test.fakes
 
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.repositories.BeersRepository
@@ -11,14 +11,23 @@ class FakeBeersRepository : BeersRepository {
 
     private val beersFlow = MutableStateFlow<List<Beer>>(emptyList())
     private val pagingStateFlow = MutableStateFlow<PagingState>(PagingState.Idle)
+    
+    // Helper to inspect state
+    fun getBeers(): List<Beer> = beersFlow.value
+    fun getPagingState(): PagingState = pagingStateFlow.value
 
-    // Helper to set state from tests
     fun setBeers(beers: List<Beer>) {
         beersFlow.value = beers
     }
 
     fun setPagingState(state: PagingState) {
         pagingStateFlow.value = state
+    }
+    
+    private var exceptionToThrow: Exception? = null
+
+    fun setExceptionToThrow(exception: Exception?) {
+        exceptionToThrow = exception
     }
 
     override suspend fun countDBEntries(): Int {
@@ -33,12 +42,6 @@ class FakeBeersRepository : BeersRepository {
         beersFlow.value = beersFlow.value + beers
     }
 
-    private var exceptionToThrow: Exception? = null
-
-    fun setExceptionToThrow(exception: Exception?) {
-        exceptionToThrow = exception
-    }
-
     override suspend fun updateAvailability(beer: Beer) {
         exceptionToThrow?.let { throw it }
         val currentList = beersFlow.value.toMutableList()
@@ -47,7 +50,6 @@ class FakeBeersRepository : BeersRepository {
             currentList[index] = beer
             beersFlow.value = currentList
         } else {
-            // Add if not present for testing convenience
              currentList.add(beer)
              beersFlow.value = currentList
         }
@@ -73,6 +75,4 @@ class FakeBeersRepository : BeersRepository {
     override suspend fun getQuantityOfBeerFromApi(quantity: Int): List<Beer> {
         return emptyList()
     }
-    
-
 }

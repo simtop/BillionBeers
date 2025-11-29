@@ -1,7 +1,7 @@
 package com.simtop.beerdomain.domain.usecases
 
 import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.fakes.FakeBeersRepository
+import com.simtop.beerdomain.test.fakes.FakeBeersRepository
 import com.simtop.core.core.Either
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals

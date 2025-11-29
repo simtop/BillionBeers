@@ -45,4 +45,6 @@ dependencies {
     
     testImplementation(libs.striktCore)
     androidTestImplementation(libs.striktCore)
+    
+    testImplementation(project(":beerdomain:test"))
 }

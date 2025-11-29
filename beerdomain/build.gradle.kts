@@ -12,4 +12,6 @@ dependencies {
     implementation(libs.androidx.annotation)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.javax.inject)
+    
+    testImplementation(project(":beerdomain:test"))
 }

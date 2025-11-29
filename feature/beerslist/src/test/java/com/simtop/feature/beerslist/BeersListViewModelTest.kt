@@ -8,7 +8,7 @@ import com.simtop.beerdomain.domain.usecases.ObservePagingStateUseCase
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.PagingState
-import com.simtop.feature.beerslist.fakes.FakeBeersRepository
+import com.simtop.beerdomain.test.fakes.FakeBeersRepository
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers

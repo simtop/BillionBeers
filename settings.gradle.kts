@@ -23,6 +23,7 @@ include(":core-common")
 include(":feature:beerslist")
 include(":feature:beerdetail")
 include(":beerdomain")
+include(":beerdomain:test")
 include(":app")
 rootProject.name = "BillionBeers"
 include(":navigation")
