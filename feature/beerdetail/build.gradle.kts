@@ -15,7 +15,8 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":navigation"))
     
-    implementation(libs.glide)
+    implementation(libs.coil3)
+    implementation(libs.coil3.network)
     
     implementation(libs.retrofit2ConverterGson)
     implementation(libs.okhttp3LoggingInterceptor)

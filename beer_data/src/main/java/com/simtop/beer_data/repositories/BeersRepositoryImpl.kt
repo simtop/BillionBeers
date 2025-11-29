@@ -12,6 +12,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 
 import javax.inject.Singleton
 
@@ -25,8 +28,24 @@ class BeersRepositoryImpl @Inject constructor(
         initialKey = 1,
         nextKey = { currentKey, _ -> currentKey + 1 },
         fetchRemote = { page ->
-            beersRemoteSource.getListOfBeers(page)
-                .map { BeersMapper.fromBeersApiResponseItemToBeer(it) }
+            val apiItems = beersRemoteSource.getListOfBeers(page)
+            coroutineScope {
+                apiItems.map { item ->
+                    async {
+                        val beer = BeersMapper.fromBeersApiResponseItemToBeer(item)
+                        if (!item.imageId.isNullOrEmpty()) {
+                            try {
+                                val imageResponse = beersRemoteSource.getImage(item.imageId!!)
+                                beer.copy(imageUrl = imageResponse.url)
+                            } catch (e: Exception) {
+                                beer
+                            }
+                        } else {
+                            beer
+                        }
+                    }
+                }.awaitAll()
+            }
         },
         saveLocal = { beers ->
             beersLocalSource.insertAllToDB(beers.map { BeersMapper.fromBeerToBeerDbModel(it) })
@@ -37,9 +56,26 @@ class BeersRepositoryImpl @Inject constructor(
         }
     )
 
-    override suspend fun getListOfBeerFromApi(page: Int): List<Beer> =
-        beersRemoteSource.getListOfBeers(page)
-            .map { BeersMapper.fromBeersApiResponseItemToBeer(it) }
+    override suspend fun getListOfBeerFromApi(page: Int): List<Beer> {
+        val apiItems = beersRemoteSource.getListOfBeers(page)
+        return coroutineScope {
+            apiItems.map { item ->
+                async {
+                    val beer = BeersMapper.fromBeersApiResponseItemToBeer(item)
+                    if (!item.imageId.isNullOrEmpty()) {
+                        try {
+                            val imageResponse = beersRemoteSource.getImage(item.imageId!!)
+                            beer.copy(imageUrl = imageResponse.url)
+                        } catch (e: Exception) {
+                            beer
+                        }
+                    } else {
+                        beer
+                    }
+                }
+            }.awaitAll()
+        }
+    }
 
     override suspend fun updateAvailability(beer: Beer) = beersLocalSource.updateBeer(beer.id, beer.availability)
 

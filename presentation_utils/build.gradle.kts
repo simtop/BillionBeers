@@ -22,5 +22,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.constraintlayout)
     
-    implementation(libs.glide)
+    implementation(libs.coil3)
+    implementation(libs.coil3.view)
+    implementation(libs.coil3.network)
 }

@@ -107,6 +107,7 @@ class BeersRepositoryTest {
         // Assert
         assertEquals(1, result.size)
         assertEquals("3", result[0].id)
+        assertEquals("https://fake.url/image.jpg", result[0].imageUrl)
     }
 
     @Test

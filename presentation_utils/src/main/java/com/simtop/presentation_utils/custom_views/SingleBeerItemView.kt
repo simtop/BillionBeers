@@ -5,7 +5,9 @@ import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
 import androidx.constraintlayout.widget.ConstraintLayout
-import com.bumptech.glide.Glide
+import coil3.load
+import coil3.request.crossfade
+import coil3.request.error
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.presentation_utils.R
 import com.simtop.presentation_utils.databinding.SingleBeerItemBinding
@@ -47,10 +49,10 @@ class SingleBeerItemView @JvmOverloads constructor(
         }
 
         if (beer.imageUrl.isNotEmpty()) {
-            Glide.with(context)
-                .load(beer.imageUrl)
-                .error(R.drawable.blue_image)
-                .into(singleBeerItemBinding.beerImage)
+            singleBeerItemBinding.beerImage.load(beer.imageUrl) {
+                crossfade(true)
+                error(R.drawable.blue_image)
+            }
         }
     }
 }

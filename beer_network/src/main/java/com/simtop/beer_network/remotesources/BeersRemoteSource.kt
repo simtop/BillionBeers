@@ -6,6 +6,7 @@ import javax.inject.Inject
 
 interface BeersRemoteSource {
     suspend fun getListOfBeers(page: Int): List<BeersApiResponseItem>
+    suspend fun getImage(id: String): com.simtop.beer_network.models.ImageResponse
 }
 
 class BeersRemoteSourceImpl @Inject constructor(private val service: BeersService) : BeersRemoteSource {
@@ -14,5 +15,9 @@ class BeersRemoteSourceImpl @Inject constructor(private val service: BeersServic
         page : Int
     ): List<BeersApiResponseItem> {
         return service.getListOfBeers(page)
+    }
+
+    override suspend fun getImage(id: String): com.simtop.beer_network.models.ImageResponse {
+        return service.getImage(id)
     }
 }

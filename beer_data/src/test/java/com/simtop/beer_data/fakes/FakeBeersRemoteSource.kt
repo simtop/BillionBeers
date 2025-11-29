@@ -24,4 +24,17 @@ class FakeBeersRemoteSource : BeersRemoteSource {
         }
         return beersResponse
     }
+
+    override suspend fun getImage(id: String): com.simtop.beer_network.models.ImageResponse {
+        return com.simtop.beer_network.models.ImageResponse(
+            id = id,
+            url = "https://fake.url/image.jpg",
+            filename = "image.jpg",
+            extension = "jpg",
+            width = 100,
+            height = 100,
+            mime = "image/jpeg",
+            size = 100
+        )
+    }
 }

@@ -1,6 +1,6 @@
 package com.simtop.feature.beerdetail.presentation
 
-import android.widget.ImageView
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -21,9 +21,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import coil3.request.placeholder
+import coil3.request.error
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.ContentScale
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.presentation_utils.R
 
@@ -208,20 +214,15 @@ fun StatCard(label: String, value: String, color: Color, textColor: Color) {
 
 @Composable
 fun BeerDetailImage(imageUrl: String) {
-    AndroidView(
-        factory = { context ->
-            ImageView(context).apply {
-                scaleType = ImageView.ScaleType.CENTER_CROP
-            }
-        },
-        update = { imageView ->
-            Glide.with(imageView.context)
-                .load(imageUrl)
-                .transition(DrawableTransitionOptions.withCrossFade())
-                .placeholder(R.drawable.blue_image)
-                .error(R.drawable.blue_image)
-                .into(imageView)
-        },
+    AsyncImage(
+        model = ImageRequest.Builder(LocalContext.current)
+            .data(imageUrl)
+            .crossfade(true)
+            .placeholder(R.drawable.blue_image)
+            .error(R.drawable.blue_image)
+            .build(),
+        contentDescription = null,
+        contentScale = ContentScale.Crop,
         modifier = Modifier.fillMaxSize()
     )
 }
