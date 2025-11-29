@@ -38,7 +38,33 @@ tasks.register<JacocoReport>("jacocoRootReport") {
     dependsOn(subprojects.map { it.tasks.withType<Test>() })
     dependsOn(subprojects.map { it.tasks.withType<JacocoReport>() })
 
-    val subprojectsWithJacoco = subprojects.filter { it.plugins.hasPlugin("jacoco") }
+    val subprojectsWithJacoco = subprojects.filter {
+        it.plugins.hasPlugin("jacoco") &&
+                !it.name.contains("presentation_utils") &&
+                !it.name.contains("beer_database")
+    }
+
+    val excludes = listOf(
+        "**/R.class",
+        "**/R$*.class",
+        "**/BuildConfig.*",
+        "**/Manifest*.*",
+        "**/*Test*.*",
+        "android/**/*.*",
+        "**/databinding/*",
+        "**/generated/*",
+        "**/model/*",
+        "**/di/*",
+        "**/*Activity*.*",
+        "**/*Fragment*.*",
+        "**/*_HiltModules*.*",
+        "**/Hilt_*.*",
+        "**/*_Factory*.*",
+        "**/*_MembersInjector*.*",
+        "**/*MapperImpl*.*",
+        "**/*Module*.*",
+        "**/*Component*.*"
+    )
 
     additionalSourceDirs.setFrom(subprojectsWithJacoco.map { it.extensions.getByType<JacocoPluginExtension>().reportsDirectory })
     sourceDirectories.setFrom(subprojectsWithJacoco.flatMap {
@@ -49,7 +75,9 @@ tasks.register<JacocoReport>("jacocoRootReport") {
     })
     classDirectories.setFrom(subprojectsWithJacoco.flatMap {
         it.tasks.withType<JacocoReport>().matching { task -> task.name.contains("Debug") }.map { reportTask ->
-            reportTask.classDirectories
+            reportTask.classDirectories.asFileTree.matching {
+                exclude(excludes)
+            }
         }
     })
     executionData.setFrom(subprojectsWithJacoco.flatMap {
