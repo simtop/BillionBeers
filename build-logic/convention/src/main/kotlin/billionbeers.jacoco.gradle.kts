@@ -1,3 +1,4 @@
+import org.gradle.internal.extensions.stdlib.capitalized
 import org.gradle.testing.jacoco.tasks.JacocoReport
 
 plugins {
@@ -21,7 +22,7 @@ val jacocoTestReport = if (tasks.findByName("jacocoTestReport") != null) {
 
 val androidComponents = extensions.findByType(com.android.build.api.variant.AndroidComponentsExtension::class.java)
 androidComponents?.onVariants { variant ->
-    val testTaskName = "test${variant.name.capitalize()}UnitTest"
+    val testTaskName = "test${variant.name.capitalized()}UnitTest"
 
     val reportTask = tasks.register<JacocoReport>("jacoco${variant.name.capitalize()}Report") {
         dependsOn(testTaskName)
@@ -32,7 +33,7 @@ androidComponents?.onVariants { variant ->
         }
 
         classDirectories.setFrom(
-            fileTree("$buildDir/tmp/kotlin-classes/${variant.name}") {
+            fileTree("$projectDir/tmp/kotlin-classes/${variant.name}") {
                 exclude(
                     "**/R.class",
                     "**/R$*.class",
@@ -55,7 +56,7 @@ androidComponents?.onVariants { variant ->
             )
         )
 
-        executionData.setFrom(file("$buildDir/jacoco/$testTaskName.exec"))
+        executionData.setFrom(file("$projectDir/jacoco/$testTaskName.exec"))
     }
 
     jacocoTestReport.configure { dependsOn(reportTask) }

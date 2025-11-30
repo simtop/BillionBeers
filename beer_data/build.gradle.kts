@@ -13,6 +13,6 @@ dependencies {
     implementation(project(":beer_database"))
     implementation(project(":beer_network"))
     
-    implementation(libs.javax.inject)
+    //implementation(libs.javax.inject)
     implementation(libs.kotlinx.coroutines.core)
 }
