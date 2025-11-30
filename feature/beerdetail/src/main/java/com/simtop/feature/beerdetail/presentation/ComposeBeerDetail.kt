@@ -1,10 +1,10 @@
 package com.simtop.feature.beerdetail.presentation
 
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -45,7 +45,7 @@ fun ComposeBeerDetail(
 
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = Modifier.padding(bottom = 16.dp).nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             Box(modifier = Modifier.wrapContentSize()) {
 
@@ -106,7 +106,7 @@ fun ComposeBeerDetail(
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.testTag("toggle_availability")
             ) {
-                androidx.compose.animation.AnimatedContent(
+                AnimatedContent(
                     targetState = beer.availability,
                     label = "availability_animation"
                 ) { isAvailable ->
