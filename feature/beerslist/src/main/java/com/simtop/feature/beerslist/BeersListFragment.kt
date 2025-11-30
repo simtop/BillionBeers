@@ -8,6 +8,10 @@ import android.view.ViewGroup
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -73,9 +77,12 @@ class BeersListFragment : Fragment() {
     ): View {
         return ComposeView(requireContext()).apply {
             setContent {
-                Scaffold(topBar = {
-                    TopAppBar(title = { Text(text = requireContext().getString(com.simtop.core.R.string.billion_beers_list)) })
-                }) { paddingValues->
+                Scaffold(
+                    topBar = {
+                        TopAppBar(title = { Text(text = requireContext().getString(com.simtop.core.R.string.billion_beers_list)) })
+                    },
+                    contentWindowInsets = WindowInsets.statusBars
+                ) { paddingValues ->
 
                     val showDialog = rememberSaveable { mutableStateOf(false) }
                     val prog = rememberSaveable { mutableFloatStateOf(0.0f) }
@@ -106,7 +113,7 @@ class BeersListFragment : Fragment() {
 
                             val beers = state.data.beers
                             Box(modifier = Modifier.fillMaxSize().padding(
-                                paddingValues
+                                top = paddingValues.calculateTopPadding()
                             )) {
                                 val listState = rememberLazyListState()
                                 
@@ -116,10 +123,18 @@ class BeersListFragment : Fragment() {
                                     onLoadMore = { beersViewModel.onScrollToBottom() }
                                 )
 
+                                val layoutDirection = androidx.compose.ui.platform.LocalLayoutDirection.current
+                                val navBarsPadding = WindowInsets.navigationBars.asPaddingValues()
+                                
                                 LazyColumn(
                                     state = listState,
                                     modifier = Modifier.testTag("beer_list"),
-                                    contentPadding = PaddingValues(bottom = 16.dp)
+                                    contentPadding = PaddingValues(
+                                        start = navBarsPadding.calculateStartPadding(layoutDirection),
+                                        top = navBarsPadding.calculateTopPadding(),
+                                        end = navBarsPadding.calculateEndPadding(layoutDirection),
+                                        bottom = navBarsPadding.calculateBottomPadding() + 16.dp
+                                    )
                                 ) {
                                     items(beers.count()) { index ->
                                         ComposeBeersListItem(beer = beers[index], onClick = ::onBeerClicked)

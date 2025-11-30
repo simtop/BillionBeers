@@ -37,6 +37,7 @@ dependencies {
     
     implementation(libs.androidPlayCore)
     implementation(libs.androidPlayCoreKtx)
+    implementation(libs.androidxActivityCompose)
     
     testImplementation(libs.striktCore)
     androidTestImplementation(libs.striktCore)
