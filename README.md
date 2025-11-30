@@ -21,6 +21,26 @@ For UI Testing I used the Robot Pattern.
 - [ ] Add Jacoco to sonar qube
 - [ ] Add Firebase Test Lab with dynamic feature
 
+## Code Quality & Reports
+
+This project uses several tools to ensure code quality and consistency.
+
+### 1. Formatting (Spotless & ktfmt)
+We use **Spotless** with **ktfmt** to enforce Google's Kotlin style guide.
+- **Check formatting**: `./gradlew spotlessCheck`
+- **Apply formatting**: `./gradlew spotlessApply` (Run this before committing!)
+
+### 2. Static Analysis (Detekt)
+We use **Detekt** to find code smells and complexity issues.
+- **Run analysis**: `./gradlew detekt`
+- **Reports**: Found in `build/reports/detekt/` for each module (e.g., `app/build/reports/detekt/detekt.html`).
+
+### 3. Code Coverage (Jacoco)
+We use **Jacoco** to measure test coverage.
+- **Generate reports**: `./gradlew jacocoTestReport`
+- **Reports**: Found in `build/reports/jacoco/jacocoTestReport/html/index.html` for each module (e.g., `core-common/build/reports/jacoco/jacocoTestReport/html/index.html`).
+
+
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated** and it will be a pleasure to collaborate with you..
 
 If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".

@@ -19,7 +19,7 @@ configure<DynamicFeatureExtension> {
     compileSdk = 35
 
     defaultConfig {
-        minSdk = 26
+        minSdk = 28
         testInstrumentationRunner = "com.simtop.billionbeers.di.MockTestRunner"
     }
 
