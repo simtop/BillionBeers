@@ -14,6 +14,6 @@ object BeersNetworkModule {
 
     @Provides
     @Singleton
-    fun provideBitCoinApi(retrofit: Retrofit): BeersService =
+    fun provideBeersApi(retrofit: Retrofit): BeersService =
         retrofit.create(BeersService::class.java)
 }

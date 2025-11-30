@@ -7,7 +7,11 @@ import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.Either
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.simtop.core.core.CommonUiState
 
 class BeerDetailViewModel @AssistedInject constructor(
     private val coroutineDispatcher: CoroutineDispatcherProvider,
@@ -15,10 +19,8 @@ class BeerDetailViewModel @AssistedInject constructor(
     @Assisted private val beer: Beer
 ) : ViewModel() {
 
-    private val _beerDetailViewState =
-            MutableLiveData<BeersDetailViewState<Beer>>()
-    val beerDetailViewState: LiveData<BeersDetailViewState<Beer>>
-        get() = _beerDetailViewState
+    private val _beerDetailViewState = MutableStateFlow<CommonUiState<Beer>>(CommonUiState.Loading)
+    val beerDetailViewState: StateFlow<CommonUiState<Beer>> = _beerDetailViewState.asStateFlow()
 
     init {
         setBeer(beer)
@@ -26,20 +28,21 @@ class BeerDetailViewModel @AssistedInject constructor(
 
     fun updateAvailability(beer: Beer) {
         viewModelScope.launch(coroutineDispatcher.io) {
-            changeAvailability(beer)
-            availabilityUseCase.execute(availabilityUseCase.Params(beer))
+            val newBeer = beer.copy(availability = !beer.availability)
+            changeAvailability(newBeer)
+            availabilityUseCase.execute(availabilityUseCase.Params(newBeer))
                     .also(::treatResponse)
         }
     }
 
     private fun setBeer(beer: Beer) {
-        _beerDetailViewState.postValue(BeersDetailViewState.Success(beer))
+        _beerDetailViewState.value = CommonUiState.Success(beer)
     }
 
     private fun treatResponse(result: Either<Exception, Unit>) {
         result.either(
                 {
-                    _beerDetailViewState.postValue(BeersDetailViewState.Error(it.message))
+                    _beerDetailViewState.value = CommonUiState.Error(it.message)
                 },
                 {
                 }
@@ -47,8 +50,7 @@ class BeerDetailViewModel @AssistedInject constructor(
     }
 
     private fun changeAvailability(beer: Beer) {
-        beer.availability = !beer.availability
-        _beerDetailViewState.postValue(BeersDetailViewState.Success(beer))
+        _beerDetailViewState.value = CommonUiState.Success(beer)
     }
 
     @dagger.assisted.AssistedFactory
@@ -61,14 +63,9 @@ class BeerDetailViewModel @AssistedInject constructor(
             assistedFactory: AssistedFactory,
             beer: Beer
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
-            override fun <T : ViewModel?> create(modelClass: Class<T>): T {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 return assistedFactory.create(beer) as T
             }
         }
     }
-}
-
-sealed class BeersDetailViewState<out T> {
-    data class Success<out T>(val result: T) : BeersDetailViewState<T>()
-    data class Error(val result: String?) : BeersDetailViewState<Nothing>()
 }

@@ -11,6 +11,7 @@ import com.simtop.beer_database.localsources.BeersLocalSource
 import com.simtop.beer_data.mappers.BeersMapper
 import com.simtop.beer_network.models.BeersApiResponseItem
 import com.simtop.beer_database.di.BeersDatabaseModule
+import com.simtop.beer_database.localsources.BeersLocalSourceImpl
 import com.simtop.beerdomain.domain.models.Beer
 import dagger.Module
 import dagger.Provides
@@ -21,6 +22,7 @@ import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.UninstallModules
 import dagger.hilt.components.SingletonComponent
 import junit.framework.TestCase.assertEquals
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Rule
@@ -46,7 +48,7 @@ class LocalDataSourceTest {
     @Before
     fun setUp() {
         hiltRule.inject()
-        localSource = BeersLocalSource(db)
+        localSource = BeersLocalSourceImpl(db)
     }
 
     @Test
@@ -54,8 +56,8 @@ class LocalDataSourceTest {
         runBlocking {
             localSource.insertAllToDB(fakeDbBeerList)
 
-            val repositoriesByName = localSource.getAllBeersFromDB()
-            assertEquals(repositoriesByName.first().id, fakeDbBeerList[0].id)
+            val repositoriesByName = localSource.getAllBeersFromDB().first()
+            assertEquals(repositoriesByName[0].id, fakeDbBeerList[0].id)
         }
     }
 
@@ -65,10 +67,10 @@ class LocalDataSourceTest {
             localSource.insertAllToDB(fakeDbBeerList)
             localSource.insertAllToDB(fakeDbBeerList)
 
-            val repositoriesByName = localSource.getAllBeersFromDB()
+            val repositoriesByName = localSource.getAllBeersFromDB().first()
 
             val count = localSource.getCountFromDB()
-            assertEquals(repositoriesByName.first().id, fakeDbBeerList[0].id)
+            assertEquals(repositoriesByName[0].id, fakeDbBeerList[0].id)
             assertEquals(count, 1)
         }
     }
@@ -97,7 +99,7 @@ class LocalDataSourceTest {
         runBlocking {
             localSource.insertAllToDB(fakeDbBeerList)
             localSource.updateBeer(fakeBeerModel2.id, false)
-            val result = localSource.getAllBeersFromDB()
+            val result = localSource.getAllBeersFromDB().first()
             assertEquals(result[0].availability, false)
         }
     }
@@ -122,26 +124,25 @@ class LocalDataSourceTest {
 }
 
 val fakeBeersApiResponseItem2 = BeersApiResponseItem(
-    1,
+    "1",
     "Buzz",
-    "A Real Bitter Experience.",
+    4.5,
+    60.0,
     "",
-    "",
-    0.0,
-    0.0,
+    emptyList(),
     emptyList()
 )
 
 val fakeBeerApiResponse2 = listOf(fakeBeersApiResponseItem2.copy())
 
 val fakeBeerModel2 = Beer(
-    1,
+    "1",
     "Buzz",
     "A Real Bitter Experience.",
     "",
     "",
-    0.0,
-    0.0,
+    4.5,
+    60.0,
     emptyList()
 )
 

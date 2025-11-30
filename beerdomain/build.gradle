@@ -1,5 +1,0 @@
-androidModule()
-
-dependencies {
-    implementation project(Modules.core)
-}

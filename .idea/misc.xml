@@ -1,6 +1,32 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" default="true" project-jdk-name="1.8" project-jdk-type="JavaSDK">
+  <component name="DesignSurface">
+    <option name="filePathToZoomLevelMap">
+      <map>
+        <entry key="../../../../../layout/compose-model-1641048146550.xml" value="0.18496621621621623" />
+        <entry key="../../../../../layout/compose-model-1641755990460.xml" value="0.67" />
+        <entry key="../../../../../layout/compose-model-1641756088362.xml" value="0.67" />
+        <entry key="../../../../../layout/compose-model-1641900874433.xml" value="0.7078651685393258" />
+        <entry key="../../../../../layout/compose-model-1641912423096.xml" value="0.7" />
+        <entry key="../../../../../layout/compose-model-1642002820637.xml" value="0.6910112359550562" />
+        <entry key="../../../../../layout/custom_preview.xml" value="0.13958333333333334" />
+        <entry key="../../../../layout/compose-model-1643547371826.xml" value="0.3887640449438202" />
+        <entry key="../../../../layout/compose-model-1643884389362.xml" value="0.3887640449438202" />
+        <entry key="../../../../layout/compose-model-1644014318834.xml" value="0.3887640449438202" />
+        <entry key="../../../../layout/compose-model-1656786455194.xml" value="0.4314606741573034" />
+        <entry key="../../../../layout/compose-model-1658076677484.xml" value="0.49887640449438203" />
+        <entry key="../../../../layout/compose-model-1658077182106.xml" value="0.25" />
+        <entry key="../../../../layout/compose-model-1658616812711.xml" value="0.12232415902140673" />
+        <entry key="../../../../layout/compose-model-1658620852306.xml" value="0.4111111111111111" />
+        <entry key="app/src/main/res/layout/activity_main.xml" value="0.1" />
+        <entry key="feature/beerdetail/src/main/res/layout/fragment_detail_beer.xml" value="0.15670289855072464" />
+        <entry key="feature/beerslist/src/main/res/layout/fragment_list_beers.xml" value="0.12552083333333333" />
+        <entry key="presentation_utils/src/main/res/layout/row_beer_list.xml" value="0.25" />
+        <entry key="presentation_utils/src/main/res/layout/single_beer_item.xml" value="0.15" />
+      </map>
+    </option>
+  </component>
+  <component name="ExternalStorageConfigurationManager" enabled="true" />
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_17" default="true" project-jdk-name="zulu-17" project-jdk-type="JavaSDK">
     <output url="file://$PROJECT_DIR$/build/classes" />
   </component>
   <component name="ProjectType">

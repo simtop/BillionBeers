@@ -1,0 +1,20 @@
+plugins {
+    id("billionbeers.android.feature")
+    id("billionbeers.android.compose")
+    id("androidx.navigation.safeargs.kotlin")
+}
+
+android {
+    namespace = "com.simtop.feature.beerslist"
+}
+
+dependencies {
+    implementation(project(":navigation"))
+    
+    implementation(libs.navigationDynamicFeaturesFragment)
+    implementation(libs.androidx.material3.android)
+    implementation(libs.androidx.runtime.livedata)
+    implementation(libs.androidx.ui.tooling.preview.android)
+    
+    testImplementation(project(":beerdomain:test"))
+}

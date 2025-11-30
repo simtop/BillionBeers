@@ -5,12 +5,13 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.simtop.beer_database.models.BeerDbModel
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 abstract class BeersDao {
 
     @Query("SELECT * FROM beers")
-    abstract fun getAllBeers(): List<BeerDbModel>
+    abstract fun getAllBeers(): Flow<List<BeerDbModel>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun insertAll(beers: List<BeerDbModel>)
@@ -22,7 +23,7 @@ abstract class BeersDao {
         WHERE id = :primaryKey
         """)
     abstract fun updateBeer(
-        primaryKey: Int,
+        primaryKey: String,
         availability: Boolean
     )
 
@@ -30,5 +31,5 @@ abstract class BeersDao {
     abstract fun deleteAll()
 
     @Query("SELECT COUNT(id) FROM beers")
-    abstract fun getCount(): Int
+    abstract suspend fun getCount(): Int
 }

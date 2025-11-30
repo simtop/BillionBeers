@@ -4,17 +4,12 @@ import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.IdlingPolicies
 import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.ViewInteraction
-import androidx.test.espresso.action.ViewActions
 import androidx.test.espresso.action.ViewActions.*
 import androidx.test.espresso.assertion.ViewAssertions
-import androidx.test.espresso.contrib.RecyclerViewActions
 import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.espresso.matcher.ViewMatchers.withId
-import com.simtop.billionbeers.utils.RecyclerViewMatchers
 import com.simtop.billionbeers.utils.ViewVisibilityIdlingResource
 import com.simtop.billionbeers.utils.waitUntilVisible
-import com.simtop.presentation_utils.core.BaseBindView
-import com.simtop.presentation_utils.core.ViewWrapper
 import java.util.concurrent.TimeUnit
 
 open class BaseTestRobot {
@@ -25,26 +20,6 @@ open class BaseTestRobot {
         .check(ViewAssertions.matches(ViewMatchers.withText(text)))
 
     fun matchText(resId: Int, text: String): ViewInteraction = matchText(textView(resId), text)
-
-    fun <T : Any> clickRecyclerViewPosition(listRes: Int,
-                                            position: Int = 0,
-                                            obj : T,
-                                            detailScreenRobot: BaseTestRobot,
-                                            func: (BaseTestRobot.() -> Unit)?): BaseTestRobot {
-        onView(withId(listRes))
-            .perform(
-                RecyclerViewActions.actionOnItemAtPosition<ViewWrapper<BaseBindView<T>>>(
-                    position,
-                    click()
-                )
-            )
-        return detailScreenRobot.apply { func?.let { it() } }
-    }
-
-    fun matchCountRecyclerViewItems(listRes: Int, count: Int = 0) {
-        onView(withId(listRes))
-            .check(ViewAssertions.matches(RecyclerViewMatchers.withItemCount(count)))
-    }
 
     fun registerIdlingRegistry(idlingResource: ViewVisibilityIdlingResource) {
         IdlingRegistry.getInstance().register(idlingResource)

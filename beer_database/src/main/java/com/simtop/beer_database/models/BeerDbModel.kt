@@ -8,7 +8,7 @@ import androidx.room.PrimaryKey
 data class BeerDbModel(
     @PrimaryKey
     @ColumnInfo(name = "id")
-    val id: Int,
+    val id: String,
     @ColumnInfo(name = "name")
     val name: String,
     @ColumnInfo(name = "tagline")

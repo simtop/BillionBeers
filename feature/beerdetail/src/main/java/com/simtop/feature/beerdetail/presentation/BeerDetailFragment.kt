@@ -1,7 +1,17 @@
 package com.simtop.feature.beerdetail.presentation
 
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
@@ -9,17 +19,13 @@ import androidx.navigation.fragment.navArgs
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.di.DynamicDependencies
 import com.simtop.feature.beerdetail.R
-import com.simtop.feature.beerdetail.databinding.FragmentDetailBeerBinding
 import com.simtop.feature.beerdetail.presentation.di.DaggerFeatureDetailComponent
-import com.simtop.presentation_utils.core.observe
 import com.simtop.presentation_utils.core.showToast
 import dagger.hilt.android.EntryPointAccessors
 import javax.inject.Inject
+import com.simtop.core.core.CommonUiState
 
-class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
-
-    private var _beersDetailFragmentBinding: FragmentDetailBeerBinding? = null
-    private val beersDetailFragmentBinding get() = _beersDetailFragmentBinding!!
+class BeerDetailFragment : Fragment() {
 
     private val args: BeerDetailFragmentArgs by navArgs()
 
@@ -33,58 +39,47 @@ class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
         )
     }
 
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        return ComposeView(requireContext()).apply {
+            setContent {
+                val viewState by beersViewModel.beerDetailViewState.collectAsState()
+
+                when (val state = viewState) {
+                    is CommonUiState.Success -> {
+                        ComposeBeerDetail(
+                            beer = state.data,
+                            onBackClick = { findNavController().popBackStack() },
+                            onToggleAvailability = { beersViewModel.updateAvailability(state.data) }
+                        )
+                    }
+                    is CommonUiState.Error -> {
+                        // Show error state or toast
+                        state.message?.let { requireActivity().showToast(it) }
+                    }
+                    CommonUiState.Loading -> {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                    else -> {}
+                }
+            }
+        }
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         initInject()
         super.onViewCreated(view, savedInstanceState)
-
-        //Setting view binding for Fragments
-        val binding = FragmentDetailBeerBinding.bind(view)
-        _beersDetailFragmentBinding = binding
-
         assistedBeer = args.myArg
-
-        observe(
-            beersViewModel.beerDetailViewState, { beerDetailViewState ->
-                beerDetailViewState?.let { treatViewState(it) }
-            }
-        )
-
     }
 
     private fun initInject() {
         DaggerFeatureDetailComponent.factory().create(
             EntryPointAccessors.fromApplication(requireContext(), DynamicDependencies::class.java)
         ).inject(this)
-    }
-
-    private fun treatViewState(result: BeersDetailViewState<Beer>) {
-        when (result) {
-            is BeersDetailViewState.Success -> treatSuccess(result.result)
-            is BeersDetailViewState.Error -> showError(result.result)
-        }
-
-    }
-
-    private fun showError(exception: String?) {
-        exception?.let { requireActivity().showToast(it) }
-    }
-
-    private fun treatSuccess(beer: Beer) {
-        beersDetailFragmentBinding.singleBeer.bind(beer, ::updateAvailability, ::onBackClicked)
-
-    }
-
-    private fun onBackClicked() {
-        findNavController().popBackStack()
-    }
-
-    private fun updateAvailability() {
-        val beer = beersViewModel.beerDetailViewState.value
-        if (beer is BeersDetailViewState.Success) beersViewModel.updateAvailability(beer.result)
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _beersDetailFragmentBinding = null
     }
 }

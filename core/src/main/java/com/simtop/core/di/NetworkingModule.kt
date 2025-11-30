@@ -1,6 +1,5 @@
 package com.simtop.core.di
 
-import com.simtop.core.BuildConfig
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -31,8 +30,9 @@ object NetworkingModule {
         loggingInterceptor: HttpLoggingInterceptor
     ): OkHttpClient.Builder {
         return OkHttpClient.Builder().apply {
-            println("Interceptor added = ${BuildConfig.DEBUG}")
-            if(BuildConfig.DEBUG) addInterceptor(loggingInterceptor)
+            //TODO: check how to do after BuildConfig Migration
+            //println("Interceptor added = ${BuildConfig.DEBUG}")
+            //if(BuildConfig.DEBUG) addInterceptor(loggingInterceptor)
         }
     }
 

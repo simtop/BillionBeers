@@ -7,17 +7,21 @@ import com.simtop.beer_database.utils.Converters
 
 object BeersMapper {
 
-    fun fromBeersApiResponseItemToBeer(response: BeersApiResponseItem?): Beer =
-        Beer(
-            response?.id ?: 0,
-            response?.name ?: "",
-            response?.tagline ?: "",
-            response?.description ?: "",
-            response?.imageUrl ?: "",
-            response?.abv ?: 0.0,
-            response?.ibu ?: 0.0,
-            response?.foodPairing ?: emptyList()
+    fun fromBeersApiResponseItemToBeer(response: BeersApiResponseItem?): Beer {
+        val translation = response?.translations?.find { it.language.code == "en" }
+        val imageUrl = response?.imageId?.let { "https://brewbuddy.dev/images/$it" }
+
+        return Beer(
+            id = response?.id ?: "",
+            name = response?.name ?: "",
+            tagline = translation?.slogan ?: "",
+            description = translation?.description ?: "",
+            imageUrl = imageUrl ?: "",
+            abv = response?.abv ?: 0.0,
+            ibu = response?.ibu ?: 0.0,
+            foodPairing = response?.foodPairing ?: emptyList()
         )
+    }
 
     fun fromBeerToBeerDbModel(beer : Beer) =
         BeerDbModel(

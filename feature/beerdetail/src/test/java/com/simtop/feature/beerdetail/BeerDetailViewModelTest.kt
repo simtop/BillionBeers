@@ -1,140 +1,135 @@
 package com.simtop.feature.beerdetail
 
-import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import app.cash.turbine.test
+import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.usecases.UpdateAvailabilityUseCase
-import com.simtop.billionbeers.testing_utils.*
+import com.simtop.billionbeers.testing_utils.fakeBeerModel
+import com.simtop.billionbeers.testing_utils.fakeException
+import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.Either
 import com.simtop.feature.beerdetail.presentation.BeerDetailViewModel
-import com.simtop.feature.beerdetail.presentation.BeersDetailViewState
+
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import org.junit.Rule
-import org.junit.Test
-import org.junit.rules.TestRule
-import strikt.api.expect
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import strikt.api.expectThat
+import strikt.assertions.isA
 import strikt.assertions.isEqualTo
+
+import com.simtop.core.core.CommonUiState
+import com.simtop.beerdomain.test.fakes.FakeBeersRepository
 
 @ExperimentalCoroutinesApi
 internal class BeerDetailViewModelTest {
 
-    @get:Rule
-    var rule: TestRule = InstantTaskExecutorRule()
+    private val coroutineDispatcherProvider = mockk<CoroutineDispatcherProvider>()
+    private val fakeBeersRepository = FakeBeersRepository()
+    private val availabilityUseCase = UpdateAvailabilityUseCase(fakeBeersRepository)
+    private val testDispatcher = StandardTestDispatcher()
 
-    @get:Rule
-    val coroutineScope = MainCoroutineScopeRule()
+    @BeforeEach
+    fun setUp() {
+        Dispatchers.setMain(testDispatcher)
+        every { coroutineDispatcherProvider.io } returns testDispatcher
+        every { coroutineDispatcherProvider.main } returns testDispatcher
+    }
 
-    private val availabilityUseCase: UpdateAvailabilityUseCase = mockk()
+    @AfterEach
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
 
     @Test
-    fun `when creating viewmodel we get success state`() = coroutineScope.runBlocking {
-        // Arrange
-
-        // Act
-
-        coroutineScope.dispatcher.pauseDispatcher()
-
+    fun `when creating viewmodel we get success state`() = runTest(testDispatcher) {
+        // Arrange & Act
         val beerDetailViewModel = BeerDetailViewModel(
-            coroutineScope.testDispatcherProvider,
+            coroutineDispatcherProvider,
             availabilityUseCase,
             fakeBeerModel
         )
 
-        val liveDataUnderTest = beerDetailViewModel.beerDetailViewState.testObserver()
-
-        coroutineScope.dispatcher.resumeDispatcher()
-
         // Assert
-
-        expect {
-            that(liveDataUnderTest.observedValues) {
-                get { size }.isEqualTo(1)
-                get { get(0) }.isEqualTo(
-                    BeersDetailViewState.Success(
-                        fakeBeerModel
-                    )
-                )
-            }
+        beerDetailViewModel.beerDetailViewState.test {
+            val item = awaitItem()
+            expectThat(item).isA<CommonUiState.Success<Beer>>()
+            expectThat((item as CommonUiState.Success).data).isEqualTo(fakeBeerModel)
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
-    fun `when usecase fails we get error state`() = coroutineScope.runBlocking {
+    fun `when usecase fails we get error state`() = runTest(testDispatcher) {
         // Arrange
-
-        coEvery {
-            availabilityUseCase.execute(any())
-        } returns Either.Left(fakeException)
-
-        // Act
-
-        coroutineScope.dispatcher.pauseDispatcher()
+        fakeBeersRepository.setExceptionToThrow(fakeException)
 
         val beerDetailViewModel = BeerDetailViewModel(
-            coroutineScope.testDispatcherProvider,
+            coroutineDispatcherProvider,
             availabilityUseCase,
             fakeBeerModel
         )
 
-        val liveDataUnderTest = beerDetailViewModel.beerDetailViewState.testObserver()
+        // Act
+        beerDetailViewModel.beerDetailViewState.test {
+            // Initial success state
+            expectThat(awaitItem()).isA<CommonUiState.Success<Beer>>()
 
-        coroutineScope.dispatcher.resumeDispatcher()
-
-        beerDetailViewModel.updateAvailability(fakeBeerModel)
-
-        // Assert
-
-        expect {
-            that(liveDataUnderTest.observedValues) {
-                get { size }.isEqualTo(3)
-                get { get(2) }.isEqualTo(
-                    BeersDetailViewState.Error(
-                        fakeException.message
-                    )
-                )
-            }
-        }
-    }
-
-    @Test
-    fun `when usecase succeeds we get success state with different availability`() =
-        coroutineScope.runBlocking {
-            // Arrange
-
-            coEvery {
-                availabilityUseCase.execute(any())
-            } returns com.simtop.core.core.Either.Right(Unit)
-
-            val testExpectedResponse =
-                fakeBeerModel.copy(availability = !fakeBeerModel.availability)
-
-            // Act
-
-            coroutineScope.dispatcher.pauseDispatcher()
-
-            val beerDetailViewModel = BeerDetailViewModel(
-                coroutineScope.testDispatcherProvider,
-                availabilityUseCase,
-                fakeBeerModel
-            )
-
-            val liveDataUnderTest = beerDetailViewModel.beerDetailViewState.testObserver()
-
-            coroutineScope.dispatcher.resumeDispatcher()
             beerDetailViewModel.updateAvailability(fakeBeerModel)
 
-            // Assert
+            // Optimistic update
+            expectThat(awaitItem()).isA<CommonUiState.Success<Beer>>()
 
-            expect {
-                that(liveDataUnderTest.observedValues) {
-                    get { size }.isEqualTo(2)
-                    get { get(0) }.isEqualTo(
-                        BeersDetailViewState.Success(
-                            testExpectedResponse
-                        )
-                    )
-                }
-            }
+            // Error state
+            val errorItem = awaitItem()
+            expectThat(errorItem).isA<CommonUiState.Error>()
+            expectThat((errorItem as CommonUiState.Error).message).isEqualTo(fakeException.message)
+            cancelAndIgnoreRemainingEvents()
         }
-}
+    }
 
+    @Test
+    fun `when usecase succeeds we get success state with different availability`() = runTest(testDispatcher) {
+        // Arrange
+        fakeBeersRepository.setExceptionToThrow(null)
+        fakeBeersRepository.setBeers(listOf(fakeBeerModel))
+
+        val testExpectedResponse = fakeBeerModel.copy(availability = !fakeBeerModel.availability)
+
+        val beerDetailViewModel = BeerDetailViewModel(
+            coroutineDispatcherProvider,
+            availabilityUseCase,
+            fakeBeerModel
+        )
+
+        // Act
+        beerDetailViewModel.beerDetailViewState.test {
+            // Initial success state
+            expectThat(awaitItem()).isA<CommonUiState.Success<Beer>>()
+
+            beerDetailViewModel.updateAvailability(fakeBeerModel)
+
+            // Optimistic update (toggled availability)
+            val updatedItem = awaitItem()
+            expectThat(updatedItem).isA<CommonUiState.Success<Beer>>()
+            expectThat((updatedItem as CommonUiState.Success).data.availability)
+                .isEqualTo(testExpectedResponse.availability)
+
+            // Since usecase succeeds, we don't expect another emission because the optimistic update was correct
+            // and the usecase success doesn't trigger a new state emission in the current implementation
+            // (it only emits on error).
+            
+            val storedBeer = fakeBeersRepository.getBeers().first()
+            expectThat(storedBeer.availability).isEqualTo(testExpectedResponse.availability)
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+}

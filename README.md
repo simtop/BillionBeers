@@ -2,11 +2,9 @@
 
 This is a base simple app that showcases my base Architecture and testing practices. It's started as a monolitic app in place of multi module to be easier to test new libraries and new ideas and you can see the progression of the multi modular approach. 
 
-This app follows the Clean Architecture and using MVVM architecture for the presentation layer. The app uses kotlin dsl for dependency management and I use de_fayard_buildsrcversions_gradle_plugin plugin to manage the latest versions of the libraries I use. 
+This app follows the Clean Architecture and uses MVVM architecture for the presentation layer. The app uses Kotlin DSL for dependency management and Version Catalog to manage library versions.
 
-The dependency management plugin is not working too well with gradle 7.3 and also the buildSrc approach wasn't too efficient with a multi modular app so soon I'll be moving the app to use versions catalog with kotlin 1.6 and gradle 7.3.
-
-The apps tech stack is: LiveData, Room, ViewModels, Dagger, constraint layout, motion layout, view binding, glide, Coroutines, Jetpack Navigation and safe args, Retrofit, okHttp, GSON, Material Design, webmockserver, mockk, junit4 (I stopped using junit5 because there were no logs in CI server), kluent, espresso
+The app's tech stack is: Jetpack Compose, StateFlow, Room, ViewModels, Hilt, Coroutines, Jetpack Navigation and safe args, Retrofit, okHttp, GSON, Material Design, webmockserver, mockk, junit4, Strikt, Espresso.
 
 You can find the app in google play store (https://play.google.com/store/apps/details?id=com.simtop.billionbeers&hl=es&gl=US). 
 Any download and 5 star is **greatly appreciated**
@@ -22,6 +20,26 @@ For UI Testing I used the Robot Pattern.
 - [ ] Check if issue with UI Tests for paging 3.9 that I reported to google is fixed and merge paging branch
 - [ ] Add Jacoco to sonar qube
 - [ ] Add Firebase Test Lab with dynamic feature
+
+## Code Quality & Reports
+
+This project uses several tools to ensure code quality and consistency.
+
+### 1. Formatting (Spotless & ktfmt)
+We use **Spotless** with **ktfmt** to enforce Google's Kotlin style guide.
+- **Check formatting**: `./gradlew spotlessCheck`
+- **Apply formatting**: `./gradlew spotlessApply` (Run this before committing!)
+
+### 2. Static Analysis (Detekt)
+We use **Detekt** to find code smells and complexity issues.
+- **Run analysis**: `./gradlew detekt`
+- **Reports**: Found in `build/reports/detekt/` for each module (e.g., `app/build/reports/detekt/detekt.html`).
+
+### 3. Code Coverage (Jacoco)
+We use **Jacoco** to measure test coverage.
+- **Generate reports**: `./gradlew jacocoTestReport`
+- **Reports**: Found in `build/reports/jacoco/jacocoTestReport/html/index.html` for each module (e.g., `core-common/build/reports/jacoco/jacocoTestReport/html/index.html`).
+
 
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated** and it will be a pleasure to collaborate with you..
 

@@ -1,0 +1,57 @@
+plugins {
+    id("billionbeers.android.application")
+    id("billionbeers.android.compose")
+    id("billionbeers.android.hilt")
+    id("androidx.navigation.safeargs.kotlin")
+    id("com.simtop.billionbeers.duplicate-classes")
+}
+
+android {
+    namespace = "com.simtop.billionbeers"
+    dynamicFeatures += setOf(":feature:beerdetail")
+    
+    packaging {
+        resources {
+            excludes += "META-INF/versions/9/module-info.class"
+            excludes += "a/a.class"
+            excludes += "a/b.class"
+            excludes += "META-INF/LICENSE.md"
+            excludes += "META-INF/LICENSE-notice.md"
+        }
+    }
+}
+
+dependencies {
+    implementation(project(":beerdomain"))
+    implementation(project(":feature:beerslist"))
+    implementation(project(":core"))
+    implementation(project(":navigation"))
+    implementation(project(":beer_data"))
+    implementation(project(":beer_database"))
+    implementation(project(":beer_network"))
+    implementation(project(":presentation_utils"))
+    
+    implementation(libs.navigationFragmentKtx)
+    implementation(libs.navigationUi)
+    implementation(libs.navigationDynamicFeaturesFragment)
+    
+    implementation(libs.androidPlayCore)
+    implementation(libs.androidPlayCoreKtx)
+    implementation(libs.androidxActivityCompose)
+    
+    testImplementation(libs.striktCore)
+    androidTestImplementation(libs.striktCore)
+    
+    // TODO: move to another module when we create the test module
+    implementation(libs.junit)
+    implementation(libs.coroutinesTest)
+    
+    testImplementation(libs.okhttp3Mockwebserver)
+    testImplementation(libs.retrofit2ConverterGson)
+    testImplementation(libs.okhttp3LoggingInterceptor)
+    
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
+    androidTestImplementation("org.hamcrest:hamcrest:2.2")
+    androidTestImplementation(libs.roomRuntime)
+}
