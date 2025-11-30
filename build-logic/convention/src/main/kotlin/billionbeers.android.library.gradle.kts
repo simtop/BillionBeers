@@ -8,6 +8,8 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("kotlin-parcelize")
     id("billionbeers.jacoco")
+    id("billionbeers.spotless")
+    id("billionbeers.detekt")
     id("de.mannodermaus.android-junit5")
 }
 

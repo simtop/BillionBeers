@@ -3,6 +3,9 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("org.jetbrains.kotlin.jvm")
+    id("billionbeers.jacoco")
+    id("billionbeers.spotless")
+    id("billionbeers.detekt")
 }
 
 val libs = the<LibrariesForLibs>()

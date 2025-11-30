@@ -10,7 +10,14 @@ configure<JacocoPluginExtension> {
     toolVersion = "0.8.11"
 }
 
-val jacocoTestReport = tasks.create("jacocoTestReport")
+// In Pure Kotlin Modules, applying id("jacoco") automatically creates a jacocoTestReport task.
+// In Android Modules, Applying id("jacoco") does NOT create the jacocoTestReport task
+// automatically. You have to create it yourself.
+val jacocoTestReport = if (tasks.findByName("jacocoTestReport") != null) {
+    tasks.named("jacocoTestReport")
+} else {
+    tasks.register("jacocoTestReport", JacocoReport::class)
+}
 
 val androidComponents = extensions.findByType(com.android.build.api.variant.AndroidComponentsExtension::class.java)
 androidComponents?.onVariants { variant ->
@@ -51,5 +58,5 @@ androidComponents?.onVariants { variant ->
         executionData.setFrom(file("$buildDir/jacoco/$testTaskName.exec"))
     }
 
-    jacocoTestReport.dependsOn(reportTask)
+    jacocoTestReport.configure { dependsOn(reportTask) }
 }

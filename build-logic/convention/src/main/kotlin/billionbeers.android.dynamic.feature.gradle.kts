@@ -9,6 +9,8 @@ plugins {
     id("de.mannodermaus.android-junit5")
     id("com.google.devtools.ksp")
     id("billionbeers.jacoco")
+    id("billionbeers.spotless")
+    id("billionbeers.detekt")
 }
 
 val libs = the<LibrariesForLibs>()
