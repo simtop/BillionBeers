@@ -11,6 +11,7 @@ import com.simtop.beer_database.localsources.BeersLocalSource
 import com.simtop.beer_data.mappers.BeersMapper
 import com.simtop.beer_network.models.BeersApiResponseItem
 import com.simtop.beer_database.di.BeersDatabaseModule
+import com.simtop.beer_database.localsources.BeersLocalSourceImpl
 import com.simtop.beerdomain.domain.models.Beer
 import dagger.Module
 import dagger.Provides
@@ -47,7 +48,7 @@ class LocalDataSourceTest {
     @Before
     fun setUp() {
         hiltRule.inject()
-        localSource = BeersLocalSource(db)
+        localSource = BeersLocalSourceImpl(db)
     }
 
     @Test

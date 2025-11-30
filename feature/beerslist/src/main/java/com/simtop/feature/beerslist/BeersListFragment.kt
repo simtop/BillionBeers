@@ -51,7 +51,7 @@ import com.simtop.core.core.CommonUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @AndroidEntryPoint
-class BeersListFragment : Fragment(R.layout.fragment_list_beers) {
+class BeersListFragment : Fragment() {
 
     private val beersViewModel: BeersListViewModel by viewModels()
 

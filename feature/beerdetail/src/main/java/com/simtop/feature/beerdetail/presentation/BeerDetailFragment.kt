@@ -25,7 +25,7 @@ import dagger.hilt.android.EntryPointAccessors
 import javax.inject.Inject
 import com.simtop.core.core.CommonUiState
 
-class BeerDetailFragment : Fragment(R.layout.fragment_detail_beer) {
+class BeerDetailFragment : Fragment() {
 
     private val args: BeerDetailFragmentArgs by navArgs()
 

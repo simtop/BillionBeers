@@ -7,9 +7,9 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
 import com.simtop.beer_database.database.BeersDatabase
 import com.simtop.beer_database.localsources.BeersLocalSource
+import com.simtop.beer_database.localsources.BeersLocalSourceImpl
 import com.simtop.billionbeers.di.fakeBeerModel2
 import com.simtop.billionbeers.di.fakeDbBeerList
-import com.simtop.core.core.mapLeft
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -32,7 +32,7 @@ class LocalDataSourceTest {
         db = Room.inMemoryDatabaseBuilder(context, BeersDatabase::class.java)
             .allowMainThreadQueries()
             .build()
-        localSource = BeersLocalSource(db)
+        localSource = BeersLocalSourceImpl(db)
     }
 
     @After

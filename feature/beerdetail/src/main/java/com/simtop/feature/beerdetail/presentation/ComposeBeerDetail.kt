@@ -15,12 +15,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
@@ -33,13 +32,71 @@ import androidx.compose.ui.layout.ContentScale
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.presentation_utils.R
 
+import androidx.compose.material3.ExperimentalMaterial3Api
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ComposeBeerDetail(
     beer: Beer,
     onBackClick: () -> Unit,
     onToggleAvailability: () -> Unit
 ) {
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            Box(modifier = Modifier.wrapContentSize()) {
+
+                BeerDetailImage(
+                    imageUrl = beer.imageUrl,
+                    modifier = Modifier.matchParentSize()
+                )
+
+                // Gradient Overlay for text readability
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    Color.Black.copy(alpha = 0.7f)
+                                )
+                            )
+                        )
+                )
+
+                LargeTopAppBar(
+                    title = {
+                        Text(
+                            text = beer.name,
+                            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
+                            maxLines = 2,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        )
+                    },
+                    expandedHeight = 350.dp,
+                    navigationIcon = {
+                        IconButton(onClick = onBackClick) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                tint = Color.White
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.largeTopAppBarColors(
+                        containerColor = Color.Transparent,
+                        scrolledContainerColor = MaterialTheme.colorScheme.primary,
+                        titleContentColor = Color.White,
+                        navigationIconContentColor = Color.White,
+                        actionIconContentColor = Color.White
+                    ),
+                    scrollBehavior = scrollBehavior
+                )
+            }
+        },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onToggleAvailability,
@@ -48,10 +105,22 @@ fun ComposeBeerDetail(
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.testTag("toggle_availability")
             ) {
-                Text(
-                    text = if (beer.availability) "Mark as Empty" else "Refill Barrels",
-                    fontWeight = FontWeight.Bold
-                )
+                androidx.compose.animation.AnimatedContent(
+                    targetState = beer.availability,
+                    label = "availability_animation"
+                ) { isAvailable ->
+                    if (isAvailable) {
+                        Text(
+                            text = "Mark as Empty",
+                            fontWeight = FontWeight.Bold
+                        )
+                    } else {
+                        Text(
+                            text = "Refill Barrels",
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
         }
     ) { paddingValues ->
@@ -59,123 +128,66 @@ fun ComposeBeerDetail(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(bottom = paddingValues.calculateBottomPadding() + 16.dp)
+                .padding(paddingValues)
+                .padding(16.dp)
                 .testTag("detail_scroll_view")
         ) {
-            // Header Image with Back Button
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp)
-            ) {
-                BeerDetailImage(imageUrl = beer.imageUrl)
-                
-                // Gradient Overlay
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(
-                                    Color.Black.copy(alpha = 0.4f),
-                                    Color.Transparent,
-                                    Color.Black.copy(alpha = 0.6f)
-                                )
-                            )
-                        )
+            // Tagline
+            Text(
+                text = beer.tagline,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontStyle = FontStyle.Italic,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            )
 
-                // Back Button
-                IconButton(
-                    onClick = onBackClick,
-                    modifier = Modifier
-                        .padding(top = 48.dp, start = 16.dp)
-                        .background(Color.Black.copy(alpha = 0.3f), CircleShape)
-                        .testTag("back_button")
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Color.White
-                    )
-                }
+            Spacer(modifier = Modifier.height(24.dp))
 
-                // Title on Image
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        text = beer.name,
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            color = Color.White,
-                            shadow = androidx.compose.ui.graphics.Shadow(
-                                color = Color.Black,
-                                blurRadius = 8f
-                            )
-                        )
-                    )
-                    Text(
-                        text = beer.tagline,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontStyle = FontStyle.Italic,
-                            color = Color.White.copy(alpha = 0.9f)
-                        )
-                    )
-                }
+            // Stats Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                StatCard(label = "ABV", value = "${beer.abv}%", color = Color(0xFFE0F7FA), textColor = Color(0xFF006064))
+                StatCard(label = "IBU", value = "${beer.ibu}", color = Color(0xFFFBE9E7), textColor = Color(0xFFBF360C))
             }
 
-            // Content Body
-            Column(modifier = Modifier.padding(24.dp)) {
-                
-                // Stats Row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    StatCard(label = "ABV", value = "${beer.abv}%", color = Color(0xFFE0F7FA), textColor = Color(0xFF006064))
-                    StatCard(label = "IBU", value = "${beer.ibu}", color = Color(0xFFFBE9E7), textColor = Color(0xFFBF360C))
-                }
+            Spacer(modifier = Modifier.height(24.dp))
 
-                Spacer(modifier = Modifier.height(24.dp))
+            // Description
+            Text(
+                text = "Description",
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = beer.description,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    lineHeight = 24.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                )
+            )
 
-                // Description
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Food Pairing
+            if (beer.foodPairing.isNotEmpty()) {
                 Text(
-                    text = "Description",
+                    text = "Food Pairing",
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = beer.description,
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        lineHeight = 24.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Food Pairing
-                if (beer.foodPairing.isNotEmpty()) {
-                    Text(
-                        text = "Food Pairing",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    beer.foodPairing.forEach { pairing ->
-                        Row(modifier = Modifier.padding(vertical = 4.dp)) {
-                            Text(
-                                text = "•",
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                                modifier = Modifier.padding(end = 8.dp)
-                            )
-                            Text(
-                                text = pairing,
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                        }
+                Spacer(modifier = Modifier.height(12.dp))
+                beer.foodPairing.forEach { pairing ->
+                    Row(modifier = Modifier.padding(vertical = 4.dp)) {
+                        Text(
+                            text = "•",
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                        Text(
+                            text = pairing,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
                     }
                 }
             }
@@ -213,7 +225,7 @@ fun StatCard(label: String, value: String, color: Color, textColor: Color) {
 }
 
 @Composable
-fun BeerDetailImage(imageUrl: String) {
+fun BeerDetailImage(imageUrl: String, modifier: Modifier = Modifier) {
     AsyncImage(
         model = ImageRequest.Builder(LocalContext.current)
             .data(imageUrl)
@@ -223,7 +235,7 @@ fun BeerDetailImage(imageUrl: String) {
             .build(),
         contentDescription = null,
         contentScale = ContentScale.Crop,
-        modifier = Modifier.fillMaxSize()
+        modifier = modifier.fillMaxSize()
     )
 }
 
