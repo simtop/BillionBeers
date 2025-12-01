@@ -16,9 +16,8 @@ fun configureCompose(commonExtension: CommonExtension<*, *, *, *, *, *>) {
     }
 
     dependencies {
-        val bom = libs.androidxComposeBom
-        add("implementation", platform(bom))
-        add("androidTestImplementation", platform(bom))
+        add("implementation", platform(libs.androidxComposeBom))
+        add("androidTestImplementation", platform(libs.androidxComposeBom))
         
         add("implementation", libs.androidxActivityCompose)
         add("implementation", libs.androidx.foundation.android)
