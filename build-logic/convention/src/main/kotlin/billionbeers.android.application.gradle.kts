@@ -78,23 +78,23 @@ configure<ApplicationExtension> {
 }
 
 dependencies {
-    "testImplementation"(libs.junit)
-    "testImplementation"(libs.mockk)
-    "testImplementation"(libs.coreTesting)
-    "testImplementation"(libs.coroutinesTest)
-    "testImplementation"(libs.kluentAndroid)
-    "testImplementation"(libs.turbine)
+    testImplementation(libs.junit)
+    testImplementation(libs.mockk)
+    testImplementation(libs.coreTesting)
+    testImplementation(libs.coroutinesTest)
+    testImplementation(libs.kluentAndroid)
+    testImplementation(libs.turbine)
 
-    "androidTestImplementation"(libs.junit)
-    "androidTestImplementation"(libs.kotlinTestJunit)
-    "androidTestImplementation"(libs.coroutinesTest)
-    "androidTestImplementation"(libs.espressoCore)
-    "androidTestImplementation"(libs.testRunner)
-    "androidTestImplementation"(libs.testRules)
-    "androidTestImplementation"(libs.testCoreKtx)
-    "androidTestImplementation"(libs.mockkAndroid)
-    "androidTestImplementation"(libs.junitKtx)
-    "androidTestImplementation"(libs.coreTesting)
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.kotlinTestJunit)
+    androidTestImplementation(libs.coroutinesTest)
+    androidTestImplementation(libs.espressoCore)
+    androidTestImplementation(libs.testRunner)
+    androidTestImplementation(libs.testRules)
+    androidTestImplementation(libs.testCoreKtx)
+    androidTestImplementation(libs.mockkAndroid)
+    androidTestImplementation(libs.junitKtx)
+    androidTestImplementation(libs.coreTesting)
 }
 
 tasks.withType<KotlinCompile>().configureEach {

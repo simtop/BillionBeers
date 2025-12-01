@@ -39,35 +39,35 @@ configure<DynamicFeatureExtension> {
 }
 
 dependencies {
-    "implementation"(project(":app"))
-    "implementation"(libs.coreKtx)
-    "implementation"(libs.appcompat)
-    "implementation"(libs.material)
-    "implementation"(libs.constraintlayout)
+    implementation(project(":app"))
+    implementation(libs.coreKtx)
+    implementation(libs.appcompat)
+    implementation(libs.material)
+    implementation(libs.constraintlayout)
     
-    "implementation"(libs.lifecycleRuntimeKtx)
-    "implementation"(libs.navigationFragmentKtx)
-    "implementation"(libs.navigationUi)
-    "implementation"(libs.navigationDynamicFeaturesFragment)
+    implementation(libs.lifecycleRuntimeKtx)
+    implementation(libs.navigationFragmentKtx)
+    implementation(libs.navigationUi)
+    implementation(libs.navigationDynamicFeaturesFragment)
 
     // Hilt dependencies for Dynamic Feature
-    "implementation"(libs.hilt.android)
-    "ksp"(libs.hilt.compiler)
-    "ksp"(libs.androidx.hilt.compiler)
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    ksp(libs.androidx.hilt.compiler)
     
-    "testImplementation"(libs.junit)
-    "testImplementation"(libs.mockk)
-    "testImplementation"(libs.coreTesting)
-    "testImplementation"(libs.coroutinesTest)
-    "testImplementation"(libs.kluentAndroid)
-    "testImplementation"(libs.turbine)
-    "testImplementation"(libs.junit.jupiter.api)
-    "testImplementation"(libs.junit.jupiter.params)
-    "testRuntimeOnly"(libs.junit.jupiter.engine)
+    testImplementation(libs.junit)
+    testImplementation(libs.mockk)
+    testImplementation(libs.coreTesting)
+    testImplementation(libs.coroutinesTest)
+    testImplementation(libs.kluentAndroid)
+    testImplementation(libs.turbine)
+    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.junit.jupiter.params)
+    testRuntimeOnly(libs.junit.jupiter.engine)
 
-    "androidTestImplementation"(libs.junit)
-    "androidTestImplementation"(libs.espressoCore)
-    "androidTestImplementation"(libs.coreTesting)
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.espressoCore)
+    androidTestImplementation(libs.coreTesting)
 }
 
 tasks.withType<Test> {

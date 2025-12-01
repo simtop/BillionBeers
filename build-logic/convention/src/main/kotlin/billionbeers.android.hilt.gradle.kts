@@ -8,9 +8,9 @@ plugins {
 val libs = the<LibrariesForLibs>()
 
 dependencies {
-    "implementation"(libs.hilt.android)
-    "ksp"(libs.hilt.compiler)
-    "ksp"(libs.androidx.hilt.compiler)
-    "androidTestImplementation"(libs.hiltAndroidTesting)
-    "kspAndroidTest"(libs.hilt.compiler)
+    add("implementation", libs.hilt.android)
+    add("ksp", libs.hilt.compiler)
+    add("ksp", libs.androidx.hilt.compiler)
+    add("androidTestImplementation", libs.hiltAndroidTesting)
+    add("kspAndroidTest", libs.hilt.compiler)
 }
