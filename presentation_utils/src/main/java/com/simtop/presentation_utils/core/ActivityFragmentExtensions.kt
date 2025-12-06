@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.DialogInterface
 import android.view.View
 import android.widget.Toast
-import androidx.annotation.LayoutRes
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.LifecycleOwner

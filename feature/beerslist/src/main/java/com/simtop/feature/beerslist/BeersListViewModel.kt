@@ -2,10 +2,11 @@ package com.simtop.feature.beerslist
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.simtop.beerdomain.domain.GetAllBeersUseCase
 import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.domain.usecases.GetAllBeersUseCase
 import com.simtop.beerdomain.domain.usecases.LoadNextPageUseCase
 import com.simtop.beerdomain.domain.usecases.ObservePagingStateUseCase
+import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.PagingHandler
 import com.simtop.core.core.PagingState
@@ -17,8 +18,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-import com.simtop.core.core.CommonUiState
 
 @HiltViewModel
 class BeersListViewModel @Inject constructor(
@@ -52,11 +51,11 @@ class BeersListViewModel @Inject constructor(
                 else -> currentState
             }
         } else {
-             when (pagingState) {
-                 is PagingState.Loading -> CommonUiState.Loading
-                 is PagingState.Error -> CommonUiState.Error(pagingState.message)
-                 else -> currentState
-             }
+            when (pagingState) {
+                is PagingState.Loading -> CommonUiState.Loading
+                is PagingState.Error -> CommonUiState.Error(pagingState.message)
+                else -> currentState
+            }
         }
     }
 
@@ -69,8 +68,8 @@ class BeersListViewModel @Inject constructor(
         getAllBeersUseCase.execute(GetAllBeersUseCase.Params(quantity))
             .onEach { beers ->
                 if (beers.isEmpty()) {
-                     // If DB is empty, we might be loading or empty state
-                     // We rely on PagingState to tell us if we are loading
+                    // If DB is empty, we might be loading or empty state
+                    // We rely on PagingState to tell us if we are loading
                 } else {
                     val currentState = _beerListViewState.value
                     // Preserve isLoadingNextPage flag when updating the list
@@ -89,7 +88,7 @@ class BeersListViewModel @Inject constructor(
             }
             .launchIn(viewModelScope)
     }
-    
+
     private fun observePaging() {
         observePagingStateUseCase.execute()
             .onEach { pagingState ->
@@ -107,23 +106,9 @@ class BeersListViewModel @Inject constructor(
     fun showEmptyState() {
         _beerListViewState.value = CommonUiState.Empty
     }
-
-    fun setProgress(showDialog: Boolean, progress: Float) {
-        val currentState = _beerListViewState.value
-        if (currentState is CommonUiState.Success) {
-            _beerListViewState.value = CommonUiState.Success(
-                currentState.data.copy(
-                    showDialog = showDialog,
-                    progress = progress
-                )
-            )
-        }
-    }
 }
 
 data class BeersListUiModel(
     val beers: List<Beer> = emptyList(),
-    val showDialog: Boolean = false,
-    val progress: Float = 0.0f,
     val isLoadingNextPage: Boolean = false
 )

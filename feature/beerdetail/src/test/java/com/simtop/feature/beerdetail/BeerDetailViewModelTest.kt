@@ -3,13 +3,12 @@ package com.simtop.feature.beerdetail
 import app.cash.turbine.test
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.usecases.UpdateAvailabilityUseCase
+import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.billionbeers.testing_utils.fakeBeerModel
 import com.simtop.billionbeers.testing_utils.fakeException
 import com.simtop.core.core.CoroutineDispatcherProvider
-import com.simtop.core.core.Either
 import com.simtop.feature.beerdetail.presentation.BeerDetailViewModel
 
-import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -26,7 +25,6 @@ import strikt.assertions.isA
 import strikt.assertions.isEqualTo
 
 import com.simtop.core.core.CommonUiState
-import com.simtop.beerdomain.test.fakes.FakeBeersRepository
 
 @ExperimentalCoroutinesApi
 internal class BeerDetailViewModelTest {

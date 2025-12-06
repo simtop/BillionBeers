@@ -8,7 +8,7 @@ plugins {
 val libs = the<org.gradle.accessors.dm.LibrariesForLibs>()
 
 configure<JacocoPluginExtension> {
-    toolVersion = "0.8.11"
+    toolVersion = "0.8.12"
 }
 
 // In Pure Kotlin Modules, applying id("jacoco") automatically creates a jacocoTestReport task.

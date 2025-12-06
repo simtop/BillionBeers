@@ -1,19 +1,18 @@
 package com.simtop.feature.beerslist
 
 import app.cash.turbine.test
+import com.simtop.beerdomain.domain.GetAllBeersUseCase
 import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.domain.usecases.GetAllBeersUseCase
 import com.simtop.beerdomain.domain.usecases.LoadNextPageUseCase
 import com.simtop.beerdomain.domain.usecases.ObservePagingStateUseCase
+import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.PagingState
-import com.simtop.beerdomain.test.fakes.FakeBeersRepository
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest

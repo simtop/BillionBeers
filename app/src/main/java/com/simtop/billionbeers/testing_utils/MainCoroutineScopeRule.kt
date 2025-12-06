@@ -33,7 +33,7 @@ class MainCoroutineScopeRule(
     }
 }
 
-//TODO: refactor
+// TODO: refactor
 @ExperimentalCoroutinesApi
 fun MainCoroutineScopeRule.runBlocking(block: suspend () -> Unit) =
     runTest(testDispatcher.scheduler) { block() }

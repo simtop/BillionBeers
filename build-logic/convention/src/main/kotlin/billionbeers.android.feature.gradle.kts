@@ -12,7 +12,8 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":core-common"))
     implementation(project(":presentation_utils"))
-    implementation(project(":beerdomain"))
+    implementation(project(":beerdomain:api"))
+    implementation(project(":beerdomain:impl"))
 
     implementation(libs.lifecycleRuntimeKtx)
     implementation(libs.navigationFragmentKtx)

@@ -3,7 +3,6 @@ package com.simtop.billionbeers.testing_utils
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 
-
 class TestObserver<T> : Observer<T> {
 
     val observedValues = mutableListOf<T?>()
@@ -15,7 +14,6 @@ class TestObserver<T> : Observer<T> {
     fun clear() {
         observedValues.clear()
     }
-
 }
 
 fun <T> LiveData<T>.testObserver() = TestObserver<T>().also {

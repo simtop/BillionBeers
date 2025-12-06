@@ -10,7 +10,9 @@ import com.simtop.presentation_utils.core.BaseBindView
 import com.simtop.presentation_utils.databinding.RowBeerListBinding
 
 class BeersItemView @JvmOverloads constructor(
-    context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
+    context: Context,
+    attrs: AttributeSet? = null,
+    defStyleAttr: Int = 0
 ) : BaseBindView<Beer>(context, attrs, defStyleAttr) {
 
     private val rowBeerListBinding: RowBeerListBinding =
@@ -28,17 +30,17 @@ class BeersItemView @JvmOverloads constructor(
     }
 
     override fun bind(value: Beer) {
-        if(value.availability) {
+        if (value.availability) {
             rowBeerListBinding.cardView.setCardBackgroundColor(Color.WHITE)
         } else {
             rowBeerListBinding.cardView.setCardBackgroundColor(Color.GRAY)
         }
         rowBeerListBinding
             .beerName.setContent {
-            MaterialTheme {
-                ComposeTitle(value.name)
+                MaterialTheme {
+                    ComposeTitle(value.name)
+                }
             }
-        }
         rowBeerListBinding.beerTagline.text = value.tagline
     }
 }

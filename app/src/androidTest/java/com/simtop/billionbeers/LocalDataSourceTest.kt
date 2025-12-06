@@ -23,82 +23,79 @@ import strikt.assertions.isEqualTo
 @RunWith(AndroidJUnit4ClassRunner::class)
 class LocalDataSourceTest {
 
-    private lateinit var localSource: BeersLocalSource
-    private lateinit var db: BeersDatabase
+  private lateinit var localSource: BeersLocalSource
+  private lateinit var db: BeersDatabase
 
-    @Before
-    fun setUp() {
-        val context: Context = ApplicationProvider.getApplicationContext()
-        db = Room.inMemoryDatabaseBuilder(context, BeersDatabase::class.java)
-            .allowMainThreadQueries()
-            .build()
-        localSource = BeersLocalSourceImpl(db)
+  @Before
+  fun setUp() {
+    val context: Context = ApplicationProvider.getApplicationContext()
+    db =
+      Room.inMemoryDatabaseBuilder(context, BeersDatabase::class.java)
+        .allowMainThreadQueries()
+        .build()
+    localSource = BeersLocalSourceImpl(db)
+  }
+
+  @After
+  fun closeDb() {
+    db.close()
+  }
+
+  @Test
+  fun insertListToDB() {
+    runBlocking {
+      localSource.insertAllToDB(fakeDbBeerList)
+
+      val repositoriesByName = localSource.getAllBeersFromDB().first()
+      assertEquals(repositoriesByName[0].id, fakeDbBeerList[0].id)
     }
+  }
 
-    @After
-    fun closeDb() {
-        db.close()
+  @Test
+  fun getAllFromDBInsertingTwiceSameList() {
+    runBlocking {
+      localSource.insertAllToDB(fakeDbBeerList)
+      localSource.insertAllToDB(fakeDbBeerList)
+
+      val repositoriesByName = localSource.getAllBeersFromDB().first()
+
+      val count = localSource.getCountFromDB()
+      assertEquals(repositoriesByName[0].id, fakeDbBeerList[0].id)
+      assertEquals(count, 1)
+
+      expect {
+        that(repositoriesByName[0]) { get { id }.isEqualTo(fakeDbBeerList[0].id) }
+        that(count) { get { this }.isEqualTo(1) }
+      }
     }
+  }
 
-    @Test
-    fun insertListToDB() {
-        runBlocking {
-            localSource.insertAllToDB(fakeDbBeerList)
+  @Test
+  fun deleteFromDB() {
+    runBlocking {
+      localSource.insertAllToDB(fakeDbBeerList)
+      localSource.deleteAllFromDB()
+      val count = localSource.getCountFromDB()
 
-            val repositoriesByName = localSource.getAllBeersFromDB().first()
-            assertEquals(repositoriesByName[0].id, fakeDbBeerList[0].id)
-        }
+      assertEquals(count, 0)
     }
+  }
 
-    @Test
-    fun getAllFromDBInsertingTwiceSameList() {
-        runBlocking {
-            localSource.insertAllToDB(fakeDbBeerList)
-            localSource.insertAllToDB(fakeDbBeerList)
-
-            val repositoriesByName = localSource.getAllBeersFromDB().first()
-
-            val count = localSource.getCountFromDB()
-            assertEquals(repositoriesByName[0].id, fakeDbBeerList[0].id)
-            assertEquals(count, 1)
-
-            expect {
-                that(repositoriesByName[0]) {
-                    get { id }.isEqualTo(fakeDbBeerList[0].id)
-                }
-                that(count) {
-                    get { this }.isEqualTo(1)
-                }
-            }
-        }
+  @Test(expected = SQLiteConstraintException::class)
+  fun shouldThrowExceptionWhenInserting() {
+    runBlocking {
+      localSource.insertAllToDB(fakeDbBeerList)
+      throw SQLiteConstraintException()
     }
+  }
 
-    @Test
-    fun deleteFromDB() {
-        runBlocking {
-            localSource.insertAllToDB(fakeDbBeerList)
-            localSource.deleteAllFromDB()
-            val count = localSource.getCountFromDB()
-
-            assertEquals(count, 0)
-        }
+  @Test
+  fun updateDB() {
+    runBlocking {
+      localSource.insertAllToDB(fakeDbBeerList)
+      localSource.updateBeer(fakeBeerModel2.id, false)
+      val result = localSource.getAllBeersFromDB().first()
+      assertEquals(result[0].availability, false)
     }
-
-    @Test(expected = SQLiteConstraintException::class)
-    fun shouldThrowExceptionWhenInserting() {
-        runBlocking {
-            localSource.insertAllToDB(fakeDbBeerList)
-            throw SQLiteConstraintException()
-        }
-    }
-
-    @Test
-    fun updateDB() {
-        runBlocking {
-            localSource.insertAllToDB(fakeDbBeerList)
-            localSource.updateBeer(fakeBeerModel2.id, false)
-            val result = localSource.getAllBeersFromDB().first()
-            assertEquals(result[0].availability, false)
-        }
-    }
+  }
 }
