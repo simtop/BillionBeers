@@ -31,10 +31,8 @@ androidx-annotation = "androidx.annotation:annotation:1.7.0"
 kotlinx-coroutines-core = "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3"
 javax-inject = "javax.inject:javax.inject:1"
 androidx-hilt-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "hiltCompiler" }
-fragmentTesting = "androidx.fragment:fragment-testing:1.8.7"
 navigationFragmentKtx = { module = "androidx.navigation:navigation-fragment-ktx", version.ref = "androidx-navigation" }
 navigationSafeArgsPlugin = { module = "androidx.navigation:navigation-safe-args-gradle-plugin", version.ref = "androidx-navigation" }
-navigationTesting = { module = "androidx.navigation:navigation-testing", version.ref = "androidx-navigation" }
 navigationUi = { module = "androidx.navigation:navigation-ui", version.ref = "androidx-navigation" }
 roomCompiler = { module = "androidx.room:room-compiler", version.ref = "androidx-room" }
 lifecycleRuntimeKtx = "androidx.lifecycle:lifecycle-runtime-ktx:2.6.1"
