@@ -92,4 +92,13 @@ tasks.register<JacocoReport>("jacocoRootReport") {
         xml.required.set(false)
         csv.required.set(false)
     }
+
+    doLast {
+        val reportPath = reports.html.outputLocation.get().asFile.resolve("index.html")
+        println("\n" + "=".repeat(80))
+        println("JaCoCo Coverage Report Generated Successfully!")
+        println("=".repeat(80))
+        println("📊 Report Location: file://${reportPath.absolutePath}")
+        println("=".repeat(80) + "\n")
+    }
 }
