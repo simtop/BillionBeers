@@ -1,8 +1,14 @@
 package com.simtop.billionbeers.robots
 
-fun detailScreen(func: DetailScreenRobot.() -> Unit) = DetailScreenRobot()
-    .apply { func() }
+import androidx.compose.ui.test.junit4.ComposeTestRule
 
-open class DetailScreenRobot : BaseTestRobot() {
+fun detailScreen(composeTestRule: ComposeTestRule, func: DetailScreenRobot.() -> Unit) =
+  DetailScreenRobot(composeTestRule).apply { func() }
 
+class DetailScreenRobot(composeTestRule: ComposeTestRule) : BaseTestRobot(composeTestRule) {
+
+  fun assertBeerDetailIsDisplayed(beerName: String, beerDescription: String) {
+    assertTextIsDisplayed(beerName)
+    assertTextIsDisplayed(beerDescription)
+  }
 }

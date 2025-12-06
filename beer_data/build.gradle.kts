@@ -9,7 +9,7 @@ android {
 
 dependencies {
     implementation(project(":core"))
-    implementation(project(":beerdomain"))
+    implementation(project(":beerdomain:api"))
     implementation(project(":beer_database"))
     implementation(project(":beer_network"))
     
