@@ -4,6 +4,5 @@ import androidx.compose.runtime.Composable
 import com.simtop.beerdomain.domain.models.Beer
 
 interface BeerDetailProvider {
-    @Composable
-    fun BeerDetailScreen(beer: Beer, onBackClick: () -> Unit)
+  @Composable fun BeerDetailScreen(beer: Beer, onBackClick: () -> Unit)
 }

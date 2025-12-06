@@ -1,45 +1,41 @@
 package com.simtop.billionbeers.data
 
-import com.simtop.billionbeers.testing_utils.FAKE_JSON
 import com.simtop.billionbeers.TestMockWebService
+import com.simtop.billionbeers.testing_utils.FAKE_JSON
 import com.simtop.billionbeers.testing_utils.fakeBeerApiResponse
+import java.net.HttpURLConnection
 import kotlinx.coroutines.runBlocking
 import org.amshove.kluent.shouldBeEqualTo
 import org.junit.Test
-import java.net.HttpURLConnection
 
 class BeersRemoteSourceTest : TestMockWebService() {
 
-    @Test
-    fun `when service succeeds we get a success response`() {
-        // Arrange
+  @Test
+  fun `when service succeeds we get a success response`() {
+    // Arrange
 
-        val expectedResult = fakeBeerApiResponse
-        mockHttpResponse(FAKE_JSON, HttpURLConnection.HTTP_OK)
+    val expectedResult = fakeBeerApiResponse
+    mockHttpResponse(FAKE_JSON, HttpURLConnection.HTTP_OK)
 
-        // Act
+    // Act
 
-        val response = runBlocking {
-            apiService.getListOfBeers(1)
-        }
+    val response = runBlocking { apiService.getListOfBeers(1) }
 
-        // Assert
+    // Assert
 
-        response.toString() shouldBeEqualTo expectedResult.toString()
-    }
+    response.toString() shouldBeEqualTo expectedResult.toString()
+  }
 
-    @Test(expected = Exception::class)
-    fun `when service fails succeeds we throw an exception`() {
-        // Arrange
+  @Test(expected = Exception::class)
+  fun `when service fails succeeds we throw an exception`() {
+    // Arrange
 
-        mockHttpResponse(FAKE_JSON, HttpURLConnection.HTTP_UNAVAILABLE)
+    mockHttpResponse(FAKE_JSON, HttpURLConnection.HTTP_UNAVAILABLE)
 
-        // Act
+    // Act
 
-        runBlocking {
-            apiService.getListOfBeers(1)
-        }
+    runBlocking { apiService.getListOfBeers(1) }
 
-        // Assert
-    }
+    // Assert
+  }
 }

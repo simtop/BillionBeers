@@ -7,8 +7,11 @@ import org.junit.Test
 
 class FeatureConstantsTest {
 
-    @Test
-    fun `verify beer detail provider class name matches constant`() {
-        assertEquals(BeerDetailProviderImpl::class.java.name, FeatureConstants.BEER_DETAIL_PROVIDER_CLASS)
-    }
+  @Test
+  fun `verify beer detail provider class name matches constant`() {
+    assertEquals(
+      BeerDetailProviderImpl::class.java.name,
+      FeatureConstants.BEER_DETAIL_PROVIDER_CLASS
+    )
+  }
 }

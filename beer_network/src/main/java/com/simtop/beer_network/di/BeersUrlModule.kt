@@ -11,10 +11,10 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object BeersUrlModule {
 
-    @Provides
-    @Singleton
-    @Named("baseUrl")
-    fun provideBaseUrl(): String {
-        return "https://brewbuddy.dev/?translations.language.code=en"
-    }
+  @Provides
+  @Singleton
+  @Named("baseUrl")
+  fun provideBaseUrl(): String {
+    return "https://brewbuddy.dev/?translations.language.code=en"
+  }
 }

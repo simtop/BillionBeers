@@ -5,15 +5,14 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import retrofit2.Retrofit
 import javax.inject.Singleton
+import retrofit2.Retrofit
 
 @Module
 @InstallIn(SingletonComponent::class)
 object BeersNetworkModule {
 
-    @Provides
-    @Singleton
-    fun provideBeersApi(retrofit: Retrofit): BeersService =
-        retrofit.create(BeersService::class.java)
+  @Provides
+  @Singleton
+  fun provideBeersApi(retrofit: Retrofit): BeersService = retrofit.create(BeersService::class.java)
 }

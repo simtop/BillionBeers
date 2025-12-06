@@ -7,8 +7,8 @@ import com.simtop.navigation.BeerDetailProvider
 
 @Keep
 class BeerDetailProviderImpl : BeerDetailProvider {
-    @Composable
-    override fun BeerDetailScreen(beer: Beer, onBackClick: () -> Unit) {
-        BeerDetailScreenImpl(beer, onBackClick)
-    }
+  @Composable
+  override fun BeerDetailScreen(beer: Beer, onBackClick: () -> Unit) {
+    BeerDetailScreenImpl(beer, onBackClick)
+  }
 }

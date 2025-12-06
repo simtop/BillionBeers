@@ -20,126 +20,127 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import coil3.request.placeholder
 import coil3.request.error
-import androidx.compose.ui.platform.LocalContext
+import coil3.request.placeholder
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.presentation_utils.R
 import com.simtop.presentation_utils.core.noRippleClickable
 
 @Composable
-fun ComposeBeersListItem(
-    beer: Beer,
-    onClick: ((Beer) -> Unit)? = null
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .testTag("beer_list_item")
-            .noRippleClickable { onClick?.invoke(beer) },
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (beer.availability) MaterialTheme.colorScheme.surface else Color.Red.copy(alpha = 0.1f)
-        )
+fun ComposeBeersListItem(beer: Beer, onClick: ((Beer) -> Unit)? = null) {
+  Card(
+    modifier =
+      Modifier.fillMaxWidth()
+        .padding(horizontal = 16.dp, vertical = 8.dp)
+        .testTag("beer_list_item")
+        .noRippleClickable { onClick?.invoke(beer) },
+    shape = RoundedCornerShape(16.dp),
+    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+    colors =
+      CardDefaults.cardColors(
+        containerColor =
+          if (beer.availability) MaterialTheme.colorScheme.surface else Color.Red.copy(alpha = 0.1f)
+      )
+  ) {
+    Row(
+      modifier = Modifier.fillMaxWidth().padding(12.dp),
+      verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Beer Image
-            BeerImage(imageUrl = beer.imageUrl)
+      // Beer Image
+      BeerImage(imageUrl = beer.imageUrl)
 
-            Spacer(modifier = Modifier.width(16.dp))
+      Spacer(modifier = Modifier.width(16.dp))
 
-            // Beer Details
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = beer.name,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
-                    ),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                
-                Spacer(modifier = Modifier.height(4.dp))
-                
-                Text(
-                    text = beer.tagline,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontStyle = FontStyle.Italic,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    ),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
+      // Beer Details
+      Column(modifier = Modifier.weight(1f)) {
+        Text(
+          text = beer.name,
+          style =
+            MaterialTheme.typography.titleMedium.copy(
+              fontWeight = FontWeight.Bold,
+              fontSize = 18.sp
+            ),
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis
+        )
 
-                Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(4.dp))
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    BeerChip(text = "ABV: ${beer.abv}%", color = Color(0xFFE0F7FA), textColor = Color(0xFF006064))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    BeerChip(text = "IBU: ${beer.ibu}", color = Color(0xFFFBE9E7), textColor = Color(0xFFBF360C))
-                }
-            }
+        Text(
+          text = beer.tagline,
+          style =
+            MaterialTheme.typography.bodyMedium.copy(
+              fontStyle = FontStyle.Italic,
+              color = MaterialTheme.colorScheme.onSurfaceVariant
+            ),
+          maxLines = 2,
+          overflow = TextOverflow.Ellipsis
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
+          BeerChip(
+            text = "ABV: ${beer.abv}%",
+            color = Color(0xFFE0F7FA),
+            textColor = Color(0xFF006064)
+          )
+          Spacer(modifier = Modifier.width(8.dp))
+          BeerChip(
+            text = "IBU: ${beer.ibu}",
+            color = Color(0xFFFBE9E7),
+            textColor = Color(0xFFBF360C)
+          )
         }
+      }
     }
+  }
 }
 
 @Composable
 fun BeerImage(imageUrl: String) {
-    Box(
-        modifier = Modifier
-            .size(80.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color.LightGray.copy(alpha = 0.3f))
-    ) {
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(imageUrl)
-                .crossfade(true)
-                .placeholder(R.drawable.blue_image)
-                .error(R.drawable.blue_image)
-                .build(),
-            contentDescription = null,
-            modifier = Modifier.matchParentSize()
-        )
-    }
+  Box(
+    modifier =
+      Modifier.size(80.dp)
+        .clip(RoundedCornerShape(12.dp))
+        .background(Color.LightGray.copy(alpha = 0.3f))
+  ) {
+    AsyncImage(
+      model =
+        ImageRequest.Builder(LocalContext.current)
+          .data(imageUrl)
+          .crossfade(true)
+          .placeholder(R.drawable.blue_image)
+          .error(R.drawable.blue_image)
+          .build(),
+      contentDescription = null,
+      modifier = Modifier.matchParentSize()
+    )
+  }
 }
 
 @Composable
 fun BeerChip(text: String, color: Color, textColor: Color) {
-    Surface(
-        color = color,
-        shape = RoundedCornerShape(8.dp),
-    ) {
-        Text(
-            text = text,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontWeight = FontWeight.SemiBold,
-                color = textColor
-            )
+  Surface(
+    color = color,
+    shape = RoundedCornerShape(8.dp),
+  ) {
+    Text(
+      text = text,
+      modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+      style =
+        MaterialTheme.typography.labelSmall.copy(
+          fontWeight = FontWeight.SemiBold,
+          color = textColor
         )
-    }
+    )
+  }
 }
 
 @Preview
 @Composable
 fun ComposeBeersListItemPreview() {
-    ComposeBeersListItem(Beer.empty.copy(
-        name = "Buzz",
-        tagline = "A Real Bitter Experience.",
-        abv = 4.5,
-        ibu = 60.0
-    ))
+  ComposeBeersListItem(
+    Beer.empty.copy(name = "Buzz", tagline = "A Real Bitter Experience.", abv = 4.5, ibu = 60.0)
+  )
 }

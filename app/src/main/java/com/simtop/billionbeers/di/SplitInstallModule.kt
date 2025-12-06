@@ -14,9 +14,9 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object SplitInstallModule {
 
-    @Provides
-    @Singleton
-    fun provideSplitInstallManager(@ApplicationContext context: Context): SplitInstallManager {
-        return SplitInstallManagerFactory.create(context)
-    }
+  @Provides
+  @Singleton
+  fun provideSplitInstallManager(@ApplicationContext context: Context): SplitInstallManager {
+    return SplitInstallManagerFactory.create(context)
+  }
 }

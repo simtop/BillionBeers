@@ -13,23 +13,18 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun ComposeTitle(name: String) {
-    Text(
-        text = name, modifier = Modifier
-            .padding(
-                start = 24.dp,
-                top = 8.dp,
-                bottom = 8.dp,
-                end = 24.dp
-            )
-            .fillMaxWidth(),
-        fontWeight = FontWeight.ExtraBold,
-        textAlign = TextAlign.Center,
-        fontSize = 24.sp
-    )
+  Text(
+    text = name,
+    modifier =
+      Modifier.padding(start = 24.dp, top = 8.dp, bottom = 8.dp, end = 24.dp).fillMaxWidth(),
+    fontWeight = FontWeight.ExtraBold,
+    textAlign = TextAlign.Center,
+    fontSize = 24.sp
+  )
 }
 
 @Preview
 @Composable
 fun ComposeTitlePreview() {
-    ComposeTitle("Hello")
+  ComposeTitle("Hello")
 }

@@ -1,6 +1,5 @@
 package com.simtop.beer_database.di
 
-
 import android.content.Context
 import androidx.room.Room
 import com.simtop.beer_database.database.BeersDao
@@ -16,16 +15,10 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object BeersDatabaseModule {
 
-    @Provides
-    @Singleton
-    fun provideDatabase(@ApplicationContext app: Context): BeersDatabase =
-        Room.databaseBuilder(
-            app,
-            BeersDatabase::class.java,
-            com.simtop.core.core.BEERS_DB_NAME
-        ).build()
+  @Provides
+  @Singleton
+  fun provideDatabase(@ApplicationContext app: Context): BeersDatabase =
+    Room.databaseBuilder(app, BeersDatabase::class.java, com.simtop.core.core.BEERS_DB_NAME).build()
 
-    @Provides
-    @Singleton
-    fun provideBeersDao(db: BeersDatabase) : BeersDao = db.beersDao()
+  @Provides @Singleton fun provideBeersDao(db: BeersDatabase): BeersDao = db.beersDao()
 }

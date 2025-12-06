@@ -1,6 +1,5 @@
 package com.simtop.core.di
 
-
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.DefaultCoroutineDispatcherProvider
 import dagger.Module
@@ -13,9 +12,8 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object CoroutineDispatchersModule {
 
-    @Provides
-    @Singleton
-    fun providesDispatcherProvider(): CoroutineDispatcherProvider =
-        DefaultCoroutineDispatcherProvider()
-
+  @Provides
+  @Singleton
+  fun providesDispatcherProvider(): CoroutineDispatcherProvider =
+    DefaultCoroutineDispatcherProvider()
 }

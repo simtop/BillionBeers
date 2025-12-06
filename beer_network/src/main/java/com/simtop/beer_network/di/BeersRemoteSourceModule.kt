@@ -11,8 +11,8 @@ import dagger.hilt.components.SingletonComponent
 @InstallIn(SingletonComponent::class)
 abstract class BeersRemoteSourceModule {
 
-    @Binds
-    abstract fun bindBeersRemoteSource(
-        beersRemoteSourceImpl: BeersRemoteSourceImpl
-    ): BeersRemoteSource
+  @Binds
+  abstract fun bindBeersRemoteSource(
+    beersRemoteSourceImpl: BeersRemoteSourceImpl
+  ): BeersRemoteSource
 }

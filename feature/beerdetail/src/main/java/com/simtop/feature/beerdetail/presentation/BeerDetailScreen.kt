@@ -21,41 +21,39 @@ import com.simtop.presentation_utils.core.showToast
 import dagger.hilt.android.EntryPointAccessors
 
 @Composable
-fun BeerDetailScreenImpl(
-    beer: Beer,
-    onBackClick: () -> Unit
-) {
-    val context = LocalContext.current
+fun BeerDetailScreenImpl(beer: Beer, onBackClick: () -> Unit) {
+  val context = LocalContext.current
 
-    val factory = remember(beer) {
-        object : ViewModelProvider.Factory {
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                val deps = EntryPointAccessors.fromApplication(context, DynamicDependencies::class.java)
-                val component = DaggerFeatureDetailComponent.factory().create(deps)
-                return component.getViewModelFactory().create(beer) as T
-            }
+  val factory =
+    remember(beer) {
+      object : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+          val deps = EntryPointAccessors.fromApplication(context, DynamicDependencies::class.java)
+          val component = DaggerFeatureDetailComponent.factory().create(deps)
+          return component.getViewModelFactory().create(beer) as T
         }
+      }
     }
 
-    val viewModel: BeerDetailViewModel = viewModel(factory = factory)
-    val viewState by viewModel.beerDetailViewState.collectAsState()
+  val viewModel: BeerDetailViewModel = viewModel(factory = factory)
+  val viewState by viewModel.beerDetailViewState.collectAsState()
 
-    when (val state = viewState) {
-        is CommonUiState.Success -> {
-            ComposeBeerDetail(
-                beer = state.data,
-                onBackClick = onBackClick,
-                onToggleAvailability = { viewModel.updateAvailability(state.data) }
-            )
-        }
-        is CommonUiState.Error -> {
-            state.message?.let { context.showToast(it) }
-        }
-        CommonUiState.Loading -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-        }
-        else -> {}
+  when (val state = viewState) {
+    is CommonUiState.Success -> {
+      ComposeBeerDetail(
+        beer = state.data,
+        onBackClick = onBackClick,
+        onToggleAvailability = { viewModel.updateAvailability(state.data) }
+      )
     }
+    is CommonUiState.Error -> {
+      state.message?.let { context.showToast(it) }
+    }
+    CommonUiState.Loading -> {
+      Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator()
+      }
+    }
+    else -> {}
+  }
 }

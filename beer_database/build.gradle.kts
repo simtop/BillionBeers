@@ -1,14 +1,12 @@
 plugins {
-    id("billionbeers.android.library")
-    id("billionbeers.room")
-    id("billionbeers.android.hilt")
+  id("billionbeers.android.library")
+  id("billionbeers.room")
+  id("billionbeers.android.hilt")
 }
 
-android {
-    namespace = "com.simtop.beer_database"
-}
+android { namespace = "com.simtop.beer_database" }
 
 dependencies {
-    implementation(project(":core"))
-    implementation(libs.retrofit2ConverterGson)
+  implementation(project(":core"))
+  implementation(libs.retrofit2ConverterGson)
 }

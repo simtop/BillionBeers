@@ -10,26 +10,22 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 abstract class BeersDao {
 
-    @Query("SELECT * FROM beers")
-    abstract fun getAllBeers(): Flow<List<BeerDbModel>>
+  @Query("SELECT * FROM beers") abstract fun getAllBeers(): Flow<List<BeerDbModel>>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    abstract suspend fun insertAll(beers: List<BeerDbModel>)
+  @Insert(onConflict = OnConflictStrategy.REPLACE)
+  abstract suspend fun insertAll(beers: List<BeerDbModel>)
 
-    @Query("""
+  @Query(
+    """
         UPDATE beers 
         SET 
         availability = :availability
         WHERE id = :primaryKey
-        """)
-    abstract fun updateBeer(
-        primaryKey: String,
-        availability: Boolean
-    )
+        """
+  )
+  abstract fun updateBeer(primaryKey: String, availability: Boolean)
 
-    @Query("DELETE FROM beers")
-    abstract fun deleteAll()
+  @Query("DELETE FROM beers") abstract fun deleteAll()
 
-    @Query("SELECT COUNT(id) FROM beers")
-    abstract suspend fun getCount(): Int
+  @Query("SELECT COUNT(id) FROM beers") abstract suspend fun getCount(): Int
 }

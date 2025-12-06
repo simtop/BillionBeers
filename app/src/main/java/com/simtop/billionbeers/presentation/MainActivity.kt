@@ -1,6 +1,5 @@
 package com.simtop.billionbeers.presentation
 
-import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -13,16 +12,11 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    @Inject
-    lateinit var splitInstallManager: SplitInstallManager
+  @Inject lateinit var splitInstallManager: SplitInstallManager
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            MaterialTheme {
-                AppNavigation(splitInstallManager = splitInstallManager)
-            }
-        }
-    }
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    enableEdgeToEdge()
+    setContent { MaterialTheme { AppNavigation(splitInstallManager = splitInstallManager) } }
+  }
 }

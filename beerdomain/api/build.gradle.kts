@@ -8,8 +8,8 @@ plugins {
 android {
   namespace = "com.simtop.beerdomain.api"
 
-//  @Suppress("UnstableApiUsage")
-//  testFixtures.enable = true
+  //  @Suppress("UnstableApiUsage")
+  //  testFixtures.enable = true
 }
 
 dependencies {
@@ -17,6 +17,6 @@ dependencies {
   implementation(libs.kotlinx.serialization.json)
   implementation(libs.kotlinx.coroutines.core)
   // TODO: Try testFixture approach in place of fake module
-  //testFixturesImplementation(project(":core-common"))
-  //testFixturesImplementation(libs.kotlinx.coroutines.core)
+  // testFixturesImplementation(project(":core-common"))
+  // testFixturesImplementation(libs.kotlinx.coroutines.core)
 }

@@ -10,6 +10,5 @@ import dagger.hilt.components.SingletonComponent
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class BeersRepositoryModule {
-    @Binds
-    abstract fun getBeersRepository(repository: BeersRepositoryImpl): BeersRepository
+  @Binds abstract fun getBeersRepository(repository: BeersRepositoryImpl): BeersRepository
 }
