@@ -24,8 +24,8 @@ configure<LibraryExtension> {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_23
+        targetCompatibility = JavaVersion.VERSION_23
     }
 
     packaging {
@@ -40,34 +40,34 @@ configure<LibraryExtension> {
 
 dependencies {
     testImplementation(libs.junit)
-    "testImplementation"(libs.mockk)
-    "testImplementation"(libs.coreTesting)
-    "testImplementation"(libs.coroutinesTest)
-    "testImplementation"(libs.kluentAndroid)
-    "testImplementation"(libs.turbine)
-    "testImplementation"(libs.junit.jupiter.api)
-    "testImplementation"(libs.junit.jupiter.params)
-    "testRuntimeOnly"(libs.junit.jupiter.engine)
+    testImplementation(libs.mockk)
+    testImplementation(libs.coreTesting)
+    testImplementation(libs.coroutinesTest)
+    testImplementation(libs.kluentAndroid)
+    testImplementation(libs.turbine)
+    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.junit.jupiter.params)
+    testRuntimeOnly(libs.junit.jupiter.engine)
 
-    "androidTestImplementation"(libs.junit)
-    "androidTestImplementation"(libs.kotlinTestJunit)
-    "androidTestImplementation"(libs.coroutinesTest)
-    "androidTestImplementation"(libs.espressoCore)
-    "androidTestImplementation"(libs.testRunner)
-    "androidTestImplementation"(libs.testRules)
-    "androidTestImplementation"(libs.testCoreKtx)
-    "androidTestImplementation"(libs.mockkAndroid)
-    "androidTestImplementation"(libs.junitKtx)
-    "androidTestImplementation"(libs.coreTesting)
-}
-
-tasks.withType<KotlinCompile>().configureEach {
-    compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-        freeCompilerArgs.add("-Xstring-concat=inline")
-    }
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.kotlinTestJunit)
+    androidTestImplementation(libs.coroutinesTest)
+    androidTestImplementation(libs.espressoCore)
+    androidTestImplementation(libs.testRunner)
+    androidTestImplementation(libs.testRules)
+    androidTestImplementation(libs.testCoreKtx)
+    androidTestImplementation(libs.mockkAndroid)
+    androidTestImplementation(libs.junitKtx)
+    androidTestImplementation(libs.coreTesting)
 }
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+tasks.withType<KotlinCompile>().configureEach {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_23)
+        freeCompilerArgs.add("-Xstring-concat=inline")
+    }
 }

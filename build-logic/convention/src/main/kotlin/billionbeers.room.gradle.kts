@@ -13,7 +13,7 @@ configure<RoomExtension> {
 }
 
 dependencies {
-    "implementation"(libs.roomRuntime)
-    "implementation"(libs.roomKtx)
-    "ksp"(libs.roomCompiler)
+    add("implementation", libs.roomRuntime)
+    add("implementation", libs.roomKtx)
+    add("ksp", libs.roomCompiler)
 }
