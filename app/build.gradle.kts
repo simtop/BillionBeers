@@ -2,8 +2,9 @@ plugins {
     id("billionbeers.android.application")
     id("billionbeers.android.compose")
     id("billionbeers.android.hilt")
-    id("androidx.navigation.safeargs.kotlin")
+
     id("com.simtop.billionbeers.duplicate-classes")
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -22,8 +23,11 @@ android {
 }
 
 dependencies {
-    implementation(project(":beerdomain"))
+    implementation(project(":beerdomain:api"))
+    implementation(project(":beerdomain:impl"))
+    androidTestImplementation(project(":beerdomain:fakes"))
     implementation(project(":feature:beerslist"))
+    androidTestImplementation(project(":feature:beerdetail"))
     implementation(project(":core"))
     implementation(project(":navigation"))
     implementation(project(":beer_data"))
@@ -31,14 +35,14 @@ dependencies {
     implementation(project(":beer_network"))
     implementation(project(":presentation_utils"))
     
-    implementation(libs.navigationFragmentKtx)
-    implementation(libs.navigationUi)
-    implementation(libs.navigationDynamicFeaturesFragment)
+
     
     implementation(libs.androidPlayCore)
     implementation(libs.androidPlayCoreKtx)
     implementation(libs.androidxActivityCompose)
-    
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.appcompat)    
     testImplementation(libs.striktCore)
     androidTestImplementation(libs.striktCore)
     
@@ -52,6 +56,7 @@ dependencies {
     
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
-    androidTestImplementation("org.hamcrest:hamcrest:2.2")
+
     androidTestImplementation(libs.roomRuntime)
+
 }

@@ -21,8 +21,8 @@ configure<ApplicationExtension> {
     defaultConfig {
         minSdk = 28
         targetSdk = 35
-        versionCode = 58
-        versionName = "0.58"
+        versionCode = 60
+        versionName = "0.60"
         testInstrumentationRunner = "com.simtop.billionbeers.di.MockTestRunner"
         multiDexEnabled = true
     }

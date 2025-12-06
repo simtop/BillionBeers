@@ -11,11 +11,15 @@ android {
 }
 
 dependencies {
-    implementation(project(":beerdomain"))
+    implementation(project(":beerdomain:api"))
     implementation(project(":core"))
     
     implementation(libs.androidx.foundation.android)
     implementation(libs.androidx.material3.android)
+    // TODO: think on how could I do it impl
+    api(libs.androidPlayCore)
+    api(libs.androidPlayCoreKtx)
+
     implementation(libs.androidx.ui.tooling.preview.android)
     
     implementation(libs.appcompat)

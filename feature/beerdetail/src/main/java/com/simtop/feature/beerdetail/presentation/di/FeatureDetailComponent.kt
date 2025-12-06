@@ -1,7 +1,8 @@
 package com.simtop.feature.beerdetail.presentation.di
 
 import com.simtop.billionbeers.di.DynamicDependencies
-import com.simtop.feature.beerdetail.presentation.BeerDetailFragment
+import com.simtop.feature.beerdetail.presentation.BeerDetailViewModel
+
 import dagger.Component
 
 @Component(
@@ -9,7 +10,7 @@ import dagger.Component
 )
 interface FeatureDetailComponent {
 
-    fun inject(fragment: BeerDetailFragment)
+    fun getViewModelFactory(): BeerDetailViewModel.AssistedFactory
 
     @Component.Factory
     interface Factory {
