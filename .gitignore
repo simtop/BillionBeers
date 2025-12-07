@@ -20,3 +20,4 @@ keystore.properties
 .idea/kotlinc.xml
 .kotlin/
 .vscode/
+bin/

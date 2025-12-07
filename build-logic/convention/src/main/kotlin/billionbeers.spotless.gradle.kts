@@ -7,7 +7,7 @@ plugins {
 configure<SpotlessExtension> {
     kotlin {
         target("**/*.kt")
-        targetExclude("**/build/**/*.kt")
+        targetExclude("**/build/**/*.kt", "**/bin/**/*.kt")
         ktfmt().googleStyle()
     }
     kotlinGradle {

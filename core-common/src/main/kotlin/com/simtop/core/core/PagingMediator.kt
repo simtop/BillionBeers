@@ -71,8 +71,9 @@ class PagingMediator<Key : Any, Value : Any>(
       _pagingState.value is PagingState.Loading ||
         _pagingState.value is PagingState.LoadingNextPage ||
         isLastPage
-    )
+    ) {
       return
+    }
 
     currentKey?.let { key -> loadPage(key, isFirstLoad = false) }
   }

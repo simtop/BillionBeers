@@ -12,12 +12,8 @@ configure<DetektExtension> {
     source.setFrom(files("src/main/java", "src/main/kotlin"))
     config.setFrom(files("$rootDir/config/detekt/detekt.yml"))
     buildUponDefaultConfig = true
-    autoCorrect = true
+    autoCorrect = false
     ignoreFailures = true
-}
-
-dependencies {
-    "detektPlugins"(libs.detekt.formatting)
 }
 
 tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {

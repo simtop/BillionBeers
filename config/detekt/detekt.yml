@@ -50,13 +50,3 @@ output-reports:
     # - 'XmlOutputReport'
     # - 'HtmlOutputReport'
     # - 'MdOutputReport'
-
-
-formatting:
-  active: true
-  android: true
-  autoCorrect: true
-  MaximumLineLength:
-    active: false # ktfmt handles this
-  NoWildcardImports:
-    active: false # ktfmt handles this

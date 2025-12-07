@@ -91,8 +91,11 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
       ExtendedFloatingActionButton(
         onClick = onToggleAvailability,
         containerColor =
-          if (beer.availability) MaterialTheme.colorScheme.primary
-          else MaterialTheme.colorScheme.error,
+          if (beer.availability) {
+            MaterialTheme.colorScheme.primary
+          } else {
+            MaterialTheme.colorScheme.error
+          },
         contentColor = Color.White,
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier.testTag("toggle_availability")
