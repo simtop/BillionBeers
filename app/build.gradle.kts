@@ -3,7 +3,7 @@ plugins {
   id("billionbeers.android.compose")
   id("billionbeers.android.hilt")
 
-  id("com.simtop.billionbeers.duplicate-classes")
+  id("billionbeers.duplicate-classes")
   alias(libs.plugins.kotlin.serialization)
 }
 
