@@ -11,6 +11,7 @@ plugins {
     id("billionbeers.spotless")
     id("billionbeers.detekt")
     id("de.mannodermaus.android-junit5")
+    id("billionbeers.unused-dependencies")
 }
 
 val libs = the<LibrariesForLibs>()

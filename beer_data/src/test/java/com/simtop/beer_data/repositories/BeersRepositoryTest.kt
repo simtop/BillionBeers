@@ -3,7 +3,9 @@ package com.simtop.beer_data.repositories
 import app.cash.turbine.test
 import com.simtop.beer_data.fakes.FakeBeersLocalSource
 import com.simtop.beer_data.fakes.FakeBeersRemoteSource
+import com.simtop.beer_database.models.BeerDbModel
 import com.simtop.beer_network.models.BeersApiResponseItem
+import com.simtop.beerdomain.domain.models.Beer
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -120,21 +122,21 @@ class BeersRepositoryTest {
   fun `updateAvailability should call local source`() =
     runTest(testDispatcher) {
       // Arrange
-      val beer = com.simtop.beerdomain.domain.models.Beer.empty.copy(id = "1", availability = true)
+      val beer = Beer.empty.copy(id = "1", availability = true)
       // Pre-populate fake local source
       beersLocalSource.insertAllToDB(
         listOf(
-          com.simtop.beer_database.models.BeerDbModel(
-            id = "1",
-            name = "Beer 1",
-            tagline = "",
-            description = "",
-            imageUrl = "",
-            abv = 0.0,
-            ibu = 0.0,
-            foodPairing = "[]",
-            availability = true
-          )
+            BeerDbModel(
+                id = "1",
+                name = "Beer 1",
+                tagline = "",
+                description = "",
+                imageUrl = "",
+                abv = 0.0,
+                ibu = 0.0,
+                foodPairing = "[]",
+                availability = true
+            )
         )
       )
 
@@ -150,7 +152,7 @@ class BeersRepositoryTest {
   fun `insertAllToDB should call local source`() =
     runTest(testDispatcher) {
       // Arrange
-      val beer = com.simtop.beerdomain.domain.models.Beer.empty.copy(id = "4", name = "Beer 4")
+      val beer = Beer.empty.copy(id = "4", name = "Beer 4")
 
       // Act
       beersRepository.insertAllToDB(listOf(beer))

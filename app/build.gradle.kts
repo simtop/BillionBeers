@@ -4,6 +4,7 @@ plugins {
   id("billionbeers.android.hilt")
 
   id("billionbeers.duplicate-classes")
+  id("billionbeers.unused-dependencies")
   alias(libs.plugins.kotlin.serialization)
 }
 

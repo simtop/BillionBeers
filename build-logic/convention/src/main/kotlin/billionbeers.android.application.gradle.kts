@@ -11,6 +11,7 @@ plugins {
     id("billionbeers.spotless")
     id("billionbeers.detekt")
     id("kotlin-parcelize")
+    id("billionbeers.unused-dependencies")
 }
 
 val libs = the<LibrariesForLibs>()

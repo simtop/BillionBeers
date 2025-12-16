@@ -13,8 +13,6 @@ dependencies {
   testImplementation(project(":beerdomain:fakes"))
 
   implementation(libs.androidx.material3.android)
-  implementation(libs.androidx.runtime.livedata)
   implementation(libs.androidx.ui.tooling.preview.android)
-  implementation(libs.androidx.navigation.compose)
   implementation(libs.hilt.navigation.compose)
 }
