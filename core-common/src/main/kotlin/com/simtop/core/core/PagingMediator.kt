@@ -78,6 +78,7 @@ class PagingMediator<Key : Any, Value : Any>(
     currentKey?.let { key -> loadPage(key, isFirstLoad = false) }
   }
 
+  @Suppress("TooGenericExceptionCaught")
   private suspend fun loadPage(key: Key, isFirstLoad: Boolean) {
     try {
       _pagingState.value = if (isFirstLoad) PagingState.Loading else PagingState.LoadingNextPage

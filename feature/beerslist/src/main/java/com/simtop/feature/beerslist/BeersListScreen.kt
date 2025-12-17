@@ -59,184 +59,205 @@ import com.simtop.presentation_utils.custom_views.ComposeTitle
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BeersListScreen(
-  viewModel: BeersListViewModel = hiltViewModel(),
-  splitInstallManager: SplitInstallManager? = null,
-  onBeerClick: (Beer) -> Unit
+    viewModel: BeersListViewModel = hiltViewModel(),
+    splitInstallManager: SplitInstallManager? = null,
+    onBeerClick: (Beer) -> Unit
 ) {
-  val context = LocalContext.current
-  val viewState by viewModel.beerListViewState.collectAsState()
+    val context = LocalContext.current
+    val viewState by viewModel.beerListViewState.collectAsState()
 
-  // State to track if we are installing the feature for a specific beer
-  var installingBeer by remember { mutableStateOf<Beer?>(null) }
+    // State to track if we are installing the feature for a specific beer
+    var installingBeer by remember { mutableStateOf<Beer?>(null) }
 
-  LaunchedEffect(Unit) {
-    if (viewModel.beerListViewState.value is CommonUiState.Empty) {
-      viewModel.getAllBeers()
-    }
-  }
-
-  Scaffold(
-    topBar = {
-      TopAppBar(
-        title = { Text(text = context.getString(com.simtop.core.R.string.billion_beers_list)) }
-      )
-    },
-    contentWindowInsets = WindowInsets.statusBars
-  ) { paddingValues ->
-    val dataVisibility = rememberSaveable { mutableStateOf(false) }
-
-    when (val state = viewState) {
-      CommonUiState.Empty -> {
-        ComposeTitle(name = "Empty State")
-      }
-      is CommonUiState.Error -> {
-        if (!dataVisibility.value) viewModel.showEmptyState()
-        state.message?.let { context.showToast(it) }
-      }
-      CommonUiState.Loading -> {
-        BeersListSkeleton(modifier = Modifier.padding(top = paddingValues.calculateTopPadding()))
-      }
-      is CommonUiState.Success -> {
-        dataVisibility.value = true
-
-        val beers = state.data.beers
-        Box(modifier = Modifier.fillMaxSize().padding(top = paddingValues.calculateTopPadding())) {
-          val listState = rememberLazyListState()
-
-          InfiniteListHandler(
-            listState = listState,
-            isLoadingNextPage = state.data.isLoadingNextPage,
-            onLoadMore = { viewModel.onScrollToBottom() }
-          )
-
-          val layoutDirection = LocalLayoutDirection.current
-          val navBarsPadding = WindowInsets.navigationBars.asPaddingValues()
-
-          LazyColumn(
-            state = listState,
-            modifier = Modifier.testTag("beer_list"),
-            contentPadding =
-              PaddingValues(
-                start = navBarsPadding.calculateStartPadding(layoutDirection),
-                top = navBarsPadding.calculateTopPadding(),
-                end = navBarsPadding.calculateEndPadding(layoutDirection),
-                bottom = navBarsPadding.calculateBottomPadding() + 16.dp
-              )
-          ) {
-            items(beers.count()) { index ->
-              ComposeBeersListItem(beer = beers[index], onClick = { beer -> installingBeer = beer })
-            }
-
-            if (state.data.isLoadingNextPage) {
-              item(key = "loading_footer") {
-                Box(
-                  modifier = Modifier.fillMaxWidth().padding(24.dp),
-                  contentAlignment = Alignment.Center
-                ) {
-                  CircularProgressIndicator(modifier = Modifier.size(32.dp), strokeWidth = 3.dp)
-                }
-              }
-            }
-          }
+    LaunchedEffect(Unit) {
+        if (viewModel.beerListViewState.value is CommonUiState.Empty) {
+            viewModel.getAllBeers()
         }
-      }
     }
-  }
 
-  // Handle dynamic feature loading overlay
-  installingBeer?.let { beer: Beer ->
-    DynamicFeatureLoader(
-      featureName = FeatureConstants.BEER_DETAIL_MODULE,
-      splitInstallManager = splitInstallManager
-    ) {
-      LaunchedEffect(beer) {
-        onBeerClick(beer)
-        installingBeer = null
-      }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(text = context.getString(com.simtop.core.R.string.billion_beers_list)) }
+            )
+        },
+        contentWindowInsets = WindowInsets.statusBars
+    ) { paddingValues ->
+        val dataVisibility = rememberSaveable { mutableStateOf(false) }
+
+        when (val state = viewState) {
+            CommonUiState.Empty -> {
+                ComposeTitle(name = "Empty State")
+            }
+
+            is CommonUiState.Error -> {
+                if (!dataVisibility.value) viewModel.showEmptyState()
+                state.message?.let { context.showToast(it) }
+            }
+
+            CommonUiState.Loading -> {
+                BeersListSkeleton(modifier = Modifier.padding(top = paddingValues.calculateTopPadding()))
+            }
+
+            is CommonUiState.Success -> {
+                dataVisibility.value = true
+
+                val beers = state.data.beers
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = paddingValues.calculateTopPadding())
+                ) {
+                    val listState = rememberLazyListState()
+
+                    InfiniteListHandler(
+                        listState = listState,
+                        isLoadingNextPage = state.data.isLoadingNextPage,
+                        onLoadMore = { viewModel.onScrollToBottom() }
+                    )
+
+                    val layoutDirection = LocalLayoutDirection.current
+                    val navBarsPadding = WindowInsets.navigationBars.asPaddingValues()
+
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.testTag("beer_list"),
+                        contentPadding =
+                            PaddingValues(
+                                start = navBarsPadding.calculateStartPadding(layoutDirection),
+                                top = navBarsPadding.calculateTopPadding(),
+                                end = navBarsPadding.calculateEndPadding(layoutDirection),
+                                bottom = navBarsPadding.calculateBottomPadding() + 16.dp
+                            )
+                    ) {
+                        items(beers.count()) { index ->
+                            ComposeBeersListItem(
+                                beer = beers[index],
+                                onClick = { beer -> installingBeer = beer })
+                        }
+
+                        if (state.data.isLoadingNextPage) {
+                            item(key = "loading_footer") {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(24.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(32.dp),
+                                        strokeWidth = 3.dp
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
-  }
+
+    // Handle dynamic feature loading overlay
+    installingBeer?.let { beer: Beer ->
+        DynamicFeatureLoader(
+            featureName = FeatureConstants.BEER_DETAIL_MODULE,
+            splitInstallManager = splitInstallManager
+        ) {
+            LaunchedEffect(beer) {
+                onBeerClick(beer)
+                installingBeer = null
+            }
+        }
+    }
 }
 
 @Composable
 fun BeersListSkeleton(modifier: Modifier = Modifier) {
-  Column(
-    modifier = modifier.fillMaxSize()
-  ) {
-    repeat(10) {
-      BeersListItemSkeleton()
+    Column(
+        modifier = modifier.fillMaxSize()
+    ) {
+        repeat(SKELETON_ITEM_COUNT) {
+            BeersListItemSkeleton()
+        }
     }
-  }
 }
 
 @Composable
 fun BeersListItemSkeleton() {
-  val shimmerBrush = shimmerBrush(targetValue = 1300f)
-  
-  Card(
-    modifier = Modifier
-      .fillMaxWidth()
-      .padding(horizontal = 16.dp, vertical = 8.dp),
-    shape = RoundedCornerShape(16.dp),
-    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-    colors = CardDefaults.cardColors(
-      containerColor = MaterialTheme.colorScheme.surface
-    )
-  ) {
-    Row(
-      modifier = Modifier.fillMaxWidth().padding(12.dp),
-      verticalAlignment = Alignment.CenterVertically
-    ) {
-      // Image placeholder
-      Box(
+    val shimmerBrush = shimmerBrush(targetValue = SHIMMER_TARGET_VALUE)
+
+    Card(
         modifier = Modifier
-          .size(80.dp)
-          .clip(RoundedCornerShape(12.dp))
-          .background(shimmerBrush)
-      )
-
-      Spacer(modifier = Modifier.width(16.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-          Box(
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Row(
             modifier = Modifier
-              .fillMaxWidth(0.7f)
-              .height(20.dp)
-              .clip(RoundedCornerShape(4.dp))
-              .background(shimmerBrush)
-          )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-          // Tagline placeholder
-          Box(
-            modifier = Modifier
-              .fillMaxWidth(0.5f)
-              .height(16.dp)
-              .clip(RoundedCornerShape(4.dp))
-              .background(shimmerBrush)
-          )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-          // Chips placeholder
-            Row {
-              Box(
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Image placeholder
+            Box(
                 modifier = Modifier
-                  .width(60.dp)
-                  .height(24.dp)
-                  .clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
-                  .background(shimmerBrush)
-              )
-                Spacer(modifier = Modifier.width(8.dp))
-              Box(
-                modifier = Modifier
-                  .width(60.dp)
-                  .height(24.dp)
-                  .clip(RoundedCornerShape(8.dp))
-                  .background(shimmerBrush)
-              )
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(shimmerBrush)
+            )
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(TITLE_WIDTH_FRACTION)
+                        .height(20.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(shimmerBrush)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Tagline placeholder
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(TAGLINE_WIDTH_FRACTION)
+                        .height(16.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(shimmerBrush)
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Chips placeholder
+                Row {
+                    Box(
+                        modifier = Modifier
+                            .width(60.dp)
+                            .height(24.dp)
+                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
+                            .background(shimmerBrush)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .width(60.dp)
+                            .height(24.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(shimmerBrush)
+                    )
+                }
             }
         }
     }
-  }
 }
+
+const val SKELETON_ITEM_COUNT = 10
+const val SHIMMER_TARGET_VALUE = 1300f
+const val TITLE_WIDTH_FRACTION = 0.7f
+const val TAGLINE_WIDTH_FRACTION = 0.5f

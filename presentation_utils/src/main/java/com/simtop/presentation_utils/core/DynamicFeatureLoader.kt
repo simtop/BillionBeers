@@ -57,10 +57,10 @@ fun DynamicFeatureLoader(
                 0f
               }
             // Ensure progress is at least 0.25f so it's noticeable
-            downloadProgress = if (progress > 0.25f) progress else 0.25f
+            downloadProgress = if (progress > MIN_VISIBLE_PROGRESS) progress else MIN_VISIBLE_PROGRESS
           }
           SplitInstallSessionStatus.PENDING -> {
-            downloadProgress = 0.1f
+            downloadProgress = PENDING_PROGRESS
           }
           SplitInstallSessionStatus.FAILED -> {
             isLoading = false
@@ -93,3 +93,6 @@ fun DynamicFeatureLoader(
     }
   }
 }
+
+private const val MIN_VISIBLE_PROGRESS = 0.25f
+private const val PENDING_PROGRESS = 0.1f

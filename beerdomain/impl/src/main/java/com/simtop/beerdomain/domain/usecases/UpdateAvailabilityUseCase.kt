@@ -11,6 +11,7 @@ class UpdateAvailabilityUseCase @Inject constructor(private val beersRepository:
 
   inner class Params(val beer: Beer)
 
+  @Suppress("TooGenericExceptionCaught")
   override suspend fun buildUseCase(params: Params): Either<Exception, Unit> {
     try {
       beersRepository.updateAvailability(params.beer)

@@ -50,3 +50,24 @@ output-reports:
     # - 'XmlOutputReport'
     # - 'HtmlOutputReport'
     # - 'MdOutputReport'
+
+naming:
+  FunctionNaming:
+    ignoreAnnotated: ['Composable']
+  TopLevelPropertyNaming:
+    constantPattern: '[A-Z][A-Z0-9_]*'
+  PackageNaming:
+    packagePattern: '^[a-z]+(\.[a-z][A-Za-z0-9_]*)*$'
+
+complexity:
+  LongMethod:
+    ignoreAnnotated: ['Composable']
+
+style:
+  WildcardImport:
+    excludeImports:
+      - 'java.util.*'
+      - 'androidx.compose.foundation.layout.*'
+      - 'androidx.compose.material3.*'
+      - 'androidx.compose.runtime.*'
+      - 'androidx.compose.ui.*'

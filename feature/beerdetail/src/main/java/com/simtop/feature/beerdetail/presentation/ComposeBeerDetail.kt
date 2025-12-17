@@ -50,7 +50,7 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
             Modifier.matchParentSize()
               .background(
                 Brush.verticalGradient(
-                  colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.7f))
+                  colors = listOf(Color.Transparent, Color.Black.copy(alpha = GRADIENT_ALPHA))
                 )
               )
         )
@@ -136,14 +136,14 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
         StatCard(
           label = "ABV",
           value = "${beer.abv}%",
-          color = Color(0xFFE0F7FA),
-          textColor = Color(0xFF006064)
+          color = Color(ABV_BG_COLOR),
+          textColor = Color(ABV_TEXT_COLOR)
         )
         StatCard(
           label = "IBU",
           value = "${beer.ibu}",
-          color = Color(0xFFFBE9E7),
-          textColor = Color(0xFFBF360C)
+          color = Color(IBU_BG_COLOR),
+          textColor = Color(IBU_TEXT_COLOR)
         )
       }
 
@@ -160,7 +160,7 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
         style =
           MaterialTheme.typography.bodyLarge.copy(
             lineHeight = 24.sp,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = TEXT_ALPHA)
           )
       )
 
@@ -248,3 +248,10 @@ fun ComposeBeerDetailPreview() {
     onToggleAvailability = {}
   )
 }
+
+private const val GRADIENT_ALPHA = 0.7f
+private const val TEXT_ALPHA = 0.8f
+private const val ABV_BG_COLOR = 0xFFE0F7FA
+private const val ABV_TEXT_COLOR = 0xFF006064
+private const val IBU_BG_COLOR = 0xFFFBE9E7
+private const val IBU_TEXT_COLOR = 0xFFBF360C
