@@ -1,6 +1,6 @@
 # BillionBeers
 
-This is a base simple app that showcases my base Architecture and testing practices. It's started as a monolitic app in place of multi module to be easier to test new libraries and new ideas and you can see the progression of the multi modular approach. 
+This is a multi-module Android application that showcases modern architecture and testing practices. It follows Clean Architecture principles and uses MVVM for the presentation layer.
 
 This app follows the Clean Architecture and uses MVVM architecture for the presentation layer. The app uses Kotlin DSL for dependency management and Version Catalog to manage library versions.
 
@@ -11,15 +11,6 @@ Any download and 5 star is **greatly appreciated**
 
 For UI Testing I used the Robot Pattern.
 
-<!-- WIP -->
-## W.I.P.
-
-- [x] Version Catalog + gradle 7.3 + kotlin 1.6 and updating libraries
-- [ ] Centralizing Errors
-- [ ] Try Github Actions and Dependabot
-- [ ] Check if issue with UI Tests for paging 3.9 that I reported to google is fixed and merge paging branch
-- [ ] Add Jacoco to sonar qube
-- [ ] Add Firebase Test Lab with dynamic feature
 
 ## Code Quality & Reports
 
@@ -40,6 +31,37 @@ We use **Jacoco** to measure test coverage.
 - **Generate reports**: `./gradlew jacocoTestReport`
 - **Reports**: Found in `build/reports/jacoco/jacocoTestReport/html/index.html` for each module (e.g., `core-common/build/reports/jacoco/jacocoTestReport/html/index.html`).
 
+### 4. Performance Measurement & Profiling
+
+This project includes a robust system for measuring and improving performance.
+
+#### A. Gradle Build Profiling (Build Speed)
+We use **Gradle Profiler** to automate build measurements.
+- **Requirement**: `brew install gradle-profiler`
+- **Run benchmark**: 
+  ```bash
+  gradle-profiler --benchmark --scenario-file ./benchmark.scenarios incremental_build
+  ```
+- **Scenarios**: Defined in `benchmark.scenarios` (Clean build, Incremental, etc.).
+
+#### B. Microbenchmarking (Code Logic)
+Measure the performance of CPU-bound logic (e.g., `BeersMapper`).
+- **Run**: `./gradlew :benchmark:microbenchmark:connectedCheck`
+- **Reports**: `benchmark/microbenchmark/build/reports/androidTests/connected/release/index.html`
+
+#### C. Macrobenchmarking (App Startup & Jank)
+Measure high-level user experience like App Startup and Scrolling.
+- **Run**: `./gradlew :benchmark:macrobenchmark:connectedCheck`
+- **Reports**: `benchmark/macrobenchmark/build/reports/androidTests/connected/debug/index.html`
+- **Notes**: 
+  - Uses a dedicated `benchmark` build type (minified but debug-signed).
+  - Macrobenchmarks requires a physical device for accurate frame timing results.
+  - Suppression rules are enabled in `gradle.properties` for local emulator testing.
+
+#### D. Interpreting Results
+- **Micro**: Focus on **Median** time and **Allocations** (aim for 0 allocs in hot loops).
+- **Macro**: Aim for Cold Startup **< 500ms** and Frame Overrun **0ms** (perfect 60fps).
+
 
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated** and it will be a pleasure to collaborate with you..
 
@@ -48,26 +70,6 @@ Don't forget to give the project a star! Thanks again!
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
-<!-- Project Progression and it's branches -->
-
-
-## Project Progression
-
-Master has the 7th Branch of Sonar Qube. I recommend to always compare old branches with master because many small bugs were fixed in master and also it contains the best approaches that old branches may not contain.
-
-1. Monolithic App with dagger2 : https://github.com/simtop/BillionBeers/tree/simple_coroutines_monolith
-2. Hilt Monolith : https://github.com/simtop/BillionBeers/tree/feature/hilt_monolith 
-   (The sub branches of the Monolith are not included in the next simple multi module approach because of UI Test Issue reported to google) 
-   1. Flow branch(Using State Flow) : https://github.com/simtop/BillionBeers/tree/feature/flow
-   2. Just Network Paging 3.0 : https://github.com/simtop/BillionBeers/tree/feature/network_paging
-   3. Network + Room Paging 3.0 : https://github.com/simtop/BillionBeers/tree/feature/network_room_paging
-3. Simpler Multi Module Approach with Hilt : https://github.com/simtop/BillionBeers/tree/feature/multimodule_hilt
-4. Complete hilt Multi Module : https://github.com/simtop/BillionBeers/tree/feature/complete_hilt_multimodule
-5. Installed Dynamic Feature : https://github.com/simtop/BillionBeers/tree/feature/dynamic_feature
-6. Dynamic Feature Module on Demand : https://github.com/simtop/BillionBeers/tree/feature/dynamic_feature_on_demand
-7. Sonar Qube : https://github.com/simtop/BillionBeers/tree/feature/sonar_qube
-8. Sonar Qube + Jacoco (Still work in progress) : https://github.com/simtop/BillionBeers/tree/feature/wip_jacoco_sonarqube
-9. Migration to Jetpack Compose : https://github.com/simtop/BillionBeers/tree/feature/compose
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 

@@ -25,6 +25,7 @@
             </intent-filter>
 
         </activity>
+        <profileable android:shell="true" />
     </application>
 
 </manifest>

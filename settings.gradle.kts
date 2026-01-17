@@ -29,3 +29,6 @@ include(":app")
 rootProject.name = "BillionBeers"
 include(":navigation")
 
+include(":benchmark:microbenchmark")
+include(":benchmark:macrobenchmark")
+
