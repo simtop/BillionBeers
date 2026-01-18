@@ -15,6 +15,8 @@ android {
 
   baselineProfile {
     from(project(":benchmark:baselineprofile"))
+    // TODO: think if to keep it or not, in theory it just affects release builds
+    automaticGenerationDuringBuild = true
   }
 
   packaging {
