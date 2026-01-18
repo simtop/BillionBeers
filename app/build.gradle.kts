@@ -37,6 +37,7 @@ dependencies {
   implementation(project(":feature:beerslist"))
   androidTestImplementation(project(":feature:beerdetail"))
   implementation(project(":core"))
+  implementation(project(":core:designsystem"))
   implementation(project(":navigation"))
   implementation(project(":beer_data"))
   implementation(project(":beer_database"))

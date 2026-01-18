@@ -9,6 +9,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
+import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -38,8 +39,8 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
   val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
   Scaffold(
-    contentWindowInsets = WindowInsets(0.dp),
-    modifier = Modifier.padding(bottom = 16.dp).nestedScroll(scrollBehavior.nestedScrollConnection),
+    contentWindowInsets = WindowInsets(BillionBeersTheme.spacing.default),
+    modifier = Modifier.padding(bottom = BillionBeersTheme.spacing.medium).nestedScroll(scrollBehavior.nestedScrollConnection),
     topBar = {
       Box(modifier = Modifier.wrapContentSize()) {
         BeerDetailImage(imageUrl = beer.imageUrl, modifier = Modifier.matchParentSize())
@@ -97,7 +98,7 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
             MaterialTheme.colorScheme.error
           },
         contentColor = Color.White,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(BillionBeersTheme.spacing.medium),
         modifier = Modifier.testTag("toggle_availability")
       ) {
         AnimatedContent(targetState = beer.availability, label = "availability_animation") {
@@ -116,7 +117,7 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
         Modifier.fillMaxSize()
           .verticalScroll(rememberScrollState())
           .padding(paddingValues)
-          .padding(16.dp)
+          .padding(BillionBeersTheme.spacing.medium)
           .testTag("detail_scroll_view")
     ) {
       // Tagline
@@ -129,7 +130,7 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
           )
       )
 
-      Spacer(modifier = Modifier.height(24.dp))
+      Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
 
       // Stats Row
       Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -147,14 +148,14 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
         )
       }
 
-      Spacer(modifier = Modifier.height(24.dp))
+      Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
 
       // Description
       Text(
         text = "Description",
         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
       )
-      Spacer(modifier = Modifier.height(8.dp))
+      Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.small))
       Text(
         text = beer.description,
         style =
@@ -164,7 +165,7 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
           )
       )
 
-      Spacer(modifier = Modifier.height(24.dp))
+      Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
 
       // Food Pairing
       if (beer.foodPairing.isNotEmpty()) {
@@ -172,13 +173,13 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
           text = "Food Pairing",
           style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
         )
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.medium - BillionBeersTheme.spacing.extraSmall))
         beer.foodPairing.forEach { pairing ->
-          Row(modifier = Modifier.padding(vertical = 4.dp)) {
+          Row(modifier = Modifier.padding(vertical = BillionBeersTheme.spacing.extraSmall)) {
             Text(
               text = "•",
               style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-              modifier = Modifier.padding(end = 8.dp)
+              modifier = Modifier.padding(end = BillionBeersTheme.spacing.small)
             )
             Text(text = pairing, style = MaterialTheme.typography.bodyLarge)
           }
@@ -192,10 +193,10 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
 fun StatCard(label: String, value: String, color: Color, textColor: Color) {
   Card(
     colors = CardDefaults.cardColors(containerColor = color),
-    shape = RoundedCornerShape(16.dp),
+    shape = RoundedCornerShape(BillionBeersTheme.spacing.medium),
     modifier = Modifier.width(100.dp)
   ) {
-    Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(modifier = Modifier.padding(BillionBeersTheme.spacing.medium), horizontalAlignment = Alignment.CenterHorizontally) {
       Text(
         text = value,
         style =
@@ -232,21 +233,23 @@ fun BeerDetailImage(imageUrl: String, modifier: Modifier = Modifier) {
 @Preview
 @Composable
 fun ComposeBeerDetailPreview() {
-  ComposeBeerDetail(
-    beer =
-      Beer.empty.copy(
-        name = "Buzz",
-        tagline = "A Real Bitter Experience.",
-        description =
-          "A light, crisp and bitter IPA brewed with English and American hops. A small batch brewed only once.",
-        abv = 4.5,
-        ibu = 60.0,
-        foodPairing =
-          listOf("Spicy chicken tikka masala", "Grilled chicken quesadilla", "Pastrami on rye")
-      ),
-    onBackClick = {},
-    onToggleAvailability = {}
-  )
+  BillionBeersTheme {
+    ComposeBeerDetail(
+      beer =
+        Beer.empty.copy(
+          name = "Buzz",
+          tagline = "A Real Bitter Experience.",
+          description =
+            "A light, crisp and bitter IPA brewed with English and American hops. A small batch brewed only once.",
+          abv = 4.5,
+          ibu = 60.0,
+          foodPairing =
+            listOf("Spicy chicken tikka masala", "Grilled chicken quesadilla", "Pastrami on rye")
+        ),
+      onBackClick = {},
+      onToggleAvailability = {}
+    )
+  }
 }
 
 private const val GRADIENT_ALPHA = 0.7f

@@ -10,6 +10,7 @@ dependencies {
   implementation(project(":beerdomain:impl"))
   implementation(project(":presentation_utils"))
   implementation(project(":core"))
+  implementation(project(":core:designsystem"))
   implementation(project(":navigation"))
   implementation(libs.androidx.navigation.compose)
 

@@ -11,6 +11,7 @@ android {
 dependencies {
   implementation(project(":beerdomain:api"))
   implementation(project(":core"))
+  implementation(project(":core:designsystem"))
 
   implementation(libs.androidx.foundation.android)
   implementation(libs.androidx.material3.android)

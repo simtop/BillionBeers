@@ -26,6 +26,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -127,7 +128,7 @@ fun BeersListScreen(
                                 start = navBarsPadding.calculateStartPadding(layoutDirection),
                                 top = navBarsPadding.calculateTopPadding(),
                                 end = navBarsPadding.calculateEndPadding(layoutDirection),
-                                bottom = navBarsPadding.calculateBottomPadding() + 16.dp
+                                bottom = navBarsPadding.calculateBottomPadding() + BillionBeersTheme.spacing.medium
                             )
                     ) {
                         items(beers.count()) { index ->
@@ -141,11 +142,11 @@ fun BeersListScreen(
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(24.dp),
+                                        .padding(BillionBeersTheme.spacing.large),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     CircularProgressIndicator(
-                                        modifier = Modifier.size(32.dp),
+                                        modifier = Modifier.size(BillionBeersTheme.spacing.extraLarge),
                                         strokeWidth = 3.dp
                                     )
                                 }
@@ -189,9 +190,9 @@ fun BeersListItemSkeleton() {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            .padding(horizontal = BillionBeersTheme.spacing.medium, vertical = BillionBeersTheme.spacing.small),
+        shape = RoundedCornerShape(BillionBeersTheme.spacing.medium),
+        elevation = CardDefaults.cardElevation(defaultElevation = BillionBeersTheme.spacing.extraSmall),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         )
@@ -199,56 +200,56 @@ fun BeersListItemSkeleton() {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(BillionBeersTheme.spacing.small + BillionBeersTheme.spacing.extraSmall),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Image placeholder
             Box(
                 modifier = Modifier
-                    .size(80.dp)
-                    .clip(RoundedCornerShape(12.dp))
+                    .size(BillionBeersTheme.spacing.huge + BillionBeersTheme.spacing.extraLarge)
+                    .clip(RoundedCornerShape(BillionBeersTheme.spacing.small + BillionBeersTheme.spacing.extraSmall))
                     .background(shimmerBrush)
             )
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(BillionBeersTheme.spacing.medium))
 
             Column(modifier = Modifier.weight(1f)) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(TITLE_WIDTH_FRACTION)
-                        .height(20.dp)
-                        .clip(RoundedCornerShape(4.dp))
+                        .height(BillionBeersTheme.spacing.medium + BillionBeersTheme.spacing.extraSmall)
+                        .clip(RoundedCornerShape(BillionBeersTheme.spacing.extraSmall))
                         .background(shimmerBrush)
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.small))
 
                 // Tagline placeholder
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(TAGLINE_WIDTH_FRACTION)
-                        .height(16.dp)
-                        .clip(RoundedCornerShape(4.dp))
+                        .height(BillionBeersTheme.spacing.medium)
+                        .clip(RoundedCornerShape(BillionBeersTheme.spacing.extraSmall))
                         .background(shimmerBrush)
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.small + BillionBeersTheme.spacing.extraSmall))
 
                 // Chips placeholder
                 Row {
                     Box(
                         modifier = Modifier
-                            .width(60.dp)
-                            .height(24.dp)
-                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
+                            .width(BillionBeersTheme.spacing.extraHuge + BillionBeersTheme.spacing.medium)
+                            .height(BillionBeersTheme.spacing.large)
+                            .clip(RoundedCornerShape(BillionBeersTheme.spacing.small))
                             .background(shimmerBrush)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(BillionBeersTheme.spacing.small))
                     Box(
                         modifier = Modifier
-                            .width(60.dp)
-                            .height(24.dp)
-                            .clip(RoundedCornerShape(8.dp))
+                            .width(BillionBeersTheme.spacing.extraHuge + BillionBeersTheme.spacing.medium)
+                            .height(BillionBeersTheme.spacing.large)
+                            .clip(RoundedCornerShape(BillionBeersTheme.spacing.small))
                             .background(shimmerBrush)
                     )
                 }

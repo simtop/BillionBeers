@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.material3.MaterialTheme
+import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.google.android.play.core.splitinstall.SplitInstallManager
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -17,6 +17,6 @@ class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     enableEdgeToEdge()
-    setContent { MaterialTheme { AppNavigation(splitInstallManager = splitInstallManager) } }
+    setContent { BillionBeersTheme { AppNavigation(splitInstallManager = splitInstallManager) } }
   }
 }
