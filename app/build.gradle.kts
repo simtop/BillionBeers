@@ -6,11 +6,16 @@ plugins {
   id("billionbeers.duplicate-classes")
   id("billionbeers.unused-dependencies")
   alias(libs.plugins.kotlin.serialization)
+  alias(libs.plugins.androidx.baseline.profile)
 }
 
 android {
   namespace = "com.simtop.billionbeers"
   dynamicFeatures += setOf(":feature:beerdetail")
+
+  baselineProfile {
+    from(project(":benchmark:baselineprofile"))
+  }
 
   packaging {
     resources {

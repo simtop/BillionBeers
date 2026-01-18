@@ -31,4 +31,5 @@ include(":navigation")
 
 include(":benchmark:microbenchmark")
 include(":benchmark:macrobenchmark")
+include(":benchmark:baselineprofile")
 
