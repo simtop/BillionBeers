@@ -31,6 +31,7 @@ import coil3.request.crossfade
 import coil3.request.error
 import coil3.request.placeholder
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.presentation_utils.R
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -230,7 +231,7 @@ fun BeerDetailImage(imageUrl: String, modifier: Modifier = Modifier) {
   )
 }
 
-@Preview
+@PreviewLightDark
 @Composable
 fun ComposeBeerDetailPreview() {
   BillionBeersTheme {

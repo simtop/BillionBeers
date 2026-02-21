@@ -33,4 +33,6 @@ include(":navigation")
 include(":benchmark:microbenchmark")
 include(":benchmark:macrobenchmark")
 include(":benchmark:baselineprofile")
-
+include(":catalog")
+include(":snapshot-testing")
+include(":snapshot-processor")

@@ -1,6 +1,7 @@
 plugins {
   id("billionbeers.android.library")
   id("billionbeers.android.compose")
+  id("billionbeers.android.screenshot")
 }
 
 android {

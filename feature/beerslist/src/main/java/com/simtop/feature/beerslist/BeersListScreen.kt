@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.android.play.core.splitinstall.SplitInstallManager
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.core.core.CommonUiState
 import com.simtop.navigation.FeatureConstants
 import com.simtop.presentation_utils.core.DynamicFeatureLoader
@@ -64,7 +65,6 @@ fun BeersListScreen(
     splitInstallManager: SplitInstallManager? = null,
     onBeerClick: (Beer) -> Unit
 ) {
-    val context = LocalContext.current
     val viewState by viewModel.beerListViewState.collectAsState()
 
     // State to track if we are installing the feature for a specific beer
@@ -76,6 +76,36 @@ fun BeersListScreen(
         }
     }
 
+    BeersListContent(
+        viewState = viewState,
+        onBeerClick = { beer -> installingBeer = beer },
+        onScrollToBottom = { viewModel.onScrollToBottom() },
+        onRetry = { viewModel.getAllBeers() }
+    )
+
+    // Handle dynamic feature loading overlay
+    installingBeer?.let { beer: Beer ->
+        DynamicFeatureLoader(
+            featureName = FeatureConstants.BEER_DETAIL_MODULE,
+            splitInstallManager = splitInstallManager
+        ) {
+            LaunchedEffect(beer) {
+                onBeerClick(beer)
+                installingBeer = null
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BeersListContent(
+    viewState: CommonUiState<BeersListUiModel>,
+    onBeerClick: (Beer) -> Unit,
+    onScrollToBottom: () -> Unit,
+    onRetry: () -> Unit
+) {
+    val context = LocalContext.current
     Scaffold(
         topBar = {
             TopAppBar(
@@ -92,8 +122,11 @@ fun BeersListScreen(
             }
 
             is CommonUiState.Error -> {
-                if (!dataVisibility.value) viewModel.showEmptyState()
-                state.message?.let { context.showToast(it) }
+                state.message?.let { message ->
+                    LaunchedEffect(message) {
+                        context.showToast(message)
+                    }
+                }
             }
 
             CommonUiState.Loading -> {
@@ -114,7 +147,7 @@ fun BeersListScreen(
                     InfiniteListHandler(
                         listState = listState,
                         isLoadingNextPage = state.data.isLoadingNextPage,
-                        onLoadMore = { viewModel.onScrollToBottom() }
+                        onLoadMore = onScrollToBottom
                     )
 
                     val layoutDirection = LocalLayoutDirection.current
@@ -134,7 +167,8 @@ fun BeersListScreen(
                         items(beers.count()) { index ->
                             ComposeBeersListItem(
                                 beer = beers[index],
-                                onClick = { beer -> installingBeer = beer })
+                                onClick = onBeerClick
+                            )
                         }
 
                         if (state.data.isLoadingNextPage) {
@@ -157,18 +191,77 @@ fun BeersListScreen(
             }
         }
     }
+}
 
-    // Handle dynamic feature loading overlay
-    installingBeer?.let { beer: Beer ->
-        DynamicFeatureLoader(
-            featureName = FeatureConstants.BEER_DETAIL_MODULE,
-            splitInstallManager = splitInstallManager
-        ) {
-            LaunchedEffect(beer) {
-                onBeerClick(beer)
-                installingBeer = null
-            }
+class BeersListPreviewParameterProvider :
+    androidx.compose.ui.tooling.preview.PreviewParameterProvider<BeersListPreviewParameterProvider.State> {
+
+    sealed interface State {
+        val uiState: CommonUiState<BeersListUiModel>
+
+        enum class Preview(
+            override val uiState: CommonUiState<BeersListUiModel>
+        ) : State {
+            LOADING(CommonUiState.Loading),
+//            EMPTY(CommonUiState.Empty),
+//            ERROR(CommonUiState.Error(message = "Failed to load beers. Please check your connection.")),
+            SUCCESS_MULTIPLE_ITEMS(
+                CommonUiState.Success(
+                    data = BeersListUiModel(
+                        beers = listOf(
+                            Beer.empty.copy(
+                                name = "Buzz",
+                                tagline = "A Real Bitter Experience.",
+                                abv = 4.5,
+                                ibu = 60.0,
+                                availability = true
+                            ),
+                            Beer.empty.copy(
+                                name = "Trashy Blonde",
+                                tagline = "You Know You Shouldn't",
+                                abv = 4.1,
+                                ibu = 41.5,
+                                availability = false
+                            )
+                        ),
+                        isLoadingNextPage = false
+                    )
+                )
+            ),
+            SUCCESS_LOADING_MORE(
+                CommonUiState.Success(
+                    data = BeersListUiModel(
+                        beers = listOf(
+                            Beer.empty.copy(
+                                name = "Buzz",
+                                tagline = "A Real Bitter Experience.",
+                                abv = 4.5,
+                                ibu = 60.0,
+                                availability = true
+                            )
+                        ),
+                        isLoadingNextPage = true
+                    )
+                )
+            )
         }
+    }
+
+    override val values = State.Preview.entries.asSequence()
+}
+
+@PreviewLightDark
+@androidx.compose.runtime.Composable
+fun BeersListScreenPreview(
+    @androidx.compose.ui.tooling.preview.PreviewParameter(BeersListPreviewParameterProvider::class) state: BeersListPreviewParameterProvider.State
+) {
+    BillionBeersTheme {
+        BeersListContent(
+            viewState = state.uiState,
+            onBeerClick = {},
+            onScrollToBottom = {},
+            onRetry = {}
+        )
     }
 }
 
@@ -190,7 +283,10 @@ fun BeersListItemSkeleton() {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = BillionBeersTheme.spacing.medium, vertical = BillionBeersTheme.spacing.small),
+            .padding(
+                horizontal = BillionBeersTheme.spacing.medium,
+                vertical = BillionBeersTheme.spacing.small
+            ),
         shape = RoundedCornerShape(BillionBeersTheme.spacing.medium),
         elevation = CardDefaults.cardElevation(defaultElevation = BillionBeersTheme.spacing.extraSmall),
         colors = CardDefaults.cardColors(

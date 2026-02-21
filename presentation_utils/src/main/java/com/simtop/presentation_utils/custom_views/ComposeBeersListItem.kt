@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -134,15 +135,35 @@ fun BeerChip(text: String, color: Color, textColor: Color) {
   }
 }
 
-@Preview
-@Composable
-fun ComposeBeersListItemPreview() {
-  BillionBeersTheme {
-    ComposeBeersListItem(
-      Beer.empty.copy(name = "Buzz", tagline = "A Real Bitter Experience.", abv = 4.5, ibu = 60.0)
+class BeerPreviewParameterProvider : androidx.compose.ui.tooling.preview.PreviewParameterProvider<Beer> {
+    override val values = sequenceOf(
+        Beer.empty.copy(
+            name = "Buzz (Available)", 
+            tagline = "A Real Bitter Experience.", 
+            abv = 4.5, 
+            ibu = 60.0,
+            availability = true
+        ),
+        Beer.empty.copy(
+            name = "Trashy Blonde (Unavailable)", 
+            tagline = "You Know You Shouldn't", 
+            abv = 4.1, 
+            ibu = 41.5,
+            availability = false
+        )
     )
+}
+
+@PreviewLightDark
+@Composable
+fun ComposeBeersListItemPreview(
+    @androidx.compose.ui.tooling.preview.PreviewParameter(BeerPreviewParameterProvider::class) beer: Beer
+) {
+  BillionBeersTheme {
+    ComposeBeersListItem(beer = beer)
   }
 }
+
 
 private const val ABV_BG_COLOR = 0xFFE0F7FA
 private const val ABV_TEXT_COLOR = 0xFF006064

@@ -15,5 +15,6 @@ dependencies {
     implementation(libs.android.junit5.plugin)
     implementation(libs.spotless.gradlePlugin)
     implementation(libs.detekt.gradlePlugin)
+    implementation(libs.paparazzi.plugin)
     implementation(files(files((libs as Any).javaClass.superclass.protectionDomain.codeSource.location)))
 }
