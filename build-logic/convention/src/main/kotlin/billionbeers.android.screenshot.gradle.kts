@@ -114,14 +114,13 @@ tasks.withType<Test>().configureEach {
         it.contains("Paparazzi", ignoreCase = true) 
     }
     
-    if (isPaparazziRun) {
-        // Paparazzi task strictly executes the auto-generated Screenshot runner
-        filter {
+    filter {
+        isFailOnNoMatchingTests = false
+        if (isPaparazziRun) {
+            // Paparazzi task strictly executes the auto-generated Screenshot runner
             includeTestsMatching("com.simtop.billionbeers.screenshot.*")
-        }
-    } else {
-        // Standard Android/JVM test runs skip the Paparazzi runner
-        filter {
+        } else {
+            // Standard Android/JVM test runs skip the Paparazzi runner
             excludeTestsMatching("com.simtop.billionbeers.screenshot.*")
         }
     }

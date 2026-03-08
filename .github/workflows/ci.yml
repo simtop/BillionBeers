@@ -9,7 +9,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -25,8 +24,63 @@ jobs:
         with:
           gradle-version: wrapper
 
-      - name: Build and Run Tests
-        run: ./gradlew build --scan
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Build Project
+        run: ./gradlew assembleDebug --scan
+
+  unit-tests:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 23
+        uses: actions/setup-java@v4
+        with:
+          java-version: '23'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v3
+        with:
+          gradle-version: wrapper
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Run Unit Tests
+        run: ./gradlew testDebugUnitTest --continue
+
+      - name: Archive Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-reports
+          path: '**/build/reports/tests/'
+
+  screenshot-tests:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 23
+        uses: actions/setup-java@v4
+        with:
+          java-version: '23'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v3
+        with:
+          gradle-version: wrapper
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
 
       - name: Verify Screenshot Tests
         id: verify-paparazzi
@@ -74,16 +128,9 @@ jobs:
         if: always() && steps.verify-paparazzi.outcome == 'failure'
         run: exit 1
 
-      - name: Archive Test Reports
+      - name: Archive Screenshot Reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-reports
-          path: '**/build/reports/'
-
-      - name: Archive Test Results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: '**/build/test-results/'
+          name: screenshot-test-reports
+          path: '**/build/reports/paparazzi/'

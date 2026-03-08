@@ -37,6 +37,9 @@ jobs:
         with:
           gradle-version: wrapper
 
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
       - name: Record Screenshots
         run: |
           RECORD_ALL="${{ github.event.inputs.record_all }}"
