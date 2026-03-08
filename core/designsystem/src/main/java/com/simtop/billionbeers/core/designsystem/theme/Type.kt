@@ -1,6 +1,7 @@
 package com.simtop.billionbeers.core.designsystem.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -54,3 +55,6 @@ val BillionBeersTypography = Typography(
         letterSpacing = 0.5.sp
     )
 )
+
+val LocalTypography = staticCompositionLocalOf { BillionBeersTypography }
+

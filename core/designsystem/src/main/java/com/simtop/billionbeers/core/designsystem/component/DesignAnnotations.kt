@@ -1,6 +1,9 @@
 package com.simtop.billionbeers.core.designsystem.component
 
 import android.content.res.Configuration
+import androidx.compose.ui.tooling.preview.Devices.PIXEL_7
+import androidx.compose.ui.tooling.preview.Devices.PIXEL_FOLD
+import androidx.compose.ui.tooling.preview.Devices.PIXEL_TABLET
 import androidx.compose.ui.tooling.preview.Preview
 
 @Preview(
@@ -47,19 +50,19 @@ annotation class PreviewFontScales
 @Preview(
     name = "Phone",
     group = "Devices",
-    device = "spec:width=411dp,height=891dp,navigationButtons=true,cutout=mask",
+    device = PIXEL_7,
     showBackground = true
 )
 @Preview(
     name = "Foldable",
     group = "Devices",
-    device = "spec:width=673dp,height=841dp,navigationButtons=true,cutout=mask",
+    device = PIXEL_FOLD,
     showBackground = true
 )
 @Preview(
     name = "Tablet",
     group = "Devices",
-    device = "spec:width=1280dp,height=800dp,navigationButtons=true,cutout=mask",
+    device = PIXEL_TABLET,
     showBackground = true
 )
 annotation class PreviewDevices

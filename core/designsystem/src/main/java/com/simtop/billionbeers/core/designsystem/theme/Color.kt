@@ -1,5 +1,6 @@
 package com.simtop.billionbeers.core.designsystem.theme
 
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
 /**
@@ -75,3 +76,6 @@ data class BillionBeersColors(
     val error: Color,
     val onError: Color
 )
+
+val LocalColors = staticCompositionLocalOf { BillionBeersLightColors }
+

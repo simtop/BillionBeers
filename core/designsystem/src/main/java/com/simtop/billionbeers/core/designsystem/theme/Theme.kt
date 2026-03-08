@@ -3,6 +3,7 @@ package com.simtop.billionbeers.core.designsystem.theme
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
@@ -24,7 +25,9 @@ fun BillionBeersTheme(
     val colorScheme = colors.toMaterialColorScheme()
 
     CompositionLocalProvider(
-        LocalSpacing provides BillionBeersSpacing()
+        LocalSpacing provides BillionBeersSpacing(),
+        LocalColors provides colors,
+        LocalTypography provides BillionBeersTypography
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
@@ -42,7 +45,18 @@ object BillionBeersTheme {
         @Composable
         @ReadOnlyComposable
         get() = LocalSpacing.current
+
+    val colors: BillionBeersColors
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalColors.current
+
+    val typography: Typography
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalTypography.current
 }
+
 
 /**
  * Helper to map custom tokens to Material3 ColorScheme.
