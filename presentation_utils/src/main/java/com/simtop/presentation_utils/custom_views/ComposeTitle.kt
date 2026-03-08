@@ -11,7 +11,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import androidx.compose.material3.MaterialTheme
+import com.simtop.billionbeers.catalog_annotations.CatalogComponent
 
+@CatalogComponent(
+    tab = "Utilities",
+)
 @Composable
 fun ComposeTitle(name: String) {
   Text(

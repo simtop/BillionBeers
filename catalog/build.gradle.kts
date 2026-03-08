@@ -18,7 +18,15 @@ dependencies {
     implementation(project(":feature:beerslist"))
     implementation(project(":core:designsystem"))
     implementation(project(":presentation_utils"))
+    implementation(project(":catalog-annotations"))
     
+    // Compose
+    implementation(libs.androidx.foundation.android)
+    implementation(libs.androidx.material3.android)
+    implementation(libs.androidx.ui.tooling.preview.android)
+    implementation(libs.androidxActivityCompose)
+    implementation(libs.androidx.navigation.compose)
+
     testImplementation(libs.junit)
 }
 
