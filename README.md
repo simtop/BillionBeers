@@ -31,7 +31,16 @@ We use **Jacoco** to measure test coverage.
 - **Generate reports**: `./gradlew jacocoTestReport`
 - **Reports**: Found in `build/reports/jacoco/jacocoTestReport/html/index.html` for each module (e.g., `core-common/build/reports/jacoco/jacocoTestReport/html/index.html`).
 
-### 4. Performance Measurement & Profiling
+### 4. Screenshot Testing (Paparazzi)
+We use **Paparazzi** for screenshot testing our Compose UI.
+- **Record specific module**: `./gradlew :feature:beerdetail:recordPaparazziDebug`
+- **Verify specific module**: `./gradlew :feature:beerdetail:verifyPaparazziDebug`
+- **Record all modules**: `./gradlew recordPaparazziDebug`
+- **Verify all modules**: `./gradlew verifyPaparazziDebug`
+- **Clean and record**: `./gradlew cleanRecordPaparazziDebug`
+- **Reports**: Found in `build/reports/paparazzi/` for each module.
+
+### 5. Performance Measurement & Profiling
 
 This project includes a robust system for measuring and improving performance.
 
