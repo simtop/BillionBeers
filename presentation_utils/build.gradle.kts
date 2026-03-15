@@ -1,6 +1,7 @@
 plugins {
   id("billionbeers.android.library")
   id("billionbeers.android.compose")
+  id("billionbeers.android.screenshot")
 }
 
 android {
@@ -11,6 +12,7 @@ android {
 dependencies {
   implementation(project(":beerdomain:api"))
   implementation(project(":core"))
+  implementation(project(":core:designsystem"))
 
   implementation(libs.androidx.foundation.android)
   implementation(libs.androidx.material3.android)

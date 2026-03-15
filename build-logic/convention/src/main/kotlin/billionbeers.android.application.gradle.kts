@@ -11,6 +11,7 @@ plugins {
     id("billionbeers.spotless")
     id("billionbeers.detekt")
     id("kotlin-parcelize")
+    id("billionbeers.unused-dependencies")
 }
 
 val libs = the<LibrariesForLibs>()
@@ -74,10 +75,20 @@ configure<ApplicationExtension> {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.getByName("release")
         }
+
+        create("benchmark") {
+            initWith(getByName("release"))
+            matchingFallbacks.add("release")
+            signingConfig = signingConfigs.getByName("debug")
+            isDebuggable = false
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "benchmark-rules.pro")
+        }
     }
 }
 
 dependencies {
+    implementation(libs.tracing.perfetto)
+    implementation(libs.tracing.perfetto.binary)
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.coreTesting)

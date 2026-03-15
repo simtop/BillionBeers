@@ -4,12 +4,20 @@ plugins {
   id("billionbeers.android.hilt")
 
   id("billionbeers.duplicate-classes")
+  id("billionbeers.unused-dependencies")
   alias(libs.plugins.kotlin.serialization)
+  alias(libs.plugins.androidx.baseline.profile)
 }
 
 android {
   namespace = "com.simtop.billionbeers"
   dynamicFeatures += setOf(":feature:beerdetail")
+
+  baselineProfile {
+    from(project(":benchmark:baselineprofile"))
+    // TODO: think if to keep it or not, in theory it just affects release builds
+    automaticGenerationDuringBuild = true
+  }
 
   packaging {
     resources {
@@ -29,6 +37,7 @@ dependencies {
   implementation(project(":feature:beerslist"))
   androidTestImplementation(project(":feature:beerdetail"))
   implementation(project(":core"))
+  implementation(project(":core:designsystem"))
   implementation(project(":navigation"))
   implementation(project(":beer_data"))
   implementation(project(":beer_database"))

@@ -1,6 +1,7 @@
 plugins {
   id("billionbeers.android.dynamic.feature")
   id("billionbeers.android.compose")
+  id("billionbeers.android.screenshot")
 }
 
 android { namespace = "com.simtop.feature.beerdetail" }
@@ -10,6 +11,7 @@ dependencies {
   implementation(project(":beerdomain:impl"))
   implementation(project(":presentation_utils"))
   implementation(project(":core"))
+  implementation(project(":core:designsystem"))
   implementation(project(":navigation"))
   implementation(libs.androidx.navigation.compose)
 

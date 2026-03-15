@@ -21,3 +21,4 @@ keystore.properties
 .kotlin/
 .vscode/
 bin/
+gradle-user-home/

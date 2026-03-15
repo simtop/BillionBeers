@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 
+@Suppress("TooManyFunctions")
 class FakeBeersRepository : BeersRepository {
 
   private val beersFlow = MutableStateFlow<List<Beer>>(emptyList())

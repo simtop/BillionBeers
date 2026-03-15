@@ -11,6 +11,7 @@ plugins {
     id("billionbeers.spotless")
     id("billionbeers.detekt")
     id("de.mannodermaus.android-junit5")
+    id("billionbeers.unused-dependencies")
 }
 
 val libs = the<LibrariesForLibs>()
@@ -48,6 +49,7 @@ dependencies {
     testImplementation(libs.junit.jupiter.api)
     testImplementation(libs.junit.jupiter.params)
     testRuntimeOnly(libs.junit.jupiter.engine)
+    testRuntimeOnly(libs.junit.vintage.engine)
 
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.kotlinTestJunit)

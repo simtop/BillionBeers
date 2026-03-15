@@ -44,7 +44,19 @@ androidComponents?.onVariants { variant ->
                     "**/databinding/*",
                     "**/generated/*",
                     "**/model/*",
-                    "**/di/*"
+                    "**/di/*",
+                    "**/*Activity*.*",
+                    "**/*Fragment*.*",
+                    "**/*_HiltModules*.*",
+                    "**/Hilt_*.*",
+                    "**/*_Factory*.*",
+                    "**/*_MembersInjector*.*",
+                    "**/*MapperImpl*.*",
+                    "**/*Module*.*",
+                    "**/*Component*.*",
+                    "**/*Screen*.*",
+                    "**/*Application*.*",
+                    "**/*CommonUiState*.*"
                 )
             }
         )

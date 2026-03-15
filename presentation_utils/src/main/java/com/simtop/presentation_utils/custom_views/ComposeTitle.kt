@@ -8,23 +8,30 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
+import androidx.compose.material3.MaterialTheme
 
 @Composable
 fun ComposeTitle(name: String) {
   Text(
     text = name,
     modifier =
-      Modifier.padding(start = 24.dp, top = 8.dp, bottom = 8.dp, end = 24.dp).fillMaxWidth(),
-    fontWeight = FontWeight.ExtraBold,
-    textAlign = TextAlign.Center,
-    fontSize = 24.sp
+      Modifier.padding(
+        start = BillionBeersTheme.spacing.large,
+        top = BillionBeersTheme.spacing.small,
+        bottom = BillionBeersTheme.spacing.small,
+        end = BillionBeersTheme.spacing.large
+      ).fillMaxWidth(),
+    style = MaterialTheme.typography.headlineMedium,
+    textAlign = TextAlign.Center
   )
 }
 
-@Preview
+@PreviewLightDark
 @Composable
 fun ComposeTitlePreview() {
-  ComposeTitle("Hello")
+  BillionBeersTheme {
+    ComposeTitle("Hello")
+  }
 }

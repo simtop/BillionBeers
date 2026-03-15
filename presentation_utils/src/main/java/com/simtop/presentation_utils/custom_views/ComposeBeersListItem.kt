@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,11 +33,11 @@ fun ComposeBeersListItem(beer: Beer, onClick: ((Beer) -> Unit)? = null) {
   Card(
     modifier =
       Modifier.fillMaxWidth()
-        .padding(horizontal = 16.dp, vertical = 8.dp)
+        .padding(horizontal = BillionBeersTheme.spacing.medium, vertical = BillionBeersTheme.spacing.small)
         .testTag("beer_list_item")
         .noRippleClickable { onClick?.invoke(beer) },
-    shape = RoundedCornerShape(16.dp),
-    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+    shape = RoundedCornerShape(BillionBeersTheme.spacing.medium),
+    elevation = CardDefaults.cardElevation(defaultElevation = BillionBeersTheme.spacing.extraSmall),
     colors =
       CardDefaults.cardColors(
         containerColor =
@@ -43,28 +45,24 @@ fun ComposeBeersListItem(beer: Beer, onClick: ((Beer) -> Unit)? = null) {
       )
   ) {
     Row(
-      modifier = Modifier.fillMaxWidth().padding(12.dp),
+      modifier = Modifier.fillMaxWidth().padding(BillionBeersTheme.spacing.small + BillionBeersTheme.spacing.extraSmall),
       verticalAlignment = Alignment.CenterVertically
     ) {
       // Beer Image
       BeerImage(imageUrl = beer.imageUrl)
 
-      Spacer(modifier = Modifier.width(16.dp))
+      Spacer(modifier = Modifier.width(BillionBeersTheme.spacing.medium))
 
       // Beer Details
       Column(modifier = Modifier.weight(1f)) {
         Text(
           text = beer.name,
-          style =
-            MaterialTheme.typography.titleMedium.copy(
-              fontWeight = FontWeight.Bold,
-              fontSize = 18.sp
-            ),
+          style = MaterialTheme.typography.titleLarge,
           maxLines = 1,
           overflow = TextOverflow.Ellipsis
         )
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.extraSmall))
 
         Text(
           text = beer.tagline,
@@ -77,19 +75,19 @@ fun ComposeBeersListItem(beer: Beer, onClick: ((Beer) -> Unit)? = null) {
           overflow = TextOverflow.Ellipsis
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.small))
 
         Row(verticalAlignment = Alignment.CenterVertically) {
           BeerChip(
             text = "ABV: ${beer.abv}%",
-            color = Color(0xFFE0F7FA),
-            textColor = Color(0xFF006064)
+            color = Color(ABV_BG_COLOR),
+            textColor = Color(ABV_TEXT_COLOR)
           )
-          Spacer(modifier = Modifier.width(8.dp))
+          Spacer(modifier = Modifier.width(BillionBeersTheme.spacing.small))
           BeerChip(
             text = "IBU: ${beer.ibu}",
-            color = Color(0xFFFBE9E7),
-            textColor = Color(0xFFBF360C)
+            color = Color(IBU_BG_COLOR),
+            textColor = Color(IBU_TEXT_COLOR)
           )
         }
       }
@@ -101,8 +99,8 @@ fun ComposeBeersListItem(beer: Beer, onClick: ((Beer) -> Unit)? = null) {
 fun BeerImage(imageUrl: String) {
   Box(
     modifier =
-      Modifier.size(80.dp)
-        .clip(RoundedCornerShape(12.dp))
+      Modifier.size(BillionBeersTheme.spacing.extraHuge + BillionBeersTheme.spacing.medium)
+        .clip(RoundedCornerShape(BillionBeersTheme.spacing.small + BillionBeersTheme.spacing.extraSmall))
         .background(Color.LightGray.copy(alpha = 0.3f))
   ) {
     AsyncImage(
@@ -123,11 +121,11 @@ fun BeerImage(imageUrl: String) {
 fun BeerChip(text: String, color: Color, textColor: Color) {
   Surface(
     color = color,
-    shape = RoundedCornerShape(8.dp),
+    shape = RoundedCornerShape(BillionBeersTheme.spacing.small),
   ) {
     Text(
       text = text,
-      modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+      modifier = Modifier.padding(horizontal = BillionBeersTheme.spacing.small, vertical = BillionBeersTheme.spacing.extraSmall),
       style =
         MaterialTheme.typography.labelSmall.copy(
           fontWeight = FontWeight.SemiBold,
@@ -137,10 +135,37 @@ fun BeerChip(text: String, color: Color, textColor: Color) {
   }
 }
 
-@Preview
-@Composable
-fun ComposeBeersListItemPreview() {
-  ComposeBeersListItem(
-    Beer.empty.copy(name = "Buzz", tagline = "A Real Bitter Experience.", abv = 4.5, ibu = 60.0)
-  )
+class BeerPreviewParameterProvider : androidx.compose.ui.tooling.preview.PreviewParameterProvider<Beer> {
+    override val values = sequenceOf(
+        Beer.empty.copy(
+            name = "Buzz (Available)", 
+            tagline = "A Real Bitter Experience.", 
+            abv = 4.5, 
+            ibu = 60.0,
+            availability = true
+        ),
+        Beer.empty.copy(
+            name = "Trashy Blonde (Unavailable)", 
+            tagline = "You Know You Shouldn't", 
+            abv = 4.1, 
+            ibu = 41.5,
+            availability = false
+        )
+    )
 }
+
+@PreviewLightDark
+@Composable
+fun ComposeBeersListItemPreview(
+    @androidx.compose.ui.tooling.preview.PreviewParameter(BeerPreviewParameterProvider::class) beer: Beer
+) {
+  BillionBeersTheme {
+    ComposeBeersListItem(beer = beer)
+  }
+}
+
+
+private const val ABV_BG_COLOR = 0xFFE0F7FA
+private const val ABV_TEXT_COLOR = 0xFF006064
+private const val IBU_BG_COLOR = 0xFFFBE9E7
+private const val IBU_TEXT_COLOR = 0xFFBF360C

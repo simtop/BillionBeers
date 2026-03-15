@@ -14,6 +14,7 @@ sealed class Either<out L, out R> {
   val isLeft: Boolean
     get() = this is Left
 
+  @Suppress("MemberNameEqualsClassName")
   inline fun <T> either(fnL: (L) -> T, fnR: (R) -> T): T =
     when (this) {
       is Left -> fnL(value)
@@ -21,6 +22,7 @@ sealed class Either<out L, out R> {
     }
 }
 
+@Suppress("TooGenericExceptionCaught")
 inline fun <T> either(f: () -> T): Either<Exception, T> =
   try {
     Either.Right(f())

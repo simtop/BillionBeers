@@ -1,0 +1,5 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- For Microbenchmarks, we usually want to disable debuggable for accurate results -->
+    </application>
+</manifest>

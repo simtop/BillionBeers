@@ -1,0 +1,20 @@
+scenario,incremental_build
+version,Gradle 8.14
+tasks,assembleDebug
+value,total execution time
+warm-up build #1,495738.60
+warm-up build #2,7032.82
+warm-up build #3,12213.07
+warm-up build #4,3939.02
+warm-up build #5,6848.89
+warm-up build #6,3814.23
+measured build #1,4552.22
+measured build #2,5809.48
+measured build #3,6216.04
+measured build #4,3753.65
+measured build #5,6312.28
+measured build #6,3850.19
+measured build #7,3043.12
+measured build #8,3638.75
+measured build #9,5769.00
+measured build #10,3770.97

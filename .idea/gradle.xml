@@ -13,11 +13,6 @@
                   <project path="$PROJECT_DIR$/build-logic/convention" />
                 </projects>
               </build>
-              <build path="$PROJECT_DIR$/buildSrc" name="buildSrc">
-                <projects>
-                  <project path="$PROJECT_DIR$/buildSrc" />
-                </projects>
-              </build>
             </builds>
           </compositeBuild>
         </compositeConfiguration>
@@ -35,16 +30,23 @@
             <option value="$PROJECT_DIR$/beerdomain/api" />
             <option value="$PROJECT_DIR$/beerdomain/fakes" />
             <option value="$PROJECT_DIR$/beerdomain/impl" />
+            <option value="$PROJECT_DIR$/benchmark" />
+            <option value="$PROJECT_DIR$/benchmark/baselineprofile" />
+            <option value="$PROJECT_DIR$/benchmark/macrobenchmark" />
+            <option value="$PROJECT_DIR$/benchmark/microbenchmark" />
             <option value="$PROJECT_DIR$/build-logic" />
             <option value="$PROJECT_DIR$/build-logic/convention" />
-            <option value="$PROJECT_DIR$/buildSrc" />
+            <option value="$PROJECT_DIR$/catalog" />
             <option value="$PROJECT_DIR$/core" />
             <option value="$PROJECT_DIR$/core-common" />
+            <option value="$PROJECT_DIR$/core/designsystem" />
             <option value="$PROJECT_DIR$/feature" />
             <option value="$PROJECT_DIR$/feature/beerdetail" />
             <option value="$PROJECT_DIR$/feature/beerslist" />
             <option value="$PROJECT_DIR$/navigation" />
             <option value="$PROJECT_DIR$/presentation_utils" />
+            <option value="$PROJECT_DIR$/snapshot-processor" />
+            <option value="$PROJECT_DIR$/snapshot-testing" />
           </set>
         </option>
       </GradleProjectSettings>

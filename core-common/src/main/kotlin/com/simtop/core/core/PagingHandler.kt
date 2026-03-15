@@ -7,12 +7,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
  * mapping PagingState to UI State.
  */
 class PagingHandler<T>(
-  private val _uiState: MutableStateFlow<T>,
+  private val uiState: MutableStateFlow<T>,
   private val reduce: (T, PagingState) -> T
 ) {
   fun handlePagingState(pagingState: PagingState) {
-    val currentState = _uiState.value
+    val currentState = uiState.value
     val newState = reduce(currentState, pagingState)
-    _uiState.value = newState
+    uiState.value = newState
   }
 }

@@ -64,7 +64,13 @@ tasks.register<JacocoReport>("jacocoRootReport") {
         "**/*_MembersInjector*.*",
         "**/*MapperImpl*.*",
         "**/*Module*.*",
-        "**/*Component*.*"
+        "**/*Component*.*",
+        "**/*Screen*.*",
+        "**/*Application*.*",
+        "**/*CommonUiState*.*",
+        "**/*Compose*.*",
+        "**/*.Companion*.*",
+        "**/navigation/*"
     )
 
     additionalSourceDirs.setFrom(subprojectsWithJacoco.map { it.extensions.getByType<JacocoPluginExtension>().reportsDirectory })
