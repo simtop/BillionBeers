@@ -8,8 +8,9 @@ import com.simtop.beerdomain.domain.usecases.UpdateAvailabilityUseCase
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.Either
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedInject
+import dev.zacsweers.metro.Assisted
+import dev.zacsweers.metro.AssistedFactory
+import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

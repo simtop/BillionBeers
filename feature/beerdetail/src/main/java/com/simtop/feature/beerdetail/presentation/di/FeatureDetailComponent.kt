@@ -2,17 +2,18 @@ package com.simtop.feature.beerdetail.presentation.di
 
 import com.simtop.billionbeers.di.DynamicDependencies
 import com.simtop.feature.beerdetail.presentation.BeerDetailViewModel
-import dagger.Component
+import dev.zacsweers.metro.DependencyGraph
+import dev.zacsweers.metro.Includes
 
-@Component(dependencies = [DynamicDependencies::class])
+@DependencyGraph
 interface FeatureDetailComponent {
 
   fun getViewModelFactory(): BeerDetailViewModel.AssistedFactory
 
-  @Component.Factory
-  interface Factory {
+  @DependencyGraph.Factory
+  fun interface Factory {
     fun create(
-      dependencies: DynamicDependencies,
+      @Includes dependencies: DynamicDependencies,
     ): FeatureDetailComponent
   }
 }

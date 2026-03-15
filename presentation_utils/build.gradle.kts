@@ -30,4 +30,5 @@ dependencies {
   implementation(libs.coil3)
   implementation(libs.coil3.view)
   implementation(libs.coil3.network)
+  implementation(libs.lifecycle.viewmodel.compose)
 }

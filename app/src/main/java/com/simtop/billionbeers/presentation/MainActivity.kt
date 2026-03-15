@@ -6,15 +6,15 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.google.android.play.core.splitinstall.SplitInstallManager
-import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
+import com.simtop.billionbeers.BillionBeersApplication
 
-@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-  @Inject lateinit var splitInstallManager: SplitInstallManager
+  lateinit var splitInstallManager: SplitInstallManager
 
   override fun onCreate(savedInstanceState: Bundle?) {
+    val appGraph = (applicationContext as BillionBeersApplication).appGraph
+    splitInstallManager = appGraph.splitInstallManager
     super.onCreate(savedInstanceState)
     enableEdgeToEdge()
     setContent { BillionBeersTheme { AppNavigation(splitInstallManager = splitInstallManager) } }

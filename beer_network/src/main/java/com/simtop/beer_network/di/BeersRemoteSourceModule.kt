@@ -2,17 +2,15 @@ package com.simtop.beer_network.di
 
 import com.simtop.beer_network.remotesources.BeersRemoteSource
 import com.simtop.beer_network.remotesources.BeersRemoteSourceImpl
-import dagger.Binds
-import dagger.Module
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
+import com.simtop.core.di.AppScope
+import dev.zacsweers.metro.ContributesTo
+import dev.zacsweers.metro.Provides
 
-@Module
-@InstallIn(SingletonComponent::class)
-abstract class BeersRemoteSourceModule {
+@ContributesTo(AppScope::class)
+interface BeersRemoteSourceModule {
 
-  @Binds
-  abstract fun bindBeersRemoteSource(
+  @Provides
+  fun provideBeersRemoteSource(
     beersRemoteSourceImpl: BeersRemoteSourceImpl
-  ): BeersRemoteSource
+  ): BeersRemoteSource = beersRemoteSourceImpl
 }

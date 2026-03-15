@@ -4,21 +4,22 @@ import android.content.Context
 import androidx.room.Room
 import com.simtop.beer_database.database.BeersDao
 import com.simtop.beer_database.database.BeersDatabase
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
-import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
+import com.simtop.core.di.AppScope
+import dev.zacsweers.metro.SingleIn
+import com.simtop.core.di.ApplicationContext
+import dev.zacsweers.metro.ContributesTo
+import dev.zacsweers.metro.Provides
+import com.simtop.core.core.BEERS_DB_NAME
 
-@Module
-@InstallIn(SingletonComponent::class)
-object BeersDatabaseModule {
+@ContributesTo(AppScope::class)
+interface BeersDatabaseModule {
 
   @Provides
-  @Singleton
+  @SingleIn(AppScope::class)
   fun provideDatabase(@ApplicationContext app: Context): BeersDatabase =
-    Room.databaseBuilder(app, BeersDatabase::class.java, com.simtop.core.core.BEERS_DB_NAME).build()
+    Room.databaseBuilder(app, BeersDatabase::class.java, BEERS_DB_NAME).build()
 
-  @Provides @Singleton fun provideBeersDao(db: BeersDatabase): BeersDao = db.beersDao()
+  @Provides
+  @SingleIn(AppScope::class)
+  fun provideBeersDao(db: BeersDatabase): BeersDao = db.beersDao()
 }

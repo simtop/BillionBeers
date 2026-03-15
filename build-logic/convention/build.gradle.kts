@@ -9,7 +9,7 @@ dependencies {
     implementation(libs.kotlinGradlePlugin)
     implementation(libs.composeCompilerGradlePlugin)
     implementation(libs.roomGradlePlugin)
-    implementation(libs.hiltAndroidGradlePlugin)
+    implementation(libs.metro.gradle.plugin)
     implementation(libs.kspGradlePlugin)
     implementation(libs.navigationSafeArgsPlugin)
     implementation(libs.android.junit5.plugin)

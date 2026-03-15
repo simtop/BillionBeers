@@ -11,7 +11,9 @@ import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.PagingHandler
 import com.simtop.core.core.PagingState
-import dagger.hilt.android.lifecycle.HiltViewModel
+import com.simtop.core.di.AppScope
+import com.simtop.core.di.ViewModelKey
+import dev.zacsweers.metro.ContributesIntoMap
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,7 +22,8 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
-@HiltViewModel
+@ContributesIntoMap(AppScope::class)
+@ViewModelKey(BeersListViewModel::class)
 class BeersListViewModel
 @Inject
 constructor(

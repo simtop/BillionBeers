@@ -26,7 +26,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -45,26 +44,27 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.play.core.splitinstall.SplitInstallManager
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
+import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.core.core.CommonUiState
 import com.simtop.navigation.FeatureConstants
 import com.simtop.presentation_utils.core.DynamicFeatureLoader
 import com.simtop.presentation_utils.core.InfiniteListHandler
+import com.simtop.presentation_utils.core.metroViewModel
 import com.simtop.presentation_utils.core.shimmerBrush
 import com.simtop.presentation_utils.core.showToast
 import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import com.simtop.presentation_utils.custom_views.ComposeErrorView
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.repeatOnLifecycle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BeersListScreen(
-    viewModel: BeersListViewModel = hiltViewModel(),
+    viewModel: BeersListViewModel = metroViewModel(),
     splitInstallManager: SplitInstallManager? = null,
     onBeerClick: (Beer) -> Unit
 ) {

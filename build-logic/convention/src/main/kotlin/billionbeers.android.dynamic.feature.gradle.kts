@@ -7,7 +7,7 @@ plugins {
     id("com.android.dynamic-feature")
     id("org.jetbrains.kotlin.android")
     id("de.mannodermaus.android-junit5")
-    id("com.google.devtools.ksp")
+    id("billionbeers.android.metro")
     id("billionbeers.jacoco")
     id("billionbeers.spotless")
     id("billionbeers.detekt")
@@ -50,12 +50,6 @@ dependencies {
     implementation(libs.navigationUi)
     implementation(libs.navigationDynamicFeaturesFragment)
 
-    // Hilt dependencies for Dynamic Feature
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
-    ksp(libs.androidx.hilt.compiler)
-    
-    testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.coreTesting)
     testImplementation(libs.coroutinesTest)

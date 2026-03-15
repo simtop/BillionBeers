@@ -29,8 +29,6 @@ dependencies {
   testImplementation(libs.okhttp3Mockwebserver)
   testImplementation(libs.turbine)
 
-  androidTestImplementation(libs.hiltAndroidTesting)
-
   androidTestImplementation(libs.kotlinTestJunit)
   androidTestImplementation(libs.coroutinesTest)
   androidTestImplementation(libs.espressoContrib)

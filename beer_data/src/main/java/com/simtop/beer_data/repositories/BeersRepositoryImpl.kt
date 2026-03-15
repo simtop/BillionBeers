@@ -6,8 +6,9 @@ import com.simtop.beer_network.remotesources.BeersRemoteSource
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.PagingMediator
+import com.simtop.core.di.AppScope
+import dev.zacsweers.metro.SingleIn
 import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -16,7 +17,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 
-@Singleton
+@SingleIn(AppScope::class)
 class BeersRepositoryImpl
 @Inject
 constructor(
