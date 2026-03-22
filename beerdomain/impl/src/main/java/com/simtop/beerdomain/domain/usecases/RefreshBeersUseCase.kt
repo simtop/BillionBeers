@@ -1,7 +1,7 @@
 package com.simtop.beerdomain.domain.usecases
 
 import com.simtop.beerdomain.domain.repositories.BeersRepository
-import javax.inject.Inject
+import dev.zacsweers.metro.Inject
 
 class RefreshBeersUseCase @Inject constructor(private val beersRepository: BeersRepository) {
   suspend fun execute() {

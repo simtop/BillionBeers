@@ -4,7 +4,7 @@ import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.BaseUseCase
 import com.simtop.core.core.Either
-import javax.inject.Inject
+import dev.zacsweers.metro.Inject
 
 class UpdateAvailabilityUseCase @Inject constructor(private val beersRepository: BeersRepository) :
   BaseUseCase<Unit, UpdateAvailabilityUseCase.Params>() {

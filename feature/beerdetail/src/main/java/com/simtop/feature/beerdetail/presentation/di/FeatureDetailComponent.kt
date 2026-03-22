@@ -8,7 +8,7 @@ import dev.zacsweers.metro.Includes
 @DependencyGraph
 interface FeatureDetailComponent {
 
-  fun getViewModelFactory(): BeerDetailViewModel.AssistedFactory
+  fun getViewModelFactory(): BeerDetailViewModel.Factory
 
   @DependencyGraph.Factory
   fun interface Factory {

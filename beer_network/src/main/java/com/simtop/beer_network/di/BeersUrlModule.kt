@@ -4,7 +4,7 @@ import com.simtop.core.di.AppScope
 import dev.zacsweers.metro.SingleIn
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.Provides
-import javax.inject.Named
+import com.simtop.core.di.Named
 
 @ContributesTo(AppScope::class)
 interface BeersUrlModule {

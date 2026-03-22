@@ -58,6 +58,7 @@ import com.simtop.presentation_utils.core.InfiniteListHandler
 import com.simtop.presentation_utils.core.metroViewModel
 import com.simtop.presentation_utils.core.shimmerBrush
 import com.simtop.presentation_utils.core.showToast
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import com.simtop.presentation_utils.custom_views.ComposeErrorView
 
@@ -73,16 +74,6 @@ fun BeersListScreen(
     // State to track if we are installing the feature for a specific beer
     var installingBeer by remember { mutableStateOf<Beer?>(null) }
 
-    val lifecycleOwner = LocalLifecycleOwner.current
-
-    LaunchedEffect(lifecycleOwner.lifecycle) {
-        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            if (viewModel.beerListViewState.value is CommonUiState.Success || viewModel.beerListViewState.value is CommonUiState.Error) {
-                viewModel.refresh()
-            }
-        }
-    }
-
     LaunchedEffect(Unit) {
         if (viewModel.beerListViewState.value is CommonUiState.Empty) {
             viewModel.getAllBeers()
@@ -93,6 +84,7 @@ fun BeersListScreen(
         viewState = viewState,
         onBeerClick = { beer -> installingBeer = beer },
         onScrollToBottom = { viewModel.onScrollToBottom() },
+        onRefresh = { viewModel.refresh() },
         onRetry = { viewModel.getAllBeers() }
     )
 
@@ -116,6 +108,7 @@ fun BeersListContent(
     viewState: CommonUiState<BeersListUiModel>,
     onBeerClick: (Beer) -> Unit,
     onScrollToBottom: () -> Unit,
+    onRefresh: () -> Unit,
     onRetry: () -> Unit
 ) {
     val context = LocalContext.current
@@ -158,7 +151,9 @@ fun BeersListContent(
                 dataVisibility.value = true
 
                 val beers = state.data.beers
-                Box(
+                PullToRefreshBox(
+                    isRefreshing = state.data.isRefreshing,
+                    onRefresh = onRefresh,
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(top = paddingValues.calculateTopPadding())
@@ -281,6 +276,7 @@ fun BeersListScreenPreview(
             viewState = state.uiState,
             onBeerClick = {},
             onScrollToBottom = {},
+            onRefresh = {},
             onRetry = {}
         )
     }

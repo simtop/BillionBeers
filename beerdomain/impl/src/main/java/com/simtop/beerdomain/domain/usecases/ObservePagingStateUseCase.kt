@@ -2,7 +2,7 @@ package com.simtop.beerdomain.domain.usecases
 
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.PagingState
-import javax.inject.Inject
+import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.flow.Flow
 
 class ObservePagingStateUseCase @Inject constructor(private val beersRepository: BeersRepository) {

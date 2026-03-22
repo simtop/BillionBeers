@@ -1,6 +1,6 @@
 package com.simtop.core.di
 
-import javax.inject.Qualifier
+import dev.zacsweers.metro.Qualifier
 
 @Qualifier
 @Retention(AnnotationRetention.RUNTIME)

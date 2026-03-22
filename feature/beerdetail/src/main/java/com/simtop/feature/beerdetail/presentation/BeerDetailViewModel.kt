@@ -1,7 +1,6 @@
 package com.simtop.feature.beerdetail.presentation
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.usecases.UpdateAvailabilityUseCase
@@ -23,6 +22,11 @@ constructor(
   private val availabilityUseCase: UpdateAvailabilityUseCase,
   @Assisted private val beer: Beer
 ) : ViewModel() {
+
+  @AssistedFactory
+  interface Factory {
+    fun create(beer: Beer): BeerDetailViewModel
+  }
 
   private val _beerDetailViewState = MutableStateFlow<CommonUiState<Beer>>(CommonUiState.Loading)
   val beerDetailViewState: StateFlow<CommonUiState<Beer>> = _beerDetailViewState.asStateFlow()
@@ -49,19 +53,5 @@ constructor(
 
   private fun changeAvailability(beer: Beer) {
     _beerDetailViewState.value = CommonUiState.Success(beer)
-  }
-
-  @dagger.assisted.AssistedFactory
-  interface AssistedFactory {
-    fun create(beer: Beer): BeerDetailViewModel
-  }
-
-  companion object {
-    fun provideFactory(assistedFactory: AssistedFactory, beer: Beer): ViewModelProvider.Factory =
-      object : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-          return assistedFactory.create(beer) as T
-        }
-      }
   }
 }

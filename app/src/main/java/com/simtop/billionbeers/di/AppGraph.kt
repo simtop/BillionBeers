@@ -11,11 +11,7 @@ import dev.zacsweers.metro.DependencyGraph
 import dev.zacsweers.metro.Provides
 
 @DependencyGraph(AppScope::class)
-interface AppGraph : DynamicDependencies {
-    override val useCase: UpdateAvailabilityUseCase
-    override val coroutineDispatcher: CoroutineDispatcherProvider
-    val splitInstallManager: SplitInstallManager
-    val viewModelFactory: ViewModelFactory
+interface AppGraph : BaseAppGraph {
 
     @DependencyGraph.Factory
     fun interface Factory {
