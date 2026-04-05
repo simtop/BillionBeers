@@ -9,6 +9,7 @@ val libs = the<LibrariesForLibs>()
 
 dependencies {
     add("implementation", libs.metro.runtime)
+    add("implementation", libs.metrox.viewmodel)
 }
 
 metro {

@@ -10,23 +10,30 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.billionbeers.BillionBeersApplication
-import com.simtop.feature.beerdetail.presentation.di.FeatureDetailComponent
-import dev.zacsweers.metro.createGraphFactory
 import com.simtop.core.core.CommonUiState
 import com.simtop.presentation_utils.core.showToast
-import com.simtop.presentation_utils.core.assistedViewModel
+import dev.zacsweers.metrox.viewmodel.assistedMetroViewModel
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
+import com.simtop.billionbeers.BillionBeersApplication
+import com.simtop.billionbeers.di.DynamicDependencies
+import com.simtop.feature.beerdetail.presentation.di.FeatureDetailComponent
+import dev.zacsweers.metro.createGraphFactory
+import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 
 @Composable
 fun BeerDetailScreenImpl(beer: Beer, onBackClick: () -> Unit) {
   val context = LocalContext.current
 
-  val viewModel: BeerDetailViewModel = assistedViewModel {
-    val appGraph = (context.applicationContext as BillionBeersApplication).appGraph as com.simtop.billionbeers.di.DynamicDependencies
+  val factory = remember {
+    val appGraph = (context.applicationContext as BillionBeersApplication).appGraph as DynamicDependencies
     val component = createGraphFactory<FeatureDetailComponent.Factory>().create(appGraph)
-    component.getViewModelFactory().create(beer)
+    component.metroViewModelFactory
   }
-  val viewState by viewModel.beerDetailViewState.collectAsState()
+
+  CompositionLocalProvider(LocalMetroViewModelFactory provides factory) {
+    val viewModel: BeerDetailViewModel = assistedMetroViewModel<BeerDetailViewModel, BeerDetailViewModel.Factory> { create(beer) }
+    val viewState by viewModel.beerDetailViewState.collectAsState()
 
   when (val state = viewState) {
     is CommonUiState.Success -> {
@@ -44,6 +51,7 @@ fun BeerDetailScreenImpl(beer: Beer, onBackClick: () -> Unit) {
         CircularProgressIndicator()
       }
     }
-    else -> {}
+      else -> {}
+    }
   }
 }

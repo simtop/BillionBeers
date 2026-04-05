@@ -5,13 +5,13 @@ import com.simtop.billionbeers.di.AppGraph
 import com.simtop.billionbeers.di.BaseAppGraph
 import dev.zacsweers.metro.createGraphFactory
 import com.simtop.core.di.GraphProvider
-import com.simtop.core.di.ViewModelFactory
+import dev.zacsweers.metrox.viewmodel.MetroViewModelFactory
 
 class BillionBeersApplication : SplitCompatApplication(), GraphProvider {
     lateinit var appGraph: BaseAppGraph
 
-    override val viewModelFactory: ViewModelFactory
-        get() = appGraph.viewModelFactory
+    override val metroViewModelFactory: MetroViewModelFactory
+        get() = appGraph.metroViewModelFactory
 
     override fun onCreate() {
         super.onCreate()

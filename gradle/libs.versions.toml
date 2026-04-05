@@ -66,8 +66,9 @@ androidPlayCore = "com.google.android.play:feature-delivery:2.1.0"
 androidPlayCoreKtx = "com.google.android.play:feature-delivery-ktx:2.1.0"
 metro-runtime = { module = "dev.zacsweers.metro:runtime", version.ref = "dev-zacsweers-metro" }
 metro-compiler = { module = "dev.zacsweers.metro:compiler", version.ref = "dev-zacsweers-metro" }
-metro-interop-dagger = { module = "dev.zacsweers.metro:interop-dagger", version.ref = "dev-zacsweers-metro" }
 metro-gradle-plugin = { module = "dev.zacsweers.metro:gradle-plugin", version.ref = "dev-zacsweers-metro" }
+metrox-viewmodel = { module = "dev.zacsweers.metro:metrox-viewmodel", version.ref = "dev-zacsweers-metro" }
+metrox-viewmodel-compose = { module = "dev.zacsweers.metro:metrox-viewmodel-compose", version.ref = "dev-zacsweers-metro" }
 # coil dependencies... (keeping them as is)
 androidxComposeBom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 androidxActivityCompose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }

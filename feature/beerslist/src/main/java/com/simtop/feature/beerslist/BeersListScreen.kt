@@ -55,7 +55,7 @@ import com.simtop.core.core.CommonUiState
 import com.simtop.navigation.FeatureConstants
 import com.simtop.presentation_utils.core.DynamicFeatureLoader
 import com.simtop.presentation_utils.core.InfiniteListHandler
-import com.simtop.presentation_utils.core.metroViewModel
+import dev.zacsweers.metrox.viewmodel.metroViewModel
 import com.simtop.presentation_utils.core.shimmerBrush
 import com.simtop.presentation_utils.core.showToast
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox

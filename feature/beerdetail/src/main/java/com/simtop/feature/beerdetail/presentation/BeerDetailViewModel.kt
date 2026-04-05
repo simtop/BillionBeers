@@ -7,9 +7,13 @@ import com.simtop.beerdomain.domain.usecases.UpdateAvailabilityUseCase
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.Either
+import com.simtop.feature.beerdetail.presentation.di.FeatureDetailScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
+import dev.zacsweers.metro.ContributesIntoMap
+import dev.zacsweers.metrox.viewmodel.ManualViewModelAssistedFactory
+import dev.zacsweers.metrox.viewmodel.ManualViewModelAssistedFactoryKey
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,8 +28,10 @@ constructor(
 ) : ViewModel() {
 
   @AssistedFactory
-  interface Factory {
-    fun create(beer: Beer): BeerDetailViewModel
+  @ManualViewModelAssistedFactoryKey(Factory::class)
+  @ContributesIntoMap(FeatureDetailScope::class)
+  interface Factory : ManualViewModelAssistedFactory {
+    fun create(@Assisted beer: Beer): BeerDetailViewModel
   }
 
   private val _beerDetailViewState = MutableStateFlow<CommonUiState<Beer>>(CommonUiState.Loading)

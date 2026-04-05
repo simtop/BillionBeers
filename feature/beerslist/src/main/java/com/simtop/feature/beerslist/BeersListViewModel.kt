@@ -12,7 +12,7 @@ import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.PagingHandler
 import com.simtop.core.core.PagingState
 import com.simtop.core.di.AppScope
-import com.simtop.core.di.ViewModelKey
+import dev.zacsweers.metrox.viewmodel.ViewModelKey
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
