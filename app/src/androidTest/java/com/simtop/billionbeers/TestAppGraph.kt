@@ -9,6 +9,7 @@ import com.simtop.billionbeers.di.BaseAppGraph
 import com.simtop.billionbeers.di.SplitInstallModule
 import com.simtop.core.di.AppScope
 import com.simtop.core.di.ApplicationContext
+import com.simtop.core.di.DefaultMetroViewModelFactory
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.DependencyGraph
@@ -40,7 +41,7 @@ interface TestViewModelMapsModule {
 )
 interface TestAppGraph : BaseAppGraph {
     override val splitInstallManager: SplitInstallManager
-    override val metroViewModelFactory: TestViewModelFactory
+    override val metroViewModelFactory: DefaultMetroViewModelFactory
 
     @DependencyGraph.Factory
     fun interface Factory {
