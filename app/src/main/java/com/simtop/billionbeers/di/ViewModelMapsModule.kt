@@ -1,7 +1,7 @@
 package com.simtop.billionbeers.di
 
 import androidx.lifecycle.ViewModel
-import dev.zacsweers.metro.AppScope
+import com.simtop.core.di.AppScope
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.Multibinds
 import dev.zacsweers.metrox.viewmodel.ManualViewModelAssistedFactory

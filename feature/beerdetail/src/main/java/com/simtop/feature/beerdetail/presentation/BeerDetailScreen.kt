@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.core.core.CommonUiState
-import com.simtop.presentation_utils.core.showToast
+import com.simtop.billionbeers.core.designsystem.component.showToast
 import dev.zacsweers.metrox.viewmodel.assistedMetroViewModel
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
@@ -44,7 +44,7 @@ fun BeerDetailScreenImpl(beer: Beer, onBackClick: () -> Unit) {
       )
     }
     is CommonUiState.Error -> {
-      state.message?.let { context.showToast(it) }
+      state.message?.let { showToast(context = context, message = it) }
     }
     CommonUiState.Loading -> {
       Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

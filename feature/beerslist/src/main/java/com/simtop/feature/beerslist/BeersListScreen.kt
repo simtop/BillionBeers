@@ -29,38 +29,43 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.draw.clip
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.repeatOnLifecycle
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import com.google.android.play.core.splitinstall.SplitInstallManager
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
+import com.simtop.billionbeers.core.designsystem.component.shimmerBrush
+import com.simtop.billionbeers.core.designsystem.component.showToast
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.core.core.CommonUiState
 import com.simtop.navigation.FeatureConstants
 import com.simtop.presentation_utils.core.DynamicFeatureLoader
 import com.simtop.presentation_utils.core.InfiniteListHandler
-import dev.zacsweers.metrox.viewmodel.metroViewModel
-import com.simtop.presentation_utils.core.shimmerBrush
-import com.simtop.presentation_utils.core.showToast
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import com.simtop.presentation_utils.custom_views.ComposeErrorView
+import dev.zacsweers.metrox.viewmodel.metroViewModel
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,7 +74,7 @@ fun BeersListScreen(
     splitInstallManager: SplitInstallManager? = null,
     onBeerClick: (Beer) -> Unit
 ) {
-    val viewState by viewModel.beerListViewState.collectAsState()
+    val rawState by viewModel.beerListViewState.collectAsState()
 
     // State to track if we are installing the feature for a specific beer
     var installingBeer by remember { mutableStateOf<Beer?>(null) }
@@ -81,7 +86,7 @@ fun BeersListScreen(
     }
 
     BeersListContent(
-        viewState = viewState,
+        viewState = rawState,
         onBeerClick = { beer -> installingBeer = beer },
         onScrollToBottom = { viewModel.onScrollToBottom() },
         onRefresh = { viewModel.refresh() },
@@ -122,7 +127,14 @@ fun BeersListContent(
     ) { paddingValues ->
         val dataVisibility = rememberSaveable { mutableStateOf(false) }
 
-        when (val state = viewState) {
+        AnimatedContent(
+            targetState = viewState,
+            label = "ScreenStateAnimation",
+            transitionSpec = {
+                fadeIn(animationSpec = tween(300)) togetherWith fadeOut(animationSpec = tween(300))
+            }
+        ) { state ->
+            when (state) {
             CommonUiState.Empty -> {
                 ComposeErrorView(
                     onRetry = onRetry,
@@ -138,7 +150,7 @@ fun BeersListContent(
                 )
                 state.message?.let { message ->
                     LaunchedEffect(message) {
-                        context.showToast(message)
+                        showToast(context, message)
                     }
                 }
             }
@@ -207,6 +219,7 @@ fun BeersListContent(
             }
         }
     }
+}
 }
 
 class BeersListPreviewParameterProvider :

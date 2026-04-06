@@ -1,4 +1,4 @@
-package com.simtop.presentation_utils.core
+package com.simtop.billionbeers.core.designsystem.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box

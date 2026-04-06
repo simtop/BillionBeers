@@ -16,6 +16,7 @@ import com.google.android.play.core.splitinstall.SplitInstallManagerFactory
 import com.google.android.play.core.splitinstall.SplitInstallRequest
 import com.google.android.play.core.splitinstall.SplitInstallStateUpdatedListener
 import com.google.android.play.core.splitinstall.model.SplitInstallSessionStatus
+import com.simtop.billionbeers.core.designsystem.component.DialogWithProgressBar
 
 @Composable
 fun DynamicFeatureLoader(
