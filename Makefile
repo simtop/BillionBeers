@@ -24,6 +24,13 @@ install: ## Install the debug APK to a connected device.
 clean: ## Clean all build outputs.
 	./gradlew clean
 
+deep-clean: ## Stop daemon and deeply clean all gradle caches to fix corrupted states.
+	./gradlew --stop
+	rm -rf .gradle build build-logic/.gradle build-logic/build build-logic/convention/.gradle build-logic/convention/build
+	find . -name "build" -type d -prune -exec rm -rf '{}' +
+	rm -rf ~/.gradle/caches/build-cache-*
+	rm -rf ~/.gradle/caches/8.*
+
 # Testing
 test: ## Run unit tests for the specified module (or all).
 	./gradlew $(MODULE):testDebugUnitTest
