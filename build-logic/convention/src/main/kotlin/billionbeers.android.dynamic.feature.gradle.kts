@@ -5,7 +5,6 @@ import org.gradle.accessors.dm.LibrariesForLibs
 
 plugins {
     id("com.android.dynamic-feature")
-    id("org.jetbrains.kotlin.android")
     id("de.mannodermaus.android-junit5")
     id("billionbeers.android.metro")
     id("billionbeers.android.compose")

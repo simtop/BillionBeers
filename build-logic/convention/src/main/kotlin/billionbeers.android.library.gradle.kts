@@ -1,11 +1,9 @@
-import com.android.build.gradle.LibraryExtension
+import com.android.build.api.dsl.LibraryExtension
 import org.gradle.api.JavaVersion
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.gradle.accessors.dm.LibrariesForLibs
 
 plugins {
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
     id("kotlin-parcelize")
     id("billionbeers.jacoco")
     id("billionbeers.spotless")
@@ -16,7 +14,9 @@ plugins {
 
 val libs = the<LibrariesForLibs>()
 
-configure<LibraryExtension> {
+val android = the<LibraryExtension>()
+
+android.apply {
     compileSdk = 35
 
     defaultConfig {
@@ -65,11 +65,4 @@ dependencies {
 
 tasks.withType<Test> {
     useJUnitPlatform()
-}
-
-tasks.withType<KotlinCompile>().configureEach {
-    compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_23)
-        freeCompilerArgs.add("-Xstring-concat=inline")
-    }
 }

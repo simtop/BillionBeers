@@ -1,12 +1,10 @@
 import com.android.build.api.dsl.ApplicationExtension
 import org.gradle.api.JavaVersion
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.gradle.accessors.dm.LibrariesForLibs
 import java.util.Properties
 
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
     id("billionbeers.jacoco")
     id("billionbeers.spotless")
     id("billionbeers.detekt")
@@ -16,7 +14,9 @@ plugins {
 
 val libs = the<LibrariesForLibs>()
 
-configure<ApplicationExtension> {
+val android = the<ApplicationExtension>()
+
+android.apply {
     compileSdk = 35
 
     defaultConfig {
@@ -106,11 +106,4 @@ dependencies {
     androidTestImplementation(libs.mockkAndroid)
     androidTestImplementation(libs.junitKtx)
     androidTestImplementation(libs.coreTesting)
-}
-
-tasks.withType<KotlinCompile>().configureEach {
-    compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_23)
-        freeCompilerArgs.add("-Xstring-concat=inline")
-    }
 }

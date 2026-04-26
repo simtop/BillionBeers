@@ -1,18 +1,17 @@
 import org.gradle.accessors.dm.LibrariesForLibs
 
-plugins {
-    id("org.jetbrains.kotlin.android")
-    id("dev.zacsweers.metro")
-}
-
 val libs = the<LibrariesForLibs>()
 
-dependencies {
-    add("implementation", libs.metro.runtime)
-    add("implementation", libs.metrox.viewmodel)
-}
+pluginManager.withPlugin("com.android.base") {
+    pluginManager.apply("dev.zacsweers.metro")
+    
+    dependencies {
+        add("implementation", libs.metro.runtime)
+        add("implementation", libs.metrox.viewmodel)
+    }
 
-metro {
-    enableTopLevelFunctionInjection.set(true)
-    generateAssistedFactories.set(true)
+    extensions.getByType<dev.zacsweers.metro.gradle.MetroPluginExtension>().apply {
+        enableTopLevelFunctionInjection.set(true)
+        generateAssistedFactories.set(true)
+    }
 }

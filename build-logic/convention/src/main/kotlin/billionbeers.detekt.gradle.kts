@@ -16,6 +16,12 @@ configure<DetektExtension> {
     ignoreFailures = true
 }
 
+// Detekt tasks will be configured by the plugin automatically in modern versions
+// or can be customized later once we identify the correct AGP 9.0 property.
+/*
 tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
-    jvmTarget = "21"
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_23)
+    }
 }
+*/

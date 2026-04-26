@@ -10,10 +10,7 @@ plugins {
 
 val libs = the<LibrariesForLibs>()
 
-fun configureCompose(commonExtension: CommonExtension<*, *, *, *, *, *>) {
-    commonExtension.buildFeatures {
-        compose = true
-    }
+fun configureCompose(commonExtension: CommonExtension) {
 
     dependencies {
         add("implementation", platform(libs.androidxComposeBom))

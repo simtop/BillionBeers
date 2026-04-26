@@ -9,15 +9,14 @@ plugins {
   alias(libs.plugins.androidx.baseline.profile)
 }
 
+baselineProfile {
+  from(project(":benchmark:baselineprofile"))
+  automaticGenerationDuringBuild = true
+}
+
 android {
   namespace = "com.simtop.billionbeers"
   dynamicFeatures += setOf(":feature:beerdetail")
-
-  baselineProfile {
-    from(project(":benchmark:baselineprofile"))
-    // TODO: think if to keep it or not, in theory it just affects release builds
-    automaticGenerationDuringBuild = true
-  }
 
   packaging {
     resources {
