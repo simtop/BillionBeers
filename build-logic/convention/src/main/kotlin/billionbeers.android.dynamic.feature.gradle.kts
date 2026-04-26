@@ -1,10 +1,9 @@
 import com.android.build.api.dsl.DynamicFeatureExtension
-import org.gradle.api.JavaVersion
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.gradle.accessors.dm.LibrariesForLibs
 
 plugins {
     id("com.android.dynamic-feature")
+    id("billionbeers.android.common")
     id("de.mannodermaus.android-junit5")
     id("billionbeers.android.metro")
     id("billionbeers.android.compose")
@@ -16,62 +15,38 @@ plugins {
 val libs = the<LibrariesForLibs>()
 
 configure<DynamicFeatureExtension> {
-    compileSdk = 35
-
-    defaultConfig {
-        minSdk = 28
-        testInstrumentationRunner = "com.simtop.billionbeers.di.MockTestRunner"
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_23
-        targetCompatibility = JavaVersion.VERSION_23
-    }
-
     packaging {
         resources {
-            excludes += "META-INF/AL2.0"
-            excludes += "META-INF/LGPL2.1"
-            excludes += "META-INF/licenses/ASM"
             pickFirsts += "**/attach_hotspot_windows.dll"
         }
     }
 }
 
 dependencies {
-    implementation(project(":app"))
-    implementation(libs.coreKtx)
-    implementation(libs.appcompat)
-    implementation(libs.material)
-    implementation(libs.constraintlayout)
+    "implementation"(project(":app"))
+    "implementation"(libs.coreKtx)
+    "implementation"(libs.appcompat)
+    "implementation"(libs.material)
+    "implementation"(libs.constraintlayout)
     
-    implementation(libs.lifecycleRuntimeKtx)
-    implementation(libs.navigationFragmentKtx)
-    implementation(libs.navigationUi)
-    implementation(libs.navigationDynamicFeaturesFragment)
+    "implementation"(libs.lifecycleRuntimeKtx)
+    "implementation"(libs.navigationFragmentKtx)
+    "implementation"(libs.navigationUi)
+    "implementation"(libs.navigationDynamicFeaturesFragment)
 
-    testImplementation(libs.mockk)
-    testImplementation(libs.coreTesting)
-    testImplementation(libs.coroutinesTest)
-    testImplementation(libs.kluentAndroid)
-    testImplementation(libs.turbine)
-    testImplementation(libs.junit.jupiter.api)
-    testImplementation(libs.junit.jupiter.params)
-    testRuntimeOnly(libs.junit.jupiter.engine)
-    testRuntimeOnly(libs.junit.vintage.engine)
+    "testImplementation"(libs.mockk)
+    "testImplementation"(libs.coreTesting)
+    "testImplementation"(libs.coroutinesTest)
+    "testImplementation"(libs.kluentAndroid)
+    "testImplementation"(libs.turbine)
+    "testImplementation"(libs.junit.jupiter.api)
+    "testImplementation"(libs.junit.jupiter.params)
+    "testRuntimeOnly"(libs.junit.jupiter.engine)
+    "testRuntimeOnly"(libs.junit.vintage.engine)
 
-    androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.espressoCore)
-    androidTestImplementation(libs.coreTesting)
+    "androidTestImplementation"(libs.junit)
+    "androidTestImplementation"(libs.espressoCore)
+    "androidTestImplementation"(libs.coreTesting)
 }
 
-tasks.withType<Test> {
-    useJUnitPlatform()
-}
 
-tasks.withType<KotlinCompile>().configureEach {
-    compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_23)
-        freeCompilerArgs.add("-Xstring-concat=inline")
-    }
-}

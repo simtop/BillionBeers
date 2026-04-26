@@ -13,15 +13,16 @@ val libs = the<LibrariesForLibs>()
 fun configureCompose(commonExtension: CommonExtension) {
 
     dependencies {
-        add("implementation", platform(libs.androidxComposeBom))
-        add("androidTestImplementation", platform(libs.androidxComposeBom))
+        "implementation"(platform(libs.androidxComposeBom))
+        "androidTestImplementation"(platform(libs.androidxComposeBom))
         
-        add("implementation", libs.androidxActivityCompose)
-        add("implementation", libs.androidx.foundation.android)
-        add("implementation", libs.androidx.material3.android)
-        add("implementation", libs.androidx.ui.tooling.preview.android)
-        add("implementation", libs.androidx.runtime.livedata)
-        add("implementation", libs.metrox.viewmodel.compose)
+        "implementation"(libs.androidxActivityCompose)
+        "implementation"(libs.androidx.foundation.android)
+        "implementation"(libs.androidx.material3.android)
+        "implementation"(libs.androidx.compose.material.icons.core)
+        "implementation"(libs.androidx.ui.tooling.preview.android)
+        "implementation"(libs.androidx.runtime.livedata)
+        "implementation"(libs.metrox.viewmodel.compose)
     }
 }
 

@@ -1,10 +1,9 @@
 import com.android.build.api.dsl.ApplicationExtension
-import org.gradle.api.JavaVersion
-import org.gradle.accessors.dm.LibrariesForLibs
 import java.util.Properties
 
 plugins {
     id("com.android.application")
+    id("billionbeers.android.common")
     id("billionbeers.jacoco")
     id("billionbeers.spotless")
     id("billionbeers.detekt")
@@ -12,34 +11,15 @@ plugins {
     id("billionbeers.unused-dependencies")
 }
 
-val libs = the<LibrariesForLibs>()
-
+val libs = the<org.gradle.accessors.dm.LibrariesForLibs>()
 val android = the<ApplicationExtension>()
 
 android.apply {
-    compileSdk = 35
-
     defaultConfig {
-        minSdk = 28
-        targetSdk = 35
+        targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 60
         versionName = "0.60"
-        testInstrumentationRunner = "com.simtop.billionbeers.di.MockTestRunner"
         multiDexEnabled = true
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_23
-        targetCompatibility = JavaVersion.VERSION_23
-    }
-
-    packaging {
-        resources {
-            excludes += "META-INF/AL2.0"
-            excludes += "META-INF/LGPL2.1"
-            excludes += "META-INF/licenses/ASM"
-            excludes += "META-INF/*.kotlin_module"
-        }
     }
 
     signingConfigs {
@@ -84,26 +64,34 @@ android.apply {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "benchmark-rules.pro")
         }
     }
+
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "/META-INF/licenses/ASM"
+            excludes += "META-INF/*.kotlin_module"
+        }
+    }
 }
 
 dependencies {
-    implementation(libs.tracing.perfetto)
-    implementation(libs.tracing.perfetto.binary)
-    testImplementation(libs.junit)
-    testImplementation(libs.mockk)
-    testImplementation(libs.coreTesting)
-    testImplementation(libs.coroutinesTest)
-    testImplementation(libs.kluentAndroid)
-    testImplementation(libs.turbine)
+    "implementation"(libs.tracing.perfetto)
+    "implementation"(libs.tracing.perfetto.binary)
+    "testImplementation"(libs.junit)
+    "testImplementation"(libs.mockk)
+    "testImplementation"(libs.coreTesting)
+    "testImplementation"(libs.coroutinesTest)
+    "testImplementation"(libs.kluentAndroid)
+    "testImplementation"(libs.turbine)
 
-    androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.kotlinTestJunit)
-    androidTestImplementation(libs.coroutinesTest)
-    androidTestImplementation(libs.espressoCore)
-    androidTestImplementation(libs.testRunner)
-    androidTestImplementation(libs.testRules)
-    androidTestImplementation(libs.testCoreKtx)
-    androidTestImplementation(libs.mockkAndroid)
-    androidTestImplementation(libs.junitKtx)
-    androidTestImplementation(libs.coreTesting)
+    "androidTestImplementation"(libs.junit)
+    "androidTestImplementation"(libs.kotlinTestJunit)
+    "androidTestImplementation"(libs.coroutinesTest)
+    "androidTestImplementation"(libs.espressoCore)
+    "androidTestImplementation"(libs.testRunner)
+    "androidTestImplementation"(libs.testRules)
+    "androidTestImplementation"(libs.testCoreKtx)
+    "androidTestImplementation"(libs.mockkAndroid)
+    "androidTestImplementation"(libs.junitKtx)
+    "androidTestImplementation"(libs.coreTesting)
 }

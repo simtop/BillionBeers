@@ -17,11 +17,11 @@ configure<JavaPluginExtension> {
 }
 
 dependencies {
-    testImplementation(libs.junit)
-    testImplementation(libs.mockk)
-    testImplementation(libs.coroutinesTest)
-    testImplementation(libs.kluentAndroid)
-    testImplementation(libs.turbine)
+    "testImplementation"(libs.junit)
+    "testImplementation"(libs.mockk)
+    "testImplementation"(libs.coroutinesTest)
+    "testImplementation"(libs.kluentAndroid)
+    "testImplementation"(libs.turbine)
 }
 
 tasks.withType<KotlinCompile>().configureEach {
