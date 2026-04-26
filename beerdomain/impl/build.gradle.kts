@@ -1,4 +1,7 @@
-plugins { id("billionbeers.android.library") }
+plugins { 
+  id("billionbeers.android.library") 
+  id("billionbeers.android.metro")
+}
 
 android { namespace = "com.simtop.beerdomain.impl" }
 

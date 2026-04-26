@@ -1,38 +1,23 @@
 package com.simtop.billionbeers
 
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import com.google.android.gms.tasks.Tasks
+import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.test.platform.app.InstrumentationRegistry
 import com.google.android.play.core.splitinstall.SplitInstallManager
-import com.simtop.beer_data.di.BeersRepositoryModule
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.beerdomain.fakes.FakeBeersRepository
-import com.simtop.billionbeers.di.SplitInstallModule
-import com.simtop.billionbeers.presentation.MainActivity
-import com.simtop.billionbeers.robots.detailScreen
-import com.simtop.billionbeers.robots.homeScreen
-import com.simtop.navigation.FeatureConstants
-import dagger.hilt.android.testing.BindValue
-import dagger.hilt.android.testing.HiltAndroidRule
-import dagger.hilt.android.testing.HiltAndroidTest
-import dagger.hilt.android.testing.UninstallModules
-import io.mockk.every
-import io.mockk.mockk
+import com.simtop.billionbeers.di.BaseAppGraph
+import com.simtop.billionbeers.fakes.FakeSplitInstallManager
+import com.simtop.billionbeers.utils.detailScreen
+import com.simtop.billionbeers.utils.homeScreen
+import com.simtop.billionbeers.utils.runMainActivityTest
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-@HiltAndroidTest
-@UninstallModules(BeersRepositoryModule::class, SplitInstallModule::class)
 class MainActivityComposeTest {
 
-  @get:Rule(order = 0) var hiltRule = HiltAndroidRule(this)
-
-  @get:Rule(order = 1) val composeTestRule = createAndroidComposeRule<MainActivity>()
-
-  @BindValue @JvmField val fakeBeersRepository: BeersRepository = FakeBeersRepository()
-
-  @BindValue @JvmField val fakeSplitInstallManager: SplitInstallManager = mockk()
+  @get:Rule val composeTestRule = createEmptyComposeRule()
 
   private val fakeBeer =
     Beer(
@@ -49,29 +34,33 @@ class MainActivityComposeTest {
       availability = true
     )
 
+  private val fakeBeersRepository: BeersRepository = FakeBeersRepository(listOf(fakeBeer))
+
+  private val fakeSplitInstallManager: SplitInstallManager = FakeSplitInstallManager()
+
   @Before
   fun setup() {
-    (fakeBeersRepository as FakeBeersRepository).setBeers(listOf(fakeBeer))
-
-    every { fakeSplitInstallManager.installedModules } returns
-      setOf(FeatureConstants.BEER_DETAIL_MODULE)
-    every { fakeSplitInstallManager.registerListener(any()) } returns Unit
-    every { fakeSplitInstallManager.unregisterListener(any()) } returns Unit
-    // Not needed if relaxed=true, but good to be explicit if logic depends on it.
-    every { fakeSplitInstallManager.startInstall(any()) } returns Tasks.forResult(0)
-
-    hiltRule.inject()
+    val context = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
+    val app = context as BillionBeersApplication
+    
+    val testGraph = dev.zacsweers.metro.createGraphFactory<TestAppGraph.Factory>().create(
+        context = context,
+        beersRepository = fakeBeersRepository,
+        splitInstallManager = fakeSplitInstallManager
+    ) as BaseAppGraph
+    
+    app.appGraph = testGraph
   }
 
   @Test
-  fun shouldDisplayBeerListAndNavigateToDetail() {
-    homeScreen(composeTestRule) {
+  fun shouldDisplayBeerListAndNavigateToDetail() = runMainActivityTest(composeTestRule) {
+    homeScreen {
       waitUntilNodeWithTextIsDisplayed(fakeBeer.name)
       assertBeerNameIsDisplayed(fakeBeer.name)
       clickOnBeer(fakeBeer.name)
     }
 
-    detailScreen(composeTestRule) {
+    detailScreen {
       waitUntilNodeWithTextIsDisplayed(fakeBeer.description)
       assertBeerDetailIsDisplayed(fakeBeer.name, fakeBeer.description)
     }

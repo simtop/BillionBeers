@@ -2,7 +2,7 @@ import org.gradle.accessors.dm.LibrariesForLibs
 
 plugins {
     id("billionbeers.android.library")
-    id("billionbeers.android.hilt")
+    id("billionbeers.android.metro")
     id("billionbeers.jacoco")
 }
 

@@ -33,7 +33,7 @@ class FakeBeersLocalSource : BeersLocalSource {
     beersFlow.value = current
   }
 
-  override fun updateBeer(primaryKey: String, availability: Boolean) {
+  override suspend fun updateBeer(primaryKey: String, availability: Boolean) {
     val current = beersFlow.value.toMutableList()
     val index = current.indexOfFirst { it.id == primaryKey }
     if (index != -1) {

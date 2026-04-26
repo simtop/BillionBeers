@@ -10,7 +10,7 @@ buildscript {
         classpath(libs.androidToolsBuildGradle)
         classpath(libs.kotlinGradlePlugin)
         classpath(libs.navigationSafeArgsPlugin)
-        classpath (libs.hiltAndroidGradlePlugin)
+        classpath(libs.metro.gradle.plugin)
     }
 
     configurations.all {
@@ -26,7 +26,7 @@ plugins {
     alias(libs.plugins.com.google.devtools.ksp) apply false
 
     alias(libs.plugins.kotlin.android) apply false
-    alias(libs.plugins.hilt) apply false
+    alias(libs.plugins.metro) apply false
     alias(libs.plugins.kotlin.serialization) apply false
     id("jacoco")
 }
@@ -58,8 +58,8 @@ tasks.register<JacocoReport>("jacocoRootReport") {
         "**/di/*",
         "**/*Activity*.*",
         "**/*Fragment*.*",
-        "**/*_HiltModules*.*",
-        "**/Hilt_*.*",
+        "**/*_MetroGraph*.*",
+        "**/Metro_*.*",
         "**/*_Factory*.*",
         "**/*_MembersInjector*.*",
         "**/*MapperImpl*.*",

@@ -2,18 +2,15 @@ package com.simtop.core.di
 
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.DefaultCoroutineDispatcherProvider
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
+import dev.zacsweers.metro.ContributesTo
+import dev.zacsweers.metro.Provides
+import dev.zacsweers.metro.SingleIn
 
-@Module
-@InstallIn(SingletonComponent::class)
-object CoroutineDispatchersModule {
+@ContributesTo(AppScope::class)
+interface CoroutineDispatchersModule {
 
   @Provides
-  @Singleton
+  @SingleIn(AppScope::class)
   fun providesDispatcherProvider(): CoroutineDispatcherProvider =
     DefaultCoroutineDispatcherProvider()
 }

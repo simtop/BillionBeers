@@ -1,18 +1,16 @@
 package com.simtop.beer_network.di
 
 import com.simtop.beer_network.network.BeersService
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
+import com.simtop.core.di.AppScope
+import dev.zacsweers.metro.SingleIn
+import dev.zacsweers.metro.ContributesTo
+import dev.zacsweers.metro.Provides
 import retrofit2.Retrofit
 
-@Module
-@InstallIn(SingletonComponent::class)
-object BeersNetworkModule {
+@ContributesTo(AppScope::class)
+interface BeersNetworkModule {
 
   @Provides
-  @Singleton
+  @SingleIn(AppScope::class)
   fun provideBeersApi(retrofit: Retrofit): BeersService = retrofit.create(BeersService::class.java)
 }

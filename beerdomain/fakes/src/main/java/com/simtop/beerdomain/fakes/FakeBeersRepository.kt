@@ -9,9 +9,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 
 @Suppress("TooManyFunctions")
-class FakeBeersRepository : BeersRepository {
+class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersRepository {
 
-  private val beersFlow = MutableStateFlow<List<Beer>>(emptyList())
+  private val beersFlow = MutableStateFlow<List<Beer>>(initialBeers)
   private val pagingStateFlow = MutableStateFlow<PagingState>(PagingState.Idle)
 
   // Helper to inspect state

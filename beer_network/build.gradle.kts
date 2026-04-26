@@ -1,6 +1,6 @@
 plugins {
   id("billionbeers.android.library")
-  id("billionbeers.android.hilt")
+  id("billionbeers.android.metro")
 }
 
 android { namespace = "com.simtop.beer_network" }

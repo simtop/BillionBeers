@@ -26,7 +26,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -45,26 +44,28 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.play.core.splitinstall.SplitInstallManager
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
+import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.core.core.CommonUiState
 import com.simtop.navigation.FeatureConstants
 import com.simtop.presentation_utils.core.DynamicFeatureLoader
 import com.simtop.presentation_utils.core.InfiniteListHandler
+import dev.zacsweers.metrox.viewmodel.metroViewModel
 import com.simtop.presentation_utils.core.shimmerBrush
 import com.simtop.presentation_utils.core.showToast
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import com.simtop.presentation_utils.custom_views.ComposeErrorView
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.repeatOnLifecycle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BeersListScreen(
-    viewModel: BeersListViewModel = hiltViewModel(),
+    viewModel: BeersListViewModel = metroViewModel(),
     splitInstallManager: SplitInstallManager? = null,
     onBeerClick: (Beer) -> Unit
 ) {
@@ -72,16 +73,6 @@ fun BeersListScreen(
 
     // State to track if we are installing the feature for a specific beer
     var installingBeer by remember { mutableStateOf<Beer?>(null) }
-
-    val lifecycleOwner = LocalLifecycleOwner.current
-
-    LaunchedEffect(lifecycleOwner.lifecycle) {
-        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            if (viewModel.beerListViewState.value is CommonUiState.Success || viewModel.beerListViewState.value is CommonUiState.Error) {
-                viewModel.refresh()
-            }
-        }
-    }
 
     LaunchedEffect(Unit) {
         if (viewModel.beerListViewState.value is CommonUiState.Empty) {
@@ -93,6 +84,7 @@ fun BeersListScreen(
         viewState = viewState,
         onBeerClick = { beer -> installingBeer = beer },
         onScrollToBottom = { viewModel.onScrollToBottom() },
+        onRefresh = { viewModel.refresh() },
         onRetry = { viewModel.getAllBeers() }
     )
 
@@ -116,6 +108,7 @@ fun BeersListContent(
     viewState: CommonUiState<BeersListUiModel>,
     onBeerClick: (Beer) -> Unit,
     onScrollToBottom: () -> Unit,
+    onRefresh: () -> Unit,
     onRetry: () -> Unit
 ) {
     val context = LocalContext.current
@@ -158,7 +151,9 @@ fun BeersListContent(
                 dataVisibility.value = true
 
                 val beers = state.data.beers
-                Box(
+                PullToRefreshBox(
+                    isRefreshing = state.data.isRefreshing,
+                    onRefresh = onRefresh,
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(top = paddingValues.calculateTopPadding())
@@ -281,6 +276,7 @@ fun BeersListScreenPreview(
             viewState = state.uiState,
             onBeerClick = {},
             onScrollToBottom = {},
+            onRefresh = {},
             onRetry = {}
         )
     }

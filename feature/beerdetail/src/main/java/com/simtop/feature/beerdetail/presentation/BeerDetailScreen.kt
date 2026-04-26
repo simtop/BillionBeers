@@ -6,37 +6,34 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.billionbeers.di.DynamicDependencies
 import com.simtop.core.core.CommonUiState
-import com.simtop.feature.beerdetail.presentation.di.DaggerFeatureDetailComponent
 import com.simtop.presentation_utils.core.showToast
-import dagger.hilt.android.EntryPointAccessors
+import dev.zacsweers.metrox.viewmodel.assistedMetroViewModel
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
+import com.simtop.billionbeers.BillionBeersApplication
+import com.simtop.billionbeers.di.DynamicDependencies
+import com.simtop.feature.beerdetail.presentation.di.FeatureDetailComponent
+import dev.zacsweers.metro.createGraphFactory
+import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 
 @Composable
 fun BeerDetailScreenImpl(beer: Beer, onBackClick: () -> Unit) {
   val context = LocalContext.current
 
-  val factory =
-    remember(beer) {
-      object : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-          val deps = EntryPointAccessors.fromApplication(context, DynamicDependencies::class.java)
-          val component = DaggerFeatureDetailComponent.factory().create(deps)
-          return component.getViewModelFactory().create(beer) as T
-        }
-      }
-    }
+  val factory = remember {
+    val appGraph = (context.applicationContext as BillionBeersApplication).appGraph as DynamicDependencies
+    val component = createGraphFactory<FeatureDetailComponent.Factory>().create(appGraph)
+    component.metroViewModelFactory
+  }
 
-  val viewModel: BeerDetailViewModel = viewModel(factory = factory)
-  val viewState by viewModel.beerDetailViewState.collectAsState()
+  CompositionLocalProvider(LocalMetroViewModelFactory provides factory) {
+    val viewModel: BeerDetailViewModel = assistedMetroViewModel<BeerDetailViewModel, BeerDetailViewModel.Factory> { create(beer) }
+    val viewState by viewModel.beerDetailViewState.collectAsState()
 
   when (val state = viewState) {
     is CommonUiState.Success -> {
@@ -54,6 +51,7 @@ fun BeerDetailScreenImpl(beer: Beer, onBackClick: () -> Unit) {
         CircularProgressIndicator()
       }
     }
-    else -> {}
+      else -> {}
+    }
   }
 }

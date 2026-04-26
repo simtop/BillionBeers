@@ -24,6 +24,7 @@ fun configureCompose(commonExtension: CommonExtension<*, *, *, *, *, *>) {
         add("implementation", libs.androidx.material3.android)
         add("implementation", libs.androidx.ui.tooling.preview.android)
         add("implementation", libs.androidx.runtime.livedata)
+        add("implementation", libs.metrox.viewmodel.compose)
     }
 }
 

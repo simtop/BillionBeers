@@ -2,15 +2,14 @@ package com.simtop.beer_database.di
 
 import com.simtop.beer_database.localsources.BeersLocalSource
 import com.simtop.beer_database.localsources.BeersLocalSourceImpl
-import dagger.Binds
-import dagger.Module
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
+import com.simtop.core.di.AppScope
+import dev.zacsweers.metro.ContributesTo
+import dev.zacsweers.metro.Provides
 
-@Module
-@InstallIn(SingletonComponent::class)
-abstract class BeersLocalSourceModule {
+@ContributesTo(AppScope::class)
+interface BeersLocalSourceModule {
 
-  @Binds
-  abstract fun bindBeersLocalSource(beersLocalSourceImpl: BeersLocalSourceImpl): BeersLocalSource
+  @Provides
+  fun provideBeersLocalSource(beersLocalSourceImpl: BeersLocalSourceImpl): BeersLocalSource =
+    beersLocalSourceImpl
 }
