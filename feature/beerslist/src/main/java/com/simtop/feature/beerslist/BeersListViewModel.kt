@@ -6,6 +6,7 @@ import com.simtop.beerdomain.domain.GetAllBeersUseCase
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.usecases.LoadNextPageUseCase
 import com.simtop.beerdomain.domain.usecases.ObservePagingStateUseCase
+import com.simtop.beerdomain.domain.usecases.RefreshBeersUseCase
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.PagingHandler
@@ -26,7 +27,8 @@ constructor(
   private val coroutineDispatcher: CoroutineDispatcherProvider,
   private val getAllBeersUseCase: GetAllBeersUseCase,
   private val observePagingStateUseCase: ObservePagingStateUseCase,
-  private val loadNextPageUseCase: LoadNextPageUseCase
+  private val loadNextPageUseCase: LoadNextPageUseCase,
+  private val refreshBeersUseCase: RefreshBeersUseCase
 ) : ViewModel() {
 
   private val _beerListViewState =
@@ -107,6 +109,10 @@ constructor(
 
   fun showEmptyState() {
     _beerListViewState.value = CommonUiState.Empty
+  }
+
+  fun refresh() {
+    viewModelScope.launch(coroutineDispatcher.io) { refreshBeersUseCase.execute() }
   }
 }
 

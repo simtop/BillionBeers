@@ -25,11 +25,15 @@ import coil3.request.crossfade
 import coil3.request.error
 import coil3.request.placeholder
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.billionbeers.catalog_annotations.CatalogComponent
 import com.simtop.presentation_utils.R
 import com.simtop.presentation_utils.core.noRippleClickable
 
+@CatalogComponent(
+    tab = "Utilities",
+)
 @Composable
-fun ComposeBeersListItem(beer: Beer, onClick: ((Beer) -> Unit)? = null) {
+fun ComposeBeersListItem(beer: Beer = Beer.empty, onClick: ((Beer) -> Unit)? = null) {
   Card(
     modifier =
       Modifier.fillMaxWidth()
@@ -95,6 +99,9 @@ fun ComposeBeersListItem(beer: Beer, onClick: ((Beer) -> Unit)? = null) {
   }
 }
 
+@CatalogComponent(
+    tab = "Utilities",
+)
 @Composable
 fun BeerImage(imageUrl: String) {
   Box(

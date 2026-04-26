@@ -56,7 +56,10 @@ import com.simtop.presentation_utils.core.InfiniteListHandler
 import com.simtop.presentation_utils.core.shimmerBrush
 import com.simtop.presentation_utils.core.showToast
 import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
-import com.simtop.presentation_utils.custom_views.ComposeTitle
+import com.simtop.presentation_utils.custom_views.ComposeErrorView
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,6 +72,16 @@ fun BeersListScreen(
 
     // State to track if we are installing the feature for a specific beer
     var installingBeer by remember { mutableStateOf<Beer?>(null) }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    LaunchedEffect(lifecycleOwner.lifecycle) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            if (viewModel.beerListViewState.value is CommonUiState.Success || viewModel.beerListViewState.value is CommonUiState.Error) {
+                viewModel.refresh()
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         if (viewModel.beerListViewState.value is CommonUiState.Empty) {
@@ -118,10 +131,18 @@ fun BeersListContent(
 
         when (val state = viewState) {
             CommonUiState.Empty -> {
-                ComposeTitle(name = "Empty State")
+                ComposeErrorView(
+                    onRetry = onRetry,
+                    modifier = Modifier.padding(top = paddingValues.calculateTopPadding())
+                )
             }
 
             is CommonUiState.Error -> {
+                ComposeErrorView(
+                    message = state.message ?: "Empty State",
+                    onRetry = onRetry,
+                    modifier = Modifier.padding(top = paddingValues.calculateTopPadding())
+                )
                 state.message?.let { message ->
                     LaunchedEffect(message) {
                         context.showToast(message)
@@ -203,8 +224,8 @@ class BeersListPreviewParameterProvider :
             override val uiState: CommonUiState<BeersListUiModel>
         ) : State {
             LOADING(CommonUiState.Loading),
-//            EMPTY(CommonUiState.Empty),
-//            ERROR(CommonUiState.Error(message = "Failed to load beers. Please check your connection.")),
+            EMPTY(CommonUiState.Empty),
+            ERROR(CommonUiState.Error(message = "Failed to load beers. Please check your connection.")),
             SUCCESS_MULTIPLE_ITEMS(
                 CommonUiState.Success(
                     data = BeersListUiModel(

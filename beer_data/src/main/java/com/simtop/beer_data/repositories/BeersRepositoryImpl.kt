@@ -109,7 +109,7 @@ constructor(
   }
 
   // Helper to trigger initial load if needed
-  suspend fun refresh() {
+  override suspend fun refresh() {
     pagingMediator.loadFirstPage()
   }
 }

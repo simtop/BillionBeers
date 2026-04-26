@@ -37,6 +37,8 @@
             <option value="$PROJECT_DIR$/build-logic" />
             <option value="$PROJECT_DIR$/build-logic/convention" />
             <option value="$PROJECT_DIR$/catalog" />
+            <option value="$PROJECT_DIR$/catalog-annotations" />
+            <option value="$PROJECT_DIR$/catalog-processor" />
             <option value="$PROJECT_DIR$/core" />
             <option value="$PROJECT_DIR$/core-common" />
             <option value="$PROJECT_DIR$/core/designsystem" />
