@@ -1,37 +1,37 @@
 package com.simtop.presentation_utils.core
 
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 
 @Composable
 fun InfiniteListHandler(
   listState: LazyListState,
   isLoadingNextPage: Boolean,
-  buffer: Int = 3,
+  buffer: Int = 1,
   onLoadMore: () -> Unit
 ) {
-  val shouldLoadMore by
-    remember(listState, isLoadingNextPage) {
-      derivedStateOf {
-        val layoutInfo = listState.layoutInfo
-        val visibleItemsInfo = layoutInfo.visibleItemsInfo
-        val totalItemsCount = layoutInfo.totalItemsCount
+  val loadMore = remember {
+    derivedStateOf {
+      val layoutInfo = listState.layoutInfo
+      val totalItemsNumber = layoutInfo.totalItemsCount
+      val lastVisibleItemIndex = (layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0) + 1
 
-        if (totalItemsCount == 0 || visibleItemsInfo.isEmpty()) {
-          false
-        } else {
-          val lastVisibleItemIndex = visibleItemsInfo.last().index
-          // Trigger when we're within 'buffer' items of the end
-          // Subtract 1 if loading footer is showing to account for it
-          val threshold = if (isLoadingNextPage) 1 else buffer
-          lastVisibleItemIndex >= totalItemsCount - threshold
-        }
+      !isLoadingNextPage && lastVisibleItemIndex > (totalItemsNumber - buffer)
+    }
+  }
+
+  LaunchedEffect(loadMore) {
+    snapshotFlow { loadMore.value }
+      .distinctUntilChanged()
+      .filter { it }
+      .collect {
+        onLoadMore()
       }
-    }
-
-  LaunchedEffect(shouldLoadMore, isLoadingNextPage) {
-    if (shouldLoadMore && !isLoadingNextPage) {
-      onLoadMore()
-    }
   }
 }

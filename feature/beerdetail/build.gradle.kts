@@ -1,6 +1,5 @@
 plugins {
   id("billionbeers.android.dynamic.feature")
-  id("billionbeers.android.compose")
   id("billionbeers.android.screenshot")
 }
 

@@ -3,6 +3,7 @@ import org.gradle.accessors.dm.LibrariesForLibs
 plugins {
     id("billionbeers.android.library")
     id("billionbeers.android.metro")
+    id("billionbeers.android.compose")
     id("billionbeers.jacoco")
 }
 

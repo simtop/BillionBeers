@@ -1,4 +1,4 @@
-package com.simtop.presentation_utils.core
+package com.simtop.billionbeers.core.designsystem.component
 
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode

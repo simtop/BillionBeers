@@ -1,104 +1,172 @@
-# BillionBeers
+# BillionBeers 🍻
 
-This is a multi-module Android application that showcases modern architecture and testing practices. It follows Clean Architecture principles and uses MVVM for the presentation layer.
+BillionBeers is a state-of-the-art multi-module Android application showcasing modern architecture, reactive UI patterns, and comprehensive testing strategies. 
 
-This app follows the Clean Architecture and uses MVVM architecture for the presentation layer. The app uses Kotlin DSL for dependency management and Version Catalog to manage library versions.
-
-The app's tech stack is: Jetpack Compose, StateFlow, Room, ViewModels, Hilt, Coroutines, Jetpack Navigation and safe args, Retrofit, okHttp, GSON, Material Design, webmockserver, mockk, junit4, Strikt, Espresso.
-
-You can find the app in google play store (https://play.google.com/store/apps/details?id=com.simtop.billionbeers&hl=es&gl=US). 
-Any download and 5 star is **greatly appreciated**
-
-For UI Testing I used the Robot Pattern.
-
-
-## Code Quality & Reports
-
-This project uses several tools to ensure code quality and consistency.
-
-### 1. Formatting (Spotless & ktfmt)
-We use **Spotless** with **ktfmt** to enforce Google's Kotlin style guide.
-- **Check formatting**: `./gradlew spotlessCheck`
-- **Apply formatting**: `./gradlew spotlessApply` (Run this before committing!)
-
-### 2. Static Analysis (Detekt)
-We use **Detekt** to find code smells and complexity issues.
-- **Run analysis**: `./gradlew detekt`
-- **Reports**: Found in `build/reports/detekt/` for each module (e.g., `app/build/reports/detekt/detekt.html`).
-
-### 3. Code Coverage (Jacoco)
-We use **Jacoco** to measure test coverage.
-- **Generate reports**: `./gradlew jacocoTestReport`
-- **Reports**: Found in `build/reports/jacoco/jacocoTestReport/html/index.html` for each module (e.g., `core-common/build/reports/jacoco/jacocoTestReport/html/index.html`).
-
-### 4. Screenshot Testing (Paparazzi)
-We use **Paparazzi** for screenshot testing our Compose UI.
-- **Record specific module**: `./gradlew :feature:beerdetail:recordPaparazziDebug`
-- **Verify specific module**: `./gradlew :feature:beerdetail:verifyPaparazziDebug`
-- **Record all modules**: `./gradlew recordPaparazziDebug`
-- **Verify all modules**: `./gradlew verifyPaparazziDebug`
-- **Clean and record**: `./gradlew cleanRecordPaparazziDebug`
-- **Reports**: Found in `build/reports/paparazzi/` for each module.
-
-### 5. Performance Measurement & Profiling
-
-This project includes a robust system for measuring and improving performance.
-
-#### A. Gradle Build Profiling (Build Speed)
-We use **Gradle Profiler** to automate build measurements.
-- **Requirement**: `brew install gradle-profiler`
-- **Run benchmark**: 
-  ```bash
-  gradle-profiler --benchmark --scenario-file ./benchmark.scenarios incremental_build
-  ```
-- **Scenarios**: Defined in `benchmark.scenarios` (Clean build, Incremental, etc.).
-
-#### B. Microbenchmarking (Code Logic)
-Measure the performance of CPU-bound logic (e.g., `BeersMapper`).
-- **Run**: `./gradlew :benchmark:microbenchmark:connectedCheck`
-- **Reports**: `benchmark/microbenchmark/build/reports/androidTests/connected/release/index.html`
-
-#### C. Macrobenchmarking (App Startup & Jank)
-Measure high-level user experience like App Startup and Scrolling.
-- **Run**: `./gradlew :benchmark:macrobenchmark:connectedCheck`
-- **Reports**: `benchmark/macrobenchmark/build/reports/androidTests/connected/debug/index.html`
-- **Notes**: 
-  - Uses a dedicated `benchmark` build type (minified but debug-signed).
-  - Macrobenchmarks requires a physical device for accurate frame timing results.
-  - Suppression rules are enabled in `gradle.properties` for local emulator testing.
-
-#### D. Interpreting Results
-- **Micro**: Focus on **Median** time and **Allocations** (aim for 0 allocs in hot loops).
-- **Macro**: Aim for Cold Startup **< 500ms** and Frame Overrun **0ms** (perfect 60fps).
-
-
-Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated** and it will be a pleasure to collaborate with you..
-
-If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
-Don't forget to give the project a star! Thanks again!
-
-<p align="right">(<a href="#top">back to top</a>)</p>
-
+[![Google Play](https://img.shields.io/badge/Google%20Play-Get%20it%20now-green?logo=google-play)](https://play.google.com/store/apps/details?id=com.simtop.billionbeers)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/simtop/BillionBeers)
 
-<p align="right">(<a href="#top">back to top</a>)</p>
+---
 
-Architecture Summary:
+## 📸 Visual Tour
 
-![Example1](imagesForReadme/ArchitectureSummary.png)
+Discover the "BillionBeers" experience through these high-fidelity screenshots:
 
-<p align="right">(<a href="#top">back to top</a>)</p>
+````carousel
+![Main List](imagesForReadme/FirstScreen.png)
+<!-- slide -->
+![Detail View](imagesForReadme/SecondScreen.png)
+<!-- slide -->
+![Search & Filter](imagesForReadme/ThirdScreen.png)
+<!-- slide -->
+![Empty States](imagesForReadme/FourthScreen.png)
+<!-- slide -->
+![Skeleton Loading](imagesForReadme/FifthScreen.jpg)
+<!-- slide -->
+![Dark Mode](imagesForReadme/SixthScreen.jpg)
+<!-- slide -->
+![Error Handling](imagesForReadme/SeventhScreen.jpg)
+````
 
-Here are images of the app:
+---
 
-![Example1](imagesForReadme/FirstScreen.png)
+## 🏗 Architecture & Design Patterns
 
-![Example1](imagesForReadme/FifthScreen.jpg)
+The project follows **Clean Architecture** principles with a robust **Multi-module** structure, ensuring high scalability and separation of concerns.
 
-![Example1](imagesForReadme/SixthScreen.jpg)
+### High-Level Module Dependency
+```mermaid
+graph TD
+    App[":app"] --> FeatureA[":feature:beerslist"]
+    App --> FeatureB[":feature:beerdetail"]
+    
+    FeatureA --> Domain[":beerdomain"]
+    FeatureB --> Domain
+    FeatureA --> PresentationUtils[":presentation_utils"]
+    
+    Domain --> Data[":beer_data"]
+    Data --> Network[":beer_network"]
+    Data --> DB[":beer_database"]
+    
+    FeatureA --> DesignSystem[":core:designsystem"]
+    FeatureB --> DesignSystem
+    
+    DesignSystem --> CoreCommon[":core-common"]
+```
 
-![Example1](imagesForReadme/SeventhScreen.jpg)
+### Feature-Level: Unidirectional Data Flow (UDF)
+Every feature utilizes a pure UDF pattern powered by Kotlin Flow and Compose's state management.
 
-![Example1](imagesForReadme/FourthScreen.png)
+```mermaid
+sequenceDiagram
+    participant UI as Compose View
+    participant VM as ViewModel
+    participant UC as UseCase
+    participant Repo as Repository
 
-<p align="right">(<a href="#top">back to top</a>)</p>
+    UI->>VM: Trigger Action (e.g. Refresh)
+    VM->>VM: Emit LoadingState
+    VM->>UC: Execute()
+    UC->>Repo: FetchData()
+    Repo-->>UC: Domain Data
+    UC-->>VM: Flow<Data>
+    VM->>VM: Map to CommonUiState
+    VM-->>UI: State Observation
+    Note over UI: Re-composes with Data/Error/Empty
+```
+
+---
+
+## 🛠 Advanced Technology Stack
+
+This project goes beyond standard libraries, incorporating advanced engineering tools:
+
+- **UI**: Jetpack Compose with a **Component Catalog** (annotation-driven demo system).
+- **DI**: **Metro** — A cutting-edge, high-performance dependency injection framework for dynamic features.
+- **Testing**:
+    - **Paparazzi**: JVM-based Snapshot Testing. It renders your Composables directly on the JVM using Android Studio's `LayoutLib`, allowing for lightning-fast regression testing without emulators.
+    - **Robot Pattern**: Standardized E2E/UI testing architecture for readability.
+- **Data**: Room, Retrofit, Kotlin Serialization, Paging(custom mediator logic).
+- **Quality**: Detekt, Spotless, Jacoco (Unified Root Reporting).
+
+---
+
+## 🚀 Project Evolution
+
+<details>
+<summary><b>Click to explore the technological journey (21+ Milestones)</b></summary>
+
+This repository has served as a technological sandbox over the years. You can explorer the project's history through these significant milestones:
+
+1.  **[Monolithic App with Dagger2](https://github.com/simtop/BillionBeers/tree/simple_coroutines_monolith)**: The original project structure.
+2.  **[Hilt Monolith](https://github.com/simtop/BillionBeers/tree/feature/hilt_monolith)**: Transitioning to modern DI.
+    *   [StateFlow Implementation](https://github.com/simtop/BillionBeers/tree/feature/flow)
+    *   [Paging 3 (Network Only)](https://github.com/simtop/BillionBeers/tree/feature/network_paging)
+    *   [Paging 3 (Network + Room)](https://github.com/simtop/BillionBeers/tree/feature/network_room_paging)
+3.  **[Simple Multi-Module (Hilt)](https://github.com/simtop/BillionBeers/tree/feature/multimodule_hilt)**: First architectural split.
+4.  **[Complete Multi-Module Architecture](https://github.com/simtop/BillionBeers/tree/feature/complete_hilt_multimodule)**: Mature layered separation.
+5.  **[Standard Dynamic Features](https://github.com/simtop/BillionBeers/tree/feature/dynamic_feature)**: Base implementation of Play Core features.
+6.  **[On-Demand Dynamic Features](https://github.com/simtop/BillionBeers/tree/feature/dynamic_feature_on_demand)**: Advanced lazy loading.
+7.  **[SonarQube Integration](https://github.com/simtop/BillionBeers/tree/feature/sonar_qube)**: Static analysis at scale.
+8.  **[SonarQube + Jacoco](https://github.com/simtop/BillionBeers/tree/feature/wip_jacoco_sonarqube)**: Unified coverage reporting.
+9.  **[Jetpack Compose Migration](https://github.com/simtop/BillionBeers/tree/feature/compose)**: Modernizing the entire UI layer.
+10. **[Kotlin DSL (KTS) Migration](https://github.com/simtop/BillionBeers/tree/feat/gradle-kts-conversion)**: Type-safe Gradle configuration.
+11. **[Centralized Version Catalog](https://github.com/simtop/BillionBeers/tree/feature/version_catalog)**: Managing dependencies in a single `toml` file.
+12. **[Build Logic Unification](https://github.com/simtop/BillionBeers/tree/feature/convention-to-precompiled-gradle-scripts)**: Industry-standard precompiled script plugins.
+13. **[Design System Catalog](https://github.com/simtop/BillionBeers/tree/demo-catalog-app)**: Standalone component documentation app.
+14. **[Baseline Profiles](https://github.com/simtop/BillionBeers/tree/baseline-profile)**: DEX layout optimization for app startup.
+15. **[Dependency Auditing](https://github.com/simtop/BillionBeers/tree/dependencies-checker-plugin)**: Custom plugin for unused dep detection.
+16. **[Advanced R8 Aggressiveness](https://github.com/simtop/BillionBeers/tree/feature/r8-rules)**: Maximum code shrinking and obfuscation.
+17. **[KSP Compose Processing](https://github.com/simtop/BillionBeers/tree/feature/compose-manual-update-finished-ksp)**: Transitioning from KAPT to KSP for build speed.
+18. **[Full Compose Navigation](https://github.com/simtop/BillionBeers/tree/feature/nav3-full-compose)**: Migration to type-safe Compose Nav.
+19. **[Assisted Inject Experiments](https://github.com/simtop/BillionBeers/tree/feature/assisted_inject_experiments_hilt)**: Dynamic parameters in DI.
+
+</details>
+
+---
+
+## 📊 Current Stack Versions
+
+> [!NOTE]
+> This section is automatically kept in sync with the codebase via `make update-docs`.
+
+<!-- START_VERSIONS -->
+| Tech | Version |
+| :--- | :--- |
+| **Kotlin** | 2.2.20 |
+| **Gradle** | 8.14 |
+| **Compose BOM** | 2025.05.01 |
+| **Metro DI** | 0.11.2 |
+| **Room DB** | 2.7.1 |
+<!-- END_VERSIONS -->
+
+---
+
+To simplify development, we use a standardized **Makefile**. Run `make help` to see all available commands.
+
+> [!TIP]
+> You can target specific modules using the `MODULE` variable:
+> `make test MODULE=:feature:beerslist`
+
+- **Build/Install**: `make build`, `make install`
+- **Testing**: `make test`, `make ui-test`
+- **Screenshots**: `make screenshot-record`, `make screenshot-verify`
+- **Analysis**: `make check-unused-deps`, `make check-duplicates`
+- **Benchmarking**: `make benchmark-macro`, `make gradle-benchmark SCENARIO=clean_build`
+
+---
+
+## 🤝 Contributing
+
+Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+---
+
+<p align="center">
+  Built with ❤️ by Simon Topchyan
+</p>

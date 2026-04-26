@@ -8,6 +8,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("de.mannodermaus.android-junit5")
     id("billionbeers.android.metro")
+    id("billionbeers.android.compose")
     id("billionbeers.jacoco")
     id("billionbeers.spotless")
     id("billionbeers.detekt")

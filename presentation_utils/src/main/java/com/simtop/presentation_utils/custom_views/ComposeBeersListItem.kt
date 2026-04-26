@@ -27,7 +27,7 @@ import coil3.request.placeholder
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.catalog_annotations.CatalogComponent
 import com.simtop.presentation_utils.R
-import com.simtop.presentation_utils.core.noRippleClickable
+import com.simtop.billionbeers.core.designsystem.component.noRippleClickable
 
 @CatalogComponent(
     tab = "Utilities",
