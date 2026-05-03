@@ -30,6 +30,8 @@ deep-clean: ## Stop daemon and deeply clean all gradle caches to fix corrupted s
 	find . -name "build" -type d -prune -exec rm -rf '{}' +
 	rm -rf ~/.gradle/caches/build-cache-*
 	rm -rf ~/.gradle/caches/8.*
+	rm -rf ~/.gradle/caches/9.*
+	./gradlew clean
 
 # Testing
 test: ## Run unit tests for the specified module (or all).

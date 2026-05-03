@@ -2,8 +2,9 @@ import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.dsl.DynamicFeatureExtension
 import com.android.build.api.dsl.TestExtension
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.gradle.api.JavaVersion
+
+apply(plugin = "billionbeers.kotlin.options")
 
 val libs = the<org.gradle.accessors.dm.LibrariesForLibs>()
 
@@ -65,12 +66,5 @@ pluginManager.withPlugin("com.android.test") {
             sourceCompatibility = JavaVersion.VERSION_23
             targetCompatibility = JavaVersion.VERSION_23
         }
-    }
-}
-
-tasks.withType<KotlinCompile>().configureEach {
-    compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_23)
-        freeCompilerArgs.add("-Xstring-concat=inline")
     }
 }
