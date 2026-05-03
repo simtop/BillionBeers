@@ -1,11 +1,14 @@
 import org.gradle.accessors.dm.LibrariesForLibs
 
 plugins {
-    id("billionbeers.android.library")
-    id("billionbeers.android.metro")
-    id("billionbeers.android.compose")
-    id("billionbeers.jacoco")
+    id("com.android.library")
 }
+
+apply(plugin = "billionbeers.android.library")
+apply(plugin = "billionbeers.android.metro")
+apply(plugin = "billionbeers.android.compose")
+apply(plugin = "billionbeers.jacoco")
+
 
 val libs = the<LibrariesForLibs>()
 

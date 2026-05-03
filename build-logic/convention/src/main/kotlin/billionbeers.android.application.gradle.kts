@@ -3,13 +3,18 @@ import java.util.Properties
 
 plugins {
     id("com.android.application")
-    id("billionbeers.android.common")
-    id("billionbeers.jacoco")
-    id("billionbeers.spotless")
-    id("billionbeers.detekt")
     id("kotlin-parcelize")
-    id("billionbeers.unused-dependencies")
 }
+
+//Because of Gradle 9 Bug: I moved them below the plugins block using
+// apply(plugin = "billionbeers.*"). This defers the evaluation of the plugin until runtime
+// rather than build-script compilation time, bypassing the accessor generation bug completely
+// while preserving the exact same functionality.
+apply(plugin = "billionbeers.android.common")
+apply(plugin = "billionbeers.jacoco")
+apply(plugin = "billionbeers.spotless")
+apply(plugin = "billionbeers.detekt")
+apply(plugin = "billionbeers.unused-dependencies")
 
 val libs = the<org.gradle.accessors.dm.LibrariesForLibs>()
 val android = the<ApplicationExtension>()

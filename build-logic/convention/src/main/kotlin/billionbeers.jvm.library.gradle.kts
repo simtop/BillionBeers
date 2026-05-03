@@ -5,10 +5,11 @@ import org.gradle.api.JavaVersion
 
 plugins {
     id("org.jetbrains.kotlin.jvm")
-    id("billionbeers.jacoco")
-    id("billionbeers.spotless")
-    id("billionbeers.detekt")
 }
+
+apply(plugin = "billionbeers.jacoco")
+apply(plugin = "billionbeers.spotless")
+apply(plugin = "billionbeers.detekt")
 
 val libs = the<LibrariesForLibs>()
 configure<JavaPluginExtension> {

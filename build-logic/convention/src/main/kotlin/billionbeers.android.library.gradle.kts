@@ -2,14 +2,15 @@ import org.gradle.accessors.dm.LibrariesForLibs
 
 plugins {
     id("com.android.library")
-    id("billionbeers.android.common")
     id("kotlin-parcelize")
-    id("billionbeers.jacoco")
-    id("billionbeers.spotless")
-    id("billionbeers.detekt")
     id("de.mannodermaus.android-junit5")
-    id("billionbeers.unused-dependencies")
 }
+
+apply(plugin = "billionbeers.android.common")
+apply(plugin = "billionbeers.jacoco")
+apply(plugin = "billionbeers.spotless")
+apply(plugin = "billionbeers.detekt")
+apply(plugin = "billionbeers.unused-dependencies")
 
 val libs = the<LibrariesForLibs>()
 

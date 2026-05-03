@@ -3,14 +3,15 @@ import org.gradle.accessors.dm.LibrariesForLibs
 
 plugins {
     id("com.android.dynamic-feature")
-    id("billionbeers.android.common")
     id("de.mannodermaus.android-junit5")
-    id("billionbeers.android.metro")
-    id("billionbeers.android.compose")
-    id("billionbeers.jacoco")
-    id("billionbeers.spotless")
-    id("billionbeers.detekt")
 }
+
+apply(plugin = "billionbeers.android.common")
+apply(plugin = "billionbeers.android.metro")
+apply(plugin = "billionbeers.android.compose")
+apply(plugin = "billionbeers.jacoco")
+apply(plugin = "billionbeers.spotless")
+apply(plugin = "billionbeers.detekt")
 
 val libs = the<LibrariesForLibs>()
 
