@@ -16,12 +16,11 @@ configure<DetektExtension> {
     ignoreFailures = true
 }
 
-// Detekt tasks will be configured by the plugin automatically in modern versions
-// or can be customized later once we identify the correct AGP 9.0 property.
-/*
+// Detekt supports max java 22 for now
 tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
-    compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_23)
-    }
+    jvmTarget = "22"
 }
-*/
+
+tasks.withType<io.gitlab.arturbosch.detekt.DetektCreateBaselineTask>().configureEach {
+    jvmTarget = "22"
+}

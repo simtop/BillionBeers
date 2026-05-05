@@ -25,6 +25,7 @@ android {
       excludes += "a/b.class"
       excludes += "META-INF/LICENSE.md"
       excludes += "META-INF/LICENSE-notice.md"
+      pickFirsts += "META-INF/services/com.simtop.billionbeers.snapshot_testing.PreviewProvider"
     }
   }
 }

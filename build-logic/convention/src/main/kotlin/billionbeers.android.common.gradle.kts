@@ -3,6 +3,7 @@ import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.dsl.DynamicFeatureExtension
 import com.android.build.api.dsl.TestExtension
 import org.gradle.api.JavaVersion
+import kotlin.text.toInt
 
 apply(plugin = "billionbeers.kotlin.options")
 
@@ -21,6 +22,9 @@ pluginManager.withPlugin("com.android.application") {
             sourceCompatibility = JavaVersion.VERSION_23
             targetCompatibility = JavaVersion.VERSION_23
         }
+        testCoverage {
+            jacocoVersion = "0.8.13"
+        }
     }
 }
 pluginManager.withPlugin("com.android.library") {
@@ -36,6 +40,9 @@ pluginManager.withPlugin("com.android.library") {
             sourceCompatibility = JavaVersion.VERSION_23
             targetCompatibility = JavaVersion.VERSION_23
         }
+        testCoverage {
+            jacocoVersion = "0.8.13"
+        }
     }
 }
 pluginManager.withPlugin("com.android.dynamic-feature") {
@@ -50,6 +57,9 @@ pluginManager.withPlugin("com.android.dynamic-feature") {
         compileOptions {
             sourceCompatibility = JavaVersion.VERSION_23
             targetCompatibility = JavaVersion.VERSION_23
+        }
+        testCoverage {
+            jacocoVersion = "0.8.13"
         }
     }
 }

@@ -50,4 +50,6 @@ dependencies {
     "androidTestImplementation"(libs.coreTesting)
 }
 
-
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
+}
