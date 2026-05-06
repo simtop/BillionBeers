@@ -4,6 +4,7 @@ SCENARIO ?= incremental_build
 
 MODULE_TRIMMED := $(strip $(MODULE))
 MODULE_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,)
+UI_TEST_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,:app:)
 
 .PHONY: help build install clean test ui-test screenshot-record screenshot-verify screenshot-clean lint format check check-duplicates check-unused-deps benchmark-micro benchmark-macro generate-baseline gradle-benchmark jacoco-report install-profiler install-diffuse
 
@@ -41,7 +42,7 @@ test: ## Run unit tests for the specified module (or all).
 	./gradlew $(MODULE_PREFIX)testDebugUnitTest
 
 ui-test: ## Run connected Android tests (UI tests).
-	./gradlew $(MODULE_PREFIX)connectedDebugAndroidTest
+	./gradlew $(UI_TEST_PREFIX)connectedDebugAndroidTest
 
 # Screenshots (Paparazzi)
 screenshot-record: ## Record golden images for Paparazzi.
