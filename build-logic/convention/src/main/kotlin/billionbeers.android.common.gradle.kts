@@ -2,79 +2,81 @@ import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.dsl.DynamicFeatureExtension
 import com.android.build.api.dsl.TestExtension
-import org.gradle.api.JavaVersion
 import kotlin.text.toInt
 
 apply(plugin = "billionbeers.kotlin.options")
 
 val libs = the<org.gradle.accessors.dm.LibrariesForLibs>()
 
+val PROJECT_COMPILE_SDK = libs.versions.compileSdk.get().toInt()
+val PROJECT_MIN_SDK = libs.versions.minSdk.get().toInt()
+
 pluginManager.withPlugin("com.android.application") {
     extensions.configure<ApplicationExtension> {
-        compileSdk = libs.versions.compileSdk.get().toInt()
+        compileSdk = PROJECT_COMPILE_SDK
         defaultConfig {
-            minSdk = libs.versions.minSdk.get().toInt()
+            minSdk = PROJECT_MIN_SDK
             if (testInstrumentationRunner == null || testInstrumentationRunner == "android.test.InstrumentationTestRunner") {
-                testInstrumentationRunner = "com.simtop.billionbeers.di.MockTestRunner"
+                testInstrumentationRunner = PROJECT_TEST_RUNNER
             }
         }
         compileOptions {
-            sourceCompatibility = JavaVersion.VERSION_23
-            targetCompatibility = JavaVersion.VERSION_23
+            sourceCompatibility = PROJECT_JAVA_VERSION
+            targetCompatibility = PROJECT_JAVA_VERSION
         }
         testCoverage {
-            jacocoVersion = "0.8.13"
+            jacocoVersion = PROJECT_JACOCO_VERSION
         }
     }
 }
 pluginManager.withPlugin("com.android.library") {
     extensions.configure<LibraryExtension> {
-        compileSdk = libs.versions.compileSdk.get().toInt()
+        compileSdk = PROJECT_COMPILE_SDK
         defaultConfig {
-            minSdk = libs.versions.minSdk.get().toInt()
+            minSdk = PROJECT_MIN_SDK
             if (testInstrumentationRunner == null || testInstrumentationRunner == "android.test.InstrumentationTestRunner") {
-                testInstrumentationRunner = "com.simtop.billionbeers.di.MockTestRunner"
+                testInstrumentationRunner = PROJECT_TEST_RUNNER
             }
         }
         compileOptions {
-            sourceCompatibility = JavaVersion.VERSION_23
-            targetCompatibility = JavaVersion.VERSION_23
+            sourceCompatibility = PROJECT_JAVA_VERSION
+            targetCompatibility = PROJECT_JAVA_VERSION
         }
         testCoverage {
-            jacocoVersion = "0.8.13"
+            jacocoVersion = PROJECT_JACOCO_VERSION
         }
     }
 }
 pluginManager.withPlugin("com.android.dynamic-feature") {
     extensions.configure<DynamicFeatureExtension> {
-        compileSdk = libs.versions.compileSdk.get().toInt()
+        compileSdk = PROJECT_COMPILE_SDK
         defaultConfig {
-            minSdk = libs.versions.minSdk.get().toInt()
+            minSdk = PROJECT_MIN_SDK
             if (testInstrumentationRunner == null || testInstrumentationRunner == "android.test.InstrumentationTestRunner") {
-                testInstrumentationRunner = "com.simtop.billionbeers.di.MockTestRunner"
+                testInstrumentationRunner = PROJECT_TEST_RUNNER
             }
         }
         compileOptions {
-            sourceCompatibility = JavaVersion.VERSION_23
-            targetCompatibility = JavaVersion.VERSION_23
+            sourceCompatibility = PROJECT_JAVA_VERSION
+            targetCompatibility = PROJECT_JAVA_VERSION
         }
         testCoverage {
-            jacocoVersion = "0.8.13"
+            jacocoVersion = PROJECT_JACOCO_VERSION
         }
     }
 }
 pluginManager.withPlugin("com.android.test") {
     extensions.configure<TestExtension> {
-        compileSdk = libs.versions.compileSdk.get().toInt()
+        compileSdk = PROJECT_COMPILE_SDK
         defaultConfig {
-            minSdk = libs.versions.minSdk.get().toInt()
+            minSdk = PROJECT_MIN_SDK
             if (testInstrumentationRunner == null || testInstrumentationRunner == "android.test.InstrumentationTestRunner") {
-                testInstrumentationRunner = "com.simtop.billionbeers.di.MockTestRunner"
+                testInstrumentationRunner = PROJECT_TEST_RUNNER
             }
         }
         compileOptions {
-            sourceCompatibility = JavaVersion.VERSION_23
-            targetCompatibility = JavaVersion.VERSION_23
+            sourceCompatibility = PROJECT_JAVA_VERSION
+            targetCompatibility = PROJECT_JAVA_VERSION
         }
     }
 }

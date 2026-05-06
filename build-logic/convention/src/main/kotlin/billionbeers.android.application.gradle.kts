@@ -22,8 +22,8 @@ val android = the<ApplicationExtension>()
 android.apply {
     defaultConfig {
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 60
-        versionName = "0.60"
+        versionCode = PROJECT_VERSION_CODE
+        versionName = PROJECT_VERSION_NAME
         multiDexEnabled = true
     }
 

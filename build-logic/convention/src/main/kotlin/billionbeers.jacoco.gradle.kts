@@ -9,7 +9,7 @@ plugins {
 val libs = the<org.gradle.accessors.dm.LibrariesForLibs>()
 
 configure<JacocoPluginExtension> {
-    toolVersion = "0.8.13"
+    toolVersion = PROJECT_JACOCO_VERSION
 }
 
 tasks.withType<Test>().configureEach {

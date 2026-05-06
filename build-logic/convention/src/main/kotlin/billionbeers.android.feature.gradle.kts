@@ -1,9 +1,5 @@
 import org.gradle.accessors.dm.LibrariesForLibs
 
-plugins {
-    id("com.android.library")
-}
-
 apply(plugin = "billionbeers.android.library")
 apply(plugin = "billionbeers.android.metro")
 apply(plugin = "billionbeers.android.compose")

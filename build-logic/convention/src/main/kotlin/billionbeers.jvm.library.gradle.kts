@@ -13,8 +13,8 @@ apply(plugin = "billionbeers.kotlin.options")
 
 val libs = the<LibrariesForLibs>()
 configure<JavaPluginExtension> {
-    sourceCompatibility = JavaVersion.VERSION_23
-    targetCompatibility = JavaVersion.VERSION_23
+    sourceCompatibility = PROJECT_JAVA_VERSION
+    targetCompatibility = PROJECT_JAVA_VERSION
 }
 
 dependencies {

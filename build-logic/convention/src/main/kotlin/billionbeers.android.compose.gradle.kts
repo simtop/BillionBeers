@@ -10,8 +10,7 @@ plugins {
 
 val libs = the<LibrariesForLibs>()
 
-fun configureCompose(commonExtension: CommonExtension) {
-
+pluginManager.withPlugin("com.android.base") {
     dependencies {
         "implementation"(platform(libs.androidxComposeBom))
         "androidTestImplementation"(platform(libs.androidxComposeBom))
@@ -24,19 +23,4 @@ fun configureCompose(commonExtension: CommonExtension) {
         "implementation"(libs.androidx.runtime.livedata)
         "implementation"(libs.metrox.viewmodel.compose)
     }
-}
-
-pluginManager.withPlugin("com.android.application") {
-    val extension = extensions.getByType<ApplicationExtension>()
-    configureCompose(extension)
-}
-
-pluginManager.withPlugin("com.android.library") {
-    val extension = extensions.getByType<LibraryExtension>()
-    configureCompose(extension)
-}
-
-pluginManager.withPlugin("com.android.dynamic-feature") {
-    val extension = extensions.getByType<DynamicFeatureExtension>()
-    configureCompose(extension)
 }
