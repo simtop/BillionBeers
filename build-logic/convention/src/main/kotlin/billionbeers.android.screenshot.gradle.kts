@@ -27,117 +27,118 @@ tasks.withType<Test>().configureEach {
     reports.junitXml.required.set(false)
 }
 
-val paparazziGeneratedDir = layout.buildDirectory.dir("generated/paparazzi-test/kotlin").get().asFile
+val namespaceProvider = provider {
+    project.extensions.findByType(com.android.build.api.dsl.CommonExtension::class.java)?.namespace ?: project.name
+}
+
+val generatePaparazziTest = tasks.register("generatePaparazziTest") {
+    val outputDir = layout.buildDirectory.dir("generated/paparazzi-test/kotlin")
+    outputs.dir(outputDir)
+    
+    val nsProvider = namespaceProvider
+    doLast {
+        val capturedModuleNamespace = nsProvider.get()
+        val safeClassName = capturedModuleNamespace.replace(".", "_").replaceFirstChar { it.uppercase() } + "ScreenshotTest"
+        
+        val outDirFile = outputDir.get().asFile
+        val packageDir = File(outDirFile, "com/simtop/billionbeers/screenshot")
+        packageDir.mkdirs()
+        
+        val testFile = File(packageDir, "${safeClassName}.kt")
+        testFile.writeText("""
+            package com.simtop.billionbeers.screenshot
+
+            import app.cash.paparazzi.DeviceConfig
+            import app.cash.paparazzi.Paparazzi
+            import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+            import com.simtop.billionbeers.snapshot_testing.PreviewProvider
+            import org.junit.Assume
+            import org.junit.Rule
+            import org.junit.Test
+            import org.junit.runner.RunWith
+            import org.junit.runners.Parameterized
+            import java.util.ServiceLoader
+
+            @RunWith(Parameterized::class)
+            class ${safeClassName}(
+                private val snapshotName: String,
+                private val content: @androidx.compose.runtime.Composable () -> Unit
+            ) {
+
+                @get:Rule
+                val paparazzi = Paparazzi(
+                    deviceConfig = DeviceConfig.PIXEL_5,
+                    theme = "android:Theme.Material.Light.NoActionBar"
+                )
+
+                @Test
+                fun snapshot() {
+                    Assume.assumeTrue("Skipping dummy snapshot", snapshotName != "DUMMY_NO_PREVIEWS_FOUND")
+                    
+                    paparazzi.snapshot(name = snapshotName) {
+                        BillionBeersTheme {
+                            content()
+                        }
+                    }
+                }
+
+                companion object {
+                    @JvmStatic
+                    @Parameterized.Parameters(name = "{0}")
+                    fun data(): Collection<Array<Any>> {
+                        val allProviders = ServiceLoader.load(PreviewProvider::class.java).toList()
+                        
+                        val namespace = "$capturedModuleNamespace"
+                        val localProviders = allProviders.filter { provider ->
+                            provider::class.java.name.startsWith(namespace)
+                        }
+                        
+                        val allSnapshots = localProviders.flatMap { it.snapshots }
+                        
+                        if (allSnapshots.isEmpty()) {
+                            return listOf(arrayOf("DUMMY_NO_PREVIEWS_FOUND", @androidx.compose.runtime.Composable {}))
+                        }
+
+                        return allSnapshots.map { snapshot ->
+                            arrayOf(snapshot.name, snapshot.content)
+                        }
+                    }
+                }
+            }
+        """.trimIndent())
+    }
+}
 
 pluginManager.withPlugin("com.android.application") {
     extensions.configure<ApplicationExtension>() {
-        sourceSets.getByName("test").java.srcDir(paparazziGeneratedDir)
+        sourceSets.getByName("test").java.srcDir(generatePaparazziTest)
+        sourceSets.getByName("test").resources.srcDir(layout.buildDirectory.dir("generated/ksp/debug/resources"))
     }
 }
 
 pluginManager.withPlugin("com.android.library") {
     extensions.configure<LibraryExtension>(){
-        sourceSets.getByName("test").java.srcDir(paparazziGeneratedDir)
+        sourceSets.getByName("test").java.srcDir(generatePaparazziTest)
+        sourceSets.getByName("test").resources.srcDir(layout.buildDirectory.dir("generated/ksp/debug/resources"))
     }
 }
 
 pluginManager.withPlugin("com.android.dynamic-feature") {
     extensions.configure<DynamicFeatureExtension>(){
-        sourceSets.getByName("test").java.srcDir(paparazziGeneratedDir)
+        sourceSets.getByName("test").java.srcDir(generatePaparazziTest)
+        sourceSets.getByName("test").resources.srcDir(layout.buildDirectory.dir("generated/ksp/debug/resources"))
     }
 }
 
-project.extensions.findByType(com.android.build.gradle.BaseExtension::class.java)?.let { android ->
-    val outputDir = layout.buildDirectory.dir("generated/paparazzi-test/kotlin").get().asFile
-    android.sourceSets.getByName("test").java.srcDir(outputDir)
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    if (name.contains("Test", ignoreCase = true)) {
+        source(generatePaparazziTest)
+    }
 }
-    
-project.afterEvaluate {
-    val ext = project.extensions.findByType(com.android.build.api.dsl.CommonExtension::class.java)
-    val capturedModuleNamespace = ext?.namespace ?: "com.simtop.unknown"
 
-    val generatePaparazziTest by tasks.registering {
-        val outputDir = layout.buildDirectory.dir("generated/paparazzi-test/kotlin")
-        outputs.dir(outputDir)
-        
-        val safeClassName = capturedModuleNamespace.replace(".", "_").replaceFirstChar { it.uppercase() } + "ScreenshotTest"
-        
-        doLast {
-            val outDirFile = outputDir.get().asFile
-            val packageDir = File(outDirFile, "com/simtop/billionbeers/screenshot")
-            packageDir.mkdirs()
-            
-            val testFile = File(packageDir, "${safeClassName}.kt")
-            testFile.writeText("""
-                package com.simtop.billionbeers.screenshot
-
-                import app.cash.paparazzi.DeviceConfig
-                import app.cash.paparazzi.Paparazzi
-                import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
-                import com.simtop.billionbeers.snapshot_testing.PreviewProvider
-                import org.junit.Assume
-                import org.junit.Rule
-                import org.junit.Test
-                import org.junit.runner.RunWith
-                import org.junit.runners.Parameterized
-                import java.util.ServiceLoader
-
-                @RunWith(Parameterized::class)
-                class ${safeClassName}(
-                    private val snapshotName: String,
-                    private val content: @androidx.compose.runtime.Composable () -> Unit
-                ) {
-
-                    @get:Rule
-                    val paparazzi = Paparazzi(
-                        deviceConfig = DeviceConfig.PIXEL_5,
-                        theme = "android:Theme.Material.Light.NoActionBar"
-                    )
-
-                    @Test
-                    fun snapshot() {
-                        Assume.assumeTrue("Skipping dummy snapshot", snapshotName != "DUMMY_NO_PREVIEWS_FOUND")
-                        
-                        paparazzi.snapshot(name = snapshotName) {
-                            BillionBeersTheme {
-                                content()
-                            }
-                        }
-                    }
-
-                    companion object {
-                        @JvmStatic
-                        @Parameterized.Parameters(name = "{0}")
-                        fun data(): Collection<Array<Any>> {
-                            val allProviders = ServiceLoader.load(PreviewProvider::class.java).toList()
-                            
-                            val namespace = "$capturedModuleNamespace"
-                            val localProviders = allProviders.filter { provider ->
-                                provider::class.java.name.startsWith(namespace)
-                            }
-                            
-                            val allSnapshots = localProviders.flatMap { it.snapshots }
-                            
-                            if (allSnapshots.isEmpty()) {
-                                return listOf(arrayOf("DUMMY_NO_PREVIEWS_FOUND", @androidx.compose.runtime.Composable {}))
-                            }
-
-                            return allSnapshots.map { snapshot ->
-                                arrayOf(snapshot.name, snapshot.content)
-                            }
-                        }
-                    }
-                }
-            """.trimIndent())
-        }
-    }
-
-    // Ensure the generate task runs before compilation and KSP to satisfy Gradle inputs
-    tasks.matching { it.name.contains("ksp", ignoreCase = true) || it.name.contains("compile", ignoreCase = true) }.configureEach {
-        if (name.contains("Test", ignoreCase = true)) {
-            dependsOn(generatePaparazziTest)
-        }
-    }
+// Fix implicit dependency for KSP
+tasks.matching { it.name.contains("ksp", ignoreCase = true) && it.name.contains("UnitTest", ignoreCase = true) }.configureEach {
+    dependsOn(generatePaparazziTest)
 }
 
 
