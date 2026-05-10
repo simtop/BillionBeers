@@ -43,14 +43,13 @@ class MainActivityComposeTest {
     val context = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
     val app = context as BillionBeersApplication
 
-    val testGraph =
-      dev.zacsweers.metro
-        .createGraphFactory<TestAppGraph.Factory>()
-        .create(
-          context = context,
-          beersRepository = fakeBeersRepository,
-          splitInstallManager = fakeSplitInstallManager,
-        ) as BaseAppGraph
+    // Configure fakes
+    com.simtop.billionbeers.di.FakeBeersRepositoryModule.fakeBeersRepository.setBeers(listOf(fakeBeer))
+    // FakeSplitInstallManager is already relaxed, but we can set it if needed
+
+    val testGraph = dev.zacsweers.metro.createGraphFactory<TestAppGraph.Factory>().create(
+        context = context
+    ) as BaseAppGraph
 
     app.appGraph = testGraph
   }

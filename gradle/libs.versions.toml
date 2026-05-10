@@ -2,7 +2,7 @@
 # Core
 org-jetbrains-kotlin = "2.3.21"
 com-google-devtools-ksp = "2.3.6"
-dev-zacsweers-metro = "1.0.0-RC4"
+dev-zacsweers-metro = "1.0.0"
 android-gradle-plugin = "9.2.0"
 compileSdk = "36"
 minSdk = "28"

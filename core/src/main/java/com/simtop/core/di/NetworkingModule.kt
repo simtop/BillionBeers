@@ -1,16 +1,14 @@
 package com.simtop.core.di
 
 import dev.zacsweers.metro.ContributesTo
+import dev.zacsweers.metro.Named
 import dev.zacsweers.metro.Provides
-import dev.zacsweers.metro.Qualifier
 import dev.zacsweers.metro.SingleIn
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Converter
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-
-@Qualifier annotation class Named(val value: String)
 
 @ContributesTo(AppScope::class)
 interface NetworkingModule {
