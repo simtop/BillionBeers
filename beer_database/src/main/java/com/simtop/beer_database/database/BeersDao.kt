@@ -76,7 +76,7 @@ abstract class BeersDao {
   )
   abstract suspend fun updateBeer(primaryKey: String, availability: Boolean)
 
-  @Query("DELETE FROM beers") abstract fun deleteAll()
+  @Query("DELETE FROM beers") abstract suspend fun deleteAll()
 
   @Query("SELECT COUNT(id) FROM beers") abstract suspend fun getCount(): Int
 }

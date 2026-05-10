@@ -26,6 +26,8 @@ sealed class Either<out L, out R> {
 inline fun <T> either(f: () -> T): Either<Exception, T> =
   try {
     Either.Right(f())
+  } catch (e: kotlinx.coroutines.CancellationException) {
+    throw e
   } catch (e: Exception) {
     Either.Left(e)
   }

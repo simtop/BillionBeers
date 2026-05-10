@@ -1,10 +1,13 @@
 package com.simtop.core.core
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 sealed class PagingState {
   object Idle : PagingState()
@@ -38,6 +41,7 @@ class PagingMediator<Key : Any, Value : Any>(
   private val _pagingState = MutableStateFlow<PagingState>(PagingState.Idle)
   val pagingState: StateFlow<PagingState> = _pagingState.asStateFlow()
 
+  private val mutex = Mutex()
   private var currentKey: Key? = initialKey
   private var isLastPage = false
 
@@ -62,20 +66,24 @@ class PagingMediator<Key : Any, Value : Any>(
       }
 
   suspend fun loadFirstPage() {
-    reset()
-    loadPage(initialKey, isFirstLoad = true)
+    mutex.withLock {
+      reset()
+      loadPage(initialKey, isFirstLoad = true)
+    }
   }
 
   suspend fun loadNextPage() {
-    if (
-      _pagingState.value is PagingState.Loading ||
-        _pagingState.value is PagingState.LoadingNextPage ||
-        isLastPage
-    ) {
-      return
-    }
+    mutex.withLock {
+      if (
+        _pagingState.value is PagingState.Loading ||
+          _pagingState.value is PagingState.LoadingNextPage ||
+          isLastPage
+      ) {
+        return
+      }
 
-    currentKey?.let { key -> loadPage(key, isFirstLoad = false) }
+      currentKey?.let { key -> loadPage(key, isFirstLoad = false) }
+    }
   }
 
   @Suppress("TooGenericExceptionCaught")
@@ -100,6 +108,8 @@ class PagingMediator<Key : Any, Value : Any>(
       } else {
         _pagingState.value = PagingState.Success
       }
+    } catch (e: CancellationException) {
+      throw e
     } catch (e: Exception) {
       _pagingState.value = PagingState.Error(e.message ?: "Unknown error")
     }

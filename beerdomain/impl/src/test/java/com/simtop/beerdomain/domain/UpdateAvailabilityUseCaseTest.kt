@@ -22,7 +22,7 @@ class UpdateAvailabilityUseCaseTest {
     val updatedBeer = beer.copy(availability = false)
 
     // Act
-    val result = useCase.execute(useCase.Params(updatedBeer))
+    val result = useCase(updatedBeer)
 
     // Assert
     assertTrue(result is Either.Right)
@@ -38,7 +38,7 @@ class UpdateAvailabilityUseCaseTest {
     val beer = Beer.empty.copy(id = "1")
 
     // Act
-    val result = useCase.execute(useCase.Params(beer))
+    val result = useCase(beer)
 
     // Assert
     assertTrue(result is Either.Left)
