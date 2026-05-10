@@ -75,7 +75,7 @@ jobs:
           elif [ -n "$MODULE_INPUT" ]; then
             # Split by space and construct command
             for MOD in $MODULE_INPUT; do
-              # Trim whitespace (though not strictly needed with space split in bash)
+              # Trim whitespace
               CLEAN_MOD=$(echo "$MOD" | xargs)
               if [ "$USE_CLEAN" = "true" ]; then
                 COMMAND="$COMMAND ${CLEAN_MOD}:clean"
@@ -87,8 +87,8 @@ jobs:
             exit 1
           fi
           
-          echo "Running command: ./gradlew assembleDebug testDebugClasses $COMMAND"
-          ./gradlew assembleDebug testDebugClasses $COMMAND
+          echo "Running command: ./gradlew $COMMAND"
+          ./gradlew $COMMAND
 
       - name: Commit and Push Screenshots
         env:
