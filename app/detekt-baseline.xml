@@ -1,0 +1,9 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ForbiddenComment:MainCoroutineScopeRule.kt$// TODO: refactor</ID>
+    <ID>TopLevelPropertyNaming:TestingConstants.kt$const val fakeErrorName = "Error getting list of beers"</ID>
+    <ID>WildcardImport:MainCoroutineScopeRule.kt$import kotlinx.coroutines.test.*</ID>
+  </CurrentIssues>
+</SmellBaseline>

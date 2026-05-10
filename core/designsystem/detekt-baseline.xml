@@ -1,0 +1,29 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>MagicNumber:Color.kt$0xFF001945</ID>
+    <ID>MagicNumber:Color.kt$0xFF002F6E</ID>
+    <ID>MagicNumber:Color.kt$0xFF0047AB</ID>
+    <ID>MagicNumber:Color.kt$0xFF1B1B1F</ID>
+    <ID>MagicNumber:Color.kt$0xFF1E5BBF</ID>
+    <ID>MagicNumber:Color.kt$0xFF303033</ID>
+    <ID>MagicNumber:Color.kt$0xFF410002</ID>
+    <ID>MagicNumber:Color.kt$0xFF690005</ID>
+    <ID>MagicNumber:Color.kt$0xFF93000A</ID>
+    <ID>MagicNumber:Color.kt$0xFFADC6FF</ID>
+    <ID>MagicNumber:Color.kt$0xFFD8E2FF</ID>
+    <ID>MagicNumber:Color.kt$0xFFE3E2E6</ID>
+    <ID>MagicNumber:Color.kt$0xFFF1F0F4</ID>
+    <ID>MagicNumber:Color.kt$0xFFFFB4AB</ID>
+    <ID>MagicNumber:Color.kt$0xFFFFDAD6</ID>
+    <ID>MagicNumber:Color.kt$0xFFFFFFFF</ID>
+    <ID>MagicNumber:DialogWithProgressBar.kt$0.01f</ID>
+    <ID>MagicNumber:DialogWithProgressBar.kt$50</ID>
+    <ID>MagicNumber:DialogWithProgressBar.kt$500</ID>
+    <ID>MatchingDeclarationName:DialogWithProgressBar.kt$CatalogSettings</ID>
+    <ID>MatchingDeclarationName:Spacing.kt$BillionBeersSpacing</ID>
+    <ID>SwallowedException:ComposeExtensions.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ComposeExtensions.kt$e: Exception</ID>
+  </CurrentIssues>
+</SmellBaseline>

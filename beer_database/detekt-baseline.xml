@@ -1,0 +1,8 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>LongParameterList:BeersDao.kt$BeersDao$( id: String, name: String, tagline: String, description: String, imageUrl: String, abv: Double, ibu: Double, foodPairing: String, )</ID>
+    <ID>MatchingDeclarationName:Converter.kt$Converters</ID>
+  </CurrentIssues>
+</SmellBaseline>

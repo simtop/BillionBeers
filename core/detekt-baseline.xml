@@ -1,0 +1,7 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ForbiddenComment:NetworkingModule.kt$NetworkingModule$// TODO: check how to do after BuildConfig Migration</ID>
+  </CurrentIssues>
+</SmellBaseline>

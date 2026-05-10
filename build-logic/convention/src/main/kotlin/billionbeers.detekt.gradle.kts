@@ -11,6 +11,7 @@ configure<DetektExtension> {
     toolVersion = libs.versions.detekt.get()
     source.setFrom(files("src/main/java", "src/main/kotlin"))
     config.setFrom(files("$rootDir/config/detekt/detekt.yml"))
+    baseline = file("detekt-baseline.xml").takeIf { it.exists() }
     buildUponDefaultConfig = true
     autoCorrect = false
     ignoreFailures = true

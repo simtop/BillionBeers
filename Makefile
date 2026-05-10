@@ -58,6 +58,9 @@ screenshot-clean: ## Clean and re-record golden images.
 lint: ## Run static analysis (Detekt).
 	./gradlew $(MODULE_PREFIX)detekt
 
+detekt-baseline: ## Update Detekt baselines for all modules.
+	./gradlew $(MODULE_PREFIX)detektBaseline
+
 format: ## Apply code formatting (Spotless).
 	./gradlew $(MODULE_PREFIX)spotlessApply
 
