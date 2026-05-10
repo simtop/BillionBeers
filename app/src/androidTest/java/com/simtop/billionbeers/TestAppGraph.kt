@@ -2,7 +2,7 @@ package com.simtop.billionbeers
 
 import android.content.Context
 import com.simtop.billionbeers.di.BaseAppGraph
-import com.simtop.core.di.AppScope
+import dev.zacsweers.metro.AppScope
 import com.simtop.core.di.ApplicationContext
 import dev.zacsweers.metro.DependencyGraph
 import dev.zacsweers.metro.Provides

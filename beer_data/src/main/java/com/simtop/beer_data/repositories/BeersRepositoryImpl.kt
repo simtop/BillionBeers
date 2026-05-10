@@ -6,7 +6,7 @@ import com.simtop.beer_network.remotesources.BeersRemoteSource
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.PagingMediator
-import com.simtop.core.di.AppScope
+import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import kotlinx.coroutines.async

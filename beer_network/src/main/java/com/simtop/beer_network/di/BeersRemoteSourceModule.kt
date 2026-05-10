@@ -2,7 +2,7 @@ package com.simtop.beer_network.di
 
 import com.simtop.beer_network.remotesources.BeersRemoteSource
 import com.simtop.beer_network.remotesources.BeersRemoteSourceImpl
-import com.simtop.core.di.AppScope
+import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.Provides
 

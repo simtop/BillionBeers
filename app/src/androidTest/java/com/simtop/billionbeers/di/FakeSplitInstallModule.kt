@@ -1,7 +1,7 @@
 package com.simtop.billionbeers.di
 
 import com.google.android.play.core.splitinstall.SplitInstallManager
-import com.simtop.core.di.AppScope
+import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.Provides

@@ -5,7 +5,7 @@ import androidx.room.Room
 import com.simtop.beer_database.database.BeersDao
 import com.simtop.beer_database.database.BeersDatabase
 import com.simtop.core.core.BEERS_DB_NAME
-import com.simtop.core.di.AppScope
+import dev.zacsweers.metro.AppScope
 import com.simtop.core.di.ApplicationContext
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.Provides

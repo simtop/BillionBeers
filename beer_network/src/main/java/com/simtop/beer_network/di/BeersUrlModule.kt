@@ -1,6 +1,6 @@
 package com.simtop.beer_network.di
 
-import com.simtop.core.di.AppScope
+import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.Named
 import dev.zacsweers.metro.Provides
