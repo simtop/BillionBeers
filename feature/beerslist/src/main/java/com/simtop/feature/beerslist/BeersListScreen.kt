@@ -47,7 +47,6 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -65,7 +64,7 @@ import com.simtop.presentation_utils.core.InfiniteListHandler
 import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import com.simtop.presentation_utils.custom_views.ComposeErrorView
 import dev.zacsweers.metrox.viewmodel.metroViewModel
-import kotlinx.coroutines.delay
+import androidx.compose.ui.res.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -120,7 +119,7 @@ fun BeersListContent(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = context.getString(com.simtop.core.R.string.billion_beers_list)) }
+                title = { Text(text = stringResource(R.string.billion_beers_list)) }
             )
         },
         contentWindowInsets = WindowInsets.statusBars
@@ -280,7 +279,7 @@ class BeersListPreviewParameterProvider :
 }
 
 @PreviewLightDark
-@androidx.compose.runtime.Composable
+@Composable
 fun BeersListScreenPreview(
     @androidx.compose.ui.tooling.preview.PreviewParameter(BeersListPreviewParameterProvider::class) state: BeersListPreviewParameterProvider.State
 ) {

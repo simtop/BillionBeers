@@ -17,5 +17,9 @@ fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
 }
 
 fun showToast(context: Context, message: String) {
-  Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+  try {
+    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+  } catch (e: Exception) {
+    // Ignore for Paparazzi Tests/previews where Toast might not be supported
+  }
 }
