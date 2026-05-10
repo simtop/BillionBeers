@@ -12,7 +12,7 @@ fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
   this.clickable(
     interactionSource = remember { MutableInteractionSource() },
     indication = null,
-    onClick = onClick
+    onClick = onClick,
   )
 }
 

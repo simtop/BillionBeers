@@ -5,9 +5,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.CompositionLocalProvider
-import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.google.android.play.core.splitinstall.SplitInstallManager
 import com.simtop.billionbeers.BillionBeersApplication
+import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 
 class MainActivity : ComponentActivity() {

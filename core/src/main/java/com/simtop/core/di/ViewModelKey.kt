@@ -1,8 +1,8 @@
 package com.simtop.core.di
 
 import androidx.lifecycle.ViewModel
-import kotlin.reflect.KClass
 import dev.zacsweers.metro.MapKey
+import kotlin.reflect.KClass
 
 @MapKey
 @Retention(AnnotationRetention.RUNTIME)

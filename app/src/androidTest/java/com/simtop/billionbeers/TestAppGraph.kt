@@ -22,33 +22,30 @@ import kotlin.reflect.KClass
 @BindingContainer
 @ContributesTo(AppScope::class)
 interface TestViewModelMapsModule {
-    @Multibinds(allowEmpty = true)
-    fun viewModels(): Map<KClass<out ViewModel>, ViewModel>
+  @Multibinds(allowEmpty = true) fun viewModels(): Map<KClass<out ViewModel>, ViewModel>
 
-    @Multibinds(allowEmpty = true)
-    fun assistedViewModels(): Map<KClass<out ViewModel>, ViewModelAssistedFactory>
+  @Multibinds(allowEmpty = true)
+  fun assistedViewModels(): Map<KClass<out ViewModel>, ViewModelAssistedFactory>
 
-    @Multibinds(allowEmpty = true)
-    fun manualAssistedViewModels(): Map<KClass<out ManualViewModelAssistedFactory>, ManualViewModelAssistedFactory>
+  @Multibinds(allowEmpty = true)
+  fun manualAssistedViewModels():
+    Map<KClass<out ManualViewModelAssistedFactory>, ManualViewModelAssistedFactory>
 }
 
 @DependencyGraph(
-    scope = AppScope::class,
-    excludes = [
-        BeersRepositoryModule::class,
-        SplitInstallModule::class,
-    ]
+  scope = AppScope::class,
+  excludes = [BeersRepositoryModule::class, SplitInstallModule::class],
 )
 interface TestAppGraph : BaseAppGraph {
-    override val splitInstallManager: SplitInstallManager
-    override val metroViewModelFactory: DefaultMetroViewModelFactory
+  override val splitInstallManager: SplitInstallManager
+  override val metroViewModelFactory: DefaultMetroViewModelFactory
 
-    @DependencyGraph.Factory
-    fun interface Factory {
-        fun create(
-            @Provides @ApplicationContext context: Context,
-            @Provides beersRepository: BeersRepository,
-            @Provides splitInstallManager: SplitInstallManager,
-        ): TestAppGraph
-    }
+  @DependencyGraph.Factory
+  fun interface Factory {
+    fun create(
+      @Provides @ApplicationContext context: Context,
+      @Provides beersRepository: BeersRepository,
+      @Provides splitInstallManager: SplitInstallManager,
+    ): TestAppGraph
+  }
 }

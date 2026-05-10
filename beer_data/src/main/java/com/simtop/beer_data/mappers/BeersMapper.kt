@@ -19,7 +19,7 @@ object BeersMapper {
       imageUrl = imageUrl ?: "",
       abv = response?.abv ?: 0.0,
       ibu = response?.ibu ?: 0.0,
-      foodPairing = response?.foodPairing ?: emptyList()
+      foodPairing = response?.foodPairing ?: emptyList(),
     )
   }
 
@@ -33,7 +33,7 @@ object BeersMapper {
       beer.abv,
       beer.ibu,
       Converters.listToJson(beer.foodPairing),
-      beer.availability
+      beer.availability,
     )
 
   fun fromBeerDbModelToBeer(beerDbModel: BeerDbModel) =
@@ -46,6 +46,6 @@ object BeersMapper {
       beerDbModel.abv,
       beerDbModel.ibu,
       Converters.jsonToList(beerDbModel.foodPairing),
-      beerDbModel.availability
+      beerDbModel.availability,
     )
 }

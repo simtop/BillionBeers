@@ -75,6 +75,5 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersReposit
     return emptyList()
   }
 
-    override suspend fun refresh() {
-    }
+  override suspend fun refresh() {}
 }

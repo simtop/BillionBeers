@@ -10,5 +10,5 @@ data class ImageResponse(
   @SerializedName("width") val width: Int?,
   @SerializedName("height") val height: Int?,
   @SerializedName("mime") val mime: String?,
-  @SerializedName("size") val size: Int
+  @SerializedName("size") val size: Int,
 )

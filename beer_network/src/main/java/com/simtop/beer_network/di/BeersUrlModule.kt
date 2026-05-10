@@ -1,10 +1,10 @@
 package com.simtop.beer_network.di
 
 import com.simtop.core.di.AppScope
-import dev.zacsweers.metro.SingleIn
+import com.simtop.core.di.Named
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.Provides
-import com.simtop.core.di.Named
+import dev.zacsweers.metro.SingleIn
 
 @ContributesTo(AppScope::class)
 interface BeersUrlModule {

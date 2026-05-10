@@ -6,8 +6,8 @@ import com.simtop.core.core.CoroutineDispatcherProvider
 import dev.zacsweers.metrox.viewmodel.MetroViewModelFactory
 
 interface BaseAppGraph : DynamicDependencies {
-    override val useCase: UpdateAvailabilityUseCase
-    override val coroutineDispatcher: CoroutineDispatcherProvider
-    val splitInstallManager: SplitInstallManager
-    val metroViewModelFactory: MetroViewModelFactory
+  override val useCase: UpdateAvailabilityUseCase
+  override val coroutineDispatcher: CoroutineDispatcherProvider
+  val splitInstallManager: SplitInstallManager
+  val metroViewModelFactory: MetroViewModelFactory
 }

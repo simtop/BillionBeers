@@ -31,7 +31,7 @@ class MainActivityComposeTest {
       ibu = 60.0,
       foodPairing =
         listOf("Spicy chicken tikka masala", "Grilled chicken quesadilla", "Caramel toffee cake"),
-      availability = true
+      availability = true,
     )
 
   private val fakeBeersRepository: BeersRepository = FakeBeersRepository(listOf(fakeBeer))
@@ -42,27 +42,31 @@ class MainActivityComposeTest {
   fun setup() {
     val context = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
     val app = context as BillionBeersApplication
-    
-    val testGraph = dev.zacsweers.metro.createGraphFactory<TestAppGraph.Factory>().create(
-        context = context,
-        beersRepository = fakeBeersRepository,
-        splitInstallManager = fakeSplitInstallManager
-    ) as BaseAppGraph
-    
+
+    val testGraph =
+      dev.zacsweers.metro
+        .createGraphFactory<TestAppGraph.Factory>()
+        .create(
+          context = context,
+          beersRepository = fakeBeersRepository,
+          splitInstallManager = fakeSplitInstallManager,
+        ) as BaseAppGraph
+
     app.appGraph = testGraph
   }
 
   @Test
-  fun shouldDisplayBeerListAndNavigateToDetail() = runMainActivityTest(composeTestRule) {
-    homeScreen {
-      waitUntilNodeWithTextIsDisplayed(fakeBeer.name)
-      assertBeerNameIsDisplayed(fakeBeer.name)
-      clickOnBeer(fakeBeer.name)
-    }
+  fun shouldDisplayBeerListAndNavigateToDetail() =
+    runMainActivityTest(composeTestRule) {
+      homeScreen {
+        waitUntilNodeWithTextIsDisplayed(fakeBeer.name)
+        assertBeerNameIsDisplayed(fakeBeer.name)
+        clickOnBeer(fakeBeer.name)
+      }
 
-    detailScreen {
-      waitUntilNodeWithTextIsDisplayed(fakeBeer.description)
-      assertBeerDetailIsDisplayed(fakeBeer.name, fakeBeer.description)
+      detailScreen {
+        waitUntilNodeWithTextIsDisplayed(fakeBeer.description)
+        assertBeerDetailIsDisplayed(fakeBeer.name, fakeBeer.description)
+      }
     }
-  }
 }

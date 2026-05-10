@@ -32,7 +32,7 @@ class PagingMediator<Key : Any, Value : Any>(
   private val nextKey: (currentKey: Key, lastPage: List<Value>) -> Key?,
   private val fetchRemote: suspend (key: Key) -> List<Value>,
   private val saveLocal: (suspend (List<Value>) -> Unit)? = null,
-  private val fetchLocal: (() -> Flow<List<Value>>)? = null
+  private val fetchLocal: (() -> Flow<List<Value>>)? = null,
 ) {
 
   private val _pagingState = MutableStateFlow<PagingState>(PagingState.Idle)

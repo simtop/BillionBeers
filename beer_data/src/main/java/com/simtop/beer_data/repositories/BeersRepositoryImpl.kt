@@ -7,8 +7,8 @@ import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.PagingMediator
 import com.simtop.core.di.AppScope
-import dev.zacsweers.metro.SingleIn
 import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.SingleIn
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -21,7 +21,7 @@ import kotlinx.coroutines.flow.onStart
 @Inject
 class BeersRepositoryImpl(
   private val beersRemoteSource: BeersRemoteSource,
-  private val beersLocalSource: BeersLocalSource
+  private val beersLocalSource: BeersLocalSource,
 ) : BeersRepository {
 
   private val pagingMediator =
@@ -57,7 +57,7 @@ class BeersRepositoryImpl(
         beersLocalSource.getAllBeersFromDB().map { list ->
           list.map { BeersMapper.fromBeerDbModelToBeer(it) }
         }
-      }
+      },
     )
 
   override suspend fun getListOfBeerFromApi(page: Int): List<Beer> {

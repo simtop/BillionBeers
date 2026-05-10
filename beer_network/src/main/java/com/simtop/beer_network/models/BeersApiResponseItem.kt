@@ -11,7 +11,7 @@ data class BeersApiResponseItem(
   val ibu: Double?,
   @SerializedName("image_id") val imageId: String?,
   val translations: List<Translation>?,
-  @SerializedName("food_pairing") val foodPairing: List<String>?
+  @SerializedName("food_pairing") val foodPairing: List<String>?,
 )
 
 @Keep data class Translation(val language: Language, val slogan: String?, val description: String?)

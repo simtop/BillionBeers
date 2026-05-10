@@ -5,9 +5,7 @@ plugins {
   id("billionbeers.android.catalog")
 }
 
-android {
-  namespace = "com.simtop.presentation_utils"
-}
+android { namespace = "com.simtop.presentation_utils" }
 
 dependencies {
   implementation(project(":beerdomain:api"))

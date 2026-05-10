@@ -10,7 +10,7 @@ interface BeersService {
   @GET("beers")
   suspend fun getListOfBeers(
     @Query("_page") page: Int,
-    @Query("_limit") perPage: Int = DEFAULT_ITEMS_PER_PAGE
+    @Query("_limit") perPage: Int = DEFAULT_ITEMS_PER_PAGE,
   ): List<BeersApiResponseItem>
 
   @GET("images/{id}") suspend fun getImage(@Path("id") id: String): ImageResponse

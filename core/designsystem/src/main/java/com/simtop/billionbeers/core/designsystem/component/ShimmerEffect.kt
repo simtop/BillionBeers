@@ -13,34 +13,38 @@ import androidx.compose.ui.graphics.Color
 
 @Composable
 fun shimmerBrush(showShimmer: Boolean = true, targetValue: Float = SHIMMER_TARGET_VALUE): Brush {
-    return if (showShimmer) {
-        val shimmerColors = listOf(
-            Color.LightGray.copy(alpha = SHIMMER_ALPHA_HIGH),
-            Color.LightGray.copy(alpha = SHIMMER_ALPHA_LOW),
-            Color.LightGray.copy(alpha = SHIMMER_ALPHA_HIGH),
-        )
+  return if (showShimmer) {
+    val shimmerColors =
+      listOf(
+        Color.LightGray.copy(alpha = SHIMMER_ALPHA_HIGH),
+        Color.LightGray.copy(alpha = SHIMMER_ALPHA_LOW),
+        Color.LightGray.copy(alpha = SHIMMER_ALPHA_HIGH),
+      )
 
-        val transition = rememberInfiniteTransition(label = "shimmer")
-        val translateAnimation = transition.animateFloat(
-            initialValue = 0f,
-            targetValue = targetValue,
-            animationSpec = infiniteRepeatable(
-                animation = tween(SHIMMER_DURATION, easing = FastOutSlowInEasing),
-                repeatMode = RepeatMode.Restart
-            ), label = "shimmer"
-        )
-        Brush.linearGradient(
-            colors = shimmerColors,
-            start = Offset.Zero,
-            end = Offset(x = translateAnimation.value, y = translateAnimation.value)
-        )
-    } else {
-        Brush.linearGradient(
-            colors = listOf(Color.Transparent, Color.Transparent),
-            start = Offset.Zero,
-            end = Offset.Zero
-        )
-    }
+    val transition = rememberInfiniteTransition(label = "shimmer")
+    val translateAnimation =
+      transition.animateFloat(
+        initialValue = 0f,
+        targetValue = targetValue,
+        animationSpec =
+          infiniteRepeatable(
+            animation = tween(SHIMMER_DURATION, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Restart,
+          ),
+        label = "shimmer",
+      )
+    Brush.linearGradient(
+      colors = shimmerColors,
+      start = Offset.Zero,
+      end = Offset(x = translateAnimation.value, y = translateAnimation.value),
+    )
+  } else {
+    Brush.linearGradient(
+      colors = listOf(Color.Transparent, Color.Transparent),
+      start = Offset.Zero,
+      end = Offset.Zero,
+    )
+  }
 }
 
 private const val SHIMMER_TARGET_VALUE = 1000f

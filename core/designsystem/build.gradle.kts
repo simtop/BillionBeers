@@ -1,15 +1,13 @@
 plugins {
-    id("billionbeers.android.library")
-    id("billionbeers.android.compose")
-    id("billionbeers.android.screenshot")
-    id("billionbeers.android.catalog")
+  id("billionbeers.android.library")
+  id("billionbeers.android.compose")
+  id("billionbeers.android.screenshot")
+  id("billionbeers.android.catalog")
 }
 
-android {
-    namespace = "com.simtop.billionbeers.core.designsystem"
-}
+android { namespace = "com.simtop.billionbeers.core.designsystem" }
 
 dependencies {
-    implementation(libs.androidx.foundation.android)
-    implementation(libs.androidx.material3.android)
+  implementation(libs.androidx.foundation.android)
+  implementation(libs.androidx.material3.android)
 }

@@ -14,7 +14,7 @@ fun InfiniteListHandler(
   listState: LazyListState,
   isLoadingNextPage: Boolean,
   buffer: Int = 1,
-  onLoadMore: () -> Unit
+  onLoadMore: () -> Unit,
 ) {
   val loadMore = remember {
     derivedStateOf {
@@ -27,11 +27,6 @@ fun InfiniteListHandler(
   }
 
   LaunchedEffect(loadMore) {
-    snapshotFlow { loadMore.value }
-      .distinctUntilChanged()
-      .filter { it }
-      .collect {
-        onLoadMore()
-      }
+    snapshotFlow { loadMore.value }.distinctUntilChanged().filter { it }.collect { onLoadMore() }
   }
 }

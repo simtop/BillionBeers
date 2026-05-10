@@ -27,7 +27,7 @@ fun AppNavigation(
     composable<BeersList> {
       BeersListScreen(
         onBeerClick = { beer -> navController.navigate(BeerDetail(beer)) },
-        splitInstallManager = splitInstallManager
+        splitInstallManager = splitInstallManager,
       )
     }
 

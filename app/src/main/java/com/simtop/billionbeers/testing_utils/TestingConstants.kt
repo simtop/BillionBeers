@@ -15,7 +15,7 @@ val fakeBeersApiResponseItem =
     0.0,
     "",
     translations = listOf(Translation(Language("en"), "A Real Bitter Experience.", "")),
-    emptyList()
+    emptyList(),
   )
 
 val fakeBeerApiResponse = listOf(fakeBeersApiResponseItem.copy())

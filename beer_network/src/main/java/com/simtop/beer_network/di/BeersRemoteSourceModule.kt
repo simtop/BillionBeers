@@ -10,7 +10,6 @@ import dev.zacsweers.metro.Provides
 interface BeersRemoteSourceModule {
 
   @Provides
-  fun provideBeersRemoteSource(
-    beersRemoteSourceImpl: BeersRemoteSourceImpl
-  ): BeersRemoteSource = beersRemoteSourceImpl
+  fun provideBeersRemoteSource(beersRemoteSourceImpl: BeersRemoteSourceImpl): BeersRemoteSource =
+    beersRemoteSourceImpl
 }

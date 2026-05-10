@@ -22,50 +22,42 @@ import com.simtop.billionbeers.catalog_annotations.CatalogComponent
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 
-@CatalogComponent(
-    tab = "Utilities",
-)
+@CatalogComponent(tab = "Utilities")
 @Composable
 fun ComposeErrorView(
-    message: String = "Empty State",
-    onRetry: () -> Unit = {},
-    modifier: Modifier = Modifier
+  message: String = "Empty State",
+  onRetry: () -> Unit = {},
+  modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(BillionBeersTheme.spacing.large),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Icon(
-            imageVector = Icons.Default.Warning,
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.error
-        )
-        
-        Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.medium))
-        
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        
-        Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
-        
-        Button(onClick = onRetry) {
-            Text(text = "Retry")
-        }
-    }
+  Column(
+    modifier = modifier.fillMaxSize().padding(BillionBeersTheme.spacing.large),
+    verticalArrangement = Arrangement.Center,
+    horizontalAlignment = Alignment.CenterHorizontally,
+  ) {
+    Icon(
+      imageVector = Icons.Default.Warning,
+      contentDescription = null,
+      modifier = Modifier.size(64.dp),
+      tint = MaterialTheme.colorScheme.error,
+    )
+
+    Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.medium))
+
+    Text(
+      text = message,
+      style = MaterialTheme.typography.bodyLarge,
+      textAlign = TextAlign.Center,
+      color = MaterialTheme.colorScheme.onSurface,
+    )
+
+    Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
+
+    Button(onClick = onRetry) { Text(text = "Retry") }
+  }
 }
 
 @PreviewLightDark
 @Composable
 fun ComposeErrorViewPreview() {
-    BillionBeersTheme {
-        ComposeErrorView()
-    }
+  BillionBeersTheme { ComposeErrorView() }
 }

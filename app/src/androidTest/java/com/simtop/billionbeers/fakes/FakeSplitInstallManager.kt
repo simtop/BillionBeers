@@ -8,66 +8,69 @@ import com.google.android.play.core.splitinstall.SplitInstallStateUpdatedListene
 import com.simtop.navigation.FeatureConstants
 
 class FakeSplitInstallManager : SplitInstallManager {
-    private val installed = mutableSetOf(FeatureConstants.BEER_DETAIL_MODULE)
-    
-    override fun startInstall(request: com.google.android.play.core.splitinstall.SplitInstallRequest): Task<Int> {
-        return Tasks.forResult(0)
-    }
+  private val installed = mutableSetOf(FeatureConstants.BEER_DETAIL_MODULE)
 
-    override fun cancelInstall(sessionId: Int): Task<Void> {
-        return Tasks.forResult(null)
-    }
+  override fun startInstall(
+    request: com.google.android.play.core.splitinstall.SplitInstallRequest
+  ): Task<Int> {
+    return Tasks.forResult(0)
+  }
 
-    override fun getSessionState(sessionId: Int): Task<SplitInstallSessionState> {
-        return Tasks.forCanceled()
-    }
+  override fun cancelInstall(sessionId: Int): Task<Void> {
+    return Tasks.forResult(null)
+  }
 
-    override fun getSessionStates(): Task<List<SplitInstallSessionState>> {
-        return Tasks.forResult(emptyList())
-    }
+  override fun getSessionState(sessionId: Int): Task<SplitInstallSessionState> {
+    return Tasks.forCanceled()
+  }
 
-    override fun registerListener(p0: SplitInstallStateUpdatedListener) {}
+  override fun getSessionStates(): Task<List<SplitInstallSessionState>> {
+    return Tasks.forResult(emptyList())
+  }
 
-    override fun unregisterListener(p0: SplitInstallStateUpdatedListener) {}
+  override fun registerListener(p0: SplitInstallStateUpdatedListener) {}
 
-    override fun getInstalledModules(): Set<String> = installed
+  override fun unregisterListener(p0: SplitInstallStateUpdatedListener) {}
 
-    override fun getInstalledLanguages(): Set<String> = emptySet()
+  override fun getInstalledModules(): Set<String> = installed
 
-    override fun startConfirmationDialogForResult(
-        p0: SplitInstallSessionState,
-        p1: androidx.activity.result.ActivityResultLauncher<androidx.activity.result.IntentSenderRequest>
-    ): Boolean = false
+  override fun getInstalledLanguages(): Set<String> = emptySet()
 
-    override fun startConfirmationDialogForResult(
-        p0: SplitInstallSessionState,
-        p1: android.app.Activity,
-        p2: Int
-    ): Boolean = false
+  override fun startConfirmationDialogForResult(
+    p0: SplitInstallSessionState,
+    p1:
+      androidx.activity.result.ActivityResultLauncher<androidx.activity.result.IntentSenderRequest>,
+  ): Boolean = false
 
-    override fun startConfirmationDialogForResult(
-        p0: SplitInstallSessionState,
-        p1: com.google.android.play.core.common.IntentSenderForResultStarter,
-        p2: Int
-    ): Boolean = false
+  override fun startConfirmationDialogForResult(
+    p0: SplitInstallSessionState,
+    p1: android.app.Activity,
+    p2: Int,
+  ): Boolean = false
 
-    override fun zza(p0: SplitInstallStateUpdatedListener) {}
+  override fun startConfirmationDialogForResult(
+    p0: SplitInstallSessionState,
+    p1: com.google.android.play.core.common.IntentSenderForResultStarter,
+    p2: Int,
+  ): Boolean = false
 
-    override fun zzb(p0: SplitInstallStateUpdatedListener) {}
+  override fun zza(p0: SplitInstallStateUpdatedListener) {}
 
-    override fun deferredInstall(modules: List<String>): Task<Void> {
-        return Tasks.forResult(null)
-    }
+  override fun zzb(p0: SplitInstallStateUpdatedListener) {}
 
-    override fun deferredUninstall(modules: List<String>): Task<Void> {
-        return Tasks.forResult(null)
-    }
+  override fun deferredInstall(modules: List<String>): Task<Void> {
+    return Tasks.forResult(null)
+  }
 
-    override fun deferredLanguageInstall(languages: List<java.util.Locale>): Task<Void> {
-        return Tasks.forResult(null)
-    }
+  override fun deferredUninstall(modules: List<String>): Task<Void> {
+    return Tasks.forResult(null)
+  }
 
-    override fun deferredLanguageUninstall(languages: List<java.util.Locale>): Task<Void> {
-        return Tasks.forResult(null)
-    }
+  override fun deferredLanguageInstall(languages: List<java.util.Locale>): Task<Void> {
+    return Tasks.forResult(null)
+  }
+
+  override fun deferredLanguageUninstall(languages: List<java.util.Locale>): Task<Void> {
+    return Tasks.forResult(null)
+  }
 }

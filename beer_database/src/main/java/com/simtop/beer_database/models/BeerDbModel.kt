@@ -14,5 +14,5 @@ data class BeerDbModel(
   @ColumnInfo(name = "abv") val abv: Double,
   @ColumnInfo(name = "ibu") val ibu: Double,
   @ColumnInfo(name = "food_pairing") val foodPairing: String,
-  @ColumnInfo(name = "availability") val availability: Boolean = true
+  @ColumnInfo(name = "availability") val availability: Boolean = true,
 )

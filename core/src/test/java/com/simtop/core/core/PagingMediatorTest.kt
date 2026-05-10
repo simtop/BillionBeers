@@ -28,7 +28,7 @@ class PagingMediatorTest {
           nextKey = { current, _ -> current + 1 },
           fetchRemote = fetchRemote,
           saveLocal = {},
-          fetchLocal = { flowOf(emptyList()) }
+          fetchLocal = { flowOf(emptyList()) },
         )
 
       mediator.pagingState.test {
@@ -52,7 +52,7 @@ class PagingMediatorTest {
           nextKey = { current, _ -> current + 1 },
           fetchRemote = fetchRemote,
           saveLocal = {},
-          fetchLocal = { flowOf(emptyList()) }
+          fetchLocal = { flowOf(emptyList()) },
         )
 
       mediator.pagingState.test {

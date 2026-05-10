@@ -35,7 +35,6 @@ class BeersListViewModelTest {
   private val loadNextPageUseCase = LoadNextPageUseCase(fakeBeersRepository)
   private val refreshBeersUseCase = RefreshBeersUseCase(fakeBeersRepository)
 
-
   private lateinit var testDispatcher: TestDispatcher
   private lateinit var viewModel: BeersListViewModel
 
@@ -52,7 +51,7 @@ class BeersListViewModelTest {
         getAllBeersUseCase,
         observePagingStateUseCase,
         loadNextPageUseCase,
-        refreshBeersUseCase
+        refreshBeersUseCase,
       )
   }
 

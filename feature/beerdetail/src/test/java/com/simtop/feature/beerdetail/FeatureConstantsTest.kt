@@ -11,7 +11,7 @@ class FeatureConstantsTest {
   fun `verify beer detail provider class name matches constant`() {
     assertEquals(
       BeerDetailProviderImpl::class.java.name,
-      FeatureConstants.BEER_DETAIL_PROVIDER_CLASS
+      FeatureConstants.BEER_DETAIL_PROVIDER_CLASS,
     )
   }
 }

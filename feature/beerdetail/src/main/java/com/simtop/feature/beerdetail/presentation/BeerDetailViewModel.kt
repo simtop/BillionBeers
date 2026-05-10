@@ -24,7 +24,7 @@ class BeerDetailViewModel
 constructor(
   private val coroutineDispatcher: CoroutineDispatcherProvider,
   private val availabilityUseCase: UpdateAvailabilityUseCase,
-  @Assisted private val beer: Beer
+  @Assisted private val beer: Beer,
 ) : ViewModel() {
 
   @AssistedFactory

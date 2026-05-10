@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
  */
 class PagingHandler<T>(
   private val uiState: MutableStateFlow<T>,
-  private val reduce: (T, PagingState) -> T
+  private val reduce: (T, PagingState) -> T,
 ) {
   fun handlePagingState(pagingState: PagingState) {
     val currentState = uiState.value

@@ -10,12 +10,12 @@ import kotlin.reflect.KClass
 
 @ContributesTo(AppScope::class)
 interface ViewModelMapsModule {
-    @Multibinds(allowEmpty = true)
-    fun viewModels(): Map<KClass<out ViewModel>, ViewModel>
+  @Multibinds(allowEmpty = true) fun viewModels(): Map<KClass<out ViewModel>, ViewModel>
 
-    @Multibinds(allowEmpty = true)
-    fun assistedViewModels(): Map<KClass<out ViewModel>, ViewModelAssistedFactory>
+  @Multibinds(allowEmpty = true)
+  fun assistedViewModels(): Map<KClass<out ViewModel>, ViewModelAssistedFactory>
 
-    @Multibinds(allowEmpty = true)
-    fun manualAssistedViewModels(): Map<KClass<out ManualViewModelAssistedFactory>, ManualViewModelAssistedFactory>
+  @Multibinds(allowEmpty = true)
+  fun manualAssistedViewModels():
+    Map<KClass<out ManualViewModelAssistedFactory>, ManualViewModelAssistedFactory>
 }

@@ -1,17 +1,16 @@
 package com.simtop.core.di
 
-import dev.zacsweers.metro.SingleIn
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.Qualifier
+import dev.zacsweers.metro.SingleIn
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
-import retrofit2.Retrofit
 import retrofit2.Converter
+import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-@Qualifier
-annotation class Named(val value: String)
+@Qualifier annotation class Named(val value: String)
 
 @ContributesTo(AppScope::class)
 interface NetworkingModule {
@@ -41,7 +40,7 @@ interface NetworkingModule {
   fun provideRetrofit(
     @Named(BASE_URL) baseUrl: String,
     converterFactory: Converter.Factory,
-    httpClient: OkHttpClient.Builder
+    httpClient: OkHttpClient.Builder,
   ): Retrofit {
     return Retrofit.Builder()
       .addConverterFactory(converterFactory)

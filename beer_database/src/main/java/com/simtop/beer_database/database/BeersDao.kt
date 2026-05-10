@@ -15,12 +15,12 @@ abstract class BeersDao {
   @Insert(onConflict = OnConflictStrategy.IGNORE)
   abstract suspend fun insertIgnoringConflicts(beers: List<BeerDbModel>): List<Long>
 
-  //Simple insertAll if we don't need pull to refresh
-//    @Insert(onConflict = OnConflictStrategy.REPLACE)
-//    abstract suspend fun insertAll(beers: List<BeerDbModel>)
+  // Simple insertAll if we don't need pull to refresh
+  //    @Insert(onConflict = OnConflictStrategy.REPLACE)
+  //    abstract suspend fun insertAll(beers: List<BeerDbModel>)
 
-  //More complex update to handle pull to refresh doesn't affect to availability field
-  //which doesn't come from the network
+  // More complex update to handle pull to refresh doesn't affect to availability field
+  // which doesn't come from the network
   @Query(
     """
         UPDATE beers
@@ -43,7 +43,7 @@ abstract class BeersDao {
     imageUrl: String,
     abv: Double,
     ibu: Double,
-    foodPairing: String
+    foodPairing: String,
   )
 
   @androidx.room.Transaction
@@ -60,7 +60,7 @@ abstract class BeersDao {
           beer.imageUrl,
           beer.abv,
           beer.ibu,
-          beer.foodPairing
+          beer.foodPairing,
         )
       }
     }

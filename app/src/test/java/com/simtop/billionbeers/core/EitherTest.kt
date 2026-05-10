@@ -28,7 +28,7 @@ class EitherTest {
             get { this.javaClass }.isSameInstanceAs(String::class.java)
             get { this }.isEqualTo("asdf")
           }
-        }
+        },
       )
     }
   }

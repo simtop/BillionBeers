@@ -1,5 +1,10 @@
 package com.simtop.feature.beerslist
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,7 +40,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -45,12 +49,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import com.google.android.play.core.splitinstall.SplitInstallManager
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
@@ -64,323 +64,314 @@ import com.simtop.presentation_utils.core.InfiniteListHandler
 import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import com.simtop.presentation_utils.custom_views.ComposeErrorView
 import dev.zacsweers.metrox.viewmodel.metroViewModel
-import androidx.compose.ui.res.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BeersListScreen(
-    viewModel: BeersListViewModel = metroViewModel(),
-    splitInstallManager: SplitInstallManager? = null,
-    onBeerClick: (Beer) -> Unit
+  viewModel: BeersListViewModel = metroViewModel(),
+  splitInstallManager: SplitInstallManager? = null,
+  onBeerClick: (Beer) -> Unit,
 ) {
-    val rawState by viewModel.beerListViewState.collectAsState()
+  val rawState by viewModel.beerListViewState.collectAsState()
 
-    // State to track if we are installing the feature for a specific beer
-    var installingBeer by remember { mutableStateOf<Beer?>(null) }
+  // State to track if we are installing the feature for a specific beer
+  var installingBeer by remember { mutableStateOf<Beer?>(null) }
 
-    LaunchedEffect(Unit) {
-        if (viewModel.beerListViewState.value is CommonUiState.Empty) {
-            viewModel.getAllBeers()
-        }
+  LaunchedEffect(Unit) {
+    if (viewModel.beerListViewState.value is CommonUiState.Empty) {
+      viewModel.getAllBeers()
     }
+  }
 
-    BeersListContent(
-        viewState = rawState,
-        onBeerClick = { beer -> installingBeer = beer },
-        onScrollToBottom = { viewModel.onScrollToBottom() },
-        onRefresh = { viewModel.refresh() },
-        onRetry = { viewModel.getAllBeers() }
-    )
+  BeersListContent(
+    viewState = rawState,
+    onBeerClick = { beer -> installingBeer = beer },
+    onScrollToBottom = { viewModel.onScrollToBottom() },
+    onRefresh = { viewModel.refresh() },
+    onRetry = { viewModel.getAllBeers() },
+  )
 
-    // Handle dynamic feature loading overlay
-    installingBeer?.let { beer: Beer ->
-        DynamicFeatureLoader(
-            featureName = FeatureConstants.BEER_DETAIL_MODULE,
-            splitInstallManager = splitInstallManager
-        ) {
-            LaunchedEffect(beer) {
-                onBeerClick(beer)
-                installingBeer = null
-            }
-        }
+  // Handle dynamic feature loading overlay
+  installingBeer?.let { beer: Beer ->
+    DynamicFeatureLoader(
+      featureName = FeatureConstants.BEER_DETAIL_MODULE,
+      splitInstallManager = splitInstallManager,
+    ) {
+      LaunchedEffect(beer) {
+        onBeerClick(beer)
+        installingBeer = null
+      }
     }
+  }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BeersListContent(
-    viewState: CommonUiState<BeersListUiModel>,
-    onBeerClick: (Beer) -> Unit,
-    onScrollToBottom: () -> Unit,
-    onRefresh: () -> Unit,
-    onRetry: () -> Unit
+  viewState: CommonUiState<BeersListUiModel>,
+  onBeerClick: (Beer) -> Unit,
+  onScrollToBottom: () -> Unit,
+  onRefresh: () -> Unit,
+  onRetry: () -> Unit,
 ) {
-    val context = LocalContext.current
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(text = stringResource(R.string.billion_beers_list)) }
-            )
-        },
-        contentWindowInsets = WindowInsets.statusBars
-    ) { paddingValues ->
-        val dataVisibility = rememberSaveable { mutableStateOf(false) }
+  val context = LocalContext.current
+  Scaffold(
+    topBar = { TopAppBar(title = { Text(text = stringResource(R.string.billion_beers_list)) }) },
+    contentWindowInsets = WindowInsets.statusBars,
+  ) { paddingValues ->
+    val dataVisibility = rememberSaveable { mutableStateOf(false) }
 
-        AnimatedContent(
-            targetState = viewState,
-            label = "ScreenStateAnimation",
-            transitionSpec = {
-                fadeIn(animationSpec = tween(300)) togetherWith fadeOut(animationSpec = tween(300))
-            }
-        ) { state ->
-            when (state) {
-            CommonUiState.Empty -> {
-                ComposeErrorView(
-                    onRetry = onRetry,
-                    modifier = Modifier.padding(top = paddingValues.calculateTopPadding())
-                )
-            }
-
-            is CommonUiState.Error -> {
-                ComposeErrorView(
-                    message = state.message ?: "Empty State",
-                    onRetry = onRetry,
-                    modifier = Modifier.padding(top = paddingValues.calculateTopPadding())
-                )
-                state.message?.let { message ->
-                    LaunchedEffect(message) {
-                        showToast(context, message)
-                    }
-                }
-            }
-
-            CommonUiState.Loading -> {
-                BeersListSkeleton(modifier = Modifier.padding(top = paddingValues.calculateTopPadding()))
-            }
-
-            is CommonUiState.Success -> {
-                dataVisibility.value = true
-
-                val beers = state.data.beers
-                PullToRefreshBox(
-                    isRefreshing = state.data.isRefreshing,
-                    onRefresh = onRefresh,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(top = paddingValues.calculateTopPadding())
-                ) {
-                    val listState = rememberLazyListState()
-
-                    InfiniteListHandler(
-                        listState = listState,
-                        isLoadingNextPage = state.data.isLoadingNextPage,
-                        onLoadMore = onScrollToBottom
-                    )
-
-                    val layoutDirection = LocalLayoutDirection.current
-                    val navBarsPadding = WindowInsets.navigationBars.asPaddingValues()
-
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier.testTag("beer_list"),
-                        contentPadding =
-                            PaddingValues(
-                                start = navBarsPadding.calculateStartPadding(layoutDirection),
-                                top = navBarsPadding.calculateTopPadding(),
-                                end = navBarsPadding.calculateEndPadding(layoutDirection),
-                                bottom = navBarsPadding.calculateBottomPadding() + BillionBeersTheme.spacing.medium
-                            )
-                    ) {
-                        items(beers.count()) { index ->
-                            ComposeBeersListItem(
-                                beer = beers[index],
-                                onClick = onBeerClick
-                            )
-                        }
-
-                        if (state.data.isLoadingNextPage) {
-                            item(key = "loading_footer") {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(BillionBeersTheme.spacing.large),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(BillionBeersTheme.spacing.extraLarge),
-                                        strokeWidth = 3.dp
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+    AnimatedContent(
+      targetState = viewState,
+      label = "ScreenStateAnimation",
+      transitionSpec = {
+        fadeIn(animationSpec = tween(300)) togetherWith fadeOut(animationSpec = tween(300))
+      },
+    ) { state ->
+      when (state) {
+        CommonUiState.Empty -> {
+          ComposeErrorView(
+            onRetry = onRetry,
+            modifier = Modifier.padding(top = paddingValues.calculateTopPadding()),
+          )
         }
+
+        is CommonUiState.Error -> {
+          ComposeErrorView(
+            message = state.message ?: "Empty State",
+            onRetry = onRetry,
+            modifier = Modifier.padding(top = paddingValues.calculateTopPadding()),
+          )
+          state.message?.let { message -> LaunchedEffect(message) { showToast(context, message) } }
+        }
+
+        CommonUiState.Loading -> {
+          BeersListSkeleton(modifier = Modifier.padding(top = paddingValues.calculateTopPadding()))
+        }
+
+        is CommonUiState.Success -> {
+          dataVisibility.value = true
+
+          val beers = state.data.beers
+          PullToRefreshBox(
+            isRefreshing = state.data.isRefreshing,
+            onRefresh = onRefresh,
+            modifier = Modifier.fillMaxSize().padding(top = paddingValues.calculateTopPadding()),
+          ) {
+            val listState = rememberLazyListState()
+
+            InfiniteListHandler(
+              listState = listState,
+              isLoadingNextPage = state.data.isLoadingNextPage,
+              onLoadMore = onScrollToBottom,
+            )
+
+            val layoutDirection = LocalLayoutDirection.current
+            val navBarsPadding = WindowInsets.navigationBars.asPaddingValues()
+
+            LazyColumn(
+              state = listState,
+              modifier = Modifier.testTag("beer_list"),
+              contentPadding =
+                PaddingValues(
+                  start = navBarsPadding.calculateStartPadding(layoutDirection),
+                  top = navBarsPadding.calculateTopPadding(),
+                  end = navBarsPadding.calculateEndPadding(layoutDirection),
+                  bottom =
+                    navBarsPadding.calculateBottomPadding() + BillionBeersTheme.spacing.medium,
+                ),
+            ) {
+              items(beers.count()) { index ->
+                ComposeBeersListItem(beer = beers[index], onClick = onBeerClick)
+              }
+
+              if (state.data.isLoadingNextPage) {
+                item(key = "loading_footer") {
+                  Box(
+                    modifier = Modifier.fillMaxWidth().padding(BillionBeersTheme.spacing.large),
+                    contentAlignment = Alignment.Center,
+                  ) {
+                    CircularProgressIndicator(
+                      modifier = Modifier.size(BillionBeersTheme.spacing.extraLarge),
+                      strokeWidth = 3.dp,
+                    )
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
-}
+  }
 }
 
 class BeersListPreviewParameterProvider :
-    androidx.compose.ui.tooling.preview.PreviewParameterProvider<BeersListPreviewParameterProvider.State> {
+  androidx.compose.ui.tooling.preview.PreviewParameterProvider<
+    BeersListPreviewParameterProvider.State
+  > {
 
-    sealed interface State {
-        val uiState: CommonUiState<BeersListUiModel>
+  sealed interface State {
+    val uiState: CommonUiState<BeersListUiModel>
 
-        enum class Preview(
-            override val uiState: CommonUiState<BeersListUiModel>
-        ) : State {
-            LOADING(CommonUiState.Loading),
-            EMPTY(CommonUiState.Empty),
-            ERROR(CommonUiState.Error(message = "Failed to load beers. Please check your connection.")),
-            SUCCESS_MULTIPLE_ITEMS(
-                CommonUiState.Success(
-                    data = BeersListUiModel(
-                        beers = listOf(
-                            Beer.empty.copy(
-                                name = "Buzz",
-                                tagline = "A Real Bitter Experience.",
-                                abv = 4.5,
-                                ibu = 60.0,
-                                availability = true
-                            ),
-                            Beer.empty.copy(
-                                name = "Trashy Blonde",
-                                tagline = "You Know You Shouldn't",
-                                abv = 4.1,
-                                ibu = 41.5,
-                                availability = false
-                            )
-                        ),
-                        isLoadingNextPage = false
-                    )
-                )
-            ),
-            SUCCESS_LOADING_MORE(
-                CommonUiState.Success(
-                    data = BeersListUiModel(
-                        beers = listOf(
-                            Beer.empty.copy(
-                                name = "Buzz",
-                                tagline = "A Real Bitter Experience.",
-                                abv = 4.5,
-                                ibu = 60.0,
-                                availability = true
-                            )
-                        ),
-                        isLoadingNextPage = true
-                    )
-                )
+    enum class Preview(override val uiState: CommonUiState<BeersListUiModel>) : State {
+      LOADING(CommonUiState.Loading),
+      EMPTY(CommonUiState.Empty),
+      ERROR(CommonUiState.Error(message = "Failed to load beers. Please check your connection.")),
+      SUCCESS_MULTIPLE_ITEMS(
+        CommonUiState.Success(
+          data =
+            BeersListUiModel(
+              beers =
+                listOf(
+                  Beer.empty.copy(
+                    name = "Buzz",
+                    tagline = "A Real Bitter Experience.",
+                    abv = 4.5,
+                    ibu = 60.0,
+                    availability = true,
+                  ),
+                  Beer.empty.copy(
+                    name = "Trashy Blonde",
+                    tagline = "You Know You Shouldn't",
+                    abv = 4.1,
+                    ibu = 41.5,
+                    availability = false,
+                  ),
+                ),
+              isLoadingNextPage = false,
             )
-        }
+        )
+      ),
+      SUCCESS_LOADING_MORE(
+        CommonUiState.Success(
+          data =
+            BeersListUiModel(
+              beers =
+                listOf(
+                  Beer.empty.copy(
+                    name = "Buzz",
+                    tagline = "A Real Bitter Experience.",
+                    abv = 4.5,
+                    ibu = 60.0,
+                    availability = true,
+                  )
+                ),
+              isLoadingNextPage = true,
+            )
+        )
+      ),
     }
+  }
 
-    override val values = State.Preview.entries.asSequence()
+  override val values = State.Preview.entries.asSequence()
 }
 
 @PreviewLightDark
 @Composable
 fun BeersListScreenPreview(
-    @androidx.compose.ui.tooling.preview.PreviewParameter(BeersListPreviewParameterProvider::class) state: BeersListPreviewParameterProvider.State
+  @androidx.compose.ui.tooling.preview.PreviewParameter(BeersListPreviewParameterProvider::class)
+  state: BeersListPreviewParameterProvider.State
 ) {
-    BillionBeersTheme {
-        BeersListContent(
-            viewState = state.uiState,
-            onBeerClick = {},
-            onScrollToBottom = {},
-            onRefresh = {},
-            onRetry = {}
-        )
-    }
+  BillionBeersTheme {
+    BeersListContent(
+      viewState = state.uiState,
+      onBeerClick = {},
+      onScrollToBottom = {},
+      onRefresh = {},
+      onRetry = {},
+    )
+  }
 }
 
 @Composable
 fun BeersListSkeleton(modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier.fillMaxSize()
-    ) {
-        repeat(SKELETON_ITEM_COUNT) {
-            BeersListItemSkeleton()
-        }
-    }
+  Column(modifier = modifier.fillMaxSize()) {
+    repeat(SKELETON_ITEM_COUNT) { BeersListItemSkeleton() }
+  }
 }
 
 @Composable
 fun BeersListItemSkeleton() {
-    val shimmerBrush = shimmerBrush(targetValue = SHIMMER_TARGET_VALUE)
+  val shimmerBrush = shimmerBrush(targetValue = SHIMMER_TARGET_VALUE)
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(
-                horizontal = BillionBeersTheme.spacing.medium,
-                vertical = BillionBeersTheme.spacing.small
-            ),
-        shape = RoundedCornerShape(BillionBeersTheme.spacing.medium),
-        elevation = CardDefaults.cardElevation(defaultElevation = BillionBeersTheme.spacing.extraSmall),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+  Card(
+    modifier =
+      Modifier.fillMaxWidth()
+        .padding(
+          horizontal = BillionBeersTheme.spacing.medium,
+          vertical = BillionBeersTheme.spacing.small,
+        ),
+    shape = RoundedCornerShape(BillionBeersTheme.spacing.medium),
+    elevation = CardDefaults.cardElevation(defaultElevation = BillionBeersTheme.spacing.extraSmall),
+    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+  ) {
+    Row(
+      modifier =
+        Modifier.fillMaxWidth()
+          .padding(BillionBeersTheme.spacing.small + BillionBeersTheme.spacing.extraSmall),
+      verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(BillionBeersTheme.spacing.small + BillionBeersTheme.spacing.extraSmall),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Image placeholder
-            Box(
-                modifier = Modifier
-                    .size(BillionBeersTheme.spacing.huge + BillionBeersTheme.spacing.extraLarge)
-                    .clip(RoundedCornerShape(BillionBeersTheme.spacing.small + BillionBeersTheme.spacing.extraSmall))
-                    .background(shimmerBrush)
+      // Image placeholder
+      Box(
+        modifier =
+          Modifier.size(BillionBeersTheme.spacing.huge + BillionBeersTheme.spacing.extraLarge)
+            .clip(
+              RoundedCornerShape(
+                BillionBeersTheme.spacing.small + BillionBeersTheme.spacing.extraSmall
+              )
             )
+            .background(shimmerBrush)
+      )
 
-            Spacer(modifier = Modifier.width(BillionBeersTheme.spacing.medium))
+      Spacer(modifier = Modifier.width(BillionBeersTheme.spacing.medium))
 
-            Column(modifier = Modifier.weight(1f)) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(TITLE_WIDTH_FRACTION)
-                        .height(BillionBeersTheme.spacing.medium + BillionBeersTheme.spacing.extraSmall)
-                        .clip(RoundedCornerShape(BillionBeersTheme.spacing.extraSmall))
-                        .background(shimmerBrush)
-                )
+      Column(modifier = Modifier.weight(1f)) {
+        Box(
+          modifier =
+            Modifier.fillMaxWidth(TITLE_WIDTH_FRACTION)
+              .height(BillionBeersTheme.spacing.medium + BillionBeersTheme.spacing.extraSmall)
+              .clip(RoundedCornerShape(BillionBeersTheme.spacing.extraSmall))
+              .background(shimmerBrush)
+        )
 
-                Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.small))
+        Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.small))
 
-                // Tagline placeholder
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(TAGLINE_WIDTH_FRACTION)
-                        .height(BillionBeersTheme.spacing.medium)
-                        .clip(RoundedCornerShape(BillionBeersTheme.spacing.extraSmall))
-                        .background(shimmerBrush)
-                )
+        // Tagline placeholder
+        Box(
+          modifier =
+            Modifier.fillMaxWidth(TAGLINE_WIDTH_FRACTION)
+              .height(BillionBeersTheme.spacing.medium)
+              .clip(RoundedCornerShape(BillionBeersTheme.spacing.extraSmall))
+              .background(shimmerBrush)
+        )
 
-                Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.small + BillionBeersTheme.spacing.extraSmall))
+        Spacer(
+          modifier =
+            Modifier.height(BillionBeersTheme.spacing.small + BillionBeersTheme.spacing.extraSmall)
+        )
 
-                // Chips placeholder
-                Row {
-                    Box(
-                        modifier = Modifier
-                            .width(BillionBeersTheme.spacing.extraHuge + BillionBeersTheme.spacing.medium)
-                            .height(BillionBeersTheme.spacing.large)
-                            .clip(RoundedCornerShape(BillionBeersTheme.spacing.small))
-                            .background(shimmerBrush)
-                    )
-                    Spacer(modifier = Modifier.width(BillionBeersTheme.spacing.small))
-                    Box(
-                        modifier = Modifier
-                            .width(BillionBeersTheme.spacing.extraHuge + BillionBeersTheme.spacing.medium)
-                            .height(BillionBeersTheme.spacing.large)
-                            .clip(RoundedCornerShape(BillionBeersTheme.spacing.small))
-                            .background(shimmerBrush)
-                    )
-                }
-            }
+        // Chips placeholder
+        Row {
+          Box(
+            modifier =
+              Modifier.width(BillionBeersTheme.spacing.extraHuge + BillionBeersTheme.spacing.medium)
+                .height(BillionBeersTheme.spacing.large)
+                .clip(RoundedCornerShape(BillionBeersTheme.spacing.small))
+                .background(shimmerBrush)
+          )
+          Spacer(modifier = Modifier.width(BillionBeersTheme.spacing.small))
+          Box(
+            modifier =
+              Modifier.width(BillionBeersTheme.spacing.extraHuge + BillionBeersTheme.spacing.medium)
+                .height(BillionBeersTheme.spacing.large)
+                .clip(RoundedCornerShape(BillionBeersTheme.spacing.small))
+                .background(shimmerBrush)
+          )
         }
+      }
     }
+  }
 }
 
 const val SKELETON_ITEM_COUNT = 10

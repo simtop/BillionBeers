@@ -4,9 +4,8 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
 /**
- * BillionBeers Primitive Color Tokens
- * These are the raw values. In a Figma-sync future, these would be the values
- * updated by the automation scripts.
+ * BillionBeers Primitive Color Tokens These are the raw values. In a Figma-sync future, these would
+ * be the values updated by the automation scripts.
  */
 internal val Blue10 = Color(0xFF001945)
 internal val Blue20 = Color(0xFF002F6E)
@@ -28,11 +27,11 @@ internal val Error80 = Color(0xFFFFB4AB)
 internal val Error90 = Color(0xFFFFDAD6)
 
 /**
- * BillionBeers Semantic Color Tokens
- * These define the "roles" of colors in the UI.
- * They reference the Primitives above.
+ * BillionBeers Semantic Color Tokens These define the "roles" of colors in the UI. They reference
+ * the Primitives above.
  */
-internal val BillionBeersLightColors = BillionBeersColors(
+internal val BillionBeersLightColors =
+  BillionBeersColors(
     primary = Blue30,
     onPrimary = Neutral100,
     primaryContainer = Blue90,
@@ -44,10 +43,11 @@ internal val BillionBeersLightColors = BillionBeersColors(
     surface = Neutral100,
     onSurface = Neutral10,
     error = Error30,
-    onError = Neutral100
-)
+    onError = Neutral100,
+  )
 
-internal val BillionBeersDarkColors = BillionBeersColors(
+internal val BillionBeersDarkColors =
+  BillionBeersColors(
     primary = Blue80,
     onPrimary = Blue20,
     primaryContainer = Blue30,
@@ -59,23 +59,22 @@ internal val BillionBeersDarkColors = BillionBeersColors(
     surface = Neutral20,
     onSurface = Neutral90,
     error = Error80,
-    onError = Error20
-)
+    onError = Error20,
+  )
 
 data class BillionBeersColors(
-    val primary: Color,
-    val onPrimary: Color,
-    val primaryContainer: Color,
-    val onPrimaryContainer: Color,
-    val secondary: Color,
-    val onSecondary: Color,
-    val background: Color,
-    val onBackground: Color,
-    val surface: Color,
-    val onSurface: Color,
-    val error: Color,
-    val onError: Color
+  val primary: Color,
+  val onPrimary: Color,
+  val primaryContainer: Color,
+  val onPrimaryContainer: Color,
+  val secondary: Color,
+  val onSecondary: Color,
+  val background: Color,
+  val onBackground: Color,
+  val surface: Color,
+  val onSurface: Color,
+  val error: Color,
+  val onError: Color,
 )
 
 val LocalColors = staticCompositionLocalOf { BillionBeersLightColors }
-

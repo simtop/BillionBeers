@@ -40,7 +40,7 @@ class BeersRepositoryTest {
           ibu = 20.0,
           imageId = "url",
           translations = emptyList(),
-          foodPairing = emptyList()
+          foodPairing = emptyList(),
         )
       beersRemoteSource.setBeersResponse(listOf(remoteBeer))
 
@@ -76,7 +76,7 @@ class BeersRepositoryTest {
           ibu = 25.0,
           imageId = "url",
           translations = emptyList(),
-          foodPairing = emptyList()
+          foodPairing = emptyList(),
         )
       beersRemoteSource.setBeersResponse(listOf(remoteBeer))
 
@@ -105,7 +105,7 @@ class BeersRepositoryTest {
           ibu = 0.0,
           imageId = "url",
           translations = emptyList(),
-          foodPairing = emptyList()
+          foodPairing = emptyList(),
         )
       beersRemoteSource.setBeersResponse(listOf(remoteBeer))
 
@@ -126,17 +126,17 @@ class BeersRepositoryTest {
       // Pre-populate fake local source
       beersLocalSource.insertAllToDB(
         listOf(
-            BeerDbModel(
-                id = "1",
-                name = "Beer 1",
-                tagline = "",
-                description = "",
-                imageUrl = "",
-                abv = 0.0,
-                ibu = 0.0,
-                foodPairing = "[]",
-                availability = true
-            )
+          BeerDbModel(
+            id = "1",
+            name = "Beer 1",
+            tagline = "",
+            description = "",
+            imageUrl = "",
+            abv = 0.0,
+            ibu = 0.0,
+            foodPairing = "[]",
+            availability = true,
+          )
         )
       )
 
@@ -177,7 +177,7 @@ class BeersRepositoryTest {
           abv = 0.0,
           ibu = 0.0,
           foodPairing = "[]",
-          availability = true
+          availability = true,
         )
       beersLocalSource.insertAllToDB(listOf(dbBeer))
 
@@ -201,7 +201,7 @@ class BeersRepositoryTest {
           ibu = 0.0,
           imageId = "url",
           translations = emptyList(),
-          foodPairing = emptyList()
+          foodPairing = emptyList(),
         )
       beersRemoteSource.setBeersResponse(listOf(remoteBeer))
 

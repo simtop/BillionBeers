@@ -12,9 +12,9 @@ import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.PagingHandler
 import com.simtop.core.core.PagingState
 import com.simtop.core.di.AppScope
-import dev.zacsweers.metrox.viewmodel.ViewModelKey
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
+import dev.zacsweers.metrox.viewmodel.ViewModelKey
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,7 +30,7 @@ class BeersListViewModel(
   private val getAllBeersUseCase: GetAllBeersUseCase,
   private val observePagingStateUseCase: ObservePagingStateUseCase,
   private val loadNextPageUseCase: LoadNextPageUseCase,
-  private val refreshBeersUseCase: RefreshBeersUseCase
+  private val refreshBeersUseCase: RefreshBeersUseCase,
 ) : ViewModel() {
 
   private val _beerListViewState =
@@ -47,24 +47,31 @@ class BeersListViewModel(
             CommonUiState.Success(currentUiModel.copy(isLoadingNextPage = true))
           }
           is PagingState.Success -> {
-            CommonUiState.Success(currentUiModel.copy(isLoadingNextPage = false, isRefreshing = false))
+            CommonUiState.Success(
+              currentUiModel.copy(isLoadingNextPage = false, isRefreshing = false)
+            )
           }
           is PagingState.Error -> {
             // For pagination error, we might want to show a snackbar but keep the data
-            CommonUiState.Success(currentUiModel.copy(isLoadingNextPage = false, isRefreshing = false))
+            CommonUiState.Success(
+              currentUiModel.copy(isLoadingNextPage = false, isRefreshing = false)
+            )
           }
           is PagingState.EndOfPagination -> {
-            CommonUiState.Success(currentUiModel.copy(isLoadingNextPage = false, isRefreshing = false))
+            CommonUiState.Success(
+              currentUiModel.copy(isLoadingNextPage = false, isRefreshing = false)
+            )
           }
           else -> currentState
         }
       } else {
         when (pagingState) {
-          is PagingState.Loading -> if (currentState is CommonUiState.Success) {
+          is PagingState.Loading ->
+            if (currentState is CommonUiState.Success) {
               CommonUiState.Success(currentState.data.copy(isRefreshing = true))
-          } else {
+            } else {
               CommonUiState.Loading
-          }
+            }
           is PagingState.Error -> CommonUiState.Error(pagingState.message)
           else -> currentState
         }
@@ -95,9 +102,11 @@ class BeersListViewModel(
           _beerListViewState.value =
             CommonUiState.Success(
               BeersListUiModel(
-                beers = beers, 
+                beers = beers,
                 isLoadingNextPage = isLoadingNextPage,
-                isRefreshing = if (currentState is CommonUiState.Success) currentState.data.isRefreshing else false
+                isRefreshing =
+                  if (currentState is CommonUiState.Success) currentState.data.isRefreshing
+                  else false,
               )
             )
         }
@@ -124,5 +133,5 @@ class BeersListViewModel(
 data class BeersListUiModel(
   val beers: List<Beer> = emptyList(),
   val isLoadingNextPage: Boolean = false,
-  val isRefreshing: Boolean = false
+  val isRefreshing: Boolean = false,
 )

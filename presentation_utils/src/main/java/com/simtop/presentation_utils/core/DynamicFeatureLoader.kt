@@ -22,7 +22,7 @@ import com.simtop.billionbeers.core.designsystem.component.DialogWithProgressBar
 fun DynamicFeatureLoader(
   featureName: String,
   splitInstallManager: SplitInstallManager? = null,
-  content: @Composable () -> Unit
+  content: @Composable () -> Unit,
 ) {
   val context = LocalContext.current
   val manager = splitInstallManager ?: remember { SplitInstallManagerFactory.create(context) }
@@ -58,7 +58,8 @@ fun DynamicFeatureLoader(
                 0f
               }
             // Ensure progress is at least 0.25f so it's noticeable
-            downloadProgress = if (progress > MIN_VISIBLE_PROGRESS) progress else MIN_VISIBLE_PROGRESS
+            downloadProgress =
+              if (progress > MIN_VISIBLE_PROGRESS) progress else MIN_VISIBLE_PROGRESS
           }
           SplitInstallSessionStatus.PENDING -> {
             downloadProgress = PENDING_PROGRESS

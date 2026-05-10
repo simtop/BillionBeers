@@ -13,7 +13,7 @@ data class Beer(
   val abv: Double,
   val ibu: Double,
   val foodPairing: List<String>,
-  var availability: Boolean = true
+  var availability: Boolean = true,
 ) {
   companion object {
     val empty = Beer("1", "", "", "", "", 0.0, 0.0, emptyList(), true)

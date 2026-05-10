@@ -9,7 +9,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
-import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -22,7 +21,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
@@ -32,6 +30,7 @@ import coil3.request.error
 import coil3.request.placeholder
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
+import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.presentation_utils.R
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,7 +40,9 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
 
   Scaffold(
     contentWindowInsets = WindowInsets(BillionBeersTheme.spacing.default),
-    modifier = Modifier.padding(bottom = BillionBeersTheme.spacing.medium).nestedScroll(scrollBehavior.nestedScrollConnection),
+    modifier =
+      Modifier.padding(bottom = BillionBeersTheme.spacing.medium)
+        .nestedScroll(scrollBehavior.nestedScrollConnection),
     topBar = {
       Box(modifier = Modifier.wrapContentSize()) {
         BeerDetailImage(imageUrl = beer.imageUrl, modifier = Modifier.matchParentSize())
@@ -64,7 +65,7 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
               style =
                 MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
               maxLines = 2,
-              overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+              overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
           },
           expandedHeight = 350.dp,
@@ -73,7 +74,7 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
               Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Back",
-                tint = Color.White
+                tint = Color.White,
               )
             }
           },
@@ -83,9 +84,9 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
               scrolledContainerColor = MaterialTheme.colorScheme.primary,
               titleContentColor = Color.White,
               navigationIconContentColor = Color.White,
-              actionIconContentColor = Color.White
+              actionIconContentColor = Color.White,
             ),
-          scrollBehavior = scrollBehavior
+          scrollBehavior = scrollBehavior,
         )
       }
     },
@@ -100,7 +101,7 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
           },
         contentColor = Color.White,
         shape = RoundedCornerShape(BillionBeersTheme.spacing.medium),
-        modifier = Modifier.testTag("toggle_availability")
+        modifier = Modifier.testTag("toggle_availability"),
       ) {
         AnimatedContent(targetState = beer.availability, label = "availability_animation") {
           isAvailable ->
@@ -111,7 +112,7 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
           }
         }
       }
-    }
+    },
   ) { paddingValues ->
     Column(
       modifier =
@@ -127,8 +128,8 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
         style =
           MaterialTheme.typography.titleMedium.copy(
             fontStyle = FontStyle.Italic,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-          )
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          ),
       )
 
       Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
@@ -139,13 +140,13 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
           label = "ABV",
           value = "${beer.abv}%",
           color = Color(ABV_BG_COLOR),
-          textColor = Color(ABV_TEXT_COLOR)
+          textColor = Color(ABV_TEXT_COLOR),
         )
         StatCard(
           label = "IBU",
           value = "${beer.ibu}",
           color = Color(IBU_BG_COLOR),
-          textColor = Color(IBU_TEXT_COLOR)
+          textColor = Color(IBU_TEXT_COLOR),
         )
       }
 
@@ -154,7 +155,7 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
       // Description
       Text(
         text = "Description",
-        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
       )
       Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.small))
       Text(
@@ -162,8 +163,8 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
         style =
           MaterialTheme.typography.bodyLarge.copy(
             lineHeight = 24.sp,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = TEXT_ALPHA)
-          )
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = TEXT_ALPHA),
+          ),
       )
 
       Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
@@ -172,15 +173,18 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
       if (beer.foodPairing.isNotEmpty()) {
         Text(
           text = "Food Pairing",
-          style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+          style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
         )
-        Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.medium - BillionBeersTheme.spacing.extraSmall))
+        Spacer(
+          modifier =
+            Modifier.height(BillionBeersTheme.spacing.medium - BillionBeersTheme.spacing.extraSmall)
+        )
         beer.foodPairing.forEach { pairing ->
           Row(modifier = Modifier.padding(vertical = BillionBeersTheme.spacing.extraSmall)) {
             Text(
               text = "•",
               style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-              modifier = Modifier.padding(end = BillionBeersTheme.spacing.small)
+              modifier = Modifier.padding(end = BillionBeersTheme.spacing.small),
             )
             Text(text = pairing, style = MaterialTheme.typography.bodyLarge)
           }
@@ -195,21 +199,24 @@ fun StatCard(label: String, value: String, color: Color, textColor: Color) {
   Card(
     colors = CardDefaults.cardColors(containerColor = color),
     shape = RoundedCornerShape(BillionBeersTheme.spacing.medium),
-    modifier = Modifier.width(100.dp)
+    modifier = Modifier.width(100.dp),
   ) {
-    Column(modifier = Modifier.padding(BillionBeersTheme.spacing.medium), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(
+      modifier = Modifier.padding(BillionBeersTheme.spacing.medium),
+      horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
       Text(
         text = value,
         style =
-          MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, color = textColor)
+          MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, color = textColor),
       )
       Text(
         text = label,
         style =
           MaterialTheme.typography.labelMedium.copy(
             fontWeight = FontWeight.SemiBold,
-            color = textColor.copy(alpha = 0.7f)
-          )
+            color = textColor.copy(alpha = 0.7f),
+          ),
       )
     }
   }
@@ -227,7 +234,7 @@ fun BeerDetailImage(imageUrl: String, modifier: Modifier = Modifier) {
         .build(),
     contentDescription = null,
     contentScale = ContentScale.Crop,
-    modifier = modifier.fillMaxSize()
+    modifier = modifier.fillMaxSize(),
   )
 }
 
@@ -245,10 +252,10 @@ fun ComposeBeerDetailPreview() {
           abv = 4.5,
           ibu = 60.0,
           foodPairing =
-            listOf("Spicy chicken tikka masala", "Grilled chicken quesadilla", "Pastrami on rye")
+            listOf("Spicy chicken tikka masala", "Grilled chicken quesadilla", "Pastrami on rye"),
         ),
       onBackClick = {},
-      onToggleAvailability = {}
+      onToggleAvailability = {},
     )
   }
 }

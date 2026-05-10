@@ -10,10 +10,10 @@ import dev.zacsweers.metro.Provides
 @DependencyGraph(AppScope::class)
 interface AppGraph : BaseAppGraph {
 
-    override val metroViewModelFactory: DefaultMetroViewModelFactory
+  override val metroViewModelFactory: DefaultMetroViewModelFactory
 
-    @DependencyGraph.Factory
-    fun interface Factory {
-        fun create(@Provides @ApplicationContext context: Context): AppGraph
-    }
+  @DependencyGraph.Factory
+  fun interface Factory {
+    fun create(@Provides @ApplicationContext context: Context): AppGraph
+  }
 }

@@ -2,6 +2,7 @@ package com.simtop.billionbeers.di
 
 import android.database.sqlite.SQLiteConstraintException
 import androidx.room.Room
+import androidx.test.platform.app.InstrumentationRegistry
 import com.simtop.beer_data.mappers.BeersMapper
 import com.simtop.beer_database.database.BeersDatabase
 import com.simtop.beer_database.localsources.BeersLocalSource
@@ -14,8 +15,6 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
 
-import androidx.test.platform.app.InstrumentationRegistry
-
 class LocalDataSourceTest {
 
   private lateinit var localSource: BeersLocalSource
@@ -24,7 +23,8 @@ class LocalDataSourceTest {
   @Before
   fun setUp() {
     val context = InstrumentationRegistry.getInstrumentation().targetContext
-    db = Room.inMemoryDatabaseBuilder(context, BeersDatabase::class.java)
+    db =
+      Room.inMemoryDatabaseBuilder(context, BeersDatabase::class.java)
         .fallbackToDestructiveMigration()
         .build()
     localSource = BeersLocalSourceImpl(db)
@@ -82,7 +82,6 @@ class LocalDataSourceTest {
       assertEquals(result[0].availability, false)
     }
   }
-
 }
 
 val fakeBeersApiResponseItem2 =

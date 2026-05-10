@@ -15,7 +15,7 @@ class FakeBeersRemoteSource : BeersRemoteSource {
 
   fun setShouldThrowError(
     shouldThrow: Boolean,
-    exception: Exception = Exception("Fake Remote Error")
+    exception: Exception = Exception("Fake Remote Error"),
   ) {
     shouldThrowError = shouldThrow
     exceptionToThrow = exception
@@ -37,7 +37,7 @@ class FakeBeersRemoteSource : BeersRemoteSource {
       width = 100,
       height = 100,
       mime = "image/jpeg",
-      size = 100
+      size = 100,
     )
   }
 }
