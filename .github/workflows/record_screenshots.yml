@@ -87,8 +87,8 @@ jobs:
             exit 1
           fi
           
-          echo "Running command: ./gradlew $COMMAND"
-          ./gradlew $COMMAND
+          echo "Running command: ./gradlew assembleDebug testDebugClasses $COMMAND"
+          ./gradlew assembleDebug testDebugClasses $COMMAND
 
       - name: Commit and Push Screenshots
         env:
