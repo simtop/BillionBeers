@@ -6,7 +6,7 @@ import com.simtop.beer_network.remotesources.BeersRemoteSource
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.PagingMediator
-import com.simtop.core.di.AppScope
+import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import kotlinx.coroutines.async
@@ -28,28 +28,7 @@ class BeersRepositoryImpl(
     PagingMediator<Int, Beer>(
       initialKey = 1,
       nextKey = { currentKey, _ -> currentKey + 1 },
-      fetchRemote = { page ->
-        val apiItems = beersRemoteSource.getListOfBeers(page)
-        coroutineScope {
-          apiItems
-            .map { item ->
-              async {
-                val beer = BeersMapper.fromBeersApiResponseItemToBeer(item)
-                if (!item.imageId.isNullOrEmpty()) {
-                  try {
-                    val imageResponse = beersRemoteSource.getImage(item.imageId!!)
-                    beer.copy(imageUrl = imageResponse.url)
-                  } catch (e: Exception) {
-                    beer
-                  }
-                } else {
-                  beer
-                }
-              }
-            }
-            .awaitAll()
-        }
-      },
+      fetchRemote = { page -> fetchAndEnrichBeers(page) },
       saveLocal = { beers ->
         beersLocalSource.insertAllToDB(beers.map { BeersMapper.fromBeerToBeerDbModel(it) })
       },
@@ -57,30 +36,30 @@ class BeersRepositoryImpl(
         beersLocalSource.getAllBeersFromDB().map { list ->
           list.map { BeersMapper.fromBeerDbModelToBeer(it) }
         }
-      },
+      }
     )
 
-  override suspend fun getListOfBeerFromApi(page: Int): List<Beer> {
+  private suspend fun fetchAndEnrichBeers(page: Int): List<Beer> {
     val apiItems = beersRemoteSource.getListOfBeers(page)
     return coroutineScope {
       apiItems
         .map { item ->
-          async {
-            val beer = BeersMapper.fromBeersApiResponseItemToBeer(item)
-            if (!item.imageId.isNullOrEmpty()) {
-              try {
-                val imageResponse = beersRemoteSource.getImage(item.imageId!!)
-                beer.copy(imageUrl = imageResponse.url)
-              } catch (e: Exception) {
-                beer
-              }
-            } else {
-              beer
-            }
-          }
+          async { enrichBeerWithImage(item) }
         }
         .awaitAll()
     }
+  }
+
+  private suspend fun enrichBeerWithImage(item: com.simtop.beer_network.models.BeersApiResponseItem): Beer {
+    val beer = BeersMapper.fromBeersApiResponseItemToBeer(item)
+    val imageUrl = item.imageId?.takeIf { it.isNotEmpty() }?.let { id ->
+      runCatching { beersRemoteSource.getImage(id).url }.getOrNull()
+    }
+    return imageUrl?.let { beer.copy(imageUrl = it) } ?: beer
+  }
+
+  override suspend fun getListOfBeerFromApi(page: Int): List<Beer> {
+    return fetchAndEnrichBeers(page)
   }
 
   override suspend fun updateAvailability(beer: Beer) =

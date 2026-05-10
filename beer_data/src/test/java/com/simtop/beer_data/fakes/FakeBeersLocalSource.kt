@@ -42,7 +42,7 @@ class FakeBeersLocalSource : BeersLocalSource {
     }
   }
 
-  override fun deleteAllFromDB() {
+  override suspend fun deleteAllFromDB() {
     beersFlow.value = emptyList()
   }
 

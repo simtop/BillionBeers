@@ -45,7 +45,7 @@ constructor(
     viewModelScope.launch(coroutineDispatcher.io) {
       val newBeer = beer.copy(availability = !beer.availability)
       changeAvailability(newBeer)
-      availabilityUseCase.execute(availabilityUseCase.Params(newBeer)).also(::treatResponse)
+      availabilityUseCase(newBeer).also(::treatResponse)
     }
   }
 

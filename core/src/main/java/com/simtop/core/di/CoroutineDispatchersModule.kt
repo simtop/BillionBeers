@@ -2,6 +2,7 @@ package com.simtop.core.di
 
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.DefaultCoroutineDispatcherProvider
+import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn

@@ -12,7 +12,7 @@ interface BeersLocalSource {
 
   suspend fun updateBeer(primaryKey: String, availability: Boolean)
 
-  fun deleteAllFromDB()
+  suspend fun deleteAllFromDB()
 
   suspend fun getCountFromDB(): Int
 }
@@ -27,7 +27,7 @@ class BeersLocalSourceImpl(private val db: BeersDatabase) : BeersLocalSource {
   override suspend fun updateBeer(primaryKey: String, availability: Boolean) =
     db.beersDao().updateBeer(primaryKey, availability)
 
-  override fun deleteAllFromDB() = db.beersDao().deleteAll()
+  override suspend fun deleteAllFromDB() = db.beersDao().deleteAll()
 
   override suspend fun getCountFromDB() = db.beersDao().getCount()
 }
