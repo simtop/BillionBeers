@@ -16,6 +16,11 @@ configure<DetektExtension> {
     ignoreFailures = true
 }
 
+// Detekt supports max java 22 for now
 tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
-    jvmTarget = "21"
+    jvmTarget = DETEKT_JAVA_VERSION
+}
+
+tasks.withType<io.gitlab.arturbosch.detekt.DetektCreateBaselineTask>().configureEach {
+    jvmTarget = DETEKT_JAVA_VERSION
 }

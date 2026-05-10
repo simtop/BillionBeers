@@ -1,5 +1,6 @@
 import org.gradle.internal.extensions.stdlib.capitalized
 import org.gradle.testing.jacoco.tasks.JacocoReport
+import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
 
 plugins {
     id("jacoco")
@@ -8,7 +9,22 @@ plugins {
 val libs = the<org.gradle.accessors.dm.LibrariesForLibs>()
 
 configure<JacocoPluginExtension> {
-    toolVersion = "0.8.12"
+    toolVersion = PROJECT_JACOCO_VERSION
+}
+
+tasks.withType<Test>().configureEach {
+    extensions.configure<JacocoTaskExtension> {
+        val jdkAndToolExcludes = listOf(
+            "jdk.internal.*",
+            "sun.*",
+            "com.sun.*",
+            "javax.*",
+            "org.junit.*",
+            "org.gradle.*",
+            "org.jacoco.*"
+        )
+        excludes = (excludes ?: emptyList()) + jdkAndToolExcludes
+    }
 }
 
 // In Pure Kotlin Modules, applying id("jacoco") automatically creates a jacocoTestReport task.

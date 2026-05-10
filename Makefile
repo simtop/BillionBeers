@@ -2,6 +2,10 @@
 MODULE ?= 
 SCENARIO ?= incremental_build
 
+MODULE_TRIMMED := $(strip $(MODULE))
+MODULE_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,)
+UI_TEST_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,:app:)
+
 .PHONY: help build install clean test ui-test screenshot-record screenshot-verify screenshot-clean lint format check check-duplicates check-unused-deps benchmark-micro benchmark-macro generate-baseline gradle-benchmark jacoco-report install-profiler install-diffuse
 
 help: ## Show this help message.
@@ -16,46 +20,55 @@ help: ## Show this help message.
 
 # Basic Commands
 build: ## Assemble the debug APK.
-	./gradlew $(MODULE):assembleDebug
+	./gradlew $(MODULE)assembleDebug
 
 install: ## Install the debug APK to a connected device.
-	./gradlew $(MODULE):installDebug
+	./gradlew $(MODULE)installDebug
 
 clean: ## Clean all build outputs.
 	./gradlew clean
 
+deep-clean: ## Stop daemon and deeply clean all gradle caches to fix corrupted states.
+	./gradlew --stop
+	rm -rf .gradle build build-logic/.gradle build-logic/build build-logic/convention/.gradle build-logic/convention/build
+	find . -name "build" -type d -prune -exec rm -rf '{}' +
+	rm -rf ~/.gradle/caches/build-cache-*
+	rm -rf ~/.gradle/caches/8.*
+	rm -rf ~/.gradle/caches/9.*
+	./gradlew clean
+
 # Testing
 test: ## Run unit tests for the specified module (or all).
-	./gradlew $(MODULE):testDebugUnitTest
+	./gradlew $(MODULE_PREFIX)testDebugUnitTest
 
 ui-test: ## Run connected Android tests (UI tests).
-	./gradlew $(MODULE):connectedDebugAndroidTest
+	./gradlew $(UI_TEST_PREFIX)connectedDebugAndroidTest
 
 # Screenshots (Paparazzi)
 screenshot-record: ## Record golden images for Paparazzi.
-	./gradlew $(MODULE):recordPaparazziDebug
+	./gradlew $(MODULE_PREFIX)recordPaparazziDebug
 
 screenshot-verify: ## Verify screenshots against golden images.
-	./gradlew $(MODULE):verifyPaparazziDebug
+	./gradlew $(MODULE_PREFIX)verifyPaparazziDebug
 
 screenshot-clean: ## Clean and re-record golden images.
-	./gradlew clean $(MODULE):recordPaparazziDebug
+	./gradlew clean $(MODULE_PREFIX)recordPaparazziDebug
 
 # Quality & Analysis
 lint: ## Run static analysis (Detekt).
-	./gradlew $(MODULE):detekt
+	./gradlew $(MODULE_PREFIX)detekt
 
 format: ## Apply code formatting (Spotless).
-	./gradlew $(MODULE):spotlessApply
+	./gradlew $(MODULE_PREFIX)spotlessApply
 
 check: ## Run all quality checks (lint + test).
-	./gradlew $(MODULE):check
+	./gradlew $(MODULE_PREFIX)check
 
 check-duplicates: ## Check for duplicate classes in the dependency graph.
-	./gradlew $(MODULE):checkDebugDuplicateClasses
+	./gradlew $(MODULE_PREFIX)checkDebugDuplicateClasses
 
 check-unused-deps: ## Detect declared but unused dependencies.
-	./gradlew $(MODULE):detectUnusedDependencies
+	./gradlew $(MODULE_PREFIX)detectUnusedDependencies
 
 # Benchmarking
 benchmark-micro: ## Run microbenchmarks on a connected device.

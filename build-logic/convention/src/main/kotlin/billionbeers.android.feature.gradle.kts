@@ -1,22 +1,21 @@
 import org.gradle.accessors.dm.LibrariesForLibs
 
-plugins {
-    id("billionbeers.android.library")
-    id("billionbeers.android.metro")
-    id("billionbeers.android.compose")
-    id("billionbeers.jacoco")
-}
+apply(plugin = "billionbeers.android.library")
+apply(plugin = "billionbeers.android.metro")
+apply(plugin = "billionbeers.android.compose")
+apply(plugin = "billionbeers.jacoco")
+
 
 val libs = the<LibrariesForLibs>()
 
 dependencies {
-    implementation(project(":core"))
-    implementation(project(":core-common"))
-    implementation(project(":presentation_utils"))
-    implementation(project(":beerdomain:api"))
-    implementation(project(":beerdomain:impl"))
+    "implementation"(project(":core"))
+    "implementation"(project(":core-common"))
+    "implementation"(project(":presentation_utils"))
+    "implementation"(project(":beerdomain:api"))
+    "implementation"(project(":beerdomain:impl"))
 
-    implementation(libs.lifecycleRuntimeKtx)
-    implementation(libs.navigationFragmentKtx)
-    implementation(libs.navigationUi)
+    "implementation"(libs.lifecycleRuntimeKtx)
+    "implementation"(libs.navigationFragmentKtx)
+    "implementation"(libs.navigationUi)
 }

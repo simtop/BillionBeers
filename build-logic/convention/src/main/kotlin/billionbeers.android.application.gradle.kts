@@ -1,45 +1,30 @@
 import com.android.build.api.dsl.ApplicationExtension
-import org.gradle.api.JavaVersion
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.gradle.accessors.dm.LibrariesForLibs
 import java.util.Properties
 
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("billionbeers.jacoco")
-    id("billionbeers.spotless")
-    id("billionbeers.detekt")
     id("kotlin-parcelize")
-    id("billionbeers.unused-dependencies")
 }
 
-val libs = the<LibrariesForLibs>()
+//Because of Gradle 9 Bug: I moved them below the plugins block using
+// apply(plugin = "billionbeers.*"). This defers the evaluation of the plugin until runtime
+// rather than build-script compilation time, bypassing the accessor generation bug completely
+// while preserving the exact same functionality.
+apply(plugin = "billionbeers.android.common")
+apply(plugin = "billionbeers.jacoco")
+apply(plugin = "billionbeers.spotless")
+apply(plugin = "billionbeers.detekt")
+apply(plugin = "billionbeers.unused-dependencies")
 
-configure<ApplicationExtension> {
-    compileSdk = 35
+val libs = the<org.gradle.accessors.dm.LibrariesForLibs>()
+val android = the<ApplicationExtension>()
 
+android.apply {
     defaultConfig {
-        minSdk = 28
-        targetSdk = 35
-        versionCode = 60
-        versionName = "0.60"
-        testInstrumentationRunner = "com.simtop.billionbeers.di.MockTestRunner"
+        targetSdk = libs.versions.targetSdk.get().toInt()
+        versionCode = PROJECT_VERSION_CODE
+        versionName = PROJECT_VERSION_NAME
         multiDexEnabled = true
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_23
-        targetCompatibility = JavaVersion.VERSION_23
-    }
-
-    packaging {
-        resources {
-            excludes += "META-INF/AL2.0"
-            excludes += "META-INF/LGPL2.1"
-            excludes += "META-INF/licenses/ASM"
-            excludes += "META-INF/*.kotlin_module"
-        }
     }
 
     signingConfigs {
@@ -84,33 +69,34 @@ configure<ApplicationExtension> {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "benchmark-rules.pro")
         }
     }
+
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "/META-INF/licenses/ASM"
+            excludes += "META-INF/*.kotlin_module"
+        }
+    }
 }
 
 dependencies {
-    implementation(libs.tracing.perfetto)
-    implementation(libs.tracing.perfetto.binary)
-    testImplementation(libs.junit)
-    testImplementation(libs.mockk)
-    testImplementation(libs.coreTesting)
-    testImplementation(libs.coroutinesTest)
-    testImplementation(libs.kluentAndroid)
-    testImplementation(libs.turbine)
+    "implementation"(libs.tracing.perfetto)
+    "implementation"(libs.tracing.perfetto.binary)
+    "testImplementation"(libs.junit)
+    "testImplementation"(libs.mockk)
+    "testImplementation"(libs.coreTesting)
+    "testImplementation"(libs.coroutinesTest)
+    "testImplementation"(libs.kluentAndroid)
+    "testImplementation"(libs.turbine)
 
-    androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.kotlinTestJunit)
-    androidTestImplementation(libs.coroutinesTest)
-    androidTestImplementation(libs.espressoCore)
-    androidTestImplementation(libs.testRunner)
-    androidTestImplementation(libs.testRules)
-    androidTestImplementation(libs.testCoreKtx)
-    androidTestImplementation(libs.mockkAndroid)
-    androidTestImplementation(libs.junitKtx)
-    androidTestImplementation(libs.coreTesting)
-}
-
-tasks.withType<KotlinCompile>().configureEach {
-    compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_23)
-        freeCompilerArgs.add("-Xstring-concat=inline")
-    }
+    "androidTestImplementation"(libs.junit)
+    "androidTestImplementation"(libs.kotlinTestJunit)
+    "androidTestImplementation"(libs.coroutinesTest)
+    "androidTestImplementation"(libs.espressoCore)
+    "androidTestImplementation"(libs.testRunner)
+    "androidTestImplementation"(libs.testRules)
+    "androidTestImplementation"(libs.testCoreKtx)
+    "androidTestImplementation"(libs.mockkAndroid)
+    "androidTestImplementation"(libs.junitKtx)
+    "androidTestImplementation"(libs.coreTesting)
 }

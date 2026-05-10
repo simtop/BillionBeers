@@ -7,7 +7,6 @@ plugins {
 
 android {
   namespace = "com.simtop.presentation_utils"
-  buildFeatures { viewBinding = true }
 }
 
 dependencies {
@@ -22,10 +21,6 @@ dependencies {
   api(libs.androidPlayCoreKtx)
 
   implementation(libs.androidx.ui.tooling.preview.android)
-
-  implementation(libs.appcompat)
-  implementation(libs.material)
-  implementation(libs.constraintlayout)
 
   implementation(libs.coil3)
   implementation(libs.coil3.view)

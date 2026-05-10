@@ -1,3 +1,6 @@
+import com.android.build.api.dsl.ApplicationExtension
+import com.android.build.api.dsl.DynamicFeatureExtension
+import com.android.build.api.dsl.LibraryExtension
 import java.io.File
 import org.gradle.accessors.dm.LibrariesForLibs
 
@@ -11,6 +14,37 @@ val libs = the<LibrariesForLibs>()
 dependencies {
     add("implementation", project(":snapshot-testing"))
     add("ksp", project(":snapshot-processor"))
+}
+
+// Paparazzi 2.0.0-alpha04's PaparazziTestReporter is wired into the Test
+// task's HTML/Junit report generators and calls a Gradle 8.x internal method
+// (TestResultProvider.hasOutput) that no longer exists in Gradle 9.4.
+// This makes the build fail at report-generation even when the test itself passed and
+// Images were recorded successfully. Disabling both reports because anyway we usually check
+// the reports in build/reports/paparazzi.
+tasks.withType<Test>().configureEach {
+    reports.html.required.set(false)
+    reports.junitXml.required.set(false)
+}
+
+val paparazziGeneratedDir = layout.buildDirectory.dir("generated/paparazzi-test/kotlin").get().asFile
+
+pluginManager.withPlugin("com.android.application") {
+    extensions.configure<ApplicationExtension>() {
+        sourceSets.getByName("test").java.srcDir(paparazziGeneratedDir)
+    }
+}
+
+pluginManager.withPlugin("com.android.library") {
+    extensions.configure<LibraryExtension>(){
+        sourceSets.getByName("test").java.srcDir(paparazziGeneratedDir)
+    }
+}
+
+pluginManager.withPlugin("com.android.dynamic-feature") {
+    extensions.configure<DynamicFeatureExtension>(){
+        sourceSets.getByName("test").java.srcDir(paparazziGeneratedDir)
+    }
 }
 
 project.extensions.findByType(com.android.build.gradle.BaseExtension::class.java)?.let { android ->

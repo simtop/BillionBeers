@@ -1,32 +1,26 @@
 import org.gradle.accessors.dm.LibrariesForLibs
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.JavaVersion
 
 plugins {
     id("org.jetbrains.kotlin.jvm")
-    id("billionbeers.jacoco")
-    id("billionbeers.spotless")
-    id("billionbeers.detekt")
 }
+
+apply(plugin = "billionbeers.jacoco")
+apply(plugin = "billionbeers.spotless")
+apply(plugin = "billionbeers.detekt")
+apply(plugin = "billionbeers.kotlin.options")
 
 val libs = the<LibrariesForLibs>()
 configure<JavaPluginExtension> {
-    sourceCompatibility = JavaVersion.VERSION_23
-    targetCompatibility = JavaVersion.VERSION_23
+    sourceCompatibility = PROJECT_JAVA_VERSION
+    targetCompatibility = PROJECT_JAVA_VERSION
 }
 
 dependencies {
-    testImplementation(libs.junit)
-    testImplementation(libs.mockk)
-    testImplementation(libs.coroutinesTest)
-    testImplementation(libs.kluentAndroid)
-    testImplementation(libs.turbine)
-}
-
-tasks.withType<KotlinCompile>().configureEach {
-    compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_23)
-        freeCompilerArgs.add("-Xstring-concat=inline")
-    }
+    "testImplementation"(libs.junit)
+    "testImplementation"(libs.mockk)
+    "testImplementation"(libs.coroutinesTest)
+    "testImplementation"(libs.kluentAndroid)
+    "testImplementation"(libs.turbine)
 }
