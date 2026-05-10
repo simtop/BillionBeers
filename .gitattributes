@@ -1,0 +1,2 @@
+# Paparazzi screenshots
+**/src/test/snapshots/images/*.png filter=lfs diff=lfs merge=lfs -text
