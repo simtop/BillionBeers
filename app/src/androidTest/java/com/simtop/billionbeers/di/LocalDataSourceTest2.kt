@@ -93,4 +93,4 @@ val fakeBeerModel2 = Beer("1", "Buzz", "A Real Bitter Experience.", "", "", 4.5,
 
 val fakeBeerListModel2 = listOf(fakeBeerModel2.copy())
 
-val fakeDbBeerList = listOf(BeersMapper.fromBeerToBeerDbModel(fakeBeerModel2))
+val fakeDbBeerList = listOf(BeersMapper().fromBeerToBeerDbModel(fakeBeerModel2))

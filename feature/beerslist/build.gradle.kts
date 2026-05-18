@@ -13,6 +13,7 @@ dependencies {
   implementation(project(":core"))
   implementation(project(":core:designsystem"))
   testImplementation(project(":beerdomain:fakes"))
+  testImplementation(libs.striktCore)
 
   implementation(libs.androidx.material3.android)
   implementation(libs.androidx.ui.tooling.preview.android)

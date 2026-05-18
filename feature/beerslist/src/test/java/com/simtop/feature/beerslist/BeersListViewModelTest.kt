@@ -22,6 +22,11 @@ import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import strikt.api.expectThat
+import strikt.assertions.isA
+import strikt.assertions.isEqualTo
+import strikt.assertions.isFalse
+import strikt.assertions.isTrue
 
 @ExperimentalCoroutinesApi
 class BeersListViewModelTest {
@@ -67,15 +72,16 @@ class BeersListViewModelTest {
 
       viewModel.beerListViewState.test {
         // Initial state (Loading)
-        assert(awaitItem() is CommonUiState.Loading)
+        expectThat(awaitItem()).isA<CommonUiState.Loading>()
 
         // Trigger data load
         fakeBeersRepository.setBeers(listOf(beer))
 
         // Success state from repository flow
-        val successState = awaitItem() as CommonUiState.Success
-        assert(successState.data.beers.size == 1)
-        assert(!successState.data.isLoadingNextPage)
+        val successState = awaitItem()
+        expectThat(successState).isA<CommonUiState.Success<BeersListUiModel>>()
+        expectThat((successState as CommonUiState.Success).data.beers.size).isEqualTo(1)
+        expectThat(successState.data.isLoadingNextPage).isFalse()
 
         // Trigger scroll to bottom
         viewModel.onScrollToBottom()
@@ -84,15 +90,17 @@ class BeersListViewModelTest {
         fakeBeersRepository.setPagingState(PagingState.LoadingNextPage)
 
         // Expect update with isLoadingNextPage = true
-        val loadingNextPageState = awaitItem() as CommonUiState.Success
-        assert(loadingNextPageState.data.isLoadingNextPage)
+        val loadingNextPageState = awaitItem()
+        expectThat(loadingNextPageState).isA<CommonUiState.Success<BeersListUiModel>>()
+        expectThat((loadingNextPageState as CommonUiState.Success).data.isLoadingNextPage).isTrue()
 
         // Simulate PagingState Success
         fakeBeersRepository.setPagingState(PagingState.Success)
 
         // Expect update with isLoadingNextPage = false
-        val finalState = awaitItem() as CommonUiState.Success
-        assert(!finalState.data.isLoadingNextPage)
+        val finalState = awaitItem()
+        expectThat(finalState).isA<CommonUiState.Success<BeersListUiModel>>()
+        expectThat((finalState as CommonUiState.Success).data.isLoadingNextPage).isFalse()
       }
     }
 }
