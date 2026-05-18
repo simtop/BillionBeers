@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Pre-commit hook for BillionBeers to prevent committing raw binary PNGs without Git LFS.
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+NC='\033[0m' # No Color
+
+# 1. Check if git-lfs binary is installed on the machine
+if ! command -v git-lfs >/dev/null 2>&1; then
+    echo -e "${RED}❌ Error: git-lfs binary is not installed on your system!${NC}"
+    echo -e "   This project uses Git LFS to manage screenshot test assets (golden images)."
+    echo -e "   Committing screenshots without Git LFS will bloat the repository with raw binary files."
+    echo ""
+    echo -e "   ${YELLOW}How to install:${NC}"
+    echo -e "   - macOS:  ${GREEN}brew install git-lfs${NC}"
+    echo -e "   - Debian/Ubuntu: ${GREEN}sudo apt install git-lfs${NC}"
+    echo ""
+    echo -e "   After installing, run: ${GREEN}make setup${NC} or ${GREEN}git lfs install --local && git lfs pull${NC}"
+    echo ""
+    exit 1
+fi
+
+# 2. Check if Git LFS filters are registered locally in this repository
+if ! git config --local filter.lfs.clean >/dev/null 2>&1; then
+    echo -e "${RED}❌ Error: Git LFS filters are not initialized for this repository!${NC}"
+    echo -e "   Please run: ${GREEN}make setup${NC} (or ${GREEN}git lfs install --local && git lfs pull${NC})"
+    echo ""
+    exit 1
+fi
+
+exit 0

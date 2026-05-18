@@ -6,7 +6,7 @@ MODULE_TRIMMED := $(strip $(MODULE))
 MODULE_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,)
 UI_TEST_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,:app:)
 
-.PHONY: help build install clean test ui-test screenshot-record screenshot-verify screenshot-clean lint format check check-duplicates check-unused-deps benchmark-micro benchmark-macro generate-baseline gradle-benchmark jacoco-report install-profiler install-diffuse
+.PHONY: help setup build install clean test ui-test screenshot-record screenshot-verify screenshot-clean lint format check check-duplicates check-unused-deps benchmark-micro benchmark-macro generate-baseline gradle-benchmark jacoco-report install-profiler install-diffuse
 
 help: ## Show this help message.
 	@echo "\n📊 BillionBeers Makefile Help"
@@ -14,9 +14,26 @@ help: ## Show this help message.
 	@echo "\nUsage: make <target> [MODULE=<module_path>] [SCENARIO=<scenario_name>]\n"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-25s\033[0m %s\n", $$1, $$2}'
 	@echo "\n💡 Examples:"
+	@echo "  make setup"
 	@echo "  make test MODULE=:feature:beerslist"
 	@echo "  make screenshot-record MODULE=:core:designsystem"
 	@echo "  make gradle-benchmark SCENARIO=clean_build"
+
+setup: ## Setup local development environment (Git hooks, Git LFS, etc.).
+	@echo "🔧 Setting up local development environment..."
+	@if ! command -v git-lfs >/dev/null 2>&1; then \
+		echo "⚠️ git-lfs not found! Please install it (e.g., 'brew install git-lfs' or 'sudo apt install git-lfs')."; \
+	else \
+		echo "✅ git-lfs is installed."; \
+		echo "📦 Configuring Git LFS locally..."; \
+		git lfs install --local; \
+		git lfs pull; \
+	fi
+	@echo "🪝 Installing Git hooks..."
+	@mkdir -p .git/hooks
+	@cp config/git-hooks/pre-commit .git/hooks/pre-commit
+	@chmod +x .git/hooks/pre-commit
+	@echo "🎉 Setup complete! You're ready to build and test BillionBeers."
 
 # Basic Commands
 build: ## Assemble the debug APK.
