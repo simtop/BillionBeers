@@ -37,7 +37,7 @@ junit5 = "6.0.3"
 androidJunit5 = "2.0.1"
 strikt = "0.35.1"
 kluent = "1.73"
-paparazzi = "2.0.0-alpha04"
+paparazzi = "2.0.0-alpha05"
 
 # KotlinX
 kotlinx-coroutines = "1.10.2"
