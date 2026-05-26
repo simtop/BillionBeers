@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
@@ -144,7 +145,7 @@ fun BeerChip(text: String, color: Color, textColor: Color) {
 }
 
 class BeerPreviewParameterProvider :
-  androidx.compose.ui.tooling.preview.PreviewParameterProvider<Beer> {
+  PreviewParameterProvider<Beer> {
   override val values =
     sequenceOf(
       Beer.empty.copy(

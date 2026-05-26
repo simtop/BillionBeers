@@ -1,4 +1,4 @@
-package com.simtop.billionbeers.catalog.screenshot
+package com.simtop.billionbeers.screenshot
 
 import androidx.compose.material3.Text
 import app.cash.paparazzi.DeviceConfig
@@ -10,10 +10,10 @@ class SimpleScreenshotTest {
 
   @get:Rule
   val paparazzi =
-    Paparazzi(
-      deviceConfig = DeviceConfig.PIXEL_5,
-      theme = "android:Theme.Material.Light.NoActionBar",
-    )
+      Paparazzi(
+          deviceConfig = DeviceConfig.PIXEL_5,
+          theme = "android:Theme.Material.Light.NoActionBar",
+      )
 
   @Test
   fun simple_text_screenshot() {

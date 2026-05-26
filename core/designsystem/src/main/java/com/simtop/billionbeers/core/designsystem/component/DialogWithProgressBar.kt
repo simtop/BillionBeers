@@ -23,10 +23,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.simtop.billionbeers.catalog_annotations.CatalogComponent
+import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import kotlinx.coroutines.delay
 
 data class CatalogSettings(val dismissOnClickOutside: Boolean = false)
@@ -129,5 +132,23 @@ fun DialogContent(number: Float, text: String, modifier: Modifier = Modifier) {
       )
       LinearProgressIndicator(progress = { number }, modifier = Modifier.fillMaxWidth())
     }
+  }
+}
+
+class DialogProgressProvider: PreviewParameterProvider<Float> {
+  override val values = sequenceOf(0f, 0.5f, 1f)
+}
+
+@PreviewLightDark
+@Composable
+fun DialogContentPreview(
+  @PreviewParameter(DialogProgressProvider::class)
+  progress: Float
+) {
+  BillionBeersTheme {
+    DialogContent(
+        number = progress,
+        text = "Downloading feature...",
+    )
   }
 }

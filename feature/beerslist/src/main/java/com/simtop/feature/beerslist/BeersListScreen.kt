@@ -50,6 +50,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import com.google.android.play.core.splitinstall.SplitInstallManager
 import com.simtop.beerdomain.domain.models.Beer
@@ -207,9 +209,7 @@ fun BeersListContent(
 }
 
 class BeersListPreviewParameterProvider :
-  androidx.compose.ui.tooling.preview.PreviewParameterProvider<
-    BeersListPreviewParameterProvider.State
-  > {
+  PreviewParameterProvider<BeersListPreviewParameterProvider.State> {
 
   sealed interface State {
     val uiState: CommonUiState<BeersListUiModel>
@@ -270,7 +270,7 @@ class BeersListPreviewParameterProvider :
 @PreviewLightDark
 @Composable
 fun BeersListScreenPreview(
-  @androidx.compose.ui.tooling.preview.PreviewParameter(BeersListPreviewParameterProvider::class)
+  @PreviewParameter(BeersListPreviewParameterProvider::class)
   state: BeersListPreviewParameterProvider.State
 ) {
   BillionBeersTheme {
