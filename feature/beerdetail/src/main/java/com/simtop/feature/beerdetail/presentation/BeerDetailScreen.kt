@@ -34,7 +34,7 @@ fun BeerDetailScreenImpl(beer: Beer, onBackClick: () -> Unit) {
 
   CompositionLocalProvider(LocalMetroViewModelFactory provides factory) {
     val viewModel: BeerDetailViewModel =
-      assistedMetroViewModel<BeerDetailViewModel, BeerDetailViewModel.Factory> { create(beer) }
+      assistedMetroViewModel<BeerDetailViewModel, BeerDetailViewModel.Factory>(key = beer.id) { create(beer) }
     val viewState by viewModel.beerDetailViewState.collectAsState()
 
     when (val state = viewState) {

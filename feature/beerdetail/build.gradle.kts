@@ -12,7 +12,6 @@ dependencies {
   implementation(project(":core"))
   implementation(project(":core:designsystem"))
   implementation(project(":navigation"))
-  implementation(libs.androidx.navigation.compose)
 
   implementation(libs.coil3)
   implementation(libs.coil3.network)
