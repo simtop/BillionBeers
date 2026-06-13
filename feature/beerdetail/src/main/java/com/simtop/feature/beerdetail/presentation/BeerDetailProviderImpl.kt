@@ -2,13 +2,14 @@ package com.simtop.feature.beerdetail.presentation
 
 import androidx.annotation.Keep
 import androidx.compose.runtime.Composable
-import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.navigation.BeerDetailProvider
+import com.simtop.navigation.BeerDetail
+import com.simtop.navigation.DynamicFeatureContentProvider
 
+@Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
 @Keep
-class BeerDetailProviderImpl : BeerDetailProvider {
-  @Composable
-  override fun BeerDetailScreen(beer: Beer, onBackClick: () -> Unit) {
-    BeerDetailScreenImpl(beer, onBackClick)
-  }
+class BeerDetailProviderImpl : DynamicFeatureContentProvider<BeerDetail> {
+    @Composable
+    override fun Content(key: BeerDetail, onBack: () -> Unit) {
+        BeerDetailScreenImpl(beer = key.beer, onBackClick = onBack)
+    }
 }
