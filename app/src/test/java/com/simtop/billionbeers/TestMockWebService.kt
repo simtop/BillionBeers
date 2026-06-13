@@ -13,7 +13,9 @@ import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Before
 import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
+import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
+import retrofit2.converter.kotlinx.serialization.asConverterFactory
 
 abstract class TestMockWebService {
 
@@ -50,11 +52,12 @@ abstract class TestMockWebService {
   }
 
   private fun generateFakeApiService() {
+    val json = Json { ignoreUnknownKeys = true }
     apiService =
       Retrofit.Builder()
         .baseUrl(mockServer.url("/"))
         .client(generateOkHttpClient())
-        .addConverterFactory(GsonConverterFactory.create())
+        .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
         .build()
         .create(BeersService::class.java)
   }

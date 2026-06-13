@@ -58,7 +58,7 @@ dependencies {
   implementation(libs.coroutinesTest)
 
   testImplementation(libs.okhttp3Mockwebserver)
-  testImplementation(libs.retrofit2ConverterGson)
+  testImplementation(libs.retrofit2ConverterSerialization)
   testImplementation(libs.okhttp3LoggingInterceptor)
 
   androidTestImplementation("androidx.compose.ui:ui-test-junit4")

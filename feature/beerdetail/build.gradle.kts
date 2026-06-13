@@ -17,7 +17,7 @@ dependencies {
   implementation(libs.coil3)
   implementation(libs.coil3.network)
 
-  implementation(libs.retrofit2ConverterGson)
+  implementation(libs.retrofit2ConverterSerialization)
   implementation(libs.okhttp3LoggingInterceptor)
 
   testImplementation(libs.mockkAndroid)

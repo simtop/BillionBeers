@@ -2,15 +2,13 @@ package com.simtop.billionbeers
 
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
-import com.google.android.play.core.splitinstall.SplitInstallManager
 import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.domain.repositories.BeersRepository
-import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.billionbeers.di.BaseAppGraph
-import com.simtop.billionbeers.fakes.FakeSplitInstallManager
+import com.simtop.billionbeers.di.FakeBeersRepositoryModule
 import com.simtop.billionbeers.utils.detailScreen
 import com.simtop.billionbeers.utils.homeScreen
 import com.simtop.billionbeers.utils.runMainActivityTest
+import dev.zacsweers.metro.createGraphFactory
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -34,20 +32,13 @@ class MainActivityComposeTest {
       availability = true,
     )
 
-  private val fakeBeersRepository: BeersRepository = FakeBeersRepository(listOf(fakeBeer))
-
-  private val fakeSplitInstallManager: SplitInstallManager = FakeSplitInstallManager()
-
   @Before
   fun setup() {
     val context = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
     val app = context as BillionBeersApplication
 
-    // Configure fakes
-    com.simtop.billionbeers.di.FakeBeersRepositoryModule.fakeBeersRepository.setBeers(listOf(fakeBeer))
-    // FakeSplitInstallManager is already relaxed, but we can set it if needed
-
-    val testGraph = dev.zacsweers.metro.createGraphFactory<TestAppGraph.Factory>().create(
+    FakeBeersRepositoryModule.fakeBeersRepository.setBeers(listOf(fakeBeer))
+    val testGraph = createGraphFactory<TestAppGraph.Factory>().create(
         context = context
     ) as BaseAppGraph
 

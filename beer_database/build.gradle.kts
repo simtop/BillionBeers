@@ -8,5 +8,5 @@ android { namespace = "com.simtop.beer_database" }
 
 dependencies {
   implementation(project(":core"))
-  implementation(libs.retrofit2ConverterGson)
+  implementation(libs.kotlinx.serialization.json)
 }

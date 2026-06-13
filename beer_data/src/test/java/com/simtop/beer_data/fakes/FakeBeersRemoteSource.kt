@@ -1,6 +1,7 @@
 package com.simtop.beer_data.fakes
 
 import com.simtop.beer_network.models.BeersApiResponseItem
+import com.simtop.beer_network.models.ImageResponse
 import com.simtop.beer_network.remotesources.BeersRemoteSource
 
 class FakeBeersRemoteSource : BeersRemoteSource {
@@ -28,8 +29,8 @@ class FakeBeersRemoteSource : BeersRemoteSource {
     return beersResponse
   }
 
-  override suspend fun getImage(id: String): com.simtop.beer_network.models.ImageResponse {
-    return com.simtop.beer_network.models.ImageResponse(
+  override suspend fun getImage(id: String): ImageResponse {
+    return ImageResponse(
       id = id,
       url = "https://fake.url/image.jpg",
       filename = "image.jpg",

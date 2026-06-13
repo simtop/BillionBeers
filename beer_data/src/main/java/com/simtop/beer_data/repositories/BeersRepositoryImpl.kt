@@ -2,6 +2,7 @@ package com.simtop.beer_data.repositories
 
 import com.simtop.beer_data.mappers.BeersMapper
 import com.simtop.beer_database.localsources.BeersLocalSource
+import com.simtop.beer_network.models.BeersApiResponseItem
 import com.simtop.beer_network.remotesources.BeersRemoteSource
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.repositories.BeersRepository
@@ -22,6 +23,7 @@ import kotlinx.coroutines.flow.onStart
 class BeersRepositoryImpl(
   private val beersRemoteSource: BeersRemoteSource,
   private val beersLocalSource: BeersLocalSource,
+  private val beersMapper: BeersMapper,
 ) : BeersRepository {
 
   private val pagingMediator =
@@ -30,11 +32,11 @@ class BeersRepositoryImpl(
       nextKey = { currentKey, _ -> currentKey + 1 },
       fetchRemote = { page -> fetchAndEnrichBeers(page) },
       saveLocal = { beers ->
-        beersLocalSource.insertAllToDB(beers.map { BeersMapper.fromBeerToBeerDbModel(it) })
+        beersLocalSource.insertAllToDB(beers.map { beersMapper.fromBeerToBeerDbModel(it) })
       },
       fetchLocal = {
         beersLocalSource.getAllBeersFromDB().map { list ->
-          list.map { BeersMapper.fromBeerDbModelToBeer(it) }
+          list.map { beersMapper.fromBeerDbModelToBeer(it) }
         }
       }
     )
@@ -50,8 +52,8 @@ class BeersRepositoryImpl(
     }
   }
 
-  private suspend fun enrichBeerWithImage(item: com.simtop.beer_network.models.BeersApiResponseItem): Beer {
-    val beer = BeersMapper.fromBeersApiResponseItemToBeer(item)
+  private suspend fun enrichBeerWithImage(item: BeersApiResponseItem): Beer {
+    val beer = beersMapper.fromBeersApiResponseItemToBeer(item)
     val imageUrl = item.imageId?.takeIf { it.isNotEmpty() }?.let { id ->
       runCatching { beersRemoteSource.getImage(id).url }.getOrNull()
     }
@@ -66,10 +68,10 @@ class BeersRepositoryImpl(
     beersLocalSource.updateBeer(beer.id, beer.availability)
 
   override suspend fun insertAllToDB(beers: List<Beer>) =
-    beersLocalSource.insertAllToDB(beers.map { BeersMapper.fromBeerToBeerDbModel(it) })
+    beersLocalSource.insertAllToDB(beers.map { beersMapper.fromBeerToBeerDbModel(it) })
 
   override suspend fun getAllBeersFromDB() =
-    beersLocalSource.getAllBeersFromDB().first().map { BeersMapper.fromBeerDbModelToBeer(it) }
+    beersLocalSource.getAllBeersFromDB().first().map { beersMapper.fromBeerDbModelToBeer(it) }
 
   override suspend fun countDBEntries() = beersLocalSource.getCountFromDB()
 

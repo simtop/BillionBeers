@@ -9,13 +9,23 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Converter
 import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.converter.kotlinx.serialization.asConverterFactory
+import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
 
 @ContributesTo(AppScope::class)
 interface NetworkingModule {
 
   companion object {
     const val BASE_URL = "baseUrl"
+  }
+ 
+  @Provides
+  @SingleIn(AppScope::class)
+  fun provideJson(): Json = Json {
+    ignoreUnknownKeys = true
+    coerceInputValues = true
+    isLenient = true
   }
 
   @Provides
@@ -50,7 +60,7 @@ interface NetworkingModule {
 
   @Provides
   @SingleIn(AppScope::class)
-  fun provideConverterFactory(): Converter.Factory {
-    return GsonConverterFactory.create()
+  fun provideConverterFactory(json: Json): Converter.Factory {
+    return json.asConverterFactory("application/json".toMediaType())
   }
 }

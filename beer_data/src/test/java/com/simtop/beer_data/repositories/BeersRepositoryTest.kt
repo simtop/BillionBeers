@@ -9,9 +9,11 @@ import com.simtop.beerdomain.domain.models.Beer
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.Assertions.assertEquals
+import com.simtop.beer_data.mappers.BeersMapper
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import strikt.api.expectThat
+import strikt.assertions.isEqualTo
 
 @ExperimentalCoroutinesApi
 class BeersRepositoryTest {
@@ -25,7 +27,8 @@ class BeersRepositoryTest {
   fun setUp() {
     beersRemoteSource = FakeBeersRemoteSource()
     beersLocalSource = FakeBeersLocalSource()
-    beersRepository = BeersRepositoryImpl(beersRemoteSource, beersLocalSource)
+    val beersMapper = BeersMapper()
+    beersRepository = BeersRepositoryImpl(beersRemoteSource, beersLocalSource, beersMapper)
   }
 
   @Test
@@ -51,12 +54,12 @@ class BeersRepositoryTest {
 
         // Wait for the update
         val updatedList = awaitItem()
-        assertEquals(1, updatedList.size)
-        assertEquals("1", updatedList[0].id)
+        expectThat(updatedList.size).isEqualTo(1)
+        expectThat(updatedList[0].id).isEqualTo("1")
 
         // Verify Remote was called (implicitly by result)
         // Verify Local was updated
-        assertEquals(1, beersLocalSource.getCountFromDB())
+        expectThat(beersLocalSource.getCountFromDB()).isEqualTo(1)
       }
     }
 
@@ -89,8 +92,8 @@ class BeersRepositoryTest {
 
       // Check if data is in local source
       val beers = beersLocalSource.getBeers()
-      assertEquals(1, beers.size)
-      assertEquals("2", beers[0].id)
+      expectThat(beers.size).isEqualTo(1)
+      expectThat(beers[0].id).isEqualTo("2")
     }
 
   @Test
@@ -113,9 +116,9 @@ class BeersRepositoryTest {
       val result = beersRepository.getListOfBeerFromApi(1)
 
       // Assert
-      assertEquals(1, result.size)
-      assertEquals("3", result[0].id)
-      assertEquals("https://fake.url/image.jpg", result[0].imageUrl)
+      expectThat(result.size).isEqualTo(1)
+      expectThat(result[0].id).isEqualTo("3")
+      expectThat(result[0].imageUrl).isEqualTo("https://fake.url/image.jpg")
     }
 
   @Test
@@ -145,7 +148,7 @@ class BeersRepositoryTest {
 
       // Assert
       val updatedBeer = beersLocalSource.getBeers().first()
-      assertEquals(false, updatedBeer.availability)
+      expectThat(updatedBeer.availability).isEqualTo(false)
     }
 
   @Test
@@ -159,8 +162,8 @@ class BeersRepositoryTest {
 
       // Assert
       val beers = beersLocalSource.getBeers()
-      assertEquals(1, beers.size)
-      assertEquals("4", beers[0].id)
+      expectThat(beers.size).isEqualTo(1)
+      expectThat(beers[0].id).isEqualTo("4")
     }
 
   @Test
@@ -185,8 +188,8 @@ class BeersRepositoryTest {
       val list = beersRepository.getAllBeersFromDB()
 
       // Assert
-      assertEquals(1, list.size)
-      assertEquals("5", list[0].id)
+      expectThat(list.size).isEqualTo(1)
+      expectThat(list[0].id).isEqualTo("5")
     }
 
   @Test
@@ -210,8 +213,8 @@ class BeersRepositoryTest {
 
       // Assert
       val beers = beersLocalSource.getBeers()
-      assertEquals(1, beers.size)
-      assertEquals("6", beers[0].id)
+      expectThat(beers.size).isEqualTo(1)
+      expectThat(beers[0].id).isEqualTo("6")
     }
 
   @Test
@@ -222,6 +225,6 @@ class BeersRepositoryTest {
 
       // Assert
       // Initial state should be Idle (from PagingMediator default)
-      assertEquals(com.simtop.core.core.PagingState.Idle, stateFlow.value)
+      expectThat(stateFlow.value).isEqualTo(com.simtop.core.core.PagingState.Idle)
     }
 }
