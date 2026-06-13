@@ -8,7 +8,6 @@ android { namespace = "com.simtop.navigation" }
 
 dependencies {
   implementation(project(":beerdomain:api"))
-  implementation(libs.androidx.navigation.dynamic.features.runtime)
-  implementation(libs.androidx.navigation.compose)
+  implementation(libs.androidx.navigation3.runtime)
   implementation(libs.kotlinx.serialization.json)
 }

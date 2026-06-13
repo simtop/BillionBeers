@@ -10,6 +10,7 @@ targetSdk = "36"
 
 # AndroidX
 androidx-navigation = "2.9.8"
+androidx-navigation3 = "1.1.2"
 androidx-room = "2.8.4"
 androidx-test = "1.7.0"
 androidx-test-espresso = "3.7.0"
@@ -64,6 +65,8 @@ navigationUi = { module = "androidx.navigation:navigation-ui", version.ref = "an
 navigationDynamicFeaturesFragment = { module = "androidx.navigation:navigation-dynamic-features-fragment", version.ref = "androidx-navigation" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "androidx-navigation" }
 androidx-navigation-dynamic-features-runtime = { group = "androidx.navigation", name = "navigation-dynamic-features-runtime", version.ref = "androidx-navigation" }
+androidx-navigation3-runtime = { group = "androidx.navigation3", name = "navigation3-runtime", version.ref = "androidx-navigation3" }
+androidx-navigation3-ui = { group = "androidx.navigation3", name = "navigation3-ui", version.ref = "androidx-navigation3" }
 
 # Room
 roomRuntime = { module = "androidx.room:room-runtime", version.ref = "androidx-room" }
