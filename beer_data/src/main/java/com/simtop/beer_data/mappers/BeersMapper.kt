@@ -3,13 +3,15 @@ package com.simtop.beer_data.mappers
 import com.simtop.beer_database.models.BeerDbModel
 import com.simtop.beer_database.utils.Converters
 import com.simtop.beer_network.models.BeersApiResponseItem
+import com.simtop.beer_network.network.BeersService
 import com.simtop.beerdomain.domain.models.Beer
 import dev.zacsweers.metro.Inject
 
 class BeersMapper @Inject constructor() {
 
   fun fromBeersApiResponseItemToBeer(response: BeersApiResponseItem?): Beer {
-    val translation = response?.translations?.find { it.language.code == "en" }
+    val translation =
+      response?.translations?.find { it.language.code == BeersService.DEFAULT_LANGUAGE_CODE }
     val imageUrl = response?.imageId?.let { "https://brewbuddy.dev/images/$it" }
 
     return Beer(
