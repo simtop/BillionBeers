@@ -58,8 +58,8 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersReposit
     }
   }
 
-  override fun getBeersFromSingleSource(quantity: Int): Flow<List<Beer>> {
-    return beersFlow.map { it.take(quantity) }
+  override fun getBeersFromSingleSource(): Flow<List<Beer>> {
+    return beersFlow
   }
 
   override fun observePagingState(): Flow<PagingState> {

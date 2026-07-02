@@ -13,7 +13,7 @@ interface BeersRepository {
 
   suspend fun updateAvailability(beer: Beer)
 
-  fun getBeersFromSingleSource(quantity: Int): Flow<List<Beer>>
+  fun getBeersFromSingleSource(): Flow<List<Beer>>
 
   fun observePagingState(): Flow<PagingState>
 

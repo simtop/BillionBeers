@@ -74,11 +74,7 @@ class PagingMediator<Key : Any, Value : Any>(
 
   suspend fun loadNextPage() {
     mutex.withLock {
-      if (
-        _pagingState.value is PagingState.Loading ||
-          _pagingState.value is PagingState.LoadingNextPage ||
-          isLastPage
-      ) {
+      if (isRequestInFlight() || isLastPage) {
         return
       }
 
@@ -120,4 +116,7 @@ class PagingMediator<Key : Any, Value : Any>(
     isLastPage = false
     _pagingState.value = PagingState.Idle
   }
+
+  private fun isRequestInFlight(): Boolean =
+    _pagingState.value is PagingState.Loading || _pagingState.value is PagingState.LoadingNextPage
 }

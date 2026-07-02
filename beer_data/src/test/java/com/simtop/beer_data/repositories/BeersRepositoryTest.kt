@@ -3,13 +3,13 @@ package com.simtop.beer_data.repositories
 import app.cash.turbine.test
 import com.simtop.beer_data.fakes.FakeBeersLocalSource
 import com.simtop.beer_data.fakes.FakeBeersRemoteSource
+import com.simtop.beer_data.mappers.BeersMapper
 import com.simtop.beer_database.models.BeerDbModel
 import com.simtop.beer_network.models.BeersApiResponseItem
 import com.simtop.beerdomain.domain.models.Beer
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
-import com.simtop.beer_data.mappers.BeersMapper
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
@@ -48,7 +48,7 @@ class BeersRepositoryTest {
       beersRemoteSource.setBeersResponse(listOf(remoteBeer))
 
       // Act & Assert
-      beersRepository.getBeersFromSingleSource(1).test {
+      beersRepository.getBeersFromSingleSource().test {
         // PagingMediator triggers loadFirstPage -> fetchRemote -> saveLocal
         // We expect the local source to be updated, which emits new value to flow
 
