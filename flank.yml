@@ -1,0 +1,37 @@
+# Flank configuration file
+# For details, see Flank documentation: https://github.com/Flank/flank
+#
+# To execute locally:
+# 1. Download flank: wget -q https://github.com/Flank/flank/releases/latest/download/flank.jar
+# 2. Run: java -jar flank.jar android run
+
+gcloud:
+  # Path to the app APK to test.
+  app: app/build/outputs/apk/debug/app-debug.apk
+  # Path to the androidTest APK containing tests.
+  test: app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+  # Set of devices to run tests on.
+  device:
+    - model: redfin
+      version: 30
+      locale: en
+      orientation: portrait
+    - model: a10
+      version: 29
+      locale: en
+      orientation: portrait
+
+  # Test timeout in minutes.
+  timeout: 15m
+
+  # Results bucket name (optional, defaults to a standard google-managed bucket).
+  # results-bucket: billion-beers-test-results
+
+  # Number of times to retry failed tests (up to 10).
+  num-flaky-test-attempts: 2
+
+flank:
+  # Max number of shards (instances running in parallel).
+  max-test-shards: 4
+  # If true, tests will be grouped by execution time to make shard runs balanced.
+  shard-time: -1
