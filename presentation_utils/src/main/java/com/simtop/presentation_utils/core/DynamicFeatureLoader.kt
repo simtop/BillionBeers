@@ -11,22 +11,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import com.google.android.play.core.splitinstall.SplitInstallManager
-import com.google.android.play.core.splitinstall.SplitInstallManagerFactory
 import com.google.android.play.core.splitinstall.SplitInstallRequest
 import com.google.android.play.core.splitinstall.SplitInstallStateUpdatedListener
 import com.google.android.play.core.splitinstall.model.SplitInstallSessionStatus
 import com.simtop.billionbeers.core.designsystem.component.DialogWithProgressBar
 
 @Composable
-fun DynamicFeatureLoader(
-    featureName: String,
-    splitInstallManager: SplitInstallManager? = null,
-    content: @Composable () -> Unit,
-) {
-    val context = LocalContext.current
-    val manager = splitInstallManager ?: remember { SplitInstallManagerFactory.create(context) }
+fun DynamicFeatureLoader(featureName: String, content: @Composable () -> Unit) {
+    val manager = LocalSplitInstallManager.current
     var isInstalled by
     remember(featureName) { mutableStateOf(manager.installedModules.contains(featureName)) }
     var downloadProgress by remember { mutableStateOf(0f) }
