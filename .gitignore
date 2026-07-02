@@ -22,3 +22,7 @@ keystore.properties
 .vscode/
 bin/
 gradle-user-home/
+*.log
+/tmp/
+.temp_research/
+profile-out/
