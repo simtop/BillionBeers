@@ -6,7 +6,10 @@ MODULE_TRIMMED := $(strip $(MODULE))
 MODULE_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,)
 UI_TEST_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,:app:)
 
-.PHONY: help setup build install clean test ui-test screenshot-record screenshot-verify screenshot-clean lint format check check-duplicates check-unused-deps benchmark-micro benchmark-macro generate-baseline gradle-benchmark jacoco-report install-profiler install-diffuse
+# Wrapper for Gradle to support build-brief (bb) or rtk if available
+GRADLE_RUNNER := $(shell if command -v bb >/dev/null 2>&1; then echo "bb ./gradlew"; elif command -v build-brief >/dev/null 2>&1; then echo "build-brief --gradle ./gradlew"; elif command -v rtk >/dev/null 2>&1; then echo "rtk ./gradlew"; else echo "./gradlew"; fi)
+
+.PHONY: help setup setup-ai-tools build install clean test ui-test screenshot-record screenshot-verify screenshot-clean lint format check check-duplicates check-unused-deps benchmark-micro benchmark-macro generate-baseline gradle-benchmark jacoco-report install-profiler install-diffuse
 
 help: ## Show this help message.
 	@echo "\n📊 BillionBeers Makefile Help"
@@ -35,77 +38,84 @@ setup: ## Setup local development environment (Git hooks, Git LFS, etc.).
 	@chmod +x .git/hooks/pre-commit
 	@echo "🎉 Setup complete! You're ready to build and test BillionBeers."
 
+setup-ai-tools: ## Install token-saving tools (rtk, build-brief, snip) via Homebrew.
+	@echo "🔧 Installing AI token-saving tools..."
+	brew tap static-var/tap && brew install build-brief || true
+	brew install rtk || true
+	brew install edouard-claude/tap/snip || true
+	@echo "🎉 AI tools setup complete!"
+
 # Basic Commands
 build: ## Assemble the debug APK.
-	./gradlew $(MODULE)assembleDebug
+	$(GRADLE_RUNNER) $(MODULE)assembleDebug
 
 install: ## Install the debug APK to a connected device.
-	./gradlew $(MODULE)installDebug
+	$(GRADLE_RUNNER) $(MODULE)installDebug
 
 clean: ## Clean all build outputs.
-	./gradlew clean
+	$(GRADLE_RUNNER) clean
 
 deep-clean: ## Stop daemon and deeply clean all gradle caches to fix corrupted states.
-	./gradlew --stop
+	$(GRADLE_RUNNER) --stop
 	rm -rf .gradle build build-logic/.gradle build-logic/build build-logic/convention/.gradle build-logic/convention/build
 	find . -name "build" -type d -prune -exec rm -rf '{}' +
 	rm -rf ~/.gradle/caches/build-cache-*
 	rm -rf ~/.gradle/caches/8.*
 	rm -rf ~/.gradle/caches/9.*
-	./gradlew clean
+	$(GRADLE_RUNNER) clean
 
 # Testing
 test: ## Run unit tests for the specified module (or all).
-	./gradlew $(MODULE_PREFIX)testDebugUnitTest
+	$(GRADLE_RUNNER) $(MODULE_PREFIX)testDebugUnitTest --continue
 
 ui-test: ## Run connected Android tests (UI tests).
-	./gradlew $(UI_TEST_PREFIX)connectedDebugAndroidTest
+	$(GRADLE_RUNNER) $(UI_TEST_PREFIX)connectedDebugAndroidTest
 
 # Screenshots (Paparazzi)
 screenshot-record: ## Record golden images for Paparazzi.
-	./gradlew $(MODULE_PREFIX)recordPaparazziDebug
+	$(GRADLE_RUNNER) $(MODULE_PREFIX)recordPaparazziDebug
 
 screenshot-verify: ## Verify screenshots against golden images.
-	./gradlew $(MODULE_PREFIX)verifyPaparazziDebug
+	$(GRADLE_RUNNER) $(MODULE_PREFIX)verifyPaparazziDebug --continue
 
 screenshot-clean: ## Clean and re-record golden images.
-	./gradlew clean $(MODULE_PREFIX)recordPaparazziDebug
+	$(GRADLE_RUNNER) clean $(MODULE_PREFIX)recordPaparazziDebug
 
 # Quality & Analysis
 lint: ## Run static analysis (Detekt).
-	./gradlew $(MODULE_PREFIX)detekt
+	$(GRADLE_RUNNER) $(MODULE_PREFIX)detekt
 
 detekt-baseline: ## Update Detekt baselines for all modules.
-	./gradlew $(MODULE_PREFIX)detektBaseline
+	$(GRADLE_RUNNER) $(MODULE_PREFIX)detektBaseline
 
 format: ## Apply code formatting (Spotless).
-	./gradlew $(MODULE_PREFIX)spotlessApply
+	$(GRADLE_RUNNER) $(MODULE_PREFIX)spotlessApply
 
 check: ## Run all quality checks (lint + test).
-	./gradlew $(MODULE_PREFIX)check
+	$(GRADLE_RUNNER) $(MODULE_PREFIX)check
 
 check-duplicates: ## Check for duplicate classes in the dependency graph.
-	./gradlew $(MODULE_PREFIX)checkDebugDuplicateClasses
+	$(GRADLE_RUNNER) $(MODULE_PREFIX)checkDebugDuplicateClasses
 
 check-unused-deps: ## Detect declared but unused dependencies.
-	./gradlew $(MODULE_PREFIX)detectUnusedDependencies
+	$(GRADLE_RUNNER) $(MODULE_PREFIX)detectUnusedDependencies
 
 # Benchmarking
 benchmark-micro: ## Run microbenchmarks on a connected device.
-	./gradlew :benchmark:microbenchmark:connectedCheck
+	$(GRADLE_RUNNER) :benchmark:microbenchmark:connectedCheck
 
 benchmark-macro: ## Run macrobenchmarks on a connected device.
-	./gradlew :benchmark:macrobenchmark:connectedCheck
+	$(GRADLE_RUNNER) :benchmark:macrobenchmark:connectedCheck
 
 generate-baseline: ## Generate Baseline Profiles for the app.
-	./gradlew :benchmark:baselineprofile:generateBaselineProfile
+	$(GRADLE_RUNNER) :benchmark:baselineprofile:generateBaselineProfile
 
 gradle-benchmark: ## Run Gradle Profiler with a specific scenario. Usage: make gradle-benchmark SCENARIO=clean_build
 	gradle-profiler --benchmark --scenario-file ./benchmark.scenarios $(SCENARIO)
 
 # Reporting
 jacoco-report: ## Generate the unified Jacoco coverage report.
-	./gradlew jacocoRootReport
+	$(GRADLE_RUNNER) jacocoRootReport
 
 update-docs: ## Update README.md with the latest library versions from the catalog.
 	@chmod +x scripts/update_readme_versions.sh
