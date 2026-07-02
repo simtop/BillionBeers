@@ -4,7 +4,11 @@ import com.simtop.core.core.CoroutineDispatcherProvider
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.*
+import kotlinx.coroutines.test.TestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
 import org.junit.rules.TestWatcher
 import org.junit.runner.Description
 
@@ -33,7 +37,6 @@ class MainCoroutineScopeRule(val testDispatcher: TestDispatcher = UnconfinedTest
   }
 }
 
-// TODO: refactor
 @ExperimentalCoroutinesApi
-fun MainCoroutineScopeRule.runBlocking(block: suspend () -> Unit) =
+fun MainCoroutineScopeRule.runBlockingTest(block: suspend () -> Unit) =
   runTest(testDispatcher.scheduler) { block() }

@@ -4,8 +4,8 @@ import app.cash.turbine.test
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.usecases.UpdateAvailabilityUseCase
 import com.simtop.beerdomain.fakes.FakeBeersRepository
-import com.simtop.billionbeers.testing_utils.fakeBeerModel
-import com.simtop.billionbeers.testing_utils.fakeException
+import com.simtop.beerdomain.fakes.fakeBeerModel
+import com.simtop.beerdomain.fakes.fakeException
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.feature.beerdetail.presentation.BeerDetailViewModel

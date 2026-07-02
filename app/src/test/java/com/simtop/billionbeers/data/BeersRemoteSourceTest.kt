@@ -1,8 +1,8 @@
 package com.simtop.billionbeers.data
 
+import com.simtop.beer_network.fixtures.FAKE_JSON
+import com.simtop.beer_network.fixtures.fakeBeerApiResponse
 import com.simtop.billionbeers.TestMockWebService
-import com.simtop.billionbeers.testing_utils.FAKE_JSON
-import com.simtop.billionbeers.testing_utils.fakeBeerApiResponse
 import java.net.HttpURLConnection
 import kotlinx.coroutines.runBlocking
 import org.amshove.kluent.shouldBeEqualTo

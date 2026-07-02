@@ -1,9 +1,8 @@
-package com.simtop.billionbeers.testing_utils
+package com.simtop.beer_network.fixtures
 
 import com.simtop.beer_network.models.BeersApiResponseItem
 import com.simtop.beer_network.models.Language
 import com.simtop.beer_network.models.Translation
-import com.simtop.beerdomain.domain.models.Beer
 
 const val FAKE_JSON = "fake_json_response.json"
 
@@ -19,11 +18,3 @@ val fakeBeersApiResponseItem =
   )
 
 val fakeBeerApiResponse = listOf(fakeBeersApiResponseItem.copy())
-
-val fakeBeerModel = Beer("1", "Buzz", "A Real Bitter Experience.", "", "", 0.0, 0.0, emptyList())
-
-val fakeBeerListModel = listOf(fakeBeerModel.copy())
-
-const val fakeErrorName = "Error getting list of beers"
-
-val fakeException = Exception(fakeErrorName)
