@@ -4,7 +4,11 @@ plugins {
   alias(libs.plugins.kotlin.serialization)
 }
 
-android { namespace = "com.simtop.core" }
+android {
+  namespace = "com.simtop.core"
+
+  buildFeatures { buildConfig = true }
+}
 
 dependencies {
   api(project(":core-common"))

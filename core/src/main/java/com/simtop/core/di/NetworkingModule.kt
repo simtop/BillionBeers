@@ -1,17 +1,18 @@
 package com.simtop.core.di
 
+import com.simtop.core.BuildConfig
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.Named
 import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
+import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Converter
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
-import kotlinx.serialization.json.Json
-import okhttp3.MediaType.Companion.toMediaType
 
 @ContributesTo(AppScope::class)
 interface NetworkingModule {
@@ -19,7 +20,7 @@ interface NetworkingModule {
   companion object {
     const val BASE_URL = "baseUrl"
   }
- 
+
   @Provides
   @SingleIn(AppScope::class)
   fun provideJson(): Json = Json {
@@ -38,9 +39,9 @@ interface NetworkingModule {
   @SingleIn(AppScope::class)
   fun providesBaseHttpClient(loggingInterceptor: HttpLoggingInterceptor): OkHttpClient.Builder {
     return OkHttpClient.Builder().apply {
-      // TODO: check how to do after BuildConfig Migration
-      // println("Interceptor added = ${BuildConfig.DEBUG}")
-      // if(BuildConfig.DEBUG) addInterceptor(loggingInterceptor)
+      if (BuildConfig.DEBUG) {
+        addInterceptor(loggingInterceptor)
+      }
     }
   }
 
