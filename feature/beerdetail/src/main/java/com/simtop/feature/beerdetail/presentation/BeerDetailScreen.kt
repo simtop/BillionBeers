@@ -5,12 +5,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.BillionBeersApplication
 import com.simtop.billionbeers.core.designsystem.component.showToast
@@ -36,6 +40,17 @@ fun BeerDetailScreenImpl(beer: Beer, onBackClick: () -> Unit) {
     val viewModel: BeerDetailViewModel =
       assistedMetroViewModel<BeerDetailViewModel, BeerDetailViewModel.Factory>(key = beer.id) { create(beer) }
     val viewState by viewModel.beerDetailViewState.collectAsState()
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    LaunchedEffect(viewModel, lifecycleOwner) {
+      lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+        viewModel.events.collect { event ->
+          when (event) {
+            is BeerDetailEvent.ShowError -> showToast(context = context, message = event.message)
+          }
+        }
+      }
+    }
 
     when (val state = viewState) {
       is CommonUiState.Success -> {
@@ -45,9 +60,7 @@ fun BeerDetailScreenImpl(beer: Beer, onBackClick: () -> Unit) {
           onToggleAvailability = { viewModel.updateAvailability(state.data) },
         )
       }
-      is CommonUiState.Error -> {
-        state.message?.let { showToast(context = context, message = it) }
-      }
+      is CommonUiState.Error -> Unit
       CommonUiState.Loading -> {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
           CircularProgressIndicator()
