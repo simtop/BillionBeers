@@ -1,5 +1,6 @@
 package com.simtop.beerdomain.domain.repositories
 
+import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.core.core.Either
@@ -17,7 +18,7 @@ interface BeersRepository {
 
   fun getBeersFromSingleSource(): Flow<List<Beer>>
 
-  fun observePagingState(): Flow<PagingState>
+  fun observePagingState(): Flow<PagingState<FetchBeersError>>
 
   suspend fun loadNextPage()
 

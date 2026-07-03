@@ -3,6 +3,7 @@ package com.simtop.feature.beerslist
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.simtop.beerdomain.domain.GetAllBeersUseCase
+import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.usecases.LoadNextPageUseCase
 import com.simtop.beerdomain.domain.usecases.ObservePagingStateUseCase
@@ -40,7 +41,9 @@ class BeersListViewModel(
     _beerListViewState.asStateFlow()
 
   private val pagingHandler =
-    PagingHandler(_beerListViewState) { currentState, pagingState ->
+    PagingHandler<CommonUiState<BeersListUiModel>, FetchBeersError>(_beerListViewState) {
+      currentState,
+      pagingState ->
       if (currentState is CommonUiState.Success) {
         val currentUiModel = currentState.data
         when (pagingState) {
@@ -73,10 +76,18 @@ class BeersListViewModel(
             } else {
               CommonUiState.Loading
             }
-          is PagingState.Error -> CommonUiState.Error(pagingState.message)
+          is PagingState.Error -> CommonUiState.Error(pagingState.error.toUiMessage())
           else -> currentState
         }
       }
+    }
+
+  private fun FetchBeersError.toUiMessage(): String =
+    when (this) {
+      FetchBeersError.Network -> "No internet connection"
+      FetchBeersError.NotFound -> "Beers not found"
+      FetchBeersError.Forbidden -> "Access denied"
+      is FetchBeersError.Unknown -> cause.message ?: "Failed to load beers"
     }
 
   init {

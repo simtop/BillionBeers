@@ -1,10 +1,11 @@
 package com.simtop.beerdomain.domain.usecases
 
+import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.PagingState
 import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.flow.Flow
 
 class ObservePagingStateUseCase @Inject constructor(private val beersRepository: BeersRepository) {
-  fun execute(): Flow<PagingState> = beersRepository.observePagingState()
+  fun execute(): Flow<PagingState<FetchBeersError>> = beersRepository.observePagingState()
 }

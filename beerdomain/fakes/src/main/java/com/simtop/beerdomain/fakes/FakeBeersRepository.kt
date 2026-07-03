@@ -1,5 +1,6 @@
 package com.simtop.beerdomain.fakes
 
+import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.repositories.BeersRepository
@@ -14,18 +15,18 @@ import kotlinx.coroutines.flow.map
 class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersRepository {
 
   private val beersFlow = MutableStateFlow<List<Beer>>(initialBeers)
-  private val pagingStateFlow = MutableStateFlow<PagingState>(PagingState.Idle)
+  private val pagingStateFlow = MutableStateFlow<PagingState<FetchBeersError>>(PagingState.Idle)
 
   // Helper to inspect state
   fun getBeers(): List<Beer> = beersFlow.value
 
-  fun getPagingState(): PagingState = pagingStateFlow.value
+  fun getPagingState(): PagingState<FetchBeersError> = pagingStateFlow.value
 
   fun setBeers(beers: List<Beer>) {
     beersFlow.value = beers
   }
 
-  fun setPagingState(state: PagingState) {
+  fun setPagingState(state: PagingState<FetchBeersError>) {
     pagingStateFlow.value = state
   }
 
@@ -65,7 +66,7 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersReposit
     return beersFlow
   }
 
-  override fun observePagingState(): Flow<PagingState> {
+  override fun observePagingState(): Flow<PagingState<FetchBeersError>> {
     return pagingStateFlow
   }
 

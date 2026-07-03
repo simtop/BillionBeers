@@ -9,18 +9,18 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-sealed class PagingState {
-  object Idle : PagingState()
+sealed class PagingState<out Error : Any> {
+  object Idle : PagingState<Nothing>()
 
-  object Loading : PagingState()
+  object Loading : PagingState<Nothing>()
 
-  object LoadingNextPage : PagingState()
+  object LoadingNextPage : PagingState<Nothing>()
 
-  object Success : PagingState()
+  object Success : PagingState<Nothing>()
 
-  data class Error(val message: String) : PagingState()
+  data class Error<out E : Any>(val error: E) : PagingState<E>()
 
-  object EndOfPagination : PagingState()
+  object EndOfPagination : PagingState<Nothing>()
 }
 
 /**
@@ -29,17 +29,20 @@ sealed class PagingState {
  *
  * @param Key The type of the key used for paging (e.g., Int for page number).
  * @param Value The type of the data being paged.
+ * @param Error The caller's typed error for a failed fetch, produced from the caught [Throwable]
+ *   by [classifyError] - callers get to `when` over real failure modes instead of a raw message.
  */
-class PagingMediator<Key : Any, Value : Any>(
+class PagingMediator<Key : Any, Value : Any, Error : Any>(
   private val initialKey: Key,
   private val nextKey: (currentKey: Key, lastPage: List<Value>) -> Key?,
   private val fetchRemote: suspend (key: Key) -> List<Value>,
+  private val classifyError: (Throwable) -> Error,
   private val saveLocal: (suspend (List<Value>) -> Unit)? = null,
   private val fetchLocal: (() -> Flow<List<Value>>)? = null,
 ) {
 
-  private val _pagingState = MutableStateFlow<PagingState>(PagingState.Idle)
-  val pagingState: StateFlow<PagingState> = _pagingState.asStateFlow()
+  private val _pagingState = MutableStateFlow<PagingState<Error>>(PagingState.Idle)
+  val pagingState: StateFlow<PagingState<Error>> = _pagingState.asStateFlow()
 
   private val mutex = Mutex()
   private var currentKey: Key? = initialKey
@@ -107,7 +110,7 @@ class PagingMediator<Key : Any, Value : Any>(
     } catch (e: CancellationException) {
       throw e
     } catch (e: Exception) {
-      _pagingState.value = PagingState.Error(e.message ?: "Unknown error")
+      _pagingState.value = PagingState.Error(classifyError(e))
     }
   }
 
