@@ -12,6 +12,14 @@ shape of problem, and it wasn't used - `core-common`'s `PagingMediator` was hand
 That needs a documented reason, because "we don't use Paging3" is not by itself a defensible
 position; it should be "we rejected Paging3, and here's the trade-off."
 
+This isn't a theoretical rejection. Paging3 was actually implemented and iterated on across
+several branches early in this project's history - `feature/network_paging` (a first pass with
+`PagingSource` and a `LoadStateAdapter`) and `feature/network_room_paging` (a network+DB
+`RemoteMediator` setup, matching this project's SSOT shape). Commit messages on those branches
+("TODO Fix Unit and UI Tests and add more tests for paging", "I need to investigate how to add
+more Espresso and Unit tests ... and how to add a usecase for the paging") and a later branch
+named `Mediator_for_paging_not_working` are the friction this ADR generalizes into a decision.
+
 ## Decision
 
 Keep the hand-rolled `PagingMediator<Key, Value>` (a small state machine over `currentKey`,
@@ -45,25 +53,25 @@ cache-vs-network load-state choreography (`REFRESH` / `PREPEND` / `APPEND`, retr
 implemented and battle-tested by Google.
 
 Giving that up means this project owns correctness, invalidation, and retry semantics itself.
-The `docs/MASTER_PLAN.md` Part 1.2 findings are exactly that cost showing up: a retry mechanism
-(`FailedRequest`, `retryLastFailedRequest()`, `canRetry`) was added and then reverted because it
-duplicated state `PagingMediator` already had for free (`currentKey` only advances on success, so
-every entry point was already retry-safe) - a mistake that wouldn't have been possible to make
-inside Paging3's `RemoteMediator`, because Paging3 owns that state itself.
+That cost showed up directly: a retry mechanism (`FailedRequest`, `retryLastFailedRequest()`,
+`canRetry`) was added to `PagingMediator` and then reverted because it duplicated state the
+mediator already had for free (`currentKey` only advances on success, so every entry point was
+already retry-safe) - a mistake that wouldn't have been possible to make inside Paging3's
+`RemoteMediator`, because Paging3 owns that state itself.
 
 ## Bonus
 
-`PagingMediator` is pure Kotlin with no Android dependency, so it ports to Kotlin Multiplatform
-for free (see `docs/FUTURE_ROADMAP.md`'s KMP migration). Paging3 is an AndroidX library with no
-multiplatform target as of this writing, so keeping paging logic in Paging3 would have blocked
-that migration path entirely.
+`PagingMediator` is pure Kotlin with no Android dependency, so it ports to a future Kotlin
+Multiplatform migration for free. Paging3 is an AndroidX library with no multiplatform target as
+of this writing, so keeping paging logic in Paging3 would have blocked that migration path
+entirely.
 
 ## Consequences
 
 - Mid-list pagination errors (`PagingState.Error` for page N > 1) are the app's responsibility to
   surface - today they're silently swallowed while keeping the existing list on screen. A
-  snackbar or footer-retry affordance for this case is tracked as follow-up work
-  (`docs/MASTER_PLAN.md` §5.1), not solved by this decision.
+  snackbar or footer-retry affordance for this case is follow-up work, not solved by this
+  decision.
 - Any future paged screen (favorites, search) needs to either reuse `PagingMediator` or accept
   writing its own equivalent - there's no `RemoteMediator`-style reusable framework backing this,
   by design.
