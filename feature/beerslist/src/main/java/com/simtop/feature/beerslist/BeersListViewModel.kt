@@ -2,12 +2,9 @@ package com.simtop.feature.beerslist
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.simtop.beerdomain.domain.GetAllBeersUseCase
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.domain.usecases.LoadNextPageUseCase
-import com.simtop.beerdomain.domain.usecases.ObservePagingStateUseCase
-import com.simtop.beerdomain.domain.usecases.RefreshBeersUseCase
+import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.PagingHandler
@@ -29,10 +26,7 @@ import kotlinx.coroutines.launch
 @Inject
 class BeersListViewModel(
   private val coroutineDispatcher: CoroutineDispatcherProvider,
-  private val getAllBeersUseCase: GetAllBeersUseCase,
-  private val observePagingStateUseCase: ObservePagingStateUseCase,
-  private val loadNextPageUseCase: LoadNextPageUseCase,
-  private val refreshBeersUseCase: RefreshBeersUseCase,
+  private val beersRepository: BeersRepository,
 ) : ViewModel() {
 
   private val _beerListViewState =
@@ -100,8 +94,8 @@ class BeersListViewModel(
   private fun observeBeers() {
     beersJob?.cancel()
     beersJob =
-      getAllBeersUseCase
-        .execute()
+      beersRepository
+        .getBeersFromSingleSource()
         .onEach { beers ->
           if (beers.isEmpty()) {
             // If DB is empty, we might be loading or empty state
@@ -131,18 +125,18 @@ class BeersListViewModel(
   }
 
   private fun observePaging() {
-    observePagingStateUseCase
-      .execute()
+    beersRepository
+      .observePagingState()
       .onEach { pagingState -> pagingHandler.handlePagingState(pagingState) }
       .launchIn(viewModelScope)
   }
 
   fun onScrollToBottom() {
-    viewModelScope.launch(coroutineDispatcher.io) { loadNextPageUseCase.execute() }
+    viewModelScope.launch(coroutineDispatcher.io) { beersRepository.loadNextPage() }
   }
 
   fun refresh() {
-    viewModelScope.launch(coroutineDispatcher.io) { refreshBeersUseCase.execute() }
+    viewModelScope.launch(coroutineDispatcher.io) { beersRepository.refresh() }
   }
 }
 

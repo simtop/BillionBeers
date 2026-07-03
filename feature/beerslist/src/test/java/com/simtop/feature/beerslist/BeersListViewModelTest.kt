@@ -1,11 +1,7 @@
 package com.simtop.feature.beerslist
 
 import app.cash.turbine.test
-import com.simtop.beerdomain.domain.GetAllBeersUseCase
 import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.domain.usecases.LoadNextPageUseCase
-import com.simtop.beerdomain.domain.usecases.ObservePagingStateUseCase
-import com.simtop.beerdomain.domain.usecases.RefreshBeersUseCase
 import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.CoroutineDispatcherProvider
@@ -34,12 +30,6 @@ class BeersListViewModelTest {
   private val coroutineDispatcherProvider = mockk<CoroutineDispatcherProvider>()
   private val fakeBeersRepository = FakeBeersRepository()
 
-  // Real UseCases
-  private val getAllBeersUseCase = GetAllBeersUseCase(fakeBeersRepository)
-  private val observePagingStateUseCase = ObservePagingStateUseCase(fakeBeersRepository)
-  private val loadNextPageUseCase = LoadNextPageUseCase(fakeBeersRepository)
-  private val refreshBeersUseCase = RefreshBeersUseCase(fakeBeersRepository)
-
   private lateinit var testDispatcher: TestDispatcher
   private lateinit var viewModel: BeersListViewModel
 
@@ -50,14 +40,7 @@ class BeersListViewModelTest {
     every { coroutineDispatcherProvider.io } returns testDispatcher
     every { coroutineDispatcherProvider.main } returns testDispatcher
 
-    viewModel =
-      BeersListViewModel(
-        coroutineDispatcherProvider,
-        getAllBeersUseCase,
-        observePagingStateUseCase,
-        loadNextPageUseCase,
-        refreshBeersUseCase,
-      )
+    viewModel = BeersListViewModel(coroutineDispatcherProvider, fakeBeersRepository)
   }
 
   @AfterEach
