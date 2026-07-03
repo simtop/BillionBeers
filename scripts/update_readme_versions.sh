@@ -10,7 +10,7 @@ KOTLIN_VER=$(grep "org-jetbrains-kotlin =" $LIBS_CATALOG | cut -d'"' -f2)
 COMPOSE_BOM_VER=$(grep "composeBom =" $LIBS_CATALOG | cut -d'"' -f2)
 METRO_VER=$(grep "dev-zacsweers-metro =" $LIBS_CATALOG | cut -d'"' -f2)
 ROOM_VER=$(grep "androidx-room =" $LIBS_CATALOG | cut -d'"' -f2)
-GRADLE_VER=$(grep "distributionUrl" $GRADLE_WRAPPER | sed 's/.*gradle-\(.*\)-all.zip/\1/')
+GRADLE_VER=$(grep "distributionUrl" $GRADLE_WRAPPER | sed -E 's/.*gradle-([^-]+)-(all|bin)\.zip.*/\1/')
 
 # Logic to update a specific table in the README
 # This script expects a block starting with <!-- START_VERSIONS --> and ending with <!-- END_VERSIONS -->
