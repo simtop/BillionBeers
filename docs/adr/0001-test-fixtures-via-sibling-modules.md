@@ -6,8 +6,8 @@ Accepted
 
 ## Context
 
-The `:testing-utils` module extraction (see `docs/MASTER_PLAN.md` §1.1) needed a home for two
-sets of test fixtures that had been living in a shared `TestingConstants.kt`:
+The `:testing-utils` module extraction needed a home for two sets of test fixtures that had been
+living in a shared `TestingConstants.kt`:
 
 - Domain fixtures (`fakeBeerModel`, `fakeBeerListModel`, `fakeException`) — types owned by
   `:beerdomain:api`.
