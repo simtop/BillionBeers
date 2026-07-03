@@ -1,5 +1,6 @@
 package com.simtop.beerdomain.domain
 
+import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.usecases.UpdateAvailabilityUseCase
 import com.simtop.beerdomain.fakes.FakeBeersRepository
@@ -42,6 +43,6 @@ class UpdateAvailabilityUseCaseTest {
 
     // Assert
     assertTrue(result is Either.Left)
-    assertEquals(exception, (result as Either.Left).value)
+    assertEquals(UpdateAvailabilityError.Unknown(exception), (result as Either.Left).value)
   }
 }

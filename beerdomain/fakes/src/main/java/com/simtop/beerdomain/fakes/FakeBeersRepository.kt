@@ -1,7 +1,9 @@
 package com.simtop.beerdomain.fakes
 
+import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.core.core.Either
 import com.simtop.core.core.PagingState
 import kotlin.collections.plus
 import kotlinx.coroutines.flow.Flow
@@ -45,8 +47,8 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersReposit
     beersFlow.value = beersFlow.value + beers
   }
 
-  override suspend fun updateAvailability(beer: Beer) {
-    exceptionToThrow?.let { throw it }
+  override suspend fun updateAvailability(beer: Beer): Either<UpdateAvailabilityError, Unit> {
+    exceptionToThrow?.let { return Either.Left(UpdateAvailabilityError.Unknown(it)) }
     val currentList = beersFlow.value.toMutableList()
     val index = currentList.indexOfFirst { it.id == beer.id }
     if (index != -1) {
@@ -56,6 +58,7 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersReposit
       currentList.add(beer)
       beersFlow.value = currentList
     }
+    return Either.Right(Unit)
   }
 
   override fun getBeersFromSingleSource(): Flow<List<Beer>> {

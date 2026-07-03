@@ -2,6 +2,7 @@ package com.simtop.feature.beerdetail.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.usecases.UpdateAvailabilityUseCase
 import com.simtop.core.core.CommonUiState
@@ -59,17 +60,23 @@ constructor(
     _beerDetailViewState.value = CommonUiState.Success(beer)
   }
 
-  private suspend fun treatResponse(result: Either<Exception, Unit>, originalBeer: Beer) {
+  private suspend fun treatResponse(
+    result: Either<UpdateAvailabilityError, Unit>,
+    originalBeer: Beer,
+  ) {
     when (result) {
       is Either.Left -> {
         _beerDetailViewState.value = CommonUiState.Success(originalBeer)
-        _events.send(
-          BeerDetailEvent.ShowError(result.value.message ?: "Unable to update availability")
-        )
+        _events.send(BeerDetailEvent.ShowError(result.value.toUiMessage()))
       }
       is Either.Right -> Unit
     }
   }
+
+  private fun UpdateAvailabilityError.toUiMessage(): String =
+    when (this) {
+      is UpdateAvailabilityError.Unknown -> cause.message ?: "Unable to update availability"
+    }
 
   private fun changeAvailability(beer: Beer) {
     _beerDetailViewState.value = CommonUiState.Success(beer)

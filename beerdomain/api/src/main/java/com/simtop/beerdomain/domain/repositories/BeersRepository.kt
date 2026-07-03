@@ -1,6 +1,8 @@
 package com.simtop.beerdomain.domain.repositories
 
+import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.core.core.Either
 import com.simtop.core.core.PagingState
 import kotlinx.coroutines.flow.Flow
 
@@ -11,7 +13,7 @@ interface BeersRepository {
 
   suspend fun insertAllToDB(beers: List<Beer>)
 
-  suspend fun updateAvailability(beer: Beer)
+  suspend fun updateAvailability(beer: Beer): Either<UpdateAvailabilityError, Unit>
 
   fun getBeersFromSingleSource(): Flow<List<Beer>>
 
