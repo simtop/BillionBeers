@@ -33,8 +33,31 @@ Always use the `Makefile` wrappers which automatically detect if `bb` or `rtk` i
 
 ---
 
-## 📱 Android CLI & Custom Skills
+## 📱 Android Skills
 
-This workspace includes the `android-cli` plugin skill. Coding agents can call:
-- `android-cli` to start/stop emulators, install APKs, run tests, and check system/SDK status.
-- Refer to the skill specifications in `android-cli/skills/SKILL.md` to trigger actions dynamically.
+Skills live in `.claude/skills/` and Claude Code agents should reach for them
+whenever a task matches their domain.
+
+**Project skill — `billionbeers-android`** (`.claude/skills/billionbeers-android/SKILL.md`):
+**Always use it whenever a task touches a real device or emulator** — starting/stopping
+emulators, checking devices/SDK status, installing/launching the app, screenshots, logcat,
+or running instrumented (`androidTest`) tests. It handles the correct `adb` path
+(`$ANDROID_HOME/platform-tools/adb`) and the known `installDebug` bundle workaround. For
+device-free work (unit tests, builds, lint, screenshots) keep using the `Makefile` targets above.
+
+**Official Android skills** — a curated subset from
+[github.com/android/skills](https://github.com/android/skills) is vendored into
+`.claude/skills/` (each carries a `.android-skill-source` marker). Agents should use the
+relevant one for its domain, e.g. `android-cli` (Google's `android` tool), `navigation-3`,
+`r8-analyzer`, `perfetto-trace-analysis`, `testing-setup`, `edge-to-edge`, `adaptive`,
+`android-intent-security`, and more.
+
+- **Update / pull new skills**: `make update-android-skills` (wraps
+  `scripts/update-android-skills.sh`). Re-run any time — it installs newly added upstream
+  skills, prunes ones removed upstream, and never touches locally-authored skills like
+  `billionbeers-android`.
+- **Opt out of a skill**: add its name to `.claude/skills/.android-skills-ignore`. Ignored
+  skills are skipped and removed on sync, so `make update-android-skills` won't resurrect
+  skills you deliberately dropped. Currently ignored: `agp-9-upgrade`, `camera1-to-camerax`,
+  `display-glasses-with-jetpack-compose-glimmer`, `migrate-xml-views-to-jetpack-compose`,
+  `wear-compose-m3`.
