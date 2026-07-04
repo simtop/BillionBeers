@@ -28,7 +28,6 @@ include(":core:designsystem")
 include(":feature:beerslist")
 include(":feature:beerdetail")
 include(":beerdomain:api")
-include(":beerdomain:impl")
 include(":beerdomain:fakes")
 include(":app")
 rootProject.name = "BillionBeers"

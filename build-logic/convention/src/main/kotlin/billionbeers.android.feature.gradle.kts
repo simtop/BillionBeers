@@ -13,7 +13,6 @@ dependencies {
     "implementation"(project(":core-common"))
     "implementation"(project(":presentation_utils"))
     "implementation"(project(":beerdomain:api"))
-    "implementation"(project(":beerdomain:impl"))
 
     "implementation"(libs.lifecycleRuntimeKtx)
     "implementation"(libs.navigationFragmentKtx)

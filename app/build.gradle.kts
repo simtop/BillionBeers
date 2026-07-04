@@ -32,7 +32,6 @@ android {
 
 dependencies {
   implementation(project(":beerdomain:api"))
-  implementation(project(":beerdomain:impl"))
   androidTestImplementation(project(":beerdomain:fakes"))
   testImplementation(project(":testing-utils"))
   androidTestImplementation(project(":testing-utils"))
