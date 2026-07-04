@@ -2,7 +2,6 @@ package com.simtop.feature.beerdetail
 
 import app.cash.turbine.test
 import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.domain.usecases.UpdateAvailabilityUseCase
 import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.beerdomain.fakes.fakeBeerModel
 import com.simtop.beerdomain.fakes.fakeException
@@ -29,7 +28,6 @@ internal class BeerDetailViewModelTest {
 
   private val coroutineDispatcherProvider = mockk<CoroutineDispatcherProvider>()
   private val fakeBeersRepository = FakeBeersRepository()
-  private val availabilityUseCase = UpdateAvailabilityUseCase(fakeBeersRepository)
   private val testDispatcher = StandardTestDispatcher()
 
   @BeforeEach
@@ -49,7 +47,7 @@ internal class BeerDetailViewModelTest {
     runTest(testDispatcher) {
       // Arrange & Act
       val beerDetailViewModel =
-        BeerDetailViewModel(coroutineDispatcherProvider, availabilityUseCase, fakeBeerModel)
+        BeerDetailViewModel(coroutineDispatcherProvider, fakeBeersRepository, fakeBeerModel)
 
       // Assert
       beerDetailViewModel.beerDetailViewState.test {
@@ -67,7 +65,7 @@ internal class BeerDetailViewModelTest {
       fakeBeersRepository.setExceptionToThrow(fakeException)
 
       val beerDetailViewModel =
-        BeerDetailViewModel(coroutineDispatcherProvider, availabilityUseCase, fakeBeerModel)
+        BeerDetailViewModel(coroutineDispatcherProvider, fakeBeersRepository, fakeBeerModel)
 
       // Act
       beerDetailViewModel.events.test {
@@ -108,7 +106,7 @@ internal class BeerDetailViewModelTest {
       val testExpectedResponse = fakeBeerModel.copy(availability = !fakeBeerModel.availability)
 
       val beerDetailViewModel =
-        BeerDetailViewModel(coroutineDispatcherProvider, availabilityUseCase, fakeBeerModel)
+        BeerDetailViewModel(coroutineDispatcherProvider, fakeBeersRepository, fakeBeerModel)
 
       // Act
       beerDetailViewModel.beerDetailViewState.test {

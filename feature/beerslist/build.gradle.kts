@@ -7,7 +7,6 @@ android { namespace = "com.simtop.feature.beerslist" }
 
 dependencies {
   implementation(project(":beerdomain:api"))
-  implementation(project(":beerdomain:impl"))
   implementation(project(":navigation"))
   implementation(project(":presentation_utils"))
   implementation(project(":core"))

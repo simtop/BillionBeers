@@ -1,13 +1,13 @@
 package com.simtop.billionbeers.di
 
 import com.google.android.play.core.splitinstall.SplitInstallManager
-import com.simtop.beerdomain.domain.usecases.UpdateAvailabilityUseCase
+import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.CoroutineDispatcherProvider
 import dev.zacsweers.metrox.viewmodel.MetroViewModelFactory
 import dev.zacsweers.metrox.viewmodel.MetroViewModelMultibindings
 
 interface BaseAppGraph : DynamicDependencies, MetroViewModelMultibindings {
-    override val useCase: UpdateAvailabilityUseCase
+    override val beersRepository: BeersRepository
     override val coroutineDispatcher: CoroutineDispatcherProvider
     val splitInstallManager: SplitInstallManager
     val metroViewModelFactory: MetroViewModelFactory

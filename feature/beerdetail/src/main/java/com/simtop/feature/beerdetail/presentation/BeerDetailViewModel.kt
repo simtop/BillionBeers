@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
 import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.domain.usecases.UpdateAvailabilityUseCase
+import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.Either
@@ -27,7 +27,7 @@ class BeerDetailViewModel
 @AssistedInject
 constructor(
   private val coroutineDispatcher: CoroutineDispatcherProvider,
-  private val availabilityUseCase: UpdateAvailabilityUseCase,
+  private val beersRepository: BeersRepository,
   @Assisted private val beer: Beer,
 ) : ViewModel() {
 
@@ -52,7 +52,7 @@ constructor(
     viewModelScope.launch(coroutineDispatcher.io) {
       val newBeer = beer.copy(availability = !beer.availability)
       changeAvailability(newBeer)
-      treatResponse(result = availabilityUseCase(newBeer), originalBeer = beer)
+      treatResponse(result = beersRepository.updateAvailability(newBeer), originalBeer = beer)
     }
   }
 
