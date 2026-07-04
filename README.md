@@ -133,7 +133,7 @@ This repository has served as a technological sandbox over the years. You can ex
 | Tech | Version |
 | :--- | :--- |
 | **Kotlin** | 2.3.21 |
-| **Gradle** | 9.4.1 |
+| **Gradle** | 9.6.0 |
 | **Compose BOM** | 2026.04.01 |
 | **Metro DI** | 1.0.0 |
 | **Room DB** | 2.8.4 |
