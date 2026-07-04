@@ -40,7 +40,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -65,14 +65,24 @@ import com.simtop.presentation_utils.core.InfiniteListHandler
 import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import com.simtop.presentation_utils.custom_views.ComposeErrorView
 import dev.zacsweers.metrox.viewmodel.metroViewModel
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+
+private val BeerSaver: Saver<Beer?, String> =
+  Saver(
+    save = { beer -> beer?.let { Json.encodeToString(it) }.orEmpty() },
+    restore = { json -> json.takeIf { it.isNotEmpty() }?.let { Json.decodeFromString<Beer>(it) } },
+  )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BeersListScreen(viewModel: BeersListViewModel = metroViewModel(), onBeerClick: (Beer) -> Unit) {
   val rawState by viewModel.beerListViewState.collectAsState()
 
-  // State to track if we are installing the feature for a specific beer
-  var installingBeer by remember { mutableStateOf<Beer?>(null) }
+  // State to track if we are installing the feature for a specific beer - saved across process
+  // death so the install flow resumes instead of silently dropping the in-flight navigation.
+  var installingBeer by rememberSaveable(stateSaver = BeerSaver) { mutableStateOf<Beer?>(null) }
 
   BeersListContent(
     viewState = rawState,

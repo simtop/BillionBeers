@@ -12,6 +12,8 @@ dependencies {
   implementation(project(":core:designsystem"))
   implementation(project(":navigation"))
   implementation(libs.androidx.navigation3.runtime)
+  implementation(libs.kotlinx.serialization.json)
+  implementation(libs.lifecycle.viewmodel.savedstate)
 
   implementation(libs.coil3)
   implementation(libs.coil3.network)

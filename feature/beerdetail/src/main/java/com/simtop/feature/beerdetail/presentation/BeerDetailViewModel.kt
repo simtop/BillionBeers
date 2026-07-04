@@ -1,6 +1,8 @@
 package com.simtop.feature.beerdetail.presentation
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.serialization.saved
 import androidx.lifecycle.viewModelScope
 import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
 import com.simtop.beerdomain.domain.models.Beer
@@ -28,15 +30,24 @@ class BeerDetailViewModel
 constructor(
   private val coroutineDispatcher: CoroutineDispatcherProvider,
   private val beersRepository: BeersRepository,
-  @Assisted private val beer: Beer,
+  @Assisted beer: Beer,
+  @Assisted savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
   @AssistedFactory
   @ManualViewModelAssistedFactoryKey(Factory::class)
   @ContributesIntoMap(FeatureDetailScope::class)
   interface Factory : ManualViewModelAssistedFactory {
-    fun create(@Assisted beer: Beer): BeerDetailViewModel
+    fun create(
+      @Assisted beer: Beer,
+      @Assisted savedStateHandle: SavedStateHandle,
+    ): BeerDetailViewModel
   }
+
+  // Last state shown on screen, saved across process death. The assisted beer param comes from
+  // the nav arg, which goes stale the moment availability is toggled - restoring from it would
+  // silently revert the toggle.
+  private var lastKnownBeer: Beer by savedStateHandle.saved(serializer = Beer.serializer()) { beer }
 
   private val _beerDetailViewState = MutableStateFlow<CommonUiState<Beer>>(CommonUiState.Loading)
   val beerDetailViewState: StateFlow<CommonUiState<Beer>> = _beerDetailViewState.asStateFlow()
@@ -45,18 +56,19 @@ constructor(
   val events: Flow<BeerDetailEvent> = _events.receiveAsFlow()
 
   init {
-    setBeer(beer)
+    setBeer(lastKnownBeer)
   }
 
   fun updateAvailability(beer: Beer) {
     viewModelScope.launch(coroutineDispatcher.io) {
       val newBeer = beer.copy(availability = !beer.availability)
-      changeAvailability(newBeer)
+      setBeer(newBeer)
       treatResponse(result = beersRepository.updateAvailability(newBeer), originalBeer = beer)
     }
   }
 
   private fun setBeer(beer: Beer) {
+    lastKnownBeer = beer
     _beerDetailViewState.value = CommonUiState.Success(beer)
   }
 
@@ -66,7 +78,7 @@ constructor(
   ) {
     when (result) {
       is Either.Left -> {
-        _beerDetailViewState.value = CommonUiState.Success(originalBeer)
+        setBeer(originalBeer)
         _events.send(BeerDetailEvent.ShowError(result.value.toUiMessage()))
       }
       is Either.Right -> Unit
@@ -77,10 +89,6 @@ constructor(
     when (this) {
       is UpdateAvailabilityError.Unknown -> cause.message ?: "Unable to update availability"
     }
-
-  private fun changeAvailability(beer: Beer) {
-    _beerDetailViewState.value = CommonUiState.Success(beer)
-  }
 }
 
 sealed interface BeerDetailEvent {
