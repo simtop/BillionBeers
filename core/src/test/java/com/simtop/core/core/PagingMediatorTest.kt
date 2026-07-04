@@ -23,10 +23,11 @@ class PagingMediatorTest {
       }
 
       val mediator =
-        PagingMediator<Int, String>(
+        PagingMediator<Int, String, String>(
           initialKey = 1,
           nextKey = { current, _ -> current + 1 },
           fetchRemote = fetchRemote,
+          classifyError = { it.message ?: "Unknown error" },
           saveLocal = {},
           fetchLocal = { flowOf(emptyList()) },
         )
@@ -47,10 +48,11 @@ class PagingMediatorTest {
       val fetchRemote: suspend (Int) -> List<String> = { throw RuntimeException("Network error") }
 
       val mediator =
-        PagingMediator<Int, String>(
+        PagingMediator<Int, String, String>(
           initialKey = 1,
           nextKey = { current, _ -> current + 1 },
           fetchRemote = fetchRemote,
+          classifyError = { it.message ?: "Unknown error" },
           saveLocal = {},
           fetchLocal = { flowOf(emptyList()) },
         )
@@ -61,8 +63,8 @@ class PagingMediatorTest {
         mediator.loadNextPage()
 
         assertEquals(PagingState.LoadingNextPage, awaitItem())
-        val error = awaitItem() as PagingState.Error
-        assertEquals("Network error", error.message)
+        val error = awaitItem() as PagingState.Error<*>
+        assertEquals("Network error", error.error)
       }
     }
 }

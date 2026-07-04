@@ -12,5 +12,6 @@ dependencies {
   implementation(project(":beer_network"))
   implementation(libs.kotlinx.coroutines.core)
   implementation(libs.kotlinx.serialization.json)
+  implementation(libs.retrofit2)
   testImplementation(libs.striktCore)
 }

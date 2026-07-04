@@ -4,6 +4,7 @@ import com.simtop.beer_data.mappers.BeersMapper
 import com.simtop.beer_database.localsources.BeersLocalSource
 import com.simtop.beer_network.models.BeersApiResponseItem
 import com.simtop.beer_network.remotesources.BeersRemoteSource
+import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.repositories.BeersRepository
@@ -12,6 +13,8 @@ import com.simtop.core.core.PagingMediator
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
+import java.io.IOException
+import java.net.HttpURLConnection
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -20,6 +23,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
+import retrofit2.HttpException
 
 @SingleIn(AppScope::class)
 @Inject
@@ -35,10 +39,11 @@ class BeersRepositoryImpl(
   // hypothetical second consumer (docs/MASTER_PLAN.md Phase 1, improvements.md §12.3).
   // Revisit if a second paged screen (favorites, search) is ever added.
   private val pagingMediator =
-    PagingMediator<Int, Beer>(
+    PagingMediator<Int, Beer, FetchBeersError>(
       initialKey = 1,
       nextKey = { currentKey, _ -> currentKey + 1 },
       fetchRemote = { page -> fetchAndEnrichBeers(page) },
+      classifyError = { it.toFetchBeersError() },
       saveLocal = { beers ->
         beersLocalSource.insertAllToDB(beers.map { beersMapper.fromBeerToBeerDbModel(it) })
       },
@@ -48,6 +53,18 @@ class BeersRepositoryImpl(
         }
       }
     )
+
+  private fun Throwable.toFetchBeersError(): FetchBeersError =
+    when (this) {
+      is HttpException ->
+        when (code()) {
+          HttpURLConnection.HTTP_NOT_FOUND -> FetchBeersError.NotFound
+          HttpURLConnection.HTTP_FORBIDDEN -> FetchBeersError.Forbidden
+          else -> FetchBeersError.Unknown(this)
+        }
+      is IOException -> FetchBeersError.Network
+      else -> FetchBeersError.Unknown(this)
+    }
 
   // Fetches one image per beer (N+1). Deliberate: the API has no batch-image endpoint, so this
   // is a forced trade-off, not a bug - see docs/MASTER_PLAN.md Phase 1.
