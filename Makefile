@@ -9,7 +9,7 @@ UI_TEST_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,:app:)
 # Wrapper for Gradle to support build-brief (bb) or rtk if available
 GRADLE_RUNNER := $(shell if command -v bb >/dev/null 2>&1; then echo "bb ./gradlew"; elif command -v build-brief >/dev/null 2>&1; then echo "build-brief --gradle ./gradlew"; elif command -v rtk >/dev/null 2>&1; then echo "rtk ./gradlew"; else echo "./gradlew"; fi)
 
-.PHONY: help setup setup-ai-tools build install clean test ui-test screenshot-record screenshot-verify screenshot-clean lint format check check-duplicates check-unused-deps benchmark-micro benchmark-macro generate-baseline gradle-benchmark jacoco-report install-profiler install-diffuse
+.PHONY: help setup setup-ai-tools build install clean test konsist ui-test screenshot-record screenshot-verify screenshot-clean lint format check check-duplicates check-unused-deps benchmark-micro benchmark-macro generate-baseline gradle-benchmark jacoco-report install-profiler install-diffuse
 
 help: ## Show this help message.
 	@echo "\n📊 BillionBeers Makefile Help"
@@ -67,6 +67,9 @@ deep-clean: ## Stop daemon and deeply clean all gradle caches to fix corrupted s
 # Testing
 test: ## Run unit tests for the specified module (or all).
 	$(GRADLE_RUNNER) $(MODULE_PREFIX)testDebugUnitTest --continue
+
+konsist: ## Run Konsist architecture rules.
+	$(GRADLE_RUNNER) :konsist:test
 
 ui-test: ## Run connected Android tests (UI tests).
 	$(GRADLE_RUNNER) $(UI_TEST_PREFIX)connectedDebugAndroidTest

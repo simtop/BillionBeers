@@ -38,6 +38,7 @@ junit5 = "6.0.3"
 androidJunit5 = "2.0.1"
 strikt = "0.35.1"
 kluent = "1.73"
+konsist = "0.17.3"
 paparazzi = "2.0.0-alpha05"
 
 # KotlinX
@@ -125,6 +126,8 @@ junit-vintage-engine = { module = "org.junit.vintage:junit-vintage-engine", vers
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit5" }
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit5" }
 junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit5" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit5" }
+konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
 
 # KotlinX
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }

@@ -81,6 +81,9 @@ jobs:
       - name: Run Unit Tests
         run: make test
 
+      - name: Run Konsist Architecture Rules
+        run: make konsist
+
       - name: Archive Test Reports
         if: always()
         uses: actions/upload-artifact@v4
