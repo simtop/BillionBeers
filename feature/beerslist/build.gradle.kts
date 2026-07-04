@@ -11,6 +11,7 @@ dependencies {
   implementation(project(":presentation_utils"))
   implementation(project(":core"))
   implementation(project(":core:designsystem"))
+  implementation(libs.kotlinx.serialization.json)
   testImplementation(project(":beerdomain:fakes"))
   testImplementation(libs.striktCore)
 

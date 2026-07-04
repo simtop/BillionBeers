@@ -1,5 +1,6 @@
 package com.simtop.feature.beerdetail
 
+import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.fakes.FakeBeersRepository
@@ -47,7 +48,12 @@ internal class BeerDetailViewModelTest {
     runTest(testDispatcher) {
       // Arrange & Act
       val beerDetailViewModel =
-        BeerDetailViewModel(coroutineDispatcherProvider, fakeBeersRepository, fakeBeerModel)
+        BeerDetailViewModel(
+          coroutineDispatcherProvider,
+          fakeBeersRepository,
+          fakeBeerModel,
+          SavedStateHandle(),
+        )
 
       // Assert
       beerDetailViewModel.beerDetailViewState.test {
@@ -65,7 +71,12 @@ internal class BeerDetailViewModelTest {
       fakeBeersRepository.setExceptionToThrow(fakeException)
 
       val beerDetailViewModel =
-        BeerDetailViewModel(coroutineDispatcherProvider, fakeBeersRepository, fakeBeerModel)
+        BeerDetailViewModel(
+          coroutineDispatcherProvider,
+          fakeBeersRepository,
+          fakeBeerModel,
+          SavedStateHandle(),
+        )
 
       // Act
       beerDetailViewModel.events.test {
@@ -106,7 +117,12 @@ internal class BeerDetailViewModelTest {
       val testExpectedResponse = fakeBeerModel.copy(availability = !fakeBeerModel.availability)
 
       val beerDetailViewModel =
-        BeerDetailViewModel(coroutineDispatcherProvider, fakeBeersRepository, fakeBeerModel)
+        BeerDetailViewModel(
+          coroutineDispatcherProvider,
+          fakeBeersRepository,
+          fakeBeerModel,
+          SavedStateHandle(),
+        )
 
       // Act
       beerDetailViewModel.beerDetailViewState.test {
