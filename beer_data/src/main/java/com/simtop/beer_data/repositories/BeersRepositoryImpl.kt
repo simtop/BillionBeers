@@ -26,6 +26,11 @@ class BeersRepositoryImpl(
   private val beersMapper: BeersMapper,
 ) : BeersRepository {
 
+  // pagingMediator holds per-screen paging state (currentKey, isLastPage) on an AppScope
+  // singleton repository. Only one consumer exists today (BeersListViewModel), so this is
+  // latent, not active - deferred rather than extracting a Paginator abstraction for a
+  // hypothetical second consumer (docs/MASTER_PLAN.md Phase 1, improvements.md §12.3).
+  // Revisit if a second paged screen (favorites, search) is ever added.
   private val pagingMediator =
     PagingMediator<Int, Beer>(
       initialKey = 1,
@@ -41,6 +46,8 @@ class BeersRepositoryImpl(
       }
     )
 
+  // Fetches one image per beer (N+1). Deliberate: the API has no batch-image endpoint, so this
+  // is a forced trade-off, not a bug - see docs/MASTER_PLAN.md Phase 1.
   private suspend fun fetchAndEnrichBeers(page: Int): List<Beer> {
     val apiItems = beersRemoteSource.getListOfBeers(page)
     return coroutineScope {

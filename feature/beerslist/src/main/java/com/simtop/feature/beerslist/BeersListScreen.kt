@@ -53,7 +53,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
-import com.google.android.play.core.splitinstall.SplitInstallManager
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.component.shimmerBrush
@@ -69,11 +68,7 @@ import dev.zacsweers.metrox.viewmodel.metroViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BeersListScreen(
-  viewModel: BeersListViewModel = metroViewModel(),
-  splitInstallManager: SplitInstallManager? = null,
-  onBeerClick: (Beer) -> Unit,
-) {
+fun BeersListScreen(viewModel: BeersListViewModel = metroViewModel(), onBeerClick: (Beer) -> Unit) {
   val rawState by viewModel.beerListViewState.collectAsState()
 
   // State to track if we are installing the feature for a specific beer
@@ -89,10 +84,7 @@ fun BeersListScreen(
 
   // Handle dynamic feature loading overlay
   installingBeer?.let { beer: Beer ->
-    DynamicFeatureLoader(
-      featureName = FeatureConstants.BEER_DETAIL_MODULE,
-      splitInstallManager = splitInstallManager,
-    ) {
+    DynamicFeatureLoader(featureName = FeatureConstants.BEER_DETAIL_MODULE) {
       LaunchedEffect(beer) {
         onBeerClick(beer)
         installingBeer = null

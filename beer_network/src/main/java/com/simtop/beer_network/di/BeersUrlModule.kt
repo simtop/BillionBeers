@@ -13,6 +13,6 @@ interface BeersUrlModule {
   @SingleIn(AppScope::class)
   @Named("baseUrl")
   fun provideBaseUrl(): String {
-    return "https://brewbuddy.dev/?translations.language.code=en"
+    return "https://brewbuddy.dev/"
   }
 }
