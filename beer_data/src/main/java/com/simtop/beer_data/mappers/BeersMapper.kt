@@ -6,9 +6,12 @@ import com.simtop.beer_network.models.BeersApiResponseItem
 import com.simtop.beer_network.network.BeersService
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.core.core.LanguageProvider
+import com.simtop.core.core.Logger
 import dev.zacsweers.metro.Inject
 
-class BeersMapper @Inject constructor(private val languageProvider: LanguageProvider) {
+class BeersMapper
+@Inject
+constructor(private val languageProvider: LanguageProvider, private val logger: Logger) {
 
   fun fromBeersApiResponseItemToBeer(response: BeersApiResponseItem?): Beer {
     val languageCode = languageProvider.currentLanguageCode()
@@ -33,12 +36,8 @@ class BeersMapper @Inject constructor(private val languageProvider: LanguageProv
     )
   }
 
-  // TODO: route through the observability seam (Logger facade) once it lands - the codebase has
-  // no logging today (docs/MASTER_PLAN.md Phase 3). System.err is a dependency-free stopgap so
-  // malformed backend data isn't silently swallowed in the meantime, without dragging
-  // android.util.Log's static-mock requirement into every indirect caller's unit tests.
   private fun logMissingField(field: String, response: BeersApiResponseItem?) {
-    System.err.println("$TAG: missing $field for beer id=${response?.id}, defaulting")
+    logger.warn(TAG, "missing $field for beer id=${response?.id}, defaulting")
   }
 
   fun fromBeerToBeerDbModel(beer: Beer) =
