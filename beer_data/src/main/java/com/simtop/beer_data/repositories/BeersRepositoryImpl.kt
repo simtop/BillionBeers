@@ -75,7 +75,7 @@ class BeersRepositoryImpl(
 
   override suspend fun countDBEntries() = beersLocalSource.getCountFromDB()
 
-  override fun getBeersFromSingleSource(quantity: Int): Flow<List<Beer>> {
+  override fun getBeersFromSingleSource(): Flow<List<Beer>> {
     return pagingMediator.data.onStart {
       if (countDBEntries() == 0) {
         pagingMediator.loadFirstPage()

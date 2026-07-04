@@ -7,9 +7,7 @@ import kotlinx.coroutines.flow.Flow
 
 class GetAllBeersUseCase @Inject constructor(private val beersRepository: BeersRepository) {
 
-  data class Params(val quantity: Int)
-
-  fun execute(params: Params): Flow<List<Beer>> {
-    return beersRepository.getBeersFromSingleSource(params.quantity)
+  fun execute(): Flow<List<Beer>> {
+    return beersRepository.getBeersFromSingleSource()
   }
 }

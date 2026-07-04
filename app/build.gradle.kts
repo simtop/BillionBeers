@@ -34,6 +34,8 @@ dependencies {
   implementation(project(":beerdomain:api"))
   implementation(project(":beerdomain:impl"))
   androidTestImplementation(project(":beerdomain:fakes"))
+  testImplementation(project(":testing-utils"))
+  androidTestImplementation(project(":testing-utils"))
   implementation(project(":feature:beerslist"))
   androidTestImplementation(project(":feature:beerdetail"))
   implementation(project(":core"))
@@ -42,6 +44,7 @@ dependencies {
   implementation(project(":beer_data"))
   implementation(project(":beer_database"))
   implementation(project(":beer_network"))
+  testImplementation(project(":beer_network:fixtures"))
   implementation(project(":presentation_utils"))
 
   implementation(libs.androidPlayCore)
@@ -53,10 +56,6 @@ dependencies {
   implementation(libs.appcompat)
   testImplementation(libs.striktCore)
   androidTestImplementation(libs.striktCore)
-
-  // TODO: move to another module when we create the test module
-  implementation(libs.junit)
-  implementation(libs.coroutinesTest)
 
   testImplementation(libs.okhttp3Mockwebserver)
   testImplementation(libs.retrofit2ConverterSerialization)

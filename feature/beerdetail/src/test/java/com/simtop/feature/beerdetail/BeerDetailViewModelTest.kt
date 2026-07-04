@@ -4,8 +4,8 @@ import app.cash.turbine.test
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.usecases.UpdateAvailabilityUseCase
 import com.simtop.beerdomain.fakes.FakeBeersRepository
-import com.simtop.billionbeers.testing_utils.fakeBeerModel
-import com.simtop.billionbeers.testing_utils.fakeException
+import com.simtop.beerdomain.fakes.fakeBeerModel
+import com.simtop.beerdomain.fakes.fakeException
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.feature.beerdetail.presentation.BeerDetailViewModel
@@ -61,7 +61,7 @@ internal class BeerDetailViewModelTest {
     }
 
   @Test
-  fun `when usecase fails we get error state`() =
+  fun `when usecase fails we rollback and emit error event`() =
     runTest(testDispatcher) {
       // Arrange
       fakeBeersRepository.setExceptionToThrow(fakeException)
@@ -70,19 +70,30 @@ internal class BeerDetailViewModelTest {
         BeerDetailViewModel(coroutineDispatcherProvider, availabilityUseCase, fakeBeerModel)
 
       // Act
-      beerDetailViewModel.beerDetailViewState.test {
-        // Initial success state
-        expectThat(awaitItem()).isA<CommonUiState.Success<Beer>>()
+      beerDetailViewModel.events.test {
+        beerDetailViewModel.beerDetailViewState.test {
+          // Initial success state
+          expectThat(awaitItem()).isA<CommonUiState.Success<Beer>>()
 
-        beerDetailViewModel.updateAvailability(fakeBeerModel)
+          beerDetailViewModel.updateAvailability(fakeBeerModel)
+          testDispatcher.scheduler.advanceUntilIdle()
 
-        // Optimistic update
-        expectThat(awaitItem()).isA<CommonUiState.Success<Beer>>()
+          // Optimistic update
+          expectThat(awaitItem()).isA<CommonUiState.Success<Beer>>()
 
-        // Error state
-        val errorItem = awaitItem()
-        expectThat(errorItem).isA<CommonUiState.Error>()
-        expectThat((errorItem as CommonUiState.Error).message).isEqualTo(fakeException.message)
+          val rollbackItem = awaitItem()
+          expectThat(rollbackItem).isA<CommonUiState.Success<Beer>>()
+          expectThat((rollbackItem as CommonUiState.Success).data).isEqualTo(fakeBeerModel)
+          cancelAndIgnoreRemainingEvents()
+        }
+
+        val event = awaitItem()
+        expectThat(event)
+          .isA<com.simtop.feature.beerdetail.presentation.BeerDetailEvent.ShowError>()
+        expectThat(
+            (event as com.simtop.feature.beerdetail.presentation.BeerDetailEvent.ShowError).message
+          )
+          .isEqualTo(fakeException.message)
         cancelAndIgnoreRemainingEvents()
       }
     }

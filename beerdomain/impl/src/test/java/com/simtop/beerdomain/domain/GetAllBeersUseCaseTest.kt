@@ -17,10 +17,9 @@ class GetAllBeersUseCaseTest {
     // Arrange
     val beer = Beer.empty.copy(id = "1", name = "Test Beer")
     fakeRepository.setBeers(listOf(beer))
-    val quantity = 10
 
     // Act & Assert
-    useCase.execute(GetAllBeersUseCase.Params(quantity)).test {
+    useCase.execute().test {
       val list = awaitItem()
       assertEquals(1, list.size)
       assertEquals("Test Beer", list[0].name)

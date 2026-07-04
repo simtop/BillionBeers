@@ -14,9 +14,12 @@ import dev.zacsweers.metro.AssistedInject
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metrox.viewmodel.ManualViewModelAssistedFactory
 import dev.zacsweers.metrox.viewmodel.ManualViewModelAssistedFactoryKey
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 class BeerDetailViewModel
@@ -37,6 +40,9 @@ constructor(
   private val _beerDetailViewState = MutableStateFlow<CommonUiState<Beer>>(CommonUiState.Loading)
   val beerDetailViewState: StateFlow<CommonUiState<Beer>> = _beerDetailViewState.asStateFlow()
 
+  private val _events = Channel<BeerDetailEvent>(Channel.BUFFERED)
+  val events: Flow<BeerDetailEvent> = _events.receiveAsFlow()
+
   init {
     setBeer(beer)
   }
@@ -45,7 +51,7 @@ constructor(
     viewModelScope.launch(coroutineDispatcher.io) {
       val newBeer = beer.copy(availability = !beer.availability)
       changeAvailability(newBeer)
-      availabilityUseCase(newBeer).also(::treatResponse)
+      treatResponse(result = availabilityUseCase(newBeer), originalBeer = beer)
     }
   }
 
@@ -53,11 +59,23 @@ constructor(
     _beerDetailViewState.value = CommonUiState.Success(beer)
   }
 
-  private fun treatResponse(result: Either<Exception, Unit>) {
-    result.either({ _beerDetailViewState.value = CommonUiState.Error(it.message) }, {})
+  private suspend fun treatResponse(result: Either<Exception, Unit>, originalBeer: Beer) {
+    when (result) {
+      is Either.Left -> {
+        _beerDetailViewState.value = CommonUiState.Success(originalBeer)
+        _events.send(
+          BeerDetailEvent.ShowError(result.value.message ?: "Unable to update availability")
+        )
+      }
+      is Either.Right -> Unit
+    }
   }
 
   private fun changeAvailability(beer: Beer) {
     _beerDetailViewState.value = CommonUiState.Success(beer)
   }
+}
+
+sealed interface BeerDetailEvent {
+  data class ShowError(val message: String) : BeerDetailEvent
 }

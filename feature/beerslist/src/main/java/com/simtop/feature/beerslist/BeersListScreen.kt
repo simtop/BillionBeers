@@ -79,18 +79,12 @@ fun BeersListScreen(
   // State to track if we are installing the feature for a specific beer
   var installingBeer by remember { mutableStateOf<Beer?>(null) }
 
-  LaunchedEffect(Unit) {
-    if (viewModel.beerListViewState.value is CommonUiState.Empty) {
-      viewModel.getAllBeers()
-    }
-  }
-
   BeersListContent(
     viewState = rawState,
     onBeerClick = { beer -> installingBeer = beer },
     onScrollToBottom = { viewModel.onScrollToBottom() },
     onRefresh = { viewModel.refresh() },
-    onRetry = { viewModel.getAllBeers() },
+    onRetry = { viewModel.refresh() },
   )
 
   // Handle dynamic feature loading overlay

@@ -132,11 +132,11 @@ This repository has served as a technological sandbox over the years. You can ex
 <!-- START_VERSIONS -->
 | Tech | Version |
 | :--- | :--- |
-| **Kotlin** | 2.2.20 |
-| **Gradle** | 8.14 |
-| **Compose BOM** | 2025.05.01 |
-| **Metro DI** | 0.11.2 |
-| **Room DB** | 2.7.1 |
+| **Kotlin** | 2.3.21 |
+| **Gradle** | 9.4.1 |
+| **Compose BOM** | 2026.04.01 |
+| **Metro DI** | 1.0.0 |
+| **Room DB** | 2.8.4 |
 <!-- END_VERSIONS -->
 
 ---
