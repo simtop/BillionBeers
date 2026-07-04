@@ -5,13 +5,16 @@ import com.simtop.beer_database.utils.Converters
 import com.simtop.beer_network.models.BeersApiResponseItem
 import com.simtop.beer_network.network.BeersService
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.core.core.LanguageProvider
 import dev.zacsweers.metro.Inject
 
-class BeersMapper @Inject constructor() {
+class BeersMapper @Inject constructor(private val languageProvider: LanguageProvider) {
 
   fun fromBeersApiResponseItemToBeer(response: BeersApiResponseItem?): Beer {
+    val languageCode = languageProvider.currentLanguageCode()
     val translation =
-      response?.translations?.find { it.language.code == BeersService.DEFAULT_LANGUAGE_CODE }
+      response?.translations?.find { it.language.code == languageCode }
+        ?: response?.translations?.find { it.language.code == BeersService.DEFAULT_LANGUAGE_CODE }
     val imageUrl = response?.imageId?.let { "https://brewbuddy.dev/images/$it" }
 
     if (response?.id == null) logMissingField("id", response)

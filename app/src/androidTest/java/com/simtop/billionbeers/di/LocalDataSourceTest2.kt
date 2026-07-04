@@ -9,6 +9,7 @@ import com.simtop.beer_database.localsources.BeersLocalSource
 import com.simtop.beer_database.localsources.BeersLocalSourceImpl
 import com.simtop.beer_network.models.BeersApiResponseItem
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.core.core.LanguageProvider
 import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -93,4 +94,4 @@ val fakeBeerModel2 = Beer("1", "Buzz", "A Real Bitter Experience.", "", "", 4.5,
 
 val fakeBeerListModel2 = listOf(fakeBeerModel2.copy())
 
-val fakeDbBeerList = listOf(BeersMapper().fromBeerToBeerDbModel(fakeBeerModel2))
+val fakeDbBeerList = listOf(BeersMapper(LanguageProvider { "en" }).fromBeerToBeerDbModel(fakeBeerModel2))

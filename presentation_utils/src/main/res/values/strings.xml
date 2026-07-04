@@ -3,4 +3,10 @@
     <string name="beer_detail">beerdetail</string>
     <string name="loading_dynamic_feature">Loading Dynamic Feature</string>
     <string name="emergency_emergency_we_run_out_of_this_beer">EMERGENCY!!\nEMERGENCY!!\nWE RUN OUT OF THIS BEER</string>
+    <string name="retry">Retry</string>
+    <string name="empty_state">Empty State</string>
+    <string name="abv_chip">ABV: %1$s%%</string>
+    <string name="ibu_chip">IBU: %1$s</string>
+    <string name="beer_list_item_image_description">Photo of %1$s</string>
+    <string name="failed_to_install_feature">Failed to install feature</string>
 </resources>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="beer_detail">beerdetail</string>
+    <string name="loading_dynamic_feature">Chargement de la fonctionnalité</string>
+    <string name="emergency_emergency_we_run_out_of_this_beer">URGENCE!!\nURGENCE!!\nNOUS N\'AVONS PLUS CETTE BIÈRE</string>
+    <string name="retry">Réessayer</string>
+    <string name="empty_state">Aucun résultat</string>
+    <string name="abv_chip">ABV : %1$s%%</string>
+    <string name="ibu_chip">IBU : %1$s</string>
+    <string name="beer_list_item_image_description">Photo de %1$s</string>
+    <string name="failed_to_install_feature">Échec de l\'installation de la fonctionnalité</string>
+</resources>

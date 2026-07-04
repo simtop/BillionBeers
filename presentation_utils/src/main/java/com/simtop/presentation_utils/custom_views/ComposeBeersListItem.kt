@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -11,6 +12,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -38,13 +40,15 @@ fun ComposeBeersListItem(beer: Beer = Beer.empty, onClick: ((Beer) -> Unit)? = n
           vertical = BillionBeersTheme.spacing.small,
         )
         .testTag("beer_list_item")
+        .minimumInteractiveComponentSize()
         .noRippleClickable { onClick?.invoke(beer) },
     shape = RoundedCornerShape(BillionBeersTheme.spacing.medium),
     elevation = CardDefaults.cardElevation(defaultElevation = BillionBeersTheme.spacing.extraSmall),
     colors =
       CardDefaults.cardColors(
         containerColor =
-          if (beer.availability) MaterialTheme.colorScheme.surface else Color.Red.copy(alpha = 0.1f)
+          if (beer.availability) MaterialTheme.colorScheme.surface
+          else MaterialTheme.colorScheme.errorContainer
       ),
   ) {
     Row(
@@ -54,7 +58,10 @@ fun ComposeBeersListItem(beer: Beer = Beer.empty, onClick: ((Beer) -> Unit)? = n
       verticalAlignment = Alignment.CenterVertically,
     ) {
       // Beer Image
-      BeerImage(imageUrl = beer.imageUrl)
+      BeerImage(
+        imageUrl = beer.imageUrl,
+        contentDescription = stringResource(R.string.beer_list_item_image_description, beer.name),
+      )
 
       Spacer(modifier = Modifier.width(BillionBeersTheme.spacing.medium))
 
@@ -84,13 +91,13 @@ fun ComposeBeersListItem(beer: Beer = Beer.empty, onClick: ((Beer) -> Unit)? = n
 
         Row(verticalAlignment = Alignment.CenterVertically) {
           BeerChip(
-            text = "ABV: ${beer.abv}%",
+            text = stringResource(R.string.abv_chip, beer.abv),
             color = Color(ABV_BG_COLOR),
             textColor = Color(ABV_TEXT_COLOR),
           )
           Spacer(modifier = Modifier.width(BillionBeersTheme.spacing.small))
           BeerChip(
-            text = "IBU: ${beer.ibu}",
+            text = stringResource(R.string.ibu_chip, beer.ibu),
             color = Color(IBU_BG_COLOR),
             textColor = Color(IBU_TEXT_COLOR),
           )
@@ -102,7 +109,7 @@ fun ComposeBeersListItem(beer: Beer = Beer.empty, onClick: ((Beer) -> Unit)? = n
 
 @CatalogComponent(tab = "Utilities")
 @Composable
-fun BeerImage(imageUrl: String) {
+fun BeerImage(imageUrl: String, contentDescription: String? = null) {
   Box(
     modifier =
       Modifier.size(BillionBeersTheme.spacing.extraHuge + BillionBeersTheme.spacing.medium)
@@ -119,7 +126,7 @@ fun BeerImage(imageUrl: String) {
           .placeholder(R.drawable.blue_image)
           .error(R.drawable.blue_image)
           .build(),
-      contentDescription = null,
+      contentDescription = contentDescription,
       modifier = Modifier.matchParentSize(),
     )
   }
