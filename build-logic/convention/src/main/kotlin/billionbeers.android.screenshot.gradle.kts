@@ -130,6 +130,20 @@ pluginManager.withPlugin("com.android.dynamic-feature") {
     }
 }
 
+// The KSP-generated PreviewProvider service file is only consumed by the generated Paparazzi
+// unit test (via ServiceLoader on the test resources wired up above) - it must never ship in
+// APKs/bundles: bundletool rejects the app bundle because the base module and the beerdetail
+// dynamic feature both contain the same entry path with different content.
+// packaging.resources.excludes cannot strip it because AGP merges META-INF/services/** by
+// default and merge rules take precedence over excludes, so it is filtered out of the java
+// resources before packaging instead. Unit-test variants keep it.
+tasks.matching {
+    it.name.startsWith("process") && it.name.endsWith("JavaRes") && !it.name.contains("UnitTest")
+}.configureEach {
+    (this as? org.gradle.api.tasks.Sync)
+        ?.exclude("META-INF/services/com.simtop.billionbeers.snapshot_testing.PreviewProvider")
+}
+
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     if (name.contains("Test", ignoreCase = true)) {
         source(generatePaparazziTest)
