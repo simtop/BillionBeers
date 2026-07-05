@@ -13,6 +13,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -41,6 +43,9 @@ fun ComposeBeersListItem(beer: Beer = Beer.empty, onClick: ((Beer) -> Unit)? = n
         )
         .testTag("beer_list_item")
         .minimumInteractiveComponentSize()
+        .semantics {
+          stateDescription = if (beer.availability) "Available" else "Out of stock"
+        }
         .noRippleClickable { onClick?.invoke(beer) },
     shape = RoundedCornerShape(BillionBeersTheme.spacing.medium),
     elevation = CardDefaults.cardElevation(defaultElevation = BillionBeersTheme.spacing.extraSmall),

@@ -59,4 +59,28 @@ class MainActivityComposeTest {
         assertBeerDetailIsDisplayed(fakeBeer.name, fakeBeer.description)
       }
     }
+
+  @Test
+  fun togglingAvailabilityOnDetailScreenUpdatesHomeScreenAndSurvivesBackNavigation() =
+    runMainActivityTest(composeTestRule) {
+      homeScreen {
+        waitUntilNodeWithTextIsDisplayed(fakeBeer.name)
+        assertBeerIsAvailable(fakeBeer.name)
+        clickOnBeer(fakeBeer.name)
+      }
+
+      detailScreen {
+        waitUntilNodeWithTextIsDisplayed(fakeBeer.description)
+        assertToggleButtonShowsMarkAsEmpty()
+        clickToggleAvailability()
+        waitUntilNodeWithTextIsDisplayed("Refill Barrels")
+        assertToggleButtonShowsRefillBarrels()
+        navigateBack()
+      }
+
+      homeScreen {
+        waitUntilNodeWithTextIsDisplayed(fakeBeer.name)
+        assertBeerIsUnavailable(fakeBeer.name)
+      }
+    }
 }

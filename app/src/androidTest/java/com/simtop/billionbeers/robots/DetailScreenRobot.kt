@@ -11,4 +11,20 @@ class DetailScreenRobot(composeTestRule: ComposeTestRule) : BaseTestRobot(compos
     assertTextIsDisplayed(beerName)
     assertTextIsDisplayed(beerDescription)
   }
+
+  fun clickToggleAvailability() {
+    clickOnNodeWithTag("toggle_availability")
+  }
+
+  fun assertToggleButtonShowsMarkAsEmpty() {
+    assertTextIsDisplayed("Mark as Empty")
+  }
+
+  fun assertToggleButtonShowsRefillBarrels() {
+    assertTextIsDisplayed("Refill Barrels")
+  }
+
+  fun navigateBack() {
+    pressBack()
+  }
 }

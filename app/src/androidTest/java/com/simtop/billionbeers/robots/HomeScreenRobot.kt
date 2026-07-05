@@ -14,4 +14,12 @@ class HomeScreenRobot(composeTestRule: ComposeTestRule) : BaseTestRobot(composeT
   fun clickOnBeer(beerName: String) {
     clickOnNodeWithText(beerName)
   }
+
+  fun assertBeerIsAvailable(beerName: String) {
+    assertNodeWithTextHasStateDescription(beerName, "Available")
+  }
+
+  fun assertBeerIsUnavailable(beerName: String) {
+    assertNodeWithTextHasStateDescription(beerName, "Out of stock")
+  }
 }
