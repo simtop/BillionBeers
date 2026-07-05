@@ -56,8 +56,13 @@ update-android-skills: ## Sync official Android skills (github.com/android/skill
 build: ## Assemble the debug APK.
 	$(GRADLE_RUNNER) $(MODULE)assembleDebug
 
-install: ## Install the debug APK to a connected device.
+install: ## Install debug build. App install includes on-demand beerdetail via bundletool local-testing; pass MODULE=:foo for a plain installDebug.
+ifeq ($(MODULE_TRIMMED),)
+	$(GRADLE_RUNNER) :app:bundleDebug
+	@bash scripts/install-local-testing.sh
+else
 	$(GRADLE_RUNNER) $(MODULE)installDebug
+endif
 
 clean: ## Clean all build outputs.
 	$(GRADLE_RUNNER) clean
