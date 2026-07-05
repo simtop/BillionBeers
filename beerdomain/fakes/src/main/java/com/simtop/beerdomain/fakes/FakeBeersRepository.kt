@@ -44,6 +44,10 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersReposit
     return beersFlow.value
   }
 
+  override suspend fun getBeerById(id: String): Beer? {
+    return beersFlow.value.find { it.id == id }
+  }
+
   override suspend fun insertAllToDB(beers: List<Beer>) {
     beersFlow.value = beersFlow.value + beers
   }

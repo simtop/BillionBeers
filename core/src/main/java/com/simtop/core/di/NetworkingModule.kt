@@ -2,6 +2,8 @@ package com.simtop.core.di
 
 import android.content.Context
 import com.simtop.core.BuildConfig
+import com.simtop.core.core.NetworkFaultController
+import com.simtop.core.network.NetworkFaultInterceptor
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.Named
@@ -46,13 +48,19 @@ interface NetworkingModule {
   @SingleIn(AppScope::class)
   fun provideOkHttpClient(
     loggingInterceptor: HttpLoggingInterceptor,
+    networkFaultController: NetworkFaultController,
     @ApplicationContext context: Context,
   ): OkHttpClient {
     return OkHttpClient.Builder()
       .connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
       .readTimeout(READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
       .cache(Cache(File(context.cacheDir, "http"), HTTP_CACHE_SIZE_BYTES))
-      .apply { if (BuildConfig.DEBUG) addInterceptor(loggingInterceptor) }
+      .apply {
+        if (BuildConfig.DEBUG) {
+          addInterceptor(loggingInterceptor)
+          addInterceptor(NetworkFaultInterceptor(networkFaultController))
+        }
+      }
       .build()
   }
 

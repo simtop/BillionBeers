@@ -109,6 +109,9 @@ class BeersRepositoryImpl(
   override suspend fun getAllBeersFromDB() =
     beersLocalSource.getAllBeersFromDB().first().map { beersMapper.fromBeerDbModelToBeer(it) }
 
+  override suspend fun getBeerById(id: String): Beer? =
+    getAllBeersFromDB().find { it.id == id }
+
   override suspend fun countDBEntries() = beersLocalSource.getCountFromDB()
 
   override fun getBeersFromSingleSource(): Flow<List<Beer>> {

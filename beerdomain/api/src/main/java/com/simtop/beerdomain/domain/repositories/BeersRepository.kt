@@ -12,6 +12,8 @@ interface BeersRepository {
 
   suspend fun getAllBeersFromDB(): List<Beer>
 
+  suspend fun getBeerById(id: String): Beer?
+
   suspend fun insertAllToDB(beers: List<Beer>)
 
   suspend fun updateAvailability(beer: Beer): Either<UpdateAvailabilityError, Unit>

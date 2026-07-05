@@ -10,4 +10,6 @@ dependencies {
   implementation(project(":beerdomain:api"))
   implementation(libs.androidx.navigation3.runtime)
   implementation(libs.kotlinx.serialization.json)
+
+  testImplementation(libs.striktCore)
 }
