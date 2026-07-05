@@ -59,13 +59,18 @@ until [ "$("$ADB" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = 
 
 Stop an emulator: `"$ADB" -s emulator-5554 emu kill`.
 
-## 2. Install the app  ⚠️ read this
+## 2. Install the app
 
-`make install` / `:app:installDebug` is **broken on this branch** — the dynamic
-feature install goes through the app bundle and bundletool rejects a duplicate
-`META-INF/services/...PreviewProvider` entry (see the
-`installdebug-bundle-broken` memory; real fix is PR #30). Until that fix is on
-your branch, install the split APKs directly:
+`make install` works (PR #30, merged 2026-07-04, fixed the bundletool
+duplicate-`META-INF/services/...PreviewProvider` rejection that used to break
+`:app:installDebug`) — use it first:
+
+```bash
+make install
+```
+
+If a very old branch predates PR #30 and bundletool still complains, fall back
+to installing the split APKs directly:
 
 ```bash
 make build            # or: ./gradlew assembleDebug  (bb/rtk wrappers via Makefile)
@@ -74,10 +79,15 @@ make build            # or: ./gradlew assembleDebug  (bb/rtk wrappers via Makefi
   feature/beerdetail/build/outputs/apk/debug/beerdetail-debug.apk
 ```
 
-Once PR #30 is merged into the working branch, `make install` works again — try
-it first and fall back to `install-multiple` only if bundletool complains.
-
 Uninstall: `"$ADB" uninstall "$APP"`.
+
+Other installable app modules from this repo, if the task needs them instead of
+the main app (no split-APK dance needed — just `installDebug`):
+- `:catalog` → `com.simtop.billionbeers.catalog` (component gallery)
+- `:app-dev-<feature>` (e.g. `:app-dev-beerslist` → `com.simtop.billionbeers.devbeerslist`)
+  — standalone single-feature sandboxes; `scripts/new-dev-app.sh` stamps out more of
+  these (see the `new-dev-app` skill/`docs/beerdetail_dev_app.md` for what does and
+  doesn't work with this pattern).
 
 ## 3. Launch / drive / observe the app
 
@@ -85,8 +95,38 @@ Uninstall: `"$ADB" uninstall "$APP"`.
 "$ADB" shell am start -n "$APP/.presentation.MainActivity"   # launch
 "$ADB" shell pm clear "$APP"                                  # reset app data
 "$ADB" logcat --pid=$("$ADB" shell pidof "$APP")             # app logs only
-# screenshot to the host:
-"$ADB" exec-out screencap -p > /tmp/billionbeers-$(date +%s).png
+```
+
+### Screenshots — don't use `exec-out` on this setup
+
+`"$ADB" exec-out screencap -p > file.png` looks like the standard one-liner, but
+on this emulator config it reliably produces a **corrupted (non-PNG) file** —
+the emulator prints `[Warning] Multiple displays were found, but no display id
+was specified...` and that text gets merged into the piped binary stream instead
+of staying separate. Use the two-step form instead, which was verified to work
+every time this session:
+
+```bash
+"$ADB" shell screencap -p /sdcard/screen.png
+"$ADB" pull /sdcard/screen.png ./screen.png
+"$ADB" shell rm /sdcard/screen.png   # optional cleanup
+```
+
+(`file ./screen.png` should report `PNG image data` — if it instead looks like
+text/JSON, the `exec-out` corruption above is what happened; re-pull with the
+two-step form.)
+
+### Finding tap coordinates for UI automation
+
+Don't eyeball coordinates from a screenshot — a displayed/preview image is
+usually scaled down from the real device resolution, and floating elements
+(FABs, drawers) are easy to misjudge. Dump the semantics tree and read exact
+`bounds="[x1,y1][x2,y2]"` for the node you want, then tap its center:
+
+```bash
+"$ADB" shell uiautomator dump /sdcard/window_dump.xml
+"$ADB" pull /sdcard/window_dump.xml ./window_dump.xml
+grep -o 'content-desc="Open debug drawer"[^/]*' ./window_dump.xml   # find your target
 ```
 
 ## 4. Instrumented tests on a device
