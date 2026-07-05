@@ -30,6 +30,7 @@ include(":feature:beerdetail")
 include(":beerdomain:api")
 include(":beerdomain:fakes")
 include(":app")
+include(":app-dev-beerslist")
 rootProject.name = "BillionBeers"
 include(":navigation")
 
