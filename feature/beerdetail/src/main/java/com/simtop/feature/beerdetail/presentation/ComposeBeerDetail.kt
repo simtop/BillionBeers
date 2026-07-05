@@ -41,7 +41,6 @@ import coil3.request.placeholder
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
-import com.simtop.feature.beerdetail.R as BeerDetailR
 import com.simtop.presentation_utils.R
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -62,7 +61,8 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
       Box(modifier = Modifier.wrapContentSize()) {
         BeerDetailImage(
           imageUrl = beer.imageUrl,
-          contentDescription = stringResource(BeerDetailR.string.beer_image_description, beer.name),
+          contentDescription =
+            stringResource(R.string.beer_list_item_image_description, beer.name),
           modifier = Modifier.matchParentSize(),
         )
 
@@ -92,7 +92,7 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
             IconButton(onClick = onBackClick) {
               Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = stringResource(BeerDetailR.string.back),
+                contentDescription = stringResource(R.string.beer_detail_back),
                 tint = Color.White,
               )
             }
@@ -110,8 +110,8 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
       }
     },
     floatingActionButton = {
-      val availableLabel = stringResource(BeerDetailR.string.availability_available)
-      val outOfStockLabel = stringResource(BeerDetailR.string.availability_out_of_stock)
+      val availableLabel = stringResource(R.string.beer_available)
+      val outOfStockLabel = stringResource(R.string.beer_out_of_stock)
       ExtendedFloatingActionButton(
         onClick = onToggleAvailability,
         containerColor =
@@ -137,9 +137,9 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
           },
         ) { isAvailable ->
           if (isAvailable) {
-            Text(text = stringResource(BeerDetailR.string.mark_as_empty), fontWeight = FontWeight.Bold)
+            Text(text = stringResource(R.string.mark_as_empty), fontWeight = FontWeight.Bold)
           } else {
-            Text(text = stringResource(BeerDetailR.string.refill_barrels), fontWeight = FontWeight.Bold)
+            Text(text = stringResource(R.string.refill_barrels), fontWeight = FontWeight.Bold)
           }
         }
       }
@@ -168,13 +168,13 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
       // Stats Row
       Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
         StatCard(
-          label = stringResource(BeerDetailR.string.abv_label),
+          label = stringResource(R.string.beer_detail_abv_label),
           value = "${beer.abv}%",
           color = Color(ABV_BG_COLOR),
           textColor = Color(ABV_TEXT_COLOR),
         )
         StatCard(
-          label = stringResource(BeerDetailR.string.ibu_label),
+          label = stringResource(R.string.beer_detail_ibu_label),
           value = "${beer.ibu}",
           color = Color(IBU_BG_COLOR),
           textColor = Color(IBU_TEXT_COLOR),
@@ -185,7 +185,7 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
 
       // Description
       Text(
-        text = stringResource(BeerDetailR.string.description_label),
+        text = stringResource(R.string.beer_detail_description),
         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
       )
       Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.small))
@@ -203,7 +203,7 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
       // Food Pairing
       if (beer.foodPairing.isNotEmpty()) {
         Text(
-          text = stringResource(BeerDetailR.string.food_pairing_label),
+          text = stringResource(R.string.beer_detail_food_pairing),
           style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
         )
         Spacer(

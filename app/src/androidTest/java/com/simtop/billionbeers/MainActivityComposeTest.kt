@@ -38,9 +38,8 @@ class MainActivityComposeTest {
     val app = context as BillionBeersApplication
 
     FakeBeersRepositoryModule.fakeBeersRepository.setBeers(listOf(fakeBeer))
-    val testGraph = createGraphFactory<TestAppGraph.Factory>().create(
-        context = context
-    ) as BaseAppGraph
+    val testGraph =
+      createGraphFactory<TestAppGraph.Factory>().create(context = context) as BaseAppGraph
 
     app.appGraph = testGraph
   }
@@ -57,6 +56,30 @@ class MainActivityComposeTest {
       detailScreen {
         waitUntilNodeWithTextIsDisplayed(fakeBeer.description)
         assertBeerDetailIsDisplayed(fakeBeer.name, fakeBeer.description)
+      }
+    }
+
+  @Test
+  fun togglingAvailabilityOnDetailScreenUpdatesHomeScreenAndSurvivesBackNavigation() =
+    runMainActivityTest(composeTestRule) {
+      homeScreen {
+        waitUntilNodeWithTextIsDisplayed(fakeBeer.name)
+        assertBeerIsAvailable(fakeBeer.name)
+        clickOnBeer(fakeBeer.name)
+      }
+
+      detailScreen {
+        waitUntilNodeWithTextIsDisplayed(fakeBeer.description)
+        assertToggleButtonShowsMarkAsEmpty()
+        clickToggleAvailability()
+        waitUntilToggleButtonShowsRefillBarrels()
+        assertToggleButtonShowsRefillBarrels()
+        navigateBack()
+      }
+
+      homeScreen {
+        waitUntilNodeWithTextIsDisplayed(fakeBeer.name)
+        assertBeerIsUnavailable(fakeBeer.name)
       }
     }
 }

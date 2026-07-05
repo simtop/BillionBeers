@@ -1,14 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="beer_detail">Détail de la bière</string>
-    <string name="back">Retour</string>
-    <string name="mark_as_empty">Marquer comme vide</string>
-    <string name="refill_barrels">Remplir les tonneaux</string>
-    <string name="description_label">Description</string>
-    <string name="food_pairing_label">Accords mets et bières</string>
-    <string name="abv_label">ABV</string>
-    <string name="ibu_label">IBU</string>
-    <string name="beer_image_description">Photo de %1$s</string>
-    <string name="availability_available">Disponible</string>
-    <string name="availability_out_of_stock">En rupture de stock</string>
 </resources>
