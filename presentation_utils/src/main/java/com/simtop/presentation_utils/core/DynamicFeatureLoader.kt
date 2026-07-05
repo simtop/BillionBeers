@@ -15,9 +15,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.retain.retain
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -90,12 +89,21 @@ fun DynamicFeatureLoader(
   }
 }
 
+/**
+ * [retain] (not [remember][androidx.compose.runtime.remember]) so the installer — status, session
+ * ID, registered listener — survives configuration changes: rotation mid-download keeps the same
+ * state holder, so the progress dialog persists and the session is neither cancelled nor restarted.
+ * The installer releases its listener via
+ * [androidx.compose.runtime.retain .RetainObserver.onRetired], which fires when the retain scope
+ * discards it for real (screen left, not rotated) — a DisposableEffect's onDispose would fire on
+ * rotation, exactly the moment the listener must stay alive. Not a ViewModel on purpose: the
+ * installer is keyed by module name and belongs to the calling screen's lifetime, and retain gives
+ * config-change survival without dragging a ViewModel factory into presentation_utils.
+ */
 @Composable
 private fun rememberDynamicFeatureInstaller(moduleName: String): DynamicFeatureInstaller {
   val manager = LocalSplitInstallManager.current
-  val installer = remember(manager, moduleName) { DynamicFeatureInstaller(manager, moduleName) }
-  DisposableEffect(installer) { onDispose { installer.release() } }
-  return installer
+  return retain(manager, moduleName) { DynamicFeatureInstaller(manager, moduleName) }
 }
 
 @Composable

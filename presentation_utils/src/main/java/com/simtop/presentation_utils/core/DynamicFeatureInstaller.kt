@@ -5,6 +5,7 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.retain.RetainObserver
 import androidx.compose.runtime.setValue
 import com.google.android.play.core.splitinstall.SplitInstallException
 import com.google.android.play.core.splitinstall.SplitInstallManager
@@ -30,7 +31,7 @@ import com.google.android.play.core.splitinstall.model.SplitInstallSessionStatus
 class DynamicFeatureInstaller(
   private val manager: SplitInstallManager,
   private val moduleName: String,
-) {
+) : RetainObserver {
 
   var status by
     mutableStateOf(
@@ -102,6 +103,19 @@ class DynamicFeatureInstaller(
       listenerRegistered = false
     }
   }
+
+  // RetainObserver: the retain scope keeps this instance alive across configuration changes and
+  // calls onRetired/onUnused only when it is discarded for real — that (and not composition exit,
+  // which also happens on rotation) is the moment to release the listener.
+  override fun onRetained() = Unit
+
+  override fun onEnteredComposition() = Unit
+
+  override fun onExitedComposition() = Unit
+
+  override fun onRetired() = release()
+
+  override fun onUnused() = release()
 
   private fun updateStatus(state: SplitInstallSessionState) {
     status =
