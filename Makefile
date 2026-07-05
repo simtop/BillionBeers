@@ -13,7 +13,7 @@ UI_TEST_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,:app:)
 # Wrapper for Gradle to support build-brief (bb) or rtk if available
 GRADLE_RUNNER := $(shell if command -v bb >/dev/null 2>&1; then echo "bb ./gradlew"; elif command -v build-brief >/dev/null 2>&1; then echo "build-brief --gradle ./gradlew"; elif command -v rtk >/dev/null 2>&1; then echo "rtk ./gradlew"; else echo "./gradlew"; fi)
 
-.PHONY: help setup setup-ai-tools update-android-skills build install clean test konsist ui-test screenshot-record screenshot-verify screenshot-clean lint format check check-duplicates check-unused-deps benchmark-micro benchmark-macro generate-baseline gradle-benchmark jacoco-report install-profiler install-diffuse new-feature-module new-dev-app
+.PHONY: help setup setup-ai-tools update-android-skills build install clean test konsist ui-test screenshot-record screenshot-verify screenshot-clean lint format check check-duplicates check-unused-deps benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark jacoco-report install-profiler install-diffuse new-feature-module new-dev-app
 
 help: ## Show this help message.
 	@echo "\n📊 BillionBeers Makefile Help"
@@ -116,6 +116,13 @@ benchmark-micro: ## Run microbenchmarks on a connected device.
 
 benchmark-macro: ## Run macrobenchmarks on a connected device.
 	$(GRADLE_RUNNER) :benchmark:macrobenchmark:connectedCheck
+
+benchmark-check: ## Run macrobenchmarks and fail if results exceed the configured performance budget.
+	$(GRADLE_RUNNER) :benchmark:macrobenchmark:connectedCheck
+	@chmod +x scripts/check-benchmark-budget.sh
+	@JSON_FILE=$$(find benchmark/macrobenchmark/build/outputs/connected_android_test_additional_output -iname "*-benchmarkData.json" | head -1); \
+	if [ -z "$$JSON_FILE" ]; then echo "error: no benchmarkData.json found" >&2; exit 1; fi; \
+	./scripts/check-benchmark-budget.sh "$$JSON_FILE"
 
 generate-baseline: ## Generate Baseline Profiles for the app.
 	$(GRADLE_RUNNER) :benchmark:baselineprofile:generateBaselineProfile

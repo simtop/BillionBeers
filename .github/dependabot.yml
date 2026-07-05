@@ -1,0 +1,89 @@
+version: 2
+updates:
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      day: "sunday"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      # gradle/libs.versions.toml has ~130+ entries organized into these same categories
+      # (see the comments in [versions]) - mirroring that grouping here keeps monthly PR volume
+      # sane. Major version bumps are deliberately excluded from every group (update-types below)
+      # so they always get their own PR for individual review, never silently bundled with
+      # routine minor/patch updates.
+      kotlin-and-ksp:
+        patterns:
+          - "org.jetbrains.kotlin*"
+          - "com.google.devtools.ksp*"
+        update-types:
+          - "minor"
+          - "patch"
+      metro:
+        patterns:
+          - "dev.zacsweers.metro*"
+        update-types:
+          - "minor"
+          - "patch"
+      androidx:
+        patterns:
+          - "androidx.*"
+        exclude-patterns:
+          - "androidx.compose*"
+        update-types:
+          - "minor"
+          - "patch"
+      compose:
+        patterns:
+          - "androidx.compose*"
+          - "androidx.activity:activity-compose*"
+        update-types:
+          - "minor"
+          - "patch"
+      networking:
+        patterns:
+          - "com.squareup.okhttp3*"
+          - "com.squareup.retrofit2*"
+        update-types:
+          - "minor"
+          - "patch"
+      testing:
+        patterns:
+          - "io.mockk*"
+          - "org.junit*"
+          - "io.strikt*"
+          - "org.amshove.kluent*"
+          - "com.lemonappdev*"
+          - "app.cash.paparazzi*"
+        update-types:
+          - "minor"
+          - "patch"
+      kotlinx:
+        patterns:
+          - "org.jetbrains.kotlinx*"
+        update-types:
+          - "minor"
+          - "patch"
+      build-tooling:
+        patterns:
+          - "com.diffplug.spotless*"
+          - "io.gitlab.arturbosch.detekt*"
+          - "com.squareup:kotlinpoet*"
+          - "com.android.tools.build*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      day: "sunday"
+    commit-message:
+      prefix: "chore(ci)"
+    groups:
+      github-actions:
+        patterns:
+          - "*"

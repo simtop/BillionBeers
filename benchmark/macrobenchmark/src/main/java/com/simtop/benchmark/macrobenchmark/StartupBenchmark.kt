@@ -8,8 +8,14 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+// androidx.benchmark's measureRepeated() returns Unit in this version (1.4.1) - there is no
+// in-process result to assert a threshold against here. Metrics only exist in the JSON file this
+// writes to build/outputs/connected_android_test_additional_output/.../*-benchmarkData.json
+// after the run. scripts/check-benchmark-budget.sh (run via `make benchmark-check`) parses that
+// file and fails if a metric's median exceeds its configured budget - see docs/improvements.md
+// §13.11 for why this couldn't be a simpler in-test assertion.
 @RunWith(AndroidJUnit4::class)
-class ExampleMacrobenchmark {
+class StartupBenchmark {
     @get:Rule
     val benchmarkRule = MacrobenchmarkRule()
 

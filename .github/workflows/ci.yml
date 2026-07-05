@@ -29,7 +29,22 @@ jobs:
         run: chmod +x gradlew
 
       - name: Run Spotless Check
+        id: spotless-check
         run: ./gradlew spotlessCheck
+
+      - name: Format Fix Hint
+        if: always() && steps.spotless-check.outcome == 'failure'
+        run: |
+          BRANCH_NAME="${{ github.head_ref || github.ref_name }}"
+          echo "### 🎨 Formatting Check Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Run the **Format Fix** workflow against this branch to auto-apply Spotless and push a fix commit:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "gh workflow run format_fix.yml --ref $BRANCH_NAME" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Or trigger it manually from the Actions tab (pick this branch in the \"Run workflow\" dropdown)." >> $GITHUB_STEP_SUMMARY
 
   lint:
     name: Static Analysis (Detekt)

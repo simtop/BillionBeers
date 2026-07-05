@@ -1,0 +1,47 @@
+name: Format Fix
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    name: Apply Spotless formatting and push a fix commit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 23
+        uses: actions/setup-java@v4
+        with:
+          java-version: '23'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: wrapper
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Run Spotless Apply
+        run: ./gradlew spotlessApply
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit and push formatting fix
+        run: |
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nothing to format - working tree already clean."
+          else
+            git commit -m "chore: apply Spotless formatting"
+            git push origin HEAD:"${GITHUB_REF_NAME}"
+          fi
