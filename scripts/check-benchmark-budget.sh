@@ -21,9 +21,8 @@ fi
 
 # Budget in milliseconds, keyed by "<@Test method name>:<metric name>". Deliberately generous -
 # these run on whatever device/emulator is available (including CI, if ever wired up), and
-# emulator timing is noisier than a physical device (see docs/improvements.md §13.11 and
-# docs/MASTER_PLAN.md's note on the deferred CI wiring decision). The point is to catch a real
-# regression (a multi-hundred-ms/multi-x slowdown), not to enforce a tight physical-device number.
+# emulator timing is noisier than a physical device. The point is to catch a real regression
+# (a multi-hundred-ms/multi-x slowdown), not to enforce a tight physical-device number.
 #
 # A case statement (not an associative array) on purpose: macOS ships bash 3.2 (no `declare -A`
 # support), while CI runners default to bash 5.x - this has to work on both.

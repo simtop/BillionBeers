@@ -1,4 +1,4 @@
-# 0004: Dependabot over Renovate for the version catalog
+# 0005: Dependabot over Renovate for the version catalog
 
 ## Status
 
