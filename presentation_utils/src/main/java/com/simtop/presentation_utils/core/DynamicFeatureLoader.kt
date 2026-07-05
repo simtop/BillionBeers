@@ -1,5 +1,8 @@
 package com.simtop.presentation_utils.core
 
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -63,10 +66,18 @@ fun DynamicFeatureLoader(
     InstallStatus.Installing ->
       InstallProgressDialog(progress = FULL_PROGRESS, onCancel = installer::cancel)
 
-    is InstallStatus.RequiresUserConfirmation ->
-      // Confirmation sheet wiring lands in the next commit; until then treat it like Pending so
-      // the user at least keeps a cancellable dialog instead of a frozen spinner.
-      InstallProgressDialog(progress = PENDING_PROGRESS, onCancel = installer::cancel)
+    is InstallStatus.RequiresUserConfirmation -> {
+      // Large (>~150MB) or metered-network downloads park here until the user approves via the
+      // Play confirmation sheet. Before this branch existed, the else-branch swallowed the status
+      // and the progress dialog spun forever.
+      val launcher =
+        rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
+          result ->
+          if (result.resultCode != Activity.RESULT_OK) installer.cancel()
+          // RESULT_OK needs no action: the listener delivers PENDING/DOWNLOADING next.
+        }
+      LaunchedEffect(status) { installer.startConfirmationDialog(launcher) }
+    }
 
     is InstallStatus.Failed ->
       InstallFailedDialog(

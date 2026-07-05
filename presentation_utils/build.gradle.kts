@@ -12,6 +12,7 @@ dependencies {
   implementation(project(":core"))
   implementation(project(":core:designsystem"))
 
+  implementation(libs.androidxActivityCompose)
   implementation(libs.androidx.foundation.android)
   implementation(libs.androidx.material3.android)
   // TODO: think on how could I do it impl
