@@ -6,6 +6,7 @@ import com.simtop.beer_network.models.Language
 import com.simtop.beer_network.models.Translation
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.core.core.LanguageProvider
+import com.simtop.core.core.NoOpLogger
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
@@ -13,7 +14,7 @@ import strikt.assertions.isEqualTo
 class BeersMapperTest {
 
   private var languageCode = "en"
-  private val mapper = BeersMapper(LanguageProvider { languageCode })
+  private val mapper = BeersMapper(LanguageProvider { languageCode }, NoOpLogger())
 
   private fun fullResponse() =
     BeersApiResponseItem(
