@@ -1,6 +1,8 @@
 # Variables
-MODULE ?= 
+MODULE ?=
 SCENARIO ?= incremental_build
+NAME ?=
+PASCAL ?=
 
 MODULE_TRIMMED := $(strip $(MODULE))
 MODULE_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,)
@@ -9,7 +11,7 @@ UI_TEST_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,:app:)
 # Wrapper for Gradle to support build-brief (bb) or rtk if available
 GRADLE_RUNNER := $(shell if command -v bb >/dev/null 2>&1; then echo "bb ./gradlew"; elif command -v build-brief >/dev/null 2>&1; then echo "build-brief --gradle ./gradlew"; elif command -v rtk >/dev/null 2>&1; then echo "rtk ./gradlew"; else echo "./gradlew"; fi)
 
-.PHONY: help setup setup-ai-tools update-android-skills build install clean test konsist ui-test screenshot-record screenshot-verify screenshot-clean lint format check check-duplicates check-unused-deps benchmark-micro benchmark-macro generate-baseline gradle-benchmark jacoco-report install-profiler install-diffuse
+.PHONY: help setup setup-ai-tools update-android-skills build install clean test konsist ui-test screenshot-record screenshot-verify screenshot-clean lint format check check-duplicates check-unused-deps benchmark-micro benchmark-macro generate-baseline gradle-benchmark jacoco-report install-profiler install-diffuse new-feature-module
 
 help: ## Show this help message.
 	@echo "\n📊 BillionBeers Makefile Help"
@@ -126,6 +128,10 @@ jacoco-report: ## Generate the unified Jacoco coverage report.
 update-docs: ## Update README.md with the latest library versions from the catalog.
 	@chmod +x scripts/update_readme_versions.sh
 	@./scripts/update_readme_versions.sh
+
+new-feature-module: ## Scaffold a feature/<NAME> module. Usage: make new-feature-module NAME=favorites [PASCAL=Favorites]
+	@chmod +x scripts/new-feature-module.sh
+	@./scripts/new-feature-module.sh "$(NAME)" "$(PASCAL)"
 
 # Helper Scripts
 install-profiler: ## Install gradle-profiler via Homebrew.
