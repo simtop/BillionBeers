@@ -3,6 +3,8 @@ MODULE ?=
 SCENARIO ?= incremental_build
 NAME ?=
 PASCAL ?=
+FEATURE ?=
+GRADLE_PATH ?=
 
 MODULE_TRIMMED := $(strip $(MODULE))
 MODULE_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,)
@@ -11,7 +13,7 @@ UI_TEST_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,:app:)
 # Wrapper for Gradle to support build-brief (bb) or rtk if available
 GRADLE_RUNNER := $(shell if command -v bb >/dev/null 2>&1; then echo "bb ./gradlew"; elif command -v build-brief >/dev/null 2>&1; then echo "build-brief --gradle ./gradlew"; elif command -v rtk >/dev/null 2>&1; then echo "rtk ./gradlew"; else echo "./gradlew"; fi)
 
-.PHONY: help setup setup-ai-tools update-android-skills build install clean test konsist ui-test screenshot-record screenshot-verify screenshot-clean lint format check check-duplicates check-unused-deps benchmark-micro benchmark-macro generate-baseline gradle-benchmark jacoco-report install-profiler install-diffuse new-feature-module
+.PHONY: help setup setup-ai-tools update-android-skills build install clean test konsist ui-test screenshot-record screenshot-verify screenshot-clean lint format check check-duplicates check-unused-deps benchmark-micro benchmark-macro generate-baseline gradle-benchmark jacoco-report install-profiler install-diffuse new-feature-module new-dev-app
 
 help: ## Show this help message.
 	@echo "\n📊 BillionBeers Makefile Help"
@@ -132,6 +134,10 @@ update-docs: ## Update README.md with the latest library versions from the catal
 new-feature-module: ## Scaffold a feature/<NAME> module. Usage: make new-feature-module NAME=favorites [PASCAL=Favorites]
 	@chmod +x scripts/new-feature-module.sh
 	@./scripts/new-feature-module.sh "$(NAME)" "$(PASCAL)"
+
+new-dev-app: ## Scaffold a standalone app-dev-<FEATURE> module. Usage: make new-dev-app FEATURE=beerdetail [PASCAL=BeerDetail] [GRADLE_PATH=:feature:beerdetail]
+	@chmod +x scripts/new-dev-app.sh
+	@./scripts/new-dev-app.sh "$(FEATURE)" "$(PASCAL)" "$(GRADLE_PATH)"
 
 # Helper Scripts
 install-profiler: ## Install gradle-profiler via Homebrew.
