@@ -92,7 +92,7 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
             IconButton(onClick = onBackClick) {
               Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = stringResource(BeerDetailR.string.back),
+                contentDescription = stringResource(R.string.beer_detail_back),
                 tint = Color.White,
               )
             }
@@ -137,9 +137,9 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
           },
         ) { isAvailable ->
           if (isAvailable) {
-            Text(text = stringResource(BeerDetailR.string.mark_as_empty), fontWeight = FontWeight.Bold)
+            Text(text = stringResource(R.string.mark_as_empty), fontWeight = FontWeight.Bold)
           } else {
-            Text(text = stringResource(BeerDetailR.string.refill_barrels), fontWeight = FontWeight.Bold)
+            Text(text = stringResource(R.string.refill_barrels), fontWeight = FontWeight.Bold)
           }
         }
       }
@@ -185,7 +185,7 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
 
       // Description
       Text(
-        text = stringResource(BeerDetailR.string.description_label),
+        text = stringResource(R.string.beer_detail_description),
         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
       )
       Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.small))
@@ -203,7 +203,7 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
       // Food Pairing
       if (beer.foodPairing.isNotEmpty()) {
         Text(
-          text = stringResource(BeerDetailR.string.food_pairing_label),
+          text = stringResource(R.string.beer_detail_food_pairing),
           style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
         )
         Spacer(

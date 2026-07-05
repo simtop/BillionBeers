@@ -1,6 +1,7 @@
 package com.simtop.billionbeers.robots
 
 import androidx.compose.ui.test.junit4.ComposeTestRule
+import com.simtop.presentation_utils.R
 
 fun homeScreen(composeTestRule: ComposeTestRule, func: HomeScreenRobot.() -> Unit) =
   HomeScreenRobot(composeTestRule).apply { func() }
@@ -16,10 +17,10 @@ class HomeScreenRobot(composeTestRule: ComposeTestRule) : BaseTestRobot(composeT
   }
 
   fun assertBeerIsAvailable(beerName: String) {
-    assertNodeWithTextHasStateDescription(beerName, "Available")
+    assertNodeWithTextsIsDisplayed(beerName, string(R.string.beer_available))
   }
 
   fun assertBeerIsUnavailable(beerName: String) {
-    assertNodeWithTextHasStateDescription(beerName, "Out of stock")
+    assertNodeWithTextsIsDisplayed(beerName, string(R.string.beer_out_of_stock))
   }
 }

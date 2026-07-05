@@ -9,4 +9,11 @@
     <string name="ibu_chip">IBU: %1$s</string>
     <string name="beer_list_item_image_description">Photo of %1$s</string>
     <string name="failed_to_install_feature">Failed to install feature</string>
+    <string name="beer_available">Available</string>
+    <string name="beer_out_of_stock">Out of stock</string>
+    <string name="mark_as_empty">Mark as Empty</string>
+    <string name="refill_barrels">Refill Barrels</string>
+    <string name="beer_detail_back">Back</string>
+    <string name="beer_detail_description">Description</string>
+    <string name="beer_detail_food_pairing">Food Pairing</string>
 </resources>

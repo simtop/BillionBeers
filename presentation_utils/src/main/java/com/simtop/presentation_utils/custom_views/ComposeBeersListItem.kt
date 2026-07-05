@@ -13,8 +13,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -43,9 +41,6 @@ fun ComposeBeersListItem(beer: Beer = Beer.empty, onClick: ((Beer) -> Unit)? = n
         )
         .testTag("beer_list_item")
         .minimumInteractiveComponentSize()
-        .semantics {
-          stateDescription = if (beer.availability) "Available" else "Out of stock"
-        }
         .noRippleClickable { onClick?.invoke(beer) },
     shape = RoundedCornerShape(BillionBeersTheme.spacing.medium),
     elevation = CardDefaults.cardElevation(defaultElevation = BillionBeersTheme.spacing.extraSmall),
@@ -106,6 +101,20 @@ fun ComposeBeersListItem(beer: Beer = Beer.empty, onClick: ((Beer) -> Unit)? = n
             color = Color(IBU_BG_COLOR),
             textColor = Color(IBU_TEXT_COLOR),
           )
+          Spacer(modifier = Modifier.width(BillionBeersTheme.spacing.small))
+          if (beer.availability) {
+            BeerChip(
+              text = stringResource(R.string.beer_available),
+              color = Color(AVAILABLE_BG_COLOR),
+              textColor = Color(AVAILABLE_TEXT_COLOR),
+            )
+          } else {
+            BeerChip(
+              text = stringResource(R.string.beer_out_of_stock),
+              color = Color(UNAVAILABLE_BG_COLOR),
+              textColor = Color(UNAVAILABLE_TEXT_COLOR),
+            )
+          }
         }
       }
     }
@@ -156,8 +165,7 @@ fun BeerChip(text: String, color: Color, textColor: Color) {
   }
 }
 
-class BeerPreviewParameterProvider :
-  PreviewParameterProvider<Beer> {
+class BeerPreviewParameterProvider : PreviewParameterProvider<Beer> {
   override val values =
     sequenceOf(
       Beer.empty.copy(
@@ -190,3 +198,7 @@ private const val ABV_BG_COLOR = 0xFFE0F7FA
 private const val ABV_TEXT_COLOR = 0xFF006064
 private const val IBU_BG_COLOR = 0xFFFBE9E7
 private const val IBU_TEXT_COLOR = 0xFFBF360C
+private const val AVAILABLE_BG_COLOR = 0xFFE8F5E9
+private const val AVAILABLE_TEXT_COLOR = 0xFF1B5E20
+private const val UNAVAILABLE_BG_COLOR = 0xFFFFEBEE
+private const val UNAVAILABLE_TEXT_COLOR = 0xFFB71C1C

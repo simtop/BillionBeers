@@ -38,9 +38,8 @@ class MainActivityComposeTest {
     val app = context as BillionBeersApplication
 
     FakeBeersRepositoryModule.fakeBeersRepository.setBeers(listOf(fakeBeer))
-    val testGraph = createGraphFactory<TestAppGraph.Factory>().create(
-        context = context
-    ) as BaseAppGraph
+    val testGraph =
+      createGraphFactory<TestAppGraph.Factory>().create(context = context) as BaseAppGraph
 
     app.appGraph = testGraph
   }
@@ -73,7 +72,7 @@ class MainActivityComposeTest {
         waitUntilNodeWithTextIsDisplayed(fakeBeer.description)
         assertToggleButtonShowsMarkAsEmpty()
         clickToggleAvailability()
-        waitUntilNodeWithTextIsDisplayed("Refill Barrels")
+        waitUntilToggleButtonShowsRefillBarrels()
         assertToggleButtonShowsRefillBarrels()
         navigateBack()
       }
