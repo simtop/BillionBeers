@@ -16,16 +16,21 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.simtop.billionbeers.catalog_annotations.CatalogComponent
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.presentation_utils.R
 
 @CatalogComponent(tab = "Utilities")
 @Composable
 fun ComposeErrorView(
-  message: String = "Empty State",
+  message: String = stringResource(R.string.empty_state),
   onRetry: () -> Unit = {},
   modifier: Modifier = Modifier,
 ) {
@@ -48,11 +53,12 @@ fun ComposeErrorView(
       style = MaterialTheme.typography.bodyLarge,
       textAlign = TextAlign.Center,
       color = MaterialTheme.colorScheme.onSurface,
+      modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
     )
 
     Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
 
-    Button(onClick = onRetry) { Text(text = "Retry") }
+    Button(onClick = onRetry) { Text(text = stringResource(R.string.retry)) }
   }
 }
 

@@ -18,7 +18,8 @@ interface BeersService {
 
   companion object {
     const val DEFAULT_ITEMS_PER_PAGE = 25
-    // Placeholder until proper localization support lands (docs/MASTER_PLAN.md Phase 2 §2.8).
+    // Fallback when LanguageProvider can't resolve a device language, and the language BeersMapper
+    // falls back to if the API doesn't have a translation for the requested one.
     const val DEFAULT_LANGUAGE_CODE = "en"
   }
 }

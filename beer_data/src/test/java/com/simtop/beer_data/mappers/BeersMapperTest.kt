@@ -5,13 +5,15 @@ import com.simtop.beer_network.models.BeersApiResponseItem
 import com.simtop.beer_network.models.Language
 import com.simtop.beer_network.models.Translation
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.core.core.LanguageProvider
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 
 class BeersMapperTest {
 
-  private val mapper = BeersMapper()
+  private var languageCode = "en"
+  private val mapper = BeersMapper(LanguageProvider { languageCode })
 
   private fun fullResponse() =
     BeersApiResponseItem(
@@ -71,12 +73,41 @@ class BeersMapperTest {
 
   @Test
   fun `fromBeersApiResponseItemToBeer defaults tagline and description when no matching translation`() {
-    val response = fullResponse().copy(translations = listOf(Translation(Language("fr"), "Une bière.", "Savoureux.")))
+    val response = fullResponse().copy(translations = listOf(Translation(Language("de"), "Ein Bier.", "Lecker.")))
 
     val beer = mapper.fromBeersApiResponseItemToBeer(response)
 
     expectThat(beer.tagline).isEqualTo("")
     expectThat(beer.description).isEqualTo("")
+  }
+
+  @Test
+  fun `fromBeersApiResponseItemToBeer picks the translation matching the current language`() {
+    languageCode = "fr"
+    val response =
+      fullResponse()
+        .copy(
+          translations =
+            listOf(
+              Translation(Language("en"), "A Real Bitter Experience.", "Tasty."),
+              Translation(Language("fr"), "Une bière.", "Savoureux."),
+            )
+        )
+
+    val beer = mapper.fromBeersApiResponseItemToBeer(response)
+
+    expectThat(beer.tagline).isEqualTo("Une bière.")
+    expectThat(beer.description).isEqualTo("Savoureux.")
+  }
+
+  @Test
+  fun `fromBeersApiResponseItemToBeer falls back to en when current language has no translation`() {
+    languageCode = "fr"
+
+    val beer = mapper.fromBeersApiResponseItemToBeer(fullResponse())
+
+    expectThat(beer.tagline).isEqualTo("A Real Bitter Experience.")
+    expectThat(beer.description).isEqualTo("Tasty.")
   }
 
   @Test

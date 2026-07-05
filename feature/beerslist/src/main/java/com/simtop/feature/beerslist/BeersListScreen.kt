@@ -1,5 +1,6 @@
 package com.simtop.feature.beerslist
 
+import android.animation.ValueAnimator
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -64,6 +65,7 @@ import com.simtop.presentation_utils.core.DynamicFeatureLoader
 import com.simtop.presentation_utils.core.InfiniteListHandler
 import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import com.simtop.presentation_utils.custom_views.ComposeErrorView
+import com.simtop.presentation_utils.R as PresentationUtilsR
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -118,12 +120,17 @@ fun BeersListContent(
     contentWindowInsets = WindowInsets.statusBars,
   ) { paddingValues ->
     val dataVisibility = rememberSaveable { mutableStateOf(false) }
+    // Honours the system "Remove animations" accessibility setting (animator duration scale 0)
+    // instead of always animating for a fixed duration.
+    val animationDurationMs =
+      if (ValueAnimator.getDurationScale() == 0f) 0 else SCREEN_STATE_ANIMATION_DURATION_MS
 
     AnimatedContent(
       targetState = viewState,
       label = "ScreenStateAnimation",
       transitionSpec = {
-        fadeIn(animationSpec = tween(300)) togetherWith fadeOut(animationSpec = tween(300))
+        fadeIn(animationSpec = tween(animationDurationMs)) togetherWith
+          fadeOut(animationSpec = tween(animationDurationMs))
       },
     ) { state ->
       when (state) {
@@ -136,7 +143,7 @@ fun BeersListContent(
 
         is CommonUiState.Error -> {
           ComposeErrorView(
-            message = state.message ?: "Empty State",
+            message = state.message ?: stringResource(PresentationUtilsR.string.empty_state),
             onRetry = onRetry,
             modifier = Modifier.padding(top = paddingValues.calculateTopPadding()),
           )
@@ -370,6 +377,7 @@ fun BeersListItemSkeleton() {
   }
 }
 
+const val SCREEN_STATE_ANIMATION_DURATION_MS = 300
 const val SKELETON_ITEM_COUNT = 10
 const val SHIMMER_TARGET_VALUE = 1300f
 const val TITLE_WIDTH_FRACTION = 0.7f

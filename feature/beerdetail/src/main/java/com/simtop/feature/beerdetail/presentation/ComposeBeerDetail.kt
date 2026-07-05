@@ -1,6 +1,11 @@
 package com.simtop.feature.beerdetail.presentation
 
+import android.animation.ValueAnimator
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -19,6 +24,11 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -31,12 +41,17 @@ import coil3.request.placeholder
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.feature.beerdetail.R as BeerDetailR
 import com.simtop.presentation_utils.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability: () -> Unit) {
   val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+  // Honours the system "Remove animations" accessibility setting (animator duration scale 0)
+  // instead of always animating for a fixed duration.
+  val animationDurationMs =
+    if (ValueAnimator.getDurationScale() == 0f) 0 else AVAILABILITY_ANIMATION_DURATION_MS
 
   Scaffold(
     contentWindowInsets = WindowInsets(BillionBeersTheme.spacing.default),
@@ -45,7 +60,11 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
         .nestedScroll(scrollBehavior.nestedScrollConnection),
     topBar = {
       Box(modifier = Modifier.wrapContentSize()) {
-        BeerDetailImage(imageUrl = beer.imageUrl, modifier = Modifier.matchParentSize())
+        BeerDetailImage(
+          imageUrl = beer.imageUrl,
+          contentDescription = stringResource(BeerDetailR.string.beer_image_description, beer.name),
+          modifier = Modifier.matchParentSize(),
+        )
 
         // Gradient Overlay for text readability
         Box(
@@ -73,7 +92,7 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
             IconButton(onClick = onBackClick) {
               Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Back",
+                contentDescription = stringResource(BeerDetailR.string.back),
                 tint = Color.White,
               )
             }
@@ -91,6 +110,8 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
       }
     },
     floatingActionButton = {
+      val availableLabel = stringResource(BeerDetailR.string.availability_available)
+      val outOfStockLabel = stringResource(BeerDetailR.string.availability_out_of_stock)
       ExtendedFloatingActionButton(
         onClick = onToggleAvailability,
         containerColor =
@@ -101,14 +122,24 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
           },
         contentColor = Color.White,
         shape = RoundedCornerShape(BillionBeersTheme.spacing.medium),
-        modifier = Modifier.testTag("toggle_availability"),
+        modifier =
+          Modifier.testTag("toggle_availability").semantics {
+            role = Role.Button
+            stateDescription = if (beer.availability) availableLabel else outOfStockLabel
+          },
       ) {
-        AnimatedContent(targetState = beer.availability, label = "availability_animation") {
-          isAvailable ->
+        AnimatedContent(
+          targetState = beer.availability,
+          label = "availability_animation",
+          transitionSpec = {
+            fadeIn(animationSpec = tween(animationDurationMs)) togetherWith
+              fadeOut(animationSpec = tween(animationDurationMs))
+          },
+        ) { isAvailable ->
           if (isAvailable) {
-            Text(text = "Mark as Empty", fontWeight = FontWeight.Bold)
+            Text(text = stringResource(BeerDetailR.string.mark_as_empty), fontWeight = FontWeight.Bold)
           } else {
-            Text(text = "Refill Barrels", fontWeight = FontWeight.Bold)
+            Text(text = stringResource(BeerDetailR.string.refill_barrels), fontWeight = FontWeight.Bold)
           }
         }
       }
@@ -137,13 +168,13 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
       // Stats Row
       Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
         StatCard(
-          label = "ABV",
+          label = stringResource(BeerDetailR.string.abv_label),
           value = "${beer.abv}%",
           color = Color(ABV_BG_COLOR),
           textColor = Color(ABV_TEXT_COLOR),
         )
         StatCard(
-          label = "IBU",
+          label = stringResource(BeerDetailR.string.ibu_label),
           value = "${beer.ibu}",
           color = Color(IBU_BG_COLOR),
           textColor = Color(IBU_TEXT_COLOR),
@@ -154,7 +185,7 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
 
       // Description
       Text(
-        text = "Description",
+        text = stringResource(BeerDetailR.string.description_label),
         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
       )
       Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.small))
@@ -172,7 +203,7 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
       // Food Pairing
       if (beer.foodPairing.isNotEmpty()) {
         Text(
-          text = "Food Pairing",
+          text = stringResource(BeerDetailR.string.food_pairing_label),
           style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
         )
         Spacer(
@@ -223,7 +254,7 @@ fun StatCard(label: String, value: String, color: Color, textColor: Color) {
 }
 
 @Composable
-fun BeerDetailImage(imageUrl: String, modifier: Modifier = Modifier) {
+fun BeerDetailImage(imageUrl: String, contentDescription: String?, modifier: Modifier = Modifier) {
   AsyncImage(
     model =
       ImageRequest.Builder(LocalContext.current)
@@ -232,7 +263,7 @@ fun BeerDetailImage(imageUrl: String, modifier: Modifier = Modifier) {
         .placeholder(R.drawable.blue_image)
         .error(R.drawable.blue_image)
         .build(),
-    contentDescription = null,
+    contentDescription = contentDescription,
     contentScale = ContentScale.Crop,
     modifier = modifier.fillMaxSize(),
   )
@@ -266,3 +297,4 @@ private const val ABV_BG_COLOR = 0xFFE0F7FA
 private const val ABV_TEXT_COLOR = 0xFF006064
 private const val IBU_BG_COLOR = 0xFFFBE9E7
 private const val IBU_TEXT_COLOR = 0xFFBF360C
+private const val AVAILABILITY_ANIMATION_DURATION_MS = 300

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="beer_detail">beerdetail</string>
+    <string name="loading_dynamic_feature">Cargando función dinámica</string>
+    <string name="emergency_emergency_we_run_out_of_this_beer">¡EMERGENCIA!!\n¡EMERGENCIA!!\nSE NOS ACABÓ ESTA CERVEZA</string>
+    <string name="retry">Reintentar</string>
+    <string name="empty_state">Sin resultados</string>
+    <string name="abv_chip">ABV: %1$s%%</string>
+    <string name="ibu_chip">IBU: %1$s</string>
+    <string name="beer_list_item_image_description">Foto de %1$s</string>
+    <string name="failed_to_install_feature">Error al instalar la función</string>
+</resources>

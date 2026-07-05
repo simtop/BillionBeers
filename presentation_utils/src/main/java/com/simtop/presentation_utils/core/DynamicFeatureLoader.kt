@@ -11,14 +11,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import com.google.android.play.core.splitinstall.SplitInstallRequest
 import com.google.android.play.core.splitinstall.SplitInstallStateUpdatedListener
 import com.google.android.play.core.splitinstall.model.SplitInstallSessionStatus
 import com.simtop.billionbeers.core.designsystem.component.DialogWithProgressBar
+import com.simtop.presentation_utils.R
 
 @Composable
 fun DynamicFeatureLoader(featureName: String, content: @Composable () -> Unit) {
     val manager = LocalSplitInstallManager.current
+    // Captured here (composable context) since the DisposableEffect callback below isn't composable.
+    val failedToInstallLabel = stringResource(R.string.failed_to_install_feature)
     var isInstalled by
     remember(featureName) { mutableStateOf(manager.installedModules.contains(featureName)) }
     var downloadProgress by remember { mutableStateOf(0f) }
@@ -61,7 +65,7 @@ fun DynamicFeatureLoader(featureName: String, content: @Composable () -> Unit) {
                 SplitInstallSessionStatus.FAILED,
                 SplitInstallSessionStatus.CANCELED -> {
                     showDialog = false
-                    error = "Failed to install feature: ${state.errorCode()}"
+                    error = "$failedToInstallLabel: ${state.errorCode()}"
                 }
 
                 else -> {

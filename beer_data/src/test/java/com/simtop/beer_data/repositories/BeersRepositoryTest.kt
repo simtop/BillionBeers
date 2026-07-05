@@ -7,6 +7,7 @@ import com.simtop.beer_data.mappers.BeersMapper
 import com.simtop.beer_database.models.BeerDbModel
 import com.simtop.beer_network.models.BeersApiResponseItem
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.core.core.LanguageProvider
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -27,7 +28,7 @@ class BeersRepositoryTest {
   fun setUp() {
     beersRemoteSource = FakeBeersRemoteSource()
     beersLocalSource = FakeBeersLocalSource()
-    val beersMapper = BeersMapper()
+    val beersMapper = BeersMapper(LanguageProvider { "en" })
     beersRepository = BeersRepositoryImpl(beersRemoteSource, beersLocalSource, beersMapper)
   }
 
