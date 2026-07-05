@@ -15,7 +15,8 @@ import dev.zacsweers.metro.SingleIn
  * Bindings backing the debug drawer. Registered in every build type - the drawer UI itself
  * (app/src/debug) is what's actually gated to debug builds; [NetworkFaultController] and
  * [FeatureFlagProvider] always exist so production code can read them cheaply (fault mode stays
- * NONE and flags stay at their defaults outside debug, since nothing ever calls setMode/setOverride).
+ * NONE and flags stay at their defaults outside debug, since nothing ever calls
+ * setMode/setOverride).
  */
 @ContributesTo(AppScope::class)
 interface DebugModule {

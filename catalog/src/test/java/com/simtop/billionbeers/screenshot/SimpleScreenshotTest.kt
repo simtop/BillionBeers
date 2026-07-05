@@ -10,10 +10,10 @@ class SimpleScreenshotTest {
 
   @get:Rule
   val paparazzi =
-      Paparazzi(
-          deviceConfig = DeviceConfig.PIXEL_5,
-          theme = "android:Theme.Material.Light.NoActionBar",
-      )
+    Paparazzi(
+      deviceConfig = DeviceConfig.PIXEL_5,
+      theme = "android:Theme.Material.Light.NoActionBar",
+    )
 
   @Test
   fun simple_text_screenshot() {

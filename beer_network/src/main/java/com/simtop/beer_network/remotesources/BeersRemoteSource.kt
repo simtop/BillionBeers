@@ -17,7 +17,10 @@ constructor(private val service: BeersService, private val languageProvider: Lan
   BeersRemoteSource {
 
   override suspend fun getListOfBeers(page: Int): List<BeersApiResponseItem> {
-    return service.getListOfBeers(page = page, languageCode = languageProvider.currentLanguageCode())
+    return service.getListOfBeers(
+      page = page,
+      languageCode = languageProvider.currentLanguageCode(),
+    )
   }
 
   override suspend fun getImage(id: String): com.simtop.beer_network.models.ImageResponse {

@@ -11,11 +11,11 @@ import com.simtop.presentation_utils.core.LocalSplitInstallManager
 import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 
 /**
- * Hosts only [BeersListScreen] against a fake, in-memory [com.simtop.beerdomain.domain.repositories.BeersRepository]
- * (see [com.simtop.billionbeers.devbeerslist.di.DevBeersRepositoryModule]) - no network, no
- * database, no beerdetail dynamic feature. Tapping a beer still triggers the module's own
- * DynamicFeatureLoader gate; the install attempt fails harmlessly since beerdetail isn't part of
- * this app.
+ * Hosts only [BeersListScreen] against a fake, in-memory
+ * [com.simtop.beerdomain.domain.repositories.BeersRepository] (see
+ * [com.simtop.billionbeers.devbeerslist.di.DevBeersRepositoryModule]) - no network, no database, no
+ * beerdetail dynamic feature. Tapping a beer still triggers the module's own DynamicFeatureLoader
+ * gate; the install attempt fails harmlessly since beerdetail isn't part of this app.
  */
 class MainActivity : ComponentActivity() {
 

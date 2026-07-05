@@ -86,25 +86,22 @@ fun DebugDrawerContent(appGraph: BaseAppGraph, modifier: Modifier = Modifier) {
     LaunchedEffect(Unit) {
       sampleBeerId = appGraph.beersRepository.getAllBeersFromDB().firstOrNull()?.id
     }
-    val entries =
-      buildList {
-        add(DeepLinkEntry("Beers list", "${DeepLinkParser.SCHEME}://${DeepLinkParser.HOST_BEERS}"))
-        sampleBeerId?.let { id ->
-          add(
-            DeepLinkEntry(
-              "Beer detail (id=$id)",
-              "${DeepLinkParser.SCHEME}://${DeepLinkParser.HOST_BEERS}/$id",
-            )
+    val entries = buildList {
+      add(DeepLinkEntry("Beers list", "${DeepLinkParser.SCHEME}://${DeepLinkParser.HOST_BEERS}"))
+      sampleBeerId?.let { id ->
+        add(
+          DeepLinkEntry(
+            "Beer detail (id=$id)",
+            "${DeepLinkParser.SCHEME}://${DeepLinkParser.HOST_BEERS}/$id",
           )
-        }
+        )
       }
+    }
     entries.forEach { entry ->
       Column(
         modifier =
           Modifier.fillMaxWidth()
-            .clickable {
-              context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(entry.uri)))
-            }
+            .clickable { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(entry.uri))) }
             .padding(vertical = 8.dp)
       ) {
         Text(text = entry.label, style = MaterialTheme.typography.bodyLarge)
