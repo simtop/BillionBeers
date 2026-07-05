@@ -1,101 +1,149 @@
 package com.simtop.presentation_utils.core
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import com.google.android.play.core.splitinstall.SplitInstallRequest
-import com.google.android.play.core.splitinstall.SplitInstallStateUpdatedListener
-import com.google.android.play.core.splitinstall.model.SplitInstallSessionStatus
+import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import com.simtop.billionbeers.core.designsystem.component.CatalogSettings
 import com.simtop.billionbeers.core.designsystem.component.DialogWithProgressBar
+import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.presentation_utils.R
 
+/**
+ * Gates [content] behind the on-demand install of the [featureName] dynamic feature module,
+ * rendering install progress / confirmation / failure UI until the module is available.
+ *
+ * [onCancelled] fires when the user abandons the install (dismisses the progress dialog, declines
+ * the Play confirmation sheet, or dismisses the failure dialog) — the caller should close whatever
+ * flow needed the feature.
+ */
 @Composable
-fun DynamicFeatureLoader(featureName: String, content: @Composable () -> Unit) {
+fun DynamicFeatureLoader(
+  featureName: String,
+  onCancelled: () -> Unit = {},
+  content: @Composable () -> Unit,
+) {
+  val installer = rememberDynamicFeatureInstaller(featureName)
+  when (val status = installer.status) {
+    InstallStatus.Installed -> content()
+
+    InstallStatus.Idle -> {
+      LaunchedEffect(installer) { installer.start() }
+      InstallProgressDialog(progress = PENDING_PROGRESS, onCancel = installer::cancel)
+    }
+
+    InstallStatus.Pending ->
+      InstallProgressDialog(progress = PENDING_PROGRESS, onCancel = installer::cancel)
+
+    is InstallStatus.Downloading ->
+      InstallProgressDialog(
+        // State reports the raw ratio; keeping the bar visibly moving is a UI decision.
+        progress = status.progress.coerceAtLeast(MIN_VISIBLE_PROGRESS),
+        onCancel = installer::cancel,
+      )
+
+    InstallStatus.Installing ->
+      InstallProgressDialog(progress = FULL_PROGRESS, onCancel = installer::cancel)
+
+    is InstallStatus.RequiresUserConfirmation ->
+      // Confirmation sheet wiring lands in the next commit; until then treat it like Pending so
+      // the user at least keeps a cancellable dialog instead of a frozen spinner.
+      InstallProgressDialog(progress = PENDING_PROGRESS, onCancel = installer::cancel)
+
+    is InstallStatus.Failed ->
+      InstallFailedDialog(
+        errorCode = status.errorCode,
+        onRetry = installer::start,
+        onCancel = installer::cancel,
+      )
+
+    InstallStatus.Cancelled -> LaunchedEffect(installer) { onCancelled() }
+  }
+}
+
+@Composable
+private fun rememberDynamicFeatureInstaller(moduleName: String): DynamicFeatureInstaller {
   val manager = LocalSplitInstallManager.current
-  // Captured here (composable context) since the DisposableEffect callback below isn't composable.
-  val failedToInstallLabel = stringResource(R.string.failed_to_install_feature)
-  var isInstalled by
-    remember(featureName) { mutableStateOf(manager.installedModules.contains(featureName)) }
-  var downloadProgress by remember { mutableStateOf(0f) }
-  var error by remember { mutableStateOf<String?>(null) }
-  var showDialog by remember { mutableStateOf(false) }
-  // Track the session we started so the listener ignores updates from other installs.
-  var sessionId by remember { mutableStateOf<Int?>(null) }
-  if (isInstalled) {
-    content()
-    return
+  val installer = remember(manager, moduleName) { DynamicFeatureInstaller(manager, moduleName) }
+  DisposableEffect(installer) { onDispose { installer.release() } }
+  return installer
+}
+
+@Composable
+private fun InstallProgressDialog(progress: Float, onCancel: () -> Unit) {
+  DialogWithProgressBar(
+    setShowDialog = { shown -> if (!shown) onCancel() },
+    number = progress,
+    text = stringResource(R.string.loading_dynamic_feature),
+    settings = CatalogSettings(dismissOnClickOutside = true),
+  )
+}
+
+@Composable
+private fun InstallFailedDialog(errorCode: Int, onRetry: () -> Unit, onCancel: () -> Unit) {
+  Dialog(onDismissRequest = onCancel) {
+    InstallFailedContent(errorCode = errorCode, onRetry = onRetry, onCancel = onCancel)
   }
+}
 
-  DisposableEffect(featureName) {
-    showDialog = true
-
-    val listener = SplitInstallStateUpdatedListener { state ->
-      // Ignore state updates that belong to a different module's install session.
-      if (state.sessionId() != sessionId) return@SplitInstallStateUpdatedListener
-      when (state.status()) {
-        SplitInstallSessionStatus.INSTALLED -> {
-          downloadProgress = 1.0f
-          isInstalled = true
-          showDialog = false
-        }
-
-        SplitInstallSessionStatus.DOWNLOADING -> {
-          val totalBytes = state.totalBytesToDownload()
-          val downloadedBytes = state.bytesDownloaded()
-          val progress =
-            if (totalBytes > 0) downloadedBytes.toFloat() / totalBytes.toFloat() else 0f
-          // Ensure progress is at least MIN_VISIBLE_PROGRESS so it's noticeable.
-          downloadProgress = if (progress > MIN_VISIBLE_PROGRESS) progress else MIN_VISIBLE_PROGRESS
-        }
-
-        SplitInstallSessionStatus.PENDING -> {
-          downloadProgress = PENDING_PROGRESS
-        }
-
-        SplitInstallSessionStatus.FAILED,
-        SplitInstallSessionStatus.CANCELED -> {
-          showDialog = false
-          error = "$failedToInstallLabel: ${state.errorCode()}"
-        }
-
-        else -> {
-          // Other transient states (REQUIRES_USER_CONFIRMATION, INSTALLING, ...) need no UI change.
-        }
-      }
-    }
-    manager.registerListener(listener)
-
-    val request = SplitInstallRequest.newBuilder().addModule(featureName).build()
-    manager
-      .startInstall(request)
-      .addOnSuccessListener { sessionId = it }
-      .addOnFailureListener {
-        showDialog = false
-        error = it.message
-      }
-
-    onDispose {
-      // Always unregister to avoid leaking the listener for the lifetime of the manager.
-      manager.unregisterListener(listener)
-      // If we left before the installation finished, cancel the in-flight session.
-      sessionId?.let { id -> if (!isInstalled) manager.cancelInstall(id) }
-    }
-  }
-
-  Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-    if (showDialog) {
-      DialogWithProgressBar(setShowDialog = { showDialog = it }, number = downloadProgress)
+@Composable
+internal fun InstallFailedContent(
+  errorCode: Int,
+  onRetry: () -> Unit,
+  onCancel: () -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  Column(
+    horizontalAlignment = Alignment.CenterHorizontally,
+    modifier =
+      modifier
+        .fillMaxWidth()
+        .background(Color.White, shape = RoundedCornerShape(8.dp))
+        .padding(16.dp),
+  ) {
+    Text(
+      text = stringResource(R.string.failed_to_install_feature),
+      style = MaterialTheme.typography.titleMedium,
+      color = Color.Black,
+    )
+    Text(
+      text = stringResource(R.string.install_error_code, errorCode),
+      style = MaterialTheme.typography.bodyMedium,
+      color = Color.Black,
+      modifier = Modifier.padding(top = 8.dp),
+    )
+    Row(modifier = Modifier.padding(top = 16.dp)) {
+      TextButton(onClick = onCancel) { Text(stringResource(R.string.install_cancel)) }
+      Spacer(modifier = Modifier.width(8.dp))
+      TextButton(onClick = onRetry) { Text(stringResource(R.string.retry)) }
     }
   }
 }
 
+@PreviewLightDark
+@Composable
+fun InstallFailedContentPreview() {
+  BillionBeersTheme { InstallFailedContent(errorCode = -6, onRetry = {}, onCancel = {}) }
+}
+
 private const val MIN_VISIBLE_PROGRESS = 0.25f
 private const val PENDING_PROGRESS = 0.1f
+private const val FULL_PROGRESS = 1f

@@ -9,6 +9,8 @@
     <string name="ibu_chip">IBU : %1$s</string>
     <string name="beer_list_item_image_description">Photo de %1$s</string>
     <string name="failed_to_install_feature">Échec de l\'installation de la fonctionnalité</string>
+    <string name="install_error_code">Code d\'erreur : %1$d</string>
+    <string name="install_cancel">Annuler</string>
     <string name="beer_available">Disponible</string>
     <string name="beer_out_of_stock">En rupture de stock</string>
     <string name="mark_as_empty">Marquer comme vide</string>

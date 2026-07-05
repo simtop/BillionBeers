@@ -99,7 +99,10 @@ fun BeersListScreen(viewModel: BeersListViewModel = metroViewModel(), onBeerClic
 
   // Handle dynamic feature loading overlay
   installingBeer?.let { beer: Beer ->
-    DynamicFeatureLoader(featureName = FeatureConstants.BEER_DETAIL_MODULE) {
+    DynamicFeatureLoader(
+      featureName = FeatureConstants.BEER_DETAIL_MODULE,
+      onCancelled = { installingBeer = null },
+    ) {
       LaunchedEffect(beer) {
         onBeerClick(beer)
         installingBeer = null
