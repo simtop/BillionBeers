@@ -17,30 +17,34 @@ dependencyResolutionManagement {
     }
 }
 
-include(":beer_data")
-include(":beer_database")
-include(":beer_network")
-include(":beer_network:fixtures")
-include(":presentation_utils")
-include(":core")
-include(":core-common")
-include(":core:designsystem")
-include(":feature:beerslist")
-include(":feature:beerdetail")
-include(":beerdomain:api")
-include(":beerdomain:fakes")
-include(":app")
-include(":app-dev-beerslist")
 rootProject.name = "BillionBeers"
-include(":navigation")
 
-include(":benchmark:microbenchmark")
-include(":benchmark:macrobenchmark")
-include(":benchmark:baselineprofile")
-include(":catalog")
-include(":snapshot-testing")
-include(":snapshot-processor")
-include(":catalog-annotations")
-include(":catalog-processor")
-include(":testing-utils")
-include(":konsist")
+// Auto-discovers every module instead of requiring a manual include(...) line per module:
+// walks the repo tree and includes any directory containing a build.gradle(.kts) file, at any
+// depth (e.g. "core/designsystem" -> ":core:designsystem", "benchmark/baselineprofile" ->
+// ":benchmark:baselineprofile"). New modules "just work" once they have a build script - no
+// settings.gradle.kts edit needed. build-logic is excluded: it's a separate composite build
+// (included above via includeBuild), not a subproject of this build.
+val excludedDirNames =
+    setOf(
+        ".git", ".gradle", ".idea", ".kotlin", ".vscode", ".circleci", ".github", ".claude",
+        "build", "src", "build-logic", "gradle", "gradle-user-home", "config", "docs", "scripts",
+        "profile-out", "brain", "imagesForReadme",
+    )
+
+fun File.hasBuildScript() = resolve("build.gradle.kts").exists() || resolve("build.gradle").exists()
+
+fun discoverModules(dir: File) {
+    val children =
+        dir.listFiles { file -> file.isDirectory && file.name !in excludedDirNames && !file.name.startsWith(".") }
+            ?: return
+    for (child in children) {
+        if (child.hasBuildScript()) {
+            val path = child.relativeTo(rootDir).path.replace(File.separatorChar, ':')
+            include(":$path")
+        }
+        discoverModules(child)
+    }
+}
+
+discoverModules(rootDir)
