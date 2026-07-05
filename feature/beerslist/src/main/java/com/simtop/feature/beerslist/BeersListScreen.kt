@@ -5,7 +5,9 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -62,6 +64,7 @@ import com.simtop.core.core.CommonUiState
 import com.simtop.navigation.FeatureConstants
 import com.simtop.presentation_utils.core.DynamicFeatureLoader
 import com.simtop.presentation_utils.core.InfiniteListHandler
+import com.simtop.presentation_utils.core.LocalDebugDrawerToggle
 import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import com.simtop.presentation_utils.custom_views.ComposeErrorView
 import dev.zacsweers.metrox.viewmodel.metroViewModel
@@ -103,7 +106,7 @@ fun BeersListScreen(viewModel: BeersListViewModel = metroViewModel(), onBeerClic
   }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun BeersListContent(
   viewState: CommonUiState<BeersListUiModel>,
@@ -113,8 +116,19 @@ fun BeersListContent(
   onRetry: () -> Unit,
 ) {
   val context = LocalContext.current
+  val toggleDebugDrawer = LocalDebugDrawerToggle.current
   Scaffold(
-    topBar = { TopAppBar(title = { Text(text = stringResource(R.string.billion_beers_list)) }) },
+    topBar = {
+      TopAppBar(
+        title = {
+          Text(
+            text = stringResource(R.string.billion_beers_list),
+            // Long-press reveals the debug drawer's floating trigger - see LocalDebugDrawerToggle.
+            modifier = Modifier.combinedClickable(onClick = {}, onLongClick = toggleDebugDrawer),
+          )
+        }
+      )
+    },
     contentWindowInsets = WindowInsets.statusBars,
   ) { paddingValues ->
     val dataVisibility = rememberSaveable { mutableStateOf(false) }
