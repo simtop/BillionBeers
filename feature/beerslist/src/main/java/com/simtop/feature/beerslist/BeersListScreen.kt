@@ -63,12 +63,12 @@ import com.simtop.billionbeers.core.designsystem.component.showToast
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.core.core.CommonUiState
 import com.simtop.navigation.FeatureConstants
+import com.simtop.presentation_utils.R as PresentationUtilsR
 import com.simtop.presentation_utils.core.DynamicFeatureLoader
 import com.simtop.presentation_utils.core.InfiniteListHandler
 import com.simtop.presentation_utils.core.LocalDebugDrawerToggle
 import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import com.simtop.presentation_utils.custom_views.ComposeErrorView
-import com.simtop.presentation_utils.R as PresentationUtilsR
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString

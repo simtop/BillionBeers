@@ -51,7 +51,7 @@ class BeersRepositoryImpl(
         beersLocalSource.getAllBeersFromDB().map { list ->
           list.map { beersMapper.fromBeerDbModelToBeer(it) }
         }
-      }
+      },
     )
 
   private fun Throwable.toFetchBeersError(): FetchBeersError =
@@ -71,19 +71,16 @@ class BeersRepositoryImpl(
   private suspend fun fetchAndEnrichBeers(page: Int): List<Beer> {
     val apiItems = beersRemoteSource.getListOfBeers(page)
     return coroutineScope {
-      apiItems
-        .map { item ->
-          async { enrichBeerWithImage(item) }
-        }
-        .awaitAll()
+      apiItems.map { item -> async { enrichBeerWithImage(item) } }.awaitAll()
     }
   }
 
   private suspend fun enrichBeerWithImage(item: BeersApiResponseItem): Beer {
     val beer = beersMapper.fromBeersApiResponseItemToBeer(item)
-    val imageUrl = item.imageId?.takeIf { it.isNotEmpty() }?.let { id ->
-      runCatching { beersRemoteSource.getImage(id).url }.getOrNull()
-    }
+    val imageUrl =
+      item.imageId
+        ?.takeIf { it.isNotEmpty() }
+        ?.let { id -> runCatching { beersRemoteSource.getImage(id).url }.getOrNull() }
     return imageUrl?.let { beer.copy(imageUrl = it) } ?: beer
   }
 
@@ -109,8 +106,7 @@ class BeersRepositoryImpl(
   override suspend fun getAllBeersFromDB() =
     beersLocalSource.getAllBeersFromDB().first().map { beersMapper.fromBeerDbModelToBeer(it) }
 
-  override suspend fun getBeerById(id: String): Beer? =
-    getAllBeersFromDB().find { it.id == id }
+  override suspend fun getBeerById(id: String): Beer? = getAllBeersFromDB().find { it.id == id }
 
   override suspend fun countDBEntries() = beersLocalSource.getCountFromDB()
 

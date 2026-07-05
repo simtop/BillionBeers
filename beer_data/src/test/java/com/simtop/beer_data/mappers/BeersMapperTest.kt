@@ -74,7 +74,9 @@ class BeersMapperTest {
 
   @Test
   fun `fromBeersApiResponseItemToBeer defaults tagline and description when no matching translation`() {
-    val response = fullResponse().copy(translations = listOf(Translation(Language("de"), "Ein Bier.", "Lecker.")))
+    val response =
+      fullResponse()
+        .copy(translations = listOf(Translation(Language("de"), "Ein Bier.", "Lecker.")))
 
     val beer = mapper.fromBeersApiResponseItemToBeer(response)
 

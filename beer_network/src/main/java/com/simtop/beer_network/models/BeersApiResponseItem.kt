@@ -14,6 +14,7 @@ data class BeersApiResponseItem(
   @SerialName("food_pairing") val foodPairing: List<String>? = null,
 )
 
-@Serializable data class Translation(val language: Language, val slogan: String?, val description: String?)
+@Serializable
+data class Translation(val language: Language, val slogan: String?, val description: String?)
 
 @Serializable data class Language(val code: String)

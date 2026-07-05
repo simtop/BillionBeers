@@ -9,7 +9,6 @@ import com.simtop.core.core.PagingState
 import kotlin.collections.plus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.map
 
 @Suppress("TooManyFunctions")
 class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersRepository {
@@ -53,7 +52,9 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersReposit
   }
 
   override suspend fun updateAvailability(beer: Beer): Either<UpdateAvailabilityError, Unit> {
-    exceptionToThrow?.let { return Either.Left(UpdateAvailabilityError.Unknown(it)) }
+    exceptionToThrow?.let {
+      return Either.Left(UpdateAvailabilityError.Unknown(it))
+    }
     val currentList = beersFlow.value.toMutableList()
     val index = currentList.indexOfFirst { it.id == beer.id }
     if (index != -1) {

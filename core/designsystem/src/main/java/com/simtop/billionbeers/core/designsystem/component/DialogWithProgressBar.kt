@@ -135,20 +135,12 @@ fun DialogContent(number: Float, text: String, modifier: Modifier = Modifier) {
   }
 }
 
-class DialogProgressProvider: PreviewParameterProvider<Float> {
+class DialogProgressProvider : PreviewParameterProvider<Float> {
   override val values = sequenceOf(0f, 0.5f, 1f)
 }
 
 @PreviewLightDark
 @Composable
-fun DialogContentPreview(
-  @PreviewParameter(DialogProgressProvider::class)
-  progress: Float
-) {
-  BillionBeersTheme {
-    DialogContent(
-        number = progress,
-        text = "Downloading feature...",
-    )
-  }
+fun DialogContentPreview(@PreviewParameter(DialogProgressProvider::class) progress: Float) {
+  BillionBeersTheme { DialogContent(number = progress, text = "Downloading feature...") }
 }

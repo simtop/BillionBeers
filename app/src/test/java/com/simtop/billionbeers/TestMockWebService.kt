@@ -4,7 +4,9 @@ import com.simtop.beer_network.network.BeersService
 import java.io.File
 import java.io.IOException
 import java.net.HttpURLConnection
+import kotlinx.serialization.json.Json
 import okhttp3.Interceptor
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Response
 import okhttp3.logging.HttpLoggingInterceptor
@@ -13,8 +15,6 @@ import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Before
 import retrofit2.Retrofit
-import kotlinx.serialization.json.Json
-import okhttp3.MediaType.Companion.toMediaType
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 
 abstract class TestMockWebService {

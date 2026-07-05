@@ -10,11 +10,11 @@ import dev.zacsweers.metrox.viewmodel.MetroViewModelFactory
 import dev.zacsweers.metrox.viewmodel.MetroViewModelMultibindings
 
 interface BaseAppGraph : DynamicDependencies, MetroViewModelMultibindings {
-    override val beersRepository: BeersRepository
-    override val coroutineDispatcher: CoroutineDispatcherProvider
-    val splitInstallManager: SplitInstallManager
-    val metroViewModelFactory: MetroViewModelFactory
-    val themeController: ThemeController
-    val networkFaultController: NetworkFaultController
-    val featureFlagProvider: FeatureFlagProvider
+  override val beersRepository: BeersRepository
+  override val coroutineDispatcher: CoroutineDispatcherProvider
+  val splitInstallManager: SplitInstallManager
+  val metroViewModelFactory: MetroViewModelFactory
+  val themeController: ThemeController
+  val networkFaultController: NetworkFaultController
+  val featureFlagProvider: FeatureFlagProvider
 }

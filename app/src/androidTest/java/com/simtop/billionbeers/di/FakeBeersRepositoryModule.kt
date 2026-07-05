@@ -12,9 +12,9 @@ import dev.zacsweers.metro.SingleIn
 @BindingContainer
 @ContributesTo(AppScope::class, replaces = [BeersRepositoryModule::class])
 object FakeBeersRepositoryModule {
-    val fakeBeersRepository = FakeBeersRepository()
+  val fakeBeersRepository = FakeBeersRepository()
 
-    @Provides
-    @SingleIn(AppScope::class)
-    fun provideBeersRepository(): BeersRepository = fakeBeersRepository
+  @Provides
+  @SingleIn(AppScope::class)
+  fun provideBeersRepository(): BeersRepository = fakeBeersRepository
 }

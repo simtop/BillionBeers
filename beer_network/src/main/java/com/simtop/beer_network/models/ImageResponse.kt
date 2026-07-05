@@ -1,8 +1,8 @@
 package com.simtop.beer_network.models
- 
+
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
- 
+
 @Serializable
 data class ImageResponse(
   @SerialName("id") val id: String,

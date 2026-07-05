@@ -61,8 +61,7 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
       Box(modifier = Modifier.wrapContentSize()) {
         BeerDetailImage(
           imageUrl = beer.imageUrl,
-          contentDescription =
-            stringResource(R.string.beer_list_item_image_description, beer.name),
+          contentDescription = stringResource(R.string.beer_list_item_image_description, beer.name),
           modifier = Modifier.matchParentSize(),
         )
 

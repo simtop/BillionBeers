@@ -29,8 +29,8 @@ sealed class PagingState<out Error : Any> {
  *
  * @param Key The type of the key used for paging (e.g., Int for page number).
  * @param Value The type of the data being paged.
- * @param Error The caller's typed error for a failed fetch, produced from the caught [Throwable]
- *   by [classifyError] - callers get to `when` over real failure modes instead of a raw message.
+ * @param Error The caller's typed error for a failed fetch, produced from the caught [Throwable] by
+ *   [classifyError] - callers get to `when` over real failure modes instead of a raw message.
  */
 class PagingMediator<Key : Any, Value : Any, Error : Any>(
   private val initialKey: Key,

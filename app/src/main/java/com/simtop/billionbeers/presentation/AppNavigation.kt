@@ -46,21 +46,23 @@ fun AppNavigation(deepLinkUri: Uri? = null, viewModel: AppNavigationViewModel = 
   NavDisplay(
     backStack = backStack,
     onBack = { backStack.removeLastOrNull() },
-    entryProvider = entryProvider {
-      entry<BeersList> {
-        BeersListScreen(onBeerClick = { beer -> backStack.add(BeerDetail(beer)) })
-      }
+    entryProvider =
+      entryProvider {
+        entry<BeersList> {
+          BeersListScreen(onBeerClick = { beer -> backStack.add(BeerDetail(beer)) })
+        }
 
-      entry<BeerDetail> { key ->
-                // The module is guaranteed installed (gated on the list screen before navigating).
-                // DynamicFeatureContent remembers the reflective lookup so it runs once, not per recomposition.
-                DynamicFeatureContent(
-                    key = key,
-                    className = FeatureConstants.BEER_DETAIL_PROVIDER_CLASS,
-                    onBack = { backStack.removeLastOrNull() },
-                  )
-      }
-    }
+        entry<BeerDetail> { key ->
+          // The module is guaranteed installed (gated on the list screen before navigating).
+          // DynamicFeatureContent remembers the reflective lookup so it runs once, not per
+          // recomposition.
+          DynamicFeatureContent(
+            key = key,
+            className = FeatureConstants.BEER_DETAIL_PROVIDER_CLASS,
+            onBack = { backStack.removeLastOrNull() },
+          )
+        }
+      },
   )
 
   pendingDeepLinkBeer?.let { beer ->
