@@ -26,3 +26,12 @@ gradle-user-home/
 /tmp/
 .temp_research/
 profile-out/
+
+# Claude Code local state. Vendored Android skills (github.com/android/skills)
+# are synced locally via `make update-android-skills`, not committed — only the
+# sync opt-out list and the project-authored billionbeers-android skill live in git.
+.claude/*
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/.android-skills-ignore
+!.claude/skills/billionbeers-android/

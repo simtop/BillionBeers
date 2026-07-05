@@ -1,0 +1,18 @@
+# Android skills to NOT install from github.com/android/skills.
+# One skill `name` (from its SKILL.md frontmatter) per line; # for comments.
+# scripts/update-android-skills.sh skips these and removes them if present,
+# so `make update-android-skills` won't resurrect skills you deliberately dropped.
+# Add a name here to opt out; delete a line to start pulling that skill again.
+
+agp-9-upgrade
+camera1-to-camerax
+display-glasses-with-jetpack-compose-glimmer
+migrate-xml-views-to-jetpack-compose
+wear-compose-m3
+# Not relevant to BillionBeers (pruned 2026-07-04 to keep skill-description
+# context overhead down):
+appfunctions
+engage-sdk-integration
+play-billing-library-version-upgrade
+styles
+verified-email
