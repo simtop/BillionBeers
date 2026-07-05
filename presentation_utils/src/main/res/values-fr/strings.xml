@@ -16,4 +16,6 @@
     <string name="beer_detail_back">Retour</string>
     <string name="beer_detail_description">Description</string>
     <string name="beer_detail_food_pairing">Accords mets et bières</string>
+    <string name="beer_detail_abv_label">ABV</string>
+    <string name="beer_detail_ibu_label">IBU</string>
 </resources>

@@ -16,4 +16,6 @@
     <string name="beer_detail_back">Back</string>
     <string name="beer_detail_description">Description</string>
     <string name="beer_detail_food_pairing">Food Pairing</string>
+    <string name="beer_detail_abv_label">ABV</string>
+    <string name="beer_detail_ibu_label">IBU</string>
 </resources>

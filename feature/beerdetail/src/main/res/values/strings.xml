@@ -1,9 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="beer_detail">Beer Detail</string>
-    <string name="abv_label">ABV</string>
-    <string name="ibu_label">IBU</string>
-    <string name="beer_image_description">Photo of %1$s</string>
-    <string name="availability_available">Available</string>
-    <string name="availability_out_of_stock">Out of stock</string>
 </resources>
