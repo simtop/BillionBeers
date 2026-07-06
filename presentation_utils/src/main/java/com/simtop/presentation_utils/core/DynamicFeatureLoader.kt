@@ -3,7 +3,6 @@ package com.simtop.presentation_utils.core
 import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,7 +10,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.annotation.StringRes
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -19,11 +20,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.retain.retain
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.google.android.play.core.splitinstall.model.SplitInstallErrorCode
 import com.simtop.billionbeers.core.designsystem.component.CatalogSettings
 import com.simtop.billionbeers.core.designsystem.component.DialogWithProgressBar
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
@@ -130,32 +131,51 @@ internal fun InstallFailedContent(
   onCancel: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
-  Column(
-    horizontalAlignment = Alignment.CenterHorizontally,
-    modifier =
-      modifier
-        .fillMaxWidth()
-        .background(Color.White, shape = RoundedCornerShape(8.dp))
-        .padding(16.dp),
+  Surface(
+    modifier = modifier.fillMaxWidth(),
+    shape = RoundedCornerShape(8.dp),
+    color = MaterialTheme.colorScheme.surface,
+    tonalElevation = 6.dp,
+    shadowElevation = 6.dp,
   ) {
-    Text(
-      text = stringResource(R.string.failed_to_install_feature),
-      style = MaterialTheme.typography.titleMedium,
-      color = Color.Black,
-    )
-    Text(
-      text = stringResource(R.string.install_error_code, errorCode),
-      style = MaterialTheme.typography.bodyMedium,
-      color = Color.Black,
-      modifier = Modifier.padding(top = 8.dp),
-    )
-    Row(modifier = Modifier.padding(top = 16.dp)) {
-      TextButton(onClick = onCancel) { Text(stringResource(R.string.install_cancel)) }
-      Spacer(modifier = Modifier.width(8.dp))
-      TextButton(onClick = onRetry) { Text(stringResource(R.string.retry)) }
+    Column(
+      horizontalAlignment = Alignment.CenterHorizontally,
+      modifier = Modifier.padding(16.dp),
+    ) {
+      Text(
+        text = stringResource(R.string.failed_to_install_feature),
+        style = MaterialTheme.typography.titleMedium,
+      )
+      Text(
+        text = stringResource(installErrorMessage(errorCode)),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 8.dp),
+      )
+      // Keep the raw code as a small, de-emphasised line so support can still diagnose unknown codes.
+      Text(
+        text = stringResource(R.string.install_error_code, errorCode),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 4.dp),
+      )
+      Row(modifier = Modifier.padding(top = 16.dp)) {
+        TextButton(onClick = onCancel) { Text(stringResource(R.string.install_cancel)) }
+        Spacer(modifier = Modifier.width(8.dp))
+        TextButton(onClick = onRetry) { Text(stringResource(R.string.retry)) }
+      }
     }
   }
 }
+
+/** Maps the common [SplitInstallErrorCode]s to a human message, falling back to a generic one. */
+@StringRes
+private fun installErrorMessage(errorCode: Int): Int =
+  when (errorCode) {
+    SplitInstallErrorCode.NETWORK_ERROR -> R.string.install_error_network
+    SplitInstallErrorCode.INSUFFICIENT_STORAGE -> R.string.install_error_storage
+    else -> R.string.install_error_generic
+  }
 
 @PreviewLightDark
 @Composable

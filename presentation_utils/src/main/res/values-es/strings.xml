@@ -10,6 +10,9 @@
     <string name="beer_list_item_image_description">Foto de %1$s</string>
     <string name="failed_to_install_feature">Error al instalar la función</string>
     <string name="install_error_code">Código de error: %1$d</string>
+    <string name="install_error_network">No se pudo descargar la función. Comprueba tu conexión e inténtalo de nuevo.</string>
+    <string name="install_error_storage">No hay suficiente almacenamiento. Libera espacio e inténtalo de nuevo.</string>
+    <string name="install_error_generic">Se produjo un error durante la instalación. Inténtalo de nuevo.</string>
     <string name="install_cancel">Cancelar</string>
     <string name="beer_available">Disponible</string>
     <string name="beer_out_of_stock">Agotado</string>

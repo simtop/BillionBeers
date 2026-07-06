@@ -10,6 +10,9 @@
     <string name="beer_list_item_image_description">Photo of %1$s</string>
     <string name="failed_to_install_feature">Failed to install feature</string>
     <string name="install_error_code">Error code: %1$d</string>
+    <string name="install_error_network">Couldn\'t download the feature. Check your connection and try again.</string>
+    <string name="install_error_storage">Not enough storage. Free up some space and try again.</string>
+    <string name="install_error_generic">Something went wrong while installing. Please try again.</string>
     <string name="install_cancel">Cancel</string>
     <string name="beer_available">Available</string>
     <string name="beer_out_of_stock">Out of stock</string>
