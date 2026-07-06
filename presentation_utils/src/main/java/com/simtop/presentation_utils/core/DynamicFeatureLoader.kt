@@ -3,6 +3,7 @@ package com.simtop.presentation_utils.core
 import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.annotation.StringRes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -138,10 +138,7 @@ internal fun InstallFailedContent(
     tonalElevation = 6.dp,
     shadowElevation = 6.dp,
   ) {
-    Column(
-      horizontalAlignment = Alignment.CenterHorizontally,
-      modifier = Modifier.padding(16.dp),
-    ) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(16.dp)) {
       Text(
         text = stringResource(R.string.failed_to_install_feature),
         style = MaterialTheme.typography.titleMedium,
@@ -152,7 +149,8 @@ internal fun InstallFailedContent(
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(top = 8.dp),
       )
-      // Keep the raw code as a small, de-emphasised line so support can still diagnose unknown codes.
+      // Keep the raw code as a small, de-emphasised line so support can still diagnose unknown
+      // codes.
       Text(
         text = stringResource(R.string.install_error_code, errorCode),
         style = MaterialTheme.typography.bodySmall,

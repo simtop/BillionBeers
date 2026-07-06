@@ -121,10 +121,7 @@ fun DialogContent(number: Float, text: String, modifier: Modifier = Modifier) {
     tonalElevation = 6.dp,
     shadowElevation = 6.dp,
   ) {
-    Column(
-      horizontalAlignment = Alignment.CenterHorizontally,
-      modifier = Modifier.padding(16.dp),
-    ) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(16.dp)) {
       Text(
         text = text,
         style = MaterialTheme.typography.bodyMedium,
