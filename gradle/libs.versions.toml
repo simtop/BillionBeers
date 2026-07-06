@@ -25,7 +25,7 @@ androidx-annotation = "1.10.0"
 androidx-lifecycle = "2.10.0"
 
 # Compose
-composeBom = "2026.04.01"
+composeBom = "2026.06.01"
 activityCompose = "1.13.0"
 
 # Networking
