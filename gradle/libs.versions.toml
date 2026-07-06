@@ -80,6 +80,7 @@ roomGradlePlugin = { module = "androidx.room:room-gradle-plugin", version.ref = 
 androidxComposeBom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 androidxActivityCompose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-foundation-android = { group = "androidx.compose.foundation", name = "foundation-android" }
+androidx-runtime-retain = { group = "androidx.compose.runtime", name = "runtime-retain" }
 androidx-material3-android = { group = "androidx.compose.material3", name = "material3-android" }
 androidx-ui-tooling-preview-android = { group = "androidx.compose.ui", name = "ui-tooling-preview-android" }
 androidx-runtime-livedata = { group = "androidx.compose.runtime", name = "runtime-livedata" }
