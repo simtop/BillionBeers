@@ -8,6 +8,11 @@ import kotlinx.coroutines.flow.Flow
 interface BeersLocalSource {
   fun getAllBeersFromDB(): Flow<List<BeerDbModel>>
 
+  /**
+   * Keyed upsert: new ids are inserted; existing ids get every column updated *except*
+   * `availability`, which is local-only (the API has no such field) and must survive refreshes. See
+   * [com.simtop.beer_database.database.BeersDao.insertAll].
+   */
   suspend fun insertAllToDB(beers: List<BeerDbModel>)
 
   suspend fun updateBeer(primaryKey: String, availability: Boolean)

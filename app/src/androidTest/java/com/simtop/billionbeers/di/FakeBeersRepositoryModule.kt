@@ -1,7 +1,9 @@
 package com.simtop.billionbeers.di
 
 import com.simtop.beer_data.di.BeersRepositoryModule
+import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
 import com.simtop.beerdomain.fakes.FakeBeersRepository
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.BindingContainer
@@ -17,4 +19,8 @@ object FakeBeersRepositoryModule {
   @Provides
   @SingleIn(AppScope::class)
   fun provideBeersRepository(): BeersRepository = fakeBeersRepository
+
+  @Provides
+  @SingleIn(AppScope::class)
+  fun provideBeersPagerFactory(): BeersPagerFactory = FakeBeersPagerFactory(fakeBeersRepository)
 }

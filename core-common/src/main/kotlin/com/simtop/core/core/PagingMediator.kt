@@ -5,121 +5,171 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-sealed class PagingState<out Error : Any> {
-  object Idle : PagingState<Nothing>()
+sealed class PagingState<out E : Any> {
+  data object Idle : PagingState<Nothing>()
 
-  object Loading : PagingState<Nothing>()
+  data object Loading : PagingState<Nothing>()
 
-  object LoadingNextPage : PagingState<Nothing>()
+  data object LoadingNextPage : PagingState<Nothing>()
 
-  object Success : PagingState<Nothing>()
+  data object Success : PagingState<Nothing>()
 
-  data class Error<out E : Any>(val error: E) : PagingState<E>()
+  /**
+   * A page failed to load. [isFirstPage] tells the UI which affordance fits: a full-screen error
+   * (nothing is on screen yet) vs. keeping the list and showing a snackbar/footer retry.
+   */
+  data class Error<out E : Any>(val error: E, val isFirstPage: Boolean) : PagingState<E>()
 
-  object EndOfPagination : PagingState<Nothing>()
+  data object EndOfPagination : PagingState<Nothing>()
 }
 
 /**
- * A generic mediator to handle paging from a remote source and optionally caching in a local
- * source.
+ * What a screen needs from a paginated source: the accumulated [data], the load [pagingState], and
+ * the two entry points. Consumers (ViewModels, fakes) depend on this, not on [PagingMediator], so
+ * tests can drive paging states directly with a hand-rolled fake.
+ *
+ * A pager instance holds per-screen state (current page, end-of-list), so it must be owned by the
+ * screen's ViewModel - never by an app-scoped singleton shared across screens.
+ */
+interface Pager<Value : Any, out E : Any> {
+  val data: Flow<List<Value>>
+  val pagingState: StateFlow<PagingState<E>>
+
+  /** Loads (or reloads, acting as refresh) the first page. Waits for any in-flight load. */
+  suspend fun loadFirstPage()
+
+  /** Loads the page after the last successfully stored one. No-op if a load is in flight. */
+  suspend fun loadNextPage()
+}
+
+/**
+ * Where fetched pages are written and where [Pager.data] reads from. Implementations own the write
+ * semantics, which is exactly where app-specific policy belongs:
+ * - [InMemoryPagingStorage] (network-only): [replaceAll] swaps the whole list, [append] grows it.
+ * - A database-backed SSOT storage can make [replaceAll] a keyed upsert that preserves local-only
+ *   columns (e.g. a user-edited flag the API doesn't know about) instead of a destructive
+ *   delete-and-reinsert.
+ */
+interface PagingStorage<Value : Any> {
+  val data: Flow<List<Value>>
+
+  /** The new first page, after a successful initial load or refresh. May be empty. */
+  suspend fun replaceAll(page: List<Value>)
+
+  /** A successfully fetched subsequent page. Never empty. */
+  suspend fun append(page: List<Value>)
+}
+
+/** Network-only storage: pages accumulate in memory and vanish with the pager. */
+class InMemoryPagingStorage<Value : Any> : PagingStorage<Value> {
+  private val pages = MutableStateFlow<List<Value>>(emptyList())
+
+  override val data: Flow<List<Value>> = pages.asStateFlow()
+
+  override suspend fun replaceAll(page: List<Value>) {
+    pages.value = page
+  }
+
+  override suspend fun append(page: List<Value>) {
+    pages.update { current -> current + page }
+  }
+}
+
+/**
+ * A small paging state machine over a remote source. Fetched pages are written to [storage]
+ * (defaulting to [InMemoryPagingStorage] for network-only paging; pass a database-backed
+ * [PagingStorage] for single-source-of-truth caching).
+ *
+ * Retry is free by construction: the page key only advances after a successful fetch-and-store, so
+ * after a [PagingState.Error] any entry point simply re-requests the failed page.
+ *
+ * [loadFirstPage] is also refresh: it resets the key and hands the new first page to
+ * [PagingStorage.replaceAll] - only *after* a successful fetch, so a failed refresh never touches
+ * stored data. Concurrent [loadNextPage] calls (e.g. scroll-spam) collapse into the single
+ * in-flight load.
+ *
+ * ```kotlin
+ * val pager: Pager<Beer, FetchBeersError> = PagingMediator(
+ *   initialKey = 1,
+ *   nextKey = { key, page -> if (page.size < PAGE_SIZE) null else key + 1 },
+ *   fetchRemote = { page -> api.getBeers(page) },
+ *   classifyError = { it.toFetchBeersError() },
+ *   storage = roomBackedStorage, // omit for in-memory paging
+ * )
+ * ```
  *
  * @param Key The type of the key used for paging (e.g., Int for page number).
  * @param Value The type of the data being paged.
- * @param Error The caller's typed error for a failed fetch, produced from the caught [Throwable] by
+ * @param E The caller's typed error for a failed load, produced from the caught [Throwable] by
  *   [classifyError] - callers get to `when` over real failure modes instead of a raw message.
  */
-class PagingMediator<Key : Any, Value : Any, Error : Any>(
+class PagingMediator<Key : Any, Value : Any, E : Any>(
   private val initialKey: Key,
   private val nextKey: (currentKey: Key, lastPage: List<Value>) -> Key?,
   private val fetchRemote: suspend (key: Key) -> List<Value>,
-  private val classifyError: (Throwable) -> Error,
-  private val saveLocal: (suspend (List<Value>) -> Unit)? = null,
-  private val fetchLocal: (() -> Flow<List<Value>>)? = null,
-) {
+  private val classifyError: (Throwable) -> E,
+  private val storage: PagingStorage<Value> = InMemoryPagingStorage(),
+) : Pager<Value, E> {
 
-  private val _pagingState = MutableStateFlow<PagingState<Error>>(PagingState.Idle)
-  val pagingState: StateFlow<PagingState<Error>> = _pagingState.asStateFlow()
+  private val _pagingState = MutableStateFlow<PagingState<E>>(PagingState.Idle)
+  override val pagingState: StateFlow<PagingState<E>> = _pagingState.asStateFlow()
+
+  override val data: Flow<List<Value>> = storage.data
 
   private val mutex = Mutex()
   private var currentKey: Key? = initialKey
   private var isLastPage = false
 
-  /**
-   * Returns the data stream. If [fetchLocal] is provided (SSOT), it returns the local flow. If
-   * [fetchLocal] is null (Network only), it returns a flow that emits results from [fetchRemote].
-   *
-   * Note: For Network only, this simple implementation might need a buffer or a way to accumulate
-   * results if we want to show a growing list. However, usually for Network only we might use a
-   * different approach or just rely on the UI to append. But to keep it consistent with SSOT, let's
-   * assume for Network Only we might want to expose a Flow that emits the *accumulated* list if we
-   * managed it here, OR just the pages.
-   *
-   * For this implementation, let's prioritize SSOT (DB as source).
-   */
-  val data: Flow<List<Value>> =
-    fetchLocal?.invoke()
-      ?: flow {
-        // Fallback for network-only if needed, or we could throw if not supported yet
-        // For now, let's assume we always use DB for this project as requested "Network + DB"
-        // But to support "Network Only", we would need an internal cache.
-      }
-
-  suspend fun loadFirstPage() {
+  override suspend fun loadFirstPage() {
     mutex.withLock {
-      reset()
-      loadPage(initialKey, isFirstLoad = true)
+      currentKey = initialKey
+      isLastPage = false
+      loadPage(initialKey, isFirstPage = true)
     }
   }
 
-  suspend fun loadNextPage() {
-    mutex.withLock {
-      if (isRequestInFlight() || isLastPage) {
-        return
-      }
-
-      currentKey?.let { key -> loadPage(key, isFirstLoad = false) }
+  override suspend fun loadNextPage() {
+    if (!mutex.tryLock()) return
+    try {
+      if (isLastPage) return
+      currentKey?.let { key -> loadPage(key, isFirstPage = false) }
+    } finally {
+      mutex.unlock()
     }
   }
 
   @Suppress("TooGenericExceptionCaught")
-  private suspend fun loadPage(key: Key, isFirstLoad: Boolean) {
+  private suspend fun loadPage(key: Key, isFirstPage: Boolean) {
     try {
-      _pagingState.value = if (isFirstLoad) PagingState.Loading else PagingState.LoadingNextPage
+      _pagingState.value = if (isFirstPage) PagingState.Loading else PagingState.LoadingNextPage
 
-      val remoteData = fetchRemote(key)
+      val page = fetchRemote(key)
+      if (isFirstPage) storage.replaceAll(page) else if (page.isNotEmpty()) storage.append(page)
 
-      if (remoteData.isEmpty()) {
-        isLastPage = true
-        _pagingState.value = PagingState.EndOfPagination
+      if (page.isEmpty()) {
+        endPagination()
         return
       }
 
-      saveLocal?.invoke(remoteData)
-
-      currentKey = nextKey(key, remoteData)
+      currentKey = nextKey(key, page)
       if (currentKey == null) {
-        isLastPage = true
-        _pagingState.value = PagingState.EndOfPagination
+        endPagination()
       } else {
         _pagingState.value = PagingState.Success
       }
     } catch (e: CancellationException) {
       throw e
     } catch (e: Exception) {
-      _pagingState.value = PagingState.Error(classifyError(e))
+      _pagingState.value = PagingState.Error(classifyError(e), isFirstPage)
     }
   }
 
-  private fun reset() {
-    currentKey = initialKey
-    isLastPage = false
-    _pagingState.value = PagingState.Idle
+  private fun endPagination() {
+    isLastPage = true
+    _pagingState.value = PagingState.EndOfPagination
   }
-
-  private fun isRequestInFlight(): Boolean =
-    _pagingState.value is PagingState.Loading || _pagingState.value is PagingState.LoadingNextPage
 }

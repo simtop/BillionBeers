@@ -75,5 +75,11 @@ entirely.
 - Any future paged screen (favorites, search) needs to either reuse `PagingMediator` or accept
   writing its own equivalent - there's no `RemoteMediator`-style reusable framework backing this,
   by design.
+- (Update, July 2026) `PagingMediator` now implements a small `Pager` interface and delegates
+  writes to a `PagingStorage` strategy - `InMemoryPagingStorage` for network-only paging, or a
+  DB-backed implementation for SSOT (the beers one upserts and never deletes, so the local-only
+  `availability` field survives pull-to-refresh). Screens get their own instance from a factory
+  (`BeersPagerFactory`), keeping paging state screen-scoped instead of living on the AppScope
+  repository (improvements.md §12.3).
 - Revisit if Paging3 ships a multiplatform target and a `PagingData`-free consumption API; until
   then this is the right trade for a KMP-bound clean-architecture codebase.

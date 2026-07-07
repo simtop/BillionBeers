@@ -1,7 +1,9 @@
 package com.simtop.billionbeers.devbeerslist.di
 
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
 import com.simtop.beerdomain.fakes.FakeBeersRepository
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesTo
@@ -13,7 +15,14 @@ interface DevBeersRepositoryModule {
 
   @Provides
   @SingleIn(AppScope::class)
-  fun provideBeersRepository(): BeersRepository = FakeBeersRepository(initialBeers = sampleBeers)
+  fun provideFakeBeersRepository(): FakeBeersRepository =
+    FakeBeersRepository(initialBeers = sampleBeers)
+
+  @Provides fun provideBeersRepository(fake: FakeBeersRepository): BeersRepository = fake
+
+  @Provides
+  fun provideBeersPagerFactory(fake: FakeBeersRepository): BeersPagerFactory =
+    FakeBeersPagerFactory(fake)
 }
 
 private val sampleBeers =

@@ -12,8 +12,7 @@ import org.junit.runner.RunWith
 // in-process result to assert a threshold against here. Metrics only exist in the JSON file this
 // writes to build/outputs/connected_android_test_additional_output/.../*-benchmarkData.json
 // after the run. scripts/check-benchmark-budget.sh (run via `make benchmark-check`) parses that
-// file and fails if a metric's median exceeds its configured budget - see docs/improvements.md
-// §13.11 for why this couldn't be a simpler in-test assertion.
+// file and fails if a metric's median exceeds its configured budget
 @RunWith(AndroidJUnit4::class)
 class StartupBenchmark {
     @get:Rule

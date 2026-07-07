@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.CoroutineDispatcherProvider
@@ -13,7 +14,6 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,7 +27,12 @@ import kotlinx.coroutines.launch
 class BeersListViewModel(
   private val coroutineDispatcher: CoroutineDispatcherProvider,
   private val beersRepository: BeersRepository,
+  beersPagerFactory: BeersPagerFactory,
 ) : ViewModel() {
+
+  // Created here (not injected as an instance) so paging state lives and dies with this screen;
+  // the app-scoped repository stays a stateless data accessor.
+  private val pager = beersPagerFactory.create()
 
   private val _beerListViewState =
     MutableStateFlow<CommonUiState<BeersListUiModel>>(CommonUiState.Loading)
@@ -87,56 +92,59 @@ class BeersListViewModel(
   init {
     observeBeers()
     observePaging()
+    loadFirstPageIfCacheIsEmpty()
   }
 
-  private var beersJob: Job? = null
+  private fun loadFirstPageIfCacheIsEmpty() {
+    viewModelScope.launch(coroutineDispatcher.io) {
+      if (beersRepository.countDBEntries() == 0) {
+        pager.loadFirstPage()
+      }
+    }
+  }
 
   private fun observeBeers() {
-    beersJob?.cancel()
-    beersJob =
-      beersRepository
-        .getBeersFromSingleSource()
-        .onEach { beers ->
-          if (beers.isEmpty()) {
-            // If DB is empty, we might be loading or empty state
-            // We rely on PagingState to tell us if we are loading
-          } else {
-            val currentState = _beerListViewState.value
-            // Preserve isLoadingNextPage flag when updating the list
-            val isLoadingNextPage =
-              if (currentState is CommonUiState.Success) {
-                currentState.data.isLoadingNextPage
-              } else {
-                false
-              }
-            _beerListViewState.value =
-              CommonUiState.Success(
-                BeersListUiModel(
-                  beers = beers,
-                  isLoadingNextPage = isLoadingNextPage,
-                  isRefreshing =
-                    if (currentState is CommonUiState.Success) currentState.data.isRefreshing
-                    else false,
-                )
+    pager.data
+      .onEach { beers ->
+        if (beers.isEmpty()) {
+          // If DB is empty, we might be loading or empty state
+          // We rely on PagingState to tell us if we are loading
+        } else {
+          val currentState = _beerListViewState.value
+          // Preserve isLoadingNextPage flag when updating the list
+          val isLoadingNextPage =
+            if (currentState is CommonUiState.Success) {
+              currentState.data.isLoadingNextPage
+            } else {
+              false
+            }
+          _beerListViewState.value =
+            CommonUiState.Success(
+              BeersListUiModel(
+                beers = beers,
+                isLoadingNextPage = isLoadingNextPage,
+                isRefreshing =
+                  if (currentState is CommonUiState.Success) currentState.data.isRefreshing
+                  else false,
               )
-          }
+            )
         }
-        .launchIn(viewModelScope)
+      }
+      .launchIn(viewModelScope)
   }
 
   private fun observePaging() {
-    beersRepository
-      .observePagingState()
+    pager.pagingState
       .onEach { pagingState -> pagingHandler.handlePagingState(pagingState) }
       .launchIn(viewModelScope)
   }
 
   fun onScrollToBottom() {
-    viewModelScope.launch(coroutineDispatcher.io) { beersRepository.loadNextPage() }
+    viewModelScope.launch(coroutineDispatcher.io) { pager.loadNextPage() }
   }
 
   fun refresh() {
-    viewModelScope.launch(coroutineDispatcher.io) { beersRepository.refresh() }
+    viewModelScope.launch(coroutineDispatcher.io) { pager.loadFirstPage() }
   }
 }
 
