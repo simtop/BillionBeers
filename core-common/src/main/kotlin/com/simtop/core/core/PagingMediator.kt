@@ -49,16 +49,28 @@ interface Pager<Value : Any, out E : Any> {
 /**
  * Where fetched pages are written and where [Pager.data] reads from. Implementations own the write
  * semantics, which is exactly where app-specific policy belongs:
- * - [InMemoryPagingStorage] (network-only): [replaceAll] swaps the whole list, [append] grows it.
- * - A database-backed SSOT storage can make [replaceAll] a keyed upsert that preserves local-only
- *   columns (e.g. a user-edited flag the API doesn't know about) instead of a destructive
- *   delete-and-reinsert.
+ * - [InMemoryPagingStorage] (network-only): [storeFirstPage] swaps the whole list, [append] grows
+ *   it.
+ * - A database-backed SSOT storage can make [storeFirstPage] a keyed upsert that preserves
+ *   local-only columns (e.g. a user-edited flag the API doesn't know about) instead of a
+ *   destructive delete-and-reinsert. Such a non-replacing storage must be paired with a
+ *   `nextKeyFromStorage` on its [PagingMediator], so the pager's position tracks what the storage
+ *   actually holds.
+ *
+ * One storage instance = one paged surface. [data], both writes, and any storage-derived key must
+ * all target the same scoped slice: a second, differently-filtered paged surface (search,
+ * favorites) needs its own storage whose queries are keyed by that surface's fetch parameters. Two
+ * surfaces must never page one unscoped shared table.
  */
 interface PagingStorage<Value : Any> {
   val data: Flow<List<Value>>
 
-  /** The new first page, after a successful initial load or refresh. May be empty. */
-  suspend fun replaceAll(page: List<Value>)
+  /**
+   * The new first page, after a successful initial load or refresh. May be empty. Implementations
+   * choose what "store" means - replace everything (in-memory) or merge/upsert into existing rows
+   * (DB SSOT); the mediator does not assume [data] equals this page afterwards.
+   */
+  suspend fun storeFirstPage(page: List<Value>)
 
   /** A successfully fetched subsequent page. Never empty. */
   suspend fun append(page: List<Value>)
@@ -70,7 +82,7 @@ class InMemoryPagingStorage<Value : Any> : PagingStorage<Value> {
 
   override val data: Flow<List<Value>> = pages.asStateFlow()
 
-  override suspend fun replaceAll(page: List<Value>) {
+  override suspend fun storeFirstPage(page: List<Value>) {
     pages.value = page
   }
 
@@ -88,8 +100,8 @@ class InMemoryPagingStorage<Value : Any> : PagingStorage<Value> {
  * after a [PagingState.Error] any entry point simply re-requests the failed page.
  *
  * [loadFirstPage] is also refresh: it resets the key and hands the new first page to
- * [PagingStorage.replaceAll] - only *after* a successful fetch, so a failed refresh never touches
- * stored data. Concurrent [loadNextPage] calls (e.g. scroll-spam) collapse into the single
+ * [PagingStorage.storeFirstPage] - only *after* a successful fetch, so a failed refresh never
+ * touches stored data. Concurrent [loadNextPage] calls (e.g. scroll-spam) collapse into the single
  * in-flight load.
  *
  * ```kotlin
@@ -106,10 +118,15 @@ class InMemoryPagingStorage<Value : Any> : PagingStorage<Value> {
  * @param Value The type of the data being paged.
  * @param E The caller's typed error for a failed load, produced from the caught [Throwable] by
  *   [classifyError] - callers get to `when` over real failure modes instead of a raw message.
- * @param resumeKey Where paging resumes when the pager starts over pre-existing [storage] data (a
- *   warm cache) and [loadNextPage] runs before any [loadFirstPage]. Without it the first "load
- *   more" would start over from [initialKey] and silently re-fetch every already-stored page.
- *   Ignored once [loadFirstPage] has run: refresh always restarts from [initialKey].
+ * @param nextKeyFromStorage Derives the key of the first page *not yet represented in [storage]*
+ *   from what storage currently holds (e.g. `rowCount / pageSize + 1`). Required whenever the
+ *   storage outlives the pager (a warm cache) or [PagingStorage.storeFirstPage] merges instead of
+ *   replacing. Consulted (a) on the first [loadNextPage] when no [loadFirstPage] has run, so "load
+ *   more" over pre-existing data doesn't silently re-fetch every stored page from [initialKey], and
+ *   (b) after every successful first-page store, so a refresh over a merging storage resumes after
+ *   everything stored rather than re-walking pages the storage kept. A refresh itself always
+ *   fetches [initialKey]. Without it the mediator assumes storage holds exactly the pages loaded
+ *   through it in this session.
  */
 class PagingMediator<Key : Any, Value : Any, E : Any>(
   private val initialKey: Key,
@@ -117,7 +134,7 @@ class PagingMediator<Key : Any, Value : Any, E : Any>(
   private val fetchRemote: suspend (key: Key) -> List<Value>,
   private val classifyError: (Throwable) -> E,
   private val storage: PagingStorage<Value> = InMemoryPagingStorage(),
-  private val resumeKey: (suspend () -> Key)? = null,
+  private val nextKeyFromStorage: (suspend () -> Key)? = null,
 ) : Pager<Value, E> {
 
   private val _pagingState = MutableStateFlow<PagingState<E>>(PagingState.Idle)
@@ -147,7 +164,7 @@ class PagingMediator<Key : Any, Value : Any, E : Any>(
       if (!isKeyInitialized) {
         currentKey =
           try {
-            resumeKey?.invoke() ?: initialKey
+            nextKeyFromStorage?.invoke() ?: initialKey
           } catch (e: CancellationException) {
             throw e
           } catch (e: Exception) {
@@ -168,14 +185,21 @@ class PagingMediator<Key : Any, Value : Any, E : Any>(
       _pagingState.value = if (isFirstPage) PagingState.Loading else PagingState.LoadingNextPage
 
       val page = fetchRemote(key)
-      if (isFirstPage) storage.replaceAll(page) else if (page.isNotEmpty()) storage.append(page)
+      if (isFirstPage) storage.storeFirstPage(page) else if (page.isNotEmpty()) storage.append(page)
 
       if (page.isEmpty()) {
         endPagination()
         return
       }
 
-      currentKey = nextKey(key, page)
+      // After a first-page store the storage - not the fetched page - is the authority on
+      // position: a merging storage may still hold pages beyond the one just fetched.
+      currentKey =
+        if (isFirstPage) {
+          nextKeyFromStorage?.invoke() ?: nextKey(key, page)
+        } else {
+          nextKey(key, page)
+        }
       if (currentKey == null) {
         endPagination()
       } else {

@@ -24,10 +24,13 @@ class BeersPagerFactoryImpl(private val repository: BeersRepository) : BeersPage
       fetchRemote = { page -> repository.getListOfBeerFromApi(page) },
       classifyError = { it.toFetchBeersError() },
       storage = BeersPagingStorage(repository),
-      // The Room cache outlives this pager (warm launch): without a resume key the first "load
-      // more" would restart at page 1 and re-fetch every cached page over the network before the
-      // list could grow. N fully cached pages mean the next unseen page is N+1.
-      resumeKey = { repository.countDBEntries() / BeersService.DEFAULT_ITEMS_PER_PAGE + FIRST_PAGE },
+      // The Room cache both outlives this pager (warm launch) and survives refresh (the storage
+      // upserts, never deletes). Either way the next unseen page comes after everything cached -
+      // N fully cached pages mean page N+1 - otherwise "load more" would silently re-fetch every
+      // cached page over the network before the list could grow.
+      nextKeyFromStorage = {
+        repository.countDBEntries() / BeersService.DEFAULT_ITEMS_PER_PAGE + FIRST_PAGE
+      },
     )
 
   private fun Throwable.toFetchBeersError(): FetchBeersError =
@@ -48,17 +51,25 @@ class BeersPagerFactoryImpl(private val repository: BeersRepository) : BeersPage
 }
 
 /**
- * Room-backed SSOT storage. Availability is a local-only field (the API doesn't have it), so every
- * write - refresh included - goes through the keyed upsert that updates all columns *except*
- * availability. Refresh deliberately never deletes rows: a delete-and-reinsert would reset every
- * locally edited availability back to the default. The accepted trade-off is that beers removed
- * server-side linger in the cache until the next reinstall/clear-data.
+ * Room-backed SSOT storage for the single full-catalog beers surface. Availability is a local-only
+ * field (the API doesn't have it), so every write - refresh included - goes through the keyed
+ * upsert that updates all columns *except* availability. Refresh deliberately never deletes rows: a
+ * delete-and-reinsert would reset every locally edited availability back to the default. The
+ * accepted trade-off is that beers removed server-side linger in the cache until the next
+ * reinstall/clear-data. Because [storeFirstPage] merges instead of replacing, the factory pairs
+ * this storage with a `nextKeyFromStorage` so the pager's position tracks the cache, not the
+ * session.
+ *
+ * Scoping: this storage owns the whole beers table only because the catalog list is the app's one
+ * paged surface. A second, differently-filtered paged surface (search, favorites) must get its own
+ * storage whose observe/write/count queries are keyed by that surface's parameters - it must not
+ * reuse this one, or the two screens' data and resume positions would bleed into each other.
  */
 private class BeersPagingStorage(private val repository: BeersRepository) : PagingStorage<Beer> {
 
   override val data: Flow<List<Beer>> = repository.observeBeers()
 
-  override suspend fun replaceAll(page: List<Beer>) = repository.insertAllToDB(page)
+  override suspend fun storeFirstPage(page: List<Beer>) = repository.insertAllToDB(page)
 
   override suspend fun append(page: List<Beer>) = repository.insertAllToDB(page)
 }

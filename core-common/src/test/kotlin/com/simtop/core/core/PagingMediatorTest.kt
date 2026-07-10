@@ -26,8 +26,8 @@ class PagingMediatorTest {
 
     override val data: Flow<List<String>> = stored
 
-    override suspend fun replaceAll(page: List<String>) {
-      events += "replaceAll"
+    override suspend fun storeFirstPage(page: List<String>) {
+      events += "storeFirstPage"
       if (failWrites) throw RuntimeException("write failed")
       stored.value = page
     }
@@ -230,18 +230,19 @@ class PagingMediatorTest {
   }
 
   @Test
-  fun `refresh hands the new first page to replaceAll only after a successful fetch`() = runTest {
-    val harness = Harness()
-    harness.mediator.loadFirstPage()
-    harness.mediator.loadNextPage()
-    assertEquals(listOf("item 1", "item 2"), harness.storage.stored.value)
-    harness.storage.events.clear()
+  fun `refresh hands the new first page to storeFirstPage only after a successful fetch`() =
+    runTest {
+      val harness = Harness()
+      harness.mediator.loadFirstPage()
+      harness.mediator.loadNextPage()
+      assertEquals(listOf("item 1", "item 2"), harness.storage.stored.value)
+      harness.storage.events.clear()
 
-    harness.mediator.loadFirstPage() // refresh
+      harness.mediator.loadFirstPage() // refresh
 
-    assertEquals(listOf("fetch 1", "replaceAll"), harness.storage.events)
-    assertEquals(listOf("item 1"), harness.storage.stored.value)
-  }
+      assertEquals(listOf("fetch 1", "storeFirstPage"), harness.storage.events)
+      assertEquals(listOf("item 1"), harness.storage.stored.value)
+    }
 
   @Test
   fun `failed refresh never touches storage`() = runTest {
@@ -279,8 +280,23 @@ class PagingMediatorTest {
     assertEquals(listOf("item 1"), harness.storage.stored.value)
   }
 
+  /** Non-replacing storage mirroring a DB upsert: every write merges instead of replacing. */
+  private class UpsertingStorage : PagingStorage<String> {
+    val stored = MutableStateFlow<List<String>>(emptyList())
+
+    override val data: Flow<List<String>> = stored
+
+    override suspend fun storeFirstPage(page: List<String>) = upsert(page)
+
+    override suspend fun append(page: List<String>) = upsert(page)
+
+    private fun upsert(page: List<String>) {
+      stored.update { current -> current + page.filterNot(current::contains) }
+    }
+  }
+
   @Test
-  fun `resumeKey seeds the first loadNextPage over a warm cache`() = runTest {
+  fun `nextKeyFromStorage seeds the first loadNextPage over a warm cache`() = runTest {
     val fetchedKeys = mutableListOf<Int>()
     val mediator =
       PagingMediator<Int, String, String>(
@@ -291,7 +307,7 @@ class PagingMediatorTest {
           listOf("item $key")
         },
         classifyError = { "unused" },
-        resumeKey = { 4 }, // e.g. three full pages already sit in storage
+        nextKeyFromStorage = { 4 }, // e.g. three full pages already sit in storage
       )
 
     mediator.loadNextPage()
@@ -301,7 +317,7 @@ class PagingMediatorTest {
   }
 
   @Test
-  fun `loadFirstPage ignores resumeKey - refresh always restarts at initialKey`() = runTest {
+  fun `refresh always fetches initialKey even with nextKeyFromStorage`() = runTest {
     val fetchedKeys = mutableListOf<Int>()
     val mediator =
       PagingMediator<Int, String, String>(
@@ -312,7 +328,7 @@ class PagingMediatorTest {
           listOf("item $key")
         },
         classifyError = { "unused" },
-        resumeKey = { 4 },
+        nextKeyFromStorage = { 2 }, // in-memory default storage: one page stored after first load
       )
 
     mediator.loadFirstPage()
@@ -322,7 +338,33 @@ class PagingMediatorTest {
   }
 
   @Test
-  fun `resumeKey failure emits Error and the next loadNextPage retries it`() = runTest {
+  fun `refresh over a non-replacing storage resumes load-more after everything stored`() = runTest {
+    val storage = UpsertingStorage()
+    val fetchedKeys = mutableListOf<Int>()
+    val mediator =
+      PagingMediator<Int, String, String>(
+        initialKey = 1,
+        nextKey = { current, _ -> current + 1 },
+        fetchRemote = { key ->
+          fetchedKeys += key
+          listOf("item $key")
+        },
+        classifyError = { "unused" },
+        storage = storage,
+        nextKeyFromStorage = { storage.stored.value.size + 1 }, // page size is 1 item
+      )
+    mediator.loadFirstPage()
+    mediator.loadNextPage() // pages 1 and 2 stored
+
+    mediator.loadFirstPage() // refresh: the upsert keeps both stored pages
+
+    mediator.loadNextPage() // must fetch page 3, not re-walk page 2
+    assertEquals(listOf(1, 2, 1, 3), fetchedKeys)
+    assertEquals(listOf("item 1", "item 2", "item 3"), storage.stored.value)
+  }
+
+  @Test
+  fun `nextKeyFromStorage failure emits Error and the next loadNextPage retries it`() = runTest {
     val fetchedKeys = mutableListOf<Int>()
     var failResume = true
     val mediator =
@@ -334,7 +376,7 @@ class PagingMediatorTest {
           listOf("item $key")
         },
         classifyError = { it.message ?: "unknown" },
-        resumeKey = {
+        nextKeyFromStorage = {
           if (failResume) throw RuntimeException("count failed")
           4
         },

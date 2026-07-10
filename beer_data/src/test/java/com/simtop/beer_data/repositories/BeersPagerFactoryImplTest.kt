@@ -89,6 +89,24 @@ class BeersPagerFactoryImplTest {
       expectThat(repository.countDBEntries()).isEqualTo(26)
     }
 
+  // Regression test: refresh upserts into the cache without deleting, so afterwards the cache -
+  // not the freshly fetched page - dictates where "load more" resumes.
+  @Test
+  fun `load more after a refresh resumes at the first uncached page`() =
+    runTest(testDispatcher) {
+      // One full page cached by a previous process; the server still returns the same page 1
+      repository.insertAllToDB((1..25).map { Beer.empty.copy(id = "$it") })
+      beersRemoteSource.setBeersResponse((1..25).map { apiItem(id = "$it") })
+      val pager = factory.create()
+
+      pager.loadFirstPage() // pull-to-refresh: upsert keeps all 25 rows
+      beersRemoteSource.setBeersResponse(listOf(apiItem(id = "26")))
+      pager.loadNextPage()
+
+      expectThat(beersRemoteSource.requestedPages.toList()).isEqualTo(listOf(1, 2))
+      expectThat(repository.countDBEntries()).isEqualTo(26)
+    }
+
   @Test
   fun `each create returns an independent pager`() =
     runTest(testDispatcher) {
