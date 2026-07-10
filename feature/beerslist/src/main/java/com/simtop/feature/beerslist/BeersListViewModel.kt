@@ -43,41 +43,40 @@ class BeersListViewModel(
     PagingHandler<CommonUiState<BeersListUiModel>, FetchBeersError>(_beerListViewState) {
       currentState,
       pagingState ->
-      if (currentState is CommonUiState.Success) {
-        val currentUiModel = currentState.data
-        when (pagingState) {
-          is PagingState.LoadingNextPage -> {
-            CommonUiState.Success(currentUiModel.copy(isLoadingNextPage = true))
+      val currentUiModel = (currentState as? CommonUiState.Success)?.data
+      when (pagingState) {
+        is PagingState.Loading ->
+          if (currentUiModel != null) {
+            // A list is already on screen, so this Loading is a refresh in progress.
+            CommonUiState.Success(currentUiModel.copy(isRefreshing = true))
+          } else {
+            CommonUiState.Loading
           }
-          is PagingState.Success -> {
+        is PagingState.LoadingNextPage ->
+          if (currentUiModel != null) {
+            CommonUiState.Success(currentUiModel.copy(isLoadingNextPage = true))
+          } else {
+            currentState
+          }
+        is PagingState.Success,
+        is PagingState.EndOfPagination ->
+          if (currentUiModel != null) {
             CommonUiState.Success(
               currentUiModel.copy(isLoadingNextPage = false, isRefreshing = false)
             )
+          } else {
+            currentState
           }
-          is PagingState.Error -> {
+        is PagingState.Error ->
+          if (currentUiModel != null) {
             // For pagination error, we might want to show a snackbar but keep the data
             CommonUiState.Success(
               currentUiModel.copy(isLoadingNextPage = false, isRefreshing = false)
             )
+          } else {
+            CommonUiState.Error(pagingState.error.toUiMessage())
           }
-          is PagingState.EndOfPagination -> {
-            CommonUiState.Success(
-              currentUiModel.copy(isLoadingNextPage = false, isRefreshing = false)
-            )
-          }
-          else -> currentState
-        }
-      } else {
-        when (pagingState) {
-          is PagingState.Loading ->
-            if (currentState is CommonUiState.Success) {
-              CommonUiState.Success(currentState.data.copy(isRefreshing = true))
-            } else {
-              CommonUiState.Loading
-            }
-          is PagingState.Error -> CommonUiState.Error(pagingState.error.toUiMessage())
-          else -> currentState
-        }
+        is PagingState.Idle -> currentState
       }
     }
 

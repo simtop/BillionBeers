@@ -280,6 +280,78 @@ class PagingMediatorTest {
   }
 
   @Test
+  fun `resumeKey seeds the first loadNextPage over a warm cache`() = runTest {
+    val fetchedKeys = mutableListOf<Int>()
+    val mediator =
+      PagingMediator<Int, String, String>(
+        initialKey = 1,
+        nextKey = { current, _ -> current + 1 },
+        fetchRemote = { key ->
+          fetchedKeys += key
+          listOf("item $key")
+        },
+        classifyError = { "unused" },
+        resumeKey = { 4 }, // e.g. three full pages already sit in storage
+      )
+
+    mediator.loadNextPage()
+    mediator.loadNextPage()
+
+    assertEquals(listOf(4, 5), fetchedKeys)
+  }
+
+  @Test
+  fun `loadFirstPage ignores resumeKey - refresh always restarts at initialKey`() = runTest {
+    val fetchedKeys = mutableListOf<Int>()
+    val mediator =
+      PagingMediator<Int, String, String>(
+        initialKey = 1,
+        nextKey = { current, _ -> current + 1 },
+        fetchRemote = { key ->
+          fetchedKeys += key
+          listOf("item $key")
+        },
+        classifyError = { "unused" },
+        resumeKey = { 4 },
+      )
+
+    mediator.loadFirstPage()
+    mediator.loadNextPage()
+
+    assertEquals(listOf(1, 2), fetchedKeys)
+  }
+
+  @Test
+  fun `resumeKey failure emits Error and the next loadNextPage retries it`() = runTest {
+    val fetchedKeys = mutableListOf<Int>()
+    var failResume = true
+    val mediator =
+      PagingMediator<Int, String, String>(
+        initialKey = 1,
+        nextKey = { current, _ -> current + 1 },
+        fetchRemote = { key ->
+          fetchedKeys += key
+          listOf("item $key")
+        },
+        classifyError = { it.message ?: "unknown" },
+        resumeKey = {
+          if (failResume) throw RuntimeException("count failed")
+          4
+        },
+      )
+
+    mediator.loadNextPage()
+
+    assertEquals(PagingState.Error("count failed", isFirstPage = false), mediator.pagingState.value)
+    assertEquals(emptyList<Int>(), fetchedKeys)
+
+    failResume = false
+    mediator.loadNextPage()
+
+    assertEquals(listOf(4), fetchedKeys)
+  }
+
+  @Test
   fun `default in-memory storage accumulates pages and refresh replaces them`() = runTest {
     var refreshed = false
     val mediator =

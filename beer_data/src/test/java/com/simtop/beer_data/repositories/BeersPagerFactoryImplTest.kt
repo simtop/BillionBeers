@@ -5,6 +5,7 @@ import com.simtop.beer_data.fakes.FakeBeersRemoteSource
 import com.simtop.beer_data.mappers.BeersMapper
 import com.simtop.beer_network.models.BeersApiResponseItem
 import com.simtop.beerdomain.domain.errors.FetchBeersError
+import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.LanguageProvider
 import com.simtop.core.core.NoOpLogger
@@ -69,6 +70,23 @@ class BeersPagerFactoryImplTest {
       pager.loadFirstPage()
 
       expectThat(repository.getAllBeersFromDB().map { it.id }).isEqualTo(listOf("1", "2"))
+    }
+
+  // Regression test: the Room cache outlives any pager, so a warm launch (cache already populated,
+  // no first-page load) must resume "load more" after the cached pages instead of silently
+  // re-fetching page 1 onwards over the network.
+  @Test
+  fun `load more over a warm cache resumes at the first uncached page`() =
+    runTest(testDispatcher) {
+      // One full page (25 beers) cached by a previous process
+      repository.insertAllToDB((1..25).map { Beer.empty.copy(id = "$it") })
+      beersRemoteSource.setBeersResponse(listOf(apiItem(id = "26")))
+      val pager = factory.create()
+
+      pager.loadNextPage()
+
+      expectThat(beersRemoteSource.requestedPages.toList()).isEqualTo(listOf(2))
+      expectThat(repository.countDBEntries()).isEqualTo(26)
     }
 
   @Test

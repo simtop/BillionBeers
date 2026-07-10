@@ -110,6 +110,33 @@ class BeersListViewModelTest {
       expectThat(fakeBeersPagerFactory.pager.loadFirstPageCallCount).isEqualTo(0)
     }
 
+  // Regression test: PagingState.Loading over an already-shown list is a refresh in progress, so
+  // the pull-to-refresh indicator must stay visible until the load resolves.
+  @Test
+  fun `refresh shows the refreshing indicator until the load completes`() =
+    runTest(testDispatcher) {
+      fakeBeersRepository.setBeers(listOf(Beer.empty.copy(id = "1")))
+      val viewModel = buildViewModel()
+      val pager = fakeBeersPagerFactory.pager
+
+      viewModel.beerListViewState.test {
+        expectThat(awaitItem()).isA<CommonUiState.Success<BeersListUiModel>>()
+
+        viewModel.refresh()
+        pager.setPagingState(PagingState.Loading)
+
+        val refreshing = awaitItem()
+        expectThat(refreshing).isA<CommonUiState.Success<BeersListUiModel>>()
+        expectThat((refreshing as CommonUiState.Success).data.isRefreshing).isTrue()
+
+        pager.setPagingState(PagingState.Success)
+
+        val done = awaitItem()
+        expectThat(done).isA<CommonUiState.Success<BeersListUiModel>>()
+        expectThat((done as CommonUiState.Success).data.isRefreshing).isFalse()
+      }
+    }
+
   @Test
   fun `refresh delegates to the pager's first page load`() =
     runTest(testDispatcher) {

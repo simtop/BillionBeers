@@ -10,6 +10,8 @@ class FakeBeersRemoteSource : BeersRemoteSource {
   private var shouldThrowError = false
   private var exceptionToThrow: Exception = Exception("Fake Remote Error")
 
+  val requestedPages = mutableListOf<Int>()
+
   fun setBeersResponse(beers: List<BeersApiResponseItem>) {
     beersResponse = beers
   }
@@ -23,6 +25,7 @@ class FakeBeersRemoteSource : BeersRemoteSource {
   }
 
   override suspend fun getListOfBeers(page: Int): List<BeersApiResponseItem> {
+    requestedPages += page
     if (shouldThrowError) {
       throw exceptionToThrow
     }

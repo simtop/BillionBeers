@@ -106,6 +106,10 @@ class InMemoryPagingStorage<Value : Any> : PagingStorage<Value> {
  * @param Value The type of the data being paged.
  * @param E The caller's typed error for a failed load, produced from the caught [Throwable] by
  *   [classifyError] - callers get to `when` over real failure modes instead of a raw message.
+ * @param resumeKey Where paging resumes when the pager starts over pre-existing [storage] data (a
+ *   warm cache) and [loadNextPage] runs before any [loadFirstPage]. Without it the first "load
+ *   more" would start over from [initialKey] and silently re-fetch every already-stored page.
+ *   Ignored once [loadFirstPage] has run: refresh always restarts from [initialKey].
  */
 class PagingMediator<Key : Any, Value : Any, E : Any>(
   private val initialKey: Key,
@@ -113,6 +117,7 @@ class PagingMediator<Key : Any, Value : Any, E : Any>(
   private val fetchRemote: suspend (key: Key) -> List<Value>,
   private val classifyError: (Throwable) -> E,
   private val storage: PagingStorage<Value> = InMemoryPagingStorage(),
+  private val resumeKey: (suspend () -> Key)? = null,
 ) : Pager<Value, E> {
 
   private val _pagingState = MutableStateFlow<PagingState<E>>(PagingState.Idle)
@@ -121,21 +126,36 @@ class PagingMediator<Key : Any, Value : Any, E : Any>(
   override val data: Flow<List<Value>> = storage.data
 
   private val mutex = Mutex()
-  private var currentKey: Key? = initialKey
+  private var currentKey: Key? = null
+  private var isKeyInitialized = false
   private var isLastPage = false
 
   override suspend fun loadFirstPage() {
     mutex.withLock {
       currentKey = initialKey
+      isKeyInitialized = true
       isLastPage = false
       loadPage(initialKey, isFirstPage = true)
     }
   }
 
+  @Suppress("TooGenericExceptionCaught")
   override suspend fun loadNextPage() {
     if (!mutex.tryLock()) return
     try {
       if (isLastPage) return
+      if (!isKeyInitialized) {
+        currentKey =
+          try {
+            resumeKey?.invoke() ?: initialKey
+          } catch (e: CancellationException) {
+            throw e
+          } catch (e: Exception) {
+            _pagingState.value = PagingState.Error(classifyError(e), isFirstPage = false)
+            return
+          }
+        isKeyInitialized = true
+      }
       currentKey?.let { key -> loadPage(key, isFirstPage = false) }
     } finally {
       mutex.unlock()

@@ -1,5 +1,6 @@
 package com.simtop.beer_data.repositories
 
+import com.simtop.beer_network.network.BeersService
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
@@ -23,6 +24,10 @@ class BeersPagerFactoryImpl(private val repository: BeersRepository) : BeersPage
       fetchRemote = { page -> repository.getListOfBeerFromApi(page) },
       classifyError = { it.toFetchBeersError() },
       storage = BeersPagingStorage(repository),
+      // The Room cache outlives this pager (warm launch): without a resume key the first "load
+      // more" would restart at page 1 and re-fetch every cached page over the network before the
+      // list could grow. N fully cached pages mean the next unseen page is N+1.
+      resumeKey = { repository.countDBEntries() / BeersService.DEFAULT_ITEMS_PER_PAGE + FIRST_PAGE },
     )
 
   private fun Throwable.toFetchBeersError(): FetchBeersError =
