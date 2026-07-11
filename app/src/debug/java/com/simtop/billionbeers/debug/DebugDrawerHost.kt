@@ -27,8 +27,8 @@ import kotlinx.coroutines.launch
 
 /**
  * Debug-build-only wrapper: a floating trigger opens a drawer with network fault injection, theme
- * override, feature flag overrides, and a deep link directory (docs/MASTER_PLAN.md Phase 3, roadmap
- * 4.1). Release builds get the no-op twin in app/src/release - same signature.
+ * override, feature flag overrides, and a deep link directory. Release builds get the no-op twin in
+ * app/src/release - same signature.
  *
  * The trigger is hidden by default and shown by long-pressing a screen's title (wired via
  * [LocalDebugDrawerToggle]), so it doesn't float over every screen all the time.

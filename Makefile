@@ -77,8 +77,18 @@ deep-clean: ## Stop daemon and deeply clean all gradle caches to fix corrupted s
 	$(GRADLE_RUNNER) clean
 
 # Testing
+# Pure-JVM modules have no testDebugUnitTest task, so they are invisible to the Android-flavored
+# test invocation and must be listed here explicitly (:konsist has its own target).
+JVM_TEST_MODULES := :core-common :testing-utils
+
 test: ## Run unit tests for the specified module (or all).
+ifeq ($(MODULE_TRIMMED),)
+	$(GRADLE_RUNNER) testDebugUnitTest $(addsuffix :test,$(JVM_TEST_MODULES)) --continue
+else ifneq ($(filter $(MODULE_TRIMMED),$(JVM_TEST_MODULES) :konsist),)
+	$(GRADLE_RUNNER) $(MODULE_TRIMMED):test --continue
+else
 	$(GRADLE_RUNNER) $(MODULE_PREFIX)testDebugUnitTest --continue
+endif
 
 konsist: ## Run Konsist architecture rules.
 	$(GRADLE_RUNNER) :konsist:test

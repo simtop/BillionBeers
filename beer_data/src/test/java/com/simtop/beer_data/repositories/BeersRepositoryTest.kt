@@ -34,71 +34,6 @@ class BeersRepositoryTest {
   }
 
   @Test
-  fun `getBeersFromSingleSource should load first page when DB is empty`() =
-    runTest(testDispatcher) {
-      // Arrange
-      val remoteBeer =
-        BeersApiResponseItem(
-          id = "1",
-          name = "Beer 1",
-          abv = 5.0,
-          ibu = 20.0,
-          imageId = "url",
-          translations = emptyList(),
-          foodPairing = emptyList(),
-        )
-      beersRemoteSource.setBeersResponse(listOf(remoteBeer))
-
-      // Act & Assert
-      beersRepository.getBeersFromSingleSource().test {
-        // PagingMediator triggers loadFirstPage -> fetchRemote -> saveLocal
-        // We expect the local source to be updated, which emits new value to flow
-
-        // Wait for the update
-        val updatedList = awaitItem()
-        expectThat(updatedList.size).isEqualTo(1)
-        expectThat(updatedList[0].id).isEqualTo("1")
-
-        // Verify Remote was called (implicitly by result)
-        // Verify Local was updated
-        expectThat(beersLocalSource.getCountFromDB()).isEqualTo(1)
-      }
-    }
-
-  @Test
-  fun `loadNextPage should trigger remote fetch and insert`() =
-    runTest(testDispatcher) {
-      // Arrange
-      // Pre-populate DB to simulate existing data
-      // Note: PagingMediator logic might be tricky here.
-      // If we just call loadNextPage, it uses currentKey.
-
-      val remoteBeer =
-        BeersApiResponseItem(
-          id = "2",
-          name = "Beer 2",
-          abv = 6.0,
-          ibu = 25.0,
-          imageId = "url",
-          translations = emptyList(),
-          foodPairing = emptyList(),
-        )
-      beersRemoteSource.setBeersResponse(listOf(remoteBeer))
-
-      // Act
-      beersRepository.loadNextPage()
-
-      // Assert
-      // Since we use UnconfinedTestDispatcher, the coroutine should execute immediately.
-      // loadNextPage -> fetchRemote -> saveLocal
-
-      // Check if data is in local source
-      val beers = beersLocalSource.getBeers()
-      expectThat(beers.size).isEqualTo(1)
-      expectThat(beers[0].id).isEqualTo("2")
-    }
-
-  @Test
   fun `getListOfBeerFromApi should call remote source`() =
     runTest(testDispatcher) {
       // Arrange
@@ -169,11 +104,11 @@ class BeersRepositoryTest {
     }
 
   @Test
-  fun `getAllBeersFromDB should return flow from local source`() =
+  fun `getAllBeersFromDB should return current local list`() =
     runTest(testDispatcher) {
       // Arrange
       val dbBeer =
-        com.simtop.beer_database.models.BeerDbModel(
+        BeerDbModel(
           id = "5",
           name = "Beer 5",
           tagline = "",
@@ -195,38 +130,16 @@ class BeersRepositoryTest {
     }
 
   @Test
-  fun `refresh should trigger loadFirstPage`() =
+  fun `observeBeers should emit local source updates`() =
     runTest(testDispatcher) {
-      // Arrange
-      val remoteBeer =
-        BeersApiResponseItem(
-          id = "6",
-          name = "Beer 6",
-          abv = 0.0,
-          ibu = 0.0,
-          imageId = "url",
-          translations = emptyList(),
-          foodPairing = emptyList(),
-        )
-      beersRemoteSource.setBeersResponse(listOf(remoteBeer))
+      beersRepository.observeBeers().test {
+        expectThat(awaitItem()).isEqualTo(emptyList())
 
-      // Act
-      beersRepository.refresh()
+        beersRepository.insertAllToDB(listOf(Beer.empty.copy(id = "6", name = "Beer 6")))
 
-      // Assert
-      val beers = beersLocalSource.getBeers()
-      expectThat(beers.size).isEqualTo(1)
-      expectThat(beers[0].id).isEqualTo("6")
-    }
-
-  @Test
-  fun `observePagingState should return paging state from mediator`() =
-    runTest(testDispatcher) {
-      // Act
-      val stateFlow = beersRepository.observePagingState()
-
-      // Assert
-      // Initial state should be Idle (from PagingMediator default)
-      expectThat(stateFlow.value).isEqualTo(com.simtop.core.core.PagingState.Idle)
+        val beers = awaitItem()
+        expectThat(beers.size).isEqualTo(1)
+        expectThat(beers[0].id).isEqualTo("6")
+      }
     }
 }

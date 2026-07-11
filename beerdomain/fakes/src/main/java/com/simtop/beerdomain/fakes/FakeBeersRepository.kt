@@ -1,32 +1,21 @@
 package com.simtop.beerdomain.fakes
 
-import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.Either
-import com.simtop.core.core.PagingState
-import kotlin.collections.plus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
-@Suppress("TooManyFunctions")
 class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersRepository {
 
   private val beersFlow = MutableStateFlow<List<Beer>>(initialBeers)
-  private val pagingStateFlow = MutableStateFlow<PagingState<FetchBeersError>>(PagingState.Idle)
 
   // Helper to inspect state
   fun getBeers(): List<Beer> = beersFlow.value
 
-  fun getPagingState(): PagingState<FetchBeersError> = pagingStateFlow.value
-
   fun setBeers(beers: List<Beer>) {
     beersFlow.value = beers
-  }
-
-  fun setPagingState(state: PagingState<FetchBeersError>) {
-    pagingStateFlow.value = state
   }
 
   private var exceptionToThrow: Exception? = null
@@ -39,6 +28,10 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersReposit
     return beersFlow.value.size
   }
 
+  override fun observeBeers(): Flow<List<Beer>> {
+    return beersFlow
+  }
+
   override suspend fun getAllBeersFromDB(): List<Beer> {
     return beersFlow.value
   }
@@ -47,8 +40,18 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersReposit
     return beersFlow.value.find { it.id == id }
   }
 
+  /** Mirrors the real DAO contract: keyed upsert that never touches the local-only availability. */
   override suspend fun insertAllToDB(beers: List<Beer>) {
-    beersFlow.value = beersFlow.value + beers
+    val current = beersFlow.value.toMutableList()
+    beers.forEach { newBeer ->
+      val index = current.indexOfFirst { it.id == newBeer.id }
+      if (index != -1) {
+        current[index] = newBeer.copy(availability = current[index].availability)
+      } else {
+        current.add(newBeer)
+      }
+    }
+    beersFlow.value = current
   }
 
   override suspend fun updateAvailability(beer: Beer): Either<UpdateAvailabilityError, Unit> {
@@ -67,22 +70,7 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersReposit
     return Either.Right(Unit)
   }
 
-  override fun getBeersFromSingleSource(): Flow<List<Beer>> {
-    return beersFlow
-  }
-
-  override fun observePagingState(): Flow<PagingState<FetchBeersError>> {
-    return pagingStateFlow
-  }
-
-  override suspend fun loadNextPage() {
-    pagingStateFlow.value = PagingState.LoadingNextPage
-    pagingStateFlow.value = PagingState.Success
-  }
-
   override suspend fun getListOfBeerFromApi(page: Int): List<Beer> {
     return emptyList()
   }
-
-  override suspend fun refresh() {}
 }

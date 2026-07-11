@@ -16,16 +16,13 @@ class FakeBeersLocalSource : BeersLocalSource {
     return beersFlow
   }
 
+  // Mirrors the real DAO's upsert: existing rows keep their local-only availability.
   override suspend fun insertAllToDB(beers: List<BeerDbModel>) {
-    // Simple append or replace logic?
-    // Repository usually replaces or appends.
-    // Let's assume append for simplicity or replace if ID matches?
-    // For now, let's just add them to the list for testing "insert happened"
     val current = beersFlow.value.toMutableList()
     beers.forEach { newBeer ->
       val index = current.indexOfFirst { it.id == newBeer.id }
       if (index != -1) {
-        current[index] = newBeer
+        current[index] = newBeer.copy(availability = current[index].availability)
       } else {
         current.add(newBeer)
       }

@@ -1,6 +1,8 @@
 package com.simtop.beer_data.di
 
+import com.simtop.beer_data.repositories.BeersPagerFactoryImpl
 import com.simtop.beer_data.repositories.BeersRepositoryImpl
+import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesTo
@@ -10,4 +12,7 @@ import dev.zacsweers.metro.Provides
 interface BeersRepositoryModule {
   @Provides
   fun provideBeersRepository(repository: BeersRepositoryImpl): BeersRepository = repository
+
+  @Provides
+  fun provideBeersPagerFactory(factory: BeersPagerFactoryImpl): BeersPagerFactory = factory
 }

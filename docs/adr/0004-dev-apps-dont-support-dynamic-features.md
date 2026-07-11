@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-MASTER_PLAN.md Phase 3 calls for `app-dev-<feature>` modules: standalone applications that
+Ffor `app-dev-<feature>` modules: standalone applications that
 compile only one feature module + fakes, for a seconds-scale build/install loop instead of the
 full `:app`. `app-dev-beerslist` (`:feature:beerslist`, a regular feature module) proved this out
 successfully. `scripts/new-dev-app.sh` and `.claude/skills/new-dev-app/SKILL.md` generalized the

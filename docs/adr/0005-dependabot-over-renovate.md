@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-`gradle/libs.versions.toml` has ~130 version/library entries (MASTER_PLAN.md Phase 3 calls for
+`gradle/libs.versions.toml` has ~130 version/library entries (for
 automated dependency updates here). Two real options exist: GitHub's native Dependabot, or the
 Mend Renovate GitHub App. Both handle Gradle version catalogs adequately as of this writing.
 
