@@ -6,6 +6,8 @@
 
 agp-9-upgrade
 camera1-to-camerax
+# camerax: upstream renamed camera1-to-camerax → camerax; BillionBeers has no camera usage
+camerax
 display-glasses-with-jetpack-compose-glimmer
 migrate-xml-views-to-jetpack-compose
 wear-compose-m3
@@ -16,3 +18,7 @@ engage-sdk-integration
 play-billing-library-version-upgrade
 styles
 verified-email
+# Merged into perfetto-trace-analysis (2026-07-07): its references/sql.md already
+# carries identical query guidance (idempotency, dur=-1, utid/upid, SPAN_JOIN,
+# GLOB, trace_processor execution protocol), so this standalone skill is redundant.
+perfetto-sql

@@ -97,14 +97,19 @@ the main app (no split-APK dance needed — just `installDebug`):
 "$ADB" logcat --pid=$("$ADB" shell pidof "$APP")             # app logs only
 ```
 
-### Screenshots — don't use `exec-out` on this setup
+### Screenshots — prefer the `android` CLI
 
-`"$ADB" exec-out screencap -p > file.png` looks like the standard one-liner, but
-on this emulator config it reliably produces a **corrupted (non-PNG) file** —
-the emulator prints `[Warning] Multiple displays were found, but no display id
-was specified...` and that text gets merged into the piped binary stream instead
-of staying separate. Use the two-step form instead, which was verified to work
-every time this session:
+The `android` CLI (see the `android-cli` skill) captures a clean PNG in one
+command — verified valid (`PNG image data, 1080x2400`) on this emulator:
+
+```bash
+android screen capture -o ./screen.png     # add --device=<serial> if >1 device
+```
+
+Do **not** use `"$ADB" exec-out screencap -p > file.png` here — on this emulator
+config the `[Warning] Multiple displays were found...` text gets merged into the
+piped binary stream, producing a corrupted (non-PNG) file. If the `android` CLI
+is unavailable, use the two-step adb form instead:
 
 ```bash
 "$ADB" shell screencap -p /sdcard/screen.png
@@ -112,16 +117,21 @@ every time this session:
 "$ADB" shell rm /sdcard/screen.png   # optional cleanup
 ```
 
-(`file ./screen.png` should report `PNG image data` — if it instead looks like
-text/JSON, the `exec-out` corruption above is what happened; re-pull with the
-two-step form.)
+(`file ./screen.png` should report `PNG image data`.)
 
 ### Finding tap coordinates for UI automation
 
 Don't eyeball coordinates from a screenshot — a displayed/preview image is
 usually scaled down from the real device resolution, and floating elements
-(FABs, drawers) are easy to misjudge. Dump the semantics tree and read exact
-`bounds="[x1,y1][x2,y2]"` for the node you want, then tap its center:
+(FABs, drawers) are easy to misjudge. Read exact element bounds/centers from the
+layout tree. Fastest is the `android` CLI, which emits structured JSON with a
+`center` for each node:
+
+```bash
+android layout --pretty > ./layout.json     # each node has "center":"[x,y]"
+```
+
+Fallback via adb (`bounds="[x1,y1][x2,y2]"`, tap its center):
 
 ```bash
 "$ADB" shell uiautomator dump /sdcard/window_dump.xml

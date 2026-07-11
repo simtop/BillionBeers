@@ -6,6 +6,13 @@
 # upstream skills are pruned. Locally-authored skills (anything NOT present in the
 # upstream repo, e.g. `billionbeers-android`) are always left untouched.
 #
+# Three ways to control a vendored skill:
+#   • .android-skills-ignore   — never install these names (opt out entirely).
+#   • .android-skill-pinned    — a file inside a vendored skill dir; the sync will
+#     NOT overwrite or prune that skill, so local edits to its SKILL.md/description
+#     survive. Trade-off: a pinned skill no longer tracks upstream updates. Delete
+#     the marker to resume tracking. Use this whenever you customize a vendored skill.
+#
 # Usage: scripts/update-android-skills.sh   (or: make update-android-skills)
 
 set -euo pipefail
@@ -16,6 +23,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SKILLS_DIR="$ROOT/.claude/skills"
 # Marker file dropped into each vendored skill so we know which dirs we own.
 MARKER=".android-skill-source"
+# Presence of this file in a skill dir means "locally customized — do not touch".
+PIN_MARKER=".android-skill-pinned"
 # Opt-out list: skill names (one per line, # comments) we never install.
 IGNORE_FILE="$SKILLS_DIR/.android-skills-ignore"
 
@@ -40,6 +49,8 @@ UPSTREAM_NAMES="$(find "$TMP/skills" -name SKILL.md -exec sed -n 's/^name:[[:spa
 for dir in "$SKILLS_DIR"/*/; do
   [ -e "$dir" ] || continue
   name="$(basename "$dir")"
+  # Never prune a pinned (locally customized) skill, even if dropped upstream.
+  [ -f "$dir$PIN_MARKER" ] && continue
   if [ -f "$dir$MARKER" ] && ! printf '%s\n' "$UPSTREAM_NAMES" | grep -qxF "$name"; then
     echo "  ✗ pruning removed-upstream skill: $name"
     rm -rf "$dir"
@@ -60,6 +71,11 @@ while IFS= read -r skillmd; do
   if is_ignored "$name"; then
     [ -e "$dest" ] && rm -rf "$dest"
     echo "  ⊘ ignored (in .android-skills-ignore): $name"
+    continue
+  fi
+  # Pinned: keep the local (customized) copy, don't overwrite with upstream.
+  if [ -f "$dest/$PIN_MARKER" ]; then
+    echo "  ⟳ pinned — kept local edits, not tracking upstream: $name"
     continue
   fi
   # Guard: never clobber a local (non-vendored) skill that shares the name.
