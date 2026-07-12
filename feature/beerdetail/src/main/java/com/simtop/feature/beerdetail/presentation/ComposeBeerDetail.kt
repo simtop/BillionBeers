@@ -53,10 +53,7 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
     if (ValueAnimator.getDurationScale() == 0f) 0 else AVAILABILITY_ANIMATION_DURATION_MS
 
   Scaffold(
-    contentWindowInsets = WindowInsets(BillionBeersTheme.spacing.default),
-    modifier =
-      Modifier.padding(bottom = BillionBeersTheme.spacing.medium)
-        .nestedScroll(scrollBehavior.nestedScrollConnection),
+    modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
     topBar = {
       Box(modifier = Modifier.wrapContentSize()) {
         BeerDetailImage(
