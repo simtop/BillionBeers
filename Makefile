@@ -13,7 +13,7 @@ UI_TEST_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,:app:)
 # Wrapper for Gradle to support build-brief (bb) or rtk if available
 GRADLE_RUNNER := $(shell if command -v bb >/dev/null 2>&1; then echo "bb ./gradlew"; elif command -v build-brief >/dev/null 2>&1; then echo "build-brief --gradle ./gradlew"; elif command -v rtk >/dev/null 2>&1; then echo "rtk ./gradlew"; else echo "./gradlew"; fi)
 
-.PHONY: help setup setup-ai-tools update-android-skills build install clean test konsist ui-test screenshot-record screenshot-verify screenshot-clean lint format check check-duplicates check-unused-deps benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark jacoco-report install-profiler install-diffuse new-feature-module new-dev-app
+.PHONY: help setup setup-ai-tools update-android-skills build bundle-release install clean test konsist ui-test screenshot-record screenshot-verify screenshot-clean lint format check check-duplicates check-unused-deps benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark jacoco-report install-profiler install-diffuse new-feature-module new-dev-app
 
 help: ## Show this help message.
 	@echo "\n📊 BillionBeers Makefile Help"
@@ -63,6 +63,14 @@ ifeq ($(MODULE_TRIMMED),)
 else
 	$(GRADLE_RUNNER) $(MODULE)installDebug
 endif
+
+bundle-release: ## Assemble the signed release App Bundle (.aab) for Play Store upload, incl. the beerdetail dynamic feature. Needs keystore.properties or STORE_FILE/STORE_PASSWORD/ALIAS/PASSWORD env vars.
+	@if [ ! -f keystore.properties ] && [ -z "$$STORE_FILE" ]; then \
+		echo "⚠️  No signing config found: create keystore.properties (STORE_FILE, STORE_PASSWORD, ALIAS, PASSWORD)"; \
+		echo "    or export those as environment variables. The .aab will be unsigned otherwise."; \
+	fi
+	$(GRADLE_RUNNER) :app:bundleRelease
+	@echo "📦 Release bundle (bundles the :feature:beerdetail on-demand module): app/build/outputs/bundle/release/app-release.aab"
 
 clean: ## Clean all build outputs.
 	$(GRADLE_RUNNER) clean
@@ -139,8 +147,8 @@ benchmark-check: ## Run macrobenchmarks and fail if results exceed the configure
 	if [ -z "$$JSON_FILE" ]; then echo "error: no benchmarkData.json found" >&2; exit 1; fi; \
 	./scripts/check-benchmark-budget.sh "$$JSON_FILE"
 
-generate-baseline: ## Generate Baseline Profiles for the app.
-	$(GRADLE_RUNNER) :benchmark:baselineprofile:generateBaselineProfile
+generate-baseline: ## Generate Baseline Profiles for the app (needs a booted device/emulator).
+	$(GRADLE_RUNNER) :app:generateBaselineProfile
 
 gradle-benchmark: ## Run Gradle Profiler with a specific scenario. Usage: make gradle-benchmark SCENARIO=clean_build
 	gradle-profiler --benchmark --scenario-file ./benchmark.scenarios $(SCENARIO)
