@@ -43,8 +43,15 @@ abstract class TestMockWebService {
     mockServer.shutdown()
   }
 
-  open fun mockHttpResponse(fileName: String, responseCode: Int) =
-    mockServer.enqueue(MockResponse().setResponseCode(responseCode).setBody(getJson(fileName)))
+  open fun mockHttpResponse(
+    fileName: String,
+    responseCode: Int,
+    headers: Map<String, String> = emptyMap(),
+  ) {
+    val response = MockResponse().setResponseCode(responseCode).setBody(getJson(fileName))
+    headers.forEach { (name, value) -> response.addHeader(name, value) }
+    mockServer.enqueue(response)
+  }
 
   private fun getJson(filename: String): String {
     val resourcesDirectory = File("src/test/resources/json/${filename}")
