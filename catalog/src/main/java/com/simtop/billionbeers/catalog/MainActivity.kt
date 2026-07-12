@@ -97,11 +97,10 @@ fun CatalogApp() {
       }
     },
   ) { padding ->
-    val filteredItems =
-      allItems.filter {
-        (it.tab == selectedTab || selectedTab.isEmpty()) &&
-          it.name.contains(searchQuery, ignoreCase = true)
-      }
+    val filteredItems = allItems.filter {
+      (it.tab == selectedTab || selectedTab.isEmpty()) &&
+        it.name.contains(searchQuery, ignoreCase = true)
+    }
 
     NavHost(
       navController = navController,
