@@ -50,12 +50,12 @@ class PagingMediatorTest {
     val mediator =
       PagingMediator<Int, String, String>(
         initialKey = 1,
-        nextKey = { current, _ -> current + 1 },
         fetchRemote = { key ->
           fetchedKeys += key
           storage.events += "fetch $key"
           if (key in failOn) throw RuntimeException("fetch $key failed")
-          pages(key)
+          val items = pages(key)
+          PageResult(items, nextKey = if (items.isEmpty()) null else key + 1)
         },
         classifyError = { it.message ?: "unknown" },
         storage = storage,
@@ -76,7 +76,7 @@ class PagingMediatorTest {
       harness.mediator.loadFirstPage()
 
       assertEquals(PagingState.Loading, awaitItem())
-      assertEquals(PagingState.Success, awaitItem())
+      assertEquals(PagingState.Success(), awaitItem())
     }
     assertEquals(listOf("item 1"), harness.storage.stored.value)
   }
@@ -87,12 +87,12 @@ class PagingMediatorTest {
     harness.mediator.loadFirstPage()
 
     harness.mediator.pagingState.test {
-      assertEquals(PagingState.Success, awaitItem())
+      assertEquals(PagingState.Success(), awaitItem())
 
       harness.mediator.loadNextPage()
 
       assertEquals(PagingState.LoadingNextPage, awaitItem())
-      assertEquals(PagingState.Success, awaitItem())
+      assertEquals(PagingState.Success(), awaitItem())
     }
     assertEquals(listOf("item 1", "item 2"), harness.storage.stored.value)
   }
@@ -157,8 +157,8 @@ class PagingMediatorTest {
     val mediator =
       PagingMediator<Int, String, String>(
         initialKey = 1,
-        nextKey = { _, lastPage -> if (lastPage.size < 2) null else 2 },
-        fetchRemote = { listOf("only item") }, // short page: fewer items than page size
+        // Short page with an explicit null nextKey: ends without a wasted empty-page fetch.
+        fetchRemote = { PageResult(listOf("only item"), nextKey = null) },
         classifyError = { "unused" },
         storage = storage,
       )
@@ -177,7 +177,7 @@ class PagingMediatorTest {
 
     harness.mediator.loadFirstPage()
 
-    assertEquals(PagingState.Success, harness.mediator.pagingState.value)
+    assertEquals(PagingState.Success(), harness.mediator.pagingState.value)
     assertEquals(listOf(1, 2, 1), harness.fetchedKeys)
   }
 
@@ -188,11 +188,10 @@ class PagingMediatorTest {
     val mediator =
       PagingMediator<Int, String, String>(
         initialKey = 1,
-        nextKey = { current, _ -> current + 1 },
         fetchRemote = {
           fetchCount++
           gate.await()
-          listOf("item")
+          PageResult(listOf("item"), nextKey = 2)
         },
         classifyError = { "unused" },
       )
@@ -206,7 +205,7 @@ class PagingMediatorTest {
     advanceUntilIdle()
 
     assertEquals(1, fetchCount)
-    assertEquals(PagingState.Success, mediator.pagingState.value)
+    assertEquals(PagingState.Success(), mediator.pagingState.value)
   }
 
   @Test
@@ -215,7 +214,6 @@ class PagingMediatorTest {
     val mediator =
       PagingMediator<Int, String, String>(
         initialKey = 1,
-        nextKey = { current, _ -> current + 1 },
         fetchRemote = { throw CancellationException("cancelled") },
         classifyError = {
           classified = true
@@ -301,10 +299,9 @@ class PagingMediatorTest {
     val mediator =
       PagingMediator<Int, String, String>(
         initialKey = 1,
-        nextKey = { current, _ -> current + 1 },
         fetchRemote = { key ->
           fetchedKeys += key
-          listOf("item $key")
+          PageResult(listOf("item $key"), nextKey = key + 1)
         },
         classifyError = { "unused" },
         nextKeyFromStorage = { 4 }, // e.g. three full pages already sit in storage
@@ -322,10 +319,9 @@ class PagingMediatorTest {
     val mediator =
       PagingMediator<Int, String, String>(
         initialKey = 1,
-        nextKey = { current, _ -> current + 1 },
         fetchRemote = { key ->
           fetchedKeys += key
-          listOf("item $key")
+          PageResult(listOf("item $key"), nextKey = key + 1)
         },
         classifyError = { "unused" },
         nextKeyFromStorage = { 2 }, // in-memory default storage: one page stored after first load
@@ -344,10 +340,9 @@ class PagingMediatorTest {
     val mediator =
       PagingMediator<Int, String, String>(
         initialKey = 1,
-        nextKey = { current, _ -> current + 1 },
         fetchRemote = { key ->
           fetchedKeys += key
-          listOf("item $key")
+          PageResult(listOf("item $key"), nextKey = key + 1)
         },
         classifyError = { "unused" },
         storage = storage,
@@ -370,10 +365,9 @@ class PagingMediatorTest {
     val mediator =
       PagingMediator<Int, String, String>(
         initialKey = 1,
-        nextKey = { current, _ -> current + 1 },
         fetchRemote = { key ->
           fetchedKeys += key
-          listOf("item $key")
+          PageResult(listOf("item $key"), nextKey = key + 1)
         },
         classifyError = { it.message ?: "unknown" },
         nextKeyFromStorage = {
@@ -399,8 +393,10 @@ class PagingMediatorTest {
     val mediator =
       PagingMediator<Int, String, String>(
         initialKey = 1,
-        nextKey = { current, _ -> current + 1 },
-        fetchRemote = { page -> if (refreshed) listOf("new $page") else listOf("item $page") },
+        fetchRemote = { page ->
+          val items = if (refreshed) listOf("new $page") else listOf("item $page")
+          PageResult(items, nextKey = page + 1)
+        },
         classifyError = { "unused" },
       )
 
@@ -425,13 +421,12 @@ class PagingMediatorTest {
     val mediator =
       PagingMediator<Int, String, String>(
         initialKey = 1,
-        nextKey = { current, _ -> current + 1 },
-        fetchRemote = {
+        fetchRemote = { page ->
           if (isFirstCall) {
             isFirstCall = false
-            listOf("stale")
+            PageResult(listOf("stale"), nextKey = page + 1)
           } else {
-            emptyList()
+            PageResult(emptyList(), nextKey = null)
           }
         },
         classifyError = { "unused" },

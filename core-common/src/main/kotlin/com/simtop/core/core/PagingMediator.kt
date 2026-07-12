@@ -16,7 +16,12 @@ sealed class PagingState<out E : Any> {
 
   data object LoadingNextPage : PagingState<Nothing>()
 
-  data object Success : PagingState<Nothing>()
+  /**
+   * A page loaded successfully. [totalCount] is the server-reported size of the whole result (from
+   * `X-Total-Count`), or null when the server didn't report it - the UI can render "N of
+   * [totalCount]".
+   */
+  data class Success(val totalCount: Int? = null) : PagingState<Nothing>()
 
   /**
    * A page failed to load. [isFirstPage] tells the UI which affordance fits: a full-screen error
@@ -26,6 +31,19 @@ sealed class PagingState<out E : Any> {
 
   data object EndOfPagination : PagingState<Nothing>()
 }
+
+/**
+ * One fetched page. The fetch owns key math now (it has the server headers): [nextKey] is the key
+ * of the page after this one, or null if this is the last page - letting the mediator end
+ * pagination *without* a wasted known-empty fetch. [totalCount] carries `X-Total-Count` through to
+ * [PagingState.Success]; both stay nullable so a header-less server falls back to the empty-page
+ * probe.
+ */
+data class PageResult<Key : Any, Value : Any>(
+  val items: List<Value>,
+  val nextKey: Key?,
+  val totalCount: Int? = null,
+)
 
 /**
  * What a screen needs from a paginated source: the accumulated [data], the load [pagingState], and
@@ -107,8 +125,10 @@ class InMemoryPagingStorage<Value : Any> : PagingStorage<Value> {
  * ```kotlin
  * val pager: Pager<Beer, FetchBeersError> = PagingMediator(
  *   initialKey = 1,
- *   nextKey = { key, page -> if (page.size < PAGE_SIZE) null else key + 1 },
- *   fetchRemote = { page -> api.getBeers(page) },
+ *   fetchRemote = { page ->
+ *     val res = api.getBeers(page) // items + X-Total-Count
+ *     PageResult(res.items, nextKey = if (page * PAGE_SIZE >= res.total) null else page + 1, res.total)
+ *   },
  *   classifyError = { it.toFetchBeersError() },
  *   storage = roomBackedStorage, // omit for in-memory paging
  * )
@@ -118,6 +138,8 @@ class InMemoryPagingStorage<Value : Any> : PagingStorage<Value> {
  * @param Value The type of the data being paged.
  * @param E The caller's typed error for a failed load, produced from the caught [Throwable] by
  *   [classifyError] - callers get to `when` over real failure modes instead of a raw message.
+ * @param fetchRemote Fetches a page and returns a [PageResult]: the items plus the caller-computed
+ *   [PageResult.nextKey] (null ends pagination with no extra fetch) and optional total count.
  * @param nextKeyFromStorage Derives the key of the first page *not yet represented in [storage]*
  *   from what storage currently holds (e.g. `rowCount / pageSize + 1`). Required whenever the
  *   storage outlives the pager (a warm cache) or [PagingStorage.storeFirstPage] merges instead of
@@ -130,8 +152,7 @@ class InMemoryPagingStorage<Value : Any> : PagingStorage<Value> {
  */
 class PagingMediator<Key : Any, Value : Any, E : Any>(
   private val initialKey: Key,
-  private val nextKey: (currentKey: Key, lastPage: List<Value>) -> Key?,
-  private val fetchRemote: suspend (key: Key) -> List<Value>,
+  private val fetchRemote: suspend (key: Key) -> PageResult<Key, Value>,
   private val classifyError: (Throwable) -> E,
   private val storage: PagingStorage<Value> = InMemoryPagingStorage(),
   private val nextKeyFromStorage: (suspend () -> Key)? = null,
@@ -184,10 +205,14 @@ class PagingMediator<Key : Any, Value : Any, E : Any>(
     try {
       _pagingState.value = if (isFirstPage) PagingState.Loading else PagingState.LoadingNextPage
 
-      val page = fetchRemote(key)
-      if (isFirstPage) storage.storeFirstPage(page) else if (page.isNotEmpty()) storage.append(page)
+      val result = fetchRemote(key)
+      val items = result.items
+      if (isFirstPage) storage.storeFirstPage(items)
+      else if (items.isNotEmpty()) storage.append(items)
 
-      if (page.isEmpty()) {
+      // Empty-page probe: the fallback end signal when the server reports no total (nextKey stays
+      // non-null) - preserves the pre-2.0 behaviour for a header-less backend.
+      if (items.isEmpty()) {
         endPagination()
         return
       }
@@ -195,15 +220,11 @@ class PagingMediator<Key : Any, Value : Any, E : Any>(
       // After a first-page store the storage - not the fetched page - is the authority on
       // position: a merging storage may still hold pages beyond the one just fetched.
       currentKey =
-        if (isFirstPage) {
-          nextKeyFromStorage?.invoke() ?: nextKey(key, page)
-        } else {
-          nextKey(key, page)
-        }
+        if (isFirstPage) nextKeyFromStorage?.invoke() ?: result.nextKey else result.nextKey
       if (currentKey == null) {
         endPagination()
       } else {
-        _pagingState.value = PagingState.Success
+        _pagingState.value = PagingState.Success(result.totalCount)
       }
     } catch (e: CancellationException) {
       throw e

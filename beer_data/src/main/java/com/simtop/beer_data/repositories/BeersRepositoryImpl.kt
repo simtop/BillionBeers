@@ -5,6 +5,7 @@ import com.simtop.beer_database.localsources.BeersLocalSource
 import com.simtop.beer_network.remotesources.BeersRemoteSource
 import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.beerdomain.domain.models.BeerPage
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.Either
 import dev.zacsweers.metro.AppScope
@@ -23,10 +24,13 @@ class BeersRepositoryImpl(
   private val beersMapper: BeersMapper,
 ) : BeersRepository {
 
-  override suspend fun getListOfBeerFromApi(page: Int): List<Beer> =
-    beersRemoteSource.getListOfBeers(page).items.map {
-      beersMapper.fromBeersApiResponseItemToBeer(it)
-    }
+  override suspend fun getBeersPageFromApi(page: Int): BeerPage {
+    val remotePage = beersRemoteSource.getListOfBeers(page)
+    return BeerPage(
+      items = remotePage.items.map { beersMapper.fromBeersApiResponseItemToBeer(it) },
+      totalCount = remotePage.totalCount,
+    )
+  }
 
   @Suppress("TooGenericExceptionCaught")
   override suspend fun updateAvailability(beer: Beer): Either<UpdateAvailabilityError, Unit> {

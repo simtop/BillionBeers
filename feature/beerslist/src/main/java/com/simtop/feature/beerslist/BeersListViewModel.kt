@@ -34,6 +34,10 @@ class BeersListViewModel(
   // the app-scoped repository stays a stateless data accessor.
   private val pager = beersPagerFactory.create()
 
+  // Last server-reported total (X-Total-Count). Lives here, not only in the UI model, so a beers
+  // emission that arrives before/after a Success can still render "N of total".
+  private var lastTotalCount: Int? = null
+
   private val _beerListViewState =
     MutableStateFlow<CommonUiState<BeersListUiModel>>(CommonUiState.Loading)
   val beerListViewState: StateFlow<CommonUiState<BeersListUiModel>> =
@@ -58,7 +62,18 @@ class BeersListViewModel(
           } else {
             currentState
           }
-        is PagingState.Success,
+        is PagingState.Success ->
+          if (currentUiModel != null) {
+            CommonUiState.Success(
+              currentUiModel.copy(
+                isLoadingNextPage = false,
+                isRefreshing = false,
+                totalCount = pagingState.totalCount ?: currentUiModel.totalCount,
+              )
+            )
+          } else {
+            currentState
+          }
         is PagingState.EndOfPagination ->
           if (currentUiModel != null) {
             CommonUiState.Success(
@@ -125,6 +140,7 @@ class BeersListViewModel(
                 isRefreshing =
                   if (currentState is CommonUiState.Success) currentState.data.isRefreshing
                   else false,
+                totalCount = lastTotalCount,
               )
             )
         }
@@ -134,7 +150,12 @@ class BeersListViewModel(
 
   private fun observePaging() {
     pager.pagingState
-      .onEach { pagingState -> pagingHandler.handlePagingState(pagingState) }
+      .onEach { pagingState ->
+        if (pagingState is PagingState.Success) {
+          pagingState.totalCount?.let { lastTotalCount = it }
+        }
+        pagingHandler.handlePagingState(pagingState)
+      }
       .launchIn(viewModelScope)
   }
 
@@ -151,4 +172,7 @@ data class BeersListUiModel(
   val beers: List<Beer> = emptyList(),
   val isLoadingNextPage: Boolean = false,
   val isRefreshing: Boolean = false,
+  // Server-reported catalog size (X-Total-Count); null until the server reports it. Renders "N of
+  // M".
+  val totalCount: Int? = null,
 )

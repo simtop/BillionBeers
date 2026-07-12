@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="billion_beers_list">"Lista de mil millones de cervezas"</string>
+    <string name="beers_count_of_total">%1$d de %2$d</string>
 </resources>
