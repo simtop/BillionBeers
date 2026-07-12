@@ -21,8 +21,9 @@ interface BeersRepository {
 
   /**
    * Keyed upsert: rows are inserted, or updated column-by-column if the id already exists.
-   * [Beer.availability] is local-only (the API has no such field), so an upsert of freshly fetched
-   * beers never overwrites a locally edited availability.
+   * [Beer.availability] is treated as local-only: the server does expose an `available` field, but
+   * it only *seeds* a row's initial value on first insert. An upsert of freshly fetched beers never
+   * overwrites the availability of an existing id, so a locally edited value stays authoritative.
    */
   suspend fun insertAllToDB(beers: List<Beer>)
 

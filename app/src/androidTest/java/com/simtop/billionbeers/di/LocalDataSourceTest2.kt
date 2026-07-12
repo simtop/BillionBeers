@@ -84,6 +84,24 @@ class LocalDataSourceTest {
       assertEquals(result[0].availability, false)
     }
   }
+
+  @Test
+  fun refreshSeedsAvailabilityOnFirstInsertButNeverOverwritesIt() {
+    runBlocking {
+      // First insert seeds availability from the (server-derived) fetched row.
+      val seeded = fakeDbBeerList[0].copy(availability = false)
+      localSource.insertAllToDB(listOf(seeded))
+      assertEquals(false, localSource.getAllBeersFromDB().first()[0].availability)
+
+      // A later refresh returns the same id flipped to available = true with a fresh name.
+      localSource.insertAllToDB(listOf(seeded.copy(availability = true, name = "Refreshed")))
+      val result = localSource.getAllBeersFromDB().first()
+
+      // Availability is authoritative locally and survives; the other columns still refresh.
+      assertEquals(false, result[0].availability)
+      assertEquals("Refreshed", result[0].name)
+    }
+  }
 }
 
 val fakeBeersApiResponseItem2 =

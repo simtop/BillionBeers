@@ -1,18 +1,21 @@
 package com.simtop.beer_data.fakes
 
 import com.simtop.beer_network.models.BeersApiResponseItem
+import com.simtop.beer_network.models.BeersPage
 import com.simtop.beer_network.remotesources.BeersRemoteSource
 
 class FakeBeersRemoteSource : BeersRemoteSource {
 
   private var beersResponse: List<BeersApiResponseItem> = emptyList()
+  private var totalCount: Int? = null
   private var shouldThrowError = false
   private var exceptionToThrow: Exception = Exception("Fake Remote Error")
 
   val requestedPages = mutableListOf<Int>()
 
-  fun setBeersResponse(beers: List<BeersApiResponseItem>) {
+  fun setBeersResponse(beers: List<BeersApiResponseItem>, totalCount: Int? = null) {
     beersResponse = beers
+    this.totalCount = totalCount
   }
 
   fun setShouldThrowError(
@@ -23,11 +26,11 @@ class FakeBeersRemoteSource : BeersRemoteSource {
     exceptionToThrow = exception
   }
 
-  override suspend fun getListOfBeers(page: Int): List<BeersApiResponseItem> {
+  override suspend fun getListOfBeers(page: Int): BeersPage {
     requestedPages += page
     if (shouldThrowError) {
       throw exceptionToThrow
     }
-    return beersResponse
+    return BeersPage(items = beersResponse, totalCount = totalCount)
   }
 }

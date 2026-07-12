@@ -31,6 +31,9 @@ constructor(private val languageProvider: LanguageProvider, private val logger: 
       abv = response?.abv ?: 0.0,
       ibu = response?.ibu ?: 0.0,
       foodPairing = response?.foodPairing ?: emptyList(),
+      // Seeds the row's initial availability on first insert only (the keyed upsert never rewrites
+      // availability for an existing id, so a user's later edit survives refresh).
+      availability = response?.available ?: true,
     )
   }
 

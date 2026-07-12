@@ -19,8 +19,9 @@ abstract class BeersDao {
   //    @Insert(onConflict = OnConflictStrategy.REPLACE)
   //    abstract suspend fun insertAll(beers: List<BeerDbModel>)
 
-  // More complex update to handle pull to refresh doesn't affect to availability field
-  // which doesn't come from the network
+  // Pull-to-refresh update that deliberately omits the availability column: the server's
+  // `available`
+  // only seeds a row on first insert, and a user's later edit is authoritative and must survive.
   @Query(
     """
         UPDATE beers

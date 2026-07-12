@@ -24,7 +24,9 @@ class BeersRepositoryImpl(
 ) : BeersRepository {
 
   override suspend fun getListOfBeerFromApi(page: Int): List<Beer> =
-    beersRemoteSource.getListOfBeers(page).map { beersMapper.fromBeersApiResponseItemToBeer(it) }
+    beersRemoteSource.getListOfBeers(page).items.map {
+      beersMapper.fromBeersApiResponseItemToBeer(it)
+    }
 
   @Suppress("TooGenericExceptionCaught")
   override suspend fun updateAvailability(beer: Beer): Either<UpdateAvailabilityError, Unit> {
