@@ -51,14 +51,14 @@ class BeersPagerFactoryImpl(private val repository: BeersRepository) : BeersPage
 }
 
 /**
- * Room-backed SSOT storage for the single full-catalog beers surface. Availability is a local-only
- * field (the API doesn't have it), so every write - refresh included - goes through the keyed
- * upsert that updates all columns *except* availability. Refresh deliberately never deletes rows: a
- * delete-and-reinsert would reset every locally edited availability back to the default. The
- * accepted trade-off is that beers removed server-side linger in the cache until the next
- * reinstall/clear-data. Because [storeFirstPage] merges instead of replacing, the factory pairs
- * this storage with a `nextKeyFromStorage` so the pager's position tracks the cache, not the
- * session.
+ * Room-backed SSOT storage for the single full-catalog beers surface. Availability is treated as a
+ * local-only field: the server's `available` only seeds a row on first insert, so every write -
+ * refresh included - goes through the keyed upsert that updates all columns *except* availability.
+ * Refresh deliberately never deletes rows: a delete-and-reinsert would reset every locally edited
+ * (or seeded) availability back to the default. The accepted trade-off is that beers removed
+ * server-side linger in the cache until the next reinstall/clear-data. Because [storeFirstPage]
+ * merges instead of replacing, the factory pairs this storage with a `nextKeyFromStorage` so the
+ * pager's position tracks the cache, not the session.
  *
  * Scoping: this storage owns the whole beers table only because the catalog list is the app's one
  * paged surface. A second, differently-filtered paged surface (search, favorites) must get its own

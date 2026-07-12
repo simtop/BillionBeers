@@ -10,6 +10,9 @@ data class BeersApiResponseItem(
   val abv: Double? = null,
   val ibu: Double? = null,
   val image: EmbeddedImage? = null,
+  // Only ever seeds a row's initial availability on first insert; the local edit stays
+  // authoritative.
+  val available: Boolean? = null,
   val translations: List<Translation>? = null,
   @SerialName("food_pairing") val foodPairing: List<String>? = null,
 )

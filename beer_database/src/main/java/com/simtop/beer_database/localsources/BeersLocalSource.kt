@@ -9,8 +9,9 @@ interface BeersLocalSource {
   fun getAllBeersFromDB(): Flow<List<BeerDbModel>>
 
   /**
-   * Keyed upsert: new ids are inserted; existing ids get every column updated *except*
-   * `availability`, which is local-only (the API has no such field) and must survive refreshes. See
+   * Keyed upsert: new ids are inserted (their `availability` seeded from the fetched row); existing
+   * ids get every column updated *except* `availability`, which is treated as local-only and must
+   * survive refreshes. The server's `available` field therefore only seeds first inserts. See
    * [com.simtop.beer_database.database.BeersDao.insertAll].
    */
   suspend fun insertAllToDB(beers: List<BeerDbModel>)

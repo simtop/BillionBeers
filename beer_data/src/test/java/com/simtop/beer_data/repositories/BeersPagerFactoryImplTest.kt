@@ -39,8 +39,9 @@ class BeersPagerFactoryImplTest {
     factory = BeersPagerFactoryImpl(repository)
   }
 
-  // Regression test: availability only exists locally (the API has no such field), so a
-  // pull-to-refresh re-delivering the same beers must not reset a locally edited availability.
+  // Regression test: availability is treated as local-only (the server value only seeds first
+  // insert), so a pull-to-refresh re-delivering the same beers must not reset a locally edited
+  // value.
   @Test
   fun `refresh keeps locally edited availability`() =
     runTest(testDispatcher) {

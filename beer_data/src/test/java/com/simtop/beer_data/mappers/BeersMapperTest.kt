@@ -138,6 +138,20 @@ class BeersMapperTest {
   }
 
   @Test
+  fun `fromBeersApiResponseItemToBeer seeds availability from the server available field`() {
+    val beer = mapper.fromBeersApiResponseItemToBeer(fullResponse().copy(available = false))
+
+    expectThat(beer.availability).isEqualTo(false)
+  }
+
+  @Test
+  fun `fromBeersApiResponseItemToBeer defaults availability to true when available is absent`() {
+    val beer = mapper.fromBeersApiResponseItemToBeer(fullResponse().copy(available = null))
+
+    expectThat(beer.availability).isEqualTo(true)
+  }
+
+  @Test
   fun `fromBeerToBeerDbModel converts a Beer into a BeerDbModel`() {
     val beer =
       Beer(
