@@ -9,10 +9,12 @@ data class BeersApiResponseItem(
   val name: String? = null,
   val abv: Double? = null,
   val ibu: Double? = null,
-  @SerialName("image_id") val imageId: String? = null,
+  val image: EmbeddedImage? = null,
   val translations: List<Translation>? = null,
   @SerialName("food_pairing") val foodPairing: List<String>? = null,
 )
+
+@Serializable data class EmbeddedImage(val url: String? = null)
 
 @Serializable
 data class Translation(val language: Language, val slogan: String?, val description: String?)

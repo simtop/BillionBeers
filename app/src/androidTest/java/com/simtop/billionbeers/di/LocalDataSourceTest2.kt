@@ -87,7 +87,14 @@ class LocalDataSourceTest {
 }
 
 val fakeBeersApiResponseItem2 =
-  BeersApiResponseItem("1", "Buzz", 4.5, 60.0, "", emptyList(), emptyList())
+  BeersApiResponseItem(
+    "1",
+    "Buzz",
+    4.5,
+    60.0,
+    translations = emptyList(),
+    foodPairing = emptyList(),
+  )
 
 val fakeBeerApiResponse2 = listOf(fakeBeersApiResponseItem2.copy())
 

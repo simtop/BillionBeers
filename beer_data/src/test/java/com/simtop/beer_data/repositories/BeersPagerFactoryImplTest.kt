@@ -151,7 +151,6 @@ class BeersPagerFactoryImplTest {
       name = name,
       abv = 5.0,
       ibu = 20.0,
-      imageId = "url",
       translations = emptyList(),
       foodPairing = emptyList(),
     )

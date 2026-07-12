@@ -7,8 +7,6 @@ import dev.zacsweers.metro.Inject
 
 interface BeersRemoteSource {
   suspend fun getListOfBeers(page: Int): List<BeersApiResponseItem>
-
-  suspend fun getImage(id: String): com.simtop.beer_network.models.ImageResponse
 }
 
 class BeersRemoteSourceImpl
@@ -21,9 +19,5 @@ constructor(private val service: BeersService, private val languageProvider: Lan
       page = page,
       languageCode = languageProvider.currentLanguageCode(),
     )
-  }
-
-  override suspend fun getImage(id: String): com.simtop.beer_network.models.ImageResponse {
-    return service.getImage(id)
   }
 }

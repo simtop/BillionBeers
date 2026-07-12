@@ -6,6 +6,7 @@ import com.simtop.beer_data.fakes.FakeBeersRemoteSource
 import com.simtop.beer_data.mappers.BeersMapper
 import com.simtop.beer_database.models.BeerDbModel
 import com.simtop.beer_network.models.BeersApiResponseItem
+import com.simtop.beer_network.models.EmbeddedImage
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.core.core.LanguageProvider
 import com.simtop.core.core.NoOpLogger
@@ -34,7 +35,7 @@ class BeersRepositoryTest {
   }
 
   @Test
-  fun `getListOfBeerFromApi should call remote source`() =
+  fun `getListOfBeerFromApi maps beers using the embedded image url without a second request`() =
     runTest(testDispatcher) {
       // Arrange
       val remoteBeer =
@@ -43,7 +44,7 @@ class BeersRepositoryTest {
           name = "Beer 3",
           abv = 0.0,
           ibu = 0.0,
-          imageId = "url",
+          image = EmbeddedImage("https://embedded.url/image.jpg"),
           translations = emptyList(),
           foodPairing = emptyList(),
         )
@@ -52,10 +53,11 @@ class BeersRepositoryTest {
       // Act
       val result = beersRepository.getListOfBeerFromApi(1)
 
-      // Assert
+      // Assert: the embedded url is used, and only the single list request was made.
       expectThat(result.size).isEqualTo(1)
       expectThat(result[0].id).isEqualTo("3")
-      expectThat(result[0].imageUrl).isEqualTo("https://fake.url/image.jpg")
+      expectThat(result[0].imageUrl).isEqualTo("https://embedded.url/image.jpg")
+      expectThat(beersRemoteSource.requestedPages.toList()).isEqualTo(listOf(1))
     }
 
   @Test

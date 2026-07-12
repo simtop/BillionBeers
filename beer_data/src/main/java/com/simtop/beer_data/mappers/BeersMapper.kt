@@ -18,8 +18,6 @@ constructor(private val languageProvider: LanguageProvider, private val logger: 
     val translation =
       response?.translations?.find { it.language.code == languageCode }
         ?: response?.translations?.find { it.language.code == BeersService.DEFAULT_LANGUAGE_CODE }
-    val imageUrl = response?.imageId?.let { "https://brewbuddy.dev/images/$it" }
-
     if (response?.id == null) logMissingField("id", response)
     if (response?.name == null) logMissingField("name", response)
     if (translation == null) logMissingField("translations (matching language)", response)
@@ -29,7 +27,7 @@ constructor(private val languageProvider: LanguageProvider, private val logger: 
       name = response?.name ?: "",
       tagline = translation?.slogan ?: "",
       description = translation?.description ?: "",
-      imageUrl = imageUrl ?: "",
+      imageUrl = response?.image?.url ?: "",
       abv = response?.abv ?: 0.0,
       ibu = response?.ibu ?: 0.0,
       foodPairing = response?.foodPairing ?: emptyList(),
