@@ -5,6 +5,8 @@ import androidx.benchmark.junit4.measureRepeated
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.simtop.beer_data.mappers.BeersMapper
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.core.core.DefaultLanguageProvider
+import com.simtop.core.core.NoOpLogger
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -13,6 +15,8 @@ import org.junit.runner.RunWith
 class BeersMapperBenchmark {
     @get:Rule
     val benchmarkRule = BenchmarkRule()
+
+    private val mapper = BeersMapper(DefaultLanguageProvider(), NoOpLogger())
 
     private val beer = Beer(
         id = "1",
@@ -28,7 +32,7 @@ class BeersMapperBenchmark {
     @Test
     fun benchmarkFromBeerToBeerDbModel() {
         benchmarkRule.measureRepeated {
-            BeersMapper.fromBeerToBeerDbModel(beer)
+            mapper.fromBeerToBeerDbModel(beer)
         }
     }
 }
