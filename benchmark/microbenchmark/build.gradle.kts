@@ -34,4 +34,6 @@ dependencies {
     "implementation"(project(":beerdomain:api"))
     "implementation"(project(":beer_database"))
     "implementation"(project(":beer_network"))
+    // BeersMapper's constructor takes LanguageProvider/Logger from core-common.
+    "implementation"(project(":core-common"))
 }
