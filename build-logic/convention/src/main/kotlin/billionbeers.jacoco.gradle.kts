@@ -12,6 +12,14 @@ configure<JacocoPluginExtension> {
     toolVersion = PROJECT_JACOCO_VERSION
 }
 
+// Coverage is owned by the variant-API report tasks below; the junit5 plugin's own jacoco
+// integration is redundant and calls the legacy libraryVariants API, which AGP 10 removes.
+pluginManager.withPlugin("de.mannodermaus.android-junit5") {
+    extensions.configure<de.mannodermaus.gradle.plugins.junit5.dsl.AndroidJUnitPlatformExtension>("junitPlatform") {
+        jacocoOptions { taskGenerationEnabled.set(false) }
+    }
+}
+
 tasks.withType<Test>().configureEach {
     extensions.configure<JacocoTaskExtension> {
         val jdkAndToolExcludes = listOf(
