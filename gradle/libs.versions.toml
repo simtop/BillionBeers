@@ -10,11 +10,11 @@ targetSdk = "36"
 
 # AndroidX
 androidx-navigation = "2.9.8"
-androidx-navigation3 = "1.1.2"
+androidx-navigation3 = "1.1.4"
 androidx-room = "2.8.4"
 androidx-test = "1.7.0"
 androidx-test-espresso = "3.7.0"
-androidx-test-uiautomator = "2.3.0"
+androidx-test-uiautomator = "2.4.0"
 androidx-tracing = "1.0.1"
 # 1.5.0-alpha01+ works with AGP 9's new DSL (no TestedExtension), so android.newDsl=false is not needed.
 androidx-benchmark = "1.5.0-alpha07"
@@ -22,9 +22,9 @@ androidx-benchmark = "1.5.0-alpha07"
 androidx-baseline-profile = "1.5.0-alpha07"
 androidx-appcompat = "1.7.1"
 androidx-constraintlayout = "2.2.1"
-androidx-core-ktx = "1.18.0"
+androidx-core-ktx = "1.19.0"
 androidx-annotation = "1.10.0"
-androidx-lifecycle = "2.10.0"
+androidx-lifecycle = "2.11.0"
 
 # Compose
 composeBom = "2026.06.01"
