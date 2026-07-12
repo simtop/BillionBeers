@@ -129,7 +129,11 @@ fun BeersListContent(
           Text(
             text = stringResource(R.string.billion_beers_list),
             // Long-press reveals the debug drawer's floating trigger - see LocalDebugDrawerToggle.
-            modifier = Modifier.combinedClickable(onClick = {}, onLongClick = toggleDebugDrawer),
+            // Only clickable when a debug host provides a toggle; release keeps a plain label.
+            modifier =
+              toggleDebugDrawer?.let { toggle ->
+                Modifier.combinedClickable(onClick = {}, onLongClick = toggle)
+              } ?: Modifier,
           )
         }
       )
