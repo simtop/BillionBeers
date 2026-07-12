@@ -6,10 +6,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -18,14 +24,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import coil3.compose.AsyncImage
+import coil3.compose.AsyncImagePainter
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.request.error
-import coil3.request.placeholder
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.catalog_annotations.CatalogComponent
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.component.noRippleClickable
+import com.simtop.billionbeers.core.designsystem.component.shimmerBrush
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.presentation_utils.R
 
@@ -124,23 +131,31 @@ fun ComposeBeersListItem(beer: Beer = Beer.empty, onClick: ((Beer) -> Unit)? = n
 @CatalogComponent(tab = "Utilities")
 @Composable
 fun BeerImage(imageUrl: String, contentDescription: String? = null) {
+  // Keeps the list item's skeleton shimmer alive on the tile until Coil resolves, so the image
+  // crossfades in from the shimmer instead of flashing a static placeholder first.
+  var isLoading by remember { mutableStateOf(true) }
+  val background = if (isLoading) shimmerBrush() else SolidColor(Color.LightGray.copy(alpha = 0.3f))
+
   Box(
     modifier =
       Modifier.size(BillionBeersTheme.spacing.extraHuge + BillionBeersTheme.spacing.medium)
         .clip(
           RoundedCornerShape(BillionBeersTheme.spacing.small + BillionBeersTheme.spacing.extraSmall)
         )
-        .background(Color.LightGray.copy(alpha = 0.3f))
+        .background(background)
   ) {
     AsyncImage(
       model =
         ImageRequest.Builder(LocalContext.current)
           .data(imageUrl)
           .crossfade(true)
-          .placeholder(R.drawable.blue_image)
           .error(R.drawable.blue_image)
           .build(),
       contentDescription = contentDescription,
+      // Bottle shots are tall and narrow; Fit shows the whole bottle inside the square tile
+      // (Crop would zoom into the label and cut the bottle off).
+      contentScale = ContentScale.Fit,
+      onState = { state -> isLoading = state is AsyncImagePainter.State.Loading },
       modifier = Modifier.matchParentSize(),
     )
   }
