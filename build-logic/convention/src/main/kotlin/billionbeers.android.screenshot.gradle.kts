@@ -109,24 +109,30 @@ val generatePaparazziTest = tasks.register("generatePaparazziTest") {
     }
 }
 
+// AGP 9 forbids passing Providers to AndroidSourceSet.srcDir (android.sourceset.disallowProvider),
+// so the generated dirs are registered as plain paths. Task dependencies are wired explicitly
+// below: KotlinCompile tasks source(generatePaparazziTest) and the unit-test KSP tasks dependsOn it.
+val generatedPaparazziTestDir = layout.buildDirectory.dir("generated/paparazzi-test/kotlin").get().asFile
+val generatedKspTestResourcesDir = layout.buildDirectory.dir("generated/ksp/debug/resources").get().asFile
+
 pluginManager.withPlugin("com.android.application") {
     extensions.configure<ApplicationExtension>() {
-        sourceSets.getByName("test").java.srcDir(generatePaparazziTest)
-        sourceSets.getByName("test").resources.srcDir(layout.buildDirectory.dir("generated/ksp/debug/resources"))
+        sourceSets.getByName("test").java.srcDir(generatedPaparazziTestDir)
+        sourceSets.getByName("test").resources.srcDir(generatedKspTestResourcesDir)
     }
 }
 
 pluginManager.withPlugin("com.android.library") {
     extensions.configure<LibraryExtension>(){
-        sourceSets.getByName("test").java.srcDir(generatePaparazziTest)
-        sourceSets.getByName("test").resources.srcDir(layout.buildDirectory.dir("generated/ksp/debug/resources"))
+        sourceSets.getByName("test").java.srcDir(generatedPaparazziTestDir)
+        sourceSets.getByName("test").resources.srcDir(generatedKspTestResourcesDir)
     }
 }
 
 pluginManager.withPlugin("com.android.dynamic-feature") {
     extensions.configure<DynamicFeatureExtension>(){
-        sourceSets.getByName("test").java.srcDir(generatePaparazziTest)
-        sourceSets.getByName("test").resources.srcDir(layout.buildDirectory.dir("generated/ksp/debug/resources"))
+        sourceSets.getByName("test").java.srcDir(generatedPaparazziTestDir)
+        sourceSets.getByName("test").resources.srcDir(generatedKspTestResourcesDir)
     }
 }
 
