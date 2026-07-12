@@ -1,8 +1,10 @@
 package com.simtop.billionbeers.catalog
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,6 +28,12 @@ import java.util.ServiceLoader
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+    enableEdgeToEdge()
+    // Lets the NavigationBar bottom bar draw its own color to the screen edge instead of the
+    // system adding a translucent contrast scrim behind 3-button navigation.
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+      window.isNavigationBarContrastEnforced = false
+    }
     setContent { BillionBeersTheme { CatalogApp() } }
   }
 }
@@ -98,7 +106,9 @@ fun CatalogApp() {
     NavHost(
       navController = navController,
       startDestination = "list",
-      modifier = Modifier.padding(padding),
+      // consumeWindowInsets stops the demo route's own TopAppBar from re-applying the status bar
+      // inset that the Scaffold padding already covers.
+      modifier = Modifier.padding(padding).consumeWindowInsets(padding),
     ) {
       composable("list") {
         LazyColumn(modifier = Modifier.fillMaxSize()) {
