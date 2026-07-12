@@ -2,6 +2,7 @@ package com.simtop.beerdomain.fakes
 
 import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.beerdomain.domain.models.BeerPage
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.Either
 import kotlinx.coroutines.flow.Flow
@@ -70,7 +71,9 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersReposit
     return Either.Right(Unit)
   }
 
-  override suspend fun getListOfBeerFromApi(page: Int): List<Beer> {
-    return emptyList()
+  var apiPage: BeerPage = BeerPage(emptyList(), null)
+
+  override suspend fun getBeersPageFromApi(page: Int): BeerPage {
+    return apiPage
   }
 }

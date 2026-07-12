@@ -35,7 +35,7 @@ class BeersRepositoryTest {
   }
 
   @Test
-  fun `getListOfBeerFromApi maps beers using the embedded image url without a second request`() =
+  fun `getBeersPageFromApi maps beers with the embedded image url and carries the total count`() =
     runTest(testDispatcher) {
       // Arrange
       val remoteBeer =
@@ -48,15 +48,16 @@ class BeersRepositoryTest {
           translations = emptyList(),
           foodPairing = emptyList(),
         )
-      beersRemoteSource.setBeersResponse(listOf(remoteBeer))
+      beersRemoteSource.setBeersResponse(listOf(remoteBeer), totalCount = 206)
 
       // Act
-      val result = beersRepository.getListOfBeerFromApi(1)
+      val result = beersRepository.getBeersPageFromApi(1)
 
-      // Assert: the embedded url is used, and only the single list request was made.
-      expectThat(result.size).isEqualTo(1)
-      expectThat(result[0].id).isEqualTo("3")
-      expectThat(result[0].imageUrl).isEqualTo("https://embedded.url/image.jpg")
+      // Assert: the embedded url is used, the total count flows through, one request only.
+      expectThat(result.items.size).isEqualTo(1)
+      expectThat(result.items[0].id).isEqualTo("3")
+      expectThat(result.items[0].imageUrl).isEqualTo("https://embedded.url/image.jpg")
+      expectThat(result.totalCount).isEqualTo(206)
       expectThat(beersRemoteSource.requestedPages.toList()).isEqualTo(listOf(1))
     }
 

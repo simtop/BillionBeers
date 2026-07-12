@@ -55,7 +55,7 @@ class BeersPagerFactoryImplTest {
       pager.loadFirstPage() // pull-to-refresh: same server payload, no availability in it
 
       expectThat(repository.getBeerById("1")?.availability).isEqualTo(false)
-      expectThat(pager.pagingState.value).isEqualTo(PagingState.Success)
+      expectThat(pager.pagingState.value).isEqualTo(PagingState.Success())
     }
 
   @Test
@@ -117,7 +117,7 @@ class BeersPagerFactoryImplTest {
 
       first.loadFirstPage()
 
-      expectThat(first.pagingState.value).isEqualTo(PagingState.Success)
+      expectThat(first.pagingState.value).isEqualTo(PagingState.Success())
       expectThat(second.pagingState.value).isEqualTo(PagingState.Idle)
     }
 

@@ -5,6 +5,7 @@ import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.core.core.PageResult
 import com.simtop.core.core.Pager
 import com.simtop.core.core.PagingMediator
 import com.simtop.core.core.PagingStorage
@@ -20,8 +21,16 @@ class BeersPagerFactoryImpl(private val repository: BeersRepository) : BeersPage
   override fun create(): Pager<Beer, FetchBeersError> =
     PagingMediator(
       initialKey = FIRST_PAGE,
-      nextKey = { currentKey, _ -> currentKey + 1 },
-      fetchRemote = { page -> repository.getListOfBeerFromApi(page) },
+      fetchRemote = { page ->
+        val beerPage = repository.getBeersPageFromApi(page)
+        // With a known total we can end exactly (no wasted empty fetch); without it, keep advancing
+        // and let the mediator's empty-page probe find the end.
+        val total = beerPage.totalCount
+        val nextKey =
+          if (total != null && page * BeersService.DEFAULT_ITEMS_PER_PAGE >= total) null
+          else page + 1
+        PageResult(items = beerPage.items, nextKey = nextKey, totalCount = total)
+      },
       classifyError = { it.toFetchBeersError() },
       storage = BeersPagingStorage(repository),
       // The Room cache both outlives this pager (warm launch) and survives refresh (the storage

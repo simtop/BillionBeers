@@ -83,12 +83,29 @@ class BeersListViewModelTest {
         expectThat((loadingNextPageState as CommonUiState.Success).data.isLoadingNextPage).isTrue()
 
         // Simulate PagingState Success
-        pager.setPagingState(PagingState.Success)
+        pager.setPagingState(PagingState.Success())
 
         // Expect update with isLoadingNextPage = false
         val finalState = awaitItem()
         expectThat(finalState).isA<CommonUiState.Success<BeersListUiModel>>()
         expectThat((finalState as CommonUiState.Success).data.isLoadingNextPage).isFalse()
+      }
+    }
+
+  @Test
+  fun `totalCount reported by Success is exposed on the ui model for N of M`() =
+    runTest(testDispatcher) {
+      fakeBeersRepository.setBeers(listOf(Beer.empty.copy(id = "1")))
+      val viewModel = buildViewModel()
+      val pager = fakeBeersPagerFactory.pager
+
+      viewModel.beerListViewState.test {
+        expectThat(awaitItem()).isA<CommonUiState.Success<BeersListUiModel>>()
+
+        pager.setPagingState(PagingState.Success(totalCount = 206))
+
+        val state = awaitItem()
+        expectThat((state as CommonUiState.Success).data.totalCount).isEqualTo(206)
       }
     }
 
@@ -129,7 +146,7 @@ class BeersListViewModelTest {
         expectThat(refreshing).isA<CommonUiState.Success<BeersListUiModel>>()
         expectThat((refreshing as CommonUiState.Success).data.isRefreshing).isTrue()
 
-        pager.setPagingState(PagingState.Success)
+        pager.setPagingState(PagingState.Success())
 
         val done = awaitItem()
         expectThat(done).isA<CommonUiState.Success<BeersListUiModel>>()

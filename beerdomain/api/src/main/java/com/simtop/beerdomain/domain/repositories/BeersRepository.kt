@@ -2,6 +2,7 @@ package com.simtop.beerdomain.domain.repositories
 
 import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.beerdomain.domain.models.BeerPage
 import com.simtop.core.core.Either
 import kotlinx.coroutines.flow.Flow
 
@@ -29,5 +30,6 @@ interface BeersRepository {
 
   suspend fun updateAvailability(beer: Beer): Either<UpdateAvailabilityError, Unit>
 
-  suspend fun getListOfBeerFromApi(page: Int): List<Beer>
+  /** Fetches one page from the API, carrying the server total for end-detection and "N of M" UI. */
+  suspend fun getBeersPageFromApi(page: Int): BeerPage
 }

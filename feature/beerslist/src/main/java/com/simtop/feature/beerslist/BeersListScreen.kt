@@ -126,15 +126,25 @@ fun BeersListContent(
     topBar = {
       TopAppBar(
         title = {
-          Text(
-            text = stringResource(R.string.billion_beers_list),
-            // Long-press reveals the debug drawer's floating trigger - see LocalDebugDrawerToggle.
-            // Only clickable when a debug host provides a toggle; release keeps a plain label.
-            modifier =
-              toggleDebugDrawer?.let { toggle ->
-                Modifier.combinedClickable(onClick = {}, onLongClick = toggle)
-              } ?: Modifier,
-          )
+          // The label is clickable to reveal the debug drawer; the count line only appears once the
+          // server total is known, so states without a total render exactly as before.
+          val titleModifier =
+            toggleDebugDrawer?.let { toggle ->
+              Modifier.combinedClickable(onClick = {}, onLongClick = toggle)
+            } ?: Modifier
+          val loaded = (viewState as? CommonUiState.Success)?.data
+          val total = loaded?.totalCount
+          if (total != null) {
+            Column(modifier = titleModifier) {
+              Text(text = stringResource(R.string.billion_beers_list))
+              Text(
+                text = stringResource(R.string.beers_count_of_total, loaded.beers.size, total),
+                style = MaterialTheme.typography.labelMedium,
+              )
+            }
+          } else {
+            Text(text = stringResource(R.string.billion_beers_list), modifier = titleModifier)
+          }
         }
       )
     },
