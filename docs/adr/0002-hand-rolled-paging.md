@@ -86,5 +86,14 @@ entirely.
   with the data. Note the scoping boundary: the pager *position* is screen-scoped, but the beers
   *data* is one shared table - fine for a single paged surface; a second filtered surface
   (search, favorites) needs its own storage with parameter-scoped queries.
+- (Update, July 2026) The repository's per-beer image fetch (a `GET
+  /images/{id}` for every item in a page — an N+1, one list request plus 25 image requests) is
+  removed. A live audit showed the `brewbuddy.dev` list response embeds `image.url` directly
+  (verified non-null across all 206 beers), so `BeersApiResponseItem` gained an embedded `image`
+  and `BeersMapper` reads that URL; `image_id`, `enrichBeerWithImage`, and the whole
+  `getImage`/`ImageResponse` chain are deleted. A page now
+  costs one request instead of 26. This is data-layer groundwork, independent of the paging state
+  machine, but it directly protects the rate-limit budget (60/min) that Paging 2.0's
+  search-as-you-type spends deliberately.
 - Revisit if Paging3 ships a multiplatform target and a `PagingData`-free consumption API; until
   then this is the right trade for a KMP-bound clean-architecture codebase.

@@ -2,6 +2,7 @@ package com.simtop.beer_data.mappers
 
 import com.simtop.beer_database.models.BeerDbModel
 import com.simtop.beer_network.models.BeersApiResponseItem
+import com.simtop.beer_network.models.EmbeddedImage
 import com.simtop.beer_network.models.Language
 import com.simtop.beer_network.models.Translation
 import com.simtop.beerdomain.domain.models.Beer
@@ -22,7 +23,7 @@ class BeersMapperTest {
       name = "Buzz",
       abv = 4.5,
       ibu = 60.0,
-      imageId = "42",
+      image = EmbeddedImage("https://brewbuddy.dev/images/42"),
       translations = listOf(Translation(Language("en"), "A Real Bitter Experience.", "Tasty.")),
       foodPairing = listOf("Steak"),
     )
@@ -122,8 +123,16 @@ class BeersMapperTest {
   }
 
   @Test
-  fun `fromBeersApiResponseItemToBeer defaults imageUrl when imageId is missing`() {
-    val beer = mapper.fromBeersApiResponseItemToBeer(fullResponse().copy(imageId = null))
+  fun `fromBeersApiResponseItemToBeer defaults imageUrl when the embedded image is missing`() {
+    val beer = mapper.fromBeersApiResponseItemToBeer(fullResponse().copy(image = null))
+
+    expectThat(beer.imageUrl).isEqualTo("")
+  }
+
+  @Test
+  fun `fromBeersApiResponseItemToBeer defaults imageUrl when the embedded image has no url`() {
+    val beer =
+      mapper.fromBeersApiResponseItemToBeer(fullResponse().copy(image = EmbeddedImage(url = null)))
 
     expectThat(beer.imageUrl).isEqualTo("")
   }

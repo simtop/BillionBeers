@@ -8,13 +8,12 @@ const val FAKE_JSON = "fake_json_response.json"
 
 val fakeBeersApiResponseItem =
   BeersApiResponseItem(
-    "1",
-    "Buzz",
-    0.0,
-    0.0,
-    "",
+    id = "1",
+    name = "Buzz",
+    abv = 0.0,
+    ibu = 0.0,
     translations = listOf(Translation(Language("en"), "A Real Bitter Experience.", "")),
-    emptyList(),
+    foodPairing = emptyList(),
   )
 
 val fakeBeerApiResponse = listOf(fakeBeersApiResponseItem.copy())
