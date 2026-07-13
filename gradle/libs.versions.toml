@@ -76,6 +76,7 @@ androidx-navigation3-ui = { group = "androidx.navigation3", name = "navigation3-
 roomRuntime = { module = "androidx.room:room-runtime", version.ref = "androidx-room" }
 roomCompiler = { module = "androidx.room:room-compiler", version.ref = "androidx-room" }
 roomKtx = { module = "androidx.room:room-ktx", version.ref = "androidx-room" }
+roomTesting = { module = "androidx.room:room-testing", version.ref = "androidx-room" }
 roomGradlePlugin = { module = "androidx.room:room-gradle-plugin", version.ref = "androidx-room" }
 
 # Compose (managed by BOM)

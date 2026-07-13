@@ -40,7 +40,8 @@ class BeersPagerFactoryImpl(
       },
       classifyError = { it.toFetchBeersError() },
       storage = BeersPagingStorage(repository, surface),
-      // Exact resume: the paging_state bookmark records the first uncached page, written in the same
+      // Exact resume: the paging_state bookmark records the first uncached page, written in the
+      // same
       // transaction as the rows. It falls back to the row-count estimate (N fully cached pages ->
       // page N+1) only when no bookmark exists yet - a fresh install, or a cache written before
       // paging_state existed (the v1->v2 migration gap). Either way "load more" resumes after

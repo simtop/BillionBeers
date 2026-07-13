@@ -22,9 +22,9 @@ interface BeersDatabaseModule {
     Room.databaseBuilder(app, BeersDatabase::class.java, BEERS_DB_NAME)
       // Real, additive v1 -> v2 migration keeps the cache (and local availability edits) across
       // release upgrades. The destructive fallback is a debug-only dev net for schema churn on a
-      // throwaway DB - it must never run in release, where it would wipe user data. `isDebug` reuses
-      // :core's BuildConfig (already enabled there, precedent: NetworkingModule) rather than turning
-      // buildConfig on in this library module.
+      // throwaway DB - it must never run in release, where it would wipe user data. The debug flag
+      // reuses :core's BuildConfig (already enabled there, precedent: NetworkingModule) instead of
+      // turning buildConfig on in this library module.
       .addMigrations(MIGRATION_1_2)
       .apply { if (BuildConfig.DEBUG) fallbackToDestructiveMigration(dropAllTables = true) }
       .build()

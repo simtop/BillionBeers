@@ -113,7 +113,8 @@ class BeersPagerFactoryImplTest {
   @Test
   fun `load more resumes from the stored bookmark, not the row-count estimate`() =
     runTest(testDispatcher) {
-      // Pages 1-2 fetched previously; page 2 was partial, so only 30 rows cached but next page is 3.
+      // Pages 1-2 fetched previously; page 2 was partial, so only 30 rows cached but next page is
+      // 3.
       repository.insertPage(
         (1..30).map { Beer.empty.copy(id = "$it") },
         surface = "catalog:en",
@@ -129,7 +130,8 @@ class BeersPagerFactoryImplTest {
       expectThat(beersRemoteSource.requestedPages.toList()).isEqualTo(listOf(3))
     }
 
-  // Regression guard for the monotonic next_key policy: a refresh re-fetching page 1 must not rewind
+  // Regression guard for the monotonic next_key policy: a refresh re-fetching page 1 must not
+  // rewind
   // a warm cache's bookmark, or "load more" would re-walk pages the cache already holds.
   @Test
   fun `refresh does not rewind the stored bookmark`() =
