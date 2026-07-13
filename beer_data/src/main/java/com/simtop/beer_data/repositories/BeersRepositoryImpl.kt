@@ -47,6 +47,22 @@ class BeersRepositoryImpl(
   override suspend fun insertAllToDB(beers: List<Beer>) =
     beersLocalSource.insertAllToDB(beers.map { beersMapper.fromBeerToBeerDbModel(it) })
 
+  override suspend fun insertPage(
+    beers: List<Beer>,
+    surface: String,
+    nextKey: Int?,
+    totalCount: Int?,
+  ) =
+    beersLocalSource.insertPageToDB(
+      beers.map { beersMapper.fromBeerToBeerDbModel(it) },
+      surface,
+      nextKey,
+      totalCount,
+    )
+
+  override suspend fun pagingNextKey(surface: String): Int? =
+    beersLocalSource.getPagingState(surface)?.nextKey
+
   override fun observeBeers(): Flow<List<Beer>> =
     beersLocalSource.getAllBeersFromDB().map { list ->
       list.map { beersMapper.fromBeerDbModelToBeer(it) }

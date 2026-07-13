@@ -28,6 +28,21 @@ interface BeersRepository {
    */
   suspend fun insertAllToDB(beers: List<Beer>)
 
+  /**
+   * Same keyed upsert as [insertAllToDB], but also records the paging bookmark for [surface] (the
+   * resume [nextKey] and [totalCount]) in the *same* transaction, so the pager's position can never
+   * diverge from the rows actually stored. [nextKey] is merged monotonically - a refresh re-fetching
+   * an earlier page never rewinds a warm cache's bookmark.
+   */
+  suspend fun insertPage(beers: List<Beer>, surface: String, nextKey: Int?, totalCount: Int?)
+
+  /**
+   * The stored resume key for [surface] - the first page not yet cached - or null when no bookmark
+   * has been recorded yet (fresh install, or a cache written before paging_state existed). Callers
+   * fall back to a row-count estimate in that case.
+   */
+  suspend fun pagingNextKey(surface: String): Int?
+
   suspend fun updateAvailability(beer: Beer): Either<UpdateAvailabilityError, Unit>
 
   /** Fetches one page from the API, carrying the server total for end-detection and "N of M" UI. */

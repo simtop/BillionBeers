@@ -2,12 +2,14 @@ package com.simtop.beer_data.fakes
 
 import com.simtop.beer_database.localsources.BeersLocalSource
 import com.simtop.beer_database.models.BeerDbModel
+import com.simtop.beer_database.models.PagingStateDbModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
 class FakeBeersLocalSource : BeersLocalSource {
 
   private val beersFlow = MutableStateFlow<List<BeerDbModel>>(emptyList())
+  private val pagingState = mutableMapOf<String, PagingStateDbModel>()
 
   // Helper to inspect state
   fun getBeers(): List<BeerDbModel> = beersFlow.value
@@ -29,6 +31,26 @@ class FakeBeersLocalSource : BeersLocalSource {
     }
     beersFlow.value = current
   }
+
+  // Mirrors BeersDao.insertPage: upsert the rows and merge the bookmark monotonically in one step.
+  override suspend fun insertPageToDB(
+    beers: List<BeerDbModel>,
+    surface: String,
+    nextKey: Int?,
+    totalCount: Int?,
+  ) {
+    insertAllToDB(beers)
+    val existing = pagingState[surface]
+    pagingState[surface] =
+      PagingStateDbModel(
+        surface = surface,
+        nextKey = listOfNotNull(existing?.nextKey, nextKey).maxOrNull(),
+        totalCount = totalCount ?: existing?.totalCount,
+        refreshedAt = 0L,
+      )
+  }
+
+  override suspend fun getPagingState(surface: String): PagingStateDbModel? = pagingState[surface]
 
   override suspend fun updateBeer(primaryKey: String, availability: Boolean) {
     val current = beersFlow.value.toMutableList()

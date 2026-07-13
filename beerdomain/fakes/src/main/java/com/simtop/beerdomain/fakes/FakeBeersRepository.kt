@@ -55,6 +55,26 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersReposit
     beersFlow.value = current
   }
 
+  private val pagingNextKeys = mutableMapOf<String, Int?>()
+
+  /** Test helper: seed a stored resume bookmark for [surface] as a warm cache would leave. */
+  fun setPagingNextKey(surface: String, nextKey: Int?) {
+    pagingNextKeys[surface] = nextKey
+  }
+
+  /** Mirrors the DAO: upsert the rows and merge the bookmark monotonically in one step. */
+  override suspend fun insertPage(
+    beers: List<Beer>,
+    surface: String,
+    nextKey: Int?,
+    totalCount: Int?,
+  ) {
+    insertAllToDB(beers)
+    pagingNextKeys[surface] = listOfNotNull(pagingNextKeys[surface], nextKey).maxOrNull()
+  }
+
+  override suspend fun pagingNextKey(surface: String): Int? = pagingNextKeys[surface]
+
   override suspend fun updateAvailability(beer: Beer): Either<UpdateAvailabilityError, Unit> {
     exceptionToThrow?.let {
       return Either.Left(UpdateAvailabilityError.Unknown(it))
