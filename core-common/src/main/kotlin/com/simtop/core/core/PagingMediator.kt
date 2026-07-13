@@ -80,32 +80,36 @@ interface Pager<Value : Any, out E : Any> {
  * favorites) needs its own storage whose queries are keyed by that surface's fetch parameters. Two
  * surfaces must never page one unscoped shared table.
  */
-interface PagingStorage<Value : Any> {
+interface PagingStorage<Key : Any, Value : Any> {
   val data: Flow<List<Value>>
 
   /**
    * The new first page, after a successful initial load or refresh. May be empty. Implementations
    * choose what "store" means - replace everything (in-memory) or merge/upsert into existing rows
    * (DB SSOT); the mediator does not assume [data] equals this page afterwards.
+   *
+   * The whole [PageResult] is passed, not just the items, so a persistent storage can record the
+   * resume key ([PageResult.nextKey]) and [PageResult.totalCount] in the *same* write as the rows -
+   * position never diverging from data. In-memory storage ignores that metadata.
    */
-  suspend fun storeFirstPage(page: List<Value>)
+  suspend fun storeFirstPage(page: PageResult<Key, Value>)
 
-  /** A successfully fetched subsequent page. Never empty. */
-  suspend fun append(page: List<Value>)
+  /** A successfully fetched subsequent page. Its [PageResult.items] are never empty. */
+  suspend fun append(page: PageResult<Key, Value>)
 }
 
 /** Network-only storage: pages accumulate in memory and vanish with the pager. */
-class InMemoryPagingStorage<Value : Any> : PagingStorage<Value> {
+class InMemoryPagingStorage<Key : Any, Value : Any> : PagingStorage<Key, Value> {
   private val pages = MutableStateFlow<List<Value>>(emptyList())
 
   override val data: Flow<List<Value>> = pages.asStateFlow()
 
-  override suspend fun storeFirstPage(page: List<Value>) {
-    pages.value = page
+  override suspend fun storeFirstPage(page: PageResult<Key, Value>) {
+    pages.value = page.items
   }
 
-  override suspend fun append(page: List<Value>) {
-    pages.update { current -> current + page }
+  override suspend fun append(page: PageResult<Key, Value>) {
+    pages.update { current -> current + page.items }
   }
 }
 
@@ -154,7 +158,7 @@ class PagingMediator<Key : Any, Value : Any, E : Any>(
   private val initialKey: Key,
   private val fetchRemote: suspend (key: Key) -> PageResult<Key, Value>,
   private val classifyError: (Throwable) -> E,
-  private val storage: PagingStorage<Value> = InMemoryPagingStorage(),
+  private val storage: PagingStorage<Key, Value> = InMemoryPagingStorage(),
   private val nextKeyFromStorage: (suspend () -> Key)? = null,
 ) : Pager<Value, E> {
 
@@ -207,8 +211,8 @@ class PagingMediator<Key : Any, Value : Any, E : Any>(
 
       val result = fetchRemote(key)
       val items = result.items
-      if (isFirstPage) storage.storeFirstPage(items)
-      else if (items.isNotEmpty()) storage.append(items)
+      if (isFirstPage) storage.storeFirstPage(result)
+      else if (items.isNotEmpty()) storage.append(result)
 
       // Empty-page probe: the fallback end signal when the server reports no total (nextKey stays
       // non-null) - preserves the pre-2.0 behaviour for a header-less backend.
