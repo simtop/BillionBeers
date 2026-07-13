@@ -4,7 +4,9 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Upsert
 import com.simtop.beer_database.models.BeerDbModel
+import com.simtop.beer_database.models.PagingStateDbModel
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -80,4 +82,37 @@ abstract class BeersDao {
   @Query("DELETE FROM beers") abstract suspend fun deleteAll()
 
   @Query("SELECT COUNT(id) FROM beers") abstract suspend fun getCount(): Int
+
+  @Query("SELECT * FROM paging_state WHERE surface = :surface")
+  abstract suspend fun getPagingState(surface: String): PagingStateDbModel?
+
+  @Upsert abstract suspend fun upsertPagingState(state: PagingStateDbModel)
+
+  /**
+   * Writes a fetched page and its paging bookmark atomically, so [PagingStateDbModel.nextKey] can
+   * never point past — or short of — the rows actually stored (the PR #57 divergence class).
+   * [nextKey] is merged monotonically: a refresh re-fetching page 1 (`nextKey = 2`) must not rewind
+   * a warm cache that already reached a later page, so the stored value only ever advances. A null
+   * incoming [nextKey] (last page) leaves the bookmark untouched — end-of-pagination is decided by
+   * the fetch's total-count math, not by persisting a null key.
+   */
+  @androidx.room.Transaction
+  open suspend fun insertPage(
+    beers: List<BeerDbModel>,
+    surface: String,
+    nextKey: Int?,
+    totalCount: Int?,
+    refreshedAt: Long,
+  ) {
+    insertAll(beers)
+    val existing = getPagingState(surface)
+    upsertPagingState(
+      PagingStateDbModel(
+        surface = surface,
+        nextKey = listOfNotNull(existing?.nextKey, nextKey).maxOrNull(),
+        totalCount = totalCount ?: existing?.totalCount,
+        refreshedAt = refreshedAt,
+      )
+    )
+  }
 }

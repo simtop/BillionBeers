@@ -2,6 +2,7 @@ package com.simtop.beer_database.localsources
 
 import com.simtop.beer_database.database.BeersDatabase
 import com.simtop.beer_database.models.BeerDbModel
+import com.simtop.beer_database.models.PagingStateDbModel
 import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.flow.Flow
 
@@ -16,6 +17,20 @@ interface BeersLocalSource {
    */
   suspend fun insertAllToDB(beers: List<BeerDbModel>)
 
+  /**
+   * Same keyed upsert as [insertAllToDB], but also records the paging bookmark for [surface] in the
+   * *same transaction* so resume position can't diverge from the stored rows. See
+   * [com.simtop.beer_database.database.BeersDao.insertPage].
+   */
+  suspend fun insertPageToDB(
+    beers: List<BeerDbModel>,
+    surface: String,
+    nextKey: Int?,
+    totalCount: Int?,
+  )
+
+  suspend fun getPagingState(surface: String): PagingStateDbModel?
+
   suspend fun updateBeer(primaryKey: String, availability: Boolean)
 
   suspend fun deleteAllFromDB()
@@ -29,6 +44,15 @@ class BeersLocalSourceImpl(private val db: BeersDatabase) : BeersLocalSource {
   override fun getAllBeersFromDB(): Flow<List<BeerDbModel>> = db.beersDao().getAllBeers()
 
   override suspend fun insertAllToDB(beers: List<BeerDbModel>) = db.beersDao().insertAll(beers)
+
+  override suspend fun insertPageToDB(
+    beers: List<BeerDbModel>,
+    surface: String,
+    nextKey: Int?,
+    totalCount: Int?,
+  ) = db.beersDao().insertPage(beers, surface, nextKey, totalCount, System.currentTimeMillis())
+
+  override suspend fun getPagingState(surface: String) = db.beersDao().getPagingState(surface)
 
   override suspend fun updateBeer(primaryKey: String, availability: Boolean) =
     db.beersDao().updateBeer(primaryKey, availability)
