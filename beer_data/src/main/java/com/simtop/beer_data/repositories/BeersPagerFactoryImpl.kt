@@ -5,6 +5,7 @@ import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.core.core.LanguageProvider
 import com.simtop.core.core.PageResult
 import com.simtop.core.core.Pager
 import com.simtop.core.core.PagingMediator
@@ -16,10 +17,16 @@ import kotlinx.coroutines.flow.Flow
 import retrofit2.HttpException
 
 @Inject
-class BeersPagerFactoryImpl(private val repository: BeersRepository) : BeersPagerFactory {
+class BeersPagerFactoryImpl(
+  private val repository: BeersRepository,
+  private val languageProvider: LanguageProvider,
+) : BeersPagerFactory {
 
-  override fun create(): Pager<Beer, FetchBeersError> =
-    PagingMediator(
+  override fun create(): Pager<Beer, FetchBeersError> {
+    // One paged surface, keyed by language so a future language switch can invalidate it (Phase 4);
+    // for now the key just scopes the bookmark. Read (resume) and write (store) share this value.
+    val surface = CATALOG_SURFACE_PREFIX + languageProvider.currentLanguageCode()
+    return PagingMediator(
       initialKey = FIRST_PAGE,
       fetchRemote = { page ->
         val beerPage = repository.getBeersPageFromApi(page)
@@ -32,15 +39,19 @@ class BeersPagerFactoryImpl(private val repository: BeersRepository) : BeersPage
         PageResult(items = beerPage.items, nextKey = nextKey, totalCount = total)
       },
       classifyError = { it.toFetchBeersError() },
-      storage = BeersPagingStorage(repository),
-      // The Room cache both outlives this pager (warm launch) and survives refresh (the storage
-      // upserts, never deletes). Either way the next unseen page comes after everything cached -
-      // N fully cached pages mean page N+1 - otherwise "load more" would silently re-fetch every
-      // cached page over the network before the list could grow.
+      storage = BeersPagingStorage(repository, surface),
+      // Exact resume: the paging_state bookmark records the first uncached page, written in the
+      // same
+      // transaction as the rows. It falls back to the row-count estimate (N fully cached pages ->
+      // page N+1) only when no bookmark exists yet - a fresh install, or a cache written before
+      // paging_state existed (the v1->v2 migration gap). Either way "load more" resumes after
+      // everything cached instead of silently re-fetching cached pages over the network.
       nextKeyFromStorage = {
-        repository.countDBEntries() / BeersService.DEFAULT_ITEMS_PER_PAGE + FIRST_PAGE
+        repository.pagingNextKey(surface)
+          ?: (repository.countDBEntries() / BeersService.DEFAULT_ITEMS_PER_PAGE + FIRST_PAGE)
       },
     )
+  }
 
   private fun Throwable.toFetchBeersError(): FetchBeersError =
     when (this) {
@@ -56,6 +67,7 @@ class BeersPagerFactoryImpl(private val repository: BeersRepository) : BeersPage
 
   private companion object {
     const val FIRST_PAGE = 1
+    const val CATALOG_SURFACE_PREFIX = "catalog:"
   }
 }
 
@@ -74,11 +86,16 @@ class BeersPagerFactoryImpl(private val repository: BeersRepository) : BeersPage
  * storage whose observe/write/count queries are keyed by that surface's parameters - it must not
  * reuse this one, or the two screens' data and resume positions would bleed into each other.
  */
-private class BeersPagingStorage(private val repository: BeersRepository) : PagingStorage<Beer> {
+private class BeersPagingStorage(
+  private val repository: BeersRepository,
+  private val surface: String,
+) : PagingStorage<Int, Beer> {
 
   override val data: Flow<List<Beer>> = repository.observeBeers()
 
-  override suspend fun storeFirstPage(page: List<Beer>) = repository.insertAllToDB(page)
+  override suspend fun storeFirstPage(page: PageResult<Int, Beer>) =
+    repository.insertPage(page.items, surface, page.nextKey, page.totalCount)
 
-  override suspend fun append(page: List<Beer>) = repository.insertAllToDB(page)
+  override suspend fun append(page: PageResult<Int, Beer>) =
+    repository.insertPage(page.items, surface, page.nextKey, page.totalCount)
 }

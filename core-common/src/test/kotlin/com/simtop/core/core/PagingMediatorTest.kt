@@ -19,23 +19,23 @@ import org.junit.Test
 class PagingMediatorTest {
 
   /** Storage that records every write so tests can assert on ordering and content. */
-  private class RecordingStorage : PagingStorage<String> {
+  private class RecordingStorage : PagingStorage<Int, String> {
     val events = mutableListOf<String>()
     val stored = MutableStateFlow<List<String>>(emptyList())
     var failWrites = false
 
     override val data: Flow<List<String>> = stored
 
-    override suspend fun storeFirstPage(page: List<String>) {
+    override suspend fun storeFirstPage(page: PageResult<Int, String>) {
       events += "storeFirstPage"
       if (failWrites) throw RuntimeException("write failed")
-      stored.value = page
+      stored.value = page.items
     }
 
-    override suspend fun append(page: List<String>) {
+    override suspend fun append(page: PageResult<Int, String>) {
       events += "append"
       if (failWrites) throw RuntimeException("write failed")
-      stored.update { current -> current + page }
+      stored.update { current -> current + page.items }
     }
   }
 
@@ -279,14 +279,14 @@ class PagingMediatorTest {
   }
 
   /** Non-replacing storage mirroring a DB upsert: every write merges instead of replacing. */
-  private class UpsertingStorage : PagingStorage<String> {
+  private class UpsertingStorage : PagingStorage<Int, String> {
     val stored = MutableStateFlow<List<String>>(emptyList())
 
     override val data: Flow<List<String>> = stored
 
-    override suspend fun storeFirstPage(page: List<String>) = upsert(page)
+    override suspend fun storeFirstPage(page: PageResult<Int, String>) = upsert(page.items)
 
-    override suspend fun append(page: List<String>) = upsert(page)
+    override suspend fun append(page: PageResult<Int, String>) = upsert(page.items)
 
     private fun upsert(page: List<String>) {
       stored.update { current -> current + page.filterNot(current::contains) }

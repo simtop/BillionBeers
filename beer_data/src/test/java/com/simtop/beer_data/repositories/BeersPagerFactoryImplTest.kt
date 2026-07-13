@@ -36,7 +36,7 @@ class BeersPagerFactoryImplTest {
     beersLocalSource = FakeBeersLocalSource()
     val beersMapper = BeersMapper(LanguageProvider { "en" }, NoOpLogger())
     repository = BeersRepositoryImpl(beersRemoteSource, beersLocalSource, beersMapper)
-    factory = BeersPagerFactoryImpl(repository)
+    factory = BeersPagerFactoryImpl(repository, LanguageProvider { "en" })
   }
 
   // Regression test: availability is treated as local-only (the server value only seeds first
@@ -106,6 +106,49 @@ class BeersPagerFactoryImplTest {
 
       expectThat(beersRemoteSource.requestedPages.toList()).isEqualTo(listOf(1, 2))
       expectThat(repository.countDBEntries()).isEqualTo(26)
+    }
+
+  // The paging_state bookmark is exact where the row-count estimate is not: a partial page leaves
+  // fewer rows than pages fetched, so resume must trust the stored next_key, not rows/pageSize.
+  @Test
+  fun `load more resumes from the stored bookmark, not the row-count estimate`() =
+    runTest(testDispatcher) {
+      // Pages 1-2 fetched previously; page 2 was partial, so only 30 rows cached but next page is
+      // 3.
+      repository.insertPage(
+        (1..30).map { Beer.empty.copy(id = "$it") },
+        surface = "catalog:en",
+        nextKey = 3,
+        totalCount = null,
+      )
+      beersRemoteSource.setBeersResponse(listOf(apiItem(id = "31")))
+      val pager = factory.create()
+
+      pager.loadNextPage()
+
+      // Row-count estimate would wrongly say page 2 (30/25 + 1); the bookmark says 3.
+      expectThat(beersRemoteSource.requestedPages.toList()).isEqualTo(listOf(3))
+    }
+
+  // Regression guard for the monotonic next_key policy: a refresh re-fetching page 1 must not
+  // rewind
+  // a warm cache's bookmark, or "load more" would re-walk pages the cache already holds.
+  @Test
+  fun `refresh does not rewind the stored bookmark`() =
+    runTest(testDispatcher) {
+      // Warm cache already reached page 6 (25 rows of page 1 present, bookmark points past page 5).
+      repository.insertPage(
+        (1..25).map { Beer.empty.copy(id = "$it") },
+        surface = "catalog:en",
+        nextKey = 6,
+        totalCount = 206,
+      )
+      beersRemoteSource.setBeersResponse((1..25).map { apiItem(id = "$it") }, totalCount = 206)
+      val pager = factory.create()
+
+      pager.loadFirstPage() // refresh: page 1 fetched, its own nextKey would be 2
+
+      expectThat(repository.pagingNextKey("catalog:en")).isEqualTo(6)
     }
 
   @Test

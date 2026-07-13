@@ -1,0 +1,113 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 2,
+    "identityHash": "c4a6e48d32c767e530c897c18ca470b7",
+    "entities": [
+      {
+        "tableName": "beers",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `tagline` TEXT NOT NULL, `description` TEXT NOT NULL, `image_url` TEXT NOT NULL, `abv` REAL NOT NULL, `ibu` REAL NOT NULL, `food_pairing` TEXT NOT NULL, `availability` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tagline",
+            "columnName": "tagline",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "imageUrl",
+            "columnName": "image_url",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "abv",
+            "columnName": "abv",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ibu",
+            "columnName": "ibu",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "foodPairing",
+            "columnName": "food_pairing",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "availability",
+            "columnName": "availability",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "paging_state",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`surface` TEXT NOT NULL, `next_key` INTEGER, `total_count` INTEGER, `refreshed_at` INTEGER NOT NULL, PRIMARY KEY(`surface`))",
+        "fields": [
+          {
+            "fieldPath": "surface",
+            "columnName": "surface",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nextKey",
+            "columnName": "next_key",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "totalCount",
+            "columnName": "total_count",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "refreshedAt",
+            "columnName": "refreshed_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "surface"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'c4a6e48d32c767e530c897c18ca470b7')"
+    ]
+  }
+}
