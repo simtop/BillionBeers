@@ -125,6 +125,35 @@ class PagingMediatorTest {
   }
 
   @Test
+  fun `next page failure also emits a one-shot LoadMoreFailed event`() = runTest {
+    val harness = Harness()
+    harness.mediator.loadFirstPage()
+    harness.failOnKey(2)
+
+    harness.mediator.events.test {
+      harness.mediator.loadNextPage()
+
+      assertEquals(PagingEvent.LoadMoreFailed("fetch 2 failed"), awaitItem())
+    }
+  }
+
+  @Test
+  fun `first page failure emits no LoadMoreFailed event`() = runTest {
+    val harness = Harness()
+    harness.failOnKey(1)
+
+    harness.mediator.events.test {
+      harness.mediator.loadFirstPage()
+
+      expectNoEvents()
+    }
+    assertEquals(
+      PagingState.Error("fetch 1 failed", isFirstPage = true),
+      harness.mediator.pagingState.value,
+    )
+  }
+
+  @Test
   fun `key only advances on success so retry refetches the failed page`() = runTest {
     val harness = Harness()
     harness.mediator.loadFirstPage()
