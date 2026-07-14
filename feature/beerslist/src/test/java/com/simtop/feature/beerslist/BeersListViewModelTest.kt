@@ -1,11 +1,13 @@
 package com.simtop.feature.beerslist
 
 import app.cash.turbine.test
+import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
 import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.CoroutineDispatcherProvider
+import com.simtop.core.core.PagingEvent
 import com.simtop.core.core.PagingState
 import io.mockk.every
 import io.mockk.mockk
@@ -89,6 +91,45 @@ class BeersListViewModelTest {
         val finalState = awaitItem()
         expectThat(finalState).isA<CommonUiState.Success<BeersListUiModel>>()
         expectThat((finalState as CommonUiState.Success).data.isLoadingNextPage).isFalse()
+      }
+    }
+
+  @Test
+  fun `a failed load-more surfaces a retry footer and a one-shot error event`() =
+    runTest(testDispatcher) {
+      fakeBeersRepository.setBeers(listOf(Beer.empty.copy(id = "1")))
+      val viewModel = buildViewModel()
+      val pager = fakeBeersPagerFactory.pager
+
+      viewModel.events.test {
+        viewModel.beerListViewState.test {
+          expectThat(awaitItem()).isA<CommonUiState.Success<BeersListUiModel>>()
+
+          // The pager reports a non-first-page failure and emits its one-shot event.
+          pager.setPagingState(PagingState.Error(FetchBeersError.RateLimited, isFirstPage = false))
+          pager.emitEvent(PagingEvent.LoadMoreFailed(FetchBeersError.RateLimited))
+
+          val state = awaitItem()
+          expectThat((state as CommonUiState.Success).data.footer).isEqualTo(ListFooter.Retry)
+        }
+        expectThat(awaitItem()).isEqualTo(BeersListEvent.ShowLoadMoreError)
+      }
+    }
+
+  @Test
+  fun `end of pagination surfaces the end-of-list footer`() =
+    runTest(testDispatcher) {
+      fakeBeersRepository.setBeers(listOf(Beer.empty.copy(id = "1")))
+      val viewModel = buildViewModel()
+      val pager = fakeBeersPagerFactory.pager
+
+      viewModel.beerListViewState.test {
+        expectThat(awaitItem()).isA<CommonUiState.Success<BeersListUiModel>>()
+
+        pager.setPagingState(PagingState.EndOfPagination)
+
+        val state = awaitItem()
+        expectThat((state as CommonUiState.Success).data.footer).isEqualTo(ListFooter.EndReached)
       }
     }
 
