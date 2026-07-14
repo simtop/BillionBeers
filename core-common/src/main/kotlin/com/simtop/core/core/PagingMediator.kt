@@ -1,10 +1,13 @@
 package com.simtop.core.core
 
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -46,9 +49,24 @@ data class PageResult<Key : Any, Value : Any>(
 )
 
 /**
- * What a screen needs from a paginated source: the accumulated [data], the load [pagingState], and
- * the two entry points. Consumers (ViewModels, fakes) depend on this, not on [PagingMediator], so
- * tests can drive paging states directly with a hand-rolled fake.
+ * A one-shot paging event - something that happened once and must be consumed exactly once (a
+ * transient toast), as opposed to [PagingState], which is the current condition and is safe to
+ * replay to every new collector. Delivered over a channel, not a [StateFlow], precisely so a
+ * config-change re-collect doesn't re-fire it.
+ */
+sealed class PagingEvent<out E : Any> {
+  /**
+   * A *subsequent* page (not the first) failed to load. The first-page failure stays in
+   * [PagingState.Error] as a full-screen condition; this fires only when there is already a list on
+   * screen, so the UI can surface a transient notice while keeping the list and its footer retry.
+   */
+  data class LoadMoreFailed<out E : Any>(val error: E) : PagingEvent<E>()
+}
+
+/**
+ * What a screen needs from a paginated source: the accumulated [data], the load [pagingState], the
+ * one-shot [events], and the two entry points. Consumers (ViewModels, fakes) depend on this, not on
+ * [PagingMediator], so tests can drive paging states directly with a hand-rolled fake.
  *
  * A pager instance holds per-screen state (current page, end-of-list), so it must be owned by the
  * screen's ViewModel - never by an app-scoped singleton shared across screens.
@@ -56,6 +74,9 @@ data class PageResult<Key : Any, Value : Any>(
 interface Pager<Value : Any, out E : Any> {
   val data: Flow<List<Value>>
   val pagingState: StateFlow<PagingState<E>>
+
+  /** One-shot events (e.g. a failed "load more"); see [PagingEvent]. Cold until collected. */
+  val events: Flow<PagingEvent<E>>
 
   /** Loads (or reloads, acting as refresh) the first page. Waits for any in-flight load. */
   suspend fun loadFirstPage()
@@ -165,6 +186,12 @@ class PagingMediator<Key : Any, Value : Any, E : Any>(
   private val _pagingState = MutableStateFlow<PagingState<E>>(PagingState.Idle)
   override val pagingState: StateFlow<PagingState<E>> = _pagingState.asStateFlow()
 
+  // Conflated: for a failed "load more" only the latest matters, so a resumed screen shows one
+  // toast, not a backlog. trySend never suspends and never fails with this overflow policy.
+  private val _events =
+    Channel<PagingEvent<E>>(capacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+  override val events: Flow<PagingEvent<E>> = _events.receiveAsFlow()
+
   override val data: Flow<List<Value>> = storage.data
 
   private val mutex = Mutex()
@@ -233,7 +260,11 @@ class PagingMediator<Key : Any, Value : Any, E : Any>(
     } catch (e: CancellationException) {
       throw e
     } catch (e: Exception) {
-      _pagingState.value = PagingState.Error(classifyError(e), isFirstPage)
+      val error = classifyError(e)
+      // A subsequent-page failure keeps the list, so it also fires a one-shot event for a transient
+      // notice; a first-page failure is the full-screen Error condition and needs no event.
+      if (!isFirstPage) _events.trySend(PagingEvent.LoadMoreFailed(error))
+      _pagingState.value = PagingState.Error(error, isFirstPage)
     }
   }
 

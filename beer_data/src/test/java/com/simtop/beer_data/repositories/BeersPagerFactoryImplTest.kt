@@ -15,8 +15,11 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import retrofit2.HttpException
+import retrofit2.Response
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 import strikt.assertions.isNotNull
@@ -175,6 +178,19 @@ class BeersPagerFactoryImplTest {
       expectThat(pager.pagingState.value)
         .isEqualTo(PagingState.Error(FetchBeersError.Network, isFirstPage = true))
       expectThat(repository.countDBEntries()).isEqualTo(0)
+    }
+
+  @Test
+  fun `HTTP 429 is classified as RateLimited`() =
+    runTest(testDispatcher) {
+      val http429 = HttpException(Response.error<Any>(429, "".toResponseBody(null)))
+      beersRemoteSource.setShouldThrowError(true, http429)
+      val pager = factory.create()
+
+      pager.loadFirstPage()
+
+      expectThat(pager.pagingState.value)
+        .isEqualTo(PagingState.Error(FetchBeersError.RateLimited, isFirstPage = true))
     }
 
   @Test

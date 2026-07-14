@@ -59,6 +59,7 @@ class BeersPagerFactoryImpl(
         when (code()) {
           HttpURLConnection.HTTP_NOT_FOUND -> FetchBeersError.NotFound
           HttpURLConnection.HTTP_FORBIDDEN -> FetchBeersError.Forbidden
+          HTTP_TOO_MANY_REQUESTS -> FetchBeersError.RateLimited
           else -> FetchBeersError.Unknown(this)
         }
       is IOException -> FetchBeersError.Network
@@ -68,6 +69,8 @@ class BeersPagerFactoryImpl(
   private companion object {
     const val FIRST_PAGE = 1
     const val CATALOG_SURFACE_PREFIX = "catalog:"
+    // No HttpURLConnection constant exists for 429.
+    const val HTTP_TOO_MANY_REQUESTS = 429
   }
 }
 

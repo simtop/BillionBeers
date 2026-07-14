@@ -36,6 +36,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
@@ -56,6 +57,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.component.shimmerBrush
@@ -84,6 +88,20 @@ private val BeerSaver: Saver<Beer?, String> =
 @Composable
 fun BeersListScreen(viewModel: BeersListViewModel = metroViewModel(), onBeerClick: (Beer) -> Unit) {
   val rawState by viewModel.beerListViewState.collectAsState()
+  val context = LocalContext.current
+  val lifecycleOwner = LocalLifecycleOwner.current
+  val loadMoreFailedMessage = stringResource(R.string.beers_load_more_failed)
+
+  // One-shot toast when a "load more" fails; the footer owns the retry affordance.
+  LaunchedEffect(viewModel, lifecycleOwner) {
+    lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+      viewModel.events.collect { event ->
+        when (event) {
+          BeersListEvent.ShowLoadMoreError -> showToast(context, loadMoreFailedMessage)
+        }
+      }
+    }
+  }
 
   // State to track if we are installing the feature for a specific beer - saved across process
   // death so the install flow resumes instead of silently dropping the in-flight navigation.
@@ -95,6 +113,7 @@ fun BeersListScreen(viewModel: BeersListViewModel = metroViewModel(), onBeerClic
     onScrollToBottom = { viewModel.onScrollToBottom() },
     onRefresh = { viewModel.refresh() },
     onRetry = { viewModel.refresh() },
+    onRetryLoadMore = { viewModel.onRetryLoadMore() },
   )
 
   // Handle dynamic feature loading overlay
@@ -119,6 +138,7 @@ fun BeersListContent(
   onScrollToBottom: () -> Unit,
   onRefresh: () -> Unit,
   onRetry: () -> Unit,
+  onRetryLoadMore: () -> Unit,
 ) {
   val context = LocalContext.current
   val toggleDebugDrawer = LocalDebugDrawerToggle.current
@@ -196,11 +216,17 @@ fun BeersListContent(
           ) {
             val listState = rememberLazyListState()
 
-            InfiniteListHandler(
-              listState = listState,
-              isLoadingNextPage = state.data.isLoadingNextPage,
-              onLoadMore = onScrollToBottom,
-            )
+            // Suspend auto-load while the retry footer is up: the user is parked at the bottom
+            // after
+            // a failure, so an unconditional scroll trigger would bypass the Retry button and, on a
+            // 429, auto-loop. Tapping Retry clears the footer and re-arms the handler.
+            if (state.data.footer !is ListFooter.Retry) {
+              InfiniteListHandler(
+                listState = listState,
+                isLoadingNextPage = state.data.isLoadingNextPage,
+                onLoadMore = onScrollToBottom,
+              )
+            }
 
             val layoutDirection = LocalLayoutDirection.current
             val navBarsPadding = WindowInsets.navigationBars.asPaddingValues()
@@ -221,24 +247,63 @@ fun BeersListContent(
                 ComposeBeersListItem(beer = beers[index], onClick = onBeerClick)
               }
 
-              if (state.data.isLoadingNextPage) {
-                item(key = "loading_footer") {
-                  Box(
-                    modifier = Modifier.fillMaxWidth().padding(BillionBeersTheme.spacing.large),
-                    contentAlignment = Alignment.Center,
-                  ) {
-                    CircularProgressIndicator(
-                      modifier = Modifier.size(BillionBeersTheme.spacing.extraLarge),
-                      strokeWidth = 3.dp,
-                    )
-                  }
-                }
+              // Bottom-of-list affordance: spinner while loading, a retry row after a failed
+              // "load more", or the end caption once the whole catalog is in.
+              when {
+                state.data.isLoadingNextPage -> item(key = "loading_footer") { LoadingMoreFooter() }
+                state.data.footer is ListFooter.Retry ->
+                  item(key = "retry_footer") { LoadMoreRetryFooter(onRetry = onRetryLoadMore) }
+                state.data.footer is ListFooter.EndReached ->
+                  item(key = "end_footer") { EndOfListFooter(beerCount = beers.size) }
+                else -> Unit
               }
             }
           }
         }
       }
     }
+  }
+}
+
+@Composable
+private fun LoadingMoreFooter() {
+  Box(
+    modifier = Modifier.fillMaxWidth().padding(BillionBeersTheme.spacing.large),
+    contentAlignment = Alignment.Center,
+  ) {
+    CircularProgressIndicator(
+      modifier = Modifier.size(BillionBeersTheme.spacing.extraLarge),
+      strokeWidth = 3.dp,
+    )
+  }
+}
+
+@Composable
+private fun LoadMoreRetryFooter(onRetry: () -> Unit) {
+  Column(
+    modifier = Modifier.fillMaxWidth().padding(BillionBeersTheme.spacing.medium),
+    horizontalAlignment = Alignment.CenterHorizontally,
+  ) {
+    Text(
+      text = stringResource(R.string.beers_load_more_failed),
+      style = MaterialTheme.typography.bodyMedium,
+      color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    TextButton(onClick = onRetry) { Text(text = stringResource(R.string.beers_load_more_retry)) }
+  }
+}
+
+@Composable
+private fun EndOfListFooter(beerCount: Int) {
+  Box(
+    modifier = Modifier.fillMaxWidth().padding(BillionBeersTheme.spacing.large),
+    contentAlignment = Alignment.Center,
+  ) {
+    Text(
+      text = stringResource(R.string.beers_end_of_list, beerCount),
+      style = MaterialTheme.typography.bodyMedium,
+      color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
   }
 }
 
@@ -295,6 +360,42 @@ class BeersListPreviewParameterProvider :
             )
         )
       ),
+      SUCCESS_LOAD_MORE_FAILED(
+        CommonUiState.Success(
+          data =
+            BeersListUiModel(
+              beers =
+                listOf(
+                  Beer.empty.copy(
+                    name = "Buzz",
+                    tagline = "A Real Bitter Experience.",
+                    abv = 4.5,
+                    ibu = 60.0,
+                    availability = true,
+                  )
+                ),
+              footer = ListFooter.Retry,
+            )
+        )
+      ),
+      SUCCESS_END_OF_LIST(
+        CommonUiState.Success(
+          data =
+            BeersListUiModel(
+              beers =
+                listOf(
+                  Beer.empty.copy(
+                    name = "Buzz",
+                    tagline = "A Real Bitter Experience.",
+                    abv = 4.5,
+                    ibu = 60.0,
+                    availability = true,
+                  )
+                ),
+              footer = ListFooter.EndReached,
+            )
+        )
+      ),
     }
   }
 
@@ -314,6 +415,7 @@ fun BeersListScreenPreview(
       onScrollToBottom = {},
       onRefresh = {},
       onRetry = {},
+      onRetryLoadMore = {},
     )
   }
 }
