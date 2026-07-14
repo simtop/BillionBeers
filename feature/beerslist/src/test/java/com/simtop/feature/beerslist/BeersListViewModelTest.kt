@@ -168,6 +168,23 @@ class BeersListViewModelTest {
       expectThat(fakeBeersPagerFactory.pager.loadFirstPageCallCount).isEqualTo(0)
     }
 
+  // Warm start: a previous process left beers cached, so the screen shows them straight away
+  // (Success, not the Loading skeleton) with no network first-page load.
+  @Test
+  fun `a warm cache surfaces the cached beers as Success without loading the first page`() =
+    runTest(testDispatcher) {
+      fakeBeersRepository.setBeers(listOf(Beer.empty.copy(id = "1"), Beer.empty.copy(id = "2")))
+      val viewModel = buildViewModel()
+
+      viewModel.beerListViewState.test {
+        val state = awaitItem()
+        expectThat(state).isA<CommonUiState.Success<BeersListUiModel>>()
+        expectThat((state as CommonUiState.Success).data.beers.map { it.id })
+          .isEqualTo(listOf("1", "2"))
+      }
+      expectThat(fakeBeersPagerFactory.pager.loadFirstPageCallCount).isEqualTo(0)
+    }
+
   // Regression test: PagingState.Loading over an already-shown list is a refresh in progress, so
   // the pull-to-refresh indicator must stay visible until the load resolves.
   @Test
