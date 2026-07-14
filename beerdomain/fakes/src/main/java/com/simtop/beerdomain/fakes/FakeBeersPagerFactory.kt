@@ -15,11 +15,19 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 
 /**
- * A [Pager] whose [data] is whatever flow the test wires in and whose [pagingState]/[events] are
- * set directly with [setPagingState]/[emitEvent] - load calls are only recorded, never fetch
- * anything.
+ * A [Pager] whose [pagingState]/[events] are set directly with [setPagingState]/[emitEvent] and
+ * whose [data] is either an external flow wired in (catalog, backed by the repository) or, when
+ * none is given, an internal source driven with [setData] (search). Load calls are only recorded.
  */
-class FakePager<Value : Any, E : Any>(override val data: Flow<List<Value>>) : Pager<Value, E> {
+class FakePager<Value : Any, E : Any>(dataFlow: Flow<List<Value>>? = null) : Pager<Value, E> {
+
+  private val _data = MutableStateFlow<List<Value>>(emptyList())
+  override val data: Flow<List<Value>> = dataFlow ?: _data
+
+  /** Pushes items when this pager owns its data source (no external flow was supplied). */
+  fun setData(items: List<Value>) {
+    _data.value = items
+  }
 
   private val _pagingState = MutableStateFlow<PagingState<E>>(PagingState.Idle)
   override val pagingState: StateFlow<PagingState<E>> = _pagingState.asStateFlow()
@@ -51,20 +59,25 @@ class FakePager<Value : Any, E : Any>(override val data: Flow<List<Value>>) : Pa
 }
 
 /**
- * Hands out a single [FakePager] backed by [repository]'s beers flow, so tests drive the list with
- * [FakeBeersRepository.setBeers] and paging states with [FakePager.setPagingState].
+ * The catalog [create] hands out a single [pager] backed by [repository]'s beers flow (drive it
+ * with [FakeBeersRepository.setBeers] + [FakePager.setPagingState]). Each search [create] mints a
+ * *fresh* pager with its own data source, recorded in [searchPagers]/[createdQueries], so a test
+ * can drive different terms independently and prove a stale one can't overwrite a newer one.
  */
 class FakeBeersPagerFactory(repository: FakeBeersRepository) : BeersPagerFactory {
 
   val pager: FakePager<Beer, FetchBeersError> = FakePager(repository.observeBeers())
 
-  /** Every query a search pager was created for, so tests can assert debounce/cancel behaviour. */
+  /** Every query a search pager was created for, in order. */
   val createdQueries = mutableListOf<BeersQuery>()
+
+  /** The per-query search pagers handed out, in order - one per [create] with a query. */
+  val searchPagers = mutableListOf<FakePager<Beer, FetchBeersError>>()
 
   override fun create(): Pager<Beer, FetchBeersError> = pager
 
   override fun create(query: BeersQuery): Pager<Beer, FetchBeersError> {
     createdQueries += query
-    return pager
+    return FakePager<Beer, FetchBeersError>().also { searchPagers += it }
   }
 }
