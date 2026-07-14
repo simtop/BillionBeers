@@ -47,4 +47,24 @@ class BeersRemoteSourceTest : TestMockWebService() {
 
     runBlocking { remoteSource.getListOfBeers(1) }
   }
+
+  @Test
+  fun `a search sends the q query parameter`() {
+    mockHttpResponse(FAKE_JSON, HttpURLConnection.HTTP_OK, mapOf("X-Total-Count" to "159"))
+
+    runBlocking { remoteSource.getListOfBeers(1, search = "ipa") }
+
+    val path = mockServer.takeRequest().path.orEmpty()
+    path.contains("q=ipa") shouldBeEqualTo true
+  }
+
+  @Test
+  fun `a catalog fetch omits the q query parameter`() {
+    mockHttpResponse(FAKE_JSON, HttpURLConnection.HTTP_OK)
+
+    runBlocking { remoteSource.getListOfBeers(1) }
+
+    val path = mockServer.takeRequest().path.orEmpty()
+    path.contains("q=") shouldBeEqualTo false
+  }
 }

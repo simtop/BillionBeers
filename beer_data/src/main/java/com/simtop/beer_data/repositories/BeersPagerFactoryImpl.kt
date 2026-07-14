@@ -3,8 +3,10 @@ package com.simtop.beer_data.repositories
 import com.simtop.beer_network.network.BeersService
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.core.core.InMemoryPagingStorage
 import com.simtop.core.core.LanguageProvider
 import com.simtop.core.core.PageResult
 import com.simtop.core.core.Pager
@@ -52,6 +54,24 @@ class BeersPagerFactoryImpl(
       },
     )
   }
+
+  override fun create(query: BeersQuery): Pager<Beer, FetchBeersError> =
+    // Search is its own surface: results live only in memory (they die with the screen and a new
+    // query instantly invalidates them) and never touch the beers table, so the catalog's
+    // SELECT * view is untouched. No nextKeyFromStorage - there's no warm cache to resume from.
+    PagingMediator(
+      initialKey = FIRST_PAGE,
+      fetchRemote = { page ->
+        val beerPage = repository.getBeersPageFromApi(page, query.search)
+        val total = beerPage.totalCount
+        val nextKey =
+          if (total != null && page * BeersService.DEFAULT_ITEMS_PER_PAGE >= total) null
+          else page + 1
+        PageResult(items = beerPage.items, nextKey = nextKey, totalCount = total)
+      },
+      classifyError = { it.toFetchBeersError() },
+      storage = InMemoryPagingStorage(),
+    )
 
   private fun Throwable.toFetchBeersError(): FetchBeersError =
     when (this) {

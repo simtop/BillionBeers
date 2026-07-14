@@ -6,6 +6,7 @@ import com.simtop.beer_data.mappers.BeersMapper
 import com.simtop.beer_network.models.BeersApiResponseItem
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.LanguageProvider
 import com.simtop.core.core.NoOpLogger
@@ -191,6 +192,20 @@ class BeersPagerFactoryImplTest {
 
       expectThat(pager.pagingState.value)
         .isEqualTo(PagingState.Error(FetchBeersError.RateLimited, isFirstPage = true))
+    }
+
+  @Test
+  fun `a search pager fetches with the query term and keeps results in memory`() =
+    runTest(testDispatcher) {
+      beersRemoteSource.setBeersResponse(listOf(apiItem(id = "1")), totalCount = 1)
+      val pager = factory.create(BeersQuery(search = "ipa"))
+
+      pager.loadFirstPage()
+
+      expectThat(pager.data.first().map { it.id }).isEqualTo(listOf("1"))
+      expectThat(beersRemoteSource.requestedSearches.toList()).isEqualTo(listOf("ipa"))
+      // Pure in-memory surface: a search must never write into the catalog's beers table.
+      expectThat(repository.countDBEntries()).isEqualTo(0)
     }
 
   @Test

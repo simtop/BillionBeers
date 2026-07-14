@@ -24,8 +24,8 @@ class BeersRepositoryImpl(
   private val beersMapper: BeersMapper,
 ) : BeersRepository {
 
-  override suspend fun getBeersPageFromApi(page: Int): BeerPage {
-    val remotePage = beersRemoteSource.getListOfBeers(page)
+  override suspend fun getBeersPageFromApi(page: Int, search: String?): BeerPage {
+    val remotePage = beersRemoteSource.getListOfBeers(page, search)
     return BeerPage(
       items = remotePage.items.map { beersMapper.fromBeersApiResponseItemToBeer(it) },
       totalCount = remotePage.totalCount,
