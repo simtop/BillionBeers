@@ -6,7 +6,8 @@ import com.simtop.core.core.LanguageProvider
 import dev.zacsweers.metro.Inject
 
 interface BeersRemoteSource {
-  suspend fun getListOfBeers(page: Int): BeersPage
+  /** [search] null fetches the full catalog; non-null adds `q=` for the search surface. */
+  suspend fun getListOfBeers(page: Int, search: String? = null): BeersPage
 }
 
 class BeersRemoteSourceImpl
@@ -14,9 +15,13 @@ class BeersRemoteSourceImpl
 constructor(private val service: BeersService, private val languageProvider: LanguageProvider) :
   BeersRemoteSource {
 
-  override suspend fun getListOfBeers(page: Int): BeersPage {
+  override suspend fun getListOfBeers(page: Int, search: String?): BeersPage {
     val response =
-      service.getListOfBeers(page = page, languageCode = languageProvider.currentLanguageCode())
+      service.getListOfBeers(
+        page = page,
+        languageCode = languageProvider.currentLanguageCode(),
+        search = search,
+      )
     // Malformed or absent header → null; the pager falls back to the empty-page probe.
     val totalCount = response.headers()[HEADER_TOTAL_COUNT]?.toIntOrNull()
     return BeersPage(items = response.body().orEmpty(), totalCount = totalCount)

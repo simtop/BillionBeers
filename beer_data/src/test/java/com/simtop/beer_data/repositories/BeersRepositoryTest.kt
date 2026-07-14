@@ -62,6 +62,16 @@ class BeersRepositoryTest {
     }
 
   @Test
+  fun `getBeersPageFromApi forwards the search term to the remote source`() =
+    runTest(testDispatcher) {
+      beersRemoteSource.setBeersResponse(emptyList(), totalCount = 0)
+
+      beersRepository.getBeersPageFromApi(1, search = "stout")
+
+      expectThat(beersRemoteSource.requestedSearches.toList()).isEqualTo(listOf("stout"))
+    }
+
+  @Test
   fun `updateAvailability should call local source`() =
     runTest(testDispatcher) {
       // Arrange

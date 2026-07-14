@@ -45,6 +45,9 @@ interface BeersRepository {
 
   suspend fun updateAvailability(beer: Beer): Either<UpdateAvailabilityError, Unit>
 
-  /** Fetches one page from the API, carrying the server total for end-detection and "N of M" UI. */
-  suspend fun getBeersPageFromApi(page: Int): BeerPage
+  /**
+   * Fetches one page from the API, carrying the server total for end-detection and "N of M" UI.
+   * [search] null fetches the full catalog; non-null fetches the `q=` search surface.
+   */
+  suspend fun getBeersPageFromApi(page: Int, search: String? = null): BeerPage
 }

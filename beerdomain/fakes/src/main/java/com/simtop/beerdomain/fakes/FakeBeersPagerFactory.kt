@@ -2,6 +2,7 @@ package com.simtop.beerdomain.fakes
 
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.core.core.Pager
 import com.simtop.core.core.PagingEvent
@@ -57,5 +58,13 @@ class FakeBeersPagerFactory(repository: FakeBeersRepository) : BeersPagerFactory
 
   val pager: FakePager<Beer, FetchBeersError> = FakePager(repository.observeBeers())
 
+  /** Every query a search pager was created for, so tests can assert debounce/cancel behaviour. */
+  val createdQueries = mutableListOf<BeersQuery>()
+
   override fun create(): Pager<Beer, FetchBeersError> = pager
+
+  override fun create(query: BeersQuery): Pager<Beer, FetchBeersError> {
+    createdQueries += query
+    return pager
+  }
 }

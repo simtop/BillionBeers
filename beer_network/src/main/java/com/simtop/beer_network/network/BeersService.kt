@@ -12,6 +12,8 @@ interface BeersService {
     @Query("_page") page: Int,
     @Query("_limit") perPage: Int = DEFAULT_ITEMS_PER_PAGE,
     @Query("translations.language.code") languageCode: String = DEFAULT_LANGUAGE_CODE,
+    // Free-text search; null (catalog) omits the param entirely so the full list is returned.
+    @Query("q") search: String? = null,
   ): Response<List<BeersApiResponseItem>>
 
   companion object {

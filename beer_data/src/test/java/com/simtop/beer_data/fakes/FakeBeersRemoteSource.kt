@@ -12,6 +12,7 @@ class FakeBeersRemoteSource : BeersRemoteSource {
   private var exceptionToThrow: Exception = Exception("Fake Remote Error")
 
   val requestedPages = mutableListOf<Int>()
+  val requestedSearches = mutableListOf<String?>()
 
   fun setBeersResponse(beers: List<BeersApiResponseItem>, totalCount: Int? = null) {
     beersResponse = beers
@@ -26,8 +27,9 @@ class FakeBeersRemoteSource : BeersRemoteSource {
     exceptionToThrow = exception
   }
 
-  override suspend fun getListOfBeers(page: Int): BeersPage {
+  override suspend fun getListOfBeers(page: Int, search: String?): BeersPage {
     requestedPages += page
+    requestedSearches += search
     if (shouldThrowError) {
       throw exceptionToThrow
     }
