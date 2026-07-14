@@ -217,15 +217,10 @@ fun BeersListContent(
             val listState = rememberLazyListState()
 
             // Suspend auto-load while the retry footer is up: the user is parked at the bottom
-            // after
-            // a failure, so an unconditional scroll trigger would bypass the Retry button and, on a
-            // 429, auto-loop. Tapping Retry clears the footer and re-arms the handler.
+            // after a failure, so scrolling away and back would re-trigger a load instead of
+            // waiting for an explicit Retry tap. Tapping Retry clears the footer and re-arms it.
             if (state.data.footer !is ListFooter.Retry) {
-              InfiniteListHandler(
-                listState = listState,
-                isLoadingNextPage = state.data.isLoadingNextPage,
-                onLoadMore = onScrollToBottom,
-              )
+              InfiniteListHandler(listState = listState, onLoadMore = onScrollToBottom)
             }
 
             val layoutDirection = LocalLayoutDirection.current

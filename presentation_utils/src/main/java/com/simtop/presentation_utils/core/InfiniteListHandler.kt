@@ -3,30 +3,52 @@ package com.simtop.presentation_utils.core
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 
-@Composable
-fun InfiniteListHandler(
-  listState: LazyListState,
-  isLoadingNextPage: Boolean,
-  buffer: Int = 1,
-  onLoadMore: () -> Unit,
-) {
-  val loadMore = remember {
-    derivedStateOf {
-      val layoutInfo = listState.layoutInfo
-      val totalItemsNumber = layoutInfo.totalItemsCount
-      val lastVisibleItemIndex = (layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0) + 1
+/**
+ * A scroll position sampled from a [LazyListState]: how many items exist and the last one shown.
+ */
+internal data class ListPosition(val totalItems: Int, val lastVisibleIndex: Int)
 
-      !isLoadingNextPage && lastVisibleItemIndex > (totalItemsNumber - buffer)
+/**
+ * Emits one "load more" signal each time the list first reaches near its bottom for a *new* length.
+ *
+ * The latch key is the item count, not a boolean: firing once per distinct at-bottom count means a
+ * load already in flight (count unchanged) or a load that failed (count unchanged) produces no
+ * further signal on its own - no double-fetch, no auto-retry loop - while a page that grew the list
+ * re-arms the next fetch. The old implementation gated on an `isLoadingNextPage` flag captured in
+ * an unkeyed `remember`, so the flag was stale and effectively dead; this needs no such flag - the
+ * pager's own mutex collapses any overlap.
+ */
+internal fun Flow<ListPosition>.loadMoreSignals(buffer: Int): Flow<Unit> =
+  map { position ->
+      val lastVisiblePlusOne = position.lastVisibleIndex + 1
+      position.totalItems.takeIf { lastVisiblePlusOne > it - buffer }
     }
-  }
+    .distinctUntilChanged()
+    .filterNotNull()
+    .map {}
 
-  LaunchedEffect(loadMore) {
-    snapshotFlow { loadMore.value }.distinctUntilChanged().filter { it }.collect { onLoadMore() }
+/**
+ * Calls [onLoadMore] when the user scrolls near the end of [listState] (within [buffer] items),
+ * once per distinct list length - see [loadMoreSignals] for why the dedup is count-based. Correct
+ * on its own: a caller need not suppress it during a load or an error to avoid a re-fetch loop.
+ */
+@Composable
+fun InfiniteListHandler(listState: LazyListState, buffer: Int = 1, onLoadMore: () -> Unit) {
+  LaunchedEffect(listState, buffer) {
+    snapshotFlow {
+        val layoutInfo = listState.layoutInfo
+        ListPosition(
+          totalItems = layoutInfo.totalItemsCount,
+          lastVisibleIndex = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0,
+        )
+      }
+      .loadMoreSignals(buffer)
+      .collect { onLoadMore() }
   }
 }
