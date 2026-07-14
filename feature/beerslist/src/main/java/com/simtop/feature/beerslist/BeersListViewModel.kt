@@ -61,7 +61,9 @@ class BeersListViewModel(
         is PagingState.Loading ->
           if (currentUiModel != null) {
             // A list is already on screen, so this Loading is a refresh in progress.
-            CommonUiState.Success(currentUiModel.copy(isRefreshing = true, footer = ListFooter.Hidden))
+            CommonUiState.Success(
+              currentUiModel.copy(isRefreshing = true, footer = ListFooter.Hidden)
+            )
           } else {
             CommonUiState.Loading
           }
@@ -88,7 +90,8 @@ class BeersListViewModel(
           }
         is PagingState.EndOfPagination ->
           if (currentUiModel != null) {
-            // The whole catalog is loaded: show the end-of-list caption instead of a footer spinner.
+            // The whole catalog is loaded: show the end-of-list caption instead of a footer
+            // spinner.
             CommonUiState.Success(
               currentUiModel.copy(
                 isLoadingNextPage = false,

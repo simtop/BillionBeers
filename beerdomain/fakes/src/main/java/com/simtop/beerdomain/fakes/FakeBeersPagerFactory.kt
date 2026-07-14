@@ -14,8 +14,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 
 /**
- * A [Pager] whose [data] is whatever flow the test wires in and whose [pagingState]/[events] are set
- * directly with [setPagingState]/[emitEvent] - load calls are only recorded, never fetch anything.
+ * A [Pager] whose [data] is whatever flow the test wires in and whose [pagingState]/[events] are
+ * set directly with [setPagingState]/[emitEvent] - load calls are only recorded, never fetch
+ * anything.
  */
 class FakePager<Value : Any, E : Any>(override val data: Flow<List<Value>>) : Pager<Value, E> {
 

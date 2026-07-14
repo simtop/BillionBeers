@@ -2,4 +2,7 @@
 <resources>
     <string name="billion_beers_list">"Lista de mil millones de cervezas"</string>
     <string name="beers_count_of_total">%1$d de %2$d</string>
+    <string name="beers_load_more_failed">No se pudieron cargar más cervezas</string>
+    <string name="beers_load_more_retry">Reintentar</string>
+    <string name="beers_end_of_list">Eso es todo: %1$d cervezas</string>
 </resources>
