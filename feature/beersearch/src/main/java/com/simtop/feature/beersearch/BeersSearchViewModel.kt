@@ -164,6 +164,14 @@ class BeersSearchViewModel(
     viewModelScope.launch(coroutineDispatcher.io) { currentPager?.loadNextPage() }
   }
 
+  /**
+   * Full-screen error retry: re-runs the current term's first page (a re-typed same query would be
+   * swallowed by distinctUntilChanged, so it can't drive this).
+   */
+  fun onRetrySearch() {
+    viewModelScope.launch(coroutineDispatcher.io) { currentPager?.loadFirstPage() }
+  }
+
   private companion object {
     const val DEBOUNCE_MILLIS = 700L
     const val MIN_QUERY_LENGTH = 2

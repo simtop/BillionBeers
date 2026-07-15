@@ -29,10 +29,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -86,7 +90,11 @@ private val BeerSaver: Saver<Beer?, String> =
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BeersListScreen(viewModel: BeersListViewModel = metroViewModel(), onBeerClick: (Beer) -> Unit) {
+fun BeersListScreen(
+  onBeerClick: (Beer) -> Unit,
+  onSearchClick: () -> Unit,
+  viewModel: BeersListViewModel = metroViewModel(),
+) {
   val rawState by viewModel.beerListViewState.collectAsState()
   val context = LocalContext.current
   val lifecycleOwner = LocalLifecycleOwner.current
@@ -110,6 +118,7 @@ fun BeersListScreen(viewModel: BeersListViewModel = metroViewModel(), onBeerClic
   BeersListContent(
     viewState = rawState,
     onBeerClick = { beer -> installingBeer = beer },
+    onSearchClick = onSearchClick,
     onScrollToBottom = { viewModel.onScrollToBottom() },
     onRefresh = { viewModel.refresh() },
     onRetry = { viewModel.refresh() },
@@ -135,6 +144,7 @@ fun BeersListScreen(viewModel: BeersListViewModel = metroViewModel(), onBeerClic
 fun BeersListContent(
   viewState: CommonUiState<BeersListUiModel>,
   onBeerClick: (Beer) -> Unit,
+  onSearchClick: () -> Unit,
   onScrollToBottom: () -> Unit,
   onRefresh: () -> Unit,
   onRetry: () -> Unit,
@@ -165,7 +175,12 @@ fun BeersListContent(
           } else {
             Text(text = stringResource(R.string.billion_beers_list), modifier = titleModifier)
           }
-        }
+        },
+        actions = {
+          IconButton(onClick = onSearchClick) {
+            Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.beers_search))
+          }
+        },
       )
     },
     contentWindowInsets = WindowInsets.statusBars,
@@ -407,6 +422,7 @@ fun BeersListScreenPreview(
     BeersListContent(
       viewState = state.uiState,
       onBeerClick = {},
+      onSearchClick = {},
       onScrollToBottom = {},
       onRefresh = {},
       onRetry = {},
