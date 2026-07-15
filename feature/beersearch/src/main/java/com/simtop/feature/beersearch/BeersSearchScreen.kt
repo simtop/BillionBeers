@@ -47,6 +47,7 @@ import com.simtop.core.core.PagedListFooter
 import com.simtop.core.core.PagedListUiModel
 import com.simtop.presentation_utils.R as PresentationUtilsR
 import com.simtop.presentation_utils.core.InfiniteListHandler
+import com.simtop.presentation_utils.core.resolvedMessage
 import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import com.simtop.presentation_utils.custom_views.ComposeErrorView
 import com.simtop.presentation_utils.custom_views.pagedListFooter
@@ -132,7 +133,7 @@ fun BeersSearchContent(
             CircularProgressIndicator()
           }
         is CommonUiState.Error ->
-          ComposeErrorView(message = state.message.orEmpty(), onRetry = onRetrySearch)
+          ComposeErrorView(message = state.resolvedMessage().orEmpty(), onRetry = onRetrySearch)
         is CommonUiState.Success ->
           if (state.data.items.isEmpty()) {
             CenteredHint(stringResource(R.string.search_no_results, query))

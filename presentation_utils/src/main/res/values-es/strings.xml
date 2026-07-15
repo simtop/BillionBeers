@@ -24,4 +24,9 @@
     <string name="beer_detail_food_pairing">Maridaje</string>
     <string name="beer_detail_abv_label">ABV</string>
     <string name="beer_detail_ibu_label">IBU</string>
+    <string name="error_no_internet">Sin conexión a internet</string>
+    <string name="error_no_beers_found">No se encontraron cervezas</string>
+    <string name="error_access_denied">Acceso denegado</string>
+    <string name="error_rate_limited">Demasiadas solicitudes. Espera un momento.</string>
+    <string name="error_failed_to_load_beers">No se pudieron cargar las cervezas</string>
 </resources>

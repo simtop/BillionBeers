@@ -40,7 +40,7 @@ data class PagedListUiModel<T>(
  * whose states it reduces (a new search term means a new reducer).
  */
 class PagedListReducer<T, E : Any>(
-  private val errorMessage: (E) -> String,
+  private val errorState: (E) -> CommonUiState.Error,
   private val endedEmpty: () -> CommonUiState<PagedListUiModel<T>> = { CommonUiState.Empty },
 ) {
 
@@ -63,7 +63,7 @@ class PagedListReducer<T, E : Any>(
         if (items.isEmpty()) endedEmpty() else success(items, footer = PagedListFooter.EndReached)
       is PagingState.Error ->
         when {
-          items.isEmpty() -> CommonUiState.Error(errorMessage(state.error))
+          items.isEmpty() -> errorState(state.error)
           // A failed refresh keeps the list with no footer: the load-more retry row would carry
           // the wrong copy and target the wrong load - repeating the refresh is the retry.
           state.isFirstPage -> success(items)

@@ -12,7 +12,7 @@ import com.simtop.core.core.PagedListReducer
 import com.simtop.core.core.PagedListUiModel
 import com.simtop.core.core.PagingEvent
 import com.simtop.core.core.PagingState
-import com.simtop.presentation_utils.core.toUiMessage
+import com.simtop.presentation_utils.core.toErrorState
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
@@ -41,7 +41,7 @@ class BeersListViewModel(
   // the app-scoped repository stays a stateless data accessor.
   private val pager = beersPagerFactory.create()
 
-  private val reducer = PagedListReducer<Beer, FetchBeersError>(errorMessage = { it.toUiMessage() })
+  private val reducer = PagedListReducer<Beer, FetchBeersError>(errorState = { it.toErrorState() })
 
   // Eagerly: the screen state has always been hot (it previously accumulated in a MutableStateFlow
   // from init), and the refresh-failure check below reads the current value between subscribers.
