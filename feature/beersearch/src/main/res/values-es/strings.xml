@@ -4,8 +4,6 @@
     <string name="search_prompt">Escribe al menos 2 letras para buscar</string>
     <string name="search_no_results">Ninguna cerveza coincide con «%1$s»</string>
     <string name="search_result_count">%1$d resultados</string>
-    <string name="search_load_more_failed">No se pudieron cargar más cervezas</string>
-    <string name="search_retry">Reintentar</string>
     <string name="search_end_of_list">Eso es todo: %1$d resultados</string>
     <string name="search_clear">Borrar búsqueda</string>
     <string name="search_back">Atrás</string>

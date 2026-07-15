@@ -4,8 +4,6 @@
     <string name="search_prompt">Saisissez au moins 2 lettres pour rechercher</string>
     <string name="search_no_results">Aucune bière ne correspond à « %1$s »</string>
     <string name="search_result_count">%1$d résultats</string>
-    <string name="search_load_more_failed">Impossible de charger plus de bières</string>
-    <string name="search_retry">Réessayer</string>
     <string name="search_end_of_list">C\'est tout : %1$d résultats</string>
     <string name="search_clear">Effacer la recherche</string>
     <string name="search_back">Retour</string>

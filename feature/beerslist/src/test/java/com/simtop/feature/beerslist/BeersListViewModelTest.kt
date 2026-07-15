@@ -7,6 +7,8 @@ import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
 import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.CoroutineDispatcherProvider
+import com.simtop.core.core.PagedListFooter
+import com.simtop.core.core.PagedListUiModel
 import com.simtop.core.core.PagingEvent
 import com.simtop.core.core.PagingState
 import io.mockk.every
@@ -68,8 +70,8 @@ class BeersListViewModelTest {
 
         // Success state from the pager's data flow
         val successState = awaitItem()
-        expectThat(successState).isA<CommonUiState.Success<BeersListUiModel>>()
-        expectThat((successState as CommonUiState.Success).data.beers.size).isEqualTo(1)
+        expectThat(successState).isA<CommonUiState.Success<PagedListUiModel<Beer>>>()
+        expectThat((successState as CommonUiState.Success).data.items.size).isEqualTo(1)
         expectThat(successState.data.isLoadingNextPage).isFalse()
 
         // Trigger scroll to bottom
@@ -81,7 +83,7 @@ class BeersListViewModelTest {
 
         // Expect update with isLoadingNextPage = true
         val loadingNextPageState = awaitItem()
-        expectThat(loadingNextPageState).isA<CommonUiState.Success<BeersListUiModel>>()
+        expectThat(loadingNextPageState).isA<CommonUiState.Success<PagedListUiModel<Beer>>>()
         expectThat((loadingNextPageState as CommonUiState.Success).data.isLoadingNextPage).isTrue()
 
         // Simulate PagingState Success
@@ -89,7 +91,7 @@ class BeersListViewModelTest {
 
         // Expect update with isLoadingNextPage = false
         val finalState = awaitItem()
-        expectThat(finalState).isA<CommonUiState.Success<BeersListUiModel>>()
+        expectThat(finalState).isA<CommonUiState.Success<PagedListUiModel<Beer>>>()
         expectThat((finalState as CommonUiState.Success).data.isLoadingNextPage).isFalse()
       }
     }
@@ -103,14 +105,14 @@ class BeersListViewModelTest {
 
       viewModel.events.test {
         viewModel.beerListViewState.test {
-          expectThat(awaitItem()).isA<CommonUiState.Success<BeersListUiModel>>()
+          expectThat(awaitItem()).isA<CommonUiState.Success<PagedListUiModel<Beer>>>()
 
           // The pager reports a non-first-page failure and emits its one-shot event.
           pager.setPagingState(PagingState.Error(FetchBeersError.RateLimited, isFirstPage = false))
           pager.emitEvent(PagingEvent.LoadMoreFailed(FetchBeersError.RateLimited))
 
           val state = awaitItem()
-          expectThat((state as CommonUiState.Success).data.footer).isEqualTo(ListFooter.Retry)
+          expectThat((state as CommonUiState.Success).data.footer).isEqualTo(PagedListFooter.Retry)
         }
         expectThat(awaitItem()).isEqualTo(BeersListEvent.ShowLoadMoreError)
       }
@@ -124,12 +126,13 @@ class BeersListViewModelTest {
       val pager = fakeBeersPagerFactory.pager
 
       viewModel.beerListViewState.test {
-        expectThat(awaitItem()).isA<CommonUiState.Success<BeersListUiModel>>()
+        expectThat(awaitItem()).isA<CommonUiState.Success<PagedListUiModel<Beer>>>()
 
         pager.setPagingState(PagingState.EndOfPagination)
 
         val state = awaitItem()
-        expectThat((state as CommonUiState.Success).data.footer).isEqualTo(ListFooter.EndReached)
+        expectThat((state as CommonUiState.Success).data.footer)
+          .isEqualTo(PagedListFooter.EndReached)
       }
     }
 
@@ -141,7 +144,7 @@ class BeersListViewModelTest {
       val pager = fakeBeersPagerFactory.pager
 
       viewModel.beerListViewState.test {
-        expectThat(awaitItem()).isA<CommonUiState.Success<BeersListUiModel>>()
+        expectThat(awaitItem()).isA<CommonUiState.Success<PagedListUiModel<Beer>>>()
 
         pager.setPagingState(PagingState.Success(totalCount = 206))
 
@@ -178,8 +181,8 @@ class BeersListViewModelTest {
 
       viewModel.beerListViewState.test {
         val state = awaitItem()
-        expectThat(state).isA<CommonUiState.Success<BeersListUiModel>>()
-        expectThat((state as CommonUiState.Success).data.beers.map { it.id })
+        expectThat(state).isA<CommonUiState.Success<PagedListUiModel<Beer>>>()
+        expectThat((state as CommonUiState.Success).data.items.map { it.id })
           .isEqualTo(listOf("1", "2"))
       }
       expectThat(fakeBeersPagerFactory.pager.loadFirstPageCallCount).isEqualTo(0)
@@ -195,19 +198,19 @@ class BeersListViewModelTest {
       val pager = fakeBeersPagerFactory.pager
 
       viewModel.beerListViewState.test {
-        expectThat(awaitItem()).isA<CommonUiState.Success<BeersListUiModel>>()
+        expectThat(awaitItem()).isA<CommonUiState.Success<PagedListUiModel<Beer>>>()
 
         viewModel.refresh()
         pager.setPagingState(PagingState.Loading)
 
         val refreshing = awaitItem()
-        expectThat(refreshing).isA<CommonUiState.Success<BeersListUiModel>>()
+        expectThat(refreshing).isA<CommonUiState.Success<PagedListUiModel<Beer>>>()
         expectThat((refreshing as CommonUiState.Success).data.isRefreshing).isTrue()
 
         pager.setPagingState(PagingState.Success())
 
         val done = awaitItem()
-        expectThat(done).isA<CommonUiState.Success<BeersListUiModel>>()
+        expectThat(done).isA<CommonUiState.Success<PagedListUiModel<Beer>>>()
         expectThat((done as CommonUiState.Success).data.isRefreshing).isFalse()
       }
     }
@@ -241,7 +244,7 @@ class BeersListViewModelTest {
 
       viewModel.events.test {
         viewModel.beerListViewState.test {
-          expectThat(awaitItem()).isA<CommonUiState.Success<BeersListUiModel>>()
+          expectThat(awaitItem()).isA<CommonUiState.Success<PagedListUiModel<Beer>>>()
 
           viewModel.refresh()
           pager.setPagingState(PagingState.Loading)
@@ -250,9 +253,9 @@ class BeersListViewModelTest {
           pager.setPagingState(PagingState.Error(FetchBeersError.Network, isFirstPage = true))
 
           val state = awaitItem()
-          expectThat(state).isA<CommonUiState.Success<BeersListUiModel>>()
+          expectThat(state).isA<CommonUiState.Success<PagedListUiModel<Beer>>>()
           expectThat((state as CommonUiState.Success).data.isRefreshing).isFalse()
-          expectThat(state.data.footer).isEqualTo(ListFooter.Hidden)
+          expectThat(state.data.footer).isEqualTo(PagedListFooter.Hidden)
         }
         expectThat(awaitItem()).isEqualTo(BeersListEvent.ShowRefreshError)
       }

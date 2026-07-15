@@ -33,14 +33,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
@@ -60,7 +58,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
@@ -70,6 +67,8 @@ import com.simtop.billionbeers.core.designsystem.component.shimmerBrush
 import com.simtop.billionbeers.core.designsystem.component.showToast
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.core.core.CommonUiState
+import com.simtop.core.core.PagedListFooter
+import com.simtop.core.core.PagedListUiModel
 import com.simtop.navigation.FeatureConstants
 import com.simtop.presentation_utils.R as PresentationUtilsR
 import com.simtop.presentation_utils.core.DynamicFeatureLoader
@@ -77,6 +76,7 @@ import com.simtop.presentation_utils.core.InfiniteListHandler
 import com.simtop.presentation_utils.core.LocalDebugDrawerToggle
 import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import com.simtop.presentation_utils.custom_views.ComposeErrorView
+import com.simtop.presentation_utils.custom_views.pagedListFooter
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -98,7 +98,7 @@ fun BeersListScreen(
   val rawState by viewModel.beerListViewState.collectAsState()
   val context = LocalContext.current
   val lifecycleOwner = LocalLifecycleOwner.current
-  val loadMoreFailedMessage = stringResource(R.string.beers_load_more_failed)
+  val loadMoreFailedMessage = stringResource(PresentationUtilsR.string.paged_list_load_more_failed)
   val refreshFailedMessage = stringResource(R.string.beers_refresh_failed)
 
   // One-shot toasts: a failed "load more" (the footer owns the retry affordance) and a failed
@@ -145,7 +145,7 @@ fun BeersListScreen(
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun BeersListContent(
-  viewState: CommonUiState<BeersListUiModel>,
+  viewState: CommonUiState<PagedListUiModel<Beer>>,
   onBeerClick: (Beer) -> Unit,
   onSearchClick: () -> Unit,
   onScrollToBottom: () -> Unit,
@@ -171,7 +171,7 @@ fun BeersListContent(
             Column(modifier = titleModifier) {
               Text(text = stringResource(R.string.billion_beers_list))
               Text(
-                text = stringResource(R.string.beers_count_of_total, loaded.beers.size, total),
+                text = stringResource(R.string.beers_count_of_total, loaded.items.size, total),
                 style = MaterialTheme.typography.labelMedium,
               )
             }
@@ -226,7 +226,7 @@ fun BeersListContent(
         is CommonUiState.Success -> {
           dataVisibility.value = true
 
-          val beers = state.data.beers
+          val beers = state.data.items
           PullToRefreshBox(
             isRefreshing = state.data.isRefreshing,
             onRefresh = onRefresh,
@@ -237,12 +237,13 @@ fun BeersListContent(
             // Suspend auto-load while the retry footer is up: the user is parked at the bottom
             // after a failure, so scrolling away and back would re-trigger a load instead of
             // waiting for an explicit Retry tap. Tapping Retry clears the footer and re-arms it.
-            if (state.data.footer !is ListFooter.Retry) {
+            if (state.data.footer !is PagedListFooter.Retry) {
               InfiniteListHandler(listState = listState, onLoadMore = onScrollToBottom)
             }
 
             val layoutDirection = LocalLayoutDirection.current
             val navBarsPadding = WindowInsets.navigationBars.asPaddingValues()
+            val endOfListText = stringResource(R.string.beers_end_of_list, beers.size)
 
             LazyColumn(
               state = listState,
@@ -260,16 +261,11 @@ fun BeersListContent(
                 ComposeBeersListItem(beer = beers[index], onClick = onBeerClick)
               }
 
-              // Bottom-of-list affordance: spinner while loading, a retry row after a failed
-              // "load more", or the end caption once the whole catalog is in.
-              when {
-                state.data.isLoadingNextPage -> item(key = "loading_footer") { LoadingMoreFooter() }
-                state.data.footer is ListFooter.Retry ->
-                  item(key = "retry_footer") { LoadMoreRetryFooter(onRetry = onRetryLoadMore) }
-                state.data.footer is ListFooter.EndReached ->
-                  item(key = "end_footer") { EndOfListFooter(beerCount = beers.size) }
-                else -> Unit
-              }
+              pagedListFooter(
+                model = state.data,
+                endOfListText = endOfListText,
+                onRetryLoadMore = onRetryLoadMore,
+              )
             }
           }
         }
@@ -278,63 +274,21 @@ fun BeersListContent(
   }
 }
 
-@Composable
-private fun LoadingMoreFooter() {
-  Box(
-    modifier = Modifier.fillMaxWidth().padding(BillionBeersTheme.spacing.large),
-    contentAlignment = Alignment.Center,
-  ) {
-    CircularProgressIndicator(
-      modifier = Modifier.size(BillionBeersTheme.spacing.extraLarge),
-      strokeWidth = 3.dp,
-    )
-  }
-}
-
-@Composable
-private fun LoadMoreRetryFooter(onRetry: () -> Unit) {
-  Column(
-    modifier = Modifier.fillMaxWidth().padding(BillionBeersTheme.spacing.medium),
-    horizontalAlignment = Alignment.CenterHorizontally,
-  ) {
-    Text(
-      text = stringResource(R.string.beers_load_more_failed),
-      style = MaterialTheme.typography.bodyMedium,
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-    TextButton(onClick = onRetry) { Text(text = stringResource(R.string.beers_load_more_retry)) }
-  }
-}
-
-@Composable
-private fun EndOfListFooter(beerCount: Int) {
-  Box(
-    modifier = Modifier.fillMaxWidth().padding(BillionBeersTheme.spacing.large),
-    contentAlignment = Alignment.Center,
-  ) {
-    Text(
-      text = stringResource(R.string.beers_end_of_list, beerCount),
-      style = MaterialTheme.typography.bodyMedium,
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-  }
-}
-
 class BeersListPreviewParameterProvider :
   PreviewParameterProvider<BeersListPreviewParameterProvider.State> {
 
   sealed interface State {
-    val uiState: CommonUiState<BeersListUiModel>
+    val uiState: CommonUiState<PagedListUiModel<Beer>>
 
-    enum class Preview(override val uiState: CommonUiState<BeersListUiModel>) : State {
+    enum class Preview(override val uiState: CommonUiState<PagedListUiModel<Beer>>) : State {
       LOADING(CommonUiState.Loading),
       EMPTY(CommonUiState.Empty),
       ERROR(CommonUiState.Error(message = "Failed to load beers. Please check your connection.")),
       SUCCESS_MULTIPLE_ITEMS(
         CommonUiState.Success(
           data =
-            BeersListUiModel(
-              beers =
+            PagedListUiModel(
+              items =
                 listOf(
                   Beer.empty.copy(
                     name = "Buzz",
@@ -358,8 +312,8 @@ class BeersListPreviewParameterProvider :
       SUCCESS_LOADING_MORE(
         CommonUiState.Success(
           data =
-            BeersListUiModel(
-              beers =
+            PagedListUiModel(
+              items =
                 listOf(
                   Beer.empty.copy(
                     name = "Buzz",
@@ -376,8 +330,8 @@ class BeersListPreviewParameterProvider :
       SUCCESS_LOAD_MORE_FAILED(
         CommonUiState.Success(
           data =
-            BeersListUiModel(
-              beers =
+            PagedListUiModel(
+              items =
                 listOf(
                   Beer.empty.copy(
                     name = "Buzz",
@@ -387,15 +341,15 @@ class BeersListPreviewParameterProvider :
                     availability = true,
                   )
                 ),
-              footer = ListFooter.Retry,
+              footer = PagedListFooter.Retry,
             )
         )
       ),
       SUCCESS_END_OF_LIST(
         CommonUiState.Success(
           data =
-            BeersListUiModel(
-              beers =
+            PagedListUiModel(
+              items =
                 listOf(
                   Beer.empty.copy(
                     name = "Buzz",
@@ -405,7 +359,7 @@ class BeersListPreviewParameterProvider :
                     availability = true,
                   )
                 ),
-              footer = ListFooter.EndReached,
+              footer = PagedListFooter.EndReached,
             )
         )
       ),

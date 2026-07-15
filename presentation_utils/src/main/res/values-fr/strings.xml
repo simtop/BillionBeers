@@ -4,6 +4,7 @@
     <string name="loading_dynamic_feature">Chargement de la fonctionnalité</string>
     <string name="emergency_emergency_we_run_out_of_this_beer">URGENCE!!\nURGENCE!!\nNOUS N\'AVONS PLUS CETTE BIÈRE</string>
     <string name="retry">Réessayer</string>
+    <string name="paged_list_load_more_failed">Impossible de charger plus de bières</string>
     <string name="empty_state">Aucun résultat</string>
     <string name="abv_chip">ABV : %1$s%%</string>
     <string name="ibu_chip">IBU : %1$s</string>

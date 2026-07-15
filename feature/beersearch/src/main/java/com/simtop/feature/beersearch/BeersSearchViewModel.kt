@@ -8,9 +8,11 @@ import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.CoroutineDispatcherProvider
+import com.simtop.core.core.PagedListReducer
+import com.simtop.core.core.PagedListUiModel
 import com.simtop.core.core.Pager
 import com.simtop.core.core.PagingEvent
-import com.simtop.core.core.PagingState
+import com.simtop.presentation_utils.core.toUiMessage
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
@@ -63,7 +65,7 @@ class BeersSearchViewModel(
   val events: Flow<BeersSearchEvent> = _events.receiveAsFlow()
 
   @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
-  val viewState: StateFlow<CommonUiState<BeersSearchUiModel>> =
+  val viewState: StateFlow<CommonUiState<PagedListUiModel<Beer>>> =
     queryText
       .map { it.trim() }
       .debounce(DEBOUNCE_MILLIS)
@@ -82,11 +84,18 @@ class BeersSearchViewModel(
         CommonUiState.Empty,
       )
 
-  private fun searchFlow(term: String): Flow<CommonUiState<BeersSearchUiModel>> =
+  private fun searchFlow(term: String): Flow<CommonUiState<PagedListUiModel<Beer>>> =
     channelFlow {
         val pager = beersPagerFactory.create(BeersQuery(term))
         currentPager = pager
-        var lastTotalCount: Int? = null
+        // One reducer per term: it latches the term's own result count, and its ended-empty state
+        // is a Success with no items (the "no results for X" hint) - Empty is the pre-search
+        // prompt.
+        val reducer =
+          PagedListReducer<Beer, FetchBeersError>(
+            errorMessage = { it.toUiMessage() },
+            endedEmpty = { CommonUiState.Success(PagedListUiModel()) },
+          )
 
         launch { pager.loadFirstPage() }
         launch {
@@ -96,61 +105,9 @@ class BeersSearchViewModel(
             }
           }
         }
-        combine(pager.data, pager.pagingState) { beers, state ->
-            if (state is PagingState.Success) state.totalCount?.let { lastTotalCount = it }
-            reduce(beers, state, lastTotalCount)
-          }
-          .collect { send(it) }
+        combine(pager.data, pager.pagingState, reducer::reduce).collect { send(it) }
       }
       .flowOn(coroutineDispatcher.io)
-
-  private fun reduce(
-    beers: List<Beer>,
-    state: PagingState<FetchBeersError>,
-    totalCount: Int?,
-  ): CommonUiState<BeersSearchUiModel> =
-    when (state) {
-      is PagingState.Error ->
-        if (state.isFirstPage) {
-          CommonUiState.Error(state.error.toUiMessage())
-        } else {
-          success(beers, totalCount, SearchFooter.Retry)
-        }
-      is PagingState.Loading,
-      PagingState.Idle -> if (beers.isEmpty()) CommonUiState.Loading else success(beers, totalCount)
-      is PagingState.LoadingNextPage -> success(beers, totalCount, isLoadingNextPage = true)
-      is PagingState.Success -> success(beers, totalCount)
-      PagingState.EndOfPagination ->
-        success(
-          beers,
-          totalCount,
-          if (beers.isEmpty()) SearchFooter.Hidden else SearchFooter.EndReached,
-        )
-    }
-
-  private fun success(
-    beers: List<Beer>,
-    totalCount: Int?,
-    footer: SearchFooter = SearchFooter.Hidden,
-    isLoadingNextPage: Boolean = false,
-  ) =
-    CommonUiState.Success(
-      BeersSearchUiModel(
-        beers = beers,
-        resultCount = totalCount,
-        isLoadingNextPage = isLoadingNextPage,
-        footer = if (beers.isEmpty()) SearchFooter.Hidden else footer,
-      )
-    )
-
-  private fun FetchBeersError.toUiMessage(): String =
-    when (this) {
-      FetchBeersError.Network -> "No internet connection"
-      FetchBeersError.NotFound -> "No beers found"
-      FetchBeersError.Forbidden -> "Access denied"
-      FetchBeersError.RateLimited -> "Too many requests. Please wait a moment."
-      is FetchBeersError.Unknown -> cause.message ?: "Search failed"
-    }
 
   fun onQueryChange(text: String) {
     queryText.value = text
@@ -179,24 +136,7 @@ class BeersSearchViewModel(
   }
 }
 
-/** The bottom-of-list affordance for search results: nothing, a retry row, or the end caption. */
-sealed interface SearchFooter {
-  data object Hidden : SearchFooter
-
-  data object Retry : SearchFooter
-
-  data object EndReached : SearchFooter
-}
-
 /** One-shot effects the search screen consumes once. */
 sealed interface BeersSearchEvent {
   data object ShowLoadMoreError : BeersSearchEvent
 }
-
-data class BeersSearchUiModel(
-  val beers: List<Beer>,
-  // X-Total-Count for "N results"; null until the server reports it.
-  val resultCount: Int?,
-  val isLoadingNextPage: Boolean = false,
-  val footer: SearchFooter = SearchFooter.Hidden,
-)
