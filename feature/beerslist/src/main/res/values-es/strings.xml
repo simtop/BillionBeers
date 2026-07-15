@@ -5,4 +5,5 @@
     <string name="beers_load_more_failed">No se pudieron cargar más cervezas</string>
     <string name="beers_load_more_retry">Reintentar</string>
     <string name="beers_end_of_list">Eso es todo: %1$d cervezas</string>
+    <string name="beers_search">Buscar</string>
 </resources>

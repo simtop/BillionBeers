@@ -35,6 +35,7 @@ dependencies {
   testImplementation(project(":testing-utils"))
   androidTestImplementation(project(":testing-utils"))
   implementation(project(":feature:beerslist"))
+  implementation(project(":feature:beersearch"))
   androidTestImplementation(project(":feature:beerdetail"))
   implementation(project(":core"))
   implementation(project(":core:designsystem"))
