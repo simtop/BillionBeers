@@ -61,6 +61,26 @@ class InfiniteListHandlerTest {
     count shouldBeEqualTo 0
   }
 
+  // Before the list's first layout pass, layoutInfo reports 0 items - that snapshot must not
+  // count as "near bottom", or every screen entry would fire an unscrolled load-more.
+  @Test
+  fun `an empty list never fires`() = runTest {
+    val count = signalsFor(ListPosition(totalItems = 0, lastVisibleIndex = 0))
+
+    count shouldBeEqualTo 0
+  }
+
+  @Test
+  fun `the pre-layout empty snapshot does not eat the real at-bottom signal`() = runTest {
+    val count =
+      signalsFor(
+        ListPosition(totalItems = 0, lastVisibleIndex = 0), // before first layout
+        ListPosition(totalItems = 25, lastVisibleIndex = 24), // laid out, user at bottom
+      )
+
+    count shouldBeEqualTo 1
+  }
+
   @Test
   fun `buffer widens the near-bottom trigger`() = runTest {
     // With buffer 5, item 20 of 25 already counts as "near bottom" (20 + 1 > 25 - 5).

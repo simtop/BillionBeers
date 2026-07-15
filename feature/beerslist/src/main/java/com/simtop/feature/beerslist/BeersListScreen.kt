@@ -99,13 +99,16 @@ fun BeersListScreen(
   val context = LocalContext.current
   val lifecycleOwner = LocalLifecycleOwner.current
   val loadMoreFailedMessage = stringResource(R.string.beers_load_more_failed)
+  val refreshFailedMessage = stringResource(R.string.beers_refresh_failed)
 
-  // One-shot toast when a "load more" fails; the footer owns the retry affordance.
+  // One-shot toasts: a failed "load more" (the footer owns the retry affordance) and a failed
+  // refresh (the list stays; pulling again is the retry).
   LaunchedEffect(viewModel, lifecycleOwner) {
     lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
       viewModel.events.collect { event ->
         when (event) {
           BeersListEvent.ShowLoadMoreError -> showToast(context, loadMoreFailedMessage)
+          BeersListEvent.ShowRefreshError -> showToast(context, refreshFailedMessage)
         }
       }
     }

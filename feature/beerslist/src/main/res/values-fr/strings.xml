@@ -3,6 +3,7 @@
     <string name="billion_beers_list">"Liste de milliards de bières"</string>
     <string name="beers_count_of_total">%1$d sur %2$d</string>
     <string name="beers_load_more_failed">Impossible de charger plus de bières</string>
+    <string name="beers_refresh_failed">Impossible d\'actualiser</string>
     <string name="beers_load_more_retry">Réessayer</string>
     <string name="beers_end_of_list">C\'est tout : %1$d bières</string>
     <string name="beers_search">Rechercher</string>

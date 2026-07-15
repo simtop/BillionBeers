@@ -100,19 +100,35 @@ class BeersListViewModel(
               )
             )
           } else {
-            currentState
+            // Pagination ended with nothing on screen: the catalog is genuinely empty. Without
+            // this, observeBeers (which ignores empty emissions) never resolves the state and the
+            // skeleton spins forever.
+            CommonUiState.Empty
           }
         is PagingState.Error ->
           if (currentUiModel != null) {
-            // A load-more failure keeps the list and offers a retry row; the transient toast is
-            // driven separately off the pager's one-shot events.
-            CommonUiState.Success(
-              currentUiModel.copy(
-                isLoadingNextPage = false,
-                isRefreshing = false,
-                footer = ListFooter.Retry,
+            if (pagingState.isFirstPage) {
+              // A failed refresh: keep the list and stop the indicator. Feedback is the one-shot
+              // refresh-error toast - the load-more footer would show the wrong copy, and pulling
+              // again is the natural retry.
+              CommonUiState.Success(
+                currentUiModel.copy(
+                  isLoadingNextPage = false,
+                  isRefreshing = false,
+                  footer = ListFooter.Hidden,
+                )
               )
-            )
+            } else {
+              // A load-more failure keeps the list and offers a retry row; the transient toast is
+              // driven separately off the pager's one-shot events.
+              CommonUiState.Success(
+                currentUiModel.copy(
+                  isLoadingNextPage = false,
+                  isRefreshing = false,
+                  footer = ListFooter.Retry,
+                )
+              )
+            }
           } else {
             CommonUiState.Error(pagingState.error.toUiMessage())
           }
@@ -186,6 +202,15 @@ class BeersListViewModel(
         if (pagingState is PagingState.Success) {
           pagingState.totalCount?.let { lastTotalCount = it }
         }
+        // A first-page failure with a list already on screen is a failed refresh: the reducer
+        // keeps the list, so the user's only feedback is this one-shot toast.
+        if (
+          pagingState is PagingState.Error &&
+            pagingState.isFirstPage &&
+            _beerListViewState.value is CommonUiState.Success
+        ) {
+          _events.trySend(BeersListEvent.ShowRefreshError)
+        }
         pagingHandler.handlePagingState(pagingState)
       }
       .launchIn(viewModelScope)
@@ -217,6 +242,8 @@ sealed interface ListFooter {
 /** One-shot effects the screen consumes exactly once. */
 sealed interface BeersListEvent {
   data object ShowLoadMoreError : BeersListEvent
+
+  data object ShowRefreshError : BeersListEvent
 }
 
 data class BeersListUiModel(
