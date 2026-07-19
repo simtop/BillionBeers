@@ -86,6 +86,10 @@ abstract class BeersDao {
   @Query("SELECT * FROM paging_state WHERE surface = :surface")
   abstract suspend fun getPagingState(surface: String): PagingStateDbModel?
 
+  // Distinguishes a legacy pre-paging_state cache (rows, zero bookmarks) from a cache whose
+  // bookmarks all belong to other surfaces (a language switch).
+  @Query("SELECT COUNT(surface) FROM paging_state") abstract suspend fun countPagingStates(): Int
+
   @Upsert abstract suspend fun upsertPagingState(state: PagingStateDbModel)
 
   /**

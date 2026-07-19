@@ -39,7 +39,13 @@ class BeersPagerFactoryImplTest {
     beersRemoteSource = FakeBeersRemoteSource()
     beersLocalSource = FakeBeersLocalSource()
     val beersMapper = BeersMapper(LanguageProvider { "en" }, NoOpLogger())
-    repository = BeersRepositoryImpl(beersRemoteSource, beersLocalSource, beersMapper)
+    repository =
+      BeersRepositoryImpl(
+        beersRemoteSource,
+        beersLocalSource,
+        beersMapper,
+        LanguageProvider { "en" },
+      )
     factory = BeersPagerFactoryImpl(repository, LanguageProvider { "en" })
   }
 
@@ -92,6 +98,27 @@ class BeersPagerFactoryImplTest {
 
       expectThat(beersRemoteSource.requestedPages.toList()).isEqualTo(listOf(2))
       expectThat(repository.countDBEntries()).isEqualTo(26)
+    }
+
+  // Language switch (Paging 2.0 Phase 4): the cached rows and bookmark belong to another
+  // language's surface, so "load more" must restart from page 1 and re-walk (re-translating via
+  // the upsert) - the row-count estimate would skip pages 1-2 and leave them in the old language.
+  @Test
+  fun `load more over a language-mismatched cache restarts from page 1`() =
+    runTest(testDispatcher) {
+      // Two full pages cached under Spanish; the estimate would resume at page 3.
+      repository.insertPage(
+        (1..50).map { Beer.empty.copy(id = "$it") },
+        surface = "catalog:es",
+        nextKey = 3,
+        totalCount = 206,
+      )
+      beersRemoteSource.setBeersResponse(listOf(apiItem(id = "1")), totalCount = 206)
+      val pager = factory.create() // built for "catalog:en"
+
+      pager.loadNextPage()
+
+      expectThat(beersRemoteSource.requestedPages.toList()).isEqualTo(listOf(1))
     }
 
   // Regression test: refresh upserts into the cache without deleting, so afterwards the cache -

@@ -15,6 +15,7 @@ import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.Brewery
+import com.simtop.beerdomain.domain.models.CatalogCacheStatus
 import com.simtop.core.core.Either
 import com.simtop.core.core.LanguageProvider
 import com.simtop.core.core.NoOpLogger
@@ -40,7 +41,13 @@ class BeersRepositoryTest {
     beersRemoteSource = FakeBeersRemoteSource()
     beersLocalSource = FakeBeersLocalSource()
     val beersMapper = BeersMapper(LanguageProvider { "en" }, NoOpLogger())
-    beersRepository = BeersRepositoryImpl(beersRemoteSource, beersLocalSource, beersMapper)
+    beersRepository =
+      BeersRepositoryImpl(
+        beersRemoteSource,
+        beersLocalSource,
+        beersMapper,
+        LanguageProvider { "en" },
+      )
   }
 
   @Test
@@ -146,6 +153,62 @@ class BeersRepositoryTest {
     }
 
   @Test
+  fun `cache status is Empty with no rows`() =
+    runTest(testDispatcher) {
+      expectThat(beersRepository.catalogCacheStatus()).isEqualTo(CatalogCacheStatus.Empty)
+    }
+
+  @Test
+  fun `cache status is Fresh with a recent bookmark for the current language`() =
+    runTest(testDispatcher) {
+      beersLocalSource.insertAllToDB(listOf(dbBeer("1")))
+      beersLocalSource.setPagingState(
+        "catalog:en",
+        nextKey = 2,
+        refreshedAt = System.currentTimeMillis() - ONE_HOUR_MILLIS,
+      )
+
+      expectThat(beersRepository.catalogCacheStatus()).isEqualTo(CatalogCacheStatus.Fresh)
+    }
+
+  @Test
+  fun `cache status is Stale once the bookmark is older than the policy TTL`() =
+    runTest(testDispatcher) {
+      beersLocalSource.insertAllToDB(listOf(dbBeer("1")))
+      beersLocalSource.setPagingState(
+        "catalog:en",
+        nextKey = 2,
+        refreshedAt = System.currentTimeMillis() - TWENTY_FIVE_HOURS_MILLIS,
+      )
+
+      expectThat(beersRepository.catalogCacheStatus()).isEqualTo(CatalogCacheStatus.Stale)
+    }
+
+  // A cache written before the paging_state table existed: rows but zero bookmarks anywhere.
+  // Its age is unknowable, so it counts as stale rather than trusted.
+  @Test
+  fun `cache status is Stale for a legacy cache with no bookmarks at all`() =
+    runTest(testDispatcher) {
+      beersLocalSource.insertAllToDB(listOf(dbBeer("1")))
+
+      expectThat(beersRepository.catalogCacheStatus()).isEqualTo(CatalogCacheStatus.Stale)
+    }
+
+  @Test
+  fun `cache status is LanguageMismatch when bookmarks belong to another language`() =
+    runTest(testDispatcher) {
+      beersLocalSource.insertAllToDB(listOf(dbBeer("1")))
+      beersLocalSource.setPagingState(
+        "catalog:es",
+        nextKey = 2,
+        refreshedAt = System.currentTimeMillis(),
+      )
+
+      expectThat(beersRepository.catalogCacheStatus())
+        .isEqualTo(CatalogCacheStatus.LanguageMismatch)
+    }
+
+  @Test
   fun `updateAvailability should call local source`() =
     runTest(testDispatcher) {
       // Arrange
@@ -229,4 +292,22 @@ class BeersRepositoryTest {
         expectThat(beers[0].id).isEqualTo("6")
       }
     }
+
+  private fun dbBeer(id: String) =
+    BeerDbModel(
+      id = id,
+      name = "Beer $id",
+      tagline = "",
+      description = "",
+      imageUrl = "",
+      abv = 0.0,
+      ibu = 0.0,
+      foodPairing = "[]",
+      availability = true,
+    )
+
+  private companion object {
+    const val ONE_HOUR_MILLIS = 60 * 60 * 1000L
+    const val TWENTY_FIVE_HOURS_MILLIS = 25 * ONE_HOUR_MILLIS
+  }
 }

@@ -7,6 +7,8 @@ import com.simtop.beerdomain.domain.models.BeerPage
 import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.Brewery
+import com.simtop.beerdomain.domain.models.CatalogCacheStatus
+import com.simtop.core.core.CachePolicy
 import com.simtop.core.core.Either
 import kotlinx.coroutines.flow.Flow
 
@@ -46,6 +48,13 @@ interface BeersRepository {
    * fall back to a row-count estimate in that case.
    */
   suspend fun pagingNextKey(surface: String): Int?
+
+  /**
+   * Classifies the catalog cache against the current language and [policy]'s TTL (using the
+   * `refreshed_at` recorded with each page write). See [CatalogCacheStatus] for the states and what
+   * each asks of the caller.
+   */
+  suspend fun catalogCacheStatus(policy: CachePolicy = CachePolicy()): CatalogCacheStatus
 
   suspend fun updateAvailability(beer: Beer): Either<UpdateAvailabilityError, Unit>
 

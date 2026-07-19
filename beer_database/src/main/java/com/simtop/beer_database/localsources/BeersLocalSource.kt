@@ -31,6 +31,11 @@ interface BeersLocalSource {
 
   suspend fun getPagingState(surface: String): PagingStateDbModel?
 
+  /**
+   * Total bookmarks across all surfaces - zero means a legacy cache written before paging_state.
+   */
+  suspend fun countPagingStates(): Int
+
   suspend fun updateBeer(primaryKey: String, availability: Boolean)
 
   suspend fun deleteAllFromDB()
@@ -53,6 +58,8 @@ class BeersLocalSourceImpl(private val db: BeersDatabase) : BeersLocalSource {
   ) = db.beersDao().insertPage(beers, surface, nextKey, totalCount, System.currentTimeMillis())
 
   override suspend fun getPagingState(surface: String) = db.beersDao().getPagingState(surface)
+
+  override suspend fun countPagingStates() = db.beersDao().countPagingStates()
 
   override suspend fun updateBeer(primaryKey: String, availability: Boolean) =
     db.beersDao().updateBeer(primaryKey, availability)

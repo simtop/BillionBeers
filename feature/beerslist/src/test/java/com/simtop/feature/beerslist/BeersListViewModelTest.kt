@@ -3,6 +3,7 @@ package com.simtop.feature.beerslist
 import app.cash.turbine.test
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.beerdomain.domain.models.CatalogCacheStatus
 import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
 import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.core.core.CommonUiState
@@ -186,6 +187,34 @@ class BeersListViewModelTest {
           .isEqualTo(listOf("1", "2"))
       }
       expectThat(fakeBeersPagerFactory.pager.loadFirstPageCallCount).isEqualTo(0)
+    }
+
+  // The TTL policy (Paging 2.0 Phase 4): a warm cache past its staleAfter still shows instantly,
+  // but start also kicks a background first-page load - the reducer renders it as the refresh
+  // spinner over the intact list.
+  @Test
+  fun `a stale warm cache loads the first page in the background on start`() =
+    runTest(testDispatcher) {
+      fakeBeersRepository.setBeers(listOf(Beer.empty.copy(id = "1")))
+      fakeBeersRepository.catalogCacheStatus = CatalogCacheStatus.Stale
+
+      val viewModel = buildViewModel()
+
+      viewModel.beerListViewState.test {
+        expectThat(awaitItem()).isA<CommonUiState.Success<PagedListUiModel<Beer>>>()
+      }
+      expectThat(fakeBeersPagerFactory.pager.loadFirstPageCallCount).isEqualTo(1)
+    }
+
+  @Test
+  fun `a language-mismatched cache loads the first page in the background on start`() =
+    runTest(testDispatcher) {
+      fakeBeersRepository.setBeers(listOf(Beer.empty.copy(id = "1")))
+      fakeBeersRepository.catalogCacheStatus = CatalogCacheStatus.LanguageMismatch
+
+      buildViewModel()
+
+      expectThat(fakeBeersPagerFactory.pager.loadFirstPageCallCount).isEqualTo(1)
     }
 
   // Regression test: PagingState.Loading over an already-shown list is a refresh in progress, so
