@@ -28,7 +28,9 @@ class MainActivity : ComponentActivity() {
         LocalMetroViewModelFactory provides appGraph.metroViewModelFactory,
         LocalSplitInstallManager provides appGraph.splitInstallManager,
       ) {
-        BillionBeersTheme { BeersListScreen(onBeerClick = {}, onSearchClick = {}) }
+        BillionBeersTheme {
+          BeersListScreen(onBeerClick = {}, onSearchClick = {}, onBrowseClick = {})
+        }
       }
     }
   }

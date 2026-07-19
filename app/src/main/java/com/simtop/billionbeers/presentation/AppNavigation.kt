@@ -13,6 +13,7 @@ import androidx.navigation3.ui.NavDisplay
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.feature.beersearch.BeersSearchScreen
 import com.simtop.feature.beerslist.BeersListScreen
+import com.simtop.navigation.BeerBrowse
 import com.simtop.navigation.BeerDetail
 import com.simtop.navigation.BeersList
 import com.simtop.navigation.BeersSearch
@@ -54,6 +55,7 @@ fun AppNavigation(deepLinkUri: Uri? = null, viewModel: AppNavigationViewModel = 
           BeersListScreen(
             onBeerClick = { beer -> backStack.add(BeerDetail(beer)) },
             onSearchClick = { backStack.add(BeersSearch) },
+            onBrowseClick = { backStack.add(BeerBrowse) },
           )
         }
 
@@ -72,6 +74,18 @@ fun AppNavigation(deepLinkUri: Uri? = null, viewModel: AppNavigationViewModel = 
             key = key,
             className = FeatureConstants.BEER_DETAIL_PROVIDER_CLASS,
             onBack = { backStack.removeLastOrNull() },
+          )
+        }
+
+        entry<BeerBrowse> { key ->
+          // Same install guarantee as BeerDetail (gated on the list screen's browse icon).
+          // onNavigate lets browse push a beer's detail onto this back stack from inside the
+          // module.
+          DynamicFeatureContent(
+            key = key,
+            className = FeatureConstants.BEER_BROWSE_PROVIDER_CLASS,
+            onBack = { backStack.removeLastOrNull() },
+            onNavigate = { destination -> backStack.add(destination) },
           )
         }
       },

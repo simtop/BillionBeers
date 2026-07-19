@@ -8,7 +8,8 @@ import com.google.android.play.core.splitinstall.SplitInstallStateUpdatedListene
 import com.simtop.navigation.FeatureConstants
 
 class FakeSplitInstallManager : SplitInstallManager {
-  private val installed = mutableSetOf(FeatureConstants.BEER_DETAIL_MODULE)
+  private val installed =
+    mutableSetOf(FeatureConstants.BEER_DETAIL_MODULE, FeatureConstants.BEER_BROWSE_MODULE)
 
   override fun startInstall(
     request: com.google.android.play.core.splitinstall.SplitInstallRequest

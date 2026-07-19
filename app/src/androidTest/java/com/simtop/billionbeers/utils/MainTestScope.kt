@@ -3,6 +3,7 @@ package com.simtop.billionbeers.utils
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.test.core.app.ActivityScenario
 import com.simtop.billionbeers.presentation.MainActivity
+import com.simtop.billionbeers.robots.BrowseScreenRobot
 import com.simtop.billionbeers.robots.DetailScreenRobot
 import com.simtop.billionbeers.robots.HomeScreenRobot
 
@@ -12,6 +13,10 @@ fun ComposeTestRule.homeScreen(func: HomeScreenRobot.() -> Unit) {
 
 fun ComposeTestRule.detailScreen(func: DetailScreenRobot.() -> Unit) {
   DetailScreenRobot(this).apply(func)
+}
+
+fun ComposeTestRule.browseScreen(func: BrowseScreenRobot.() -> Unit) {
+  BrowseScreenRobot(this).apply(func)
 }
 
 fun runMainActivityTest(composeTestRule: ComposeTestRule, block: ComposeTestRule.() -> Unit) {

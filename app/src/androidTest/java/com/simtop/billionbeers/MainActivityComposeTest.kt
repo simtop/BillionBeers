@@ -3,11 +3,15 @@ package com.simtop.billionbeers
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.beerdomain.domain.models.BeerStyle
+import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.billionbeers.di.BaseAppGraph
 import com.simtop.billionbeers.di.FakeBeersRepositoryModule
+import com.simtop.billionbeers.utils.browseScreen
 import com.simtop.billionbeers.utils.detailScreen
 import com.simtop.billionbeers.utils.homeScreen
 import com.simtop.billionbeers.utils.runMainActivityTest
+import com.simtop.core.core.Either
 import dev.zacsweers.metro.createGraphFactory
 import org.junit.Before
 import org.junit.Rule
@@ -32,12 +36,24 @@ class MainActivityComposeTest {
       availability = true,
     )
 
+  private val fakeStyle = BeerStyle(id = "style-1", name = "IPA (Indian Pale Ale)")
+  private val fakeBrewery =
+    Brewery(
+      id = "brewery-1",
+      name = "Supreme Suds Collective",
+      countryCode = "KP",
+      foundedYear = 1972,
+      imageUrl = "",
+    )
+
   @Before
   fun setup() {
     val context = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
     val app = context as BillionBeersApplication
 
     FakeBeersRepositoryModule.fakeBeersRepository.setBeers(listOf(fakeBeer))
+    FakeBeersRepositoryModule.fakeBeersRepository.beerStyles = Either.Right(listOf(fakeStyle))
+    FakeBeersRepositoryModule.fakeBeersRepository.breweries = Either.Right(listOf(fakeBrewery))
     val testGraph =
       createGraphFactory<TestAppGraph.Factory>().create(context = context) as BaseAppGraph
 
@@ -81,5 +97,31 @@ class MainActivityComposeTest {
         waitUntilNodeWithTextIsDisplayed(fakeBeer.name)
         assertBeerIsUnavailable(fakeBeer.name)
       }
+    }
+
+  // The §10.7 proof: the browse destination lives in the *second* on-demand module, reached
+  // through the same install gate as beerdetail (the fake installer reports it installed, so the
+  // gate passes straight through to navigation - the dialog flow itself can't run without Play).
+  @Test
+  fun browseOpensTheDynamicModuleAndListsStylesAndBreweries() =
+    runMainActivityTest(composeTestRule) {
+      homeScreen {
+        waitUntilNodeWithTextIsDisplayed(fakeBeer.name)
+        clickOnBrowse()
+      }
+
+      browseScreen {
+        waitUntilNodeWithTextIsDisplayed(fakeStyle.name)
+        assertBrowseTitleIsDisplayed()
+        assertStyleIsDisplayed(fakeStyle.name)
+
+        clickOnBreweriesTab()
+        waitUntilNodeWithTextIsDisplayed(fakeBrewery.name)
+        assertBreweryIsDisplayed(fakeBrewery.name)
+
+        pressBack()
+      }
+
+      homeScreen { waitUntilNodeWithTextIsDisplayed(fakeBeer.name) }
     }
 }

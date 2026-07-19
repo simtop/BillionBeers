@@ -6,6 +6,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -20,6 +21,10 @@ open class BaseTestRobot(private val composeTestRule: ComposeTestRule) {
 
   fun clickOnNodeWithText(text: String) {
     composeTestRule.onNodeWithText(text).performClick()
+  }
+
+  fun clickOnNodeWithContentDescription(label: String) {
+    composeTestRule.onNodeWithContentDescription(label).performClick()
   }
 
   fun assertTextIsDisplayed(text: String) {
