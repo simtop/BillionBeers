@@ -4,6 +4,7 @@ import com.simtop.beer_network.network.BeersService
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
+import com.simtop.beerdomain.domain.models.CatalogCacheStatus
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.InMemoryPagingStorage
@@ -22,23 +23,27 @@ class BeersPagerFactoryImpl(
 ) : BeersPagerFactory {
 
   override fun create(): Pager<Beer, FetchBeersError> {
-    // One paged surface, keyed by language so a future language switch can invalidate it (Phase 4);
-    // for now the key just scopes the bookmark. Read (resume) and write (store) share this value.
-    val surface = CATALOG_SURFACE_PREFIX + languageProvider.currentLanguageCode()
+    // One paged surface, keyed by language (shared with the repository's cache-status check via
+    // catalogSurface). Read (resume) and write (store) share this value.
+    val surface = catalogSurface(languageProvider)
     return PagingMediator(
       initialKey = FIRST_PAGE,
       fetchRemote = fetchPage(BeersQuery()),
       classifyError = { it.toFetchBeersError() },
       storage = BeersPagingStorage(repository, surface),
       // Exact resume: the paging_state bookmark records the first uncached page, written in the
-      // same
-      // transaction as the rows. It falls back to the row-count estimate (N fully cached pages ->
-      // page N+1) only when no bookmark exists yet - a fresh install, or a cache written before
-      // paging_state existed (the v1->v2 migration gap). Either way "load more" resumes after
-      // everything cached instead of silently re-fetching cached pages over the network.
+      // same transaction as the rows. On a bookmark miss the fallback depends on *why* it missed:
+      // - LanguageMismatch (rows fetched under another language): restart from page 1, so
+      //   "load more" re-walks and re-translates the stale pages through the upsert instead of
+      //   skipping them - the count estimate would jump past rows that still need re-fetching.
+      // - Otherwise (fresh install, or a legacy cache from before paging_state existed): the
+      //   row-count estimate (N fully cached pages -> page N+1) keeps its original job.
       nextKeyFromStorage = {
         repository.pagingNextKey(surface)
-          ?: (repository.countDBEntries() / BeersService.DEFAULT_ITEMS_PER_PAGE + FIRST_PAGE)
+          ?: when (repository.catalogCacheStatus()) {
+            CatalogCacheStatus.LanguageMismatch -> FIRST_PAGE
+            else -> repository.countDBEntries() / BeersService.DEFAULT_ITEMS_PER_PAGE + FIRST_PAGE
+          }
       },
     )
   }
@@ -69,7 +74,6 @@ class BeersPagerFactoryImpl(
 
   private companion object {
     const val FIRST_PAGE = 1
-    const val CATALOG_SURFACE_PREFIX = "catalog:"
   }
 }
 

@@ -10,8 +10,11 @@ import com.simtop.beerdomain.domain.models.BeerPage
 import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.Brewery
+import com.simtop.beerdomain.domain.models.CatalogCacheStatus
 import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.core.core.CachePolicy
 import com.simtop.core.core.Either
+import com.simtop.core.core.LanguageProvider
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
@@ -26,6 +29,7 @@ class BeersRepositoryImpl(
   private val beersRemoteSource: BeersRemoteSource,
   private val beersLocalSource: BeersLocalSource,
   private val beersMapper: BeersMapper,
+  private val languageProvider: LanguageProvider,
 ) : BeersRepository {
 
   override suspend fun getBeersPageFromApi(page: Int, query: BeersQuery): BeerPage {
@@ -89,6 +93,21 @@ class BeersRepositoryImpl(
 
   override suspend fun pagingNextKey(surface: String): Int? =
     beersLocalSource.getPagingState(surface)?.nextKey
+
+  override suspend fun catalogCacheStatus(policy: CachePolicy): CatalogCacheStatus {
+    if (beersLocalSource.getCountFromDB() == 0) return CatalogCacheStatus.Empty
+    val state = beersLocalSource.getPagingState(catalogSurface(languageProvider))
+    return when {
+      // No bookmark for this language: either a legacy cache from before paging_state existed
+      // (age unknowable -> treat as stale) or bookmarks that all belong to another language.
+      state == null ->
+        if (beersLocalSource.countPagingStates() == 0) CatalogCacheStatus.Stale
+        else CatalogCacheStatus.LanguageMismatch
+      System.currentTimeMillis() - state.refreshedAt > policy.staleAfter.inWholeMilliseconds ->
+        CatalogCacheStatus.Stale
+      else -> CatalogCacheStatus.Fresh
+    }
+  }
 
   override fun observeBeers(): Flow<List<Beer>> =
     beersLocalSource.getAllBeersFromDB().map { list ->

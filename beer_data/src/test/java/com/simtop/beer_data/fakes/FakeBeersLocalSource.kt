@@ -52,6 +52,19 @@ class FakeBeersLocalSource : BeersLocalSource {
 
   override suspend fun getPagingState(surface: String): PagingStateDbModel? = pagingState[surface]
 
+  override suspend fun countPagingStates(): Int = pagingState.size
+
+  /** Test helper: seed a bookmark as a warm cache would leave it, with a steerable timestamp. */
+  fun setPagingState(surface: String, nextKey: Int?, refreshedAt: Long) {
+    pagingState[surface] =
+      PagingStateDbModel(
+        surface = surface,
+        nextKey = nextKey,
+        totalCount = null,
+        refreshedAt = refreshedAt,
+      )
+  }
+
   override suspend fun updateBeer(primaryKey: String, availability: Boolean) {
     val current = beersFlow.value.toMutableList()
     val index = current.indexOfFirst { it.id == primaryKey }

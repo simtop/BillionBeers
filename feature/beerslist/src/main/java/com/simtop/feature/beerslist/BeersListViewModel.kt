@@ -4,8 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.beerdomain.domain.models.CatalogCacheStatus
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.core.core.CachePolicy
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.PagedListReducer
@@ -57,7 +59,7 @@ class BeersListViewModel(
   init {
     observeEvents()
     observeRefreshFailures()
-    loadFirstPageIfCacheIsEmpty()
+    loadFirstPageUnlessCacheIsFresh()
   }
 
   private fun observeEvents() {
@@ -86,9 +88,16 @@ class BeersListViewModel(
       .launchIn(viewModelScope)
   }
 
-  private fun loadFirstPageIfCacheIsEmpty() {
+  /**
+   * The cache policy at work: cached rows always show immediately, and anything non-fresh also
+   * triggers a first-page load. Empty is the cold start (full-screen Loading, as before); Stale and
+   * LanguageMismatch load *behind* the visible list - the reducer turns that into the refresh
+   * spinner, the upsert keeps the list stable under it, and a failure degrades to the existing
+   * one-shot refresh-failed toast.
+   */
+  private fun loadFirstPageUnlessCacheIsFresh() {
     viewModelScope.launch(coroutineDispatcher.io) {
-      if (beersRepository.countDBEntries() == 0) {
+      if (beersRepository.catalogCacheStatus(CACHE_POLICY) != CatalogCacheStatus.Fresh) {
         pager.loadFirstPage()
       }
     }
@@ -105,6 +114,12 @@ class BeersListViewModel(
 
   fun refresh() {
     viewModelScope.launch(coroutineDispatcher.io) { pager.loadFirstPage() }
+  }
+
+  private companion object {
+    // The default 24h TTL; becomes an injected/screen-specific value only when a second surface
+    // wants a different one.
+    val CACHE_POLICY = CachePolicy()
   }
 }
 

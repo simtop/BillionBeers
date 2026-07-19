@@ -7,7 +7,9 @@ import com.simtop.beerdomain.domain.models.BeerPage
 import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.Brewery
+import com.simtop.beerdomain.domain.models.CatalogCacheStatus
 import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.core.core.CachePolicy
 import com.simtop.core.core.Either
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -78,6 +80,17 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersReposit
   }
 
   override suspend fun pagingNextKey(surface: String): Int? = pagingNextKeys[surface]
+
+  /**
+   * What [catalogCacheStatus] reports. Left null it derives from the data - empty cache -> Empty,
+   * seeded beers -> Fresh - so cold- and warm-start fixtures stay one-liners; tests exercising the
+   * TTL/language paths set Stale or LanguageMismatch explicitly.
+   */
+  var catalogCacheStatus: CatalogCacheStatus? = null
+
+  override suspend fun catalogCacheStatus(policy: CachePolicy): CatalogCacheStatus =
+    catalogCacheStatus
+      ?: if (beersFlow.value.isEmpty()) CatalogCacheStatus.Empty else CatalogCacheStatus.Fresh
 
   override suspend fun updateAvailability(beer: Beer): Either<UpdateAvailabilityError, Unit> {
     exceptionToThrow?.let {
