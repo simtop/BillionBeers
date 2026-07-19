@@ -1,0 +1,18 @@
+[
+  {
+    "id": "t1",
+    "name": "IPA (Indian Pale Ale)",
+    "translations": [
+      {
+        "id": "tr1",
+        "language_id": "l1",
+        "typology_id": "t1",
+        "description": "Hop-forward and bitter."
+      }
+    ]
+  },
+  {
+    "id": "t2",
+    "name": "Stout"
+  }
+]

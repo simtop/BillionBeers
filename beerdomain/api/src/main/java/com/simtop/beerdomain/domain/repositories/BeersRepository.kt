@@ -1,8 +1,12 @@
 package com.simtop.beerdomain.domain.repositories
 
+import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeerPage
+import com.simtop.beerdomain.domain.models.BeerStyle
+import com.simtop.beerdomain.domain.models.BeersQuery
+import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.core.core.Either
 import kotlinx.coroutines.flow.Flow
 
@@ -46,8 +50,15 @@ interface BeersRepository {
   suspend fun updateAvailability(beer: Beer): Either<UpdateAvailabilityError, Unit>
 
   /**
-   * Fetches one page from the API, carrying the server total for end-detection and "N of M" UI.
-   * [search] null fetches the full catalog; non-null fetches the `q=` search surface.
+   * Fetches one page from the API, carrying the server total for end-detection and "N of M" UI. The
+   * default (all-null) [query] fetches the full catalog; setting search/style/brewery fetches that
+   * filtered surface.
    */
-  suspend fun getBeersPageFromApi(page: Int, search: String? = null): BeerPage
+  suspend fun getBeersPageFromApi(page: Int, query: BeersQuery = BeersQuery()): BeerPage
+
+  /** All 17 beer styles, unpaged - a list this small never needs a pager. */
+  suspend fun getBeerStyles(): Either<FetchBeersError, List<BeerStyle>>
+
+  /** All 38 breweries, unpaged - same reasoning as [getBeerStyles]. */
+  suspend fun getBreweries(): Either<FetchBeersError, List<Brewery>>
 }

@@ -1,6 +1,8 @@
 package com.simtop.billionbeers.data
 
+import com.simtop.beer_network.fixtures.FAKE_BREWERIES_JSON
 import com.simtop.beer_network.fixtures.FAKE_JSON
+import com.simtop.beer_network.fixtures.FAKE_TYPOLOGIES_JSON
 import com.simtop.beer_network.remotesources.BeersRemoteSourceImpl
 import com.simtop.billionbeers.TestMockWebService
 import com.simtop.core.core.LanguageProvider
@@ -66,5 +68,60 @@ class BeersRemoteSourceTest : TestMockWebService() {
 
     val path = mockServer.takeRequest().path.orEmpty()
     path.contains("q=") shouldBeEqualTo false
+  }
+
+  @Test
+  fun `a style filter sends the typology id query parameter`() {
+    mockHttpResponse(FAKE_JSON, HttpURLConnection.HTTP_OK, mapOf("X-Total-Count" to "9"))
+
+    runBlocking { remoteSource.getListOfBeers(1, typologyId = "t1") }
+
+    val path = mockServer.takeRequest().path.orEmpty()
+    path.contains("typology.id=t1") shouldBeEqualTo true
+  }
+
+  @Test
+  fun `a brewery filter sends the brewery id query parameter`() {
+    mockHttpResponse(FAKE_JSON, HttpURLConnection.HTTP_OK, mapOf("X-Total-Count" to "5"))
+
+    runBlocking { remoteSource.getListOfBeers(1, breweryId = "b1") }
+
+    val path = mockServer.takeRequest().path.orEmpty()
+    path.contains("brewery.id=b1") shouldBeEqualTo true
+  }
+
+  @Test
+  fun `a catalog fetch omits the filter query parameters`() {
+    mockHttpResponse(FAKE_JSON, HttpURLConnection.HTTP_OK)
+
+    runBlocking { remoteSource.getListOfBeers(1) }
+
+    val path = mockServer.takeRequest().path.orEmpty()
+    path.contains("typology.id=") shouldBeEqualTo false
+    path.contains("brewery.id=") shouldBeEqualTo false
+  }
+
+  @Test
+  fun `typologies parse ignoring the unrendered translations`() {
+    mockHttpResponse(FAKE_TYPOLOGIES_JSON, HttpURLConnection.HTTP_OK)
+
+    val typologies = runBlocking { remoteSource.getTypologies() }
+
+    typologies.map { it.id } shouldBeEqualTo listOf("t1", "t2")
+    typologies.map { it.name } shouldBeEqualTo listOf("IPA (Indian Pale Ale)", "Stout")
+  }
+
+  @Test
+  fun `breweries parse the embedded country and image`() {
+    mockHttpResponse(FAKE_BREWERIES_JSON, HttpURLConnection.HTTP_OK)
+
+    val breweries = runBlocking { remoteSource.getBreweries() }
+
+    breweries.size shouldBeEqualTo 1
+    breweries[0].id shouldBeEqualTo "b1"
+    breweries[0].name shouldBeEqualTo "Supreme Suds Collective"
+    breweries[0].foundedYear shouldBeEqualTo 1972
+    breweries[0].country?.code shouldBeEqualTo "KP"
+    breweries[0].image?.url shouldBeEqualTo "https://brewbuddy.dev/images/b1.jpg"
   }
 }

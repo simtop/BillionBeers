@@ -5,8 +5,12 @@ package com.simtop.beerdomain.domain.models
  * query, and a changed query means a *new* pager, not a mutation - which keeps invalidation out of
  * the mediator (see `BeersPagerFactory`).
  *
- * Phase 2 wires only [search] (`q=`); language stays on the `LanguageProvider` the way the catalog
- * does it, so it isn't part of the query. Style/brewery/abv/sort filters are Phase 3 - additive and
- * non-breaking when they arrive.
+ * [search] maps to `q=`, [styleId] to `typology.id=`, [breweryId] to `brewery.id=`. The API ANDs
+ * whatever is present, so combinations are legal even though each screen sets exactly one. Language
+ * stays on the `LanguageProvider` the way the catalog does it, so it isn't part of the query.
  */
-data class BeersQuery(val search: String)
+data class BeersQuery(
+  val search: String? = null,
+  val styleId: String? = null,
+  val breweryId: String? = null,
+)

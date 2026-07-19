@@ -13,10 +13,7 @@ import com.simtop.core.core.Pager
 import com.simtop.core.core.PagingMediator
 import com.simtop.core.core.PagingStorage
 import dev.zacsweers.metro.Inject
-import java.io.IOException
-import java.net.HttpURLConnection
 import kotlinx.coroutines.flow.Flow
-import retrofit2.HttpException
 
 @Inject
 class BeersPagerFactoryImpl(
@@ -30,7 +27,7 @@ class BeersPagerFactoryImpl(
     val surface = CATALOG_SURFACE_PREFIX + languageProvider.currentLanguageCode()
     return PagingMediator(
       initialKey = FIRST_PAGE,
-      fetchRemote = fetchPage(search = null),
+      fetchRemote = fetchPage(BeersQuery()),
       classifyError = { it.toFetchBeersError() },
       storage = BeersPagingStorage(repository, surface),
       // Exact resume: the paging_state bookmark records the first uncached page, written in the
@@ -47,12 +44,13 @@ class BeersPagerFactoryImpl(
   }
 
   override fun create(query: BeersQuery): Pager<Beer, FetchBeersError> =
-    // Search is its own surface: results live only in memory (they die with the screen and a new
-    // query instantly invalidates them) and never touch the beers table, so the catalog's
-    // SELECT * view is untouched. No nextKeyFromStorage - there's no warm cache to resume from.
+    // A query surface (search, beers-by-style, beers-by-brewery) is its own pager: results live
+    // only in memory (they die with the screen and a new query instantly invalidates them) and
+    // never touch the beers table, so the catalog's SELECT * view is untouched. No
+    // nextKeyFromStorage - there's no warm cache to resume from.
     PagingMediator(
       initialKey = FIRST_PAGE,
-      fetchRemote = fetchPage(query.search),
+      fetchRemote = fetchPage(query),
       classifyError = { it.toFetchBeersError() },
       storage = InMemoryPagingStorage(),
     )
@@ -61,32 +59,17 @@ class BeersPagerFactoryImpl(
    * One page fetch plus the shared nextKey math: with a known total the end is exact (no wasted
    * empty fetch); without it, keep advancing and let the mediator's empty-page probe find the end.
    */
-  private fun fetchPage(search: String?): suspend (Int) -> PageResult<Int, Beer> = { page ->
-    val beerPage = repository.getBeersPageFromApi(page, search)
+  private fun fetchPage(query: BeersQuery): suspend (Int) -> PageResult<Int, Beer> = { page ->
+    val beerPage = repository.getBeersPageFromApi(page, query)
     val total = beerPage.totalCount
     val nextKey =
       if (total != null && page * BeersService.DEFAULT_ITEMS_PER_PAGE >= total) null else page + 1
     PageResult(items = beerPage.items, nextKey = nextKey, totalCount = total)
   }
 
-  private fun Throwable.toFetchBeersError(): FetchBeersError =
-    when (this) {
-      is HttpException ->
-        when (code()) {
-          HttpURLConnection.HTTP_NOT_FOUND -> FetchBeersError.NotFound
-          HttpURLConnection.HTTP_FORBIDDEN -> FetchBeersError.Forbidden
-          HTTP_TOO_MANY_REQUESTS -> FetchBeersError.RateLimited
-          else -> FetchBeersError.Unknown(this)
-        }
-      is IOException -> FetchBeersError.Network
-      else -> FetchBeersError.Unknown(this)
-    }
-
   private companion object {
     const val FIRST_PAGE = 1
     const val CATALOG_SURFACE_PREFIX = "catalog:"
-    // No HttpURLConnection constant exists for 429.
-    const val HTTP_TOO_MANY_REQUESTS = 429
   }
 }
 
