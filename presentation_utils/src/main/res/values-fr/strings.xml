@@ -4,6 +4,7 @@
     <string name="loading_dynamic_feature">Chargement de la fonctionnalité</string>
     <string name="emergency_emergency_we_run_out_of_this_beer">URGENCE!!\nURGENCE!!\nNOUS N\'AVONS PLUS CETTE BIÈRE</string>
     <string name="retry">Réessayer</string>
+    <string name="paged_list_load_more_failed">Impossible de charger plus de bières</string>
     <string name="empty_state">Aucun résultat</string>
     <string name="abv_chip">ABV : %1$s%%</string>
     <string name="ibu_chip">IBU : %1$s</string>
@@ -23,4 +24,9 @@
     <string name="beer_detail_food_pairing">Accords mets et bières</string>
     <string name="beer_detail_abv_label">ABV</string>
     <string name="beer_detail_ibu_label">IBU</string>
+    <string name="error_no_internet">Pas de connexion Internet</string>
+    <string name="error_no_beers_found">Aucune bière trouvée</string>
+    <string name="error_access_denied">Accès refusé</string>
+    <string name="error_rate_limited">Trop de requêtes. Veuillez patienter un instant.</string>
+    <string name="error_failed_to_load_beers">Impossible de charger les bières</string>
 </resources>

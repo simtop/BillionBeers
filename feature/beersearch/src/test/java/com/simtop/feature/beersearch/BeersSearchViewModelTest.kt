@@ -1,5 +1,6 @@
 package com.simtop.feature.beersearch
 
+import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.Beer
@@ -8,6 +9,7 @@ import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
 import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.CoroutineDispatcherProvider
+import com.simtop.core.core.PagedListUiModel
 import com.simtop.core.core.PagingState
 import io.mockk.every
 import io.mockk.mockk
@@ -49,7 +51,8 @@ class BeersSearchViewModelTest {
 
   @AfterEach fun tearDown() = Dispatchers.resetMain()
 
-  private fun buildViewModel() = BeersSearchViewModel(coroutineDispatcherProvider, fakeFactory)
+  private fun buildViewModel(savedStateHandle: SavedStateHandle = SavedStateHandle()) =
+    BeersSearchViewModel(coroutineDispatcherProvider, fakeFactory, savedStateHandle)
 
   @Test
   fun `rapid typing debounces into a single query`() =
@@ -104,10 +107,10 @@ class BeersSearchViewModelTest {
         runCurrent()
 
         val state = expectMostRecentItem()
-        expectThat(state).isA<CommonUiState.Success<BeersSearchUiModel>>()
+        expectThat(state).isA<CommonUiState.Success<PagedListUiModel<Beer>>>()
         val model = (state as CommonUiState.Success).data
-        expectThat(model.beers.map { it.id }).isEqualTo(listOf("1"))
-        expectThat(model.resultCount).isEqualTo(159)
+        expectThat(model.items.map { it.id }).isEqualTo(listOf("1"))
+        expectThat(model.totalCount).isEqualTo(159)
       }
     }
 
@@ -130,8 +133,8 @@ class BeersSearchViewModelTest {
         runCurrent()
 
         val state = expectMostRecentItem()
-        expectThat(state).isA<CommonUiState.Success<BeersSearchUiModel>>()
-        expectThat((state as CommonUiState.Success).data.beers).isEmpty()
+        expectThat(state).isA<CommonUiState.Success<PagedListUiModel<Beer>>>()
+        expectThat((state as CommonUiState.Success).data.items).isEmpty()
       }
     }
 
@@ -184,8 +187,25 @@ class BeersSearchViewModelTest {
         runCurrent()
 
         val state = expectMostRecentItem()
-        expectThat((state as CommonUiState.Success).data.beers.map { it.id })
+        expectThat((state as CommonUiState.Success).data.items.map { it.id })
           .isEqualTo(listOf("stout-1"))
+      }
+    }
+
+  // Process death: the query survives in the SavedStateHandle, so a recreated ViewModel re-runs
+  // the search on its own - the user gets their results back, not just the text in the field.
+  @Test
+  fun `a query restored from the saved state re-runs the search`() =
+    runTest(testDispatcher) {
+      val viewModel = buildViewModel(SavedStateHandle(mapOf("search_query" to "ipa")))
+
+      viewModel.viewState.test {
+        advanceTimeBy(pastDebounce)
+        runCurrent()
+
+        expectThat(fakeFactory.createdQueries.toList()).isEqualTo(listOf(BeersQuery("ipa")))
+        expectThat(viewModel.query.value).isEqualTo("ipa")
+        cancelAndIgnoreRemainingEvents()
       }
     }
 

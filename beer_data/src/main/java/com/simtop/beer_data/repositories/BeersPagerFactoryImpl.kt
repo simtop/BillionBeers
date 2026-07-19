@@ -30,16 +30,7 @@ class BeersPagerFactoryImpl(
     val surface = CATALOG_SURFACE_PREFIX + languageProvider.currentLanguageCode()
     return PagingMediator(
       initialKey = FIRST_PAGE,
-      fetchRemote = { page ->
-        val beerPage = repository.getBeersPageFromApi(page)
-        // With a known total we can end exactly (no wasted empty fetch); without it, keep advancing
-        // and let the mediator's empty-page probe find the end.
-        val total = beerPage.totalCount
-        val nextKey =
-          if (total != null && page * BeersService.DEFAULT_ITEMS_PER_PAGE >= total) null
-          else page + 1
-        PageResult(items = beerPage.items, nextKey = nextKey, totalCount = total)
-      },
+      fetchRemote = fetchPage(search = null),
       classifyError = { it.toFetchBeersError() },
       storage = BeersPagingStorage(repository, surface),
       // Exact resume: the paging_state bookmark records the first uncached page, written in the
@@ -61,17 +52,22 @@ class BeersPagerFactoryImpl(
     // SELECT * view is untouched. No nextKeyFromStorage - there's no warm cache to resume from.
     PagingMediator(
       initialKey = FIRST_PAGE,
-      fetchRemote = { page ->
-        val beerPage = repository.getBeersPageFromApi(page, query.search)
-        val total = beerPage.totalCount
-        val nextKey =
-          if (total != null && page * BeersService.DEFAULT_ITEMS_PER_PAGE >= total) null
-          else page + 1
-        PageResult(items = beerPage.items, nextKey = nextKey, totalCount = total)
-      },
+      fetchRemote = fetchPage(query.search),
       classifyError = { it.toFetchBeersError() },
       storage = InMemoryPagingStorage(),
     )
+
+  /**
+   * One page fetch plus the shared nextKey math: with a known total the end is exact (no wasted
+   * empty fetch); without it, keep advancing and let the mediator's empty-page probe find the end.
+   */
+  private fun fetchPage(search: String?): suspend (Int) -> PageResult<Int, Beer> = { page ->
+    val beerPage = repository.getBeersPageFromApi(page, search)
+    val total = beerPage.totalCount
+    val nextKey =
+      if (total != null && page * BeersService.DEFAULT_ITEMS_PER_PAGE >= total) null else page + 1
+    PageResult(items = beerPage.items, nextKey = nextKey, totalCount = total)
+  }
 
   private fun Throwable.toFetchBeersError(): FetchBeersError =
     when (this) {

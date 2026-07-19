@@ -4,6 +4,7 @@
     <string name="loading_dynamic_feature">Loading Dynamic Feature</string>
     <string name="emergency_emergency_we_run_out_of_this_beer">EMERGENCY!!\nEMERGENCY!!\nWE RUN OUT OF THIS BEER</string>
     <string name="retry">Retry</string>
+    <string name="paged_list_load_more_failed">Couldn\'t load more beers</string>
     <string name="empty_state">Empty State</string>
     <string name="abv_chip">ABV: %1$s%%</string>
     <string name="ibu_chip">IBU: %1$s</string>
@@ -23,4 +24,9 @@
     <string name="beer_detail_food_pairing">Food Pairing</string>
     <string name="beer_detail_abv_label">ABV</string>
     <string name="beer_detail_ibu_label">IBU</string>
+    <string name="error_no_internet">No internet connection</string>
+    <string name="error_no_beers_found">No beers found</string>
+    <string name="error_access_denied">Access denied</string>
+    <string name="error_rate_limited">Too many requests. Please wait a moment.</string>
+    <string name="error_failed_to_load_beers">Failed to load beers</string>
 </resources>

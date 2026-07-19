@@ -1,25 +1,32 @@
 package com.simtop.feature.beersearch
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.CreationExtras
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.CoroutineDispatcherProvider
+import com.simtop.core.core.PagedListReducer
+import com.simtop.core.core.PagedListUiModel
 import com.simtop.core.core.Pager
 import com.simtop.core.core.PagingEvent
-import com.simtop.core.core.PagingState
+import com.simtop.presentation_utils.core.toErrorState
 import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.Assisted
+import dev.zacsweers.metro.AssistedFactory
+import dev.zacsweers.metro.AssistedInject
 import dev.zacsweers.metro.ContributesIntoMap
-import dev.zacsweers.metro.Inject
-import dev.zacsweers.metrox.viewmodel.ViewModelKey
+import dev.zacsweers.metrox.viewmodel.ViewModelAssistedFactory
+import dev.zacsweers.metrox.viewmodel.ViewModelAssistedFactoryKey
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.channelFlow
@@ -43,16 +50,31 @@ import kotlinx.coroutines.launch
  *
  * Results are in-memory only (the pager's storage is), so they die with the screen and a new query
  * invalidates instantly. The catalog's Room cache is never touched.
+ *
+ * The query lives here in the [SavedStateHandle], not in the screen: process death then restores
+ * the *results* (the restored query re-runs the search), not just the text in the field.
  */
-@ContributesIntoMap(AppScope::class)
-@ViewModelKey(BeersSearchViewModel::class)
-@Inject
+@AssistedInject
 class BeersSearchViewModel(
   private val coroutineDispatcher: CoroutineDispatcherProvider,
   private val beersPagerFactory: BeersPagerFactory,
+  @Assisted private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
-  private val queryText = MutableStateFlow("")
+  @AssistedFactory
+  @ViewModelAssistedFactoryKey(BeersSearchViewModel::class)
+  @ContributesIntoMap(AppScope::class)
+  fun interface Factory : ViewModelAssistedFactory {
+    override fun create(extras: CreationExtras): BeersSearchViewModel =
+      create(extras.createSavedStateHandle())
+
+    fun create(@Assisted savedStateHandle: SavedStateHandle): BeersSearchViewModel
+  }
+
+  private val queryText = savedStateHandle.getStateFlow(KEY_QUERY, "")
+
+  /** The current query text, owned here so the screen and the search can never disagree. */
+  val query: StateFlow<String> = queryText
 
   // The pager backing whatever term is on screen now, so scroll/retry act on it. Written on Main
   // (short-query reset) and IO (each term's searchFlow), read on IO (scroll/retry) - volatile for
@@ -63,7 +85,7 @@ class BeersSearchViewModel(
   val events: Flow<BeersSearchEvent> = _events.receiveAsFlow()
 
   @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
-  val viewState: StateFlow<CommonUiState<BeersSearchUiModel>> =
+  val viewState: StateFlow<CommonUiState<PagedListUiModel<Beer>>> =
     queryText
       .map { it.trim() }
       .debounce(DEBOUNCE_MILLIS)
@@ -82,11 +104,18 @@ class BeersSearchViewModel(
         CommonUiState.Empty,
       )
 
-  private fun searchFlow(term: String): Flow<CommonUiState<BeersSearchUiModel>> =
+  private fun searchFlow(term: String): Flow<CommonUiState<PagedListUiModel<Beer>>> =
     channelFlow {
         val pager = beersPagerFactory.create(BeersQuery(term))
         currentPager = pager
-        var lastTotalCount: Int? = null
+        // One reducer per term: it latches the term's own result count, and its ended-empty state
+        // is a Success with no items (the "no results for X" hint) - Empty is the pre-search
+        // prompt.
+        val reducer =
+          PagedListReducer<Beer, FetchBeersError>(
+            errorState = { it.toErrorState() },
+            endedEmpty = { CommonUiState.Success(PagedListUiModel()) },
+          )
 
         launch { pager.loadFirstPage() }
         launch {
@@ -96,64 +125,12 @@ class BeersSearchViewModel(
             }
           }
         }
-        combine(pager.data, pager.pagingState) { beers, state ->
-            if (state is PagingState.Success) state.totalCount?.let { lastTotalCount = it }
-            reduce(beers, state, lastTotalCount)
-          }
-          .collect { send(it) }
+        combine(pager.data, pager.pagingState, reducer::reduce).collect { send(it) }
       }
       .flowOn(coroutineDispatcher.io)
 
-  private fun reduce(
-    beers: List<Beer>,
-    state: PagingState<FetchBeersError>,
-    totalCount: Int?,
-  ): CommonUiState<BeersSearchUiModel> =
-    when (state) {
-      is PagingState.Error ->
-        if (state.isFirstPage) {
-          CommonUiState.Error(state.error.toUiMessage())
-        } else {
-          success(beers, totalCount, SearchFooter.Retry)
-        }
-      is PagingState.Loading,
-      PagingState.Idle -> if (beers.isEmpty()) CommonUiState.Loading else success(beers, totalCount)
-      is PagingState.LoadingNextPage -> success(beers, totalCount, isLoadingNextPage = true)
-      is PagingState.Success -> success(beers, totalCount)
-      PagingState.EndOfPagination ->
-        success(
-          beers,
-          totalCount,
-          if (beers.isEmpty()) SearchFooter.Hidden else SearchFooter.EndReached,
-        )
-    }
-
-  private fun success(
-    beers: List<Beer>,
-    totalCount: Int?,
-    footer: SearchFooter = SearchFooter.Hidden,
-    isLoadingNextPage: Boolean = false,
-  ) =
-    CommonUiState.Success(
-      BeersSearchUiModel(
-        beers = beers,
-        resultCount = totalCount,
-        isLoadingNextPage = isLoadingNextPage,
-        footer = if (beers.isEmpty()) SearchFooter.Hidden else footer,
-      )
-    )
-
-  private fun FetchBeersError.toUiMessage(): String =
-    when (this) {
-      FetchBeersError.Network -> "No internet connection"
-      FetchBeersError.NotFound -> "No beers found"
-      FetchBeersError.Forbidden -> "Access denied"
-      FetchBeersError.RateLimited -> "Too many requests. Please wait a moment."
-      is FetchBeersError.Unknown -> cause.message ?: "Search failed"
-    }
-
   fun onQueryChange(text: String) {
-    queryText.value = text
+    savedStateHandle[KEY_QUERY] = text
   }
 
   fun onScrollToBottom() {
@@ -173,30 +150,14 @@ class BeersSearchViewModel(
   }
 
   private companion object {
+    const val KEY_QUERY = "search_query"
     const val DEBOUNCE_MILLIS = 700L
     const val MIN_QUERY_LENGTH = 2
     const val SUBSCRIPTION_TIMEOUT_MILLIS = 5_000L
   }
 }
 
-/** The bottom-of-list affordance for search results: nothing, a retry row, or the end caption. */
-sealed interface SearchFooter {
-  data object Hidden : SearchFooter
-
-  data object Retry : SearchFooter
-
-  data object EndReached : SearchFooter
-}
-
 /** One-shot effects the search screen consumes once. */
 sealed interface BeersSearchEvent {
   data object ShowLoadMoreError : BeersSearchEvent
 }
-
-data class BeersSearchUiModel(
-  val beers: List<Beer>,
-  // X-Total-Count for "N results"; null until the server reports it.
-  val resultCount: Int?,
-  val isLoadingNextPage: Boolean = false,
-  val footer: SearchFooter = SearchFooter.Hidden,
-)

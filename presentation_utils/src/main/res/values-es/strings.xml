@@ -4,6 +4,7 @@
     <string name="loading_dynamic_feature">Cargando función dinámica</string>
     <string name="emergency_emergency_we_run_out_of_this_beer">¡EMERGENCIA!!\n¡EMERGENCIA!!\nSE NOS ACABÓ ESTA CERVEZA</string>
     <string name="retry">Reintentar</string>
+    <string name="paged_list_load_more_failed">No se pudieron cargar más cervezas</string>
     <string name="empty_state">Sin resultados</string>
     <string name="abv_chip">ABV: %1$s%%</string>
     <string name="ibu_chip">IBU: %1$s</string>
@@ -23,4 +24,9 @@
     <string name="beer_detail_food_pairing">Maridaje</string>
     <string name="beer_detail_abv_label">ABV</string>
     <string name="beer_detail_ibu_label">IBU</string>
+    <string name="error_no_internet">Sin conexión a internet</string>
+    <string name="error_no_beers_found">No se encontraron cervezas</string>
+    <string name="error_access_denied">Acceso denegado</string>
+    <string name="error_rate_limited">Demasiadas solicitudes. Espera un momento.</string>
+    <string name="error_failed_to_load_beers">No se pudieron cargar las cervezas</string>
 </resources>
