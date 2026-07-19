@@ -5,15 +5,18 @@ import androidx.compose.runtime.remember
 import androidx.navigation3.runtime.NavKey
 
 /**
- * + * Contract implemented by a screen that lives inside a dynamic feature module.
- * + *
- * + * The base module only knows this interface; the concrete implementation is loaded by
- * + * reflection once the module is installed. Being generic over the [NavKey] keeps the
- * + * contract reusable for every future dynamic feature instead of needing a bespoke
- * + * interface per feature. +
+ * Contract implemented by a screen that lives inside a dynamic feature module.
+ *
+ * The base module only knows this interface; the concrete implementation is loaded by reflection
+ * once the module is installed. Being generic over the [NavKey] keeps the contract reusable for
+ * every future dynamic feature instead of needing a bespoke interface per feature.
+ *
+ * [onNavigate] pushes a key onto the app back stack, so a non-leaf feature screen (browse) can
+ * navigate forward to another destination (a beer's detail). Leaf screens (detail) simply ignore
+ * it.
  */
 fun interface DynamicFeatureContentProvider<T : NavKey> {
-  @Composable fun Content(key: T, onBack: () -> Unit)
+  @Composable fun Content(key: T, onBack: () -> Unit, onNavigate: (NavKey) -> Unit)
 }
 
 /**
@@ -28,12 +31,17 @@ fun interface DynamicFeatureContentProvider<T : NavKey> {
  * stack, so the lookup here is guaranteed to succeed.
  */
 @Composable
-fun <T : NavKey> DynamicFeatureContent(key: T, className: String, onBack: () -> Unit) {
+fun <T : NavKey> DynamicFeatureContent(
+  key: T,
+  className: String,
+  onBack: () -> Unit,
+  onNavigate: (NavKey) -> Unit = {},
+) {
   val provider =
     remember(className) {
       @Suppress("UNCHECKED_CAST")
       (Class.forName(className).getDeclaredConstructor().newInstance()
         as DynamicFeatureContentProvider<T>)
     }
-  provider.Content(key = key, onBack = onBack)
+  provider.Content(key = key, onBack = onBack, onNavigate = onNavigate)
 }

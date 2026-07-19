@@ -16,7 +16,7 @@ baselineProfile {
 
 android {
   namespace = "com.simtop.billionbeers"
-  dynamicFeatures += setOf(":feature:beerdetail")
+  dynamicFeatures += setOf(":feature:beerdetail", ":feature:beerbrowse")
 
   packaging {
     resources {

@@ -29,4 +29,12 @@
     <string name="error_access_denied">Accès refusé</string>
     <string name="error_rate_limited">Trop de requêtes. Veuillez patienter un instant.</string>
     <string name="error_failed_to_load_beers">Impossible de charger les bières</string>
+    <string name="browse_title">Explorer</string>
+    <string name="browse_back">Retour</string>
+    <string name="browse_tab_styles">Styles</string>
+    <string name="browse_tab_breweries">Brasseries</string>
+    <string name="browse_brewery_founded">%1$s · Fondée en %2$d</string>
+    <string name="browse_beers_count">%1$d bières</string>
+    <string name="browse_beers_end_of_list">C\'est tout : %1$d bières</string>
+    <string name="browse_no_beers">Pas encore de bières ici</string>
 </resources>

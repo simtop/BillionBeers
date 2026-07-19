@@ -8,4 +8,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable object BeersSearch : NavKey
 
+@Serializable object BeerBrowse : NavKey
+
 @Serializable data class BeerDetail(val beer: Beer) : NavKey
