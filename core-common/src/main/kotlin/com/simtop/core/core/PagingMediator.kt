@@ -140,7 +140,9 @@ class InMemoryPagingStorage<Key : Any, Value : Any> : PagingStorage<Key, Value> 
  * [PagingStorage] for single-source-of-truth caching).
  *
  * Retry is free by construction: the page key only advances after a successful fetch-and-store, so
- * after a [PagingState.Error] any entry point simply re-requests the failed page.
+ * after a [PagingState.Error] any entry point simply re-requests the failed page. That includes a
+ * failed first page or refresh retried through [loadNextPage]: the retry re-runs it *as* a first
+ * page (stored via [PagingStorage.storeFirstPage]), never as an append of page one.
  *
  * [loadFirstPage] is also refresh: it resets the key and hands the new first page to
  * [PagingStorage.storeFirstPage] - only *after* a successful fetch, so a failed refresh never
@@ -199,6 +201,11 @@ class PagingMediator<Key : Any, Value : Any, E : Any>(
   private var isKeyInitialized = false
   private var isLastPage = false
 
+  // Set while the page to retry is a *first* page (a failed initial load or refresh). Without it,
+  // a loadNextPage after a failed loadFirstPage would refetch the first page but store it through
+  // append - duplicating it in a replacing storage and mispositioning a merging one.
+  private var retryFirstPage = false
+
   override suspend fun loadFirstPage() {
     mutex.withLock {
       currentKey = initialKey
@@ -225,7 +232,7 @@ class PagingMediator<Key : Any, Value : Any, E : Any>(
           }
         isKeyInitialized = true
       }
-      currentKey?.let { key -> loadPage(key, isFirstPage = false) }
+      currentKey?.let { key -> loadPage(key, isFirstPage = retryFirstPage) }
     } finally {
       mutex.unlock()
     }
@@ -240,6 +247,7 @@ class PagingMediator<Key : Any, Value : Any, E : Any>(
       val items = result.items
       if (isFirstPage) storage.storeFirstPage(result)
       else if (items.isNotEmpty()) storage.append(result)
+      retryFirstPage = false
 
       // Empty-page probe: the fallback end signal when the server reports no total (nextKey stays
       // non-null) - preserves the pre-2.0 behaviour for a header-less backend.
@@ -260,6 +268,7 @@ class PagingMediator<Key : Any, Value : Any, E : Any>(
     } catch (e: CancellationException) {
       throw e
     } catch (e: Exception) {
+      retryFirstPage = isFirstPage
       val error = classifyError(e)
       // A subsequent-page failure keeps the list, so it also fires a one-shot event for a transient
       // notice; a first-page failure is the full-screen Error condition and needs no event.

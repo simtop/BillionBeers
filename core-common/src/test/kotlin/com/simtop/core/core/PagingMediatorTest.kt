@@ -289,6 +289,46 @@ class PagingMediatorTest {
     )
   }
 
+  // Regression guard: a failed first page retried through loadNextPage must re-run as a *first*
+  // page. Storing it via append would duplicate page 1 in a replacing storage and leave the pager
+  // positioned as if page 1 were the next page in a merging one.
+  @Test
+  fun `after a failed first load loadNextPage retries it as a first page not an append`() =
+    runTest {
+      val harness = Harness()
+      harness.failOnKey(1)
+      harness.mediator.loadFirstPage() // fails
+      harness.succeedOnKey(1)
+      harness.storage.events.clear()
+
+      harness.mediator.loadNextPage() // retry entry point after the failure
+
+      assertEquals(listOf("fetch 1", "storeFirstPage"), harness.storage.events)
+      assertEquals(listOf("item 1"), harness.storage.stored.value)
+
+      harness.mediator.loadNextPage() // and pagination resumes normally afterwards
+      assertEquals(listOf(1, 1, 2), harness.fetchedKeys)
+    }
+
+  @Test
+  fun `after a failed refresh loadNextPage re-runs the refresh instead of appending page 1`() =
+    runTest {
+      val harness = Harness()
+      harness.mediator.loadFirstPage()
+      harness.mediator.loadNextPage() // pages 1 and 2 on screen
+      harness.failOnKey(1)
+      harness.mediator.loadFirstPage() // refresh fails
+      harness.succeedOnKey(1)
+      harness.storage.events.clear()
+
+      harness.mediator.loadNextPage()
+
+      assertEquals(listOf("fetch 1", "storeFirstPage"), harness.storage.events)
+      // The replacing storage holds exactly the refreshed first page - "item 1" was not appended
+      // after the stale list.
+      assertEquals(listOf("item 1"), harness.storage.stored.value)
+    }
+
   @Test
   fun `storage write failure emits Error and does not advance the key`() = runTest {
     val harness = Harness()

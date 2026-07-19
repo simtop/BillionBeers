@@ -212,6 +212,52 @@ class BeersListViewModelTest {
       }
     }
 
+  // Regression test: an empty catalog (first fetch returns no items) must resolve to Empty. The
+  // beers flow never emits a non-empty list, so only the paging state can end the skeleton.
+  @Test
+  fun `an empty catalog resolves to Empty instead of staying on the skeleton`() =
+    runTest(testDispatcher) {
+      val viewModel = buildViewModel()
+      val pager = fakeBeersPagerFactory.pager
+
+      viewModel.beerListViewState.test {
+        expectThat(awaitItem()).isA<CommonUiState.Loading>()
+
+        pager.setPagingState(PagingState.EndOfPagination)
+
+        expectThat(awaitItem()).isEqualTo(CommonUiState.Empty)
+      }
+    }
+
+  // A failed refresh keeps the list on screen: no load-more retry footer (its copy would be wrong
+  // and its tap targets the wrong load) - the one-shot toast is the feedback, pulling again the
+  // retry.
+  @Test
+  fun `a failed refresh keeps the list, hides the footer and emits a one-shot refresh error`() =
+    runTest(testDispatcher) {
+      fakeBeersRepository.setBeers(listOf(Beer.empty.copy(id = "1")))
+      val viewModel = buildViewModel()
+      val pager = fakeBeersPagerFactory.pager
+
+      viewModel.events.test {
+        viewModel.beerListViewState.test {
+          expectThat(awaitItem()).isA<CommonUiState.Success<BeersListUiModel>>()
+
+          viewModel.refresh()
+          pager.setPagingState(PagingState.Loading)
+          expectThat((awaitItem() as CommonUiState.Success).data.isRefreshing).isTrue()
+
+          pager.setPagingState(PagingState.Error(FetchBeersError.Network, isFirstPage = true))
+
+          val state = awaitItem()
+          expectThat(state).isA<CommonUiState.Success<BeersListUiModel>>()
+          expectThat((state as CommonUiState.Success).data.isRefreshing).isFalse()
+          expectThat(state.data.footer).isEqualTo(ListFooter.Hidden)
+        }
+        expectThat(awaitItem()).isEqualTo(BeersListEvent.ShowRefreshError)
+      }
+    }
+
   @Test
   fun `refresh delegates to the pager's first page load`() =
     runTest(testDispatcher) {
