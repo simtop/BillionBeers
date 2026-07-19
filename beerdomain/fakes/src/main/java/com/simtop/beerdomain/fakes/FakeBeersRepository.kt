@@ -1,8 +1,12 @@
 package com.simtop.beerdomain.fakes
 
+import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeerPage
+import com.simtop.beerdomain.domain.models.BeerStyle
+import com.simtop.beerdomain.domain.models.BeersQuery
+import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.Either
 import kotlinx.coroutines.flow.Flow
@@ -93,11 +97,19 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersReposit
 
   var apiPage: BeerPage = BeerPage(emptyList(), null)
 
-  /** Records every (page, search) the pager fetched, so tests can assert what was requested. */
-  val apiRequests = mutableListOf<Pair<Int, String?>>()
+  /** Records every (page, query) the pager fetched, so tests can assert what was requested. */
+  val apiRequests = mutableListOf<Pair<Int, BeersQuery>>()
 
-  override suspend fun getBeersPageFromApi(page: Int, search: String?): BeerPage {
-    apiRequests += page to search
+  override suspend fun getBeersPageFromApi(page: Int, query: BeersQuery): BeerPage {
+    apiRequests += page to query
     return apiPage
   }
+
+  var beerStyles: Either<FetchBeersError, List<BeerStyle>> = Either.Right(emptyList())
+
+  var breweries: Either<FetchBeersError, List<Brewery>> = Either.Right(emptyList())
+
+  override suspend fun getBeerStyles(): Either<FetchBeersError, List<BeerStyle>> = beerStyles
+
+  override suspend fun getBreweries(): Either<FetchBeersError, List<Brewery>> = breweries
 }

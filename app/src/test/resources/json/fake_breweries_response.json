@@ -1,0 +1,25 @@
+[
+  {
+    "id": "b1",
+    "name": "Supreme Suds Collective",
+    "country_id": "c1",
+    "image_id": "i1",
+    "founded_year": 1972,
+    "country": {
+      "id": "c1",
+      "code": "KP",
+      "translations": [
+        {
+          "id": "ctr1",
+          "language_id": "l1",
+          "country_id": "c1",
+          "name": "North Korea"
+        }
+      ]
+    },
+    "image": {
+      "id": "i1",
+      "url": "https://brewbuddy.dev/images/b1.jpg"
+    }
+  }
+]

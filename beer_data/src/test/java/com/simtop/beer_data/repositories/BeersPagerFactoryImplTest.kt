@@ -209,6 +209,33 @@ class BeersPagerFactoryImplTest {
     }
 
   @Test
+  fun `a style-filtered pager fetches with the typology id and keeps results in memory`() =
+    runTest(testDispatcher) {
+      beersRemoteSource.setBeersResponse(listOf(apiItem(id = "1")), totalCount = 1)
+      val pager = factory.create(BeersQuery(styleId = "style-1"))
+
+      pager.loadFirstPage()
+
+      expectThat(pager.data.first().map { it.id }).isEqualTo(listOf("1"))
+      expectThat(beersRemoteSource.requestedTypologyIds.toList()).isEqualTo(listOf("style-1"))
+      // One page load = exactly one /beers request (the browse analogue of the N+1 guard).
+      expectThat(beersRemoteSource.requestedPages.toList()).isEqualTo(listOf(1))
+      expectThat(repository.countDBEntries()).isEqualTo(0)
+    }
+
+  @Test
+  fun `a brewery-filtered pager fetches with the brewery id`() =
+    runTest(testDispatcher) {
+      beersRemoteSource.setBeersResponse(listOf(apiItem(id = "1")), totalCount = 1)
+      val pager = factory.create(BeersQuery(breweryId = "brew-1"))
+
+      pager.loadFirstPage()
+
+      expectThat(beersRemoteSource.requestedBreweryIds.toList()).isEqualTo(listOf("brew-1"))
+      expectThat(repository.countDBEntries()).isEqualTo(0)
+    }
+
+  @Test
   fun `pager data emits beers from the local source`() =
     runTest(testDispatcher) {
       beersRemoteSource.setBeersResponse(listOf(apiItem(id = "1")))

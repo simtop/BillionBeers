@@ -6,10 +6,19 @@ import com.simtop.beer_data.fakes.FakeBeersRemoteSource
 import com.simtop.beer_data.mappers.BeersMapper
 import com.simtop.beer_database.models.BeerDbModel
 import com.simtop.beer_network.models.BeersApiResponseItem
+import com.simtop.beer_network.models.BreweryApiResponseItem
+import com.simtop.beer_network.models.EmbeddedCountry
 import com.simtop.beer_network.models.EmbeddedImage
+import com.simtop.beer_network.models.TypologyApiResponseItem
+import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.beerdomain.domain.models.BeerStyle
+import com.simtop.beerdomain.domain.models.BeersQuery
+import com.simtop.beerdomain.domain.models.Brewery
+import com.simtop.core.core.Either
 import com.simtop.core.core.LanguageProvider
 import com.simtop.core.core.NoOpLogger
+import java.io.IOException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -66,9 +75,74 @@ class BeersRepositoryTest {
     runTest(testDispatcher) {
       beersRemoteSource.setBeersResponse(emptyList(), totalCount = 0)
 
-      beersRepository.getBeersPageFromApi(1, search = "stout")
+      beersRepository.getBeersPageFromApi(1, BeersQuery(search = "stout"))
 
       expectThat(beersRemoteSource.requestedSearches.toList()).isEqualTo(listOf("stout"))
+    }
+
+  @Test
+  fun `getBeersPageFromApi forwards the style and brewery filters to the remote source`() =
+    runTest(testDispatcher) {
+      beersRemoteSource.setBeersResponse(emptyList(), totalCount = 0)
+
+      beersRepository.getBeersPageFromApi(1, BeersQuery(styleId = "style-1"))
+      beersRepository.getBeersPageFromApi(1, BeersQuery(breweryId = "brew-1"))
+
+      expectThat(beersRemoteSource.requestedTypologyIds.toList()).isEqualTo(listOf("style-1", null))
+      expectThat(beersRemoteSource.requestedBreweryIds.toList()).isEqualTo(listOf(null, "brew-1"))
+    }
+
+  @Test
+  fun `getBeerStyles maps typologies to domain styles`() =
+    runTest(testDispatcher) {
+      beersRemoteSource.typologiesResponse =
+        listOf(TypologyApiResponseItem(id = "t1", name = "IPA (Indian Pale Ale)"))
+
+      val result = beersRepository.getBeerStyles()
+
+      expectThat(result)
+        .isEqualTo(Either.Right(listOf(BeerStyle(id = "t1", name = "IPA (Indian Pale Ale)"))))
+    }
+
+  @Test
+  fun `getBreweries maps embedded country and image to a domain brewery`() =
+    runTest(testDispatcher) {
+      beersRemoteSource.breweriesResponse =
+        listOf(
+          BreweryApiResponseItem(
+            id = "b1",
+            name = "Supreme Suds Collective",
+            foundedYear = 1972,
+            country = EmbeddedCountry(code = "KP"),
+            image = EmbeddedImage("https://embedded.url/brewery.jpg"),
+          )
+        )
+
+      val result = beersRepository.getBreweries()
+
+      expectThat(result)
+        .isEqualTo(
+          Either.Right(
+            listOf(
+              Brewery(
+                id = "b1",
+                name = "Supreme Suds Collective",
+                countryCode = "KP",
+                foundedYear = 1972,
+                imageUrl = "https://embedded.url/brewery.jpg",
+              )
+            )
+          )
+        )
+    }
+
+  @Test
+  fun `unpaged fetch failures come back as classified errors, not thrown`() =
+    runTest(testDispatcher) {
+      beersRemoteSource.setShouldThrowError(true, IOException("no network"))
+
+      expectThat(beersRepository.getBeerStyles()).isEqualTo(Either.Left(FetchBeersError.Network))
+      expectThat(beersRepository.getBreweries()).isEqualTo(Either.Left(FetchBeersError.Network))
     }
 
   @Test

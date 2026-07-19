@@ -13,9 +13,10 @@ import com.simtop.core.core.Pager
  * Two surfaces exist, and they deliberately do **not** share storage:
  * - [create] (no args) is the **catalog**: the Room-backed single source of truth, whose pager
  *   reads and writes the one beers table and resumes from the `paging_state` bookmark.
- * - [create] with a [BeersQuery] is a **search** surface: a per-query in-memory pager whose results
- *   die with the screen and never touch the beers table (so the catalog's `SELECT * FROM beers`
- *   view can't be polluted by search hits). A changed query means a new pager, not a mutation.
+ * - [create] with a [BeersQuery] is a **query** surface (search, beers-by-style, beers-by-brewery):
+ *   a per-query in-memory pager whose results die with the screen and never touch the beers table
+ *   (so the catalog's `SELECT * FROM beers` view can't be polluted by filtered hits). A changed
+ *   query means a new pager, not a mutation.
  *
  * The factory itself is stateless, so it can safely be an app-scoped binding.
  */

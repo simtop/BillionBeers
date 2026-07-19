@@ -3,8 +3,12 @@ package com.simtop.beer_data.mappers
 import com.simtop.beer_database.models.BeerDbModel
 import com.simtop.beer_database.utils.Converters
 import com.simtop.beer_network.models.BeersApiResponseItem
+import com.simtop.beer_network.models.BreweryApiResponseItem
+import com.simtop.beer_network.models.TypologyApiResponseItem
 import com.simtop.beer_network.network.BeersService
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.beerdomain.domain.models.BeerStyle
+import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.core.core.LanguageProvider
 import com.simtop.core.core.Logger
 import dev.zacsweers.metro.Inject
@@ -39,6 +43,26 @@ constructor(private val languageProvider: LanguageProvider, private val logger: 
 
   private fun logMissingField(field: String, response: BeersApiResponseItem?) {
     logger.warn(TAG, "missing $field for beer id=${response?.id}, defaulting")
+  }
+
+  fun fromTypologyToBeerStyle(response: TypologyApiResponseItem): BeerStyle {
+    if (response.id == null || response.name == null) {
+      logger.warn(TAG, "missing id or name for typology id=${response.id}, defaulting")
+    }
+    return BeerStyle(id = response.id ?: "", name = response.name ?: "")
+  }
+
+  fun fromBreweryApiResponseItemToBrewery(response: BreweryApiResponseItem): Brewery {
+    if (response.id == null || response.name == null) {
+      logger.warn(TAG, "missing id or name for brewery id=${response.id}, defaulting")
+    }
+    return Brewery(
+      id = response.id ?: "",
+      name = response.name ?: "",
+      countryCode = response.country?.code ?: "",
+      foundedYear = response.foundedYear,
+      imageUrl = response.image?.url ?: "",
+    )
   }
 
   fun fromBeerToBeerDbModel(beer: Beer) =
