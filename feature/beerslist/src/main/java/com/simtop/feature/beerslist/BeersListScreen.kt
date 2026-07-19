@@ -74,6 +74,7 @@ import com.simtop.presentation_utils.R as PresentationUtilsR
 import com.simtop.presentation_utils.core.DynamicFeatureLoader
 import com.simtop.presentation_utils.core.InfiniteListHandler
 import com.simtop.presentation_utils.core.LocalDebugDrawerToggle
+import com.simtop.presentation_utils.core.resolvedMessage
 import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import com.simtop.presentation_utils.custom_views.ComposeErrorView
 import com.simtop.presentation_utils.custom_views.pagedListFooter
@@ -211,12 +212,13 @@ fun BeersListContent(
         }
 
         is CommonUiState.Error -> {
+          val errorMessage = state.resolvedMessage()
           ComposeErrorView(
-            message = state.message ?: stringResource(PresentationUtilsR.string.empty_state),
+            message = errorMessage ?: stringResource(PresentationUtilsR.string.empty_state),
             onRetry = onRetry,
             modifier = Modifier.padding(top = paddingValues.calculateTopPadding()),
           )
-          state.message?.let { message -> LaunchedEffect(message) { showToast(context, message) } }
+          errorMessage?.let { message -> LaunchedEffect(message) { showToast(context, message) } }
         }
 
         CommonUiState.Loading -> {

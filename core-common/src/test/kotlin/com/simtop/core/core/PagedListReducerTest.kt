@@ -7,7 +7,11 @@ class PagedListReducerTest {
 
   private fun reducer(
     endedEmpty: () -> CommonUiState<PagedListUiModel<String>> = { CommonUiState.Empty }
-  ) = PagedListReducer<String, String>(errorMessage = { "error: $it" }, endedEmpty = endedEmpty)
+  ) =
+    PagedListReducer<String, String>(
+      errorState = { CommonUiState.Error("error: $it") },
+      endedEmpty = endedEmpty,
+    )
 
   private val items = listOf("a", "b")
 

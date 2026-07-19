@@ -427,6 +427,30 @@ class PagingMediatorTest {
     assertEquals(listOf("item 1", "item 2", "item 3"), storage.stored.value)
   }
 
+  // A dataset smaller than one page: the fetch's total-count math says the first page is also the
+  // last (nextKey == null). The storage's row-count estimate rounds to "page 1 is next" and must
+  // not override that - it used to, costing a redundant refetch of page 1 on the next scroll.
+  @Test
+  fun `a first page that is also the last ends pagination despite nextKeyFromStorage`() = runTest {
+    val fetchedKeys = mutableListOf<Int>()
+    val mediator =
+      PagingMediator<Int, String, String>(
+        initialKey = 1,
+        fetchRemote = { key ->
+          fetchedKeys += key
+          PageResult(listOf("only item"), nextKey = null)
+        },
+        classifyError = { "unused" },
+        nextKeyFromStorage = { 1 }, // stale estimate: fewer rows than a page rounds back to 1
+      )
+
+    mediator.loadFirstPage()
+    assertEquals(PagingState.EndOfPagination, mediator.pagingState.value)
+
+    mediator.loadNextPage() // must be a no-op, not a refetch of page 1
+    assertEquals(listOf(1), fetchedKeys)
+  }
+
   @Test
   fun `nextKeyFromStorage failure emits Error and the next loadNextPage retries it`() = runTest {
     val fetchedKeys = mutableListOf<Int>()

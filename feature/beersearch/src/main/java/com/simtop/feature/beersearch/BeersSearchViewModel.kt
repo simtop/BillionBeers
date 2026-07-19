@@ -15,7 +15,7 @@ import com.simtop.core.core.PagedListReducer
 import com.simtop.core.core.PagedListUiModel
 import com.simtop.core.core.Pager
 import com.simtop.core.core.PagingEvent
-import com.simtop.presentation_utils.core.toUiMessage
+import com.simtop.presentation_utils.core.toErrorState
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
@@ -113,7 +113,7 @@ class BeersSearchViewModel(
         // prompt.
         val reducer =
           PagedListReducer<Beer, FetchBeersError>(
-            errorMessage = { it.toUiMessage() },
+            errorState = { it.toErrorState() },
             endedEmpty = { CommonUiState.Success(PagedListUiModel()) },
           )
 

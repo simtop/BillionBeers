@@ -24,4 +24,9 @@
     <string name="beer_detail_food_pairing">Accords mets et bières</string>
     <string name="beer_detail_abv_label">ABV</string>
     <string name="beer_detail_ibu_label">IBU</string>
+    <string name="error_no_internet">Pas de connexion Internet</string>
+    <string name="error_no_beers_found">Aucune bière trouvée</string>
+    <string name="error_access_denied">Accès refusé</string>
+    <string name="error_rate_limited">Trop de requêtes. Veuillez patienter un instant.</string>
+    <string name="error_failed_to_load_beers">Impossible de charger les bières</string>
 </resources>
