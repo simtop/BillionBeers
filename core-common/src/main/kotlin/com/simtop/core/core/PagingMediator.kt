@@ -32,7 +32,12 @@ sealed class PagingState<out E : Any> {
    */
   data class Error<out E : Any>(val error: E, val isFirstPage: Boolean) : PagingState<E>()
 
-  data object EndOfPagination : PagingState<Nothing>()
+  /**
+   * Every page is loaded. Carries the last [totalCount] the fetch reported (null when the end was
+   * found by the empty-page probe on a header-less backend), so a surface whose *first* page is
+   * also its last - which never passes through [Success] - can still render its "N results" count.
+   */
+  data class EndOfPagination(val totalCount: Int? = null) : PagingState<Nothing>()
 }
 
 /**
@@ -252,7 +257,7 @@ class PagingMediator<Key : Any, Value : Any, E : Any>(
       // Empty-page probe: the fallback end signal when the server reports no total (nextKey stays
       // non-null) - preserves the pre-2.0 behaviour for a header-less backend.
       if (items.isEmpty()) {
-        endPagination()
+        endPagination(result.totalCount)
         return
       }
 
@@ -265,7 +270,7 @@ class PagingMediator<Key : Any, Value : Any, E : Any>(
         if (isFirstPage && result.nextKey != null) nextKeyFromStorage?.invoke() ?: result.nextKey
         else result.nextKey
       if (currentKey == null) {
-        endPagination()
+        endPagination(result.totalCount)
       } else {
         _pagingState.value = PagingState.Success(result.totalCount)
       }
@@ -281,8 +286,8 @@ class PagingMediator<Key : Any, Value : Any, E : Any>(
     }
   }
 
-  private fun endPagination() {
+  private fun endPagination(totalCount: Int?) {
     isLastPage = true
-    _pagingState.value = PagingState.EndOfPagination
+    _pagingState.value = PagingState.EndOfPagination(totalCount)
   }
 }

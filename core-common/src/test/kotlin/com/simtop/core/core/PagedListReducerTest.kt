@@ -68,7 +68,7 @@ class PagedListReducerTest {
 
   @Test
   fun `end of pagination with items shows the end footer`() {
-    val state = reducer().reduce(items, PagingState.EndOfPagination)
+    val state = reducer().reduce(items, PagingState.EndOfPagination())
 
     assertEquals(
       CommonUiState.Success(PagedListUiModel(items, footer = PagedListFooter.EndReached)),
@@ -76,9 +76,24 @@ class PagedListReducerTest {
     )
   }
 
+  // A single-page surface (browse-by-style, a short search) goes straight to EndOfPagination
+  // without ever passing through Success - the total it carries must still reach the ui model,
+  // or those screens can never render their "N results" header.
+  @Test
+  fun `a total carried by end of pagination is latched like one from Success`() {
+    val state = reducer().reduce(items, PagingState.EndOfPagination(totalCount = 14))
+
+    assertEquals(
+      CommonUiState.Success(
+        PagedListUiModel(items, footer = PagedListFooter.EndReached, totalCount = 14)
+      ),
+      state,
+    )
+  }
+
   @Test
   fun `end of pagination with nothing is Empty by default`() {
-    val state = reducer().reduce(emptyList(), PagingState.EndOfPagination)
+    val state = reducer().reduce(emptyList(), PagingState.EndOfPagination())
 
     assertEquals(CommonUiState.Empty, state)
   }
@@ -89,7 +104,7 @@ class PagedListReducerTest {
     val noResults = CommonUiState.Success(PagedListUiModel<String>())
     val reducer = reducer(endedEmpty = { noResults })
 
-    assertEquals(noResults, reducer.reduce(emptyList(), PagingState.EndOfPagination))
+    assertEquals(noResults, reducer.reduce(emptyList(), PagingState.EndOfPagination()))
   }
 
   @Test
