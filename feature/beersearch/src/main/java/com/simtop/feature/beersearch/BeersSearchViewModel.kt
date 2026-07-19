@@ -1,7 +1,10 @@
 package com.simtop.feature.beersearch
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.CreationExtras
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
@@ -12,16 +15,18 @@ import com.simtop.core.core.PagedListReducer
 import com.simtop.core.core.PagedListUiModel
 import com.simtop.core.core.Pager
 import com.simtop.core.core.PagingEvent
-import com.simtop.presentation_utils.core.toUiMessage
+import com.simtop.presentation_utils.core.toErrorState
 import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.Assisted
+import dev.zacsweers.metro.AssistedFactory
+import dev.zacsweers.metro.AssistedInject
 import dev.zacsweers.metro.ContributesIntoMap
-import dev.zacsweers.metro.Inject
-import dev.zacsweers.metrox.viewmodel.ViewModelKey
+import dev.zacsweers.metrox.viewmodel.ViewModelAssistedFactory
+import dev.zacsweers.metrox.viewmodel.ViewModelAssistedFactoryKey
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.channelFlow
@@ -45,16 +50,31 @@ import kotlinx.coroutines.launch
  *
  * Results are in-memory only (the pager's storage is), so they die with the screen and a new query
  * invalidates instantly. The catalog's Room cache is never touched.
+ *
+ * The query lives here in the [SavedStateHandle], not in the screen: process death then restores
+ * the *results* (the restored query re-runs the search), not just the text in the field.
  */
-@ContributesIntoMap(AppScope::class)
-@ViewModelKey(BeersSearchViewModel::class)
-@Inject
+@AssistedInject
 class BeersSearchViewModel(
   private val coroutineDispatcher: CoroutineDispatcherProvider,
   private val beersPagerFactory: BeersPagerFactory,
+  @Assisted private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
-  private val queryText = MutableStateFlow("")
+  @AssistedFactory
+  @ViewModelAssistedFactoryKey(BeersSearchViewModel::class)
+  @ContributesIntoMap(AppScope::class)
+  fun interface Factory : ViewModelAssistedFactory {
+    override fun create(extras: CreationExtras): BeersSearchViewModel =
+      create(extras.createSavedStateHandle())
+
+    fun create(@Assisted savedStateHandle: SavedStateHandle): BeersSearchViewModel
+  }
+
+  private val queryText = savedStateHandle.getStateFlow(KEY_QUERY, "")
+
+  /** The current query text, owned here so the screen and the search can never disagree. */
+  val query: StateFlow<String> = queryText
 
   // The pager backing whatever term is on screen now, so scroll/retry act on it. Written on Main
   // (short-query reset) and IO (each term's searchFlow), read on IO (scroll/retry) - volatile for
@@ -93,7 +113,7 @@ class BeersSearchViewModel(
         // prompt.
         val reducer =
           PagedListReducer<Beer, FetchBeersError>(
-            errorMessage = { it.toUiMessage() },
+            errorState = { it.toErrorState() },
             endedEmpty = { CommonUiState.Success(PagedListUiModel()) },
           )
 
@@ -110,7 +130,7 @@ class BeersSearchViewModel(
       .flowOn(coroutineDispatcher.io)
 
   fun onQueryChange(text: String) {
-    queryText.value = text
+    savedStateHandle[KEY_QUERY] = text
   }
 
   fun onScrollToBottom() {
@@ -130,6 +150,7 @@ class BeersSearchViewModel(
   }
 
   private companion object {
+    const val KEY_QUERY = "search_query"
     const val DEBOUNCE_MILLIS = 700L
     const val MIN_QUERY_LENGTH = 2
     const val SUBSCRIPTION_TIMEOUT_MILLIS = 5_000L

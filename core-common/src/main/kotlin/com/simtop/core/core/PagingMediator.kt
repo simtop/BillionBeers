@@ -257,9 +257,13 @@ class PagingMediator<Key : Any, Value : Any, E : Any>(
       }
 
       // After a first-page store the storage - not the fetched page - is the authority on
-      // position: a merging storage may still hold pages beyond the one just fetched.
+      // position: a merging storage may still hold pages beyond the one just fetched. Except when
+      // the fetch itself says the first page is also the last (nextKey == null): the total-count
+      // math is authoritative about the end, and a row-count estimate from storage (e.g. a
+      // sub-page dataset rounding to "page 1 is next") must not resurrect pagination past it.
       currentKey =
-        if (isFirstPage) nextKeyFromStorage?.invoke() ?: result.nextKey else result.nextKey
+        if (isFirstPage && result.nextKey != null) nextKeyFromStorage?.invoke() ?: result.nextKey
+        else result.nextKey
       if (currentKey == null) {
         endPagination()
       } else {

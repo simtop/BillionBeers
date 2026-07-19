@@ -24,10 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -50,6 +47,7 @@ import com.simtop.core.core.PagedListFooter
 import com.simtop.core.core.PagedListUiModel
 import com.simtop.presentation_utils.R as PresentationUtilsR
 import com.simtop.presentation_utils.core.InfiniteListHandler
+import com.simtop.presentation_utils.core.resolvedMessage
 import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import com.simtop.presentation_utils.custom_views.ComposeErrorView
 import com.simtop.presentation_utils.custom_views.pagedListFooter
@@ -62,7 +60,8 @@ fun BeersSearchScreen(
   viewModel: BeersSearchViewModel = metroViewModel(),
 ) {
   val viewState by viewModel.viewState.collectAsState()
-  var query by rememberSaveable { mutableStateOf("") }
+  // VM-owned (SavedStateHandle-backed) so process death restores the search, not just the text.
+  val query by viewModel.query.collectAsState()
   val context = LocalContext.current
   val lifecycleOwner = LocalLifecycleOwner.current
   val loadMoreFailedMessage = stringResource(PresentationUtilsR.string.paged_list_load_more_failed)
@@ -80,10 +79,7 @@ fun BeersSearchScreen(
   BeersSearchContent(
     viewState = viewState,
     query = query,
-    onQueryChange = {
-      query = it
-      viewModel.onQueryChange(it)
-    },
+    onQueryChange = viewModel::onQueryChange,
     onBeerClick = onBeerClick,
     onBack = onBack,
     onScrollToBottom = { viewModel.onScrollToBottom() },
@@ -137,7 +133,7 @@ fun BeersSearchContent(
             CircularProgressIndicator()
           }
         is CommonUiState.Error ->
-          ComposeErrorView(message = state.message.orEmpty(), onRetry = onRetrySearch)
+          ComposeErrorView(message = state.resolvedMessage().orEmpty(), onRetry = onRetrySearch)
         is CommonUiState.Success ->
           if (state.data.items.isEmpty()) {
             CenteredHint(stringResource(R.string.search_no_results, query))
