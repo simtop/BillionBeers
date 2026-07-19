@@ -30,6 +30,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -94,6 +95,7 @@ private val BeerSaver: Saver<Beer?, String> =
 fun BeersListScreen(
   onBeerClick: (Beer) -> Unit,
   onSearchClick: () -> Unit,
+  onBrowseClick: () -> Unit,
   viewModel: BeersListViewModel = metroViewModel(),
 ) {
   val rawState by viewModel.beerListViewState.collectAsState()
@@ -118,11 +120,15 @@ fun BeersListScreen(
   // State to track if we are installing the feature for a specific beer - saved across process
   // death so the install flow resumes instead of silently dropping the in-flight navigation.
   var installingBeer by rememberSaveable(stateSaver = BeerSaver) { mutableStateOf<Beer?>(null) }
+  // The same gate for the beerbrowse module: the browse destination is only pushed once the
+  // module is installed.
+  var installingBrowse by rememberSaveable { mutableStateOf(false) }
 
   BeersListContent(
     viewState = rawState,
     onBeerClick = { beer -> installingBeer = beer },
     onSearchClick = onSearchClick,
+    onBrowseClick = { installingBrowse = true },
     onScrollToBottom = { viewModel.onScrollToBottom() },
     onRefresh = { viewModel.refresh() },
     onRetry = { viewModel.refresh() },
@@ -141,6 +147,18 @@ fun BeersListScreen(
       }
     }
   }
+
+  if (installingBrowse) {
+    DynamicFeatureLoader(
+      featureName = FeatureConstants.BEER_BROWSE_MODULE,
+      onCancelled = { installingBrowse = false },
+    ) {
+      LaunchedEffect(Unit) {
+        onBrowseClick()
+        installingBrowse = false
+      }
+    }
+  }
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -149,6 +167,7 @@ fun BeersListContent(
   viewState: CommonUiState<PagedListUiModel<Beer>>,
   onBeerClick: (Beer) -> Unit,
   onSearchClick: () -> Unit,
+  onBrowseClick: () -> Unit,
   onScrollToBottom: () -> Unit,
   onRefresh: () -> Unit,
   onRetry: () -> Unit,
@@ -181,6 +200,12 @@ fun BeersListContent(
           }
         },
         actions = {
+          IconButton(onClick = onBrowseClick) {
+            Icon(
+              Icons.AutoMirrored.Filled.List,
+              contentDescription = stringResource(R.string.beers_browse),
+            )
+          }
           IconButton(onClick = onSearchClick) {
             Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.beers_search))
           }
@@ -382,6 +407,7 @@ fun BeersListScreenPreview(
       viewState = state.uiState,
       onBeerClick = {},
       onSearchClick = {},
+      onBrowseClick = {},
       onScrollToBottom = {},
       onRefresh = {},
       onRetry = {},

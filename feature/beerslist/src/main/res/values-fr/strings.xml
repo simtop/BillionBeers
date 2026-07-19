@@ -5,4 +5,5 @@
     <string name="beers_refresh_failed">Impossible d\'actualiser</string>
     <string name="beers_end_of_list">C\'est tout : %1$d bières</string>
     <string name="beers_search">Rechercher</string>
+    <string name="beers_browse">Explorer</string>
 </resources>

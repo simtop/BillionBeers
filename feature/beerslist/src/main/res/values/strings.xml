@@ -5,4 +5,5 @@
     <string name="beers_refresh_failed">Couldn\'t refresh</string>
     <string name="beers_end_of_list">That\'s all %1$d beers</string>
     <string name="beers_search">Search</string>
+    <string name="beers_browse">Browse</string>
 </resources>

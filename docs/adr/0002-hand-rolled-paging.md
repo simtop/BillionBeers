@@ -95,5 +95,14 @@ entirely.
   costs one request instead of 26. This is data-layer groundwork, independent of the paging state
   machine, but it directly protects the rate-limit budget (60/min) that Paging 2.0's
   search-as-you-type spends deliberately.
+- (Update, July 2026 — Paging 2.0 Phase 3) The "any future paged screen needs to reuse
+  `PagingMediator` or write its own" consequence has now been exercised twice and held: search
+  (an in-memory `q=` surface) and browse-by-style/brewery (in-memory `typology.id=`/`brewery.id=`
+  surfaces inside the on-demand `beerbrowse` module) each shipped as a `BeersQuery` value plus the
+  shared `PagedListReducer`/footer UI, with **zero changes to `core-common`** — the plug-and-play
+  goal Paging 2.0 set as its acceptance test. The deliberate counter-example landed alongside:
+  styles (17 rows) and breweries (38 rows) are plain unpaged fetches, because a pager for a list
+  that small is machinery without a customer. Pagers are per-query values (a changed query is a
+  new pager, never a mutation), which is what keeps invalidation out of the mediator.
 - Revisit if Paging3 ships a multiplatform target and a `PagingData`-free consumption API; until
   then this is the right trade for a KMP-bound clean-architecture codebase.
