@@ -8,6 +8,7 @@ import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
 import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.CoroutineDispatcherProvider
+import com.simtop.core.core.PagedListUiModel
 import com.simtop.core.core.PagingState
 import io.mockk.every
 import io.mockk.mockk
@@ -104,10 +105,10 @@ class BeersSearchViewModelTest {
         runCurrent()
 
         val state = expectMostRecentItem()
-        expectThat(state).isA<CommonUiState.Success<BeersSearchUiModel>>()
+        expectThat(state).isA<CommonUiState.Success<PagedListUiModel<Beer>>>()
         val model = (state as CommonUiState.Success).data
-        expectThat(model.beers.map { it.id }).isEqualTo(listOf("1"))
-        expectThat(model.resultCount).isEqualTo(159)
+        expectThat(model.items.map { it.id }).isEqualTo(listOf("1"))
+        expectThat(model.totalCount).isEqualTo(159)
       }
     }
 
@@ -130,8 +131,8 @@ class BeersSearchViewModelTest {
         runCurrent()
 
         val state = expectMostRecentItem()
-        expectThat(state).isA<CommonUiState.Success<BeersSearchUiModel>>()
-        expectThat((state as CommonUiState.Success).data.beers).isEmpty()
+        expectThat(state).isA<CommonUiState.Success<PagedListUiModel<Beer>>>()
+        expectThat((state as CommonUiState.Success).data.items).isEmpty()
       }
     }
 
@@ -184,7 +185,7 @@ class BeersSearchViewModelTest {
         runCurrent()
 
         val state = expectMostRecentItem()
-        expectThat((state as CommonUiState.Success).data.beers.map { it.id })
+        expectThat((state as CommonUiState.Success).data.items.map { it.id })
           .isEqualTo(listOf("stout-1"))
       }
     }
