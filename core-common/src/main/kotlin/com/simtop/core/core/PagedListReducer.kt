@@ -47,7 +47,13 @@ class PagedListReducer<T, E : Any>(
   private var lastTotalCount: Int? = null
 
   fun reduce(items: List<T>, state: PagingState<E>): CommonUiState<PagedListUiModel<T>> {
-    if (state is PagingState.Success) state.totalCount?.let { lastTotalCount = it }
+    // Both total-carrying states latch: a surface whose first page is also its last never emits
+    // Success at all - EndOfPagination is its only chance to report "N results".
+    when (state) {
+      is PagingState.Success -> state.totalCount?.let { lastTotalCount = it }
+      is PagingState.EndOfPagination -> state.totalCount?.let { lastTotalCount = it }
+      else -> Unit
+    }
     return when (state) {
       PagingState.Idle -> if (items.isEmpty()) CommonUiState.Loading else success(items)
       PagingState.Loading ->
@@ -59,7 +65,7 @@ class PagedListReducer<T, E : Any>(
         // Success with no items yet: a DB-backed data flow may emit just after the state does, so
         // hold Loading until the rows arrive.
         if (items.isEmpty()) CommonUiState.Loading else success(items)
-      PagingState.EndOfPagination ->
+      is PagingState.EndOfPagination ->
         if (items.isEmpty()) endedEmpty() else success(items, footer = PagedListFooter.EndReached)
       is PagingState.Error ->
         when {

@@ -173,7 +173,7 @@ class PagingMediatorTest {
     harness.mediator.loadFirstPage()
 
     harness.mediator.loadNextPage() // page 2 is empty
-    assertEquals(PagingState.EndOfPagination, harness.mediator.pagingState.value)
+    assertEquals(PagingState.EndOfPagination(), harness.mediator.pagingState.value)
 
     harness.mediator.loadNextPage()
     harness.mediator.loadNextPage()
@@ -194,8 +194,44 @@ class PagingMediatorTest {
 
     mediator.loadFirstPage()
 
-    assertEquals(PagingState.EndOfPagination, mediator.pagingState.value)
+    assertEquals(PagingState.EndOfPagination(), mediator.pagingState.value)
     assertEquals(listOf("only item"), storage.stored.value)
+  }
+
+  // A single-page surface never emits Success at all, so EndOfPagination is its only chance to
+  // carry the server total - without it the UI can never render "N results" for short datasets.
+  @Test
+  fun `EndOfPagination carries the total when the first page is also the last`() = runTest {
+    val mediator =
+      PagingMediator<Int, String, String>(
+        initialKey = 1,
+        fetchRemote = { PageResult(listOf("only item"), nextKey = null, totalCount = 14) },
+        classifyError = { "unused" },
+      )
+
+    mediator.loadFirstPage()
+
+    assertEquals(PagingState.EndOfPagination(totalCount = 14), mediator.pagingState.value)
+  }
+
+  @Test
+  fun `the empty-page probe carries the total when the header reports one`() = runTest {
+    val mediator =
+      PagingMediator<Int, String, String>(
+        initialKey = 1,
+        // A server that reports totals but whose nextKey math wasn't wired: page 2 comes back
+        // empty with the header still present.
+        fetchRemote = { page ->
+          if (page == 1) PageResult(listOf("item"), nextKey = 2, totalCount = 1)
+          else PageResult(emptyList(), nextKey = 3, totalCount = 1)
+        },
+        classifyError = { "unused" },
+      )
+
+    mediator.loadFirstPage()
+    mediator.loadNextPage()
+
+    assertEquals(PagingState.EndOfPagination(totalCount = 1), mediator.pagingState.value)
   }
 
   @Test
@@ -445,7 +481,7 @@ class PagingMediatorTest {
       )
 
     mediator.loadFirstPage()
-    assertEquals(PagingState.EndOfPagination, mediator.pagingState.value)
+    assertEquals(PagingState.EndOfPagination(), mediator.pagingState.value)
 
     mediator.loadNextPage() // must be a no-op, not a refetch of page 1
     assertEquals(listOf(1), fetchedKeys)
@@ -528,7 +564,7 @@ class PagingMediatorTest {
 
     mediator.loadFirstPage() // refresh: the stale item must not survive
 
-    assertEquals(PagingState.EndOfPagination, mediator.pagingState.value)
+    assertEquals(PagingState.EndOfPagination(), mediator.pagingState.value)
     mediator.data.test { assertEquals(emptyList<String>(), awaitItem()) }
   }
 }

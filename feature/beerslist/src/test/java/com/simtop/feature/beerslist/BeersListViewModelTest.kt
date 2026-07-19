@@ -129,7 +129,7 @@ class BeersListViewModelTest {
       viewModel.beerListViewState.test {
         expectThat(awaitItem()).isA<CommonUiState.Success<PagedListUiModel<Beer>>>()
 
-        pager.setPagingState(PagingState.EndOfPagination)
+        pager.setPagingState(PagingState.EndOfPagination())
 
         val state = awaitItem()
         expectThat((state as CommonUiState.Success).data.footer)
@@ -255,7 +255,7 @@ class BeersListViewModelTest {
       viewModel.beerListViewState.test {
         expectThat(awaitItem()).isA<CommonUiState.Loading>()
 
-        pager.setPagingState(PagingState.EndOfPagination)
+        pager.setPagingState(PagingState.EndOfPagination())
 
         expectThat(awaitItem()).isEqualTo(CommonUiState.Empty)
       }

@@ -129,7 +129,7 @@ class BeersSearchViewModelTest {
         runCurrent()
         val pager = fakeFactory.searchPagers.last()
         pager.setData(emptyList())
-        pager.setPagingState(PagingState.EndOfPagination)
+        pager.setPagingState(PagingState.EndOfPagination())
         runCurrent()
 
         val state = expectMostRecentItem()
