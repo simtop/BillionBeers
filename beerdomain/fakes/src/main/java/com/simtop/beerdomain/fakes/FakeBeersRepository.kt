@@ -109,7 +109,20 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersReposit
 
   var breweries: Either<FetchBeersError, List<Brewery>> = Either.Right(emptyList())
 
-  override suspend fun getBeerStyles(): Either<FetchBeersError, List<BeerStyle>> = beerStyles
+  /** Fetch counts, so tests can assert lazy/once semantics of the unpaged browse loads. */
+  var beerStylesCallCount = 0
+    private set
 
-  override suspend fun getBreweries(): Either<FetchBeersError, List<Brewery>> = breweries
+  var breweriesCallCount = 0
+    private set
+
+  override suspend fun getBeerStyles(): Either<FetchBeersError, List<BeerStyle>> {
+    beerStylesCallCount++
+    return beerStyles
+  }
+
+  override suspend fun getBreweries(): Either<FetchBeersError, List<Brewery>> {
+    breweriesCallCount++
+    return breweries
+  }
 }

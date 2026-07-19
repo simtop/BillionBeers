@@ -29,4 +29,12 @@
     <string name="error_access_denied">Acceso denegado</string>
     <string name="error_rate_limited">Demasiadas solicitudes. Espera un momento.</string>
     <string name="error_failed_to_load_beers">No se pudieron cargar las cervezas</string>
+    <string name="browse_title">Explorar</string>
+    <string name="browse_back">Atrás</string>
+    <string name="browse_tab_styles">Estilos</string>
+    <string name="browse_tab_breweries">Cervecerías</string>
+    <string name="browse_brewery_founded">%1$s · Fundada en %2$d</string>
+    <string name="browse_beers_count">%1$d cervezas</string>
+    <string name="browse_beers_end_of_list">Eso es todo: %1$d cervezas</string>
+    <string name="browse_no_beers">Aún no hay cervezas aquí</string>
 </resources>

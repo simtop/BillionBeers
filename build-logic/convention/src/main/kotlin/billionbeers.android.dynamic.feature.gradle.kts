@@ -33,7 +33,6 @@ dependencies {
     "implementation"(libs.lifecycleRuntimeKtx)
     "implementation"(libs.navigationFragmentKtx)
     "implementation"(libs.navigationUi)
-    "implementation"(libs.navigationDynamicFeaturesFragment)
 
     "testImplementation"(libs.mockk)
     "testImplementation"(libs.coreTesting)
