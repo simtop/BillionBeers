@@ -93,7 +93,9 @@ fun DynamicFeatureLoader(
   }
 }
 
-/** The bar position for the states that show progress; `null` for the states that show no dialog. */
+/**
+ * The bar position for the states that show progress; `null` for the states that show no dialog.
+ */
 private fun InstallStatus.progressOrNull(): Float? =
   when (this) {
     InstallStatus.Idle,
