@@ -159,6 +159,21 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
           ),
       )
 
+      // Style · Brewery, only when the embedded data has both (older cached rows may have
+      // neither - Room migration backfills empty strings, not a re-fetch).
+      if (beer.styleName.isNotEmpty() && beer.breweryName.isNotEmpty()) {
+        Text(
+          text =
+            stringResource(
+              R.string.beer_detail_style_and_brewery,
+              beer.styleName,
+              beer.breweryName,
+            ),
+          style = MaterialTheme.typography.bodyMedium,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+      }
+
       Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
 
       // Stats Row
@@ -197,26 +212,96 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
       Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
 
       // Food Pairing
-      if (beer.foodPairing.isNotEmpty()) {
+      BeerDetailBulletSection(
+        title = stringResource(R.string.beer_detail_food_pairing),
+        items = beer.foodPairing,
+      )
+
+      // Details: released year / serving temperature / fermentation method / SRM, each row shown
+      // only when its field is present - a beer fetched before Phase 4 (or a legacy cache row)
+      // simply renders fewer rows instead of blanks.
+      val detailRows = beer.detailRows()
+      if (detailRows.isNotEmpty()) {
+        Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
         Text(
-          text = stringResource(R.string.beer_detail_food_pairing),
+          text = stringResource(R.string.beer_detail_details),
           style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
         )
-        Spacer(
-          modifier =
-            Modifier.height(BillionBeersTheme.spacing.medium - BillionBeersTheme.spacing.extraSmall)
-        )
-        beer.foodPairing.forEach { pairing ->
-          Row(modifier = Modifier.padding(vertical = BillionBeersTheme.spacing.extraSmall)) {
+        Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.small))
+        detailRows.forEach { (label, value) ->
+          Row(
+            modifier =
+              Modifier.fillMaxWidth().padding(vertical = BillionBeersTheme.spacing.extraSmall),
+            horizontalArrangement = Arrangement.SpaceBetween,
+          ) {
             Text(
-              text = "•",
-              style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-              modifier = Modifier.padding(end = BillionBeersTheme.spacing.small),
+              text = label,
+              style = MaterialTheme.typography.bodyLarge,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Text(text = pairing, style = MaterialTheme.typography.bodyLarge)
+            Text(text = value, style = MaterialTheme.typography.bodyLarge)
           }
         }
       }
+
+      Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
+
+      BeerDetailBulletSection(
+        title = stringResource(R.string.beer_detail_ingredients),
+        items = beer.ingredients,
+      )
+
+      Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
+
+      BeerDetailBulletSection(
+        title = stringResource(R.string.beer_detail_recommended_glasses),
+        items = beer.recommendedGlasses,
+      )
+    }
+  }
+}
+
+/** The (label, value) rows for the Details section - only the fields this [Beer] actually has. */
+@Composable
+private fun Beer.detailRows(): List<Pair<String, String>> = buildList {
+  releasedYear?.let { add(stringResource(R.string.beer_detail_released_year_label) to "$it") }
+  val minTemp = minServingTemperature
+  val maxTemp = maxServingTemperature
+  if (minTemp != null && maxTemp != null) {
+    add(
+      stringResource(R.string.beer_detail_serving_temperature_label) to
+        stringResource(R.string.beer_detail_serving_temperature_value, minTemp, maxTemp)
+    )
+  }
+  if (fermentationMethod.isNotEmpty()) {
+    add(stringResource(R.string.beer_detail_fermentation_method_label) to fermentationMethod)
+  }
+  srm?.let { add(stringResource(R.string.beer_detail_srm_label) to "$it") }
+}
+
+/**
+ * A titled bullet list, hidden entirely when [items] is empty - the Food Pairing pattern reused for
+ * Ingredients and Recommended Glasses.
+ */
+@Composable
+private fun BeerDetailBulletSection(title: String, items: List<String>) {
+  if (items.isEmpty()) return
+  Text(
+    text = title,
+    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+  )
+  Spacer(
+    modifier =
+      Modifier.height(BillionBeersTheme.spacing.medium - BillionBeersTheme.spacing.extraSmall)
+  )
+  items.forEach { item ->
+    Row(modifier = Modifier.padding(vertical = BillionBeersTheme.spacing.extraSmall)) {
+      Text(
+        text = "•",
+        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+        modifier = Modifier.padding(end = BillionBeersTheme.spacing.small),
+      )
+      Text(text = item, style = MaterialTheme.typography.bodyLarge)
     }
   }
 }
@@ -280,6 +365,36 @@ fun ComposeBeerDetailPreview() {
           ibu = 60.0,
           foodPairing =
             listOf("Spicy chicken tikka masala", "Grilled chicken quesadilla", "Pastrami on rye"),
+          styleName = "IPA (Indian Pale Ale)",
+          breweryName = "ChuckleCraft Brewery",
+          srm = 9,
+          releasedYear = 1980,
+          minServingTemperature = 4,
+          maxServingTemperature = 8,
+          fermentationMethod = "Ale",
+          ingredients = listOf("Pale malt", "Cascade hops", "American ale yeast"),
+          recommendedGlasses = listOf("Pint glass", "Tulip"),
+        ),
+      onBackClick = {},
+      onToggleAvailability = {},
+    )
+  }
+}
+
+// A beer fetched before Phase 4 (or a legacy cache row post-migration): the Details/Ingredients/
+// Glasses sections must not render at all, not render with blanks.
+@PreviewLightDark
+@Composable
+fun ComposeBeerDetailWithoutEnrichedFieldsPreview() {
+  BillionBeersTheme {
+    ComposeBeerDetail(
+      beer =
+        Beer.empty.copy(
+          name = "Buzz",
+          tagline = "A Real Bitter Experience.",
+          description = "A light, crisp and bitter IPA.",
+          abv = 4.5,
+          ibu = 60.0,
         ),
       onBackClick = {},
       onToggleAvailability = {},

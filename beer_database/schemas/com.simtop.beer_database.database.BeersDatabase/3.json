@@ -1,0 +1,168 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 3,
+    "identityHash": "51afa20111c59708bf3066781416e9b9",
+    "entities": [
+      {
+        "tableName": "beers",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `tagline` TEXT NOT NULL, `description` TEXT NOT NULL, `image_url` TEXT NOT NULL, `abv` REAL NOT NULL, `ibu` REAL NOT NULL, `food_pairing` TEXT NOT NULL, `availability` INTEGER NOT NULL, `style_name` TEXT NOT NULL DEFAULT '', `brewery_name` TEXT NOT NULL DEFAULT '', `srm` INTEGER, `released_year` INTEGER, `min_serving_temperature` INTEGER, `max_serving_temperature` INTEGER, `fermentation_method` TEXT NOT NULL DEFAULT '', `ingredients` TEXT NOT NULL DEFAULT '[]', `recommended_glasses` TEXT NOT NULL DEFAULT '[]', PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tagline",
+            "columnName": "tagline",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "imageUrl",
+            "columnName": "image_url",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "abv",
+            "columnName": "abv",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ibu",
+            "columnName": "ibu",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "foodPairing",
+            "columnName": "food_pairing",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "availability",
+            "columnName": "availability",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "styleName",
+            "columnName": "style_name",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "''"
+          },
+          {
+            "fieldPath": "breweryName",
+            "columnName": "brewery_name",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "''"
+          },
+          {
+            "fieldPath": "srm",
+            "columnName": "srm",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "releasedYear",
+            "columnName": "released_year",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "minServingTemperature",
+            "columnName": "min_serving_temperature",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "maxServingTemperature",
+            "columnName": "max_serving_temperature",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "fermentationMethod",
+            "columnName": "fermentation_method",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "''"
+          },
+          {
+            "fieldPath": "ingredients",
+            "columnName": "ingredients",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'[]'"
+          },
+          {
+            "fieldPath": "recommendedGlasses",
+            "columnName": "recommended_glasses",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'[]'"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "paging_state",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`surface` TEXT NOT NULL, `next_key` INTEGER, `total_count` INTEGER, `refreshed_at` INTEGER NOT NULL, PRIMARY KEY(`surface`))",
+        "fields": [
+          {
+            "fieldPath": "surface",
+            "columnName": "surface",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nextKey",
+            "columnName": "next_key",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "totalCount",
+            "columnName": "total_count",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "refreshedAt",
+            "columnName": "refreshed_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "surface"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '51afa20111c59708bf3066781416e9b9')"
+    ]
+  }
+}
