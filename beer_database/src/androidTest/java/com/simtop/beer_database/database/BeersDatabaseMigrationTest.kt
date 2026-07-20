@@ -58,4 +58,49 @@ class BeersDatabaseMigrationTest {
     }
     db.close()
   }
+
+  @Test
+  fun migrate2To3_keepsBeersAndPagingState_andAddsDetailColumnsWithDefaults() {
+    val dbName = "migration-test-2-3"
+
+    // v2: seed one beer (locally edited availability) and a paging_state bookmark.
+    helper.createDatabase(dbName, 2).apply {
+      execSQL(
+        "INSERT INTO beers " +
+          "(id, name, tagline, description, image_url, abv, ibu, food_pairing, availability) " +
+          "VALUES ('1', 'Beer 1', '', '', '', 0.0, 0.0, '[]', 0)"
+      )
+      execSQL(
+        "INSERT INTO paging_state (surface, next_key, total_count, refreshed_at) " +
+          "VALUES ('catalog:en', 3, 206, 0)"
+      )
+      close()
+    }
+
+    val db = helper.runMigrationsAndValidate(dbName, 3, true, MIGRATION_2_3)
+
+    // The pre-existing beer and its edited availability survived...
+    db
+      .query(
+        "SELECT availability, style_name, brewery_name, srm, ingredients, recommended_glasses " +
+          "FROM beers WHERE id = '1'"
+      )
+      .use { cursor ->
+        assertTrue(cursor.moveToFirst())
+        assertEquals(0, cursor.getInt(0))
+        // ...and the new columns carry their defaults, matching BeerDbModel's Kotlin defaults.
+        assertEquals("", cursor.getString(1))
+        assertEquals("", cursor.getString(2))
+        assertTrue(cursor.isNull(3))
+        assertEquals("[]", cursor.getString(4))
+        assertEquals("[]", cursor.getString(5))
+      }
+
+    // paging_state (an unrelated table) is untouched by this migration.
+    db.query("SELECT next_key FROM paging_state WHERE surface = 'catalog:en'").use { cursor ->
+      assertTrue(cursor.moveToFirst())
+      assertEquals(3, cursor.getInt(0))
+    }
+    db.close()
+  }
 }

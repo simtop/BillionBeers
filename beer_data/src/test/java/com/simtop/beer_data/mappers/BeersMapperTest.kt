@@ -2,8 +2,12 @@ package com.simtop.beer_data.mappers
 
 import com.simtop.beer_database.models.BeerDbModel
 import com.simtop.beer_network.models.BeersApiResponseItem
+import com.simtop.beer_network.models.BreweryApiResponseItem
 import com.simtop.beer_network.models.EmbeddedImage
+import com.simtop.beer_network.models.EmbeddedTypology
 import com.simtop.beer_network.models.Language
+import com.simtop.beer_network.models.NamedEntity
+import com.simtop.beer_network.models.NamedTranslation
 import com.simtop.beer_network.models.Translation
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.core.core.LanguageProvider
@@ -152,6 +156,65 @@ class BeersMapperTest {
   }
 
   @Test
+  fun `fromBeersApiResponseItemToBeer maps the embedded detail fields`() {
+    val response =
+      fullResponse()
+        .copy(
+          srm = 9,
+          releasedYear = 1980,
+          minServingTemperature = 1,
+          maxServingTemperature = 9,
+          typology = EmbeddedTypology(name = "Stout"),
+          brewery = BreweryApiResponseItem(id = "b1", name = "ChuckleCraft Brewery"),
+          fermentationMethod = namedEntity("en" to "Lager", "it" to "Lager IT"),
+          ingredients = listOf(namedEntity("en" to "Dark malt")),
+          recommendedGlasses = listOf(namedEntity("en" to "Chalice")),
+        )
+
+    val beer = mapper.fromBeersApiResponseItemToBeer(response)
+
+    expectThat(beer.styleName).isEqualTo("Stout")
+    expectThat(beer.breweryName).isEqualTo("ChuckleCraft Brewery")
+    expectThat(beer.srm).isEqualTo(9)
+    expectThat(beer.releasedYear).isEqualTo(1980)
+    expectThat(beer.minServingTemperature).isEqualTo(1)
+    expectThat(beer.maxServingTemperature).isEqualTo(9)
+    expectThat(beer.fermentationMethod).isEqualTo("Lager")
+    expectThat(beer.ingredients).isEqualTo(listOf("Dark malt"))
+    expectThat(beer.recommendedGlasses).isEqualTo(listOf("Chalice"))
+  }
+
+  @Test
+  fun `named-entity fields fall back to en then to whatever translation exists`() {
+    languageCode = "fr"
+    val fallsBackToEn =
+      fullResponse().copy(fermentationMethod = namedEntity("en" to "Lager", "it" to "Lager IT"))
+    val fallsBackToFirst = fullResponse().copy(fermentationMethod = namedEntity("it" to "Lager IT"))
+
+    expectThat(mapper.fromBeersApiResponseItemToBeer(fallsBackToEn).fermentationMethod)
+      .isEqualTo("Lager")
+    expectThat(mapper.fromBeersApiResponseItemToBeer(fallsBackToFirst).fermentationMethod)
+      .isEqualTo("Lager IT")
+  }
+
+  @Test
+  fun `detail fields default to empty when the embedded objects are absent`() {
+    val beer = mapper.fromBeersApiResponseItemToBeer(fullResponse())
+
+    expectThat(beer.styleName).isEqualTo("")
+    expectThat(beer.breweryName).isEqualTo("")
+    expectThat(beer.srm).isEqualTo(null)
+    expectThat(beer.fermentationMethod).isEqualTo("")
+    expectThat(beer.ingredients).isEqualTo(emptyList())
+    expectThat(beer.recommendedGlasses).isEqualTo(emptyList())
+  }
+
+  private fun namedEntity(vararg nameByLanguage: Pair<String, String>) =
+    NamedEntity(
+      translations = nameByLanguage.map { (lang, name) -> NamedTranslation(name, Language(lang)) }
+    )
+
+  @Test
   fun `fromBeerToBeerDbModel converts a Beer into a BeerDbModel`() {
     val beer =
       Beer(
@@ -182,6 +245,34 @@ class BeersMapperTest {
           availability = false,
         )
       )
+  }
+
+  @Test
+  fun `fromBeerToBeerDbModel and back round-trips the detail fields`() {
+    val beer =
+      Beer(
+        id = "1",
+        name = "Buzz",
+        tagline = "",
+        description = "",
+        imageUrl = "",
+        abv = 4.5,
+        ibu = 60.0,
+        foodPairing = emptyList(),
+        styleName = "Stout",
+        breweryName = "ChuckleCraft Brewery",
+        srm = 9,
+        releasedYear = 1980,
+        minServingTemperature = 1,
+        maxServingTemperature = 9,
+        fermentationMethod = "Lager",
+        ingredients = listOf("Dark malt", "Roasted barley"),
+        recommendedGlasses = listOf("Chalice"),
+      )
+
+    val roundTripped = mapper.fromBeerDbModelToBeer(mapper.fromBeerToBeerDbModel(beer))
+
+    expectThat(roundTripped).isEqualTo(beer)
   }
 
   @Test

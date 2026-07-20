@@ -34,7 +34,16 @@ abstract class BeersDao {
         image_url = :imageUrl,
         abv = :abv,
         ibu = :ibu,
-        food_pairing = :foodPairing
+        food_pairing = :foodPairing,
+        style_name = :styleName,
+        brewery_name = :breweryName,
+        srm = :srm,
+        released_year = :releasedYear,
+        min_serving_temperature = :minServingTemperature,
+        max_serving_temperature = :maxServingTemperature,
+        fermentation_method = :fermentationMethod,
+        ingredients = :ingredients,
+        recommended_glasses = :recommendedGlasses
         WHERE id = :id
         """
   )
@@ -47,6 +56,15 @@ abstract class BeersDao {
     abv: Double,
     ibu: Double,
     foodPairing: String,
+    styleName: String,
+    breweryName: String,
+    srm: Int?,
+    releasedYear: Int?,
+    minServingTemperature: Int?,
+    maxServingTemperature: Int?,
+    fermentationMethod: String,
+    ingredients: String,
+    recommendedGlasses: String,
   )
 
   @androidx.room.Transaction
@@ -64,6 +82,15 @@ abstract class BeersDao {
           beer.abv,
           beer.ibu,
           beer.foodPairing,
+          beer.styleName,
+          beer.breweryName,
+          beer.srm,
+          beer.releasedYear,
+          beer.minServingTemperature,
+          beer.maxServingTemperature,
+          beer.fermentationMethod,
+          beer.ingredients,
+          beer.recommendedGlasses,
         )
       }
     }

@@ -37,4 +37,13 @@
     <string name="browse_beers_count">%1$d cervezas</string>
     <string name="browse_beers_end_of_list">Eso es todo: %1$d cervezas</string>
     <string name="browse_no_beers">Aún no hay cervezas aquí</string>
+    <string name="beer_detail_style_and_brewery">%1$s · %2$s</string>
+    <string name="beer_detail_details">Detalles</string>
+    <string name="beer_detail_srm_label">SRM</string>
+    <string name="beer_detail_released_year_label">Lanzamiento</string>
+    <string name="beer_detail_serving_temperature_label">Temperatura de servicio</string>
+    <string name="beer_detail_serving_temperature_value">%1$d–%2$d°C</string>
+    <string name="beer_detail_fermentation_method_label">Fermentación</string>
+    <string name="beer_detail_ingredients">Ingredientes</string>
+    <string name="beer_detail_recommended_glasses">Copas recomendadas</string>
 </resources>

@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.simtop.beer_database.database.BeersDao
 import com.simtop.beer_database.database.BeersDatabase
 import com.simtop.beer_database.database.MIGRATION_1_2
+import com.simtop.beer_database.database.MIGRATION_2_3
 import com.simtop.core.BuildConfig
 import com.simtop.core.core.BEERS_DB_NAME
 import com.simtop.core.di.ApplicationContext
@@ -25,7 +26,7 @@ interface BeersDatabaseModule {
       // throwaway DB - it must never run in release, where it would wipe user data. The debug flag
       // reuses :core's BuildConfig (already enabled there, precedent: NetworkingModule) instead of
       // turning buildConfig on in this library module.
-      .addMigrations(MIGRATION_1_2)
+      .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
       .apply { if (BuildConfig.DEBUG) fallbackToDestructiveMigration(dropAllTables = true) }
       .build()
 
