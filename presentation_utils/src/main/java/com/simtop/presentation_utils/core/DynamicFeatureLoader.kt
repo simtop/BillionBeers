@@ -45,26 +45,12 @@ fun DynamicFeatureLoader(
   content: @Composable () -> Unit,
 ) {
   val installer = rememberDynamicFeatureInstaller(featureName)
-  when (val status = installer.status) {
+  val status = installer.status
+
+  when (status) {
     InstallStatus.Installed -> content()
 
-    InstallStatus.Idle -> {
-      LaunchedEffect(installer) { installer.start() }
-      InstallProgressDialog(progress = PENDING_PROGRESS, onCancel = installer::cancel)
-    }
-
-    InstallStatus.Pending ->
-      InstallProgressDialog(progress = PENDING_PROGRESS, onCancel = installer::cancel)
-
-    is InstallStatus.Downloading ->
-      InstallProgressDialog(
-        // State reports the raw ratio; keeping the bar visibly moving is a UI decision.
-        progress = status.progress.coerceAtLeast(MIN_VISIBLE_PROGRESS),
-        onCancel = installer::cancel,
-      )
-
-    InstallStatus.Installing ->
-      InstallProgressDialog(progress = FULL_PROGRESS, onCancel = installer::cancel)
+    InstallStatus.Idle -> LaunchedEffect(installer) { installer.start() }
 
     is InstallStatus.RequiresUserConfirmation -> {
       // Large (>~150MB) or metered-network downloads park here until the user approves via the
@@ -87,8 +73,41 @@ fun DynamicFeatureLoader(
       )
 
     InstallStatus.Cancelled -> LaunchedEffect(installer) { onCancelled() }
+
+    // The in-progress states render nothing here on purpose — see the single dialog call site
+    // below.
+    InstallStatus.Pending,
+    is InstallStatus.Downloading,
+    InstallStatus.Installing -> Unit
+  }
+
+  // ONE call site for the progress dialog, deliberately outside the `when`. Call-site position is
+  // composable identity: emitting the dialog from four separate branches gave each branch its own
+  // composition group, so every Idle -> Pending -> Downloading -> Installing transition disposed
+  // the dialog's window and added a fresh one — the scrim blinked and the screen behind relaid out
+  // on each step. Kept in one group, the window survives the whole flow and only `progress`
+  // changes.
+  val progress = status.progressOrNull()
+  if (progress != null) {
+    InstallProgressDialog(progress = progress, onCancel = installer::cancel)
   }
 }
+
+/**
+ * The bar position for the states that show progress; `null` for the states that show no dialog.
+ */
+private fun InstallStatus.progressOrNull(): Float? =
+  when (this) {
+    InstallStatus.Idle,
+    InstallStatus.Pending -> PENDING_PROGRESS
+    // State reports the raw ratio; keeping the bar visibly moving is a UI decision.
+    is InstallStatus.Downloading -> progress.coerceAtLeast(MIN_VISIBLE_PROGRESS)
+    InstallStatus.Installing -> FULL_PROGRESS
+    InstallStatus.Installed,
+    is InstallStatus.RequiresUserConfirmation,
+    is InstallStatus.Failed,
+    InstallStatus.Cancelled -> null
+  }
 
 /**
  * [retain] (not [remember][androidx.compose.runtime.remember]) so the installer — status, session
