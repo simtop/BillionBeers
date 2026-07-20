@@ -110,8 +110,11 @@ ui-test-managed: ## Run instrumented tests on the ATD fast-lane managed device (
 ui-test-managed-newest: ## Run instrumented tests on the API 37 managed device (forward-compat lane).
 	$(GRADLE_RUNNER) $(UI_TEST_PREFIX)pixel9Api37DebugAndroidTest
 
-ui-test-managed-all: ## Run instrumented tests on both managed devices, every opted-in module (what CI runs).
+ui-test-managed-ci: ## Run what CI runs per push: the ATD fast lane, every opted-in module.
 	$(GRADLE_RUNNER) ciGroupDebugAndroidTest
+
+ui-test-managed-all: ## Run instrumented tests on both managed devices, every opted-in module.
+	$(GRADLE_RUNNER) allDevicesDebugAndroidTest
 
 # Screenshots (Paparazzi)
 screenshot-record: ## Record golden images for Paparazzi.

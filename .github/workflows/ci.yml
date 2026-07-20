@@ -220,9 +220,20 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
+      - name: Cache Android system images
+        # Downloading the emulator + system image cost ~2m45s on the first run. Keyed on the
+        # device definitions, so changing a device invalidates the cache instead of serving a
+        # stale image. AVD snapshots are deliberately NOT cached - they are flaky across emulator
+        # versions, and boot time is not reliably cacheable anyway.
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/lib/android/sdk/system-images
+          key: android-system-images-${{ hashFiles('build-logic/convention/src/main/kotlin/billionbeers.android.managed.device.gradle.kts') }}
+
       - name: Run instrumented tests on the managed devices
-        # The `ci` device group: the API 35 ATD fast lane plus the API 37 forward-compat lane.
-        # Which devices that means is defined in build-logic, not here.
+        # The `ci` group is the ATD fast lane. The slower API 37 lane is the `compat` group and
+        # runs weekly (.github/workflows/weekly-compat.yml). Which devices those mean is defined
+        # in build-logic, not here.
         run: ./gradlew ciGroupDebugAndroidTest
 
       - name: Archive instrumented test reports

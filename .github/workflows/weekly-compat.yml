@@ -1,0 +1,91 @@
+name: Weekly Forward-Compat Tests
+
+# Instrumented tests on the newest device lane (API 37, one above targetSdk). Kept off the
+# per-push path because its full system image takes ~2m28s just to boot, against ~30s for the
+# API 35 ATD fast lane that every push already runs.
+#
+# Known limitation: skipping the run when nothing merged means a forward-compat break caused by
+# a new emulator/system image alone - with no repo change - is not caught until the next merge.
+# Accepted deliberately; use "Run workflow" to force a run any time.
+
+on:
+  schedule:
+    # 06:00 UTC every Saturday.
+    - cron: '0 6 * * 6'
+  workflow_dispatch:
+
+jobs:
+  gate:
+    name: Check for merges since the last run
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.check.outputs.run }}
+    steps:
+      - name: Check for commits in the last week
+        id: check
+        # The schedule is weekly, so "commits in the last 7 days" is exactly "merged since the
+        # last scheduled run". Queried through the API rather than `git log` on purpose: a
+        # checkout defaults to depth 1, which would make the window silently always-empty.
+        run: |
+          SINCE=$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%SZ)
+          COUNT=$(gh api "repos/${{ github.repository }}/commits?sha=master&since=$SINCE" --jq 'length')
+          echo "Commits on master since $SINCE: $COUNT"
+          if [ "$COUNT" -gt 0 ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "Nothing merged in the last week - skipping the compat run."
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  compat-tests:
+    name: Instrumented Tests (API 37 forward-compat)
+    needs: gate
+    # A manual dispatch always runs; the gate only suppresses the cron.
+    if: needs.gate.outputs.run == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Enable KVM
+        # GitHub's Linux runners support nested virtualization, but the device node is not
+        # writable by default. Without this the emulator falls back to software rendering and
+        # takes many minutes (or times out).
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Set up JDK 23
+        uses: actions/setup-java@v5
+        with:
+          java-version: '23'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: wrapper
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Cache Android system images
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/lib/android/sdk/system-images
+          key: android-system-images-${{ hashFiles('build-logic/convention/src/main/kotlin/billionbeers.android.managed.device.gradle.kts') }}
+
+      - name: Run forward-compat instrumented tests
+        # The `compat` device group - defined in build-logic, not named here.
+        run: ./gradlew compatGroupDebugAndroidTest
+
+      - name: Archive instrumented test reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: compat-test-reports
+          path: '**/build/reports/androidTests/managedDevice/'
