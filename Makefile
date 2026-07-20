@@ -101,8 +101,17 @@ endif
 konsist: ## Run Konsist architecture rules.
 	$(GRADLE_RUNNER) :konsist:test
 
-ui-test: ## Run connected Android tests (UI tests).
+ui-test: ## Run connected Android tests (UI tests) on an already-running device/emulator.
 	$(GRADLE_RUNNER) $(UI_TEST_PREFIX)connectedDebugAndroidTest
+
+ui-test-managed: ## Run instrumented tests on the ATD fast-lane managed device (boots/tears down its own emulator).
+	$(GRADLE_RUNNER) $(UI_TEST_PREFIX)atdApi35DebugAndroidTest
+
+ui-test-managed-newest: ## Run instrumented tests on the API 37 managed device (forward-compat lane).
+	$(GRADLE_RUNNER) $(UI_TEST_PREFIX)pixel9Api37DebugAndroidTest
+
+ui-test-managed-all: ## Run instrumented tests on both managed devices, every opted-in module (what CI runs).
+	$(GRADLE_RUNNER) ciGroupDebugAndroidTest
 
 # Screenshots (Paparazzi)
 screenshot-record: ## Record golden images for Paparazzi.

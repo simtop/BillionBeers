@@ -2,6 +2,7 @@ plugins {
   id("billionbeers.android.application")
   id("billionbeers.android.compose")
   id("billionbeers.android.metro")
+  id("billionbeers.android.managed.device")
 
   id("billionbeers.duplicate-classes")
   id("billionbeers.unused-dependencies")

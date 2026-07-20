@@ -2,6 +2,7 @@ plugins {
   id("billionbeers.android.library")
   id("billionbeers.room")
   id("billionbeers.android.metro")
+  id("billionbeers.android.managed.device")
 }
 
 android {
