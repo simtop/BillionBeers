@@ -66,7 +66,9 @@ class BeersRepositoryImpl(
   @Suppress("TooGenericExceptionCaught")
   override suspend fun updateAvailability(beer: Beer): Either<UpdateAvailabilityError, Unit> {
     return try {
-      beersLocalSource.updateBeer(beer.id, beer.availability)
+      // Upsert, not update: a beer reached through search/browse may not be in the catalog cache
+      // yet, and a zero-row UPDATE would silently drop the user's edit.
+      beersLocalSource.upsertAvailability(beersMapper.fromBeerToBeerDbModel(beer))
       Either.Right(Unit)
     } catch (e: CancellationException) {
       throw e

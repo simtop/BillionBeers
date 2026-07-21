@@ -98,13 +98,27 @@ abstract class BeersDao {
 
   @Query(
     """
-        UPDATE beers 
-        SET 
+        UPDATE beers
+        SET
         availability = :availability
         WHERE id = :primaryKey
         """
   )
-  abstract suspend fun updateBeer(primaryKey: String, availability: Boolean)
+  abstract suspend fun updateBeer(primaryKey: String, availability: Boolean): Int
+
+  /**
+   * A user's availability edit. Usually the row is already cached and this is a plain column
+   * update, but a beer reached through a query surface (search/browse) may not be in the table yet
+   * - then the zero-row update falls back to inserting the full row, so the edit is persisted
+   *   instead of silently matching nothing. Once the row exists, the keyed upsert's
+   *   availability-preserving rule protects the edit from later catalog fetches like any other.
+   */
+  @androidx.room.Transaction
+  open suspend fun upsertAvailability(beer: BeerDbModel) {
+    if (updateBeer(beer.id, beer.availability) == 0) {
+      insertIgnoringConflicts(listOf(beer))
+    }
+  }
 
   @Query("DELETE FROM beers") abstract suspend fun deleteAll()
 

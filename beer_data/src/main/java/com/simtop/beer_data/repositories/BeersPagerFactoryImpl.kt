@@ -15,6 +15,7 @@ import com.simtop.core.core.PagingMediator
 import com.simtop.core.core.PagingStorage
 import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 
 @Inject
 class BeersPagerFactoryImpl(
@@ -51,13 +52,14 @@ class BeersPagerFactoryImpl(
   override fun create(query: BeersQuery): Pager<Beer, FetchBeersError> =
     // A query surface (search, beers-by-style, beers-by-brewery) is its own pager: results live
     // only in memory (they die with the screen and a new query instantly invalidates them) and
-    // never touch the beers table, so the catalog's SELECT * view is untouched. No
-    // nextKeyFromStorage - there's no warm cache to resume from.
+    // its fetches never write into the beers table, so the catalog's SELECT * view is untouched.
+    // No nextKeyFromStorage - there's no warm cache to resume from. The overlay keeps the
+    // in-memory snapshot's availability in sync with the table, where edits live.
     PagingMediator(
       initialKey = FIRST_PAGE,
       fetchRemote = fetchPage(query),
       classifyError = { it.toFetchBeersError() },
-      storage = InMemoryPagingStorage(),
+      storage = AvailabilityOverlayStorage(InMemoryPagingStorage(), repository),
     )
 
   /**
@@ -75,6 +77,26 @@ class BeersPagerFactoryImpl(
   private companion object {
     const val FIRST_PAGE = 1
   }
+}
+
+/**
+ * Wraps a query surface's in-memory storage so its rows reflect availability edits made after the
+ * fetch. Availability's single source of truth is the beers table - the detail screen's toggle is
+ * written there even for beers the catalog hasn't paged in (see `BeersDao.upsertAvailability`) -
+ * while the fetched items are a snapshot from the API. [data] therefore overlays the table's
+ * current availability by id; beers absent from the table pass through unchanged. Writes still go
+ * only to the in-memory delegate - the table is read, never written, by a query surface.
+ */
+private class AvailabilityOverlayStorage(
+  private val delegate: PagingStorage<Int, Beer>,
+  repository: BeersRepository,
+) : PagingStorage<Int, Beer> by delegate {
+
+  override val data: Flow<List<Beer>> =
+    combine(delegate.data, repository.observeBeers()) { items, cached ->
+      val availabilityById = cached.associate { it.id to it.availability }
+      items.map { beer -> availabilityById[beer.id]?.let { beer.copy(availability = it) } ?: beer }
+    }
 }
 
 /**

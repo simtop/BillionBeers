@@ -79,7 +79,7 @@ class LocalDataSourceTest {
   fun updateDB() {
     runBlocking {
       localSource.insertAllToDB(fakeDbBeerList)
-      localSource.updateBeer(fakeBeerModel2.id, false)
+      localSource.upsertAvailability(fakeDbBeerList[0].copy(availability = false))
       val result = localSource.getAllBeersFromDB().first()
       assertEquals(result[0].availability, false)
     }

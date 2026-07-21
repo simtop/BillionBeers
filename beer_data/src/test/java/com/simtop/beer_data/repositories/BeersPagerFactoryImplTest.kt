@@ -262,6 +262,24 @@ class BeersPagerFactoryImplTest {
       expectThat(repository.countDBEntries()).isEqualTo(0)
     }
 
+  // Regression test: search/browse results are an in-memory snapshot, so a detail-screen
+  // availability toggle (written to the beers table) used to be invisible when navigating back to
+  // the query surface. The overlay must reflect it - including for a beer the catalog never
+  // cached, which the upsert writes as a fresh row.
+  @Test
+  fun `a query pager reflects an availability edit made on the detail screen`() =
+    runTest(testDispatcher) {
+      beersRemoteSource.setBeersResponse(listOf(apiItem(id = "1")), totalCount = 1)
+      val pager = factory.create(BeersQuery(search = "ipa"))
+      pager.loadFirstPage()
+      val beer = pager.data.first().single()
+      expectThat(beer.availability).isEqualTo(true)
+
+      repository.updateAvailability(beer.copy(availability = false))
+
+      expectThat(pager.data.first().single().availability).isEqualTo(false)
+    }
+
   @Test
   fun `pager data emits beers from the local source`() =
     runTest(testDispatcher) {

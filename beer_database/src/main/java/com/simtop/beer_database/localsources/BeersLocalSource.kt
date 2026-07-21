@@ -36,7 +36,12 @@ interface BeersLocalSource {
    */
   suspend fun countPagingStates(): Int
 
-  suspend fun updateBeer(primaryKey: String, availability: Boolean)
+  /**
+   * Persists a user's availability edit: updates the cached row, or inserts the full [beer] row
+   * when it isn't cached yet (a beer reached through search/browse before the catalog paged it in).
+   * See [com.simtop.beer_database.database.BeersDao.upsertAvailability].
+   */
+  suspend fun upsertAvailability(beer: BeerDbModel)
 
   suspend fun deleteAllFromDB()
 
@@ -61,8 +66,8 @@ class BeersLocalSourceImpl(private val db: BeersDatabase) : BeersLocalSource {
 
   override suspend fun countPagingStates() = db.beersDao().countPagingStates()
 
-  override suspend fun updateBeer(primaryKey: String, availability: Boolean) =
-    db.beersDao().updateBeer(primaryKey, availability)
+  override suspend fun upsertAvailability(beer: BeerDbModel) =
+    db.beersDao().upsertAvailability(beer)
 
   override suspend fun deleteAllFromDB() = db.beersDao().deleteAll()
 
