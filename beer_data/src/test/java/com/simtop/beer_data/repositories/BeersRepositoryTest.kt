@@ -238,6 +238,21 @@ class BeersRepositoryTest {
       expectThat(updatedBeer.availability).isEqualTo(false)
     }
 
+  // Regression test: a beer reached through search/browse may not be in the catalog cache, and
+  // the old plain UPDATE then matched zero rows - the edit silently evaporated. The upsert must
+  // insert the row instead.
+  @Test
+  fun `updateAvailability persists the edit for a beer not yet cached`() =
+    runTest(testDispatcher) {
+      val beer = Beer.empty.copy(id = "42", availability = true)
+
+      beersRepository.updateAvailability(beer.copy(availability = false))
+
+      val inserted = beersLocalSource.getBeers().single()
+      expectThat(inserted.id).isEqualTo("42")
+      expectThat(inserted.availability).isEqualTo(false)
+    }
+
   @Test
   fun `insertAllToDB should call local source`() =
     runTest(testDispatcher) {

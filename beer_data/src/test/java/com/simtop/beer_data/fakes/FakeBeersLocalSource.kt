@@ -65,13 +65,16 @@ class FakeBeersLocalSource : BeersLocalSource {
       )
   }
 
-  override suspend fun updateBeer(primaryKey: String, availability: Boolean) {
+  // Mirrors BeersDao.upsertAvailability: update the cached row, insert the full row when absent.
+  override suspend fun upsertAvailability(beer: BeerDbModel) {
     val current = beersFlow.value.toMutableList()
-    val index = current.indexOfFirst { it.id == primaryKey }
+    val index = current.indexOfFirst { it.id == beer.id }
     if (index != -1) {
-      current[index] = current[index].copy(availability = availability)
-      beersFlow.value = current
+      current[index] = current[index].copy(availability = beer.availability)
+    } else {
+      current.add(beer)
     }
+    beersFlow.value = current
   }
 
   override suspend fun deleteAllFromDB() {

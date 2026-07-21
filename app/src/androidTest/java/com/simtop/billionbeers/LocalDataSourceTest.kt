@@ -8,7 +8,6 @@ import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
 import com.simtop.beer_database.database.BeersDatabase
 import com.simtop.beer_database.localsources.BeersLocalSource
 import com.simtop.beer_database.localsources.BeersLocalSourceImpl
-import com.simtop.billionbeers.di.fakeBeerModel2
 import com.simtop.billionbeers.di.fakeDbBeerList
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -93,7 +92,7 @@ class LocalDataSourceTest {
   fun updateDB() {
     runBlocking {
       localSource.insertAllToDB(fakeDbBeerList)
-      localSource.updateBeer(fakeBeerModel2.id, false)
+      localSource.upsertAvailability(fakeDbBeerList[0].copy(availability = false))
       val result = localSource.getAllBeersFromDB().first()
       assertEquals(result[0].availability, false)
     }

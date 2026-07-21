@@ -5,11 +5,10 @@ import com.google.android.gms.tasks.Tasks
 import com.google.android.play.core.splitinstall.SplitInstallManager
 import com.google.android.play.core.splitinstall.SplitInstallSessionState
 import com.google.android.play.core.splitinstall.SplitInstallStateUpdatedListener
-import com.simtop.navigation.FeatureConstants
+import com.simtop.navigation.DynamicFeature
 
 class FakeSplitInstallManager : SplitInstallManager {
-  private val installed =
-    mutableSetOf(FeatureConstants.BEER_DETAIL_MODULE, FeatureConstants.BEER_BROWSE_MODULE)
+  private val installed = DynamicFeature.entries.mapTo(mutableSetOf()) { it.moduleName }
 
   override fun startInstall(
     request: com.google.android.play.core.splitinstall.SplitInstallRequest

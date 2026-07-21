@@ -47,7 +47,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -70,9 +69,7 @@ import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.PagedListFooter
 import com.simtop.core.core.PagedListUiModel
-import com.simtop.navigation.FeatureConstants
 import com.simtop.presentation_utils.R as PresentationUtilsR
-import com.simtop.presentation_utils.core.DynamicFeatureLoader
 import com.simtop.presentation_utils.core.InfiniteListHandler
 import com.simtop.presentation_utils.core.LocalDebugDrawerToggle
 import com.simtop.presentation_utils.core.resolvedMessage
@@ -80,15 +77,6 @@ import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import com.simtop.presentation_utils.custom_views.ComposeErrorView
 import com.simtop.presentation_utils.custom_views.pagedListFooter
 import dev.zacsweers.metrox.viewmodel.metroViewModel
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-
-private val BeerSaver: Saver<Beer?, String> =
-  Saver(
-    save = { beer -> beer?.let { Json.encodeToString(it) }.orEmpty() },
-    restore = { json -> json.takeIf { it.isNotEmpty() }?.let { Json.decodeFromString<Beer>(it) } },
-  )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -117,48 +105,16 @@ fun BeersListScreen(
     }
   }
 
-  // State to track if we are installing the feature for a specific beer - saved across process
-  // death so the install flow resumes instead of silently dropping the in-flight navigation.
-  var installingBeer by rememberSaveable(stateSaver = BeerSaver) { mutableStateOf<Beer?>(null) }
-  // The same gate for the beerbrowse module: the browse destination is only pushed once the
-  // module is installed.
-  var installingBrowse by rememberSaveable { mutableStateOf(false) }
-
   BeersListContent(
     viewState = rawState,
-    onBeerClick = { beer -> installingBeer = beer },
+    onBeerClick = onBeerClick,
     onSearchClick = onSearchClick,
-    onBrowseClick = { installingBrowse = true },
+    onBrowseClick = onBrowseClick,
     onScrollToBottom = { viewModel.onScrollToBottom() },
     onRefresh = { viewModel.refresh() },
     onRetry = { viewModel.refresh() },
     onRetryLoadMore = { viewModel.onRetryLoadMore() },
   )
-
-  // Handle dynamic feature loading overlay
-  installingBeer?.let { beer: Beer ->
-    DynamicFeatureLoader(
-      featureName = FeatureConstants.BEER_DETAIL_MODULE,
-      onCancelled = { installingBeer = null },
-    ) {
-      LaunchedEffect(beer) {
-        onBeerClick(beer)
-        installingBeer = null
-      }
-    }
-  }
-
-  if (installingBrowse) {
-    DynamicFeatureLoader(
-      featureName = FeatureConstants.BEER_BROWSE_MODULE,
-      onCancelled = { installingBrowse = false },
-    ) {
-      LaunchedEffect(Unit) {
-        onBrowseClick()
-        installingBrowse = false
-      }
-    }
-  }
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
