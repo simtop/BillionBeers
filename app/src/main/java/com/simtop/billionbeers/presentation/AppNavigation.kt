@@ -3,14 +3,9 @@ package com.simtop.billionbeers.presentation
 import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
-import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.feature.beersearch.BeersSearchScreen
 import com.simtop.feature.beerslist.BeersListScreen
 import com.simtop.navigation.BeerBrowse
@@ -19,19 +14,13 @@ import com.simtop.navigation.BeersList
 import com.simtop.navigation.BeersSearch
 import com.simtop.navigation.DeepLinkDestination
 import com.simtop.navigation.DynamicFeatureContent
-import com.simtop.navigation.FeatureConstants
 import com.simtop.navigation.toDeepLinkDestination
-import com.simtop.presentation_utils.core.DynamicFeatureLoader
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 
 @Composable
 fun AppNavigation(deepLinkUri: Uri? = null, viewModel: AppNavigationViewModel = metroViewModel()) {
   val backStack = rememberNavBackStack(BeersList)
-
-  // Beer resolved from an incoming deep link, pending the beerdetail dynamic feature install -
-  // mirrors BeersListScreen's own installingBeer/DynamicFeatureLoader gate, since BeerDetail can
-  // only be pushed onto the back stack once that module is installed.
-  var pendingDeepLinkBeer by remember { mutableStateOf<Beer?>(null) }
+  val navigate = rememberDynamicFeatureNavigator(backStack)
 
   LaunchedEffect(deepLinkUri) {
     when (val destination = deepLinkUri?.toDeepLinkDestination()) {
@@ -40,9 +29,9 @@ fun AppNavigation(deepLinkUri: Uri? = null, viewModel: AppNavigationViewModel = 
         backStack.clear()
         backStack.add(BeersList)
       }
-      is DeepLinkDestination.BeerDetail -> {
-        pendingDeepLinkBeer = viewModel.resolveBeer(destination.beerId)
-      }
+      // An unresolvable beer id stays on the current screen.
+      is DeepLinkDestination.BeerDetail ->
+        viewModel.resolveBeer(destination.beerId)?.let { beer -> navigate(BeerDetail(beer)) }
     }
   }
 
@@ -53,50 +42,32 @@ fun AppNavigation(deepLinkUri: Uri? = null, viewModel: AppNavigationViewModel = 
       entryProvider {
         entry<BeersList> {
           BeersListScreen(
-            onBeerClick = { beer -> backStack.add(BeerDetail(beer)) },
-            onSearchClick = { backStack.add(BeersSearch) },
-            onBrowseClick = { backStack.add(BeerBrowse) },
+            onBeerClick = { beer -> navigate(BeerDetail(beer)) },
+            onSearchClick = { navigate(BeersSearch) },
+            onBrowseClick = { navigate(BeerBrowse) },
           )
         }
 
         entry<BeersSearch> {
           BeersSearchScreen(
-            onBeerClick = { beer -> backStack.add(BeerDetail(beer)) },
+            onBeerClick = { beer -> navigate(BeerDetail(beer)) },
             onBack = { backStack.removeLastOrNull() },
           )
         }
 
         entry<BeerDetail> { key ->
-          // The module is guaranteed installed (gated on the list screen before navigating).
-          // DynamicFeatureContent remembers the reflective lookup so it runs once, not per
-          // recomposition.
-          DynamicFeatureContent(
-            key = key,
-            className = FeatureConstants.BEER_DETAIL_PROVIDER_CLASS,
-            onBack = { backStack.removeLastOrNull() },
-          )
+          DynamicFeatureContent(key = key, onBack = { backStack.removeLastOrNull() })
         }
 
+        // onNavigate lets browse push a beer's detail from inside the module - routed through
+        // `navigate`, so it is gated like every other caller.
         entry<BeerBrowse> { key ->
-          // Same install guarantee as BeerDetail (gated on the list screen's browse icon).
-          // onNavigate lets browse push a beer's detail onto this back stack from inside the
-          // module.
           DynamicFeatureContent(
             key = key,
-            className = FeatureConstants.BEER_BROWSE_PROVIDER_CLASS,
             onBack = { backStack.removeLastOrNull() },
-            onNavigate = { destination -> backStack.add(destination) },
+            onNavigate = navigate,
           )
         }
       },
   )
-
-  pendingDeepLinkBeer?.let { beer ->
-    DynamicFeatureLoader(featureName = FeatureConstants.BEER_DETAIL_MODULE) {
-      LaunchedEffect(beer) {
-        backStack.add(BeerDetail(beer))
-        pendingDeepLinkBeer = null
-      }
-    }
-  }
 }

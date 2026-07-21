@@ -19,11 +19,9 @@ states (empty list, all beers unavailable, large lists for scroll testing, etc).
 
 ## Known limitation
 
-Tapping a beer still goes through `BeersListScreen`'s own `DynamicFeatureLoader` gate (it's
-unconditional inside the composable, not something a caller can skip). Since `:feature:beerdetail`
-isn't declared as a dynamic feature of this app, the install request fails immediately - no crash,
-just a briefly-shown loading dialog that dismisses itself. This is expected: this module is for
-iterating on the list screen, not the detail screen.
+Tapping a beer does nothing. `BeersListScreen` reports the tap to its caller and the real `:app`
+answers it by installing `:feature:beerdetail` on demand; this module has no detail screen to show.
+That's expected - this module is for iterating on the list screen.
 
 ## Adding another dev-app
 

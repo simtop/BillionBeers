@@ -20,23 +20,21 @@ fun interface DynamicFeatureContentProvider<T : NavKey> {
 }
 
 /**
- * Loads and renders the [DynamicFeatureContentProvider] implementation named by [className] from an
- * installed dynamic feature module.
+ * Loads and renders the [DynamicFeatureContentProvider] that [key]'s [DynamicFeature] exposes.
  *
- * The reflective lookup is [remember]ed against [className], so `Class.forName` + `newInstance()`
- * runs once per entry rather than on every recomposition.
+ * Precondition: the module is installed. A [DynamicFeatureKey] only reaches the back stack through
+ * the app's navigator, which installs the module first.
  *
- * Precondition: the owning module is already installed (gated on the calling screen via
- * [com.simtop.presentation_utils.core.DynamicFeatureLoader]) before the [key] is added to the back
- * stack, so the lookup here is guaranteed to succeed.
+ * The reflective lookup is [remember]ed, so `Class.forName` + `newInstance()` runs once per entry
+ * rather than on every recomposition.
  */
 @Composable
-fun <T : NavKey> DynamicFeatureContent(
+fun <T : DynamicFeatureKey> DynamicFeatureContent(
   key: T,
-  className: String,
   onBack: () -> Unit,
   onNavigate: (NavKey) -> Unit = {},
 ) {
+  val className = key.feature.providerClass
   val provider =
     remember(className) {
       @Suppress("UNCHECKED_CAST")
