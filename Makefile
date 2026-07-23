@@ -13,7 +13,7 @@ UI_TEST_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,:app:)
 # Wrapper for Gradle to support build-brief (bb) or rtk if available
 GRADLE_RUNNER := $(shell if command -v bb >/dev/null 2>&1; then echo "bb ./gradlew"; elif command -v build-brief >/dev/null 2>&1; then echo "build-brief --gradle ./gradlew"; elif command -v rtk >/dev/null 2>&1; then echo "rtk ./gradlew"; else echo "./gradlew"; fi)
 
-.PHONY: help setup setup-ai-tools update-android-skills build bundle-release install clean test konsist compose-metrics ui-test screenshot-record screenshot-verify screenshot-clean lint format check check-duplicates check-unused-deps benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark jacoco-report install-profiler install-diffuse new-feature-module new-dev-app
+.PHONY: help setup setup-ai-tools update-android-skills build bundle-release install clean test konsist compose-metrics ui-test screenshot-record screenshot-verify screenshot-clean lint android-lint format check check-duplicates check-unused-deps benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark jacoco-report install-profiler install-diffuse new-feature-module new-dev-app
 
 help: ## Show this help message.
 	@echo "\n📊 BillionBeers Makefile Help"
@@ -136,6 +136,9 @@ screenshot-clean: ## Clean and re-record golden images.
 # Quality & Analysis
 lint: ## Run static analysis (Detekt).
 	$(GRADLE_RUNNER) $(MODULE_PREFIX)detekt
+
+android-lint: ## Run Android Lint over the app and its whole library graph (checkDependencies), gated by app/lint-baseline.xml.
+	$(GRADLE_RUNNER) :app:lintDebug
 
 detekt-baseline: ## Update Detekt baselines for all modules.
 	$(GRADLE_RUNNER) $(MODULE_PREFIX)detektBaseline
