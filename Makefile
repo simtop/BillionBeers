@@ -13,7 +13,7 @@ UI_TEST_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,:app:)
 # Wrapper for Gradle to support build-brief (bb) or rtk if available
 GRADLE_RUNNER := $(shell if command -v bb >/dev/null 2>&1; then echo "bb ./gradlew"; elif command -v build-brief >/dev/null 2>&1; then echo "build-brief --gradle ./gradlew"; elif command -v rtk >/dev/null 2>&1; then echo "rtk ./gradlew"; else echo "./gradlew"; fi)
 
-.PHONY: help setup setup-ai-tools update-android-skills build bundle-release install clean test konsist compose-metrics ui-test screenshot-record screenshot-verify screenshot-clean lint android-lint format check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark jacoco-report install-profiler install-diffuse new-feature-module new-dev-app
+.PHONY: help setup setup-ai-tools update-android-skills build bundle-release install clean test konsist compose-metrics ui-test screenshot-record screenshot-verify screenshot-clean lint android-lint format check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline health benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark jacoco-report install-profiler install-diffuse new-feature-module new-dev-app
 
 help: ## Show this help message.
 	@echo "\n📊 BillionBeers Makefile Help"
@@ -160,6 +160,9 @@ dependency-guard: ## Verify the app's release runtime dependency graph against i
 
 dependency-guard-baseline: ## Re-baseline the dependency graph after an intentional change (review the diff before committing).
 	$(GRADLE_RUNNER) :app:dependencyGuardBaseline
+
+health: ## Aggregate the read-only health checks into a markdown report (docs/health/REPORT.md).
+	@bash scripts/health-report.sh --run docs/health/REPORT.md
 
 # Benchmarking
 benchmark-micro: ## Run microbenchmarks on a connected device.
