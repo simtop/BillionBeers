@@ -67,7 +67,7 @@ survives contact with this repo's existing setup:
   landing.
 - **Readability is preserved** by the `# vX` comment.
 
-Residual cost: a one-time resolution of six action SHAs. That's the whole bill.
+Residual cost: a one-time resolution of five action SHAs. That's the whole bill.
 
 ---
 
@@ -156,7 +156,7 @@ document, not to ship a control that breaks every routine update.
 
 ## Consequences
 
-- All six Actions across the five workflows (`ci`, `format_fix`, `record_screenshots`,
+- All five Actions across the five workflows (`ci`, `format_fix`, `record_screenshots`,
   `weekly-compat`, `dependabot-auto-merge`) are SHA-pinned; Dependabot keeps them fresh.
 - `ci.yml` gains a PR-only `secret-scan` job gating on `format-check`, consistent with the other
   parallel jobs.
