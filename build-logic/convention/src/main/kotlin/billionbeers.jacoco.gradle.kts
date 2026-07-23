@@ -45,7 +45,12 @@ val jacocoTestReport = if (tasks.findByName("jacocoTestReport") != null) {
 }
 
 val androidComponents = extensions.findByType(com.android.build.api.variant.AndroidComponentsExtension::class.java)
-androidComponents?.onVariants { variant ->
+// Coverage is measured on the debug variant only. Registering a report for every variant made
+// jacoco<Variant>Report depend on a test<Variant>UnitTest task that doesn't exist for the AndroidX
+// baseline-profile variants (benchmarkRelease, nonMinifiedRelease), breaking jacocoRootReport at
+// configuration time. Scoping to debug is both the fix and the coverage convention.
+val debugVariants = androidComponents?.selector()?.withBuildType("debug")
+if (androidComponents != null && debugVariants != null) androidComponents.onVariants(debugVariants) { variant ->
     val testTaskName = "test${variant.name.capitalized()}UnitTest"
 
     val reportTask = tasks.register<JacocoReport>("jacoco${variant.name.capitalize()}Report") {
@@ -56,32 +61,38 @@ androidComponents?.onVariants { variant ->
             html.required.set(true)
         }
 
+        // AGP 9's built-in kotlinc writes classes under build/intermediates/built_in_kotlinc/...,
+        // not the old build/tmp/kotlin-classes/ this hardcoded (and it dropped the build/ segment
+        // too). Take the class output straight from the compile task so the path follows AGP
+        // wherever it moves it, and so the report gets an implicit dependency on compilation.
         classDirectories.setFrom(
-            fileTree("$projectDir/tmp/kotlin-classes/${variant.name}") {
-                exclude(
-                    "**/R.class",
-                    "**/R$*.class",
-                    "**/BuildConfig.*",
-                    "**/Manifest*.*",
-                    "**/*Test*.*",
-                    "android/**/*.*",
-                    "**/databinding/*",
-                    "**/generated/*",
-                    "**/model/*",
-                    "**/di/*",
-                    "**/*Activity*.*",
-                    "**/*Fragment*.*",
-                    "**/*_HiltModules*.*",
-                    "**/Hilt_*.*",
-                    "**/*_Factory*.*",
-                    "**/*_MembersInjector*.*",
-                    "**/*MapperImpl*.*",
-                    "**/*Module*.*",
-                    "**/*Component*.*",
-                    "**/*Screen*.*",
-                    "**/*Application*.*",
-                    "**/*CommonUiState*.*"
-                )
+            tasks.named("compile${variant.name.capitalized()}Kotlin").map { task ->
+                task.outputs.files.asFileTree.matching {
+                    exclude(
+                        "**/R.class",
+                        "**/R$*.class",
+                        "**/BuildConfig.*",
+                        "**/Manifest*.*",
+                        "**/*Test*.*",
+                        "android/**/*.*",
+                        "**/databinding/*",
+                        "**/generated/*",
+                        "**/model/*",
+                        "**/di/*",
+                        "**/*Activity*.*",
+                        "**/*Fragment*.*",
+                        "**/*_HiltModules*.*",
+                        "**/Hilt_*.*",
+                        "**/*_Factory*.*",
+                        "**/*_MembersInjector*.*",
+                        "**/*MapperImpl*.*",
+                        "**/*Module*.*",
+                        "**/*Component*.*",
+                        "**/*Screen*.*",
+                        "**/*Application*.*",
+                        "**/*CommonUiState*.*"
+                    )
+                }
             }
         )
 
@@ -92,7 +103,10 @@ androidComponents?.onVariants { variant ->
             )
         )
 
-        executionData.setFrom(file("$projectDir/jacoco/$testTaskName.exec"))
+        // Test tasks write coverage to build/jacoco/, not $projectDir/jacoco/ - the missing
+        // build/ segment meant this report (and the aggregated root report) had no execution data
+        // and produced empty coverage.
+        executionData.setFrom(layout.buildDirectory.file("jacoco/$testTaskName.exec"))
     }
 
     jacocoTestReport.configure { dependsOn(reportTask) }

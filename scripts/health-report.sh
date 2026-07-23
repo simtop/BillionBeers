@@ -35,11 +35,8 @@ if [[ "$RUN" == "1" ]]; then
   # failures surface as report rows, not by aborting. Only tasks whose *artifacts* this script
   # parses are run here - the Lint and dependency-guard rows read committed baseline files, so
   # those tasks are deliberately not invoked.
-  # jacocoRootReport is intentionally absent: it currently fails at configuration
-  # (:app:jacocoBenchmarkReleaseReport wants a non-existent testBenchmarkReleaseUnitTest), which
-  # the coverage row reports as a finding. Re-add it here once that task is repaired.
   ./gradlew --console=plain --continue -PcomposeCompilerReports=true \
-    detekt compileReleaseKotlin \
+    detekt jacocoRootReport compileReleaseKotlin \
     >&2 2>&1 || true
 fi
 
