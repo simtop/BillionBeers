@@ -12,16 +12,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Set up JDK 23
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
         with:
           java-version: '23'
           distribution: 'temurin'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
+        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6
         with:
           gradle-version: wrapper
 
@@ -46,22 +46,57 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Or trigger it manually from the Actions tab (pick this branch in the \"Run workflow\" dropdown)." >> $GITHUB_STEP_SUMMARY
 
+  secret-scan:
+    name: Secret Scan (gitleaks)
+    # PR-only on purpose: branch protection means every change reaches master through a PR, so
+    # scanning the PR's own commit range guards every change without re-scanning full history on
+    # each push. A full-history scan would also re-flag long-since-removed commits forever and be
+    # slow; a one-off deep-history audit (plus secret rotation) is the right remediation for the
+    # past, not this recurring gate.
+    if: github.event_name == 'pull_request'
+    needs: format-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # Full history so the base..head range below can be resolved; the scan itself is still
+          # scoped to just this PR's commits.
+          fetch-depth: 0
+
+      - name: Scan PR commit range for secrets
+        env:
+          # Pinned release + verified checksum, in the same spirit as the SHA-pinned actions - a
+          # floating install script or action tag is the exact mutable-supply-chain surface this
+          # job exists to close. Bump both together when updating.
+          GITLEAKS_VERSION: 8.30.1
+          GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+        run: |
+          set -euo pipefail
+          curl -sSL -o gitleaks.tar.gz \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  gitleaks.tar.gz" | sha256sum -c -
+          tar -xzf gitleaks.tar.gz gitleaks
+          ./gitleaks git . \
+            --log-opts="origin/${{ github.base_ref }}..HEAD" \
+            --redact --verbose --no-banner
+
   lint:
     name: Static Analysis (Detekt)
     needs: format-check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Set up JDK 23
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
         with:
           java-version: '23'
           distribution: 'temurin'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
+        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6
         with:
           gradle-version: wrapper
 
@@ -77,16 +112,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Set up JDK 23
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
         with:
           java-version: '23'
           distribution: 'temurin'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
+        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6
         with:
           gradle-version: wrapper
 
@@ -101,7 +136,7 @@ jobs:
 
       - name: Archive Test Reports
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: unit-test-reports
           path: '**/build/reports/tests/'
@@ -112,18 +147,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           lfs: true
 
       - name: Set up JDK 23
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
         with:
           java-version: '23'
           distribution: 'temurin'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
+        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6
         with:
           gradle-version: wrapper
 
@@ -167,7 +202,7 @@ jobs:
 
       - name: Upload Screenshot Failures
         if: always() && steps.verify-paparazzi.outcome == 'failure'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: screenshot-failures
           path: '**/build/paparazzi/failures/'
@@ -178,7 +213,7 @@ jobs:
 
       - name: Archive Screenshot Reports
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: screenshot-test-reports
           path: '**/build/reports/paparazzi/'
@@ -194,7 +229,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Enable KVM
         # GitHub's Linux runners support nested virtualization, but the device node is not
@@ -207,13 +242,13 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       - name: Set up JDK 23
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
         with:
           java-version: '23'
           distribution: 'temurin'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
+        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6
         with:
           gradle-version: wrapper
 
@@ -235,7 +270,7 @@ jobs:
 
       - name: Archive instrumented test reports
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: instrumented-test-reports
           path: '**/build/reports/androidTests/managedDevice/'
