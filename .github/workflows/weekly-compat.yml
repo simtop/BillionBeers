@@ -73,11 +73,14 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      # Removed precautionarily alongside the same cache in ci.yml: a restored partial
-      # `system-images` cache breaks GMD device setup there. This lane has only ever run once (a
-      # cache miss, which passed), so it never hit the bug - but it uses the identical cache
-      # mechanism and key, so the next weekly run would have been the first cache hit. See ci.yml
-      # for the full rationale and the conditions for a correct re-introduction.
+      # Removed alongside the same cache in ci.yml: a restored `system-images` cache breaks GMD
+      # setup for any device whose own image is in it (the image dir is restored without the SDK
+      # package registry, and setup fails on an unset property). This lane's one run actually HIT
+      # that cache and passed - but only because the cache held the API 35 ATD image while this
+      # lane provisions the API 37 image, so its install path never saw the restored dir. That
+      # protection is one eviction cycle away from gone: a weekly run on a cache miss would save
+      # the API 37 image and the next hit would fail setup exactly like ci.yml's lane did. See
+      # ci.yml for the conditions a correct re-introduction must meet.
 
       - name: Run forward-compat instrumented tests
         # The `compat` device group - defined in build-logic, not named here.
