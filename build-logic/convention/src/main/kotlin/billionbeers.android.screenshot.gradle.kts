@@ -52,6 +52,7 @@ val generatePaparazziTest = tasks.register("generatePaparazziTest") {
             import app.cash.paparazzi.Paparazzi
             import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
             import com.simtop.billionbeers.snapshot_testing.PreviewProvider
+            import com.simtop.billionbeers.snapshot_testing.SnapshotImageEnvironment
             import org.junit.Assume
             import org.junit.Rule
             import org.junit.Test
@@ -76,8 +77,10 @@ val generatePaparazziTest = tasks.register("generatePaparazziTest") {
                     Assume.assumeTrue("Skipping dummy snapshot", snapshotName != "DUMMY_NO_PREVIEWS_FOUND")
                     
                     paparazzi.snapshot(name = snapshotName) {
-                        BillionBeersTheme {
-                            content()
+                        SnapshotImageEnvironment {
+                            BillionBeersTheme {
+                                content()
+                            }
                         }
                     }
                 }
