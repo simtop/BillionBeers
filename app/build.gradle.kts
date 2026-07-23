@@ -8,11 +8,21 @@ plugins {
   id("billionbeers.unused-dependencies")
   alias(libs.plugins.kotlin.serialization)
   alias(libs.plugins.androidx.baseline.profile)
+  alias(libs.plugins.dependency.guard)
 }
 
 baselineProfile {
   from(project(":benchmark:baselineprofile"))
   automaticGenerationDuringBuild = true
+}
+
+dependencyGuard {
+  // Locks the release runtime classpath - everything that actually ships - into a committed
+  // baseline (app/dependencies/releaseRuntimeClasspath.txt). Any change to the fully-resolved
+  // graph (a new transitive, a shared library bumped by an added SDK - the classic runtime binary
+  // incompatibility cause) then fails CI until the baseline is regenerated in the same PR, making
+  // it a reviewed decision. Regenerate with `make dependency-guard-baseline`.
+  configuration("releaseRuntimeClasspath")
 }
 
 android {

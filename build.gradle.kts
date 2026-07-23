@@ -29,6 +29,7 @@ plugins {
     alias(libs.plugins.metro) apply false
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.spotless) apply false
+    alias(libs.plugins.dependency.guard) apply false
     id("jacoco")
 }
 
