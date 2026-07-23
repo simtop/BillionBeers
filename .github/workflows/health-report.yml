@@ -1,0 +1,59 @@
+name: Weekly Health Report
+
+# Aggregates the read-only health checks (Lint backlog, Detekt, Compose stability, coverage,
+# dependency graph) into one markdown table - "what's wrong and what needs solving." Written to
+# the run's Step Summary (always current) and committed to docs/health/REPORT.md so git history
+# is the trend line. Weekly, because these are burn-down signals, not per-PR gates.
+
+on:
+  schedule:
+    # 07:00 UTC every Saturday (after the forward-compat lane at 06:00).
+    - cron: '0 7 * * 6'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  health-report:
+    name: Generate health report
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up JDK 23
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+        with:
+          java-version: '23'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6
+        with:
+          gradle-version: wrapper
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Generate health report
+        run: bash scripts/health-report.sh --run docs/health/REPORT.md
+
+      - name: Publish to run summary
+        if: always()
+        run: cat docs/health/REPORT.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit report if it changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/health/REPORT.md
+          if git diff --cached --quiet; then
+            echo "Health report unchanged - nothing to commit."
+          else
+            # [skip ci]: a report-only commit must not trigger the whole Android CI on master.
+            git commit -m "chore: update weekly health report [skip ci]"
+            # Rebase onto any commits that landed since checkout - closes the weekly race window.
+            git pull --rebase origin master
+            git push origin HEAD:master
+          fi
