@@ -78,6 +78,27 @@ android.apply {
             excludes += "META-INF/*.kotlin_module"
         }
     }
+
+    lint {
+        // One Android Lint pass over the app and its entire library graph (checkDependencies), so
+        // a single `:app:lintDebug` covers the whole product with one checked-in baseline. This is
+        // Google's Android-platform corpus (NewApi/minSdk misuse, a11y, manifest, security,
+        // resources) - orthogonal to Detekt (Kotlin smells) and Konsist (our architecture rules),
+        // none of which understand the framework. New errors fail CI; everything present at
+        // adoption is grandfathered in lint-baseline.xml and burned down over time - never by
+        // regenerating the baseline to bury a regression.
+        baseline = file("lint-baseline.xml")
+        checkDependencies = true
+        abortOnError = true
+        warningsAsErrors = false
+        // Lint runs as its own CI job via lintDebug, so it need not also gate release assembly.
+        checkReleaseBuilds = false
+        // Dependency-freshness checks are Dependabot's job (ADR 0005); leaving them on would only
+        // add stale, version-churning noise to the baseline. Cosmetic - they are warning severity,
+        // so with warningsAsErrors=false they never gated CI anyway; this just keeps the baseline
+        // meaningful (latent bugs, not "an update exists").
+        disable += setOf("NewerVersionAvailable", "GradleDependency", "AndroidGradlePluginVersion")
+    }
 }
 
 // The AndroidX Baseline Profile plugin auto-generates `nonMinifiedRelease` and `benchmarkRelease`
