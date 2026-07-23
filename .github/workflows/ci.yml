@@ -197,6 +197,11 @@ jobs:
       - name: Run Konsist Architecture Rules
         run: make konsist
 
+      # High-water ratchet: jacocoRootReport reuses the debug unit tests just run above (they're
+      # up-to-date), then fails if line coverage dropped below config/coverage-floor.txt.
+      - name: Coverage floor check
+        run: make coverage-check
+
       - name: Archive Test Reports
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
