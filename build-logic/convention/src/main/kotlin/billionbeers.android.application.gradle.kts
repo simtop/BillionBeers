@@ -71,6 +71,15 @@ android.apply {
         }
     }
 
+    // `benchmark` mirrors `release` via initWith, but initWith copies build-type settings, not
+    // source sets - so benchmark lacked src/release, which holds the no-op DebugDrawerHost stub that
+    // src/main references (the real drawer lives in src/debug). Without this the benchmark variant
+    // does not compile, breaking macrobenchmark. The baseline-profile variants (benchmarkRelease,
+    // nonMinifiedRelease) already extend release; this gives the hand-rolled build type the same.
+    // AGP 9's built-in kotlinc compiles from the source set's kotlin dirs, so the .kt stub must be
+    // added there (java.srcDir alone does not reach kotlin compilation).
+    sourceSets.getByName("benchmark").kotlin.srcDir("src/release/java")
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
