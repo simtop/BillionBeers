@@ -50,6 +50,7 @@ kotlinx-serialization-json = "1.11.0"
 # Tools
 spotless = "8.8.0"
 detekt = "1.23.8"
+dependency-guard = "0.5.0"
 kotlinpoet = "2.3.0"
 
 [libraries]
@@ -173,6 +174,7 @@ metro = { id = "dev.zacsweers.metro", version.ref = "dev-zacsweers-metro" }
 android-junit5 = { id = "de.mannodermaus.android-junit5", version.ref = "androidJunit5" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+dependency-guard = { id = "com.dropbox.dependency-guard", version.ref = "dependency-guard" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "org-jetbrains-kotlin" }
 androidx-benchmark = { id = "androidx.benchmark", version.ref = "androidx-benchmark" }
 androidx-baseline-profile = { id = "androidx.baselineprofile", version.ref = "androidx-baseline-profile" }
