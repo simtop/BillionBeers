@@ -2,28 +2,6 @@
 <issues format="6" by="lint 9.2.1" type="baseline" client="gradle" dependencies="true" name="AGP (9.2.1)" variant="all" version="9.2.1">
 
     <issue
-        id="NewApi"
-        message="Call requires API level 33 (current min is 28): `android.animation.ValueAnimator#getDurationScale`"
-        errorLine1="      if (ValueAnimator.getDurationScale() == 0f) 0 else SCREEN_STATE_ANIMATION_DURATION_MS"
-        errorLine2="                        ~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/simtop/feature/beerslist/BeersListScreen.kt"
-            line="177"
-            column="25"/>
-    </issue>
-
-    <issue
-        id="NewApi"
-        message="Call requires API level 33 (current min is 28): `android.animation.ValueAnimator#getDurationScale`"
-        errorLine1="    if (ValueAnimator.getDurationScale() == 0f) 0 else AVAILABILITY_ANIMATION_DURATION_MS"
-        errorLine2="                      ~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/simtop/feature/beerdetail/presentation/ComposeBeerDetail.kt"
-            line="53"
-            column="23"/>
-    </issue>
-
-    <issue
         id="OldTargetApi"
         message="Not targeting the latest versions of Android; compatibility modes apply. Consider testing and updating this version. Consult the `android.os.Build.VERSION_CODES` javadoc for details."
         errorLine1="targetSdk = &quot;36&quot;"
