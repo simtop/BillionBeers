@@ -13,7 +13,7 @@ UI_TEST_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,:app:)
 # Wrapper for Gradle to support build-brief (bb) or rtk if available
 GRADLE_RUNNER := $(shell if command -v bb >/dev/null 2>&1; then echo "bb ./gradlew"; elif command -v build-brief >/dev/null 2>&1; then echo "build-brief --gradle ./gradlew"; elif command -v rtk >/dev/null 2>&1; then echo "rtk ./gradlew"; else echo "./gradlew"; fi)
 
-.PHONY: help setup setup-ai-tools update-android-skills build bundle-release install clean test konsist compose-metrics ui-test screenshot-record screenshot-verify screenshot-clean lint android-lint format check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline health benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark jacoco-report install-profiler install-diffuse new-feature-module new-dev-app
+.PHONY: help setup setup-ai-tools update-android-skills build bundle-release install clean test konsist compose-metrics ui-test screenshot-record screenshot-verify screenshot-clean lint android-lint format check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline health benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark jacoco-report coverage-check install-profiler install-diffuse new-feature-module new-dev-app
 
 help: ## Show this help message.
 	@echo "\n📊 BillionBeers Makefile Help"
@@ -187,6 +187,10 @@ gradle-benchmark: ## Run Gradle Profiler with a specific scenario. Usage: make g
 # Reporting
 jacoco-report: ## Generate the unified Jacoco coverage report.
 	$(GRADLE_RUNNER) jacocoRootReport
+
+coverage-check: ## Fail if line coverage dropped below config/coverage-floor.txt (the high-water ratchet).
+	$(GRADLE_RUNNER) jacocoRootReport
+	@bash scripts/coverage-check.sh
 
 update-docs: ## Update README.md with the latest library versions from the catalog.
 	@chmod +x scripts/update_readme_versions.sh
