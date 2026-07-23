@@ -38,7 +38,12 @@ tasks.register("clean", Delete::class) {
 }
 
 tasks.register<JacocoReport>("jacocoRootReport") {
-    dependsOn(subprojects.map { it.tasks.withType<Test>() })
+    // Debug unit tests only. Depending on every Test task (or the `test` lifecycle task, which on
+    // an Android module aggregates all variants) pulled in the benchmark variant - which does not
+    // compile (its source set lacks the debug-drawer stub `src/release` has) and broke this task.
+    // The class/exec data below already reads only Debug-named reports, so JVM modules' `test`
+    // never contributed here regardless.
+    dependsOn(subprojects.map { sp -> sp.tasks.matching { it.name == "testDebugUnitTest" } })
     dependsOn(subprojects.map { it.tasks.withType<JacocoReport>() })
 
     val subprojectsWithJacoco = subprojects.filter {
@@ -97,7 +102,8 @@ tasks.register<JacocoReport>("jacocoRootReport") {
 
     reports {
         html.required.set(true)
-        xml.required.set(false)
+        // XML on: the health report (scripts/health-report.sh) and any coverage tooling parse it.
+        xml.required.set(true)
         csv.required.set(false)
     }
 
