@@ -1,6 +1,6 @@
 package com.simtop.feature.beerdetail.presentation
 
-import android.animation.ValueAnimator
+import android.provider.Settings
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -48,9 +48,15 @@ import com.simtop.presentation_utils.R
 fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability: () -> Unit) {
   val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
   // Honours the system "Remove animations" accessibility setting (animator duration scale 0)
-  // instead of always animating for a fixed duration.
-  val animationDurationMs =
-    if (ValueAnimator.getDurationScale() == 0f) 0 else AVAILABILITY_ANIMATION_DURATION_MS
+  // instead of always animating for a fixed duration. Read via Settings.Global (API 17+) rather
+  // than ValueAnimator.getDurationScale(), which is API 33 and crashes on our minSdk 28.
+  val animationsDisabled =
+    Settings.Global.getFloat(
+      LocalContext.current.contentResolver,
+      Settings.Global.ANIMATOR_DURATION_SCALE,
+      1f,
+    ) == 0f
+  val animationDurationMs = if (animationsDisabled) 0 else AVAILABILITY_ANIMATION_DURATION_MS
 
   Scaffold(
     modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
