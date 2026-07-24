@@ -93,9 +93,15 @@ the main app (no split-APK dance needed — just `installDebug`):
 
 ```bash
 "$ADB" shell am start -n "$APP/.presentation.MainActivity"   # launch
-"$ADB" shell pm clear "$APP"                                  # reset app data
+"$ADB" shell pm clear "$APP"                                  # reset app data — SEE WARNING
 "$ADB" logcat --pid=$("$ADB" shell pidof "$APP")             # app logs only
 ```
+
+> ⚠️ **`pm clear` breaks on-demand dynamic-feature installs.** It wipes bundletool
+> local-testing's staged split APKs, so installing `beerdetail` or `beerbrowse` afterwards
+> fails with SplitInstall **error −5**. That is not an app bug and not worth debugging —
+> re-run `scripts/install-local-testing.sh` to re-stage the splits. If you only need to reset
+> app state, prefer relaunching or clearing via the app rather than `pm clear`.
 
 ### Screenshots — prefer the `android` CLI
 

@@ -31,6 +31,8 @@ rod/
 # Claude Code local state. Vendored Android skills (github.com/android/skills)
 # are synced locally via `make update-android-skills`, not committed — only the
 # sync opt-out list and the project-authored billionbeers-android skill live in git.
+# settings.json is NOT committed — permissions (read-only allowlist and machine-specific
+# rules alike) stay local to each clone.
 .claude/*
 !.claude/skills/
 .claude/skills/*
