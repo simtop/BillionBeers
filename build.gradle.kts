@@ -38,12 +38,20 @@ tasks.register("clean", Delete::class) {
 }
 
 tasks.register<JacocoReport>("jacocoRootReport") {
-    // Debug unit tests only. Depending on every Test task (or the `test` lifecycle task, which on
-    // an Android module aggregates all variants) pulled in the benchmark variant - which does not
-    // compile (its source set lacks the debug-drawer stub `src/release` has) and broke this task.
-    // The class/exec data below already reads only Debug-named reports, so JVM modules' `test`
-    // never contributed here regardless.
-    dependsOn(subprojects.map { sp -> sp.tasks.matching { it.name == "testDebugUnitTest" } })
+    // Android debug unit tests + JVM-module `test`. The Android `test` *lifecycle* task aggregates
+    // every variant (incl. the non-compiling benchmark one), so it is excluded by only taking `test`
+    // from non-Android modules; Android modules contribute via testDebugUnitTest instead.
+    dependsOn(
+        subprojects.flatMap { sp ->
+            sp.tasks.matching { task ->
+                val isAndroid =
+                    sp.extensions.findByType(
+                        com.android.build.api.variant.AndroidComponentsExtension::class.java
+                    ) != null
+                task.name == "testDebugUnitTest" || (task.name == "test" && !isAndroid)
+            }
+        }
+    )
     dependsOn(subprojects.map { it.tasks.withType<JacocoReport>() })
 
     val subprojectsWithJacoco = subprojects.filter {
@@ -87,17 +95,21 @@ tasks.register<JacocoReport>("jacocoRootReport") {
             file("${it.projectDir}/src/main/kotlin")
         )
     })
+    // The report holding a module's data: jacocoDebugReport for Android modules, jacocoTestReport
+    // for JVM modules. (Android modules also have an unconfigured jacocoTestReport aggregator, which
+    // contributes empty class/exec data - harmless.)
+    fun org.gradle.api.Project.dataReports() =
+        tasks.withType<JacocoReport>().matching { it.name.contains("Debug") || it.name == "jacocoTestReport" }
+
     classDirectories.setFrom(subprojectsWithJacoco.flatMap {
-        it.tasks.withType<JacocoReport>().matching { task -> task.name.contains("Debug") }.map { reportTask ->
+        it.dataReports().map { reportTask ->
             reportTask.classDirectories.asFileTree.matching {
                 exclude(excludes)
             }
         }
     })
     executionData.setFrom(subprojectsWithJacoco.flatMap {
-        it.tasks.withType<JacocoReport>().matching { task -> task.name.contains("Debug") }.map { reportTask ->
-            reportTask.executionData
-        }
+        it.dataReports().map { reportTask -> reportTask.executionData }
     })
 
     reports {
