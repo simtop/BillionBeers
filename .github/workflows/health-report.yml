@@ -1,9 +1,13 @@
 name: Weekly Health Report
 
 # Aggregates the read-only health checks (Lint backlog, Detekt, Compose stability, coverage,
-# dependency graph) into one markdown table - "what's wrong and what needs solving." Written to
-# the run's Step Summary (always current) and committed to docs/health/REPORT.md so git history
-# is the trend line. Weekly, because these are burn-down signals, not per-PR gates.
+# dependency graph) into one markdown table - "what's wrong and what needs solving." Written to the
+# run's Step Summary, which renders the table on every run. Weekly, because these are burn-down
+# signals, not per-PR gates.
+#
+# It does NOT commit the report to master: master's required status checks reject a direct push
+# (GH006, "protected branch hook declined"), so the Step Summary is the live view. The committed
+# docs/health/REPORT.md is a point-in-time sample checked in when the report was added.
 
 on:
   schedule:
@@ -12,7 +16,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   health-report:
@@ -42,18 +46,3 @@ jobs:
       - name: Publish to run summary
         if: always()
         run: cat docs/health/REPORT.md >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Commit report if it changed
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/health/REPORT.md
-          if git diff --cached --quiet; then
-            echo "Health report unchanged - nothing to commit."
-          else
-            # [skip ci]: a report-only commit must not trigger the whole Android CI on master.
-            git commit -m "chore: update weekly health report [skip ci]"
-            # Rebase onto any commits that landed since checkout - closes the weekly race window.
-            git pull --rebase origin master
-            git push origin HEAD:master
-          fi
