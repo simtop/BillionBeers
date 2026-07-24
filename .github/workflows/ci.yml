@@ -6,6 +6,14 @@ on:
   pull_request:
     branches: [ main, master ]
 
+# Cancel superseded runs on the same ref. Scoped to PRs only: a new push to a PR makes the
+# in-flight run obsolete, so killing it saves a full emulator boot + 29-module test pass. Master
+# runs are left alone (cancel-in-progress false) so every merged commit is still validated end to
+# end - post-merge CI is the last line before a broken master.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   format-check:
     name: Code Style Formatting Check
@@ -342,3 +350,30 @@ jobs:
         with:
           name: instrumented-test-reports
           path: '**/build/reports/androidTests/managedDevice/'
+
+  # Single aggregate gate - make THIS the only required status check in branch protection, not the
+  # individual jobs. Why: a `skipped` job (secret-scan is PR-only; future path-filtered lanes will
+  # skip on docs/CI-only changes) reports neither success nor failure, and a *required* skipped
+  # check blocks merge forever. This gate treats `skipped` as fine and fails only on a real
+  # failure or cancellation, so path filtering stays safe and required-checks are managed in one
+  # place. `if: always()` so the gate runs even when an upstream job fails.
+  ci-gate:
+    name: CI Gate
+    if: always()
+    needs:
+      - format-check
+      - secret-scan
+      - lint
+      - android-lint
+      - dependency-guard
+      - unit-tests
+      - screenshot-tests
+      - instrumented-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if any required job failed or was cancelled
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: |
+          echo "One or more CI jobs failed or were cancelled:"
+          echo '${{ toJSON(needs) }}'
+          exit 1
