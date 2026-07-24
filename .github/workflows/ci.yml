@@ -54,6 +54,48 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Or trigger it manually from the Actions tab (pick this branch in the \"Run workflow\" dropdown)." >> $GITHUB_STEP_SUMMARY
 
+  # Cheap change-scope detector. The heavy test lanes (unit / screenshot / instrumented) key their
+  # `if:` off this to skip work that a docs/skills/scripts-only change can't affect - saving a full
+  # emulator boot and a 29-module test pass. On anything other than a PR (i.e. the master
+  # post-merge push) it forces code=true so post-merge validation is always complete. On a PR it
+  # flags code=true unless every changed file is in the safe-list below - fail-open toward running,
+  # because skipping tests on a real code change is the costly mistake. Workflow edits are NOT in
+  # the safe-list on purpose: a `.github/**` change runs the full suite so it validates itself.
+  changes:
+    name: Detect change scope
+    needs: format-check
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0 # need the merge base for the diff below
+
+      - name: Classify changed paths
+        id: filter
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "Not a PR - running the full suite."
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          CHANGED=$(git diff --name-only "${{ github.event.pull_request.base.sha }}...HEAD")
+          echo "Changed files:"; echo "$CHANGED"
+          # A line is "safe" (docs / skills / scripts only) if it matches this. If ANY changed file
+          # is NOT safe - including any .github/** workflow edit - it's treated as code and the
+          # heavy lanes run.
+          SAFE='^(docs/|rod/|imagesForReadme/|\.claude/skills/|scripts/|.*\.md$|LICENSE$)'
+          if echo "$CHANGED" | grep -qvE "$SAFE"; then
+            echo "Code paths changed - heavy test lanes will run."
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Docs/skills/scripts-only change - skipping heavy test lanes."
+            echo "code=false" >> "$GITHUB_OUTPUT"
+          fi
+
   secret-scan:
     name: Secret Scan (gitleaks)
     # PR-only on purpose: branch protection means every change reaches master through a PR, so
@@ -179,7 +221,8 @@ jobs:
 
   unit-tests:
     name: Unit Tests
-    needs: format-check
+    needs: [format-check, changes]
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -219,7 +262,8 @@ jobs:
 
   screenshot-tests:
     name: Screenshot Tests (Paparazzi)
-    needs: format-check
+    needs: [format-check, changes]
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -301,7 +345,8 @@ jobs:
   # only for a *physical* device matrix, which this project does not need.
   instrumented-tests:
     name: Instrumented Tests (Gradle Managed Device)
-    needs: format-check
+    needs: [format-check, changes]
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -362,6 +407,7 @@ jobs:
     if: always()
     needs:
       - format-check
+      - changes
       - secret-scan
       - lint
       - android-lint
