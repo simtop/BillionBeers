@@ -26,6 +26,10 @@ android.apply {
             // Library modules publish only debug/release, so the benchmark consumer must fall back
             // to release when resolving :app's transitive deps - mirroring :app's own benchmark type.
             matchingFallbacks += "release"
+            // Only the default `debug` build type is auto-signed; a custom type ships unsigned and
+            // fails to install (INSTALL_PARSE_FAILED_NO_CERTIFICATES). Debug-sign it, matching :app's
+            // benchmark type so the test and target APKs install together.
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 
