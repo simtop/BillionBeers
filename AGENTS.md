@@ -127,6 +127,12 @@ declaring done.
 6. **Device** — instrumented tests, install, logcat: use the `billionbeers-android` skill, not
    ad-hoc `adb`
 
+**CI note: heavy lanes skip per-lane on PR pushes.** A push to an open PR reruns only the test
+lanes its diff can affect (goldens and `screenshot/` test folders → screenshot; `src/androidTest/`
+→ instrumented; other `src/test/` → unit; anything else → all) plus any lane that was red on the
+previous head; unaffected green lanes adopt their previous verdict. Docs/skills/scripts-only PRs
+still skip all heavy lanes. Logic and soundness rules live in `.github/scripts/detect-change-scope.sh`.
+
 **Gotcha: pure-JVM modules are invisible to `make test`.** It targets `testDebugUnitTest`, which
 plain `org.jetbrains.kotlin.jvm` modules (`:core-common`, `:konsist`, `:testing-utils`) don't have.
 Their tests need explicit invocation (`./gradlew :core-common:test`) or `make check`. `:konsist:test`
