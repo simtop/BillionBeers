@@ -9,8 +9,15 @@ android { namespace = "com.simtop.beer_network" }
 dependencies {
   implementation(project(":core"))
 
-  implementation(libs.retrofit2ConverterSerialization)
+  // Main declares the service and DTOs, so it needs Retrofit itself. It used to reach it only
+  // transitively through the converter below - which main never actually used.
+  implementation(libs.retrofit2)
   implementation(libs.kotlinx.serialization.json)
-  implementation(libs.okhttp3LoggingInterceptor)
-  implementation(libs.androidx.annotation)
+
+  // The converter and logging interceptor are test-only: the production Retrofit/OkHttp stack is
+  // assembled in :core's NetworkingModule, and only TestMockWebService builds one by hand.
+  testImplementation(project(":beer_network:fixtures"))
+  testImplementation(libs.okhttp3Mockwebserver)
+  testImplementation(libs.retrofit2ConverterSerialization)
+  testImplementation(libs.okhttp3LoggingInterceptor)
 }
