@@ -34,7 +34,12 @@
 #   runs exclude com.simtop.billionbeers.screenshot.*, Paparazzi runs include only it, and the
 #   package lives in a `screenshot/` source folder. If that filter changes, this map changes with
 #   it. Test *compilation* is still shared - but a compile break fails whichever lane reruns, so
-#   the gate catches it even when the other lane adopted green.
+#   the gate catches it even when the other lane adopted green. What is NOT covered is *behavioural*
+#   sharing: a helper under `src/test/` outside a `screenshot/` folder that a hand-written screenshot
+#   test depends on would let the screenshot lane adopt a stale green. No such helper exists today
+#   (:catalog is the only module with hand-written screenshot tests and it has no other test
+#   sources). If that changes, a plain `src/test/` edit in a module that also holds screenshot tests
+#   has to set a_screenshot too.
 set -euo pipefail
 
 emit() {
@@ -144,11 +149,18 @@ concl() { echo "$JOBS" | jq -r --arg n "$1" 'map(select(.name == $n))[0].conclus
 
 # Every name below is matched against the previous run's job list as a literal string, so renaming
 # a job silently turns its lookup into "missing" -> nothing is ever adopted -> CI just quietly gets
-# slower, with no failure to notice. Warn loudly instead. (A PR that *adds* a lane also trips this
-# once, because the previous run predates the job - harmless and self-clearing.)
+# slower, with no failure to notice. Warn loudly instead.
+#
+# Warn on an absent *name*, not on a "missing" conclusion. The two are different and only the first
+# means a rename: a job that is still running is listed by name with a null conclusion, which
+# `concl` also reports as "missing". That happens whenever the previous run was superseded by this
+# push (concurrency cancels it mid-flight), so keying the warning off `concl` would cry wolf on
+# every rapid second push. The *decision* still fails open in both cases, which is what matters.
+# (A PR that adds a lane trips this once, because the previous run predates the job - self-clearing.)
+has_job() { echo "$JOBS" | jq -e --arg n "$1" 'any(.[]; .name == $n)' >/dev/null 2>&1; }
 for n in "Detect change scope" "Unit Tests" "Screenshot Tests (Paparazzi)" \
   "Instrumented Tests (Gradle Managed Device)"; do
-  [ "$(concl "$n")" = "missing" ] &&
+  has_job "$n" ||
     echo "::warning::Job '$n' not found in previous run $PREV_RUN - verdict adoption is disabled for it. If this job was renamed, update .github/scripts/detect-change-scope.sh to match."
 done
 
