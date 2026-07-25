@@ -162,6 +162,8 @@ document, not to ship a control that breaks every routine update.
   parallel jobs.
 - Bumping gitleaks is a two-line change (`GITLEAKS_VERSION` + `GITLEAKS_SHA256`); the version is not
   Dependabot-managed because it is a `curl`ed release, so it is a deliberate, occasional manual bump.
+  The weekly `gitleaks-version-check` workflow watches for drift and opens an issue with the
+  ready-to-paste bump, so the reminder is automated even though the bump itself stays manual.
 
 ## When to revisit dependency verification
 
