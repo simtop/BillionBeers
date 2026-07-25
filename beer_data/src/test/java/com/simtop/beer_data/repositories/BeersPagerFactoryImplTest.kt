@@ -25,6 +25,9 @@ import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 import strikt.assertions.isNotNull
 
+// Covers the cache-resume rules the pager has to get right: the stored bookmark wins over the
+// row-count estimate, a language mismatch restarts from page 1, and a refresh neither wipes the
+// cache nor rewinds the bookmark.
 @ExperimentalCoroutinesApi
 class BeersPagerFactoryImplTest {
 
