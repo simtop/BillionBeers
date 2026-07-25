@@ -19,8 +19,13 @@
 # - The pushed range is the direct tree diff BEFORE -> AFTER, NOT a merge-base diff: a force-push
 #   that *drops* a code commit changes the tree without adding commits and must still classify
 #   as code.
-# - "Green" means the job succeeded, or was skipped in a run whose CI Gate succeeded (that skip
-#   was itself a sound adoption - induction).
+# - "Green" means the job succeeded, or was skipped in a run where THIS filter job succeeded (that
+#   skip was itself a sound adoption - induction). The trust anchor is the filter job, not the
+#   aggregate CI Gate: the filter's decision that lane L could skip does not become unsound because
+#   some other lane M failed. Anchoring on the gate instead made adoption collapse on any red PR -
+#   from the second push onward every unaffected lane rerun, which is the exact case (a PR being
+#   fixed over several pushes) the mechanism exists to speed up. A cancelled run is still handled:
+#   its unstarted lanes are `cancelled`, not `skipped`, so they fail open.
 # - Every uncertainty fails open to running everything: non-PR events, first run of a PR,
 #   unreachable BEFORE, no or unreadable previous run, renamed jobs, a previous run still in
 #   flight. Skipping a real test is the costly mistake; an extra run is just minutes.
@@ -120,11 +125,13 @@ fi
 echo "Previous run $PREV_RUN job conclusions: $JOBS"
 
 concl() { echo "$JOBS" | jq -r --arg n "$1" 'map(select(.name == $n))[0].conclusion // "missing"'; }
-GATE=$(concl "CI Gate")
+# This job's own name - if it is ever renamed, the lookup returns "missing" and every skip stops
+# being trusted, so the mechanism degrades to running everything rather than to skipping wrongly.
+PREV_FILTER=$(concl "Detect change scope")
 
 was_green() {
   local c; c=$(concl "$1")
-  [ "$c" = "success" ] || { [ "$c" = "skipped" ] && [ "$GATE" = "success" ]; }
+  [ "$c" = "success" ] || { [ "$c" = "skipped" ] && [ "$PREV_FILTER" = "success" ]; }
 }
 
 decide() { # $1 = affected by this push (true/false), $2 = previous job name
