@@ -6,6 +6,7 @@ import com.simtop.beer_network.models.TypologyApiResponseItem
 import com.simtop.beer_network.network.BeersService
 import com.simtop.core.core.LanguageProvider
 import dev.zacsweers.metro.Inject
+import retrofit2.HttpException
 
 interface BeersRemoteSource {
   /**
@@ -45,6 +46,12 @@ constructor(private val service: BeersService, private val languageProvider: Lan
         typologyId = typologyId,
         breweryId = breweryId,
       )
+    // Response<> means Retrofit hands back non-2xx instead of throwing, and a failed body is null.
+    // Without this guard a 5xx would become an empty page - which PagingMediator's empty-page probe
+    // reads as end-of-pagination, silently truncating the list with no error and no retry. Throwing
+    // matches the unpaged endpoints (no Response<> wrapper, so Retrofit throws) and lands in
+    // toFetchBeersError() like any other HTTP failure.
+    if (!response.isSuccessful) throw HttpException(response)
     // Malformed or absent header → null; the pager falls back to the empty-page probe.
     val totalCount = response.headers()[HEADER_TOTAL_COUNT]?.toIntOrNull()
     return BeersPage(items = response.body().orEmpty(), totalCount = totalCount)

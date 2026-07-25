@@ -9,7 +9,9 @@ import com.simtop.core.core.LanguageProvider
 import java.net.HttpURLConnection
 import kotlinx.coroutines.runBlocking
 import org.amshove.kluent.shouldBeEqualTo
+import org.junit.Assert.assertThrows
 import org.junit.Test
+import retrofit2.HttpException
 
 class BeersRemoteSourceTest : TestMockWebService() {
 
@@ -43,11 +45,27 @@ class BeersRemoteSourceTest : TestMockWebService() {
     page.totalCount shouldBeEqualTo null
   }
 
-  @Test(expected = Exception::class)
-  fun `throws when the service fails`() {
+  @Test
+  fun `throws HttpException carrying the status code when the service fails`() {
     mockHttpResponse(FAKE_JSON, HttpURLConnection.HTTP_UNAVAILABLE)
 
-    runBlocking { remoteSource.getListOfBeers(1) }
+    val thrown =
+      assertThrows(HttpException::class.java) { runBlocking { remoteSource.getListOfBeers(1) } }
+
+    thrown.code() shouldBeEqualTo HttpURLConnection.HTTP_UNAVAILABLE
+  }
+
+  /**
+   * The regression that matters: getListOfBeers returns Response<>, so Retrofit does not throw on
+   * non-2xx and a failed body is null. If that leaked through as an empty page, PagingMediator's
+   * empty-page probe would read it as end-of-pagination and silently truncate the list instead of
+   * surfacing an error the user can retry.
+   */
+  @Test
+  fun `a server error never surfaces as an empty page`() {
+    mockHttpResponse(FAKE_JSON, HttpURLConnection.HTTP_INTERNAL_ERROR)
+
+    assertThrows(HttpException::class.java) { runBlocking { remoteSource.getListOfBeers(1) } }
   }
 
   @Test

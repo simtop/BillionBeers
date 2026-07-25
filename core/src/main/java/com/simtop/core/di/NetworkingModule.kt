@@ -4,6 +4,7 @@ import android.content.Context
 import com.simtop.core.BuildConfig
 import com.simtop.core.core.NetworkFaultController
 import com.simtop.core.network.NetworkFaultInterceptor
+import com.simtop.core.network.NetworkJson
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.Named
@@ -30,13 +31,7 @@ interface NetworkingModule {
     private const val HTTP_CACHE_SIZE_BYTES = 5L * 1024 * 1024
   }
 
-  @Provides
-  @SingleIn(AppScope::class)
-  fun provideJson(): Json = Json {
-    ignoreUnknownKeys = true
-    coerceInputValues = true
-    isLenient = true
-  }
+  @Provides @SingleIn(AppScope::class) fun provideJson(): Json = NetworkJson
 
   @Provides
   @SingleIn(AppScope::class)
