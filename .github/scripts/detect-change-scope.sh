@@ -62,11 +62,49 @@ emit() {
   fi
 }
 
-# Docs / skills / local-notes paths that no test lane can be affected by.
-# scripts/coverage-check.sh is carved out: the unit lane executes it (make coverage-check).
-is_safe() {
-  [ "$1" = "scripts/coverage-check.sh" ] && return 1
-  echo "$1" | grep -qE '^(docs/|rod/|imagesForReadme/|\.claude/skills/|scripts/|.*\.md$|LICENSE$)'
+# =============================================================================
+# THE RULE SET - the only block to edit when changing which lanes a change runs
+# =============================================================================
+# classify_path maps ONE changed file onto the lanes it can affect, by setting
+# a_unit / a_screenshot / a_instrumented. A file that sets none of them is inert:
+# no test lane can be affected by it.
+#
+# Both levels of the filter go through this one function - level 1 (is the whole
+# PR inert?) and level 2 (what did this push touch?) - so path knowledge lives in
+# exactly one place. Adding a rule here changes both.
+#
+# First match wins, so order matters. The final `else` is the safety net: an
+# unrecognised path runs everything, which is what stops a new kind of file from
+# being silently skipped. Only add a branch above it when you can say why the
+# lanes you are excluding cannot be affected - that claim is now the only thing
+# standing between a stale verdict and a green PR.
+INERT_RE='^(docs/|rod/|imagesForReadme/|\.claude/skills/|scripts/)'
+classify_path() {
+  local f="$1"
+  if [ "$f" = "scripts/coverage-check.sh" ]; then
+    a_unit=true # the unit lane executes it (make coverage-check)
+  elif [[ "$f" =~ $INERT_RE ]] || [[ "$f" == *.md ]] || [ "$f" = "LICENSE" ]; then
+    : # inert - docs, skills, local notes, every other script
+  elif [[ "$f" == */src/test/snapshots/* ]]; then
+    a_screenshot=true # recorded goldens
+  elif [[ "$f" == */src/test/* && "$f" == */screenshot/* ]]; then
+    a_screenshot=true # screenshot-test source, excluded from plain test runs
+  elif [[ "$f" == */src/androidTest/* ]]; then
+    a_instrumented=true
+  elif [[ "$f" == */src/test/* ]]; then
+    a_unit=true # plain unit-test source, excluded from Paparazzi runs
+  else
+    a_unit=true; a_screenshot=true; a_instrumented=true
+  fi
+}
+
+# Classify a newline-separated file list, leaving the three a_* flags set.
+classify_all() {
+  a_unit=false; a_screenshot=false; a_instrumented=false
+  while IFS= read -r f; do
+    [ -z "$f" ] && continue
+    classify_path "$f"
+  done <<< "$1"
 }
 
 if [ "$EVENT_NAME" != "pull_request" ]; then
@@ -76,12 +114,8 @@ fi
 
 CHANGED=$(git diff --name-only "$BASE_SHA...HEAD")
 echo "PR diff:"; echo "$CHANGED"
-all_safe=true
-while IFS= read -r f; do
-  [ -z "$f" ] && continue
-  is_safe "$f" || { all_safe=false; break; }
-done <<< "$CHANGED"
-if $all_safe; then
+classify_all "$CHANGED"
+if ! $a_unit && ! $a_screenshot && ! $a_instrumented; then
   emit false false false "docs/skills/scripts-only PR"
   exit 0
 fi
@@ -99,27 +133,7 @@ fi
 PUSHED=$(git diff --name-only "$BEFORE" "$AFTER")
 echo "Pushed diff ($BEFORE -> $AFTER):"; echo "$PUSHED"
 
-# Path -> lane map. Keep it sound: when in doubt a path must fall through to
-# "affects everything".
-a_unit=false; a_screenshot=false; a_instrumented=false
-while IFS= read -r f; do
-  [ -z "$f" ] && continue
-  if [ "$f" = "scripts/coverage-check.sh" ]; then
-    a_unit=true # runs inside the unit lane
-  elif is_safe "$f"; then
-    : # affects no lane
-  elif [[ "$f" == */src/test/snapshots/* ]]; then
-    a_screenshot=true # recorded goldens
-  elif [[ "$f" == */src/test/* && "$f" == */screenshot/* ]]; then
-    a_screenshot=true # screenshot-test source, excluded from plain test runs
-  elif [[ "$f" == */src/androidTest/* ]]; then
-    a_instrumented=true
-  elif [[ "$f" == */src/test/* ]]; then
-    a_unit=true # plain unit-test source, excluded from Paparazzi runs
-  else
-    a_unit=true; a_screenshot=true; a_instrumented=true
-  fi
-done <<< "$PUSHED"
+classify_all "$PUSHED"
 
 if $a_unit && $a_screenshot && $a_instrumented; then
   emit true true true "push touches code paths"
@@ -137,9 +151,14 @@ if ! [[ "$PREV_RUN" =~ ^[0-9]+$ ]]; then
   emit true true true "no usable previous CI run for $BEFORE - failing open"
   exit 0
 fi
-JOBS=$(gh api "repos/$REPO/actions/runs/$PREV_RUN/jobs?per_page=100" \
-  --jq '[.jobs[] | {name, conclusion}]' || true)
-if [ -z "$JOBS" ]; then
+# --paginate, because a single page caps at 100 jobs: a workflow with a sharded matrix can exceed
+# that, and a lane whose job fell off page 1 would read as renamed - it still fails open, but you
+# would lose adoption with no obvious cause. `jq -s` reassembles the per-page streams into one array.
+JOBS=$(gh api --paginate "repos/$REPO/actions/runs/$PREV_RUN/jobs?per_page=100" \
+  --jq '.jobs[] | {name, conclusion}' | jq -s '.' || true)
+# An API failure yields no stdout, which `jq -s` turns into "[]" rather than the empty string - so
+# check both, or a failed fetch would fall through and warn about every job being "renamed".
+if [ -z "$JOBS" ] || [ "$JOBS" = "[]" ]; then
   emit true true true "could not read jobs of previous run $PREV_RUN - failing open"
   exit 0
 fi
