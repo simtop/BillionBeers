@@ -59,7 +59,7 @@ from the project. If a search hits `bin/`, you're reading a ghost; search `src/`
 
 ## 3. Invariants — break these and the build (or an instrumented test) breaks
 
-The first four are enforced by `:konsist`; the wording here is from the tests themselves.
+The first six are enforced by `:konsist`; the wording here is from the tests themselves.
 
 1. **Repository interfaces do not import data-layer types.** (`RepositoryBoundaryTest`)
 2. **Feature modules never depend on other feature modules** — `beerslist` ⊥ `beerdetail`, and so
@@ -68,12 +68,18 @@ The first four are enforced by `:konsist`; the wording here is from the tests th
 4. **ViewModels depend only on domain-layer types.** This is the load-bearing precondition for the
    use-case policy in ADR 0003 — without it, "inject the repository directly" becomes "inject
    whatever you like". (`ViewModelBoundaryTest`)
+5. **User-facing strings for dynamic-feature modules live in `:presentation_utils`.** Resources
+   declared inside a dynamic feature module crash instrumented tests. This has bitten twice.
+   (`DynamicFeatureResourceBoundaryTest` — it catches the failure path, a dynamic-feature file
+   importing its *own* module `R`. Being Kotlin-only it can't see a stray `strings.xml` that
+   nothing references, which is harmless anyway.)
+6. **Dev-apps depend only on `api` + `fakes` modules** — that's what keeps their build fast.
+   (`DevAppDependencyBoundaryTest` enforces the load-bearing half: no `app-dev-*` build script may
+   declare `:beer_data`, `:beer_database` or `:beer_network`. It reads the build scripts directly,
+   since Konsist doesn't scan `.kts`.)
 
 Not yet mechanically enforced (candidates — see `rod/July_Improvements.md` §4.3):
 
-5. **User-facing strings for dynamic-feature modules live in `:presentation_utils`.** Resources
-   declared inside a dynamic feature module crash instrumented tests. This has bitten twice.
-6. **Dev-apps depend only on `api` + `fakes` modules** — that's what keeps their build fast.
 7. **Test fixtures live in sibling `:module:fakes` / `:module:fixtures` modules**, never Gradle's
    `java-test-fixtures` plugin (ADR 0001 — measured build-time cost).
 8. **Domain models are immutable; one-shot UI events use `Channel(BUFFERED).receiveAsFlow()`**, not
