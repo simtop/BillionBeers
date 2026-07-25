@@ -1,14 +1,10 @@
 package com.simtop.billionbeers
 
 import com.simtop.beer_network.network.BeersService
+import com.simtop.core.network.NetworkJson
 import java.io.File
-import java.io.IOException
-import java.net.HttpURLConnection
-import kotlinx.serialization.json.Json
-import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
-import okhttp3.Response
 import okhttp3.logging.HttpLoggingInterceptor
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -59,45 +55,18 @@ abstract class TestMockWebService {
   }
 
   private fun generateFakeApiService() {
-    val json = Json { ignoreUnknownKeys = true }
     apiService =
       Retrofit.Builder()
         .baseUrl(mockServer.url("/"))
         .client(generateOkHttpClient())
-        .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+        .addConverterFactory(NetworkJson.asConverterFactory("application/json".toMediaType()))
         .build()
         .create(BeersService::class.java)
   }
 
+  // Deliberately no error-translating interceptor: this stack must fail exactly the way production
+  // does. An earlier test-only ErrorInterceptor turned non-2xx into thrown exceptions, which hid
+  // that getListOfBeers' Response<> signature was swallowing server errors into an empty page.
   private fun generateOkHttpClient() =
-    OkHttpClient()
-      .newBuilder()
-      .addInterceptor(HttpLoggingInterceptor())
-      .addInterceptor(ErrorInterceptor())
-      .build()
-}
-
-class ErrorInterceptor : Interceptor {
-
-  override fun intercept(chain: Interceptor.Chain): Response {
-    val response =
-      try {
-        chain.proceed(chain.request())
-      } catch (error: IOException) {
-        // TODO add exceptions sealed class
-        throw Exception("No internet connection")
-      }
-    if (!response.isSuccessful) {
-      when (response.code) {
-        HttpURLConnection.HTTP_UNAVAILABLE -> throw Exception("ServerException.ServiceUnavailable")
-        HttpURLConnection.HTTP_NOT_FOUND -> throw Exception("ClientException.NotFound")
-        HttpURLConnection.HTTP_CLIENT_TIMEOUT -> throw Exception("ClientException.RequestTimeout")
-        else ->
-          throw Exception(
-            IllegalStateException("The status code ${response.code} was received but not handled!")
-          )
-      }
-    }
-    return response
-  }
+    OkHttpClient().newBuilder().addInterceptor(HttpLoggingInterceptor()).build()
 }
