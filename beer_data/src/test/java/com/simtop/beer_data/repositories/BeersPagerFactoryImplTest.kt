@@ -224,6 +224,13 @@ class BeersPagerFactoryImplTest {
         .isEqualTo(PagingState.Error(FetchBeersError.RateLimited, isFirstPage = true))
     }
 
+  // TEMPORARY - deliberate failure, pushed only to prove a red lane is never skipped by the
+  // per-lane CI filter. This commit is never merged; PR is closed after the observation.
+  @Test
+  fun `TEMPORARY deliberate failure`() {
+    expectThat(1).isEqualTo(2)
+  }
+
   @Test
   fun `a search pager fetches with the query term and keeps results in memory`() =
     runTest(testDispatcher) {
