@@ -63,22 +63,11 @@ jobs:
   # Level 2 (per push): on a `synchronize` push to a code PR, a lane reruns only if (a) the pushed
   # diff could affect it, or (b) its verdict on the previous head was not green. A lane skipped
   # here is *adopting* its previous green verdict: the CI Gate treats `skipped` as pass, which is
-  # sound only because this job verified green-ness before deciding to skip. Concretely: push
-  # re-recorded goldens onto a PR where only screenshots were red -> only the screenshot lane
-  # reruns; push a unit-test fix -> unit + screenshot rerun (Paparazzi tests are unit-test
-  # source), instrumented adopts its green verdict.
+  # sound only because the filter verified green-ness before deciding to skip.
   #
-  # Soundness rules - keep these when touching the script:
-  # - The pushed range is the direct tree diff `before -> after`, NOT a merge-base diff: a
-  #   force-push that *drops* a code commit changes the tree without adding commits, and must
-  #   still classify as code.
-  # - "Green" means the job succeeded, or it was skipped in a run whose CI Gate succeeded (that
-  #   skip was itself a sound adoption - induction).
-  # - Every uncertainty fails open to running everything: non-PR events, first run of a PR,
-  #   unreachable `before` (force-push), no previous run, unreadable/renamed jobs, a previous run
-  #   still in flight. Skipping a real test is the costly mistake; an extra run is just minutes.
-  # - Workflow edits are NOT in the safe-list on purpose: a `.github/**` change runs the full
-  #   suite so it validates itself.
+  # The logic, path->lane map, and the soundness rules that must survive edits all live in
+  # .github/scripts/detect-change-scope.sh - deliberately under .github/ (NOT scripts/, which is
+  # in the safe-list) so an edit to the filter itself runs the full suite and validates itself.
   changes:
     name: Detect change scope
     needs: format-check
@@ -94,110 +83,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          fetch-depth: 0 # need the merge base and the previous head for the diffs below
+          fetch-depth: 0 # need the merge base and the previous head for the diffs
 
       - name: Classify changed paths
         id: filter
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-
-          emit() {
-            echo "unit=$1" >> "$GITHUB_OUTPUT"
-            echo "screenshot=$2" >> "$GITHUB_OUTPUT"
-            echo "instrumented=$3" >> "$GITHUB_OUTPUT"
-            echo "Decision: unit=$1 screenshot=$2 instrumented=$3 ($4)"
-          }
-
-          if [ "${{ github.event_name }}" != "pull_request" ]; then
-            emit true true true "not a PR - post-merge validation is always complete"
-            exit 0
-          fi
-
-          # A line is "safe" (docs / skills / scripts only) if it matches this.
-          SAFE='^(docs/|rod/|imagesForReadme/|\.claude/skills/|scripts/|.*\.md$|LICENSE$)'
-          CHANGED=$(git diff --name-only "${{ github.event.pull_request.base.sha }}...HEAD")
-          echo "PR diff:"; echo "$CHANGED"
-          if ! echo "$CHANGED" | grep -qvE "$SAFE"; then
-            emit false false false "docs/skills/scripts-only PR"
-            exit 0
-          fi
-
-          if [ "${{ github.event.action }}" != "synchronize" ]; then
-            emit true true true "first run of a code PR"
-            exit 0
-          fi
-
-          BEFORE='${{ github.event.before }}'
-          AFTER='${{ github.event.after }}'
-          if [ -z "$BEFORE" ] || ! git cat-file -e "$BEFORE" 2>/dev/null; then
-            emit true true true "previous head unreachable (force-push) - failing open"
-            exit 0
-          fi
-
-          PUSHED=$(git diff --name-only "$BEFORE" "$AFTER")
-          echo "Pushed diff ($BEFORE -> $AFTER):"; echo "$PUSHED"
-
-          # Path -> lane map. Keep it sound: when in doubt a path must fall through to
-          # "affects everything".
-          a_unit=false; a_screenshot=false; a_instrumented=false
-          while IFS= read -r f; do
-            [ -z "$f" ] && continue
-            if echo "$f" | grep -qE "$SAFE"; then
-              : # docs/skills/scripts - affects no lane
-            elif [[ "$f" == */src/test/snapshots/* ]]; then
-              a_screenshot=true # recorded goldens
-            elif [[ "$f" == */src/androidTest/* ]]; then
-              a_instrumented=true
-            elif [[ "$f" == */src/test/* ]]; then
-              a_unit=true; a_screenshot=true # Paparazzi tests live in unit-test source sets
-            else
-              a_unit=true; a_screenshot=true; a_instrumented=true
-            fi
-          done <<< "$PUSHED"
-
-          if $a_unit && $a_screenshot && $a_instrumented; then
-            emit true true true "push touches code paths"
-            exit 0
-          fi
-
-          # At least one lane is unaffected by this push. It may skip IFF its verdict on the
-          # previous head was green - look that up.
-          PREV_RUN=$(gh api "repos/${{ github.repository }}/actions/workflows/ci.yml/runs?head_sha=$BEFORE&event=pull_request&per_page=1" \
-            --jq '.workflow_runs[0].id // empty' || true)
-          if [ -z "$PREV_RUN" ]; then
-            emit true true true "no previous CI run for $BEFORE - failing open"
-            exit 0
-          fi
-          JOBS=$(gh api "repos/${{ github.repository }}/actions/runs/$PREV_RUN/jobs?per_page=100" \
-            --jq '[.jobs[] | {name, conclusion}]' || true)
-          if [ -z "$JOBS" ]; then
-            emit true true true "could not read jobs of previous run $PREV_RUN - failing open"
-            exit 0
-          fi
-          echo "Previous run $PREV_RUN job conclusions: $JOBS"
-
-          concl() { echo "$JOBS" | jq -r --arg n "$1" 'map(select(.name == $n))[0].conclusion // "missing"'; }
-          GATE=$(concl "CI Gate")
-
-          was_green() {
-            local c; c=$(concl "$1")
-            [ "$c" = "success" ] || { [ "$c" = "skipped" ] && [ "$GATE" = "success" ]; }
-          }
-
-          decide() { # $1 = affected by this push (true/false), $2 = previous job name
-            if [ "$1" = "true" ]; then echo true
-            elif was_green "$2"; then echo false
-            else echo true
-            fi
-          }
-
-          UNIT=$(decide "$a_unit" "Unit Tests")
-          SCREENSHOT=$(decide "$a_screenshot" "Screenshot Tests (Paparazzi)")
-          INSTRUMENTED=$(decide "$a_instrumented" "Instrumented Tests (Gradle Managed Device)")
-          emit "$UNIT" "$SCREENSHOT" "$INSTRUMENTED" \
-            "per-lane: rerunning affected or previously-red lanes, adopting green verdicts from run $PREV_RUN"
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_ACTION: ${{ github.event.action }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.event.after }}
+          REPO: ${{ github.repository }}
+        run: bash .github/scripts/detect-change-scope.sh
 
   secret-scan:
     name: Secret Scan (gitleaks)
