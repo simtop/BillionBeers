@@ -1,0 +1,76 @@
+name: Weekly Gitleaks Version Check
+
+# The gitleaks binary in ci.yml is a pinned, checksum-verified `curl`ed release, not a GitHub
+# Action, so Dependabot never bumps it (ADR 0006 accepts the manual two-line update as the cost of
+# closing the mutable-supply-chain surface). Without a reminder it can silently drift behind CVE
+# fixes. This lane compares the pinned version against the latest release once a week and opens an
+# issue on drift - the bump itself stays a deliberate, human-reviewed change.
+
+on:
+  schedule:
+    # 05:00 UTC every Saturday (before the compat lane at 06:00 and health report at 07:00).
+    - cron: '0 5 * * 6'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  version-check:
+    name: Compare pinned gitleaks against latest release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Check for drift and open an issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          PINNED=$(grep -m1 'GITLEAKS_VERSION:' .github/workflows/ci.yml | awk '{print $2}')
+          LATEST=$(gh api repos/gitleaks/gitleaks/releases/latest --jq '.tag_name' | sed 's/^v//')
+          echo "Pinned: ${PINNED} - Latest: ${LATEST}"
+          if [ "${PINNED}" = "${LATEST}" ]; then
+            echo "Up to date."
+            exit 0
+          fi
+
+          TITLE="CI: pinned gitleaks (${PINNED}) is behind the latest release (${LATEST})"
+          # Dedupe on the title prefix so a still-open issue (any target version) suppresses new
+          # ones; a bump to yet another version while an issue sits open edits nothing - the open
+          # issue already says "you are behind".
+          if gh issue list --state open --json title --jq '.[].title' \
+              | grep -q '^CI: pinned gitleaks .* is behind the latest release'; then
+            echo "An open drift issue already exists - not filing another."
+            exit 0
+          fi
+
+          # Best-effort convenience: read the new linux_x64 sha256 from the release's checksums
+          # file so the issue is copy-paste ready. The committer still verifies it against the
+          # release page - this lane must not become the trusted source for the pin.
+          SHA256=$(curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${LATEST}/gitleaks_${LATEST}_checksums.txt" \
+            | awk '/linux_x64.tar.gz/ {print $1}' || true)
+          SHA256=${SHA256:-"<linux_x64 sha256 from the release checksums file>"}
+
+          cat > issue-body.md <<EOF
+          The gitleaks binary pinned in the \`secret-scan\` job has drifted behind the latest release.
+
+          - Pinned: \`${PINNED}\`
+          - Latest: [\`${LATEST}\`](https://github.com/gitleaks/gitleaks/releases/tag/v${LATEST})
+
+          Per ADR 0006 this is a deliberate manual bump: update both env lines in
+          \`.github/workflows/ci.yml\` together.
+
+          \`\`\`yaml
+          GITLEAKS_VERSION: ${LATEST}
+          GITLEAKS_SHA256: ${SHA256}
+          \`\`\`
+
+          The sha256 was read from the release's \`gitleaks_${LATEST}_checksums.txt\` - verify it
+          against the release page before committing.
+
+          Filed automatically by the \`gitleaks-version-check\` workflow.
+          EOF
+          gh issue create --title "${TITLE}" --body-file issue-body.md
