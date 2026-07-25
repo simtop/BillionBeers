@@ -42,6 +42,10 @@ jobs:
           # branch so the regenerated ledger can be committed and pushed back to it.
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
           ssh-key: ${{ secrets.VERIFICATION_METADATA_DEPLOY_KEY }}
+          # The regen graph runs verifyPaparazziDebug alongside testDebugUnitTest, which puts the
+          # generated screenshot tests in verify mode - without LFS the golden PNGs are pointer
+          # files and Paparazzi NPEs on them.
+          lfs: true
 
       - name: Skip if HEAD is already a regen commit
         id: guard
