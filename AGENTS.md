@@ -98,6 +98,7 @@ Not yet mechanically enforced (candidates — see `rod/July_Improvements.md` §4
 | Dependabot over Renovate | `docs/adr/0005` |
 | CI supply-chain hardening: Actions SHA-pinned, gitleaks on PR ranges | `docs/adr/0006` |
 | Dependency verification enforced; `make verification-metadata` regenerates the ledger, and a CI workflow does it on Dependabot branches so auto-merge survives | `docs/adr/0007` |
+| Per-lane CI test selection: a lane runs if the push could affect it or it was red last time, else it adopts the green verdict. Rules live in one function in `.github/scripts/detect-change-scope.sh` | `docs/adr/0008` |
 
 Also settled, without an ADR:
 
@@ -131,7 +132,8 @@ declaring done.
 lanes its diff can affect (goldens and `screenshot/` test folders → screenshot; `src/androidTest/`
 → instrumented; other `src/test/` → unit; anything else → all) plus any lane that was red on the
 previous head; unaffected green lanes adopt their previous verdict. Docs/skills/scripts-only PRs
-still skip all heavy lanes. Logic and soundness rules live in `.github/scripts/detect-change-scope.sh`.
+still skip all heavy lanes. **To change what runs when, edit the single `classify_path` function**
+in `.github/scripts/detect-change-scope.sh`; the reasoning is in ADR 0008.
 
 **Gotcha: pure-JVM modules are invisible to `make test`.** It targets `testDebugUnitTest`, which
 plain `org.jetbrains.kotlin.jvm` modules (`:core-common`, `:konsist`, `:testing-utils`) don't have.
