@@ -13,7 +13,7 @@ UI_TEST_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,:app:)
 # Wrapper for Gradle to support build-brief (bb) or rtk if available
 GRADLE_RUNNER := $(shell if command -v bb >/dev/null 2>&1; then echo "bb ./gradlew"; elif command -v build-brief >/dev/null 2>&1; then echo "build-brief --gradle ./gradlew"; elif command -v rtk >/dev/null 2>&1; then echo "rtk ./gradlew"; else echo "./gradlew"; fi)
 
-.PHONY: help setup setup-ai-tools update-android-skills build bundle-release install clean test konsist compose-metrics ui-test screenshot-record screenshot-verify screenshot-clean lint android-lint format check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline health benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark jacoco-report coverage-check install-profiler install-diffuse new-feature-module new-dev-app
+.PHONY: help setup setup-ai-tools update-android-skills build bundle-release install clean test konsist compose-metrics ui-test screenshot-record screenshot-verify screenshot-clean lint android-lint format check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline verification-metadata health benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark jacoco-report coverage-check install-profiler install-diffuse new-feature-module new-dev-app
 
 help: ## Show this help message.
 	@echo "\n📊 BillionBeers Makefile Help"
@@ -160,6 +160,23 @@ dependency-guard: ## Verify the app's release runtime dependency graph against i
 
 dependency-guard-baseline: ## Re-baseline the dependency graph after an intentional change (review the diff before committing).
 	$(GRADLE_RUNNER) :app:dependencyGuardBaseline
+
+# The task set mirrors what CI executes (ci.yml) plus assembleDebug for local builds - the ledger
+# only covers configurations a build actually resolves, so anything CI runs must be resolved here
+# or CI fails verification. Two passes on purpose, mirroring CI's separate lanes: writes merge
+# into the existing file, and combining :app:lintDebug with verifyPaparazziDebug in ONE invocation
+# trips Gradle's implicit-dependency validation on generatePaparazziTest outputs (a combination CI
+# never runs). Don't add broader tasks (e.g. root assembleDebugAndroidTest) for the same reason.
+# The jvmargs override is needed because these are no-configuration-cache builds of the whole
+# graph; the default 2g heap GC-thrashes.
+VERIFICATION_WRITE_FLAGS := --write-verification-metadata sha256 --no-configuration-cache --continue \
+	"-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8"
+verification-metadata: ## Regenerate gradle/verification-metadata.xml over the full CI task graph (ADR 0007).
+	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) \
+		help spotlessCheck detekt :app:lintDebug :app:dependencyGuard
+	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) \
+		assembleDebug testDebugUnitTest :konsist:test :core-common:test :testing-utils:test \
+		verifyPaparazziDebug jacocoRootReport ciGroupDebugAndroidTest
 
 health: ## Aggregate the read-only health checks into a markdown report (docs/health/REPORT.md).
 	@bash scripts/health-report.sh --run docs/health/REPORT.md

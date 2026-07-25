@@ -96,6 +96,8 @@ Not yet mechanically enforced (candidates — see `rod/July_Improvements.md` §4
 | A use case exists iff it does something a repository call doesn't — in practice **none survive today**; ViewModels inject `BeersRepository` directly, which is only safe because invariant 4 is enforced | `docs/adr/0003` |
 | Dev-apps can't host dynamic features | `docs/adr/0004` |
 | Dependabot over Renovate | `docs/adr/0005` |
+| CI supply-chain hardening: Actions SHA-pinned, gitleaks on PR ranges | `docs/adr/0006` |
+| Dependency verification enforced; `make verification-metadata` regenerates the ledger, and a CI workflow does it on Dependabot branches so auto-merge survives | `docs/adr/0007` |
 
 Also settled, without an ADR:
 

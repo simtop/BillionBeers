@@ -1,0 +1,98 @@
+name: Regenerate Verification Metadata
+
+# Keeps gradle/verification-metadata.xml current on Dependabot branches so dependency
+# verification (ADR 0007) doesn't break the auto-merge flow (ADR 0005). Design notes:
+#
+# - `pull_request`, NOT `pull_request_target`: we never push with GITHUB_TOKEN, so we don't
+#   need the base-branch privilege escalation that pull_request_target grants. The push uses a
+#   write deploy key instead - stored as a Dependabot secret (Dependabot-triggered runs only
+#   see the Dependabot secret store) AND as an Actions secret (for workflow_dispatch runs).
+# - A deploy-key push (unlike a GITHUB_TOKEN push) triggers workflows, so ci.yml re-runs on
+#   the new head SHA and the auto-merge `--auto` gate resolves instead of hanging forever.
+# - Loop termination: the push re-triggers this workflow, but the guard step sees the ledger
+#   commit at HEAD and exits before the expensive regen; even without it, a second regen
+#   produces no diff and commits nothing.
+# - workflow_dispatch exists to regenerate on Linux, which resolves platform-specific
+#   artifacts (e.g. aapt2 linux jars) that a macOS-run `make verification-metadata` misses.
+
+on:
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch: {}
+
+# The deploy key gives push access; the token needs nothing beyond checkout.
+permissions:
+  contents: read
+
+concurrency:
+  group: regen-verification-metadata-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  regen:
+    name: Regenerate verification-metadata.xml
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout branch head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # pull_request checks out an ephemeral merge commit by default - we need the real
+          # branch so the regenerated ledger can be committed and pushed back to it.
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          ssh-key: ${{ secrets.VERIFICATION_METADATA_DEPLOY_KEY }}
+
+      - name: Skip if HEAD is already a regen commit
+        id: guard
+        run: |
+          if [ "$(git log -1 --pretty=%s)" = "chore: regenerate dependency verification metadata" ]; then
+            echo "HEAD is this workflow's own commit - nothing new to resolve."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Enable KVM
+        if: steps.guard.outputs.skip != 'true'
+        # Same as ci.yml: the regen task graph includes the Gradle Managed Device lane, whose
+        # UTP/emulator tooling is itself Gradle-resolved and must land in the ledger.
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Set up JDK 23
+        if: steps.guard.outputs.skip != 'true'
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+        with:
+          java-version: '23'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        if: steps.guard.outputs.skip != 'true'
+        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6
+        with:
+          gradle-version: wrapper
+
+      - name: Make gradlew executable
+        if: steps.guard.outputs.skip != 'true'
+        run: chmod +x gradlew
+
+      # Strict on purpose (no continue-on-error): if the task graph fails, the bump needs a
+      # human anyway, and committing a partially-resolved ledger would only mask that.
+      - name: Regenerate verification metadata
+        if: steps.guard.outputs.skip != 'true'
+        run: make verification-metadata
+
+      - name: Commit and push if the ledger changed
+        if: steps.guard.outputs.skip != 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add gradle/verification-metadata.xml
+          if git diff --cached --quiet; then
+            echo "Ledger already current - nothing to commit."
+          else
+            git commit -m "chore: regenerate dependency verification metadata"
+            git push
+          fi
