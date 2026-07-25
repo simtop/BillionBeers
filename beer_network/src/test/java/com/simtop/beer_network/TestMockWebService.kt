@@ -1,4 +1,4 @@
-package com.simtop.billionbeers
+package com.simtop.beer_network
 
 import com.simtop.beer_network.network.BeersService
 import com.simtop.core.network.NetworkJson

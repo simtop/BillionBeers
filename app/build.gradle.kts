@@ -55,7 +55,6 @@ dependencies {
   implementation(project(":beer_data"))
   implementation(project(":beer_database"))
   implementation(project(":beer_network"))
-  testImplementation(project(":beer_network:fixtures"))
   implementation(project(":presentation_utils"))
 
   implementation(libs.androidPlayCore)
@@ -63,14 +62,11 @@ dependencies {
   implementation(libs.androidxActivityCompose)
   implementation(libs.androidx.navigation3.runtime)
   implementation(libs.androidx.navigation3.ui)
-  implementation(libs.kotlinx.serialization.json)
+  // appcompat stays: the manifest's @style/AppTheme resolves to a Theme.AppCompat parent
+  // (core/src/main/res/values/styles.xml), which no import scan can see.
   implementation(libs.appcompat)
   testImplementation(libs.striktCore)
   androidTestImplementation(libs.striktCore)
-
-  testImplementation(libs.okhttp3Mockwebserver)
-  testImplementation(libs.retrofit2ConverterSerialization)
-  testImplementation(libs.okhttp3LoggingInterceptor)
 
   androidTestImplementation("androidx.compose.ui:ui-test-junit4")
   debugImplementation("androidx.compose.ui:ui-test-manifest")

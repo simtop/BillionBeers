@@ -1,10 +1,9 @@
-package com.simtop.billionbeers.data
+package com.simtop.beer_network.remotesources
 
+import com.simtop.beer_network.TestMockWebService
 import com.simtop.beer_network.fixtures.FAKE_BREWERIES_JSON
 import com.simtop.beer_network.fixtures.FAKE_JSON
 import com.simtop.beer_network.fixtures.FAKE_TYPOLOGIES_JSON
-import com.simtop.beer_network.remotesources.BeersRemoteSourceImpl
-import com.simtop.billionbeers.TestMockWebService
 import com.simtop.core.core.LanguageProvider
 import java.net.HttpURLConnection
 import kotlinx.coroutines.runBlocking
