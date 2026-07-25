@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted
+Accepted. §3 (deferring dependency verification) is superseded by ADR 0007: the revisit trigger
+below — a CI job that regenerates and commits the metadata on Dependabot branches — was built,
+and verification is now enforced.
 
 ## Context
 
