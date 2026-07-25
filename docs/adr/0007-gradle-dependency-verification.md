@@ -61,6 +61,15 @@ regen commit; even without it, the second run would produce no diff and commit n
 
 ## Operational notes
 
+- **Warm caches under-record.** A ledger generated locally misses metadata files (POMs, BOMs,
+  `.module`) that a warm `~/.gradle` cache never re-downloads but a cold CI runner does —
+  observed live on PR #116 (`kotlinx-coroutines-bom-1.8.0.pom`). Symptom: green locally,
+  verification failure within seconds on CI, during project configuration. Fix: dispatch the
+  regen workflow against the branch; it regenerates cold on Linux and pushes the completed
+  ledger. These entries accumulate, so this fades after the first few regens.
+- **Reading a verification failure:** "artifact is not listed" means the ledger is behind —
+  regenerate. A checksum **mismatch** on an artifact already in the ledger is the alarm this
+  control exists for — do not regenerate over it; verify the artifact independently first.
 - **Platform-specific artifacts:** a ledger generated on macOS lacks Linux-only artifacts (e.g.
   `aapt2 …:linux`). The `workflow_dispatch` trigger exists exactly for this — run the workflow
   against a branch and it appends what Linux resolves. Symmetrically, after a bump lands, the
