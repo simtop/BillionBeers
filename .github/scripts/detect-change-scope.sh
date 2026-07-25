@@ -42,6 +42,19 @@ emit() {
   echo "screenshot=$2" >> "$GITHUB_OUTPUT"
   echo "instrumented=$3" >> "$GITHUB_OUTPUT"
   echo "Decision: unit=$1 screenshot=$2 instrumented=$3 ($4)"
+  # Also surface it on the run page: "why did that lane not run?" should not require opening a log.
+  if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+    { echo "### Test lane selection"
+      echo ""
+      echo "$4"
+      echo ""
+      echo "| lane | runs |"
+      echo "|---|---|"
+      echo "| Unit Tests | $1 |"
+      echo "| Screenshot Tests (Paparazzi) | $2 |"
+      echo "| Instrumented Tests | $3 |"
+    } >> "$GITHUB_STEP_SUMMARY"
+  fi
 }
 
 # Docs / skills / local-notes paths that no test lane can be affected by.
@@ -112,8 +125,11 @@ fi
 # head was green - look that up.
 PREV_RUN=$(gh api "repos/$REPO/actions/workflows/ci.yml/runs?head_sha=$BEFORE&event=pull_request&per_page=1" \
   --jq '.workflow_runs[0].id // empty' || true)
-if [ -z "$PREV_RUN" ]; then
-  emit true true true "no previous CI run for $BEFORE - failing open"
+# Must be a bare run id. On a transient API error (observed: HTTP 504) gh prints the error body to
+# *stdout*, so this lands here as JSON rather than as the empty string - an emptiness check alone
+# lets that text through into the next request URL. Anything that is not digits fails open.
+if ! [[ "$PREV_RUN" =~ ^[0-9]+$ ]]; then
+  emit true true true "no usable previous CI run for $BEFORE - failing open"
   exit 0
 fi
 JOBS=$(gh api "repos/$REPO/actions/runs/$PREV_RUN/jobs?per_page=100" \
@@ -125,8 +141,17 @@ fi
 echo "Previous run $PREV_RUN job conclusions: $JOBS"
 
 concl() { echo "$JOBS" | jq -r --arg n "$1" 'map(select(.name == $n))[0].conclusion // "missing"'; }
-# This job's own name - if it is ever renamed, the lookup returns "missing" and every skip stops
-# being trusted, so the mechanism degrades to running everything rather than to skipping wrongly.
+
+# Every name below is matched against the previous run's job list as a literal string, so renaming
+# a job silently turns its lookup into "missing" -> nothing is ever adopted -> CI just quietly gets
+# slower, with no failure to notice. Warn loudly instead. (A PR that *adds* a lane also trips this
+# once, because the previous run predates the job - harmless and self-clearing.)
+for n in "Detect change scope" "Unit Tests" "Screenshot Tests (Paparazzi)" \
+  "Instrumented Tests (Gradle Managed Device)"; do
+  [ "$(concl "$n")" = "missing" ] &&
+    echo "::warning::Job '$n' not found in previous run $PREV_RUN - verdict adoption is disabled for it. If this job was renamed, update .github/scripts/detect-change-scope.sh to match."
+done
+
 PREV_FILTER=$(concl "Detect change scope")
 
 was_green() {
