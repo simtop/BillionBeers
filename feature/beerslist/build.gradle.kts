@@ -6,10 +6,9 @@ plugins {
 android { namespace = "com.simtop.feature.beerslist" }
 
 dependencies {
-  implementation(project(":beerdomain:api"))
+  // :core, :core-common, :presentation_utils and :beerdomain:api come from the
+  // billionbeers.android.feature plugin - see :feature:beersearch for the same shape.
   implementation(project(":navigation"))
-  implementation(project(":presentation_utils"))
-  implementation(project(":core"))
   implementation(project(":core:designsystem"))
   implementation(libs.kotlinx.serialization.json)
   testImplementation(project(":beerdomain:fakes"))
