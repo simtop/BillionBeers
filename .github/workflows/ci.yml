@@ -46,6 +46,20 @@ jobs:
       - name: Verify IDE-sync artifacts are covered by the ledger
         run: ./gradlew ideSyncArtifacts
 
+      # Same reasoning as the step above: a cheap always-run guard on this lane rather than a
+      # ninth job. The README's version table claims to be "automatically kept in sync" via
+      # `make update-docs`, but nothing invoked it - by 2026-08-01 four of its five rows were
+      # stale, because Dependabot lands version bumps weekly and each one re-stales the table.
+      # Regenerating and diffing is what makes the word "automatically" true.
+      - name: Verify the README version table matches the catalog
+        run: |
+          ./scripts/update_readme_versions.sh >/dev/null
+          if ! git diff --quiet -- README.md; then
+            echo "::error::README version table is stale. Run 'make update-docs' and commit."
+            git --no-pager diff -- README.md
+            exit 1
+          fi
+
       - name: Format Fix Hint
         if: always() && steps.spotless-check.outcome == 'failure'
         run: |
