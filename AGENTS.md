@@ -97,7 +97,7 @@ Not yet mechanically enforced (candidates — see `rod/July_Improvements.md` §4
 | Dev-apps can't host dynamic features | `docs/adr/0004` |
 | Dependabot over Renovate | `docs/adr/0005` |
 | CI supply-chain hardening: Actions SHA-pinned, gitleaks on PR ranges | `docs/adr/0006` |
-| Dependency verification enforced; `make verification-metadata` regenerates the ledger, and a CI workflow does it on Dependabot branches so auto-merge survives | `docs/adr/0007` |
+| Dependency verification enforced; `make verification-metadata` regenerates the ledger, and a CI workflow does it on Dependabot branches so auto-merge survives — it re-baselines dependency-guard first (else the regen aborts on stale-baseline drift), but only when the drift is version-only | `docs/adr/0007` |
 | Per-lane CI test selection: a lane runs if the push could affect it or it was red last time, else it adopts the green verdict. Rules live in one function in `.github/scripts/detect-change-scope.sh` | `docs/adr/0008` |
 
 Also settled, without an ADR:

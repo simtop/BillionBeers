@@ -33,6 +33,8 @@ that are easy to get wrong.
    (`.github/workflows/regen-verification-metadata.yml`). On Dependabot PRs it regenerates the
    ledger and pushes the diff back to the branch; CI re-runs on the new head and the existing
    `--auto` merge gate resolves normally.
+4. **The workflow re-baselines dependency-guard first, and only for version-only drift.** See
+   below — this is what makes (3) actually complete on a real bump.
 
 ## The two load-bearing choices in the workflow
 
@@ -53,6 +55,39 @@ The obvious pattern for pushing to a PR branch is `pull_request_target` (base-br
 write token). We don't need it: the deploy key provides the push, so the workflow runs in the
 ordinary least-privilege `pull_request` context with a read-only token, and never mixes
 base-context privileges with PR-head code execution.
+
+### Re-baseline dependency-guard before regenerating, and only when drift is version-only
+
+The ledger is not the only file a bump invalidates. `:app`'s release runtime classpath usually
+shifts too, so dependency-guard's committed baseline (`app/dependencies/releaseRuntimeClasspath.txt`)
+goes stale on the same commit. Because `make verification-metadata` runs `:app:dependencyGuard` —
+which *fails* on baseline drift — the regen step exited non-zero, its commit-and-push step was
+skipped, and **neither** file was ever written. The workflow built to unblock Dependabot could not
+complete on any bump that moved the shipped graph. Observed as a hard deadlock on PRs #123, #124
+and #127 (Kotlin 2.4.0→2.4.10, the Metro group, Material 1.13.0→1.14.0), each stuck red with no
+path forward: every manual fix a human could reach for — `spotlessApply`, a re-dispatched regen —
+was itself a Gradle invocation, and so failed on the same unlisted checksums.
+
+So the workflow runs `:app:dependencyGuardBaseline` **before** the regen, under
+`--write-verification-metadata` so the bump's unlisted artifacts don't block the resolution needed
+to list them. `make verification-metadata` afterwards remains the authority on ledger content —
+it still runs the full CI task graph, with `:app:dependencyGuard` now passing.
+
+Doing that unconditionally would quietly disable dependency-guard for exactly the PRs it guards,
+since patch/minor Dependabot PRs auto-merge unread. The workflow therefore compares the
+**version-stripped coordinate sets** either side of the re-baseline:
+
+- **version-only drift** (same coordinates, new versions) is what a bump legitimately is, and is
+  already under review as the bump itself → re-baseline and continue;
+- **a coordinate added or removed** is a new or dropped transitive dependency — the runtime-binary-
+  incompatibility signal the guard exists for → fail red, auto-merge never resolves, a human
+  reviews the delta and re-baselines by hand.
+
+  That hand re-baseline needs the escape hatch, not the Makefile target: on an un-regenerated
+  branch the bump's artifacts aren't in the ledger, so `make dependency-guard-baseline` fails on
+  verification like everything else. Use
+  `./gradlew --dependency-verification off :app:dependencyGuardBaseline`, commit, push — the
+  coordinate sets then match and the workflow finishes the ledger itself.
 
 ### Loop termination
 

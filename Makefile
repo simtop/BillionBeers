@@ -169,6 +169,9 @@ dependency-guard-baseline: ## Re-baseline the dependency graph after an intentio
 # never runs). Don't add broader tasks (e.g. root assembleDebugAndroidTest) for the same reason.
 # The jvmargs override is needed because these are no-configuration-cache builds of the whole
 # graph; the default 2g heap GC-thrashes.
+# ORDER MATTERS after a dependency bump: :app:dependencyGuard below fails on a stale baseline and
+# aborts the regen before the ledger is written. Run `make dependency-guard-baseline` first (the
+# regen workflow does this automatically on Dependabot branches - ADR 0007).
 VERIFICATION_WRITE_FLAGS := --write-verification-metadata sha256 --no-configuration-cache --continue \
 	"-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8"
 verification-metadata: ## Regenerate gradle/verification-metadata.xml over the full CI task graph (ADR 0007).
