@@ -15,22 +15,19 @@ architecture rules enforced by Konsist · JVM screenshot tests · dependency ver
 
 ## 📸 Visual Tour
 
-Discover the "BillionBeers" experience through these high-fidelity screenshots:
+Captured from the current build with `scripts/play-listing.sh` — the same assets that go to the
+Play Store, so they cannot quietly drift from the app again.
 
 ````carousel
-![Main List](imagesForReadme/FirstScreen.png)
+![Catalog](imagesForReadme/catalog.jpg)
 <!-- slide -->
-![Detail View](imagesForReadme/SecondScreen.png)
+![Search as you type](imagesForReadme/search.jpg)
 <!-- slide -->
-![Search & Filter](imagesForReadme/ThirdScreen.png)
+![Beer detail](imagesForReadme/detail.jpg)
 <!-- slide -->
-![Empty States](imagesForReadme/FourthScreen.png)
+![Browse by style](imagesForReadme/browse-by-style.jpg)
 <!-- slide -->
-![Skeleton Loading](imagesForReadme/FifthScreen.jpg)
-<!-- slide -->
-![Dark Mode](imagesForReadme/SixthScreen.jpg)
-<!-- slide -->
-![Error Handling](imagesForReadme/SeventhScreen.jpg)
+![Dark theme](imagesForReadme/dark-theme.jpg)
 ````
 
 ---
