@@ -78,7 +78,11 @@ emit() {
 # being silently skipped. Only add a branch above it when you can say why the
 # lanes you are excluding cannot be affected - that claim is now the only thing
 # standing between a stale verdict and a green PR.
-INERT_RE='^(docs/|rod/|imagesForReadme/|\.claude/skills/|scripts/)'
+#
+# fastlane/ holds Play Store listing metadata only - description text and store
+# screenshots, written by scripts/play-listing.sh. Nothing there is compiled, read at
+# runtime, or asserted on by a test, so no lane can be affected by it.
+INERT_RE='^(docs/|rod/|imagesForReadme/|fastlane/|\.claude/skills/|scripts/)'
 classify_path() {
   local f="$1"
   if [ "$f" = "scripts/coverage-check.sh" ]; then

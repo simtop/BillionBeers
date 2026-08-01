@@ -1,0 +1,27 @@
+A clean, fast catalog for exploring craft beer.
+
+BillionBeers lets you page through hundreds of beers, dig into the details that actually matter to a brewer or a curious drinker, and keep track of what you still have in stock.
+
+WHAT YOU CAN DO
+
+• Browse the catalog — scroll a photo-led list of beers with ABV and IBU at a glance. New beers load as you reach the bottom, so there is no paging to fiddle with.
+
+• Search as you type — start typing and the list narrows immediately. No search button, no waiting.
+
+• Browse by style or brewery — jump between beer styles and the breweries that make them, and see how many beers sit under each.
+
+• Read the full spec — every beer has its description, food pairings, ABV, IBU and SRM, release year, serving temperature, fermentation method, ingredients, and the glassware it is best served in.
+
+• Track what is on tap — mark a beer as empty when you run out, and refill the barrels when you restock. Your stock is yours: it is stored on your device and never overwritten by the catalog.
+
+BUILT TO FEEL FAST
+
+Beers you have already seen are cached on your device, so the app opens straight into content instead of a spinner, and keeps working when your connection does not. When something does go wrong, the app tells you what happened and gives you a way to retry, rather than showing an empty screen.
+
+Full support for light and dark themes, and available in English, French and Spanish.
+
+ABOUT THIS APP
+
+BillionBeers is a free, ad-free, open-source app. There are no accounts, no tracking, and no in-app purchases. Beer data comes from an open beer catalog API, so treat it as a reference for exploring styles and breweries rather than a live shop inventory.
+
+The full source code is on GitHub at github.com/simtop/BillionBeers, where it doubles as a reference project for modern Android development.

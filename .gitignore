@@ -38,3 +38,4 @@ rod/
 .claude/skills/*
 !.claude/skills/.android-skills-ignore
 !.claude/skills/billionbeers-android/
+!.claude/skills/play-listing/

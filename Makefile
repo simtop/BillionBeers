@@ -13,7 +13,7 @@ UI_TEST_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,:app:)
 # Wrapper for Gradle to support build-brief (bb) or rtk if available
 GRADLE_RUNNER := $(shell if command -v bb >/dev/null 2>&1; then echo "bb ./gradlew"; elif command -v build-brief >/dev/null 2>&1; then echo "build-brief --gradle ./gradlew"; elif command -v rtk >/dev/null 2>&1; then echo "rtk ./gradlew"; else echo "./gradlew"; fi)
 
-.PHONY: help setup setup-ai-tools update-android-skills build bundle-release install clean test konsist compose-metrics ui-test screenshot-record screenshot-verify screenshot-clean lint android-lint format check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline verification-metadata health benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark jacoco-report coverage-check install-profiler install-diffuse new-feature-module new-dev-app
+.PHONY: help setup setup-ai-tools update-android-skills build bundle-release install clean test konsist compose-metrics ui-test screenshot-record screenshot-verify screenshot-clean lint android-lint format check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline verification-metadata health benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark jacoco-report coverage-check install-profiler install-diffuse new-feature-module new-dev-app play-listing-check play-listing-capture play-listing-reset
 
 help: ## Show this help message.
 	@echo "\n📊 BillionBeers Makefile Help"
@@ -219,6 +219,15 @@ coverage-check: ## Fail if line coverage dropped below config/coverage-floor.txt
 update-docs: ## Update README.md with the latest library versions from the catalog.
 	@chmod +x scripts/update_readme_versions.sh
 	@./scripts/update_readme_versions.sh
+
+play-listing-check: ## Validate the Play Store listing assets against Play's limits.
+	@bash scripts/play-listing.sh check
+
+play-listing-capture: ## Put a device in capture state for Play screenshots (see the play-listing skill).
+	@bash scripts/play-listing.sh prepare
+
+play-listing-reset: ## Restore a device after `make play-listing-capture`.
+	@bash scripts/play-listing.sh reset
 
 new-feature-module: ## Scaffold a feature/<NAME> module. Usage: make new-feature-module NAME=favorites [PASCAL=Favorites]
 	@chmod +x scripts/new-feature-module.sh
