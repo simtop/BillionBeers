@@ -147,6 +147,7 @@ diagram that only lives in a README rots; these rules fail the build. They run a
 | Dev-app sandboxes depend only on `api` + `fakes` modules, which is what keeps them fast | `DevAppDependencyBoundaryTest` |
 | No module applies `java-test-fixtures` — fixtures live in sibling `:fakes` modules (ADR 0001) | `TestFixturesPluginBoundaryTest` |
 | ViewModels never use `MutableSharedFlow` — it drops one-shot events when nothing is collecting | `OneShotEventBoundaryTest` |
+| Domain models are immutable — no `var`, and no `val` holding a mutable collection | `DomainModelImmutabilityTest` |
 
 Reinforced by:
 

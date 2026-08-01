@@ -60,7 +60,7 @@ when they get in the way. (`:konsist`'s build-script rules skip `bin/` for this 
 
 ## 3. Invariants — break these and the build (or an instrumented test) breaks
 
-The first eight are enforced by `:konsist`; the wording here is from the tests themselves.
+All nine are enforced by `:konsist`; the wording here is from the tests themselves.
 
 1. **Repository interfaces do not import data-layer types.** (`RepositoryBoundaryTest`)
 2. **Feature modules never depend on other feature modules** — `beerslist` ⊥ `beerdetail`, and so
@@ -85,10 +85,12 @@ The first eight are enforced by `:konsist`; the wording here is from the tests t
 8. **One-shot UI events use `Channel(BUFFERED).receiveAsFlow()`**, never `MutableSharedFlow`, which
    drops events when nothing is collecting. (`OneShotEventBoundaryTest`.)
 
-Still convention-only, with no rule behind it:
+9. **Domain models are immutable** — no `var`, and no `val` holding a mutable collection
+   (`MutableList`, `HashMap`, `Array`, …), which is the half that slips through review.
+   (`DomainModelImmutabilityTest`.)
 
-9. **Domain models are immutable.** Konsist can see `data class` properties, so this is enforceable;
-   nobody has written it.
+Every invariant in this list is now mechanically enforced. If you add one, add its rule in the
+same change — a convention with no test is a convention that drifts.
 
 ---
 
