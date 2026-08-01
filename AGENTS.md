@@ -50,16 +50,17 @@ tooling rather than by memory, and deviations need a written reason.
 Modules are **auto-discovered** by `settings.gradle.kts` — any directory with a build script is
 included. Adding a module needs no `settings.gradle.kts` edit.
 
-**Two stale directories will mislead a grep** (both harmless, both worth deleting):
-`beerdomain/impl/` is empty (no build script, so not even a module), and `core-common/bin/` is a
-leftover IDE output tree holding *deleted* sources — including `BaseUseCase.kt`, which was removed
-from the project. If a search hits `bin/`, you're reading a ghost; search `src/`.
+**`bin/` directories will mislead a grep.** `core-common/bin/` and `build-logic/convention/bin/`
+are leftover IDE output trees holding *deleted* sources — including `BaseUseCase.kt`, which was
+removed from the project. Both are gitignored and untracked, so they never reach a clone; the cost
+is local only. If a search hits `bin/`, you're reading a ghost — search `src/`, and `rm -rf` them
+when they get in the way. (`:konsist`'s build-script rules skip `bin/` for this reason.)
 
 ---
 
 ## 3. Invariants — break these and the build (or an instrumented test) breaks
 
-The first six are enforced by `:konsist`; the wording here is from the tests themselves.
+The first eight are enforced by `:konsist`; the wording here is from the tests themselves.
 
 1. **Repository interfaces do not import data-layer types.** (`RepositoryBoundaryTest`)
 2. **Feature modules never depend on other feature modules** — `beerslist` ⊥ `beerdetail`, and so
@@ -78,12 +79,16 @@ The first six are enforced by `:konsist`; the wording here is from the tests the
    declare `:beer_data`, `:beer_database` or `:beer_network`. It reads the build scripts directly,
    since Konsist doesn't scan `.kts`.)
 
-Not yet mechanically enforced (candidates — see `rod/July_Improvements.md` §4.3):
-
 7. **Test fixtures live in sibling `:module:fakes` / `:module:fixtures` modules**, never Gradle's
    `java-test-fixtures` plugin (ADR 0001 — measured build-time cost).
-8. **Domain models are immutable; one-shot UI events use `Channel(BUFFERED).receiveAsFlow()`**, not
-   `SharedFlow` (which drops events with no active collector).
+   (`TestFixturesPluginBoundaryTest` — reads the build scripts, ignoring comment lines.)
+8. **One-shot UI events use `Channel(BUFFERED).receiveAsFlow()`**, never `MutableSharedFlow`, which
+   drops events when nothing is collecting. (`OneShotEventBoundaryTest`.)
+
+Still convention-only, with no rule behind it:
+
+9. **Domain models are immutable.** Konsist can see `data class` properties, so this is enforceable;
+   nobody has written it.
 
 ---
 
