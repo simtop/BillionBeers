@@ -46,11 +46,4 @@ class DevAppDependencyBoundaryTest {
       }
     }
   }
-
-  /** Walks up from the test working directory (the :konsist module) to the Gradle root. */
-  private fun repoRoot(): File {
-    var dir: File? = File(System.getProperty("user.dir"))
-    while (dir != null && !File(dir, "settings.gradle.kts").exists()) dir = dir.parentFile
-    return dir ?: error("Could not locate Gradle root (no settings.gradle.kts above user.dir)")
-  }
 }
