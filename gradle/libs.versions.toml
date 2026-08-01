@@ -36,7 +36,7 @@ com-squareup-retrofit2 = "3.0.0"
 
 # Testing
 io-mockk = "1.14.11"
-junit5 = "6.1.1"
+junit5 = "6.1.2"
 androidJunit5 = "2.0.1"
 strikt = "0.35.1"
 kluent = "1.73"
