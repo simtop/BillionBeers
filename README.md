@@ -1,6 +1,12 @@
 # BillionBeers 🍻
 
-BillionBeers is a state-of-the-art multi-module Android application showcasing modern architecture, reactive UI patterns, and comprehensive testing strategies. 
+A production-shaped, multi-module Android app — a beer catalog — used as a proving ground for modern
+Android architecture. **The shape is the product:** the boundaries that matter here fail the build
+rather than fail a code review, and the decisions that are easy to second-guess are written down as
+ADRs instead of argued twice.
+
+Compose UI · Metro DI · Room as SSOT · hand-rolled paging · two on-demand dynamic feature modules ·
+architecture rules enforced by Konsist · JVM screenshot tests · dependency verification.
 
 [![Google Play](https://img.shields.io/badge/Google%20Play-Get%20it%20now-green?logo=google-play)](https://play.google.com/store/apps/details?id=com.simtop.billionbeers)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/simtop/BillionBeers)
@@ -34,45 +40,127 @@ Discover the "BillionBeers" experience through these high-fidelity screenshots:
 The project follows **Clean Architecture** principles with a robust **Multi-module** structure, ensuring high scalability and separation of concerns.
 
 ### High-Level Module Dependency
+
+Dependencies point **inwards**: features and data both depend on the domain, and the domain depends
+on nothing but pure Kotlin. The load-bearing edges here — features never reaching each other, the
+domain staying Android-free, data never leaking upwards — are checked by
+[Konsist tests](#-enforced-architecture) on every push.
+
 ```mermaid
 graph TD
-    App[":app"] --> FeatureA[":feature:beerslist"]
-    App --> FeatureB[":feature:beerdetail"]
-    
-    FeatureA --> Domain[":beerdomain"]
-    FeatureB --> Domain
-    FeatureA --> PresentationUtils[":presentation_utils"]
-    
-    Domain --> Data[":beer_data"]
-    Data --> Network[":beer_network"]
-    Data --> DB[":beer_database"]
-    
-    FeatureA --> DesignSystem[":core:designsystem"]
-    FeatureB --> DesignSystem
-    
-    DesignSystem --> CoreCommon[":core-common"]
+    App[":app"]
+
+    subgraph FEATURES ["Features — never depend on each other"]
+        List[":feature:beerslist"]
+        Search[":feature:beersearch"]
+        Detail[":feature:beerdetail<br/><i>on-demand</i>"]
+        Browse[":feature:beerbrowse<br/><i>on-demand</i>"]
+    end
+
+    subgraph SHARED ["Shared UI"]
+        Nav[":navigation"]
+        PresUtils[":presentation_utils"]
+        Design[":core:designsystem"]
+    end
+
+    subgraph DATA ["Data — implements the domain interfaces"]
+        Data[":beer_data"]
+        Network[":beer_network"]
+        DB[":beer_database"]
+    end
+
+    subgraph DOMAIN ["Domain — pure JVM, zero Android"]
+        Api[":beerdomain:api<br/><i>models · repo interfaces · typed errors</i>"]
+        Fakes[":beerdomain:fakes"]
+    end
+
+    CoreCommon[":core-common<br/><i>pure JVM · paging · Either · seams</i>"]
+
+    App --> FEATURES
+    App --> DATA
+    FEATURES --> SHARED
+    FEATURES --> Api
+    SHARED --> Api
+    Data --> Network
+    Data --> DB
+    Data --> Api
+    Fakes --> Api
+    Api --> CoreCommon
+    SHARED --> CoreCommon
+
+    classDef dyn stroke-dasharray: 5 5
+    class Detail,Browse dyn
 ```
 
+> [!NOTE]
+> **The two dashed modules invert their build edge.** Android's `com.android.dynamic-feature`
+> plugin requires an on-demand feature to declare `implementation(project(":app"))`, while `:app`
+> lists it under `dynamicFeatures`. The *code* dependency still runs the direction drawn above —
+> features never reach into `:app`, and cross-feature navigation goes through `:navigation`.
+>
+> Shared foundation dependencies (`:core`, `:core-common`, `:presentation_utils`,
+> `:beerdomain:api`) are injected into every feature by the `billionbeers.android.feature`
+> convention plugin rather than hand-declared per module.
+
 ### Feature-Level: Unidirectional Data Flow (UDF)
-Every feature utilizes a pure UDF pattern powered by Kotlin Flow and Compose's state management.
+
+Every feature uses a pure UDF pattern powered by Kotlin Flow and Compose state. There is **no use
+case layer** — ViewModels inject the domain repository interface directly, which is only safe
+because a Konsist rule mechanically forbids a ViewModel from touching anything outside the domain
+layer. The reasoning is written down in [ADR 0003](docs/adr/0003-use-case-policy.md).
 
 ```mermaid
 sequenceDiagram
-    participant UI as Compose View
+    participant UI as Compose Screen
     participant VM as ViewModel
-    participant UC as UseCase
-    participant Repo as Repository
+    participant Pager as Pager (screen-scoped)
+    participant Repo as BeersRepository<br/>(domain interface)
+    participant Impl as Repository impl<br/>(:beer_data)
 
-    UI->>VM: Trigger Action (e.g. Refresh)
-    VM->>VM: Emit LoadingState
-    VM->>UC: Execute()
-    UC->>Repo: FetchData()
-    Repo-->>UC: Domain Data
-    UC-->>VM: Flow<Data>
-    VM->>VM: Map to CommonUiState
-    VM-->>UI: State Observation
-    Note over UI: Re-composes with Data/Error/Empty
+    UI->>VM: Intent (open screen · scroll to end)
+    VM->>Repo: catalogCacheStatus(policy)
+    Repo-->>VM: Fresh / Stale / Empty
+    Note over VM: A fresh cache skips the fetch entirely —<br/>Room is the source of truth, not the network.
+    VM->>Pager: loadFirstPage() / nextPage()
+    Pager->>Repo: getBeersPageFromApi(page, query)
+    Repo->>Impl: bound by Metro
+    Impl-->>Repo: BeerPage (items + server total)
+    Pager->>Repo: insertPage(...) — page + resume key, one transaction
+    Pager-->>VM: data + PagingState
+    VM->>VM: PagedListReducer folds page into PagedListUiModel<br/>(errors arrive typed, as FetchBeersError)
+    VM-->>UI: StateFlow<CommonUiState<PagedListUiModel<Beer>>>
+    Note over VM,UI: One-shot effects go over<br/>Channel(BUFFERED).receiveAsFlow(),<br/>never SharedFlow — it drops events<br/>with no active collector.
 ```
+
+---
+
+## 🛡 Enforced Architecture
+
+The point of this repository is that **the conventions are enforced by tooling, not by memory**. A
+diagram that only lives in a README rots; these rules fail the build. They run as
+[Konsist](https://github.com/LemonAppDev/konsist) tests in the `:konsist` module, on every push.
+
+| Rule | Test |
+|---|---|
+| Repository interfaces never import data-layer types | `RepositoryBoundaryTest` |
+| Feature modules never depend on other feature modules — cross-feature nav goes through `:navigation` | `FeatureModuleBoundaryTest` |
+| The domain layer has zero Android imports | `DomainLayerPurityTest` |
+| ViewModels depend only on domain types (the precondition that makes "no use cases" safe) | `ViewModelBoundaryTest` |
+| Dynamic features declare no resources of their own — they crash instrumented tests | `DynamicFeatureResourceBoundaryTest` |
+| Dev-app sandboxes depend only on `api` + `fakes` modules, which is what keeps them fast | `DevAppDependencyBoundaryTest` |
+
+Reinforced by:
+
+- **Supply chain** — Gradle dependency verification with a checked-in ledger (211 locked deps),
+  `dependency-guard` on the resolved graph, GitHub Actions pinned to SHAs, and gitleaks on every PR
+  range. See [ADR 0006](docs/adr/0006-ci-supply-chain-hardening.md) and
+  [ADR 0007](docs/adr/0007-gradle-dependency-verification.md).
+- **Convention plugins** — module setup lives in `build-logic`, so a new feature module is a plugin
+  id and a namespace, not a copied 80-line build script.
+- **Decision record** — eight [ADRs](docs/adr/) covering the choices that are easy to second-guess:
+  no Paging3, no `java-test-fixtures`, no use-case layer.
+- **Dev-app sandboxes** — `app-dev-<feature>` modules build a single feature against fakes for fast
+  iteration (`make new-dev-app`).
 
 ---
 
@@ -85,17 +173,23 @@ This project goes beyond standard libraries, incorporating advanced engineering 
 - **Testing**:
     - **Paparazzi**: JVM-based Snapshot Testing. It renders your Composables directly on the JVM using Android Studio's `LayoutLib`, allowing for lightning-fast regression testing without emulators.
     - **Robot Pattern**: Standardized E2E/UI testing architecture for readability.
-- **Data**: Room, Retrofit, Kotlin Serialization, Paging(custom mediator logic).
-- **Quality**: Detekt, Spotless, Jacoco (Unified Root Reporting).
+- **Data**: Room (SSOT), Retrofit, Kotlin Serialization, and a **hand-rolled `PagingMediator`** —
+  Paging 3 was deliberately dropped because `PagingData` leaks through every layer
+  ([ADR 0002](docs/adr/0002-hand-rolled-paging.md)).
+- **Errors**: typed sealed errors carried in `Either<DomainError, T>`, converted at the data boundary
+  — never an untyped `Exception` on the left.
+- **Quality**: Konsist (architecture), Detekt, Spotless, Jacoco (Unified Root Reporting),
+  dependency-guard, macrobenchmark perf budgets, and Baseline Profiles.
 
 ---
 
 ## 🚀 Project Evolution
 
 <details>
-<summary><b>Click to explore the technological journey (21+ Milestones)</b></summary>
+<summary><b>Click to explore the technological journey (19 Milestones)</b></summary>
 
-This repository has served as a technological sandbox over the years. You can explorer the project's history through these significant milestones:
+This repository has served as a technological sandbox over the years. Each milestone below is a
+live branch you can check out and read:
 
 1.  **[Monolithic App with Dagger2](https://github.com/simtop/BillionBeers/tree/simple_coroutines_monolith)**: The original project structure.
 2.  **[Hilt Monolith](https://github.com/simtop/BillionBeers/tree/feature/hilt_monolith)**: Transitioning to modern DI.
@@ -120,6 +214,11 @@ This repository has served as a technological sandbox over the years. You can ex
 18. **[Full Compose Navigation](https://github.com/simtop/BillionBeers/tree/feature/nav3-full-compose)**: Migration to type-safe Compose Nav.
 19. **[Assisted Inject Experiments](https://github.com/simtop/BillionBeers/tree/feature/assisted_inject_experiments_hilt)**: Dynamic parameters in DI.
 
+Everything after this point landed on `master` rather than on its own branch — the Metro DI
+migration, Navigation 3, the hand-rolled paging layer, on-demand dynamic-feature install handling,
+the Konsist rule set, Gradle dependency verification, and per-lane CI test selection. Read
+`docs/adr/` for the decisions and `git log` for the work.
+
 </details>
 
 ---
@@ -132,10 +231,10 @@ This repository has served as a technological sandbox over the years. You can ex
 <!-- START_VERSIONS -->
 | Tech | Version |
 | :--- | :--- |
-| **Kotlin** | 2.3.21 |
-| **Gradle** | 9.6.0 |
-| **Compose BOM** | 2026.04.01 |
-| **Metro DI** | 1.0.0 |
+| **Kotlin** | 2.4.10 |
+| **Gradle** | 9.6.1 |
+| **Compose BOM** | 2026.06.01 |
+| **Metro DI** | 1.3.2 |
 | **Room DB** | 2.8.4 |
 <!-- END_VERSIONS -->
 
