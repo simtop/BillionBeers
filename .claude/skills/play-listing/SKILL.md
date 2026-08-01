@@ -165,9 +165,16 @@ Headlines live in `fastlane/metadata/android/<locale>/framing-captions.tsv`, one
 of that locale's listing copy on purpose: adding a language is the same move as for any other
 store text, and the layout is shared rather than duplicated per locale.
 
-Output goes to `images/phoneScreenshotsFramed/`. **Play takes one set, not both** - upload either
-these or the raw `phoneScreenshots/`. The raw set is also what the README's Visual Tour uses, so
-do not delete it in favour of the framed one.
+Output goes to `images/phoneScreenshotsFramed/`, beside the raw captures rather than replacing
+them. **Which set goes where is decided (2026-08-01):**
+
+| Surface | Set | Why |
+|---|---|---|
+| Play Store listing | **framed** (`phoneScreenshotsFramed/`) | A storefront competes for a thumb-scroll. The headline sells before anyone reads the description, and the first 2-3 shots appear in search results, where a bare screenshot reads as an unfinished listing. |
+| README Visual Tour | **raw** (`phoneScreenshots/`) | Documentation. A reader wants the actual UI, not marketing furniture around it. |
+
+So keep both sets. Play accepts only one, so never upload them together, and never delete the raw
+set in favour of the framed one — the README renders it.
 
 Rendering is headless Chrome over generated HTML, chosen because it needs no image library and
 gives real control over gradients and type. The palette is lifted from
