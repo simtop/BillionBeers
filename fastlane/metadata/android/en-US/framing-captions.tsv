@@ -1,0 +1,7 @@
+# filename<TAB>headline   -- to localise, copy this file to captions.<locale>.tsv and
+# translate column 2 only. The layout is shared.
+01-catalog.jpg	Hundreds of beers,<br>one clean list
+02-search.jpg	Find any beer<br>as you type
+03-detail.jpg	Every detail<br>that matters
+04-browse.jpg	Browse by style<br>or brewery
+05-dark.jpg	Looks just as good<br>in the dark
