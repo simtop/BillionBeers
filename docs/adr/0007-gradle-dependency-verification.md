@@ -113,12 +113,65 @@ regen commit; even without it, the second run would produce no diff and commit n
   `aapt2 …:linux`). The `workflow_dispatch` trigger exists exactly for this — run the workflow
   against a branch and it appends what Linux resolves. Symmetrically, after a bump lands, the
   first local macOS build may need a local `make verification-metadata` for the osx twins.
+- **IDE-only artifacts are trusted by rule, not by hash.** Android Studio's Gradle sync resolves
+  `-sources.jar` / `-javadoc.jar` variants that no build ever asks for. They were therefore absent
+  from the ledger, and sync failed with ~137 "checksums are missing" entries while every CLI build
+  and every CI lane stayed green — **no test could have caught this**: CI has no IDE, never requests
+  those variants, and `make verification-metadata` runs the CI task graph, so the ledger
+  *structurally* cannot contain them. Recording their hashes would be the wrong fix (unbounded
+  churn, and still incomplete the moment someone opens sources for one more dependency). The fix is
+  a `<trusted-artifacts>` rule in the ledger's `<configuration>` block trusting both suffixes by
+  regex. Safe because sources and javadoc jars never land on a compile or runtime classpath — they
+  are never executed, so the supply-chain surface this ADR protects is untouched.
+  `--write-verification-metadata` preserves the block verbatim, so the regen workflow does not
+  undo it (verified).
+
+  **Gradle's own distribution sources are the same case, one coordinate further out.** Sync also
+  resolves `gradle:gradle:<version>` `-src.zip` from the IDE-injected "Gradle distributions"
+  repository, to give build scripts API completion. It surfaces as a *separate* one-artifact
+  failure — and as the easily-dismissed `Could not resolve Gradle distribution sources` line — so
+  fixing the jars alone leaves sync still red. A third `<trust>` rule covers it, scoped to that
+  group/name. Pinning its hash instead would re-break sync on **every Gradle upgrade**, which is
+  what the accumulated 9.5.0 / 9.6.0 / 9.6.1 copies in `~/.gradle` show happening.
+- **Trusting the sources jars exposes a second, opposite gap — one that must be *recorded*, not
+  trusted.** Fetching sources for a module still needs that module's `.module`/`.pom` metadata in
+  the ledger. For anything CI resolves this is already there; the exception is
+  `localGroovy()`, pulled in by `kotlin-dsl` in `build-logic`. Its jars come from the Gradle
+  distribution, so CI never resolves them remotely and the ledger had **no `org.apache.groovy`
+  entries at all** — but asking for their *sources* forces a real Maven Central resolution, which
+  needs the metadata. Symptom: sync fails one artifact at a time (`groovy-4.0.32.module`, then its
+  siblings). These are ordinary executable dependencies, so the fix is checksums, not a `<trust>`
+  rule: resolve all eleven `org.apache.groovy:*` modules plus their sources under
+  `--write-verification-metadata sha256` in one pass. Recorded hashes were cross-checked against
+  Maven Central's published artifact before committing (`groovy-4.0.32.module` matched on both
+  sha1 and sha256).
+
+  A cache sweep for other coordinates missing from the ledger *at any version* turned up only
+  unreferenced version-catalog entries and residue from other projects, so this class is closed —
+  but the sweep is the way to check it, not one sync round-trip per artifact.
+- **The `ideSyncArtifacts` task is what stops the above recurring.** Trusting suffixes by regex is
+  version-agnostic, but the *recorded* Groovy checksums are not: the bundled Groovy moves with the
+  Gradle version (4.0.29 → 4.0.32 already happened), so a Gradle bump would strand the ledger on
+  the old coordinates and break sync again — and nothing in CI could see it. The root-project task
+  resolves that graph, deriving both version and module list from the running distribution rather
+  than hardcoding them. It is wired in twice, deliberately:
+  - `make verification-metadata` includes it, so a regen **records** the current coordinates. This
+    is the one entry in that target that does *not* mirror a CI task, for the reason above.
+  - the always-run `format-check` lane in `ci.yml` runs it plainly, so a stale ledger **fails
+    red** in CI instead of waiting to ambush whoever next opens the IDE.
+
+  Verified in all three modes: passes when the ledger is complete, fails with "12 artifacts failed
+  verification" when the Groovy entries are stripped, and records them under
+  `--write-verification-metadata`. It is configuration-cache clean (~0.5s on a reused entry), so
+  its cost on the always-run lane is negligible.
 - **Escape hatch:** `./gradlew --dependency-verification off …` (or `lenient`) bypasses
   enforcement for one invocation when debugging.
 - **Rebases:** a manual `@dependabot rebase` drops the bot's ledger commit; the resulting
   synchronize event re-fires the regen workflow, so it self-heals.
 - **Ledger hygiene:** `--write-verification-metadata` appends; entries for dropped versions are
-  not pruned automatically. Occasionally regenerate from an empty file to compact it.
+  not pruned automatically. Occasionally regenerate from an empty file to compact it — but the
+  generator does **not** reconstruct the `<configuration>` block, so compacting drops the
+  `<trusted-artifacts>` rules above and breaks IDE sync again. Preserve that block by hand.
 - **Tasks outside the CI graph** (e.g. `make benchmark-check`) may resolve artifacts the ledger
   misses. Fix is always the same: `make verification-metadata` (extend the target's task list if
   a lane becomes permanent).
