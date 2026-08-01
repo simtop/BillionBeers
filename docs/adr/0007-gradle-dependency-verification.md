@@ -49,6 +49,10 @@ under one name (`VERIFICATION_METADATA_DEPLOY_KEY`): the **Dependabot** store, b
 Dependabot-triggered runs only see Dependabot secrets, and the **Actions** store, for
 `workflow_dispatch` runs.
 
+`format_fix.yml` shares this key for the same reason — it commits directly to the branch it runs
+on, so a `GITHUB_TOKEN` push there would strand an open PR's head on a SHA CI never runs. The name
+is now narrower than its use; treat it as "the bot's write key", not one workflow's.
+
 ### `pull_request`, not `pull_request_target`
 
 The obvious pattern for pushing to a PR branch is `pull_request_target` (base-branch context,
