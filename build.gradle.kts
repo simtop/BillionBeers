@@ -37,6 +37,68 @@ tasks.register("clean", Delete::class) {
     delete(rootProject.layout.buildDirectory)
 }
 
+// Resolves the artifacts Android Studio's Gradle sync needs but no build ever asks for, so that
+// `make verification-metadata` records them (ADR 0007). Without this the ledger cannot cover them:
+// CI has no IDE, so the CI task graph never resolves them, and sync fails one artifact at a time on
+// a machine no lane can see.
+//
+// The gap is localGroovy(), pulled in by `kotlin-dsl` in build-logic. Its jars come from the Gradle
+// distribution, so nothing resolves them remotely — but asking for their *sources* forces a real
+// Maven Central resolution, which needs metadata the ledger lacks. Version and module list are read
+// off the running distribution rather than hardcoded, because the bundled Groovy moves with every
+// Gradle upgrade (4.0.29 → 4.0.32 already happened) and a stale pin here reintroduces the bug.
+//
+// Run it two ways:
+//   ./gradlew ideSyncArtifacts                              → fails if the ledger is behind
+//   ./gradlew ideSyncArtifacts --write-verification-metadata sha256 → records what's missing
+val ideSyncGroovyVersion: String = groovy.lang.GroovySystem.getVersion()
+val ideSyncGroovyModules: List<String> =
+    (gradle.gradleHomeDir?.resolve("lib")?.listFiles()?.map { it.name } ?: emptyList())
+        .filter { it.startsWith("groovy") && it.endsWith("-$ideSyncGroovyVersion.jar") }
+        .map { it.removeSuffix("-$ideSyncGroovyVersion.jar") }
+        .sorted()
+
+val ideSyncMetadata: Configuration by configurations.creating
+val ideSyncSources: Configuration by configurations.creating { isTransitive = false }
+
+ideSyncGroovyModules.forEach { module ->
+    val coordinate = "org.apache.groovy:$module:$ideSyncGroovyVersion"
+    dependencies.add(ideSyncMetadata.name, coordinate)
+    dependencies.add(ideSyncSources.name, "$coordinate:sources@jar")
+}
+
+tasks.register("ideSyncArtifacts") {
+    description = "Resolves IDE-sync-only artifacts so dependency verification covers them."
+    group = "verification"
+    // Captured as configuration-cache-friendly values: a Provider for the resolution result and a
+    // FileCollection for the artifacts. Referencing the Configuration objects from doLast instead
+    // would make the task incompatible with the configuration cache, which is on by default here.
+    val version = ideSyncGroovyVersion
+    val moduleCount = ideSyncGroovyModules.size
+    val rootComponent = ideSyncMetadata.incoming.resolutionResult.rootComponent
+    // Lenient: a module without a published sources jar must not fail the check. Metadata is the
+    // part the ledger actually needs; the sources jars themselves are covered by the
+    // `-sources.jar` trust rule.
+    val sourceFiles = ideSyncSources.incoming.artifactView { isLenient = true }.files
+    doLast {
+        if (moduleCount == 0) {
+            error("Found no bundled Groovy jars in the Gradle distribution — the layout changed.")
+        }
+        val seen = mutableSetOf<String>()
+        val queue = ArrayDeque(listOf(rootComponent.get()))
+        while (queue.isNotEmpty()) {
+            val component = queue.removeFirst()
+            if (!seen.add(component.id.displayName)) continue
+            component.dependencies.filterIsInstance<ResolvedDependencyResult>()
+                .forEach { queue.addLast(it.selected) }
+        }
+        logger.lifecycle(
+            "ideSyncArtifacts: groovy $version, $moduleCount modules, " +
+                "${seen.size - 1} components, ${sourceFiles.files.size} sources jars",
+        )
+    }
+}
+
 tasks.register<JacocoReport>("jacocoRootReport") {
     // Android debug unit tests + JVM-module `test`. The Android `test` *lifecycle* task aggregates
     // every variant (incl. the non-compiling benchmark one), so it is excluded by only taking `test`

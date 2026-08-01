@@ -167,6 +167,10 @@ dependency-guard-baseline: ## Re-baseline the dependency graph after an intentio
 # into the existing file, and combining :app:lintDebug with verifyPaparazziDebug in ONE invocation
 # trips Gradle's implicit-dependency validation on generatePaparazziTest outputs (a combination CI
 # never runs). Don't add broader tasks (e.g. root assembleDebugAndroidTest) for the same reason.
+# ideSyncArtifacts is the deliberate exception to "mirrors what CI executes": it resolves what
+# Android Studio's sync needs and no build does, which the CI graph by definition cannot cover.
+# It reads the bundled Groovy version off the running distribution, so a Gradle upgrade re-records
+# the right coordinates instead of leaving the ledger pinned to the old ones (ADR 0007).
 # The jvmargs override is needed because these are no-configuration-cache builds of the whole
 # graph; the default 2g heap GC-thrashes.
 # ORDER MATTERS after a dependency bump: :app:dependencyGuard below fails on a stale baseline and
@@ -176,7 +180,7 @@ VERIFICATION_WRITE_FLAGS := --write-verification-metadata sha256 --no-configurat
 	"-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8"
 verification-metadata: ## Regenerate gradle/verification-metadata.xml over the full CI task graph (ADR 0007).
 	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) \
-		help spotlessCheck detekt :app:lintDebug :app:dependencyGuard
+		help spotlessCheck detekt :app:lintDebug :app:dependencyGuard ideSyncArtifacts
 	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) \
 		assembleDebug testDebugUnitTest :konsist:test :core-common:test :testing-utils:test \
 		verifyPaparazziDebug jacocoRootReport ciGroupDebugAndroidTest

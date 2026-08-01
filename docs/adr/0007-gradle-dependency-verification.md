@@ -149,12 +149,29 @@ regen commit; even without it, the second run would produce no diff and commit n
   A cache sweep for other coordinates missing from the ledger *at any version* turned up only
   unreferenced version-catalog entries and residue from other projects, so this class is closed —
   but the sweep is the way to check it, not one sync round-trip per artifact.
+- **The `ideSyncArtifacts` task is what stops the above recurring.** Trusting suffixes by regex is
+  version-agnostic, but the *recorded* Groovy checksums are not: the bundled Groovy moves with the
+  Gradle version (4.0.29 → 4.0.32 already happened), so a Gradle bump would strand the ledger on
+  the old coordinates and break sync again — and nothing in CI could see it. The root-project task
+  resolves that graph, deriving both version and module list from the running distribution rather
+  than hardcoding them. It is wired in twice, deliberately:
+  - `make verification-metadata` includes it, so a regen **records** the current coordinates. This
+    is the one entry in that target that does *not* mirror a CI task, for the reason above.
+  - the always-run `format-check` lane in `ci.yml` runs it plainly, so a stale ledger **fails
+    red** in CI instead of waiting to ambush whoever next opens the IDE.
+
+  Verified in all three modes: passes when the ledger is complete, fails with "12 artifacts failed
+  verification" when the Groovy entries are stripped, and records them under
+  `--write-verification-metadata`. It is configuration-cache clean (~0.5s on a reused entry), so
+  its cost on the always-run lane is negligible.
 - **Escape hatch:** `./gradlew --dependency-verification off …` (or `lenient`) bypasses
   enforcement for one invocation when debugging.
 - **Rebases:** a manual `@dependabot rebase` drops the bot's ledger commit; the resulting
   synchronize event re-fires the regen workflow, so it self-heals.
 - **Ledger hygiene:** `--write-verification-metadata` appends; entries for dropped versions are
-  not pruned automatically. Occasionally regenerate from an empty file to compact it.
+  not pruned automatically. Occasionally regenerate from an empty file to compact it — but the
+  generator does **not** reconstruct the `<configuration>` block, so compacting drops the
+  `<trusted-artifacts>` rules above and breaks IDE sync again. Preserve that block by hand.
 - **Tasks outside the CI graph** (e.g. `make benchmark-check`) may resolve artifacts the ledger
   misses. Fix is always the same: `make verification-metadata` (extend the target's task list if
   a lane becomes permanent).

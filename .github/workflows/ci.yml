@@ -40,6 +40,12 @@ jobs:
         id: spotless-check
         run: ./gradlew spotlessCheck
 
+      # Lives here because this lane always runs and already has Gradle set up. Guards the one
+      # verification gap CI is otherwise blind to: artifacts only Android Studio's sync resolves.
+      # Without it a stale ledger is invisible until a human hits it in the IDE (ADR 0007).
+      - name: Verify IDE-sync artifacts are covered by the ledger
+        run: ./gradlew ideSyncArtifacts
+
       - name: Format Fix Hint
         if: always() && steps.spotless-check.outcome == 'failure'
         run: |
