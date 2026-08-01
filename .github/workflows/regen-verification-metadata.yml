@@ -82,6 +82,50 @@ jobs:
         if: steps.guard.outputs.skip != 'true'
         run: chmod +x gradlew
 
+      # A version bump almost always shifts :app's release runtime classpath, so
+      # dependency-guard's committed baseline goes stale on the very commit that makes the ledger
+      # stale. `make verification-metadata` runs :app:dependencyGuard, which *fails* on any
+      # baseline drift - so without re-baselining first the regen step dies, the push step is
+      # skipped, and neither file is ever updated. That deadlocked #123, #124 and #127: the one
+      # workflow built to unblock Dependabot could not run to completion on any of them.
+      #
+      # --write-verification-metadata is what makes this step possible at all: in write mode
+      # Gradle records checksums instead of enforcing them, so the bump's not-yet-listed
+      # artifacts don't block the very resolution needed to list them.
+      - name: Re-baseline dependency guard
+        if: steps.guard.outputs.skip != 'true'
+        run: |
+          cp app/dependencies/releaseRuntimeClasspath.txt "$RUNNER_TEMP/guard-before.txt"
+          ./gradlew --write-verification-metadata sha256 --no-configuration-cache \
+            "-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8" \
+            :app:dependencyGuardBaseline
+
+      # dependency-guard exists to make any change to the shipped dependency graph a *reviewed*
+      # decision, and patch/minor Dependabot PRs auto-merge unread - so re-baselining
+      # unconditionally would silently disable the control for exactly the PRs it guards.
+      # Version-only drift (same coordinates, new versions) is what a bump legitimately does and
+      # is already under review as the bump itself. A coordinate appearing or disappearing is a
+      # new or dropped transitive dependency - the signal the guard is actually for - so that
+      # stops here, red, and the auto-merge never resolves.
+      - name: Fail if the bump added or removed a coordinate
+        if: steps.guard.outputs.skip != 'true'
+        run: |
+          coords() { sed 's/:[^:]*$//' "$1" | sort -u; }
+          if ! delta=$(diff <(coords "$RUNNER_TEMP/guard-before.txt") \
+                            <(coords app/dependencies/releaseRuntimeClasspath.txt)); then
+            echo "::error::This bump adds or removes dependency coordinates, not just versions."
+            echo "$delta"
+            echo
+            echo "Review that transitive-graph change by hand. To accept it, re-baseline on the"
+            echo "branch and push - note that plain 'make dependency-guard-baseline' will NOT work"
+            echo "here, because the bump's artifacts aren't in the ledger yet and verification"
+            echo "blocks every Gradle invocation until they are:"
+            echo "  ./gradlew --dependency-verification off :app:dependencyGuardBaseline"
+            echo "Once the coordinate sets match again, this workflow re-runs and finishes the job."
+            exit 1
+          fi
+          echo "Release classpath drift is version-only - safe to re-baseline automatically."
+
       # Strict on purpose (no continue-on-error): if the task graph fails, the bump needs a
       # human anyway, and committing a partially-resolved ledger would only mask that.
       - name: Regenerate verification metadata
@@ -93,7 +137,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add gradle/verification-metadata.xml
+          git add gradle/verification-metadata.xml app/dependencies/releaseRuntimeClasspath.txt
           if git diff --cached --quiet; then
             echo "Ledger already current - nothing to commit."
           else
