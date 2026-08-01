@@ -147,7 +147,7 @@ tracing-perfetto = { module = "androidx.tracing:tracing-perfetto", version.ref =
 tracing-perfetto-binary = { module = "androidx.tracing:tracing-perfetto-binary", version.ref = "androidx-tracing" }
 
 # MISC
-material = "com.google.android.material:material:1.13.0"
+material = "com.google.android.material:material:1.14.0"
 androidPlayCore = "com.google.android.play:feature-delivery:2.1.0"
 androidPlayCoreKtx = "com.google.android.play:feature-delivery-ktx:2.1.0"
 javax-inject = "javax.inject:javax.inject:1"
