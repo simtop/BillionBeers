@@ -149,6 +149,42 @@ both wrong and a policy risk.
 
 After editing any text file, run `scripts/play-listing.sh check`.
 
+## Making them marketable
+
+A raw capture shows the UI; a store frame sells the app. `scripts/store-frames.sh` wraps each
+capture in the layout polished listings use - a headline on the brand gradient, with the screen
+in a device mockup below:
+
+```bash
+make store-frames                 # en-US
+make store-frames LOCALE=fr-FR    # any locale that has captions + captures
+```
+
+Headlines live in `fastlane/metadata/android/<locale>/framing-captions.tsv`, one
+`filename<TAB>headline` row per screenshot (`<br>` forces a line break). They sit beside the rest
+of that locale's listing copy on purpose: adding a language is the same move as for any other
+store text, and the layout is shared rather than duplicated per locale.
+
+Output goes to `images/phoneScreenshotsFramed/`, beside the raw captures rather than replacing
+them. **Which set goes where is decided (2026-08-01):**
+
+| Surface | Set | Why |
+|---|---|---|
+| Play Store listing | **framed** (`phoneScreenshotsFramed/`) | A storefront competes for a thumb-scroll. The headline sells before anyone reads the description, and the first 2-3 shots appear in search results, where a bare screenshot reads as an unfinished listing. |
+| README Visual Tour | **raw** (`phoneScreenshots/`) | Documentation. A reader wants the actual UI, not marketing furniture around it. |
+
+So keep both sets. Play accepts only one, so never upload them together, and never delete the raw
+set in favour of the framed one — the README renders it.
+
+Rendering is headless Chrome over generated HTML, chosen because it needs no image library and
+gives real control over gradients and type. The palette is lifted from
+`core/designsystem/.../theme/Color.kt`, so reskinning the app means updating three constants at
+the top of the script.
+
+Writing headlines: say what the user gets, not what the screen is called. "Find any beer as you
+type" beats "Search screen". Keep them to two short lines - the frame gives you roughly 40
+characters per line before the type has to shrink.
+
 ## Validating
 
 ```bash
