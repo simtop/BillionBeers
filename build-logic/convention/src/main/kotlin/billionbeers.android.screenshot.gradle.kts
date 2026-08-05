@@ -153,8 +153,13 @@ tasks.matching {
         ?.exclude("META-INF/services/com.simtop.billionbeers.snapshot_testing.PreviewProvider")
 }
 
+// UnitTest, not Test: the generated runner is a Paparazzi (JVM-only) test and belongs solely to the
+// unit-test compilation. Matching "Test" also matched compileDebugAndroidTestKotlin, which fed the
+// generated file into the *instrumented* compile - where Paparazzi is not on the classpath. That was
+// latent only because no screenshot-enabled module had an androidTest source set; the first one to
+// add one failed with "Unresolved reference 'Paparazzi'" before this task had any chance to run.
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-    if (name.contains("Test", ignoreCase = true)) {
+    if (name.contains("UnitTest", ignoreCase = true)) {
         source(generatePaparazziTest)
     }
 }

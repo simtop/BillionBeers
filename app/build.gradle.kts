@@ -29,6 +29,11 @@ android {
   namespace = "com.simtop.billionbeers"
   dynamicFeatures += setOf(":feature:beerdetail", ":feature:beerbrowse")
 
+  // Opt up from the shared default (androidx.test.runner.AndroidJUnitRunner). MockTestRunner
+  // substitutes BillionBeersApplication so the instrumented tests can swap in the fake Metro graph
+  // - it lives in this module's androidTest source set, so only this module can name it.
+  defaultConfig { testInstrumentationRunner = "com.simtop.billionbeers.di.MockTestRunner" }
+
   packaging {
     resources {
       excludes += "META-INF/versions/9/module-info.class"
