@@ -5,13 +5,7 @@ plugins {
   id("billionbeers.android.managed.device")
 }
 
-android {
-  namespace = "com.simtop.beer_database"
-  // The shared convention points every module at the app's MockTestRunner (Metro/mockk graph),
-  // which doesn't exist here. This module's instrumented tests are plain Room migration checks, so
-  // use the stock runner.
-  defaultConfig { testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner" }
-}
+android { namespace = "com.simtop.beer_database" }
 
 dependencies {
   implementation(project(":core"))

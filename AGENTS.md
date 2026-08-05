@@ -154,6 +154,23 @@ is re-run. Not an app bug.
 **Gotcha: `installDebug` is broken** by a duplicate PreviewProvider service entry — install the
 split APKs with `adb install-multiple` (the `billionbeers-android` skill handles this).
 
+**Adding `androidTest` to a module: two traps, both now fixed in build-logic.** Recorded because
+the symptoms point away from the cause. (1) The screenshot convention used to feed its generated
+Paparazzi runner into *every* compile task matching `"Test"`, including
+`compileDebugAndroidTestKotlin` — so the first screenshot-enabled module to gain an androidTest
+source set failed with `Unresolved reference 'Paparazzi'` in a file it never wrote. The filter now
+matches `"UnitTest"`. (2) `PROJECT_TEST_RUNNER` used to name `MockTestRunner`, which lives in
+`app/src/androidTest` — every other module built a test APK referencing a class it did not contain
+and died on device with `ClassNotFoundException`. The default is now the stock
+`AndroidJUnitRunner`; `:app` opts up in its own build script. A module that needs a custom runner
+sets it in its own `android { defaultConfig { … } }`, which overrides the convention.
+
+**Instrumented tests are opt-in per module.** A module needs
+`id("billionbeers.android.managed.device")` for `atdApi35DebugAndroidTest` to exist and for CI's
+`ciGroupDebugAndroidTest` to pick it up. Without it the tests compile and never run — the
+`:konsist:test` failure mode. Today `:app`, `:beer_database` and `:benchmark:microbenchmark` are
+opted in.
+
 ---
 
 ## 6. Build & development commands
