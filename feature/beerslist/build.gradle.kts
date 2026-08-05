@@ -1,6 +1,7 @@
 plugins {
   id("billionbeers.android.feature")
   id("billionbeers.android.screenshot")
+  id("billionbeers.android.feature.uitest")
 }
 
 android { namespace = "com.simtop.feature.beerslist" }

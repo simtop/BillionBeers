@@ -82,6 +82,9 @@ roomGradlePlugin = { module = "androidx.room:room-gradle-plugin", version.ref = 
 
 # Compose (managed by BOM)
 androidxComposeBom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+# Versionless on purpose - both come from the Compose BOM above.
+androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidxActivityCompose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-foundation-android = { group = "androidx.compose.foundation", name = "foundation-android" }
 androidx-runtime-retain = { group = "androidx.compose.runtime", name = "runtime-retain" }
