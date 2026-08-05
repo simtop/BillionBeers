@@ -73,8 +73,8 @@ dependencies {
   testImplementation(libs.striktCore)
   androidTestImplementation(libs.striktCore)
 
-  androidTestImplementation("androidx.compose.ui:ui-test-junit4")
-  debugImplementation("androidx.compose.ui:ui-test-manifest")
+  androidTestImplementation(libs.androidx.ui.test.junit4)
+  debugImplementation(libs.androidx.ui.test.manifest)
 
   androidTestImplementation(libs.roomRuntime)
 }

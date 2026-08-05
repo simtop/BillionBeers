@@ -60,7 +60,7 @@ when they get in the way. (`:konsist`'s build-script rules skip `bin/` for this 
 
 ## 3. Invariants — break these and the build (or an instrumented test) breaks
 
-All nine are enforced by `:konsist`; the wording here is from the tests themselves.
+All ten are enforced by `:konsist`; the wording here is from the tests themselves.
 
 1. **Repository interfaces do not import data-layer types.** (`RepositoryBoundaryTest`)
 2. **Feature modules never depend on other feature modules** — `beerslist` ⊥ `beerdetail`, and so
@@ -88,6 +88,13 @@ All nine are enforced by `:konsist`; the wording here is from the tests themselv
 9. **Domain models are immutable** — no `var`, and no `val` holding a mutable collection
    (`MutableList`, `HashMap`, `Array`, …), which is the half that slips through review.
    (`DomainModelImmutabilityTest`.)
+
+10. **A module with `src/androidTest/` opts into the managed device** — via
+    `billionbeers.android.feature.uitest` (feature modules) or `billionbeers.android.managed.device`
+    directly. Without it the module has no `atdApi35DebugAndroidTest` task and is absent from
+    `ciGroupDebugAndroidTest`, so its tests compile, look like coverage, and never run.
+    `:benchmark:*` is exempt — benchmarks use their own runner and real hardware, not the ATD lane.
+    (`InstrumentedTestOptInBoundaryTest` — reads the build scripts.)
 
 Every invariant in this list is now mechanically enforced. If you add one, add its rule in the
 same change — a convention with no test is a convention that drifts.
@@ -165,11 +172,14 @@ and died on device with `ClassNotFoundException`. The default is now the stock
 `AndroidJUnitRunner`; `:app` opts up in its own build script. A module that needs a custom runner
 sets it in its own `android { defaultConfig { … } }`, which overrides the convention.
 
-**Instrumented tests are opt-in per module.** A module needs
-`id("billionbeers.android.managed.device")` for `atdApi35DebugAndroidTest` to exist and for CI's
-`ciGroupDebugAndroidTest` to pick it up. Without it the tests compile and never run — the
-`:konsist:test` failure mode. Today `:app`, `:beer_database` and `:benchmark:microbenchmark` are
-opted in.
+**Instrumented tests are opt-in per module.** A module needs `billionbeers.android.managed.device`
+— directly, or via `billionbeers.android.feature.uitest` — for `atdApi35DebugAndroidTest` to exist
+and for CI's `ciGroupDebugAndroidTest` to pick it up. Without it the tests compile and never run,
+the `:konsist:test` failure mode; invariant 10 now enforces this. Opted in today: `:app`,
+`:beer_database`, `:feature:beerslist`. `:benchmark:microbenchmark` has `androidTest` sources but is
+*deliberately* out — it declares `AndroidBenchmarkRunner`, builds against
+`testBuildType = "release"`, and suppresses the `EMULATOR` error class, because a measurement taken
+on a managed virtual device is meaningless. It runs via `make benchmark-check`.
 
 ---
 
