@@ -42,6 +42,7 @@ tooling rather than by memory, and deviations need a written reason.
 | `:navigation` | Nav keys / typed routes shared across features |
 | `:konsist` | The architecture rules. Pure JVM — see the gotcha in §5 |
 | `:testing-utils` | Pure-JVM shared test helpers |
+| `:testing-utils-android` | `BaseTestRobot` — the shared instrumented-test robot base, consumed by `:app` and by every feature module in the UI-test tier (ADR 0009) |
 | `:snapshot-testing`, `:snapshot-processor` | Paparazzi harness + KSP generation of screenshot tests from previews |
 | `:catalog`, `:catalog-annotations`, `:catalog-processor` | Demo/component catalog app + its KSP generator |
 | `:benchmark:{macrobenchmark,microbenchmark,baselineprofile}` | Perf budgets and baseline profile generation |
@@ -113,6 +114,7 @@ same change — a convention with no test is a convention that drifts.
 | CI supply-chain hardening: Actions SHA-pinned, gitleaks on PR ranges | `docs/adr/0006` |
 | Dependency verification enforced; `make verification-metadata` regenerates the ledger, and a CI workflow does it on Dependabot branches so auto-merge survives — it re-baselines dependency-guard first (else the regen aborts on stale-baseline drift), but only when the drift is version-only | `docs/adr/0007` |
 | Per-lane CI test selection: a lane runs if the push could affect it or it was red last time, else it adopts the green verdict. Rules live in one function in `.github/scripts/detect-change-scope.sh` | `docs/adr/0008` |
+| Instrumented UI tests live in the feature module that owns the screen; cross-feature and install-gate tests stay in `:app`. Cost is ~49s per *module* vs ~2s per *test*, so concentrate tests and add modules deliberately | `docs/adr/0009` |
 
 Also settled, without an ADR:
 
