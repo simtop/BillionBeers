@@ -30,6 +30,8 @@ import org.junit.jupiter.api.Test
 import strikt.api.expectThat
 import strikt.assertions.isA
 import strikt.assertions.isEqualTo
+import strikt.assertions.isFalse
+import strikt.assertions.isTrue
 
 @ExperimentalCoroutinesApi
 class BrowseBeersViewModelTest {
@@ -143,6 +145,62 @@ class BrowseBeersViewModelTest {
           cancelAndIgnoreRemainingEvents()
         }
         expectThat(awaitItem()).isEqualTo(BrowseBeersEvent.ShowLoadMoreError)
+      }
+    }
+
+  @Test
+  fun `a first-page reload keeps the list under the refresh indicator`() =
+    runTest(testDispatcher) {
+      val viewModel = buildViewModel()
+
+      viewModel.viewState.test {
+        runCurrent()
+        val pager = fakeFactory.searchPagers.last()
+        pager.setData(listOf(Beer.empty.copy(id = "1")))
+        pager.setPagingState(PagingState.Success())
+        runCurrent()
+
+        viewModel.onRetryFirstPage()
+        pager.setPagingState(PagingState.Loading)
+        runCurrent()
+
+        val refreshing = expectMostRecentItem()
+        val model = (refreshing as CommonUiState.Success).data
+        expectThat(model.isRefreshing).isTrue()
+        expectThat(model.items.map { it.id }).isEqualTo(listOf("1"))
+        // Two loads: the one from init, plus this refresh.
+        expectThat(pager.loadFirstPageCallCount).isEqualTo(2)
+        cancelAndIgnoreRemainingEvents()
+      }
+    }
+
+  // A failed refresh keeps the list on screen with no retry footer - the toast is the feedback and
+  // pulling again is the retry, matching the catalog screen.
+  @Test
+  fun `a failed refresh keeps the list, hides the footer and emits a one-shot refresh error`() =
+    runTest(testDispatcher) {
+      val viewModel = buildViewModel()
+
+      viewModel.events.test {
+        viewModel.viewState.test {
+          runCurrent()
+          val pager = fakeFactory.searchPagers.last()
+          pager.setData(listOf(Beer.empty.copy(id = "1")))
+          pager.setPagingState(PagingState.Success())
+          runCurrent()
+
+          viewModel.onRetryFirstPage()
+          pager.setPagingState(PagingState.Error(FetchBeersError.Network, isFirstPage = true))
+          runCurrent()
+
+          val state = expectMostRecentItem()
+          val model = (state as CommonUiState.Success).data
+          expectThat(model.items.map { it.id }).isEqualTo(listOf("1"))
+          expectThat(model.isRefreshing).isFalse()
+          expectThat(model.footer).isEqualTo(PagedListFooter.Hidden)
+          cancelAndIgnoreRemainingEvents()
+        }
+        expectThat(awaitItem()).isEqualTo(BrowseBeersEvent.ShowRefreshError)
       }
     }
 

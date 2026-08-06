@@ -11,6 +11,7 @@ import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.PagedListReducer
 import com.simtop.core.core.PagedListUiModel
 import com.simtop.core.core.PagingEvent
+import com.simtop.core.core.PagingState
 import com.simtop.feature.beerbrowse.presentation.di.FeatureBrowseScope
 import com.simtop.presentation_utils.core.toErrorState
 import dev.zacsweers.metro.Assisted
@@ -81,6 +82,23 @@ constructor(
         }
       }
     }
+    observeRefreshFailures()
+  }
+
+  private fun observeRefreshFailures() {
+    viewModelScope.launch {
+      pager.pagingState.collect { pagingState ->
+        // A first-page failure with a list already on screen is a failed refresh: the reducer keeps
+        // the list, so the user's only feedback is this one-shot toast.
+        if (
+          pagingState is PagingState.Error &&
+            pagingState.isFirstPage &&
+            viewState.value is CommonUiState.Success
+        ) {
+          _events.trySend(BrowseBeersEvent.ShowRefreshError)
+        }
+      }
+    }
   }
 
   fun onScrollToBottom() {
@@ -91,7 +109,11 @@ constructor(
     viewModelScope.launch(coroutineDispatcher.io) { pager.loadNextPage() }
   }
 
-  /** Full-screen error retry: re-runs the first page of this selection. */
+  /**
+   * Re-runs the first page of this selection, for both callers that want one: the full-screen error
+   * retry, and pull-to-refresh. With a list already on screen the reducer turns this into the
+   * refresh spinner and keeps the items under it; a failure degrades to the one-shot toast.
+   */
   fun onRetryFirstPage() {
     viewModelScope.launch(coroutineDispatcher.io) { pager.loadFirstPage() }
   }
@@ -104,4 +126,6 @@ constructor(
 /** One-shot effects the browse beers screen consumes once. */
 sealed interface BrowseBeersEvent {
   data object ShowLoadMoreError : BrowseBeersEvent
+
+  data object ShowRefreshError : BrowseBeersEvent
 }
