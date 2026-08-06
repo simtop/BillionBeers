@@ -31,6 +31,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewParameter
@@ -52,6 +53,12 @@ import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import com.simtop.presentation_utils.custom_views.ComposeErrorView
 import com.simtop.presentation_utils.custom_views.pagedListFooter
 import dev.zacsweers.metrox.viewmodel.metroViewModel
+
+/**
+ * The search input, addressed by tag rather than by its placeholder so an instrumented test does
+ * not break when the hint copy changes. Same reasoning as `beer_list` on the catalog's list.
+ */
+const val SEARCH_FIELD_TAG = "search_field"
 
 @Composable
 fun BeersSearchScreen(
@@ -162,7 +169,7 @@ private fun SearchField(query: String, onQueryChange: (String) -> Unit, autoFocu
     onValueChange = onQueryChange,
     placeholder = { Text(stringResource(R.string.search_hint)) },
     singleLine = true,
-    modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
+    modifier = Modifier.fillMaxWidth().focusRequester(focusRequester).testTag(SEARCH_FIELD_TAG),
     colors =
       TextFieldDefaults.colors(
         focusedContainerColor = Color.Transparent,

@@ -50,6 +50,7 @@ dependencies {
   androidTestImplementation(project(":beerdomain:fakes"))
   testImplementation(project(":testing-utils"))
   androidTestImplementation(project(":testing-utils"))
+  androidTestImplementation(project(":testing-utils-android"))
   implementation(project(":feature:beerslist"))
   implementation(project(":feature:beersearch"))
   androidTestImplementation(project(":feature:beerdetail"))
