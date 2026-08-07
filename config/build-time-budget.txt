@@ -1,0 +1,44 @@
+# Build-time budgets, in seconds, keyed by gradle-profiler scenario id (see benchmark.scenarios).
+# Checked by scripts/check-build-budget.sh via `make build-budget`. Raising a number here is a
+# deliberate, reviewable edit, exactly like lowering config/coverage-floor.txt.
+#
+# READ THIS BEFORE TREATING A FAILURE AS A REGRESSION.
+#
+# These are wall-clock seconds, so they are a property of the machine that measured them. The
+# reference machine is an Apple M1 Pro, 8 cores, 16 GB, macOS 26.5, JDK 24. A slower machine can
+# fail these without anything being wrong with the build. That is why:
+#
+#   1. Every budget is deliberately generous - roughly 3-4x the measured median, and comfortably
+#      above the worst of ten measured iterations. This mirrors scripts/check-benchmark-budget.sh,
+#      which budgets 3000ms against an ~890ms measurement and says why in its own comment. The
+#      point is to catch a multi-x regression, not to defend a stopwatch.
+#   2. The `ratio` line below is the machine-independent half, and the one worth arguing from.
+#      Two scenarios measured on the same machine in the same run cancel out the hardware.
+#
+# Baseline measured 2026-08-07, 6 warm-ups + 10 iterations (ADR 0011 has the full table):
+#
+#   scenario            median    min     max   spread
+#   clean_build_cold      37.3   29.7    59.3      79%
+#   clean_build_warm       4.3    2.5    11.5     207%
+#   incremental_leaf       2.3    1.8     3.7      81%
+#   incremental_deep       2.5    2.0     3.4      58%
+#   unit_tests             5.6    4.9     6.6      32%
+
+clean_build_cold  120
+clean_build_warm   20
+incremental_leaf   10
+incremental_deep   10
+unit_tests         20
+
+# The modularization guard, and the only line here that survives a change of hardware.
+#
+# Measured at 1.11x: an ABI change to `Beer` in `:beerdomain:api` (ten dependent modules) costs
+# essentially the same as one to `MainActivity` in `:app` (no dependents). At ~2.4s per build, both
+# are dominated by Gradle's fixed per-build overhead rather than by compilation, so the fan-out is
+# not what you are paying for.
+#
+# The limit is 3x rather than something near 1.11x on purpose: the ratio of two small, noisy numbers
+# is itself noisy, and this is a guard against incremental compilation breaking across module
+# boundaries - the failure where a deep change starts recompiling the world. If it ever trips,
+# the question is "what stopped being incremental", not "which module got slower".
+ratio incremental_deep incremental_leaf 3.0

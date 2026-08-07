@@ -116,6 +116,7 @@ same change — a convention with no test is a convention that drifts.
 | Per-lane CI test selection: a lane runs if the push could affect it or it was red last time, else it adopts the green verdict. Rules live in one function in `.github/scripts/detect-change-scope.sh` | `docs/adr/0008` |
 | Instrumented UI tests live in the feature module that owns the screen; cross-feature and install-gate tests stay in `:app`. Cost is ~49s per *module* vs ~2s per *test*, so concentrate tests and add modules deliberately | `docs/adr/0009` |
 | **Non-goals** — auth, cert pinning, encrypted storage, integrity/anti-tamper, push, server-side `available` sync, a shipped analytics/crash SDK, consent flows, automatic retry, multi-process. All declined because the premise is absent (the backend isn't ours, is read-only, and is unauthenticated), each with its reopen trigger. Read it before "adding what a real app has" — and delete a row in the same PR that builds it | `docs/adr/0010` |
+| Build time is budgeted in `config/build-time-budget.txt` and measured **locally** by `make build-budget`, never in CI — a CI wall-clock number measures which runner the job drew. Clean build 37s cold / 4s warm; a deep ABI change costs only 1.11x a leaf one, so **per-build overhead dominates, not compilation** — do not justify a new module by build speed | `docs/adr/0011` |
 
 Also settled, without an ADR:
 
@@ -149,6 +150,12 @@ declaring done.
    fails CI with `MissingTranslation` — that is how PR #140 broke master.
 6. **Device** — instrumented tests, install, logcat: use the `billionbeers-android` skill, not
    ad-hoc `adb`
+
+**Off the ladder, on purpose: `make build-budget` and `make benchmark-check`.** Both measure
+wall-clock, so both are local-and-deliberate rather than per-change gates — CI cannot control for
+hardware (ADR 0009 §"Note on measuring any of this", ADR 0011). Run `build-budget` when you change
+the build itself: a convention plugin, an annotation processor, the module graph. It takes 15–20
+minutes and it measures *your* machine, so close anything heavy first.
 
 **CI note: heavy lanes skip per-lane on PR pushes.** A push to an open PR reruns only the test
 lanes its diff can affect (goldens and `screenshot/` test folders → screenshot; `src/androidTest/`

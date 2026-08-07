@@ -165,6 +165,12 @@ Reinforced by:
   a deliberate absence never has to be mistaken for an oversight.
 - **Dev-app sandboxes** — `app-dev-<feature>` modules build a single feature against fakes for fast
   iteration (`make new-dev-app`).
+- **A budget on the build itself, not just the app** — `make build-budget` measures clean,
+  incremental and test builds with gradle-profiler and checks them against
+  `config/build-time-budget.txt`. Clean build is 37s cold and 4s warm; a deep ABI change costs
+  1.11x a leaf one, which says per-build overhead dominates and further module splitting would not
+  make builds faster. It runs locally, never in CI, because a CI wall-clock number mostly measures
+  which runner the job drew. See [ADR 0011](docs/adr/0011-build-time-budget.md).
 - **CI that runs only what a change can break** — a push to a PR reruns the test lanes its diff can
   affect, plus any lane that was red on the previous head; unaffected green lanes adopt their
   previous verdict, and a docs-only PR skips the heavy lanes entirely. The rules live in one

@@ -1,13 +1,57 @@
-clean_build {
+// Gradle Profiler scenarios — the build-time equivalent of the macrobenchmark budgets.
+//
+// Run one with `make gradle-benchmark SCENARIO=<name>`, or the whole committed set with
+// `make build-budget` (which also checks the results against config/build-time-budget.txt).
+//
+// Two things these scenarios are careful about, because the obvious version of each is wrong:
+//
+// 1. `clean` does NOT produce a cold build. It deletes the build directory; it leaves the build
+//    cache (~/.gradle/caches/build-cache-1, 1.4G here) and the configuration cache
+//    (.gradle/configuration-cache) fully warm. So "clean build" is two different measurements and
+//    they are split below. The cold one *disables* the caches rather than deleting them — deleting
+//    is slow, destructive, and unreproducible across machines, whereas the flags are neither.
+//
+// 2. An ABI change high in the graph is the cheapest possible incremental build, not a
+//    representative one. `MainActivity.kt` is in `:app`, which nothing depends on; `Beer` is in
+//    `:beerdomain:api`, which ten modules depend on. Both are measured, because the *ratio*
+//    between them is what the module split actually buys.
+
+// The fresh-clone / cold-CI number: no build cache, no configuration cache.
+// This is the pessimistic bound — nobody experiences it twice, but a regression here is a real
+// regression that the warm numbers can hide.
+clean_build_cold {
+    tasks = ["assembleDebug"]
+    cleanup-tasks = ["clean"]
+    gradle-args = ["--no-build-cache", "--no-configuration-cache"]
+}
+
+// What a developer actually gets after `make clean`: outputs gone, both caches warm.
+clean_build_warm {
     tasks = ["assembleDebug"]
     cleanup-tasks = ["clean"]
 }
 
-incremental_build {
+// ABI change at the top of the graph — `:app` has no dependents, so this recompiles almost
+// nothing. The best case, and the floor the deep number is compared against.
+incremental_leaf {
     tasks = ["assembleDebug"]
     apply-abi-change-to = "app/src/main/java/com/simtop/billionbeers/presentation/MainActivity.kt"
 }
 
+// ABI change at the bottom of the graph — `Beer` lives in `:beerdomain:api`, which ten modules
+// depend on. This is the number that answers "does the module split pay for itself": it should be
+// meaningfully worse than incremental_leaf, but far better than clean_build_warm. If it ever
+// approaches the clean number, incremental compilation has stopped working somewhere.
+incremental_deep {
+    tasks = ["assembleDebug"]
+    apply-abi-change-to = "beerdomain/api/src/main/java/com/simtop/beerdomain/domain/models/Beer.kt"
+}
+
+// Without a mutator this scenario measures nothing: `testDebugUnitTest` is up-to-date after the
+// warm-up, so every measured iteration would report Gradle's startup cost and no test execution.
+// A non-ABI change to a file that `BeersListViewModelTest` exercises forces the recompile-and-rerun
+// this is meant to time, without the full-graph recompile `--rerun-tasks` would drag in.
 unit_tests {
     tasks = ["testDebugUnitTest"]
+    apply-non-abi-change-to = "feature/beerslist/src/main/java/com/simtop/feature/beerslist/BeersListViewModel.kt"
 }
