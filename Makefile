@@ -1,6 +1,9 @@
 # Variables
 MODULE ?=
-SCENARIO ?= incremental_build
+SCENARIO ?= clean_build_warm
+# Warm-ups matter here: at 1 warm-up every scenario was still descending (ADR 0011).
+BUILD_BUDGET_WARMUPS ?= 6
+BUILD_BUDGET_ITERATIONS ?= 10
 NAME ?=
 PASCAL ?=
 FEATURE ?=
@@ -14,7 +17,7 @@ UI_TEST_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,:app:)
 # Wrapper for Gradle to support build-brief (bb) or rtk if available
 GRADLE_RUNNER := $(shell if command -v bb >/dev/null 2>&1; then echo "bb ./gradlew"; elif command -v build-brief >/dev/null 2>&1; then echo "build-brief --gradle ./gradlew"; elif command -v rtk >/dev/null 2>&1; then echo "rtk ./gradlew"; else echo "./gradlew"; fi)
 
-.PHONY: help setup setup-ai-tools update-android-skills build bundle-release install clean test konsist compose-metrics ui-test screenshot-record screenshot-verify screenshot-clean lint android-lint format check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline verification-metadata health benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark jacoco-report coverage-check install-profiler install-diffuse new-feature-module new-dev-app play-listing-check play-listing-capture play-listing-reset store-frames
+.PHONY: help setup setup-ai-tools update-android-skills build bundle-release install clean test konsist compose-metrics ui-test screenshot-record screenshot-verify screenshot-clean lint android-lint format check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline verification-metadata health benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark build-budget build-budget-check jacoco-report coverage-check install-profiler install-diffuse new-feature-module new-dev-app play-listing-check play-listing-capture play-listing-reset store-frames
 
 help: ## Show this help message.
 	@echo "\n📊 BillionBeers Makefile Help"
@@ -25,7 +28,7 @@ help: ## Show this help message.
 	@echo "  make setup"
 	@echo "  make test MODULE=:feature:beerslist"
 	@echo "  make screenshot-record MODULE=:core:designsystem"
-	@echo "  make gradle-benchmark SCENARIO=clean_build"
+	@echo "  make gradle-benchmark SCENARIO=clean_build_warm"
 
 setup: ## Setup local development environment (Git hooks, Git LFS, etc.).
 	@echo "🔧 Setting up local development environment..."
@@ -206,8 +209,21 @@ benchmark-check: ## Run macrobenchmarks and fail if results exceed the configure
 generate-baseline: ## Generate Baseline Profiles for the app (needs a booted device/emulator).
 	$(GRADLE_RUNNER) :app:generateBaselineProfile
 
-gradle-benchmark: ## Run Gradle Profiler with a specific scenario. Usage: make gradle-benchmark SCENARIO=clean_build
+gradle-benchmark: ## Run Gradle Profiler with a specific scenario. Usage: make gradle-benchmark SCENARIO=clean_build_warm
 	gradle-profiler --benchmark --scenario-file ./benchmark.scenarios $(SCENARIO)
+
+build-budget: ## Measure build times and check them against config/build-time-budget.txt. Local only - see ADR 0011.
+	@command -v gradle-profiler >/dev/null 2>&1 || \
+		{ echo "❌ gradle-profiler not found. Install it with 'brew install gradle-profiler'." >&2; exit 1; }
+	@echo "⏱  Measuring build times (~15-20 min). Close other heavy processes - this measures your machine."
+	@rm -rf profile-out/baseline
+	gradle-profiler --benchmark --scenario-file ./benchmark.scenarios \
+		--warmups $(BUILD_BUDGET_WARMUPS) --iterations $(BUILD_BUDGET_ITERATIONS) \
+		--output-dir profile-out/baseline
+	@bash scripts/check-build-budget.sh profile-out/baseline/benchmark.csv
+
+build-budget-check: ## Re-check the last build-budget measurement without re-measuring.
+	@bash scripts/check-build-budget.sh profile-out/baseline/benchmark.csv
 
 # Reporting
 jacoco-report: ## Generate the unified Jacoco coverage report.
