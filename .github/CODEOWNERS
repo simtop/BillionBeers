@@ -1,0 +1,44 @@
+# Code owners.
+#
+# ⚠️ THIS FILE IS ADVISORY, AND MUST STAY THAT WAY WHILE AUTO-MERGE IS IN USE.
+#
+# CODEOWNERS on its own blocks nothing. It becomes a merge gate only if branch protection on
+# `master` enables required pull-request reviews *with* "Require review from Code Owners". Today
+# `master` requires no approvals at all - only the `CI Gate` status check - so the Dependabot
+# auto-merge workflow (`gh pr merge --auto --squash`, .github/workflows/dependabot-auto-merge.yml)
+# waits on CI and nothing else.
+#
+# Turning on required code-owner reviews would stop every Dependabot PR dead, because the bot
+# cannot approve its own PR and no other reviewer exists. If review enforcement is ever wanted,
+# either exempt Dependabot or retire the auto-merge workflow in the same change - not after.
+#
+# Known, accepted side effect: GitHub auto-requests review from the owners below on any PR whose
+# author is not an owner, which means one review request per Dependabot PR. Noise, not a block.
+#
+# Syntax: last matching pattern wins, so the catch-all goes first.
+
+*                               @simtop
+
+# The parts where a mistake is expensive and silent, listed so they are never "just a small diff".
+
+# Build logic: a convention plugin change lands in every module at once, and two of this repo's
+# nastiest bugs came from here (ADR 0009 records both - a generated Paparazzi runner leaking into
+# androidTest, and a test runner naming a class only :app contained).
+/build-logic/                   @simtop
+/gradle/libs.versions.toml      @simtop
+
+# Supply chain: the dependency ledger and the resolved-graph baseline. A careless regeneration here
+# is how checksum verification silently stops meaning anything (ADR 0006, ADR 0007).
+/gradle/verification-metadata.xml   @simtop
+/app/dependencies/              @simtop
+
+# CI, and the one function that decides which lanes a push runs (ADR 0008).
+/.github/                       @simtop
+
+# The rules and the record. Changing an invariant should never be incidental to another change.
+/konsist/                       @simtop
+/docs/adr/                      @simtop
+
+# The committed thresholds. Lowering one is meant to be a visible, reviewed decision - that is the
+# entire mechanism (ADR 0011 for build time, coverage-floor for tests).
+/config/                        @simtop
