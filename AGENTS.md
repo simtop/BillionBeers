@@ -140,7 +140,11 @@ declaring done.
 3. **Architecture** — `make konsist`
 4. **Screenshots** — `make screenshot-verify` (record with `make screenshot-record` and inspect the
    PNGs; they are your eyes on the UI)
-5. **Lint / format** — `make lint`, `make format`
+5. **Lint / format** — `make lint`, `make format`, and **`make android-lint` whenever resources
+   change**. `make lint` is Detekt only; the Android Lint gate CI runs is `make android-lint`
+   (`:app:lintDebug`, checkDependencies across the whole graph). A string added to
+   `values/strings.xml` without its `values-fr` / `values-es` siblings passes every other rung and
+   fails CI with `MissingTranslation` — that is how PR #140 broke master.
 6. **Device** — instrumented tests, install, logcat: use the `billionbeers-android` skill, not
    ad-hoc `adb`
 
