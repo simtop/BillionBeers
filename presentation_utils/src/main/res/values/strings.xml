@@ -5,6 +5,7 @@
     <string name="emergency_emergency_we_run_out_of_this_beer">EMERGENCY!!\nEMERGENCY!!\nWE RUN OUT OF THIS BEER</string>
     <string name="retry">Retry</string>
     <string name="paged_list_load_more_failed">Couldn\'t load more beers</string>
+    <string name="paged_list_refresh_failed">Couldn\'t refresh</string>
     <string name="empty_state">Empty State</string>
     <string name="abv_chip">ABV: %1$s%%</string>
     <string name="ibu_chip">IBU: %1$s</string>

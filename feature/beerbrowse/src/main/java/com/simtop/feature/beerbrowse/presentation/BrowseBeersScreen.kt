@@ -17,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -63,12 +64,15 @@ internal fun BrowseBeersScreen(
   val context = LocalContext.current
   val lifecycleOwner = LocalLifecycleOwner.current
   val loadMoreFailedMessage = stringResource(R.string.paged_list_load_more_failed)
+  val refreshFailedMessage = stringResource(R.string.paged_list_refresh_failed)
 
   LaunchedEffect(viewModel, lifecycleOwner) {
     lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
       viewModel.events.collect { event ->
         when (event) {
           BrowseBeersEvent.ShowLoadMoreError -> showToast(context, loadMoreFailedMessage)
+          // A failed refresh keeps the list; pulling again is the retry.
+          BrowseBeersEvent.ShowRefreshError -> showToast(context, refreshFailedMessage)
         }
       }
     }
@@ -94,6 +98,7 @@ internal fun BrowseBeersContent(
   onBeerClick: (Beer) -> Unit,
   onScrollToBottom: () -> Unit,
   onRetryLoadMore: () -> Unit,
+  // Serves both first-page reloads: the full-screen error retry and the pull-to-refresh gesture.
   onRetryFirstPage: () -> Unit,
 ) {
   Scaffold(
@@ -128,6 +133,7 @@ internal fun BrowseBeersContent(
               model = state.data,
               onBeerClick = onBeerClick,
               onScrollToBottom = onScrollToBottom,
+              onRefresh = onRetryFirstPage,
               onRetryLoadMore = onRetryLoadMore,
             )
           }
@@ -141,37 +147,41 @@ private fun BrowseBeersResults(
   model: PagedListUiModel<Beer>,
   onBeerClick: (Beer) -> Unit,
   onScrollToBottom: () -> Unit,
+  onRefresh: () -> Unit,
   onRetryLoadMore: () -> Unit,
 ) {
-  Column {
-    model.totalCount?.let { count ->
-      Text(
-        text = stringResource(R.string.browse_beers_count, count),
-        style = MaterialTheme.typography.labelLarge,
-        modifier =
-          Modifier.fillMaxWidth()
-            .padding(
-              horizontal = BillionBeersTheme.spacing.medium,
-              vertical = BillionBeersTheme.spacing.small,
-            ),
-      )
-    }
-
-    val listState = rememberLazyListState()
-    if (model.footer !is PagedListFooter.Retry) {
-      InfiniteListHandler(listState = listState, onLoadMore = onScrollToBottom)
-    }
-
-    val endOfListText = stringResource(R.string.browse_beers_end_of_list, model.items.size)
-    LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
-      items(model.items.size) { index ->
-        ComposeBeersListItem(beer = model.items[index], onClick = onBeerClick)
+  // The count header sits inside the box so it travels with the pull, as on the catalog screen.
+  PullToRefreshBox(isRefreshing = model.isRefreshing, onRefresh = onRefresh) {
+    Column {
+      model.totalCount?.let { count ->
+        Text(
+          text = stringResource(R.string.browse_beers_count, count),
+          style = MaterialTheme.typography.labelLarge,
+          modifier =
+            Modifier.fillMaxWidth()
+              .padding(
+                horizontal = BillionBeersTheme.spacing.medium,
+                vertical = BillionBeersTheme.spacing.small,
+              ),
+        )
       }
-      pagedListFooter(
-        model = model,
-        endOfListText = endOfListText,
-        onRetryLoadMore = onRetryLoadMore,
-      )
+
+      val listState = rememberLazyListState()
+      if (model.footer !is PagedListFooter.Retry) {
+        InfiniteListHandler(listState = listState, onLoadMore = onScrollToBottom)
+      }
+
+      val endOfListText = stringResource(R.string.browse_beers_end_of_list, model.items.size)
+      LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+        items(model.items.size) { index ->
+          ComposeBeersListItem(beer = model.items[index], onClick = onBeerClick)
+        }
+        pagedListFooter(
+          model = model,
+          endOfListText = endOfListText,
+          onRetryLoadMore = onRetryLoadMore,
+        )
+      }
     }
   }
 }
