@@ -93,7 +93,8 @@ instead of convention-enforced.
   mechanical, and rare compared to the per-method mirror tax.
 - **No universal seam:** policy 1 gives every operation a ready-made hook for cross-cutting
   behaviour (analytics, logging). Accepted: cross-cutting concerns belong in the observability
-  facade (`Logger`/`Analytics` seam, MASTER_PLAN Phase 3), not smeared across per-call wrappers.
+  facade (the `Logger`/`AnalyticsTracker` seam in `:core-common`), not smeared across per-call
+  wrappers.
 - **Onboarding nuance:** "always" is easier to teach than "iff". Accepted: the rule is one
   sentence, and Konsist turns violations of the underlying boundary into build failures rather
   than tribal knowledge.
