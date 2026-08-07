@@ -21,10 +21,24 @@ convention plugins meant a second module *could not* host instrumented tests at 
 
 Both are fixed (#137). The question this ADR settles is what to do with the possibility.
 
-Running an instrumented test from `:app` means assembling the whole application first — base
-module, both dynamic-feature splits, the 27-module graph behind them — before a single assertion
-executes. A test in `:feature:beersearch` needs three modules. Gradle's up-to-date checks and build
-cache then supply incrementality for free.
+Running an instrumented test from `:app` means assembling the whole application first — base module
+and both dynamic-feature splits — before a single assertion executes. A test in
+`:feature:beersearch` builds that module's own graph and nothing else. Gradle's up-to-date checks
+and build cache then supply incrementality for free.
+
+> **Correction, 2026-08-07.** This paragraph originally said "the 27-module graph behind them" and
+> "needs three modules". Both were wrong, and measured against
+> `./gradlew <project>:dependencies --configuration debugRuntimeClasspath` the real figures are
+> **16 and 9**: `:app`'s own closure is 13 projects, plus `:app` and the two dynamic features;
+> `:feature:beersearch` resolves 8 projects plus itself. So the gap is roughly 1.8x by module
+> count, not the 9x the old numbers implied.
+>
+> The decision is unaffected, because it never rested on those counts. The load-bearing evidence is
+> the profiling table below — ~49s of fixed per-module overhead against ~2s per test, measured on a
+> device rather than inferred from the graph. Module count is also a poor proxy for build cost:
+> `:app` additionally dexes, packages and bundles two splits, which `:feature:beersearch` does not,
+> and ADR 0011 later measured that fixed per-build overhead dominates compilation at this scale
+> anyway.
 
 ## Decision
 

@@ -97,6 +97,14 @@ All ten are enforced by `:konsist`; the wording here is from the tests themselve
     `:benchmark:*` is exempt — benchmarks use their own runner and real hardware, not the ATD lane.
     (`InstrumentedTestOptInBoundaryTest` — reads the build scripts.)
 
+11. **A `src/` directory has a build script beside it.** Otherwise nothing compiles, tests or ships
+    it, but a grep still finds it — the same failure mode as the stale `bin/` trees in §2. Note that
+    `./gradlew projects` is not proof a module is real: `:beerdomain`, `:feature` and `:benchmark`
+    appear there as containers Gradle synthesizes from nested includes, with no build script of
+    their own. (`OrphanedSourceTreeTest` — reads the filesystem. Caught
+    `beerdomain/src/main/AndroidManifest.xml` on adoption, orphaned when `:beerdomain` split into
+    `api`/`fakes`.)
+
 Every invariant in this list is now mechanically enforced. If you add one, add its rule in the
 same change — a convention with no test is a convention that drifts.
 
