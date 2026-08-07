@@ -115,17 +115,19 @@ same change — a convention with no test is a convention that drifts.
 | Dependency verification enforced; `make verification-metadata` regenerates the ledger, and a CI workflow does it on Dependabot branches so auto-merge survives — it re-baselines dependency-guard first (else the regen aborts on stale-baseline drift), but only when the drift is version-only | `docs/adr/0007` |
 | Per-lane CI test selection: a lane runs if the push could affect it or it was red last time, else it adopts the green verdict. Rules live in one function in `.github/scripts/detect-change-scope.sh` | `docs/adr/0008` |
 | Instrumented UI tests live in the feature module that owns the screen; cross-feature and install-gate tests stay in `:app`. Cost is ~49s per *module* vs ~2s per *test*, so concentrate tests and add modules deliberately | `docs/adr/0009` |
+| **Non-goals** — auth, cert pinning, encrypted storage, integrity/anti-tamper, push, server-side `available` sync, a shipped analytics/crash SDK, consent flows, automatic retry, multi-process. All declined because the premise is absent (the backend isn't ours, is read-only, and is unauthenticated), each with its reopen trigger. Read it before "adding what a real app has" — and delete a row in the same PR that builds it | `docs/adr/0010` |
 
 Also settled, without an ADR:
 
 - **Typed errors reuse `Either<L, R>` parameterized with a sealed error type** — the problem was
   `Either<Exception, T>`'s untyped left, not `Either`. No new `Result`/`Outcome` type.
-- **`available` is local-only** even though the API has the field. The backend isn't ours, so a
-  sync could only ever one-way-overwrite user edits. The server value seeds a row on first insert.
+- **`available` is local-only** even though the API has the field. The server value seeds a row on
+  first insert; nothing writes back. Now has an ADR — the reasoning and its reopen trigger live in
+  `docs/adr/0010`.
 - **The N+1 image fetch is gone** — list responses embed `image.url`. Don't reintroduce
   `GET /images/{id}`.
 - **Paging is complete and plug-and-play** (5 phases, 8/8 criteria). A new filtered surface needs a
-  wider `BeersQuery` and a screen — **not** `core-common` changes. Reference: `rod/PAGING_2_0.md`.
+  wider `BeersQuery` and a screen — **not** `core-common` changes.
 - **Mappers are injected classes, not objects**, so they're testable and swappable.
 
 ---
@@ -236,7 +238,9 @@ is vendored (each carries a `.android-skill-source` marker): `android-cli`, `nav
 ## 8. Docs & planning
 
 - **`docs/`** — committed, load-bearing docs only. `docs/adr/` is the decision record.
-- **`rod/`** — local-only notes and plans, gitignored as one folder rule. **It has no git history,
-  so deleting a file there is permanent.** `rod/July_Improvements.md` is the current consolidation
-  of open work; `rod/MASTER_PLAN.md` is the plan of record.
-- A doc that becomes load-bearing gets promoted from `rod/` to `docs/` and committed.
+- **Planning notes are local-only and gitignored**, so nothing in a clone points at them and no
+  committed file should cite one. **They also have no git history, so deleting one is permanent** —
+  never delete or overwrite a file in an ignored notes directory without being asked to.
+- Work that is decided but not built is described in `docs/adr/0010` as planned future work, not as
+  a pointer to a plan the reader cannot open.
+- A note that becomes load-bearing gets rewritten into `docs/` and committed.

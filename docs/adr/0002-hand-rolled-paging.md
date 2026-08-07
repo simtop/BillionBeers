@@ -80,7 +80,7 @@ entirely.
   DB-backed implementation for SSOT (the beers one upserts and never deletes, so the local-only
   `availability` field survives pull-to-refresh). Screens get their own instance from a factory
   (`BeersPagerFactory`), keeping paging state screen-scoped instead of living on the AppScope
-  repository (improvements.md §12.3). Because such a cache outlives any single pager (warm
+  repository. Because such a cache outlives any single pager (warm
   launches) and survives refresh (upsert, no delete), a storage-derived key
   (`nextKeyFromStorage`, e.g. `rowCount / pageSize + 1`) keeps the pager's position reconciled
   with the data. Note the scoping boundary: the pager *position* is screen-scoped, but the beers

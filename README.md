@@ -148,6 +148,7 @@ diagram that only lives in a README rots; these rules fail the build. They run a
 | No module applies `java-test-fixtures` — fixtures live in sibling `:fakes` modules (ADR 0001) | `TestFixturesPluginBoundaryTest` |
 | ViewModels never use `MutableSharedFlow` — it drops one-shot events when nothing is collecting | `OneShotEventBoundaryTest` |
 | Domain models are immutable — no `var`, and no `val` holding a mutable collection | `DomainModelImmutabilityTest` |
+| A module with `src/androidTest/` opts into the managed device — otherwise its tests compile, read as coverage, and never run | `InstrumentedTestOptInBoundaryTest` |
 
 Reinforced by:
 
@@ -157,8 +158,11 @@ Reinforced by:
   [ADR 0007](docs/adr/0007-gradle-dependency-verification.md).
 - **Convention plugins** — module setup lives in `build-logic`, so a new feature module is a plugin
   id and a namespace, not a copied 80-line build script.
-- **Decision record** — eight [ADRs](docs/adr/) covering the choices that are easy to second-guess:
-  no Paging3, no `java-test-fixtures`, no use-case layer.
+- **Decision record** — eleven [ADRs](docs/adr/) covering the choices that are easy to second-guess:
+  no Paging3, no `java-test-fixtures`, no use-case layer — and
+  [ADR 0010](docs/adr/0010-non-goals.md), which records the capabilities this project deliberately
+  *doesn't* have (auth, pinning, push, background sync) and the premise each one is waiting on, so
+  a deliberate absence never has to be mistaken for an oversight.
 - **Dev-app sandboxes** — `app-dev-<feature>` modules build a single feature against fakes for fast
   iteration (`make new-dev-app`).
 - **CI that runs only what a change can break** — a push to a PR reruns the test lanes its diff can
