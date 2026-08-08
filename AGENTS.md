@@ -224,7 +224,7 @@ sets it in its own `android { defaultConfig { … } }`, which overrides the conv
 — directly, or via `billionbeers.android.feature.uitest` — for `atdApi35DebugAndroidTest` to exist
 and for CI's `ciGroupDebugAndroidTest` to pick it up. Without it the tests compile and never run,
 the `:konsist:test` failure mode; invariant 10 now enforces this. Opted in today: `:app`,
-`:beer_database`, `:feature:beerslist`. `:benchmark:microbenchmark` has `androidTest` sources but is
+`:beer_database`, `:feature:beerslist`, `:feature:beersearch`. `:benchmark:microbenchmark` has `androidTest` sources but is
 *deliberately* out — it declares `AndroidBenchmarkRunner`, builds against
 `testBuildType = "release"`, and suppresses the `EMULATOR` error class, because a measurement taken
 on a managed virtual device is meaningless. It runs via `make benchmark-check`.

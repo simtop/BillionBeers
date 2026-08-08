@@ -185,6 +185,14 @@ fun BeersListContent(
     AnimatedContent(
       targetState = viewState,
       label = "ScreenStateAnimation",
+      // Keyed by *which* state, not by its contents. AnimatedContent wraps each content in a
+      // `key(contentKey(state))`, and the default contentKey is the state itself - so every
+      // appended page, being an `equals`-different CommonUiState.Success, replaced the group
+      // holding `rememberLazyListState()` and dropped the user back at the top of the catalog
+      // (and crossfaded the whole list on the way). Measured, not reasoned:
+      // BeersListStateRestorationUiTest.theScrollPositionSurvivesANewPageArriving found only
+      // items 0-6 composed after a page arrived at scroll position 39.
+      contentKey = { state -> state::class },
       transitionSpec = {
         fadeIn(animationSpec = tween(animationDurationMs)) togetherWith
           fadeOut(animationSpec = tween(animationDurationMs))
