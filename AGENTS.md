@@ -61,7 +61,7 @@ when they get in the way. (`:konsist`'s build-script rules skip `bin/` for this 
 
 ## 3. Invariants — break these and the build (or an instrumented test) breaks
 
-All ten are enforced by `:konsist`; the wording here is from the tests themselves.
+All thirteen are enforced by `:konsist`; the wording here is from the tests themselves.
 
 1. **Repository interfaces do not import data-layer types.** (`RepositoryBoundaryTest`)
 2. **Feature modules never depend on other feature modules** — `beerslist` ⊥ `beerdetail`, and so
@@ -115,8 +115,22 @@ All ten are enforced by `:konsist`; the wording here is from the tests themselve
     `:benchmark:*`, `testing-utils*` and `build-logic` are exempt — for them a test library on
     `implementation` is correct. (`TestLibraryBoundaryTest` — reads the catalog and build scripts.)
 
+13. **Feature modules never declare a data-layer module.** No `feature/*` build script may name
+    `:beer_data`, `:beer_database` or `:beer_network`; a feature reaches persistence and the network
+    through the `:beerdomain:api` repository interfaces, whose implementations `:app` binds. This is
+    the edge the neighbouring rules leave open: invariant 2 reads *imports* and only for the
+    beerslist/beerdetail pair, invariant 4 fires only when a **ViewModel** imports a data type (a
+    mapper or composable in the same module passes), and invariant 6 covers `app-dev-*` only. So
+    the dependency could be declared and used with nothing firing. `:app` is exempt — assembling the
+    graph is its job. (`FeatureDataLayerBoundaryTest` — reads the build scripts.)
+
 Every invariant in this list is now mechanically enforced. If you add one, add its rule in the
 same change — a convention with no test is a convention that drifts.
+
+**`:konsist:test` declares the repo's `.kt`/`.kts` files as task inputs, and must keep doing so.**
+The rules read the project off the filesystem, which Gradle cannot see, so without that declaration
+the task goes UP-TO-DATE while the code it guards changes — measured, a flat invariant-2 violation
+left `make konsist` green at "3 up-to-date". The whole gate, not one rule.
 
 ---
 
