@@ -118,6 +118,25 @@ upstream of any coroutine. Fixed by resolving the path from `applicationInfo.dat
 no syscall) and letting OkHttp create the directory lazily on its own dispatcher; verified on an
 emulator as two violations per launch before and zero after, with the cache still written.
 
+Its sibling, a `newSSLContext` violation from building the OkHttp client, was removed by warming the
+networking branch of the graph on the injected IO dispatcher in `BillionBeersApplication`.
+
+**Measured on a Pixel 8, not an emulator**, 10 cold starts per side of the minified benchmark
+variant: median 209.5 ms to 206.2 ms, mean 213.9 ms to 206.4 ms. A small real win of 3-7 ms, against
+a same-code run-to-run swing of 2.5 ms. Debug-build StrictMode reported the violation at 270-294 ms
+on the main thread every launch, and zero after.
+
+Two lessons worth more than the change itself:
+
+- **A StrictMode duration is not a cost estimate.** 270-294 ms in a debug build bought ~5 ms in the
+  shipped variant, which is minified and AOT-compiled from a baseline profile. Read StrictMode as
+  "this is on the wrong thread", never as "this costs the user that much".
+- **The emulator could not answer this and quietly said it could.** The same comparison there swung
+  160 ms between two runs of *identical* code - 30x the effect - and a first single-run comparison
+  showed a convincing -182 ms (-15.9%) that was pure noise. The Pixel reproduces to 2.5 ms. This is
+  ADR 0009's measurement warning in a second setting, and why `androidx.benchmark.suppressErrors`
+  lists `EMULATOR`.
+
 ## Worked example: a vendor SDK that does not handle threading
 
 The case the guidance has to survive. A third-party SDK exposes a blocking call and cannot be
