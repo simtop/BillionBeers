@@ -160,7 +160,7 @@ Reinforced by:
   [ADR 0007](docs/adr/0007-gradle-dependency-verification.md).
 - **Convention plugins** — module setup lives in `build-logic`, so a new feature module is a plugin
   id and a namespace, not a copied 80-line build script.
-- **Decision record** — eleven [ADRs](docs/adr/) covering the choices that are easy to second-guess:
+- **Decision record** — twelve [ADRs](docs/adr/) covering the choices that are easy to second-guess:
   no Paging3, no `java-test-fixtures`, no use-case layer — and
   [ADR 0010](docs/adr/0010-non-goals.md), which records the capabilities this project deliberately
   *doesn't* have (auth, pinning, push, background sync) and the premise each one is waiting on, so
