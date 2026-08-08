@@ -15,6 +15,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTextInput
 import androidx.test.espresso.Espresso
 import androidx.test.platform.app.InstrumentationRegistry
@@ -113,6 +114,22 @@ open class BaseTestRobot(private val composeTestRule: ComposeTestRule) {
 
   fun assertNodeWithTagIsFocused(testTag: String) {
     composeTestRule.onNodeWithTag(testTag).assertIsFocused()
+  }
+
+  /**
+   * Scrolls a lazy list by index rather than by pixel offset, so a test states the item it wants
+   * rather than a distance that depends on the device's density and item heights.
+   */
+  fun scrollToIndexInNodeWithTag(testTag: String, index: Int) {
+    composeTestRule.onNodeWithTag(testTag).performScrollToIndex(index)
+  }
+
+  fun waitForIdle() {
+    composeTestRule.waitForIdle()
+  }
+
+  fun waitUntil(timeoutMillis: Long = 5000, condition: () -> Boolean) {
+    composeTestRule.waitUntil(timeoutMillis, condition)
   }
 
   fun assertNodeWithContentDescriptionIsDisplayed(label: String) {
