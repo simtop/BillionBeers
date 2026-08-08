@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -26,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.simtop.billionbeers.di.BaseAppGraph
 import com.simtop.core.core.FeatureFlag
@@ -68,16 +70,11 @@ fun DebugDrawerContent(appGraph: BaseAppGraph, modifier: Modifier = Modifier) {
     SectionTitle("Feature flags")
     val overrides by appGraph.featureFlagProvider.overrides.collectAsState()
     FeatureFlag.entries.forEach { flag ->
-      Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-      ) {
-        Text(text = flag.displayName, modifier = Modifier.weight(1f))
-        Switch(
-          checked = overrides[flag] ?: flag.defaultValue,
-          onCheckedChange = { enabled -> appGraph.featureFlagProvider.setOverride(flag, enabled) },
-        )
-      }
+      SwitchRow(
+        label = flag.displayName,
+        checked = overrides[flag] ?: flag.defaultValue,
+        onCheckedChange = { enabled -> appGraph.featureFlagProvider.setOverride(flag, enabled) },
+      )
     }
 
     Spacer(modifier = Modifier.padding(top = 12.dp))
@@ -121,13 +118,40 @@ private fun SectionTitle(text: String) {
   Text(text = text, style = MaterialTheme.typography.titleMedium)
 }
 
+/**
+ * The [RadioRow] reasoning, for a [Switch] whose label was likewise a sibling rather than merged.
+ */
+@Composable
+private fun SwitchRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+  Row(
+    modifier =
+      Modifier.fillMaxWidth()
+        .toggleable(value = checked, onValueChange = onCheckedChange, role = Role.Switch)
+        .padding(vertical = 4.dp),
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    Text(text = label, modifier = Modifier.weight(1f))
+    Switch(checked = checked, onCheckedChange = null)
+  }
+}
+
+/**
+ * `onClick = null` on the [RadioButton] is load-bearing, not a tidy-up. Given its own handler it
+ * becomes a separately focusable target carrying no label of its own - the row holds the [Text] -
+ * so a screen reader announces an unlabelled control next to the one it should read. Passing null
+ * leaves the button as decoration and lets the row's `selectable` own both the click and the merged
+ * semantics, which is what TalkBack should land on. `role` makes it announce as a radio rather than
+ * a generic button.
+ */
 @Composable
 private fun RadioRow(label: String, selected: Boolean, onClick: () -> Unit) {
   Row(
-    modifier = Modifier.fillMaxWidth().selectable(selected = selected, onClick = onClick),
+    modifier =
+      Modifier.fillMaxWidth()
+        .selectable(selected = selected, onClick = onClick, role = Role.RadioButton),
     verticalAlignment = Alignment.CenterVertically,
   ) {
-    RadioButton(selected = selected, onClick = onClick)
+    RadioButton(selected = selected, onClick = null)
     Text(text = label)
   }
 }
