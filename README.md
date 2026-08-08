@@ -150,6 +150,7 @@ diagram that only lives in a README rots; these rules fail the build. They run a
 | Domain models are immutable — no `var`, and no `val` holding a mutable collection | `DomainModelImmutabilityTest` |
 | A module with `src/androidTest/` opts into the managed device — otherwise its tests compile, read as coverage, and never run | `InstrumentedTestOptInBoundaryTest` |
 | Every `src/` directory has a build script beside it — an orphaned source tree is invisible to Gradle but still found by grep | `OrphanedSourceTreeTest` |
+| Test-only libraries never sit on `implementation`/`api` — they ship in the release APK | `TestLibraryBoundaryTest` |
 
 Reinforced by:
 

@@ -105,6 +105,14 @@ All ten are enforced by `:konsist`; the wording here is from the tests themselve
     `beerdomain/src/main/AndroidManifest.xml` on adoption, orphaned when `:beerdomain` split into
     `api`/`fakes`.)
 
+12. **Test-only libraries never sit on `implementation`/`api`** — they ship. `:core-common` had
+    `implementation(libs.coroutinesTest)` beside the `coroutines-core` line that replaced it, so
+    `kotlinx-coroutines-test` reached `:app`'s release classpath and its `TestMainDispatcherFactory`
+    was in the shipped APK's `META-INF/services`. `dependency-guard` could not catch it: the
+    baseline was recorded *with* the dependency already present, so it protected the defect.
+    `:benchmark:*`, `testing-utils*` and `build-logic` are exempt — for them a test library on
+    `implementation` is correct. (`TestLibraryBoundaryTest` — reads the catalog and build scripts.)
+
 Every invariant in this list is now mechanically enforced. If you add one, add its rule in the
 same change — a convention with no test is a convention that drifts.
 
