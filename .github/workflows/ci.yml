@@ -279,7 +279,13 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: unit-test-reports
-          path: '**/build/reports/tests/'
+          # test-results holds the JUnit XML, reports/tests the HTML. Screenshot-enabled modules
+          # emit only the former - billionbeers.android.screenshot has to disable the HTML report,
+          # because Paparazzi replaces the HTML reporter with one that calls a Gradle 8 internal.
+          # With the HTML path alone this artifact was empty for most of the app.
+          path: |
+            **/build/test-results/
+            **/build/reports/tests/
 
   screenshot-tests:
     name: Screenshot Tests (Paparazzi)

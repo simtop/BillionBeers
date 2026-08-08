@@ -16,15 +16,20 @@ dependencies {
     add("ksp", project(":snapshot-processor"))
 }
 
-// Paparazzi 2.0.0-alpha04's PaparazziTestReporter is wired into the Test
-// task's HTML/Junit report generators and calls a Gradle 8.x internal method
-// (TestResultProvider.hasOutput) that no longer exists in Gradle 9.4.
-// This makes the build fail at report-generation even when the test itself passed and
-// Images were recorded successfully. Disabling both reports because anyway we usually check
-// the reports in build/reports/paparazzi.
+// Paparazzi's plugin calls Test.setTestReporter(PaparazziTestReporter) on every Test task in the
+// module - not just during record/verify - and that reporter's ClassPageRenderer calls the Gradle 8
+// internal TestResultsProvider.hasOutput, gone in Gradle 9.4. Report generation then fails a build
+// whose tests passed, so the HTML report stays off; the Paparazzi one in build/reports/paparazzi is
+// the one worth reading anyway.
+//
+// JUnit XML is NOT affected and must stay on. Gradle generates it through Binary2JUnitXmlReport-
+// Generator, a path setTestReporter does not touch - the reporter it replaces is the HTML one only.
+// Disabling it here was collateral damage, and it cost more than the bug: it is the only
+// machine-readable record a test run leaves, so CI's unit-test-reports artifact was empty for the
+// seven screenshot-enabled modules and "the tests passed" could not be verified from CI output.
 tasks.withType<Test>().configureEach {
     reports.html.required.set(false)
-    reports.junitXml.required.set(false)
+    reports.junitXml.required.set(true)
 }
 
 val namespaceProvider = provider {
@@ -177,8 +182,25 @@ tasks.withType<Test>().configureEach {
         it.contains("Paparazzi", ignoreCase = true) 
     }
     
+    // A `--tests` filter that matches nothing must fail, or a typo'd filter reads as a green run -
+    // the bug that forced a mutation-probe to prove a test had executed at all. Restoring it
+    // unconditionally is not an option: with the excludeTestsMatching below and no `--tests`, a
+    // module holding only screenshot tests (:core:designsystem) legitimately runs zero tests, and
+    // Gradle fails exactly that with "No tests found for given includes:" (empty list and all).
+    // So it tracks `--tests`, which is stock Gradle behaviour for the filter the developer typed.
+    // The per-task filter's commandLineIncludePatterns would be more precise, but it lives on the
+    // internal DefaultTestFilter - and an internal-API dependency is what broke the reports above.
+    //
+    // Consequence, and it is the correct one: a project-wide `./gradlew testDebugUnitTest --tests
+    // "*Foo*"` now fails these modules when they hold no match. Every module that does not apply
+    // this plugin already did - :app, :beer_data, :beer_network and :navigation all fail that way -
+    // so this ends a silent exemption rather than creating a new sharp edge. Scope the filter to a
+    // module (`make test MODULE=:feature:beerslist`) as before.
+    val hasCommandLineTestFilter = project.gradle.startParameter.taskRequests
+        .any { request -> request.args.any { it == "--tests" } }
+
     filter {
-        isFailOnNoMatchingTests = false
+        isFailOnNoMatchingTests = hasCommandLineTestFilter
         if (isPaparazziRun) {
             // Paparazzi task strictly executes the auto-generated Screenshot runner
             includeTestsMatching("com.simtop.billionbeers.screenshot.*")
