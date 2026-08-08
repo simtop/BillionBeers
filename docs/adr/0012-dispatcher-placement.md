@@ -109,6 +109,15 @@ This is the direct answer to "you can't tell from outside": you can, on the firs
 stack trace pointing at the exact call. Room and the platform already cover the two largest cases;
 StrictMode covers the remainder.
 
+**It earned its keep on the first launch**, and not in a repository. `NetworkingModule` built its
+OkHttp cache with `context.cacheDir`, which routes through `ContextImpl.getDataDir()` and calls
+`File.exists()` - a main-thread disk read of ~490-790 ms on every launch, before the first frame,
+because the first composition resolves a ViewModel that pulls the repository that builds the client.
+No amount of `launch(io)` in a ViewModel would ever have revealed it: the work was in the DI graph,
+upstream of any coroutine. Fixed by resolving the path from `applicationInfo.dataDir` (a String field,
+no syscall) and letting OkHttp create the directory lazily on its own dispatcher; verified on an
+emulator as two violations per launch before and zero after, with the cache still written.
+
 ## Worked example: a vendor SDK that does not handle threading
 
 The case the guidance has to survive. A third-party SDK exposes a blocking call and cannot be
