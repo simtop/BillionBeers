@@ -1,19 +1,13 @@
 package com.simtop.feature.beerslist
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performScrollToIndex
-import androidx.test.platform.app.InstrumentationRegistry
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.fakes.fakeBeerModel
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.PagedListFooter
 import com.simtop.core.core.PagedListUiModel
-import com.simtop.presentation_utils.R as PresentationUtilsR
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -43,9 +37,6 @@ class BeersListPagingUiTest {
 
   private val lastBeerIndex = beers.lastIndex
 
-  private fun string(resId: Int): String =
-    InstrumentationRegistry.getInstrumentation().targetContext.getString(resId)
-
   private fun setContent(footer: PagedListFooter, onScrollToBottom: () -> Unit) {
     composeTestRule.setContent { Content(footer = footer, onScrollToBottom = onScrollToBottom) }
   }
@@ -74,19 +65,23 @@ class BeersListPagingUiTest {
     var loadMoreCount = 0
     setContent(PagedListFooter.Hidden) { loadMoreCount++ }
 
-    composeTestRule.waitForIdle()
-    assertEquals(
-      "load-more fired before any scroll - the list was already at its end",
-      0,
-      loadMoreCount,
-    )
+    beersList(composeTestRule) {
+      waitForIdle()
+      assertEquals(
+        "load-more fired before any scroll - the list was already at its end",
+        0,
+        loadMoreCount,
+      )
+      // The list's own controls, checked while the screen is up rather than in a test of their own.
+      assertEveryClickableIsLabelled()
 
-    composeTestRule.onNodeWithTag(BEER_LIST_TAG).performScrollToIndex(lastBeerIndex)
+      scrollToBeerAt(lastBeerIndex)
 
-    // The callback runs from a LaunchedEffect collecting a snapshotFlow, so it can land after the
-    // scroll returns. Waiting on the condition rather than asserting straight away is what keeps
-    // this from passing on a warm local device and flaking on a CI runner.
-    composeTestRule.waitUntil(WAIT_TIMEOUT_MS) { loadMoreCount > 0 }
+      // The callback runs from a LaunchedEffect collecting a snapshotFlow, so it can land after the
+      // scroll returns. Waiting on the condition rather than asserting straight away is what keeps
+      // this from passing on a warm local device and flaking on a CI runner.
+      waitUntil(WAIT_TIMEOUT_MS) { loadMoreCount > 0 }
+    }
 
     assertEquals(1, loadMoreCount)
   }
@@ -106,16 +101,17 @@ class BeersListPagingUiTest {
     var loadMoreCount = 0
     setContent(PagedListFooter.Retry) { loadMoreCount++ }
 
-    composeTestRule.waitForIdle()
-    assertEquals(0, loadMoreCount)
+    beersList(composeTestRule) {
+      waitForIdle()
+      assertEquals(0, loadMoreCount)
 
-    // One past the last beer: the retry footer is its own item in the lazy list.
-    composeTestRule.onNodeWithTag(BEER_LIST_TAG).performScrollToIndex(lastBeerIndex + 1)
-    composeTestRule.waitForIdle()
+      // One past the last beer: the retry footer is its own item in the lazy list.
+      scrollToBeerAt(lastBeerIndex + 1)
+      waitForIdle()
 
-    composeTestRule
-      .onNodeWithText(string(PresentationUtilsR.string.paged_list_load_more_failed))
-      .assertIsDisplayed()
+      assertLoadMoreFailedFooterIsDisplayed()
+      assertEveryClickableIsLabelled()
+    }
 
     assertEquals(
       "auto-load fired while the retry footer was up - the user must drive this with Retry",
@@ -125,7 +121,6 @@ class BeersListPagingUiTest {
   }
 
   private companion object {
-    const val BEER_LIST_TAG = "beer_list"
     const val WAIT_TIMEOUT_MS = 5_000L
   }
 }
