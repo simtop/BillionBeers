@@ -7,7 +7,6 @@ import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.CommonUiState
-import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.Either
 import com.simtop.feature.beerbrowse.presentation.di.FeatureBrowseScope
 import com.simtop.presentation_utils.core.toErrorState
@@ -28,10 +27,7 @@ import kotlinx.coroutines.launch
 @ContributesIntoMap(FeatureBrowseScope::class)
 @ViewModelKey(BrowseViewModel::class)
 @Inject
-class BrowseViewModel(
-  private val coroutineDispatcher: CoroutineDispatcherProvider,
-  private val beersRepository: BeersRepository,
-) : ViewModel() {
+class BrowseViewModel(private val beersRepository: BeersRepository) : ViewModel() {
 
   private val _styles = MutableStateFlow<CommonUiState<List<BeerStyle>>>(CommonUiState.Loading)
   val styles: StateFlow<CommonUiState<List<BeerStyle>>> = _styles.asStateFlow()
@@ -53,14 +49,14 @@ class BrowseViewModel(
   }
 
   fun retryStyles() {
-    viewModelScope.launch(coroutineDispatcher.io) {
+    viewModelScope.launch {
       _styles.value = CommonUiState.Loading
       _styles.value = beersRepository.getBeerStyles().toUiState()
     }
   }
 
   fun retryBreweries() {
-    viewModelScope.launch(coroutineDispatcher.io) {
+    viewModelScope.launch {
       _breweries.value = CommonUiState.Loading
       _breweries.value = beersRepository.getBreweries().toUiState()
     }

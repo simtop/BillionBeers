@@ -23,6 +23,10 @@ dependencies {
     "testImplementation"(libs.turbine)
     "testImplementation"(libs.junit.jupiter.api)
     "testImplementation"(libs.junit.jupiter.params)
+
+    // The shared MainDispatcherExtension. Every ViewModel test needs Dispatchers.setMain, and
+    // hand-rolling it in each module is how the JUnit 4 rule this replaced drifted out of use.
+    "testImplementation"(project(":testing-utils"))
     "testRuntimeOnly"(libs.junit.jupiter.engine)
     "testRuntimeOnly"(libs.junit.vintage.engine)
 

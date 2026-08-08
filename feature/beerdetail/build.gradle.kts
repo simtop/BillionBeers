@@ -40,7 +40,6 @@ dependencies {
   androidTestImplementation(libs.junitKtx)
 
   testImplementation(project(":beerdomain:fakes"))
-  testImplementation(project(":testing-utils"))
   testImplementation(libs.striktCore)
   androidTestImplementation(libs.striktCore)
 }

@@ -1,6 +1,7 @@
 package com.simtop.billionbeers
 
 import com.google.android.play.core.splitcompat.SplitCompatApplication
+import com.simtop.billionbeers.debug.enableStrictMode
 import com.simtop.billionbeers.di.AppGraph
 import com.simtop.billionbeers.di.BaseAppGraph
 import com.simtop.core.di.GraphProvider
@@ -15,6 +16,7 @@ class BillionBeersApplication : SplitCompatApplication(), GraphProvider {
 
   override fun onCreate() {
     super.onCreate()
+    enableStrictMode()
     if (!::appGraph.isInitialized) {
       appGraph = createGraphFactory<AppGraph.Factory>().create(this)
     }

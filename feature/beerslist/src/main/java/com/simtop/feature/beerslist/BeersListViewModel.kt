@@ -9,7 +9,6 @@ import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.CachePolicy
 import com.simtop.core.core.CommonUiState
-import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.PagedListReducer
 import com.simtop.core.core.PagedListUiModel
 import com.simtop.core.core.PagingEvent
@@ -34,7 +33,6 @@ import kotlinx.coroutines.launch
 @ViewModelKey(BeersListViewModel::class)
 @Inject
 class BeersListViewModel(
-  private val coroutineDispatcher: CoroutineDispatcherProvider,
   private val beersRepository: BeersRepository,
   beersPagerFactory: BeersPagerFactory,
 ) : ViewModel() {
@@ -96,7 +94,7 @@ class BeersListViewModel(
    * one-shot refresh-failed toast.
    */
   private fun loadFirstPageUnlessCacheIsFresh() {
-    viewModelScope.launch(coroutineDispatcher.io) {
+    viewModelScope.launch {
       if (beersRepository.catalogCacheStatus(CACHE_POLICY) != CatalogCacheStatus.Fresh) {
         pager.loadFirstPage()
       }
@@ -104,16 +102,16 @@ class BeersListViewModel(
   }
 
   fun onScrollToBottom() {
-    viewModelScope.launch(coroutineDispatcher.io) { pager.loadNextPage() }
+    viewModelScope.launch { pager.loadNextPage() }
   }
 
   /** Footer retry tap: reloads the failed next page. Retry is free - the key never advanced. */
   fun onRetryLoadMore() {
-    viewModelScope.launch(coroutineDispatcher.io) { pager.loadNextPage() }
+    viewModelScope.launch { pager.loadNextPage() }
   }
 
   fun refresh() {
-    viewModelScope.launch(coroutineDispatcher.io) { pager.loadFirstPage() }
+    viewModelScope.launch { pager.loadFirstPage() }
   }
 
   private companion object {
