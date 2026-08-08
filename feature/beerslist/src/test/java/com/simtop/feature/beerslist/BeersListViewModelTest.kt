@@ -7,13 +7,10 @@ import com.simtop.beerdomain.domain.models.CatalogCacheStatus
 import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
 import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.core.core.CommonUiState
-import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.PagedListFooter
 import com.simtop.core.core.PagedListUiModel
 import com.simtop.core.core.PagingEvent
 import com.simtop.core.core.PagingState
-import io.mockk.every
-import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestDispatcher
@@ -33,7 +30,6 @@ import strikt.assertions.isTrue
 @ExperimentalCoroutinesApi
 class BeersListViewModelTest {
 
-  private val coroutineDispatcherProvider = mockk<CoroutineDispatcherProvider>()
   private val fakeBeersRepository = FakeBeersRepository()
   private val fakeBeersPagerFactory = FakeBeersPagerFactory(fakeBeersRepository)
 
@@ -43,8 +39,6 @@ class BeersListViewModelTest {
   fun setUp() {
     testDispatcher = UnconfinedTestDispatcher()
     Dispatchers.setMain(testDispatcher)
-    every { coroutineDispatcherProvider.io } returns testDispatcher
-    every { coroutineDispatcherProvider.main } returns testDispatcher
   }
 
   @AfterEach
@@ -52,8 +46,7 @@ class BeersListViewModelTest {
     Dispatchers.resetMain()
   }
 
-  private fun buildViewModel() =
-    BeersListViewModel(coroutineDispatcherProvider, fakeBeersRepository, fakeBeersPagerFactory)
+  private fun buildViewModel() = BeersListViewModel(fakeBeersRepository, fakeBeersPagerFactory)
 
   @Test
   fun `when onScrollToBottom is called, isLoadingNextPage should be true`() =

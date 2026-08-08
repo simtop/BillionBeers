@@ -6,27 +6,24 @@ import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
 import com.simtop.beerdomain.fakes.FakeBeersRepository
+import com.simtop.billionbeers.testing_utils.MainDispatcherExtension
 import com.simtop.core.core.CommonUiState
-import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.PagedListFooter
 import com.simtop.core.core.PagedListUiModel
 import com.simtop.core.core.PagingEvent
 import com.simtop.core.core.PagingState
 import com.simtop.feature.beerbrowse.presentation.BrowseBeersEvent
 import com.simtop.feature.beerbrowse.presentation.BrowseBeersViewModel
-import io.mockk.every
-import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 import strikt.api.expectThat
 import strikt.assertions.isA
 import strikt.assertions.isEqualTo
@@ -36,30 +33,24 @@ import strikt.assertions.isTrue
 @ExperimentalCoroutinesApi
 class BrowseBeersViewModelTest {
 
-  private val coroutineDispatcherProvider = mockk<CoroutineDispatcherProvider>()
+  @JvmField
+  @RegisterExtension
+  val mainDispatcher = MainDispatcherExtension(UnconfinedTestDispatcher())
   private val fakeRepository = FakeBeersRepository()
   private val fakeFactory = FakeBeersPagerFactory(fakeRepository)
 
-  private lateinit var testDispatcher: TestDispatcher
-
   private val styleQuery = BeersQuery(styleId = "style-1")
 
-  @BeforeEach
-  fun setUp() {
-    testDispatcher = UnconfinedTestDispatcher()
-    Dispatchers.setMain(testDispatcher)
-    every { coroutineDispatcherProvider.io } returns testDispatcher
-    every { coroutineDispatcherProvider.main } returns testDispatcher
-  }
+  @BeforeEach fun setUp() {}
 
   @AfterEach fun tearDown() = Dispatchers.resetMain()
 
   private fun buildViewModel(query: BeersQuery = styleQuery) =
-    BrowseBeersViewModel(coroutineDispatcherProvider, fakeFactory, query)
+    BrowseBeersViewModel(mainDispatcher.dispatcherProvider, fakeFactory, query)
 
   @Test
   fun `creates one pager for its query and loads the first page`() =
-    runTest(testDispatcher) {
+    runTest(mainDispatcher.testDispatcher) {
       val viewModel = buildViewModel()
 
       viewModel.viewState.test {
@@ -73,7 +64,7 @@ class BrowseBeersViewModelTest {
 
   @Test
   fun `results surface with the server total`() =
-    runTest(testDispatcher) {
+    runTest(mainDispatcher.testDispatcher) {
       val viewModel = buildViewModel()
 
       viewModel.viewState.test {
@@ -93,7 +84,7 @@ class BrowseBeersViewModelTest {
 
   @Test
   fun `a selection with no beers exposes zero results, not Empty`() =
-    runTest(testDispatcher) {
+    runTest(mainDispatcher.testDispatcher) {
       val viewModel = buildViewModel()
 
       viewModel.viewState.test {
@@ -111,7 +102,7 @@ class BrowseBeersViewModelTest {
 
   @Test
   fun `a first-page failure surfaces the error state`() =
-    runTest(testDispatcher) {
+    runTest(mainDispatcher.testDispatcher) {
       val viewModel = buildViewModel()
 
       viewModel.viewState.test {
@@ -127,7 +118,7 @@ class BrowseBeersViewModelTest {
 
   @Test
   fun `a failed load more keeps the list, shows the retry footer and emits the one-shot event`() =
-    runTest(testDispatcher) {
+    runTest(mainDispatcher.testDispatcher) {
       val viewModel = buildViewModel()
 
       viewModel.events.test {
@@ -150,7 +141,7 @@ class BrowseBeersViewModelTest {
 
   @Test
   fun `a first-page reload keeps the list under the refresh indicator`() =
-    runTest(testDispatcher) {
+    runTest(mainDispatcher.testDispatcher) {
       val viewModel = buildViewModel()
 
       viewModel.viewState.test {
@@ -178,7 +169,7 @@ class BrowseBeersViewModelTest {
   // pulling again is the retry, matching the catalog screen.
   @Test
   fun `a failed refresh keeps the list, hides the footer and emits a one-shot refresh error`() =
-    runTest(testDispatcher) {
+    runTest(mainDispatcher.testDispatcher) {
       val viewModel = buildViewModel()
 
       viewModel.events.test {
@@ -206,7 +197,7 @@ class BrowseBeersViewModelTest {
 
   @Test
   fun `scroll to bottom and retry both load the next page of the same pager`() =
-    runTest(testDispatcher) {
+    runTest(mainDispatcher.testDispatcher) {
       val viewModel = buildViewModel()
 
       viewModel.viewState.test {

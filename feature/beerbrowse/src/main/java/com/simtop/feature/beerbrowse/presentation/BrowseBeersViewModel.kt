@@ -66,7 +66,7 @@ constructor(
 
   val viewState: StateFlow<CommonUiState<PagedListUiModel<Beer>>> =
     combine(pager.data, pager.pagingState, reducer::reduce)
-      .flowOn(coroutineDispatcher.io)
+      .flowOn(coroutineDispatcher.default)
       .stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(SUBSCRIPTION_TIMEOUT_MILLIS),
@@ -74,7 +74,7 @@ constructor(
       )
 
   init {
-    viewModelScope.launch(coroutineDispatcher.io) { pager.loadFirstPage() }
+    viewModelScope.launch { pager.loadFirstPage() }
     viewModelScope.launch {
       pager.events.collect { event ->
         when (event) {
@@ -102,11 +102,11 @@ constructor(
   }
 
   fun onScrollToBottom() {
-    viewModelScope.launch(coroutineDispatcher.io) { pager.loadNextPage() }
+    viewModelScope.launch { pager.loadNextPage() }
   }
 
   fun onRetryLoadMore() {
-    viewModelScope.launch(coroutineDispatcher.io) { pager.loadNextPage() }
+    viewModelScope.launch { pager.loadNextPage() }
   }
 
   /**
@@ -115,7 +115,7 @@ constructor(
    * refresh spinner and keeps the items under it; a failure degrades to the one-shot toast.
    */
   fun onRetryFirstPage() {
-    viewModelScope.launch(coroutineDispatcher.io) { pager.loadFirstPage() }
+    viewModelScope.launch { pager.loadFirstPage() }
   }
 
   private companion object {

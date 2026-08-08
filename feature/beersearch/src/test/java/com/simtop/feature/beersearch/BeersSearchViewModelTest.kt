@@ -7,24 +7,21 @@ import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
 import com.simtop.beerdomain.fakes.FakeBeersRepository
+import com.simtop.billionbeers.testing_utils.MainDispatcherExtension
 import com.simtop.core.core.CommonUiState
-import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.PagedListUiModel
 import com.simtop.core.core.PagingState
-import io.mockk.every
-import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 import strikt.api.expectThat
 import strikt.assertions.isA
 import strikt.assertions.isEmpty
@@ -33,30 +30,24 @@ import strikt.assertions.isEqualTo
 @ExperimentalCoroutinesApi
 class BeersSearchViewModelTest {
 
-  private val coroutineDispatcherProvider = mockk<CoroutineDispatcherProvider>()
+  @JvmField
+  @RegisterExtension
+  val mainDispatcher = MainDispatcherExtension(UnconfinedTestDispatcher())
   private val fakeRepository = FakeBeersRepository()
   private val fakeFactory = FakeBeersPagerFactory(fakeRepository)
 
-  private lateinit var testDispatcher: TestDispatcher
-
   private val pastDebounce = 701L // just over the 700ms debounce
 
-  @BeforeEach
-  fun setUp() {
-    testDispatcher = UnconfinedTestDispatcher()
-    Dispatchers.setMain(testDispatcher)
-    every { coroutineDispatcherProvider.io } returns testDispatcher
-    every { coroutineDispatcherProvider.main } returns testDispatcher
-  }
+  @BeforeEach fun setUp() {}
 
   @AfterEach fun tearDown() = Dispatchers.resetMain()
 
   private fun buildViewModel(savedStateHandle: SavedStateHandle = SavedStateHandle()) =
-    BeersSearchViewModel(coroutineDispatcherProvider, fakeFactory, savedStateHandle)
+    BeersSearchViewModel(mainDispatcher.dispatcherProvider, fakeFactory, savedStateHandle)
 
   @Test
   fun `rapid typing debounces into a single query`() =
-    runTest(testDispatcher) {
+    runTest(mainDispatcher.testDispatcher) {
       val viewModel = buildViewModel()
 
       viewModel.viewState.test {
@@ -75,7 +66,7 @@ class BeersSearchViewModelTest {
 
   @Test
   fun `a query under two characters creates no pager`() =
-    runTest(testDispatcher) {
+    runTest(mainDispatcher.testDispatcher) {
       val viewModel = buildViewModel()
 
       viewModel.viewState.test {
@@ -92,7 +83,7 @@ class BeersSearchViewModelTest {
 
   @Test
   fun `results are exposed with the server total as the result count`() =
-    runTest(testDispatcher) {
+    runTest(mainDispatcher.testDispatcher) {
       val viewModel = buildViewModel()
 
       viewModel.viewState.test {
@@ -118,7 +109,7 @@ class BeersSearchViewModelTest {
   // Surfaces as Success with zero results (count 0), which 2c's "No results" empty state reads.
   @Test
   fun `a query with no matches exposes zero results`() =
-    runTest(testDispatcher) {
+    runTest(mainDispatcher.testDispatcher) {
       val viewModel = buildViewModel()
 
       viewModel.viewState.test {
@@ -140,7 +131,7 @@ class BeersSearchViewModelTest {
 
   @Test
   fun `a first-page rate limit shows the error state`() =
-    runTest(testDispatcher) {
+    runTest(mainDispatcher.testDispatcher) {
       val viewModel = buildViewModel()
 
       viewModel.viewState.test {
@@ -162,7 +153,7 @@ class BeersSearchViewModelTest {
   // newer term) can't overwrite the results the user is now looking at.
   @Test
   fun `a newer term supersedes a stale one`() =
-    runTest(testDispatcher) {
+    runTest(mainDispatcher.testDispatcher) {
       val viewModel = buildViewModel()
 
       viewModel.viewState.test {
@@ -196,7 +187,7 @@ class BeersSearchViewModelTest {
   // the search on its own - the user gets their results back, not just the text in the field.
   @Test
   fun `a query restored from the saved state re-runs the search`() =
-    runTest(testDispatcher) {
+    runTest(mainDispatcher.testDispatcher) {
       val viewModel = buildViewModel(SavedStateHandle(mapOf("search_query" to "ipa")))
 
       viewModel.viewState.test {
@@ -211,7 +202,7 @@ class BeersSearchViewModelTest {
 
   @Test
   fun `onScrollToBottom loads the next page of the current results`() =
-    runTest(testDispatcher) {
+    runTest(mainDispatcher.testDispatcher) {
       val viewModel = buildViewModel()
 
       viewModel.viewState.test {

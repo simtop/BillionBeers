@@ -127,18 +127,18 @@ class BeersSearchViewModel(
         }
         combine(pager.data, pager.pagingState, reducer::reduce).collect { send(it) }
       }
-      .flowOn(coroutineDispatcher.io)
+      .flowOn(coroutineDispatcher.default)
 
   fun onQueryChange(text: String) {
     savedStateHandle[KEY_QUERY] = text
   }
 
   fun onScrollToBottom() {
-    viewModelScope.launch(coroutineDispatcher.io) { currentPager?.loadNextPage() }
+    viewModelScope.launch { currentPager?.loadNextPage() }
   }
 
   fun onRetryLoadMore() {
-    viewModelScope.launch(coroutineDispatcher.io) { currentPager?.loadNextPage() }
+    viewModelScope.launch { currentPager?.loadNextPage() }
   }
 
   /**
@@ -146,7 +146,7 @@ class BeersSearchViewModel(
    * swallowed by distinctUntilChanged, so it can't drive this).
    */
   fun onRetrySearch() {
-    viewModelScope.launch(coroutineDispatcher.io) { currentPager?.loadFirstPage() }
+    viewModelScope.launch { currentPager?.loadFirstPage() }
   }
 
   private companion object {

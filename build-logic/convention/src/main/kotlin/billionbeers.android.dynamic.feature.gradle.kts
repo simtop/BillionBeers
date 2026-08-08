@@ -41,6 +41,9 @@ dependencies {
     "testImplementation"(libs.turbine)
     "testImplementation"(libs.junit.jupiter.api)
     "testImplementation"(libs.junit.jupiter.params)
+
+    // The shared MainDispatcherExtension, same as the library convention supplies.
+    "testImplementation"(project(":testing-utils"))
     "testRuntimeOnly"(libs.junit.jupiter.engine)
     "testRuntimeOnly"(libs.junit.vintage.engine)
 

@@ -7,10 +7,7 @@ import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.beerdomain.fakes.fakeBeerModel
 import com.simtop.beerdomain.fakes.fakeException
 import com.simtop.core.core.CommonUiState
-import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.feature.beerdetail.presentation.BeerDetailViewModel
-import io.mockk.every
-import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -27,15 +24,12 @@ import strikt.assertions.isEqualTo
 @ExperimentalCoroutinesApi
 internal class BeerDetailViewModelTest {
 
-  private val coroutineDispatcherProvider = mockk<CoroutineDispatcherProvider>()
   private val fakeBeersRepository = FakeBeersRepository()
   private val testDispatcher = StandardTestDispatcher()
 
   @BeforeEach
   fun setUp() {
     Dispatchers.setMain(testDispatcher)
-    every { coroutineDispatcherProvider.io } returns testDispatcher
-    every { coroutineDispatcherProvider.main } returns testDispatcher
   }
 
   @AfterEach
@@ -49,7 +43,6 @@ internal class BeerDetailViewModelTest {
       // Arrange & Act
       val beerDetailViewModel =
         BeerDetailViewModel(
-          coroutineDispatcherProvider,
           fakeBeersRepository,
           fakeBeerModel,
           SavedStateHandle(),
@@ -72,7 +65,6 @@ internal class BeerDetailViewModelTest {
 
       val beerDetailViewModel =
         BeerDetailViewModel(
-          coroutineDispatcherProvider,
           fakeBeersRepository,
           fakeBeerModel,
           SavedStateHandle(),
@@ -118,7 +110,6 @@ internal class BeerDetailViewModelTest {
 
       val beerDetailViewModel =
         BeerDetailViewModel(
-          coroutineDispatcherProvider,
           fakeBeersRepository,
           fakeBeerModel,
           SavedStateHandle(),

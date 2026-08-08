@@ -5,11 +5,8 @@ import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.core.core.CommonUiState
-import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.Either
 import com.simtop.feature.beerbrowse.presentation.BrowseViewModel
-import io.mockk.every
-import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestDispatcher
@@ -28,7 +25,6 @@ import strikt.assertions.isEqualTo
 @ExperimentalCoroutinesApi
 class BrowseViewModelTest {
 
-  private val coroutineDispatcherProvider = mockk<CoroutineDispatcherProvider>()
   private val fakeRepository = FakeBeersRepository()
 
   private lateinit var testDispatcher: TestDispatcher
@@ -37,13 +33,11 @@ class BrowseViewModelTest {
   fun setUp() {
     testDispatcher = UnconfinedTestDispatcher()
     Dispatchers.setMain(testDispatcher)
-    every { coroutineDispatcherProvider.io } returns testDispatcher
-    every { coroutineDispatcherProvider.main } returns testDispatcher
   }
 
   @AfterEach fun tearDown() = Dispatchers.resetMain()
 
-  private fun buildViewModel() = BrowseViewModel(coroutineDispatcherProvider, fakeRepository)
+  private fun buildViewModel() = BrowseViewModel(fakeRepository)
 
   @Test
   fun `styles load on start and expose Success`() =

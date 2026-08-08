@@ -8,7 +8,6 @@ import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.CommonUiState
-import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.Either
 import com.simtop.feature.beerdetail.presentation.di.FeatureDetailScope
 import dev.zacsweers.metro.Assisted
@@ -28,7 +27,6 @@ import kotlinx.coroutines.launch
 class BeerDetailViewModel
 @AssistedInject
 constructor(
-  private val coroutineDispatcher: CoroutineDispatcherProvider,
   private val beersRepository: BeersRepository,
   @Assisted beer: Beer,
   @Assisted savedStateHandle: SavedStateHandle,
@@ -60,7 +58,7 @@ constructor(
   }
 
   fun updateAvailability(beer: Beer) {
-    viewModelScope.launch(coroutineDispatcher.io) {
+    viewModelScope.launch {
       val newBeer = beer.copy(availability = !beer.availability)
       setBeer(newBeer)
       treatResponse(result = beersRepository.updateAvailability(newBeer), originalBeer = beer)
