@@ -95,6 +95,8 @@ All ten are enforced by `:konsist`; the wording here is from the tests themselve
     directly. Without it the module has no `atdApi35DebugAndroidTest` task and is absent from
     `ciGroupDebugAndroidTest`, so its tests compile, look like coverage, and never run.
     `:benchmark:*` is exempt — benchmarks use their own runner and real hardware, not the ATD lane.
+    `make benchmark-check`'s startup budget is 500ms, calibrated on a Pixel 8 (medians 202-282ms) and
+    **enforced only on physical devices**; an emulator run reports its number and never gates.
     (`InstrumentedTestOptInBoundaryTest` — reads the build scripts.)
 
 11. **A `src/` directory has a build script beside it.** Otherwise nothing compiles, tests or ships
