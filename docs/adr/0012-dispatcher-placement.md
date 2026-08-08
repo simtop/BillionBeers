@@ -118,24 +118,34 @@ upstream of any coroutine. Fixed by resolving the path from `applicationInfo.dat
 no syscall) and letting OkHttp create the directory lazily on its own dispatcher; verified on an
 emulator as two violations per launch before and zero after, with the cache still written.
 
-Its sibling, a `newSSLContext` violation from building the OkHttp client, was removed by warming the
-networking branch of the graph on the injected IO dispatcher in `BillionBeersApplication`.
+Its sibling, a `newSSLContext` violation from building the OkHttp client, was **not** worth fixing -
+and establishing that took three measurements, two of which lied.
 
-**Measured on a Pixel 8, not an emulator**, 10 cold starts per side of the minified benchmark
-variant: median 209.5 ms to 206.2 ms, mean 213.9 ms to 206.4 ms. A small real win of 3-7 ms, against
-a same-code run-to-run swing of 2.5 ms. Debug-build StrictMode reported the violation at 270-294 ms
-on the main thread every launch, and zero after.
+A warm-up that resolved the networking branch on a background thread in `BillionBeersApplication`
+removed the violation, and was **built, merged and then reverted**. The record of why is worth more
+than the code was:
 
-Two lessons worth more than the change itself:
+1. **Emulator benchmark - wrong.** A single run showed -182 ms (-15.9%), which looked like a decisive
+   win. It was noise: two runs of *identical* code there differ by 160 ms, 30x the effect.
+2. **Physical benchmark - inconclusive, and I read it as a win.** Pixel 8, 10 cold starts per side:
+   median 209.5 -> 206.2 ms, mean 213.9 -> 206.4 ms. A 3-7 ms "improvement" sitting inside a 12-14 ms
+   standard deviation.
+3. **Perfetto trace - decisive.** A cold start on the Pixel contains *no* SSL, Conscrypt or socket
+   slice on the main thread. The only OkHttp work anywhere in the process is
+   `JIT compiling okhttp3.Dispatcher.<init>` on the JIT thread pool, ~3 ms, off the critical path.
+   There was nothing to move, so the 3-7 ms was noise too.
 
-- **A StrictMode duration is not a cost estimate.** 270-294 ms in a debug build bought ~5 ms in the
-  shipped variant, which is minified and AOT-compiled from a baseline profile. Read StrictMode as
-  "this is on the wrong thread", never as "this costs the user that much".
-- **The emulator could not answer this and quietly said it could.** The same comparison there swung
-  160 ms between two runs of *identical* code - 30x the effect - and a first single-run comparison
-  showed a convincing -182 ms (-15.9%) that was pure noise. The Pixel reproduces to 2.5 ms. This is
-  ADR 0009's measurement warning in a second setting, and why `androidx.benchmark.suppressErrors`
-  lists `EMULATOR`.
+**The lesson that generalises: a StrictMode duration is not a cost.** It reported 270-294 ms on the
+main thread in a *debug* build. The shipped build is minified and AOT-compiled from a baseline
+profile (the trace confirms `filter=speed-profile`), and there the same work does not measurably
+exist. Read StrictMode as "this is on the wrong thread", never as "this costs the user that much" -
+and reach for a trace before optimising, not a stopwatch and certainly not an emulator.
+
+Where startup time actually goes on a Pixel 8, from that trace: 103 ms in the first
+`Choreographer#doFrame` (22.8 ms of it Compose `measure`, 17.1 ms of *that* text measurement), 41 ms
+in `bindApplication` (~16 ms of it dex/OAT loading), and 24.7 ms before the process even starts. The
+largest addressable item is font I/O blocking the main thread during text layout - 12.3 ms of
+uninterruptible I/O sleep inside `TextStringSimpleNode::measure` - not anything in the DI graph.
 
 ## Worked example: a vendor SDK that does not handle threading
 
