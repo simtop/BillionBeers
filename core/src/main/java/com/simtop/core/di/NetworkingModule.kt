@@ -29,6 +29,30 @@ interface NetworkingModule {
     private const val CONNECT_TIMEOUT_SECONDS = 10L
     private const val READ_TIMEOUT_SECONDS = 30L
     private const val HTTP_CACHE_SIZE_BYTES = 5L * 1024 * 1024
+
+    /**
+     * The OkHttp cache directory, resolved without touching the filesystem.
+     *
+     * `context.cacheDir` looks free and is not: it routes through `ContextImpl.getDataDir()`, which
+     * calls `File.exists()` and creates the directory if missing. StrictMode caught it on the main
+     * thread at ~500-790 ms per launch on an emulator (ADR 0012 added the detector; this was its
+     * first finding), because the first composition resolves a ViewModel, which pulls the
+     * repository, which builds this client - all before the first frame.
+     *
+     * `applicationInfo.dataDir` is a plain String field the package manager already populated, so
+     * it costs no syscall, and `<dataDir>/cache` is exactly what `getCacheDir()` returns. OkHttp
+     * does not touch the directory when the `Cache` is constructed either -
+     * `DiskLruCache.initialize()` creates it lazily on the first cache read or write, which happens
+     * on OkHttp's own dispatcher thread. So the disk work still happens, just not on the main
+     * thread.
+     *
+     * Deferring the whole client with Retrofit's `callFactory` was considered and does not work:
+     * Retrofit calls `newCall()` synchronously on the calling thread, which for a
+     * `viewModelScope.launch` is the main thread (ADR 0012). That relocates the violation instead
+     * of removing it.
+     */
+    private fun httpCacheDir(context: Context): File =
+      File(context.applicationInfo.dataDir, "cache/http")
   }
 
   @Provides @SingleIn(AppScope::class) fun provideJson(): Json = NetworkJson
@@ -49,7 +73,7 @@ interface NetworkingModule {
     return OkHttpClient.Builder()
       .connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
       .readTimeout(READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-      .cache(Cache(File(context.cacheDir, "http"), HTTP_CACHE_SIZE_BYTES))
+      .cache(Cache(httpCacheDir(context), HTTP_CACHE_SIZE_BYTES))
       .apply {
         if (BuildConfig.DEBUG) {
           addInterceptor(loggingInterceptor)
