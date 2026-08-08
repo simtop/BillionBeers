@@ -60,6 +60,24 @@ class BeersSearchInputUiTest {
     searchScreen(composeTestRule) { assertSearchFieldIsFocused() }
   }
 
+  /**
+   * The screen's controls are icon-only - a back arrow and a clear affordance - so a dropped
+   * `contentDescription` leaves them silent to TalkBack while looking untouched in a screenshot.
+   * Asserted with text present, because the clear action only composes once the field is non-empty.
+   */
+  @Test
+  fun everyControlIsReachableByAScreenReader() {
+    setContent()
+
+    searchScreen(composeTestRule) {
+      assertEveryClickableIsLabelled()
+
+      typeQuery("stout")
+      assertClearActionIsPresent()
+      assertEveryClickableIsLabelled()
+    }
+  }
+
   @Test
   fun typingThroughTheImeReachesTheQueryCallback() {
     val typed = mutableListOf<String>()

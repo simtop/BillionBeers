@@ -66,12 +66,17 @@ class MainActivityComposeTest {
       homeScreen {
         waitUntilNodeWithTextIsDisplayed(fakeBeer.name)
         assertBeerNameIsDisplayed(fakeBeer.name)
+        // Both real screens, checked where they are already composed - the catalog list and the
+        // detail screen behind it. Cheaper here than a dedicated test per feature module, which
+        // ADR 0009 prices at ~49s of module overhead against ~2s of test.
+        assertEveryClickableIsLabelled()
         clickOnBeer(fakeBeer.name)
       }
 
       detailScreen {
         waitUntilNodeWithTextIsDisplayed(fakeBeer.description)
         assertBeerDetailIsDisplayed(fakeBeer.name, fakeBeer.description)
+        assertEveryClickableIsLabelled()
       }
     }
 
@@ -114,6 +119,9 @@ class MainActivityComposeTest {
         waitUntilNodeWithTextIsDisplayed(fakeStyle.name)
         assertBrowseTitleIsDisplayed()
         assertStyleIsDisplayed(fakeStyle.name)
+        // The only a11y coverage the browse dynamic feature gets - and its tabs are exactly the
+        // kind of icon-adjacent control where an unlabelled clickable hides.
+        assertEveryClickableIsLabelled()
 
         clickOnBreweriesTab()
         waitUntilNodeWithTextIsDisplayed(fakeBrewery.name)
