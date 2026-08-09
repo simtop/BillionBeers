@@ -99,6 +99,14 @@ tasks.register("ideSyncArtifacts") {
     }
 }
 
+// Modules deliberately kept out of the aggregate, by exact project path.
+//
+// This used to be `it.name.contains("presentation_utils")`, a substring match on the *name*, which
+// is fragile twice over: a rename silently drops the exclusion - the module then re-enters the
+// aggregate and nobody notices - and `contains` would also swallow any future module whose name
+// happens to embed one of these strings. Exact paths plus the check below fail loudly instead.
+val coverageExcludedProjects = setOf(":presentation_utils", ":beer_database")
+
 tasks.register<JacocoReport>("jacocoRootReport") {
     // Android debug unit tests + JVM-module `test`. The Android `test` *lifecycle* task aggregates
     // every variant (incl. the non-compiling benchmark one), so it is excluded by only taking `test`
@@ -116,10 +124,15 @@ tasks.register<JacocoReport>("jacocoRootReport") {
     )
     dependsOn(subprojects.map { it.tasks.withType<JacocoReport>() })
 
+    val unknownExclusions = coverageExcludedProjects - subprojects.map { it.path }.toSet()
+    require(unknownExclusions.isEmpty()) {
+        "coverageExcludedProjects names projects that do not exist: $unknownExclusions. " +
+            "A module was renamed or removed - update the set rather than leaving a dead entry, " +
+            "which would silently pull the module back into the coverage aggregate."
+    }
+
     val subprojectsWithJacoco = subprojects.filter {
-        it.plugins.hasPlugin("jacoco") &&
-                !it.name.contains("presentation_utils") &&
-                !it.name.contains("beer_database")
+        it.plugins.hasPlugin("jacoco") && it.path !in coverageExcludedProjects
     }
 
     val excludes = listOf(

@@ -39,13 +39,28 @@ val namespaceProvider = provider {
 val generatePaparazziTest = tasks.register("generatePaparazziTest") {
     val outputDir = layout.buildDirectory.dir("generated/paparazzi-test/kotlin")
     outputs.dir(outputDir)
-    
+
+    // The module namespace is the task's only input, and it must be declared. Without it the task
+    // had outputs and no inputs, so Gradle held it UP-TO-DATE forever once the file existed.
+    //
+    // That is not cosmetic. The namespace is baked into the generated runner twice: as the class
+    // name, and as the prefix it filters PreviewProviders by. Renaming a module's namespace left
+    // the stale prefix in place, so the runner would match zero providers, fall through to the
+    // DUMMY_NO_PREVIEWS_FOUND branch, and report a green screenshot run that asserted nothing.
+    // Measured before this fix: changing :core:designsystem's namespace regenerated nothing and
+    // the file kept the old value.
+    inputs.property("moduleNamespace", namespaceProvider)
+
     val nsProvider = namespaceProvider
     doLast {
         val capturedModuleNamespace = nsProvider.get()
         val safeClassName = capturedModuleNamespace.replace(".", "_").replaceFirstChar { it.uppercase() } + "ScreenshotTest"
         
         val outDirFile = outputDir.get().asFile
+        // Wipe first: the class name is derived from the namespace, so regenerating after a rename
+        // writes a *new* file and would otherwise leave the old one beside it - a second runner
+        // class still filtering on the dead prefix, which compiles and asserts nothing.
+        outDirFile.deleteRecursively()
         val packageDir = File(outDirFile, "com/simtop/billionbeers/screenshot")
         packageDir.mkdirs()
         
