@@ -2,6 +2,7 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
+    <ID>ModifierMissing:MainActivity.kt$CatalogApp</ID>
     <ID>SwallowedException:MainActivity.kt$e: Throwable</ID>
     <ID>TooGenericExceptionCaught:MainActivity.kt$e: Throwable</ID>
   </CurrentIssues>

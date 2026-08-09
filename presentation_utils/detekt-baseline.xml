@@ -2,7 +2,19 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
+    <ID>ComposableParamOrder:ComposeErrorView.kt$ComposeErrorView</ID>
+    <ID>LambdaParameterInRestartableEffect:DynamicFeatureLoader.kt$onCancelled</ID>
+    <ID>LambdaParameterInRestartableEffect:InfiniteListHandler.kt$onLoadMore</ID>
     <ID>LongParameterList:DynamicFeatureInstallerTest.kt$DynamicFeatureInstallerTest$( status: Int, sessionId: Int = SESSION_ID, errorCode: Int = SplitInstallErrorCode.NO_ERROR, downloaded: Long = 0, total: Long = 0, modules: List&lt;String&gt; = listOf(MODULE), )</ID>
     <ID>MatchingDeclarationName:InfiniteListHandler.kt$ListPosition</ID>
+    <ID>ModifierMissing:ComposeBeersListItem.kt$BeerChip</ID>
+    <ID>ModifierMissing:ComposeBeersListItem.kt$BeerImage</ID>
+    <ID>ModifierMissing:ComposeBeersListItem.kt$ComposeBeersListItem</ID>
+    <ID>ModifierMissing:ComposeTitle.kt$ComposeTitle</ID>
+    <ID>ParameterNaming:DynamicFeatureLoader.kt$onCancelled</ID>
+    <ID>PreviewPublic:ComposeBeersListItem.kt$ComposeBeersListItemPreview</ID>
+    <ID>PreviewPublic:ComposeErrorView.kt$ComposeErrorViewPreview</ID>
+    <ID>PreviewPublic:ComposeTitle.kt$ComposeTitlePreview</ID>
+    <ID>PreviewPublic:DynamicFeatureLoader.kt$InstallFailedContentPreview</ID>
   </CurrentIssues>
 </SmellBaseline>

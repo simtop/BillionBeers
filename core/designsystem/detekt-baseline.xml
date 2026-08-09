@@ -23,6 +23,12 @@
     <ID>MagicNumber:DialogWithProgressBar.kt$500</ID>
     <ID>MagicNumber:DialogWithProgressBar.kt$DialogProgressProvider$0.5f</ID>
     <ID>MatchingDeclarationName:Spacing.kt$BillionBeersSpacing</ID>
+    <ID>ModifierComposed:ComposeExtensions.kt$noRippleClickable</ID>
+    <ID>ModifierMissing:CatalogDemos.kt$ColorCatalogDemo</ID>
+    <ID>ModifierMissing:CatalogDemos.kt$TypographyCatalogDemo</ID>
+    <ID>ModifierMissing:DialogWithProgressBar.kt$DialogWithProgressBarDemo</ID>
+    <ID>MutableStateAutoboxing:DialogWithProgressBar.kt$mutableStateOf(number)</ID>
+    <ID>PreviewPublic:DialogWithProgressBar.kt$DialogContentPreview</ID>
     <ID>SwallowedException:ComposeExtensions.kt$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ComposeExtensions.kt$e: Exception</ID>
   </CurrentIssues>
