@@ -20,11 +20,7 @@ import com.android.build.api.dsl.CommonExtension
  * (`the<LibrariesForLibs>()`) needs a `Project` receiver, which an extension on `CommonExtension`
  * does not have.
  */
-fun CommonExtension.configureBillionBeersAndroid(
-  compileSdkVersion: Int,
-  minSdkVersion: Int,
-  withTestCoverage: Boolean = true,
-) {
+fun CommonExtension.configureBillionBeersAndroid(compileSdkVersion: Int, minSdkVersion: Int) {
   compileSdk = compileSdkVersion
 
   defaultConfig.apply {
@@ -45,9 +41,7 @@ fun CommonExtension.configureBillionBeersAndroid(
     targetCompatibility = PROJECT_JAVA_VERSION
   }
 
-  // `com.android.test` opts out, matching the original four blocks: that tier produces a standalone
-  // test APK and has no coverage story.
-  if (withTestCoverage) {
-    testCoverage.jacocoVersion = PROJECT_JACOCO_VERSION
-  }
+  // Test coverage is deliberately NOT set here: it applies to three of the four tiers, and the
+  // caller opts in per plugin id. See billionbeers.android.common for why that has to be an opt-in
+  // list rather than an exclusion.
 }
