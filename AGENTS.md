@@ -150,6 +150,7 @@ left `make konsist` green at "3 up-to-date". The whole gate, not one rule.
 | **Non-goals** — auth, cert pinning, encrypted storage, integrity/anti-tamper, push, server-side `available` sync, a shipped analytics/crash SDK, consent flows, automatic retry, multi-process. All declined because the premise is absent (the backend isn't ours, is read-only, and is unauthenticated), each with its reopen trigger. Read it before "adding what a real app has" — and delete a row in the same PR that builds it | `docs/adr/0010` |
 | Dispatchers are chosen where the work is, not where the coroutine starts. ViewModels use a bare `viewModelScope.launch { }` — Room and Retrofit suspend calls are already main-safe, so an IO hop only moves state assignment off Main. Inject `CoroutineDispatcherProvider` only where a class actually calls `withContext`/`flowOn` (a blocking SDK, CPU work). StrictMode in debug is the detector that makes this safe | `docs/adr/0012` |
 | Build time is budgeted in `config/build-time-budget.txt` and measured **locally** by `make build-budget`, never in CI — a CI wall-clock number measures which runner the job drew. Clean build 37s cold / 4s warm; a deep ABI change costs only 1.11x a leaf one, so **per-build overhead dominates, not compilation** — do not justify a new module by build speed | `docs/adr/0011` |
+| Convention plugins stay **precompiled script plugins**; the project moved to them from binary plugins on purpose. Do not propose converting back on the usual grounds — precompiled scripts *can* share helper functions (see `AndroidCommon.kt`), and the configuration-time argument is largely neutralised by the configuration cache. Converting is a *measurement* task with a written method, not a judgement call. Declarative Gradle sits on top of this, not against it | `docs/adr/0013` |
 
 Also settled, without an ADR:
 
@@ -177,10 +178,18 @@ declaring done.
 4. **Screenshots** — `make screenshot-verify` (record with `make screenshot-record` and inspect the
    PNGs; they are your eyes on the UI)
 5. **Lint / format** — `make lint`, `make format`, and **`make android-lint` whenever resources
-   change**. `make lint` is Detekt only; the Android Lint gate CI runs is `make android-lint`
-   (`:app:lintDebug`, checkDependencies across the whole graph). A string added to
-   `values/strings.xml` without its `values-fr` / `values-es` siblings passes every other rung and
-   fails CI with `MissingTranslation` — that is how PR #140 broke master.
+   change**. These are three separate gates and all three now fail:
+   - `make lint` is **Detekt**, and since the gate was adopted it **fails on new findings** and runs
+     in CI on the `format-check` job. The backlog present at adoption is frozen in per-module
+     `detekt-baseline.xml`; burn those down, and **never regenerate one to bury a new finding**
+     (same rule as `lint-baseline.xml`). To grandfather something deliberately:
+     `make detekt-baseline MODULE=:foo`, or dispatch `detekt_baseline.yml` against the branch — the
+     committed diff is the review. Test and `androidTest` sources are scanned too.
+   - `make android-lint` is **Android Lint** (`:app:lintDebug`, checkDependencies across the whole
+     graph), gated by `app/lint-baseline.xml`. A string added to `values/strings.xml` without its
+     `values-fr` / `values-es` siblings passes every other rung and fails CI with
+     `MissingTranslation` — that is how PR #140 broke master.
+   - `make format` is Spotless; CI runs `spotlessCheck` and `format_fix.yml` can apply it for you.
 6. **Device** — instrumented tests, install, logcat: use the `billionbeers-android` skill, not
    ad-hoc `adb`
 

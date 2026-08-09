@@ -2,7 +2,7 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>SwallowedException:BeersRepositoryImpl.kt$BeersRepositoryImpl$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:BeersRepositoryImpl.kt$BeersRepositoryImpl$e: Exception</ID>
+    <ID>CyclomaticComplexMethod:BeersMapper.kt$BeersMapper$fun fromBeersApiResponseItemToBeer(response: BeersApiResponseItem?): Beer</ID>
+    <ID>TooManyFunctions:BeersRepositoryImpl.kt$BeersRepositoryImpl : BeersRepository</ID>
   </CurrentIssues>
 </SmellBaseline>

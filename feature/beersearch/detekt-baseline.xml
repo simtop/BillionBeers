@@ -1,0 +1,8 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>EmptyFunctionBlock:BeersSearchViewModelTest.kt$BeersSearchViewModelTest${}</ID>
+    <ID>LongParameterList:BeersSearchScreen.kt$( viewState: CommonUiState&lt;PagedListUiModel&lt;Beer&gt;&gt;, query: String, onQueryChange: (String) -&gt; Unit, onBeerClick: (Beer) -&gt; Unit, onBack: () -&gt; Unit, onScrollToBottom: () -&gt; Unit, onRetryLoadMore: () -&gt; Unit, onRetrySearch: () -&gt; Unit, autoFocus: Boolean = true, )</ID>
+  </CurrentIssues>
+</SmellBaseline>

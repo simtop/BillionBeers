@@ -2,6 +2,6 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>MagicNumber:BeersListScreen.kt$300</ID>
+    <ID>LongParameterList:BeersListScreen.kt$( viewState: CommonUiState&lt;PagedListUiModel&lt;Beer&gt;&gt;, onBeerClick: (Beer) -&gt; Unit, onSearchClick: () -&gt; Unit, onBrowseClick: () -&gt; Unit, onScrollToBottom: () -&gt; Unit, onRefresh: () -&gt; Unit, onRetry: () -&gt; Unit, onRetryLoadMore: () -&gt; Unit, )</ID>
   </CurrentIssues>
 </SmellBaseline>

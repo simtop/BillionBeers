@@ -1,0 +1,7 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>LongParameterList:BeersService.kt$BeersService$( @Query("_page") page: Int, @Query("_limit") perPage: Int = DEFAULT_ITEMS_PER_PAGE, @Query("translations.language.code") languageCode: String = DEFAULT_LANGUAGE_CODE, // Filters; null omits the param entirely, so the catalog's unfiltered fetch stays byte- // identical on the wire. The server ANDs whichever are present. @Query("q") search: String? = null, @Query("typology.id") typologyId: String? = null, @Query("brewery.id") breweryId: String? = null, )</ID>
+  </CurrentIssues>
+</SmellBaseline>

@@ -1,0 +1,12 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:CatalogProcessor.kt$CatalogProcessor$private fun generateWrapper( func: KSFunctionDeclaration, wrapperName: String, demoContainer: String, )</ID>
+    <ID>LongMethod:CatalogProcessor.kt$CatalogProcessor$private fun generateWrapper( func: KSFunctionDeclaration, wrapperName: String, demoContainer: String, )</ID>
+    <ID>MaxLineLength:CatalogProcessor.kt$CatalogProcessor$"TextField(value = $paramName.toString(), onValueChange = { $paramName = it.toIntOrNull() ?: 0 }, label = { Text(%S) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))"</ID>
+    <ID>WildcardImport:CatalogProcessor.kt$import com.google.devtools.ksp.processing.*</ID>
+    <ID>WildcardImport:CatalogProcessor.kt$import com.google.devtools.ksp.symbol.*</ID>
+    <ID>WildcardImport:CatalogProcessor.kt$import com.squareup.kotlinpoet.*</ID>
+  </CurrentIssues>
+</SmellBaseline>

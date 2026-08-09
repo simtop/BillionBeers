@@ -40,6 +40,21 @@ jobs:
         id: spotless-check
         run: ./gradlew spotlessCheck
 
+      # Detekt had never run in ANY workflow - it was a local-only, advisory tool, and with
+      # `ignoreFailures = true` it could not fail even there. Both halves are fixed now, so it
+      # belongs on the lane that already has Gradle set up and always runs.
+      #
+      # `success() || failure()` rather than plain ordering: a Spotless failure must not hide a
+      # Detekt failure, or fixing one just uncovers the other on the next push.
+      #
+      # Added as a step on an existing job, deliberately. "CI Gate" lists jobs, not steps, so this
+      # needs no branch-protection change (AGENTS.md: add new lanes to ci-gate needs, not to the
+      # protection rule).
+      - name: Run Detekt
+        id: detekt-check
+        if: success() || failure()
+        run: ./gradlew detekt
+
       # Lives here because this lane always runs and already has Gradle set up. Guards the one
       # verification gap CI is otherwise blind to: artifacts only Android Studio's sync resolves.
       # Without it a stale ledger is invisible until a human hits it in the IDE (ADR 0007).
@@ -73,6 +88,32 @@ jobs:
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Or trigger it manually from the Actions tab (pick this branch in the \"Run workflow\" dropdown)." >> $GITHUB_STEP_SUMMARY
+
+      # Deliberately worded differently from the Format Fix hint above. Spotless output is a
+      # mechanical transform, so "run the fixer" is always the right advice. A Detekt baseline is a
+      # suppression, so the right advice is "fix the code", and the workflow is the exception.
+      - name: Detekt Hint
+        if: always() && steps.detekt-check.outcome == 'failure'
+        run: |
+          BRANCH_NAME="${{ github.head_ref || github.ref_name }}"
+          echo "### 🔍 Detekt Found New Issues" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The backlog that existed when this gate was adopted is already baselined, so a failure here means **new** findings. Fix them." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Reproduce locally:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "make lint" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "If — and only if — the finding is pre-existing or a deliberate exception, re-baseline it. **This suppresses the rule, so the diff is the review**:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "make detekt-baseline MODULE=:the:module   # locally, then commit the diff" >> $GITHUB_STEP_SUMMARY
+          echo "gh workflow run detekt_baseline.yml --ref $BRANCH_NAME   # or on the branch" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Never re-baseline to silence a finding you just introduced — that is how the gate stops working." >> $GITHUB_STEP_SUMMARY
 
   # Change-scope detector with per-lane verdict adoption. The heavy test lanes (unit / screenshot
   # / instrumented) key their `if:` off one output each. Two levels:
