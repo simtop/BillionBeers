@@ -17,6 +17,8 @@ apply(plugin = "billionbeers.detekt")
 // one tier the unused-dependency check never looked at.
 apply(plugin = "billionbeers.unused-dependencies")
 
+registerDataLayerClasspathBoundaryCheck()
+
 val libs = the<LibrariesForLibs>()
 
 configure<DynamicFeatureExtension> {

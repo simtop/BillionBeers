@@ -5,6 +5,7 @@ apply(plugin = "billionbeers.android.metro")
 apply(plugin = "billionbeers.android.compose")
 apply(plugin = "billionbeers.jacoco")
 
+registerDataLayerClasspathBoundaryCheck()
 
 val libs = the<LibrariesForLibs>()
 

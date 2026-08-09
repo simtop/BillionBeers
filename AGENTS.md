@@ -124,6 +124,17 @@ All thirteen are enforced by `:konsist`; the wording here is from the tests them
     the dependency could be declared and used with nothing firing. `:app` is exempt — assembling the
     graph is its job. (`FeatureDataLayerBoundaryTest` — reads the build scripts.)
 
+    `FeatureDataLayerBoundaryTest` only sees a data-layer module named in the feature's *own* build
+    script. It cannot see one arriving through an intermediate dependency's `api(...)` declaration —
+    a type the feature's compiler genuinely resolves, with nothing in the feature's own text to
+    catch it. `checkDataLayerClasspathBoundary`, a real Gradle task (not a Konsist test — it needs a
+    resolved dependency graph, which Konsist's static scan doesn't have) wired into `check` on every
+    `billionbeers.android.feature` / `billionbeers.android.dynamic.feature` module, closes that:
+    it resolves the module's own `debugCompileClasspath` and fails if a forbidden module shows up
+    anywhere in it. An `implementation(...)`-declared path is correctly not flagged — Gradle's own
+    configuration elision already keeps that off the compile classpath, so there is no real
+    violation to catch there. (`build-logic/convention/src/main/kotlin/FeatureBoundaryChecks.kt`.)
+
 Every invariant in this list is now mechanically enforced. If you add one, add its rule in the
 same change — a convention with no test is a convention that drifts.
 
