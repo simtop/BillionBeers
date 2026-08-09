@@ -45,3 +45,58 @@ tasks.withType<Test>().configureEach {
     .withPropertyName("filesUnderArchitectureRules")
     .withPathSensitivity(PathSensitivity.RELATIVE)
 }
+
+// Every rule file must actually have run.
+//
+// This gate has now failed silently three separate ways: it went UP-TO-DATE while the code it
+// guards changed (fixed by declaring inputs above), it passed a single-class `--tests` run while a
+// full run died of OutOfMemory (fixed by maxHeapSize above), and before either of those it simply
+// never ran at all because `make test` targets testDebugUnitTest, which a pure-JVM module does not
+// have (AGENTS.md §5). Each fix addressed one symptom. This addresses the shape.
+//
+// The check is self-maintaining on purpose: it counts `*Test.kt` rule files on disk and compares
+// against the JUnit XML classes the run produced, so adding a rule raises the bar automatically and
+// a hardcoded expected number can never go stale. A rule that is added but never executed - the
+// exact thing AGENTS.md warns about twice - now fails the build instead of reading as coverage.
+//
+// Skipped when a `--tests` filter is supplied, because running one rule class is then correct.
+val ruleSourceDir = layout.projectDirectory.dir("src/test/kotlin/com/simtop/konsist")
+val hasTestFilter =
+  gradle.startParameter.taskRequests.any { request -> request.args.any { it == "--tests" } }
+
+tasks.named<Test>("test") {
+  val resultsDir = reports.junitXml.outputLocation
+  val ruleDir = ruleSourceDir
+  val filtered = hasTestFilter
+
+  doLast {
+    if (filtered) return@doLast
+
+    val expected =
+      ruleDir.asFile
+        .listFiles { file -> file.name.endsWith("Test.kt") }
+        ?.map { it.name.removeSuffix(".kt") }
+        ?.toSet()
+        .orEmpty()
+    val executed =
+      resultsDir
+        .get()
+        .asFile
+        .listFiles { file -> file.name.startsWith("TEST-") && file.extension == "xml" }
+        ?.map { it.name.removePrefix("TEST-").removeSuffix(".xml").substringAfterLast('.') }
+        ?.toSet()
+        .orEmpty()
+
+    check(expected.isNotEmpty()) {
+      "Found no *Test.kt rule files in $ruleDir - the layout changed and this check, plus the " +
+        "whole architecture gate, would pass vacuously."
+    }
+
+    val missing = expected - executed
+    check(missing.isEmpty()) {
+      "These Konsist rules exist but did not run: ${missing.sorted().joinToString(", ")}.\n" +
+        "A rule that never executes looks like coverage and enforces nothing. Ran " +
+        "${executed.size} of ${expected.size}."
+    }
+  }
+}
