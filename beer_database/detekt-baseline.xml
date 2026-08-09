@@ -2,7 +2,9 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>LongParameterList:BeersDao.kt$BeersDao$( id: String, name: String, tagline: String, description: String, imageUrl: String, abv: Double, ibu: Double, foodPairing: String, )</ID>
+    <ID>LongParameterList:BeersDao.kt$BeersDao$( id: String, name: String, tagline: String, description: String, imageUrl: String, abv: Double, ibu: Double, foodPairing: String, styleName: String, breweryName: String, srm: Int?, releasedYear: Int?, minServingTemperature: Int?, maxServingTemperature: Int?, fermentationMethod: String, ingredients: String, recommendedGlasses: String, )</ID>
+    <ID>MagicNumber:Migrations.kt$&lt;no name provided&gt;$3</ID>
     <ID>MatchingDeclarationName:Converter.kt$Converters</ID>
+    <ID>TooManyFunctions:BeersDao.kt$BeersDao</ID>
   </CurrentIssues>
 </SmellBaseline>

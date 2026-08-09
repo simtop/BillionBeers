@@ -1,0 +1,15 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ReturnCount:SnapshotProcessor.kt$SnapshotProcessor$private fun isValidPreview(func: KSFunctionDeclaration): Boolean</ID>
+    <ID>SpreadOperator:SnapshotProcessor.kt$SnapshotProcessor$(true, *resolver.getAllFiles().toList().toTypedArray())</ID>
+    <ID>SwallowedException:SnapshotProcessor.kt$SnapshotProcessor$e: Exception</ID>
+    <ID>SwallowedException:SnapshotProcessor.kt$SnapshotProcessor$e: FileAlreadyExistsException</ID>
+    <ID>TooGenericExceptionCaught:SnapshotProcessor.kt$SnapshotProcessor$e: Exception</ID>
+    <ID>UnusedPrivateProperty:SnapshotProcessor.kt$SnapshotProcessor$val previewSymbols = resolver.getSymbolsWithAnnotation("androidx.compose.ui.tooling.preview.Preview")</ID>
+    <ID>WildcardImport:SnapshotProcessor.kt$import com.google.devtools.ksp.processing.*</ID>
+    <ID>WildcardImport:SnapshotProcessor.kt$import com.google.devtools.ksp.symbol.*</ID>
+    <ID>WildcardImport:SnapshotProcessor.kt$import com.squareup.kotlinpoet.*</ID>
+  </CurrentIssues>
+</SmellBaseline>

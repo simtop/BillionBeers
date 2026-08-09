@@ -2,6 +2,7 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>EmptyFunctionBlock:FakeBeersRepository.kt$FakeBeersRepository${}</ID>
+    <ID>TooManyFunctions:FakeBeersRepository.kt$FakeBeersRepository : BeersRepository</ID>
+    <ID>TopLevelPropertyNaming:BeerFixtures.kt$const val fakeErrorName = "Error getting list of beers"</ID>
   </CurrentIssues>
 </SmellBaseline>
