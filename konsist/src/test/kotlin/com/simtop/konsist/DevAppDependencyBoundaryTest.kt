@@ -20,6 +20,13 @@ class DevAppDependencyBoundaryTest {
 
   private val forbiddenDataLayerModules = listOf(":beer_data", ":beer_database", ":beer_network")
 
+  // A positive control on the list above: if one of those strings drifts (typo, or the module gets
+  // renamed/moved), this fails loudly instead of the rule below silently matching nothing.
+  @Test
+  fun `forbidden data-layer module list names real modules`() {
+    assertModulePathsExist(forbiddenDataLayerModules)
+  }
+
   @Test
   fun `dev-apps do not depend on data-layer modules`() {
     val root = repoRoot()

@@ -31,6 +31,13 @@ class InstrumentedTestOptInBoundaryTest {
   private val optInPluginIds =
     listOf("billionbeers.android.managed.device", "billionbeers.android.feature.uitest")
 
+  // A positive control on the list above: if one of those ids drifts (typo, or the plugin gets
+  // renamed/moved), this fails loudly instead of the rule below silently matching nothing.
+  @Test
+  fun `opt-in plugin id list names real convention plugins`() {
+    assertConventionPluginsExist(optInPluginIds)
+  }
+
   @Test
   fun `modules with instrumented tests opt into the managed device`() {
     val root = repoRoot()

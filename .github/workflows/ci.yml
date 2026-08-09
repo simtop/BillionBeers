@@ -310,6 +310,12 @@ jobs:
       - name: Run Konsist Architecture Rules
         run: make konsist
 
+      # Konsist reads each feature's own build-script text, so it can't see a data-layer module
+      # arriving through an intermediate dependency's api(...) declaration. This resolves the
+      # actual compile classpath instead - same invariant (13, AGENTS.md), the gap Konsist leaves.
+      - name: Check data-layer classpath boundary
+        run: make check-data-layer-boundary
+
       # High-water ratchet: jacocoRootReport reuses the debug unit tests just run above (they're
       # up-to-date), then fails if line coverage dropped below config/coverage-floor.txt.
       - name: Coverage floor check
