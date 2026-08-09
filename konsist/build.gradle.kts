@@ -1,11 +1,12 @@
-plugins { id("org.jetbrains.kotlin.jvm") }
+// billionbeers.jvm.library, not a bare kotlin("jvm"): this module used to opt out of the convention
+// because that tier shipped JUnit 4 with no useJUnitPlatform(), and these rules are JUnit 5. Opting
+// out cost it spotless and detekt too. The convention now carries the JUnit 5 tier, so the rules
+// module is formatted and linted like everything else it polices.
+plugins { id("billionbeers.jvm.library") }
 
-dependencies {
-  testImplementation(libs.konsist)
-  testImplementation(libs.junit.jupiter.api)
-  testRuntimeOnly(libs.junit.jupiter.engine)
-  testRuntimeOnly(libs.junit.platform.launcher)
-}
+// The JUnit 5 API, the jupiter/vintage engines and the platform launcher all come from the
+// convention now, so the rules themselves are the only dependency left to declare.
+dependencies { testImplementation(libs.konsist) }
 
 // The rules read the rest of the repo off the filesystem - Konsist.scopeFromProject() for the
 // import-based ones, and plain File reads for the ones that parse build.gradle.kts. None of that is
@@ -26,8 +27,8 @@ val filesUnderRules =
     exclude("**/build/**", "**/bin/**", "**/.git/**", "**/.gradle/**", "**/gradle-user-home/**")
   }
 
+// useJUnitPlatform() is not repeated here - billionbeers.jvm.library sets it for this tier.
 tasks.withType<Test>().configureEach {
-  useJUnitPlatform()
   inputs
     .files(filesUnderRules)
     .withPropertyName("filesUnderArchitectureRules")
