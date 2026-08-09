@@ -7,13 +7,13 @@ import org.junit.jupiter.api.Test
 /**
  * A test-only library declared on `implementation` or `api` ships in the release APK.
  *
- * Caught on adoption: `core-common/build.gradle.kts` declared
- * `implementation(libs.coroutinesTest)` next to `implementation(libs.kotlinx.coroutines.core)` -
- * the comment on the line ("For Dispatchers? No, coroutines-core") shows the first was a mistake the
- * author noticed, corrected on the following line, and never deleted. Because every module depends
- * on `:core-common`, `kotlinx-coroutines-test` reached `:app`'s `releaseRuntimeClasspath` and its
- * `TestMainDispatcherFactory` entry was present in the shipped APK's merged
- * `META-INF/services` registry.
+ * Caught on adoption: `core-common/build.gradle.kts` declared `implementation(libs.coroutinesTest)`
+ * next to `implementation(libs.kotlinx.coroutines.core)` - the comment on the line ("For
+ * Dispatchers? No, coroutines-core") shows the first was a mistake the author noticed, corrected on
+ * the following line, and never deleted. Because every module depends on `:core-common`,
+ * `kotlinx-coroutines-test` reached `:app`'s `releaseRuntimeClasspath` and its
+ * `TestMainDispatcherFactory` entry was present in the shipped APK's merged `META-INF/services`
+ * registry.
  *
  * Nothing else catches this. `dependency-guard` locks the resolved release classpath, but it was
  * baselined *with* the offending dependency already on it, so the guard faithfully protected the
@@ -27,15 +27,16 @@ import org.junit.jupiter.api.Test
 class TestLibraryBoundaryTest {
 
   /** Configurations whose contents reach a shipped artifact. */
-  private val productionConfigurations = listOf("implementation", "api", "compileOnly", "runtimeOnly")
+  private val productionConfigurations =
+    listOf("implementation", "api", "compileOnly", "runtimeOnly")
 
   /**
    * Modules allowed to put test libraries on a production configuration.
    *
    * `testing-utils` / `testing-utils-android` are the sibling fixture modules ADR 0001 chose
    * instead of Gradle's `java-test-fixtures`; exposing JUnit and friends via `api` is their entire
-   * job, and consumers only ever take them on `testImplementation` /
-   * `androidTestImplementation`, so nothing they declare can reach a release classpath.
+   * job, and consumers only ever take them on `testImplementation` / `androidTestImplementation`,
+   * so nothing they declare can reach a release classpath.
    *
    * `build-logic` is a separate composite build of Gradle plugins - its `implementation`
    * dependencies are compile-time inputs to the build itself, not to the app.
@@ -77,16 +78,13 @@ class TestLibraryBoundaryTest {
    * script uses (`coroutinesTest` -> `libs.coroutinesTest`, `androidx-ui-test-junit4` ->
    * `libs.androidx.ui.test.junit4`).
    *
-   * Handles all three shapes the catalog uses: `alias = "group:name:version"`,
-   * `alias = { module = "group:name", ... }` and `alias = { group = "...", name = "...", ... }`.
+   * Handles all three shapes the catalog uses: `alias = "group:name:version"`, `alias = { module =
+   * "group:name", ... }` and `alias = { group = "...", name = "...", ... }`.
    */
   private fun testOnlyAliases(root: File): List<String> {
     val toml = File(root, "gradle/libs.versions.toml").readLines()
     val librariesSection =
-      toml
-        .dropWhile { it.trim() != "[libraries]" }
-        .drop(1)
-        .takeWhile { !it.trim().startsWith("[") }
+      toml.dropWhile { it.trim() != "[libraries]" }.drop(1).takeWhile { !it.trim().startsWith("[") }
 
     return librariesSection.mapNotNull { rawLine ->
       val line = rawLine.substringBefore('#').trim()
@@ -109,6 +107,81 @@ class TestLibraryBoundaryTest {
     }
   }
 
+  /**
+   * Every `[libraries]` alias, in the dotted form a build script uses, paired with its coordinate.
+   * Needed by [testOnlyBundleAliases], which has to resolve a bundle's members back to coordinates.
+   */
+  private fun allAliasCoordinates(root: File): Map<String, String> {
+    val toml = File(root, "gradle/libs.versions.toml").readLines()
+    val librariesSection =
+      toml.dropWhile { it.trim() != "[libraries]" }.drop(1).takeWhile { !it.trim().startsWith("[") }
+
+    return librariesSection
+      .mapNotNull { rawLine ->
+        val line = rawLine.substringBefore('#').trim()
+        if (line.isEmpty() || '=' !in line) return@mapNotNull null
+        val alias = line.substringBefore('=').trim()
+        val value = line.substringAfter('=').trim()
+
+        val coordinate =
+          when {
+            value.startsWith("\"") -> value.trim('"')
+            "module" in value ->
+              Regex("""module\s*=\s*"([^"]+)"""").find(value)?.groupValues?.get(1)
+            else -> {
+              val group = Regex("""group\s*=\s*"([^"]+)"""").find(value)?.groupValues?.get(1)
+              val name = Regex("""name\s*=\s*"([^"]+)"""").find(value)?.groupValues?.get(1)
+              if (group != null && name != null) "$group:$name" else null
+            }
+          } ?: return@mapNotNull null
+
+        alias to coordinate
+      }
+      .toMap()
+  }
+
+  /**
+   * Bundle aliases holding at least one test-only library, in the dotted form a build script uses
+   * (`unitTest` -> `libs.bundles.unitTest`).
+   *
+   * A bundle is a single name for a list of libraries, so without this the catalog offers a way
+   * straight through this rule: `implementation(libs.bundles.unitTest)` ships five test libraries
+   * while matching none of the `libs.<alias>` patterns the rule looks for. **One** test-only member
+   * condemns the bundle - that member ships just as surely as it would on its own line.
+   *
+   * The `[bundles]` section is TOML arrays, which may be written on one line or across several, so
+   * the section text is joined before the entries are split out.
+   */
+  private fun testOnlyBundleAliases(root: File): List<String> {
+    val toml = File(root, "gradle/libs.versions.toml").readLines()
+    val bundlesSection =
+      toml
+        .dropWhile { it.trim() != "[bundles]" }
+        .drop(1)
+        .takeWhile { !it.trim().startsWith("[") }
+        .joinToString("\n") { it.substringBefore('#') }
+
+    if (bundlesSection.isBlank()) return emptyList()
+
+    val aliasCoordinates = allAliasCoordinates(root)
+
+    return Regex("""([\w.-]+)\s*=\s*\[([^]]*)]""", RegexOption.DOT_MATCHES_ALL)
+      .findAll(bundlesSection)
+      .mapNotNull { match ->
+        val bundleAlias = match.groupValues[1].trim()
+        val members =
+          match.groupValues[2].split(',').map { it.trim().trim('"') }.filter { it.isNotEmpty() }
+
+        val holdsTestLibrary = members.any { member ->
+          val coordinate = aliasCoordinates[member]
+          coordinate != null && isTestOnly(coordinate)
+        }
+
+        if (holdsTestLibrary) bundleAlias.replace('-', '.') else null
+      }
+      .toList()
+  }
+
   @Test
   fun `test-only libraries never reach a production configuration`() {
     val root = repoRoot()
@@ -118,6 +191,11 @@ class TestLibraryBoundaryTest {
       "No test-only aliases found in gradle/libs.versions.toml - the catalog format changed and " +
         "this rule would pass vacuously"
     }
+
+    // `libs.<alias>` for a bare library, `libs.bundles.<alias>` for a bundle. Both reach a release
+    // classpath the same way, so both are checked against the same production configurations.
+    val referencePaths =
+      aliases.map { "libs.$it" } + testOnlyBundleAliases(root).map { "libs.bundles.$it" }
 
     val violations = mutableListOf<String>()
 
@@ -131,11 +209,12 @@ class TestLibraryBoundaryTest {
         script.uncommentedText().lines().forEachIndexed { index, line ->
           val declaration = line.trim()
           productionConfigurations.forEach { configuration ->
-            aliases.forEach { alias ->
-              if (declaration.startsWith("$configuration(libs.$alias)") ||
-                declaration.startsWith("\"$configuration\"(libs.$alias)")
+            referencePaths.forEach { reference ->
+              if (
+                declaration.startsWith("$configuration($reference)") ||
+                  declaration.startsWith("\"$configuration\"($reference)")
               ) {
-                violations += "$relativePath:${index + 1}  $configuration(libs.$alias)"
+                violations += "$relativePath:${index + 1}  $configuration($reference)"
               }
             }
           }

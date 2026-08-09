@@ -9,10 +9,11 @@ buildscript {
     dependencies {
         classpath(libs.androidToolsBuildGradle)
         classpath(libs.kotlinGradlePlugin)
-        classpath(libs.navigationSafeArgsPlugin)
-        classpath(libs.metro.gradle.plugin)
     }
 
+    // Live, despite appearances: javapoet reaches this classpath transitively through AGP and the
+    // Room Gradle plugin (confirmed with `./gradlew buildEnvironment`). Note the scope - this is the
+    // *buildscript* classpath only, so it does not pin the javapoet that KSP processors resolve.
     configurations.all {
         resolutionStrategy {
             force("com.squareup:javapoet:1.13.0")
@@ -21,7 +22,6 @@ buildscript {
 }
 
 plugins {
-    id("org.sonarqube").version("3.2.0")
     alias(libs.plugins.compose.compiler) apply false
     alias(libs.plugins.com.google.devtools.ksp) apply false
 

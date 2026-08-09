@@ -5,17 +5,16 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
- * A dev-app (app-dev-<feature>) exists to build one feature in seconds instead of minutes: it
- * binds the feature under development to :beerdomain:fakes instead of the real data layer, so the
- * heavy :beer_data / :beer_database / :beer_network graph (Room, Retrofit, OkHttp) never enters
- * its compilation. The moment a dev-app declares a dependency on a data-layer module, that
- * guarantee is gone and the dev-app is just a slower copy of :app.
+ * A dev-app (app-dev-<feature>) exists to build one feature in seconds instead of minutes: it binds
+ * the feature under development to :beerdomain:fakes instead of the real data layer, so the heavy
+ * :beer_data / :beer_database / :beer_network graph (Room, Retrofit, OkHttp) never enters its
+ * compilation. The moment a dev-app declares a dependency on a data-layer module, that guarantee is
+ * gone and the dev-app is just a slower copy of :app.
  *
  * The invariant lives in build.gradle.kts, not in Kotlin source, and Konsist's project scope does
- * not surface build scripts (they are excluded, and .kts is not scanned at all), so this rule
- * reads the dev-app build files directly. It matches the full project("...") call form on purpose:
- * a bare ":beer_data" would also match the explanatory comment in the build file and fail correct
- * code.
+ * not surface build scripts (they are excluded, and .kts is not scanned at all), so this rule reads
+ * the dev-app build files directly. It matches the full project("...") call form on purpose: a bare
+ * ":beer_data" would also match the explanatory comment in the build file and fail correct code.
  */
 class DevAppDependencyBoundaryTest {
 
@@ -38,8 +37,9 @@ class DevAppDependencyBoundaryTest {
 
     devAppBuildScripts.forEach { script ->
       val text = script.readText()
-      val violations =
-        forbiddenDataLayerModules.filter { module -> text.contains("project(\"$module\")") }
+      val violations = forbiddenDataLayerModules.filter { module ->
+        text.contains("project(\"$module\")")
+      }
       assertTrue(violations.isEmpty()) {
         "${script.parentFile.name} depends on data-layer module(s) $violations - dev-apps must use " +
           ":beerdomain:fakes, not the real data layer, to keep their build fast"

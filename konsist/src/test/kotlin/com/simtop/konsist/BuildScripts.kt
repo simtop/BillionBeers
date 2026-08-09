@@ -19,8 +19,8 @@ internal fun repoRoot(): File {
 
 /**
  * Every `build.gradle.kts` in the project, skipping build output and IDE output trees. `bin/` is
- * excluded because stale IDE output holds *deleted* sources and would make a rule fail on code
- * that no longer exists (AGENTS.md §2).
+ * excluded because stale IDE output holds *deleted* sources and would make a rule fail on code that
+ * no longer exists (AGENTS.md §2).
  */
 internal fun buildScripts(root: File = repoRoot()): List<File> =
   root

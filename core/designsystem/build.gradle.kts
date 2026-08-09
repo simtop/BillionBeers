@@ -5,9 +5,9 @@ plugins {
   id("billionbeers.android.catalog")
 }
 
-android { namespace = "com.simtop.billionbeers.core.designsystem" }
-
-dependencies {
-  implementation(libs.androidx.foundation.android)
-  implementation(libs.androidx.material3.android)
+android {
+  namespace = "com.simtop.billionbeers.core.designsystem"
 }
+
+// No dependencies block: foundation and material3 are the only two this module needs, and
+// billionbeers.android.compose supplies both.

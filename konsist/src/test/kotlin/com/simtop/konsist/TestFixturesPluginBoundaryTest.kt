@@ -5,14 +5,14 @@ import org.junit.jupiter.api.Test
 
 /**
  * Backs ADR 0001 (docs/adr/0001-test-fixtures-via-sibling-modules.md): test fixtures live in
- * sibling `:module:fakes` / `:module:fixtures` modules, never Gradle's `java-test-fixtures`
- * plugin. That was decided on measured build-time cost, not taste - the plugin adds a variant to
- * every consumer and the ADR records what that did to build times here.
+ * sibling `:module:fakes` / `:module:fixtures` modules, never Gradle's `java-test-fixtures` plugin.
+ * That was decided on measured build-time cost, not taste - the plugin adds a variant to every
+ * consumer and the ADR records what that did to build times here.
  *
- * The decision was drifting back in on its own: `beerdomain/api/build.gradle.kts` carried a
- * "TODO: try testFixtures instead" with commented-out `testFixturesImplementation` lines, which is
- * how a settled ADR quietly becomes a suggestion. Deleting the TODO fixes today; this rule fixes
- * the next time.
+ * The decision was drifting back in on its own: `beerdomain/api/build.gradle.kts` carried a "TODO:
+ * try testFixtures instead" with commented-out `testFixturesImplementation` lines, which is how a
+ * settled ADR quietly becomes a suggestion. Deleting the TODO fixes today; this rule fixes the next
+ * time.
  *
  * Matching is on the plugin id and deliberately ignores comment lines - see [uncommentedText].
  */

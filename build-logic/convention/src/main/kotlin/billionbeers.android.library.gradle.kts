@@ -7,6 +7,7 @@ plugins {
 }
 
 apply(plugin = "billionbeers.android.common")
+apply(plugin = "billionbeers.android.testing")
 apply(plugin = "billionbeers.jacoco")
 apply(plugin = "billionbeers.spotless")
 apply(plugin = "billionbeers.detekt")
@@ -15,33 +16,10 @@ apply(plugin = "billionbeers.unused-dependencies")
 val libs = the<LibrariesForLibs>()
 
 dependencies {
+    // The JUnit 5 tier and useJUnitPlatform() come from billionbeers.android.testing. JUnit 4 stays
+    // declared here: library modules still hold `org.junit.Test` tests, which the vintage engine
+    // (also supplied there) runs alongside the Jupiter ones.
     "testImplementation"(libs.junit)
-    "testImplementation"(libs.mockk)
-    "testImplementation"(libs.coreTesting)
-    "testImplementation"(libs.coroutinesTest)
-    "testImplementation"(libs.kluentAndroid)
-    "testImplementation"(libs.turbine)
-    "testImplementation"(libs.junit.jupiter.api)
-    "testImplementation"(libs.junit.jupiter.params)
 
-    // The shared MainDispatcherExtension. Every ViewModel test needs Dispatchers.setMain, and
-    // hand-rolling it in each module is how the JUnit 4 rule this replaced drifted out of use.
-    "testImplementation"(project(":testing-utils"))
-    "testRuntimeOnly"(libs.junit.jupiter.engine)
-    "testRuntimeOnly"(libs.junit.vintage.engine)
-
-    "androidTestImplementation"(libs.junit)
-    "androidTestImplementation"(libs.kotlinTestJunit)
-    "androidTestImplementation"(libs.coroutinesTest)
-    "androidTestImplementation"(libs.espressoCore)
-    "androidTestImplementation"(libs.testRunner)
-    "androidTestImplementation"(libs.testRules)
-    "androidTestImplementation"(libs.testCoreKtx)
-    "androidTestImplementation"(libs.mockkAndroid)
-    "androidTestImplementation"(libs.junitKtx)
-    "androidTestImplementation"(libs.coreTesting)
-}
-
-tasks.withType<Test>().configureEach {
-    useJUnitPlatform()
+    "androidTestImplementation"(libs.bundles.instrumentedTest)
 }

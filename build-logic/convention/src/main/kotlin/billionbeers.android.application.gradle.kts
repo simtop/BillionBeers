@@ -23,8 +23,9 @@ val android = the<ApplicationExtension>()
 android.apply {
     defaultConfig {
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = PROJECT_VERSION_CODE
-        versionName = PROJECT_VERSION_NAME
+        // From gradle.properties, not a constant in the convention jar - see Versions.kt for why.
+        versionCode = providers.gradleProperty("billionbeers.versionCode").get().toInt()
+        versionName = providers.gradleProperty("billionbeers.versionName").get()
         multiDexEnabled = true
     }
 
@@ -135,21 +136,11 @@ plugins.withId("androidx.baselineprofile") {
 dependencies {
     "implementation"(libs.tracing.perfetto)
     "implementation"(libs.tracing.perfetto.binary)
+    // JUnit 4, deliberately: this tier applies neither android-junit5 nor useJUnitPlatform(), and
+    // :app's unit tests are `org.junit.Test`. It shares the bundles with the JUnit 5 tiers but not
+    // the platform - see billionbeers.android.testing for why that split is intentional.
     "testImplementation"(libs.junit)
-    "testImplementation"(libs.mockk)
-    "testImplementation"(libs.coreTesting)
-    "testImplementation"(libs.coroutinesTest)
-    "testImplementation"(libs.kluentAndroid)
-    "testImplementation"(libs.turbine)
+    "testImplementation"(libs.bundles.unitTest)
 
-    "androidTestImplementation"(libs.junit)
-    "androidTestImplementation"(libs.kotlinTestJunit)
-    "androidTestImplementation"(libs.coroutinesTest)
-    "androidTestImplementation"(libs.espressoCore)
-    "androidTestImplementation"(libs.testRunner)
-    "androidTestImplementation"(libs.testRules)
-    "androidTestImplementation"(libs.testCoreKtx)
-    "androidTestImplementation"(libs.mockkAndroid)
-    "androidTestImplementation"(libs.junitKtx)
-    "androidTestImplementation"(libs.coreTesting)
+    "androidTestImplementation"(libs.bundles.instrumentedTest)
 }

@@ -65,7 +65,6 @@ dependencies {
 
   implementation(libs.androidPlayCore)
   implementation(libs.androidPlayCoreKtx)
-  implementation(libs.androidxActivityCompose)
   implementation(libs.androidx.navigation3.runtime)
   implementation(libs.androidx.navigation3.ui)
   // appcompat stays: the manifest's @style/AppTheme resolves to a Theme.AppCompat parent

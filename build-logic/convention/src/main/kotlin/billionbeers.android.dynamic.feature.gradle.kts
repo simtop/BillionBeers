@@ -7,11 +7,15 @@ plugins {
 }
 
 apply(plugin = "billionbeers.android.common")
+apply(plugin = "billionbeers.android.testing")
 apply(plugin = "billionbeers.android.metro")
 apply(plugin = "billionbeers.android.compose")
 apply(plugin = "billionbeers.jacoco")
 apply(plugin = "billionbeers.spotless")
 apply(plugin = "billionbeers.detekt")
+// Matches android.library / android.application. Its absence here meant dynamic features were the
+// one tier the unused-dependency check never looked at.
+apply(plugin = "billionbeers.unused-dependencies")
 
 val libs = the<LibrariesForLibs>()
 
@@ -34,24 +38,9 @@ dependencies {
     "implementation"(libs.navigationFragmentKtx)
     "implementation"(libs.navigationUi)
 
-    "testImplementation"(libs.mockk)
-    "testImplementation"(libs.coreTesting)
-    "testImplementation"(libs.coroutinesTest)
-    "testImplementation"(libs.kluentAndroid)
-    "testImplementation"(libs.turbine)
-    "testImplementation"(libs.junit.jupiter.api)
-    "testImplementation"(libs.junit.jupiter.params)
-
-    // The shared MainDispatcherExtension, same as the library convention supplies.
-    "testImplementation"(project(":testing-utils"))
-    "testRuntimeOnly"(libs.junit.jupiter.engine)
-    "testRuntimeOnly"(libs.junit.vintage.engine)
-
+    // The JUnit 5 tier, :testing-utils and useJUnitPlatform() come from billionbeers.android.testing.
+    // This tier declares no JUnit 4: dynamic-feature modules have no `org.junit.Test` sources.
     "androidTestImplementation"(libs.junit)
     "androidTestImplementation"(libs.espressoCore)
     "androidTestImplementation"(libs.coreTesting)
-}
-
-tasks.withType<Test>().configureEach {
-    useJUnitPlatform()
 }

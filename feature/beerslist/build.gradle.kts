@@ -14,8 +14,4 @@ dependencies {
   implementation(libs.kotlinx.serialization.json)
   testImplementation(project(":beerdomain:fakes"))
   testImplementation(libs.striktCore)
-
-  implementation(libs.androidx.material3.android)
-  implementation(libs.androidx.compose.material.icons.core)
-  implementation(libs.androidx.ui.tooling.preview.android)
 }
