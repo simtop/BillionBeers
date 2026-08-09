@@ -65,7 +65,6 @@ lifecycle-viewmodel-savedstate = { module = "androidx.lifecycle:lifecycle-viewmo
 
 # Navigation
 navigationFragmentKtx = { module = "androidx.navigation:navigation-fragment-ktx", version.ref = "androidx-navigation" }
-navigationSafeArgsPlugin = { module = "androidx.navigation:navigation-safe-args-gradle-plugin", version.ref = "androidx-navigation" }
 navigationUi = { module = "androidx.navigation:navigation-ui", version.ref = "androidx-navigation" }
 navigationDynamicFeaturesFragment = { module = "androidx.navigation:navigation-dynamic-features-fragment", version.ref = "androidx-navigation" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "androidx-navigation" }
