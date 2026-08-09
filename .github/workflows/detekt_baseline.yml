@@ -1,0 +1,118 @@
+name: Detekt Baseline
+
+# Dispatch against a branch to regenerate the Detekt baselines and commit them to that same branch.
+# The sibling of format_fix.yml, for the gate that replaced `ignoreFailures = true`.
+#
+# IT IS DELIBERATELY NOT AUTOMATIC, and that is the whole design note. spotlessApply is a
+# deterministic mechanical transform, so format_fix.yml can run and commit with nothing for a
+# reviewer to approve. A Detekt baseline is the opposite: it is a *suppression list*. Running this
+# on every push, or on a red PR, would mean any new finding silences itself and the gate never
+# fails again - the exact state this replaced, reached automatically instead of by a config flag.
+#
+# So: manual dispatch only, never on `push` or `pull_request`, and it prints what it suppressed
+# into the job summary. The baseline files are committed, so the PR diff is the real review surface
+# - a reviewer can see precisely which rules were added and object.
+#
+# When to dispatch it:
+#   - onboarding a module that had no baseline
+#   - after genuinely FIXING findings, to shrink a baseline
+#   - a deliberate, reviewed decision to grandfather something
+#
+# When NOT to: CI went red on a finding you just introduced. Fix the code. That is the point.
+#
+# Push uses the write deploy key, not GITHUB_TOKEN, for the reason in ADR 0007: events created with
+# GITHUB_TOKEN do not trigger workflow runs, so the commit would move an open PR's head to a SHA CI
+# never runs on, leaving "CI Gate" pending forever and `gh pr merge --auto` hanging silently.
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: detekt-baseline-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  baseline:
+    name: Regenerate Detekt baselines on the branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Refuse to run on the default branch
+        # Baselines suppress findings; doing that on master without review is precisely the failure
+        # this workflow's design is trying to avoid. Branch protection would reject the push anyway,
+        # so fail here with a message that says why.
+        if: github.ref_name == github.event.repository.default_branch
+        run: |
+          echo "::error::Dispatch this against a feature branch, not ${{ github.ref_name }}."
+          echo "It commits directly to the branch it runs on, and a baseline is a suppression."
+          exit 1
+
+      - name: Checkout branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.ref_name }}
+          ssh-key: ${{ secrets.VERIFICATION_METADATA_DEPLOY_KEY }}
+
+      - name: Set up JDK 23
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+        with:
+          java-version: '23'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6
+        with:
+          gradle-version: wrapper
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Regenerate Detekt baselines
+        run: ./gradlew detektBaseline
+
+      - name: Summarise what changed, then commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # -u, not -A: only files already tracked. The repo deliberately carries untracked
+          # local-only content (planning notes) that must never be committed.
+          git add -u
+          # Newly created baselines are untracked, so add those explicitly by name.
+          git ls-files --others --exclude-standard -- '**/detekt-baseline.xml' \
+            | xargs -r git add --
+
+          if git diff --cached --quiet; then
+            echo "No baseline changes - Detekt findings already match the committed baselines."
+            echo "No baseline changes." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          # Make the suppression visible in the run itself, not only in the eventual diff. Counting
+          # added <ID> lines per file is enough to see at a glance whether this quietly grew.
+          {
+            echo "## Detekt baseline changes"
+            echo ""
+            echo "A baseline is a suppression list. Review these before merging."
+            echo ""
+            echo "| file | rules added | rules removed |"
+            echo "|---|---|---|"
+            for f in $(git diff --cached --name-only -- '**/detekt-baseline.xml'); do
+              added=$(git diff --cached -- "$f" | grep -c '^+.*<ID>' || true)
+              removed=$(git diff --cached -- "$f" | grep -c '^-.*<ID>' || true)
+              echo "| \`$f\` | $added | $removed |"
+            done
+            echo ""
+            echo "Rules newly suppressed:"
+            echo ""
+            echo '```'
+            git diff --cached -- '**/detekt-baseline.xml' \
+              | grep '^+.*<ID>' | sed 's/^+\s*//' | sort | uniq -c | sort -rn || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          git commit -m "chore: regenerate Detekt baselines"
+          git push origin HEAD:"$GITHUB_REF_NAME"
+          echo "Pushed a baseline commit to $GITHUB_REF_NAME - review the diff before merging."

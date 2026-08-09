@@ -178,10 +178,18 @@ declaring done.
 4. **Screenshots** — `make screenshot-verify` (record with `make screenshot-record` and inspect the
    PNGs; they are your eyes on the UI)
 5. **Lint / format** — `make lint`, `make format`, and **`make android-lint` whenever resources
-   change**. `make lint` is Detekt only; the Android Lint gate CI runs is `make android-lint`
-   (`:app:lintDebug`, checkDependencies across the whole graph). A string added to
-   `values/strings.xml` without its `values-fr` / `values-es` siblings passes every other rung and
-   fails CI with `MissingTranslation` — that is how PR #140 broke master.
+   change**. These are three separate gates and all three now fail:
+   - `make lint` is **Detekt**, and since the gate was adopted it **fails on new findings** and runs
+     in CI on the `format-check` job. The backlog present at adoption is frozen in per-module
+     `detekt-baseline.xml`; burn those down, and **never regenerate one to bury a new finding**
+     (same rule as `lint-baseline.xml`). To grandfather something deliberately:
+     `make detekt-baseline MODULE=:foo`, or dispatch `detekt_baseline.yml` against the branch — the
+     committed diff is the review. Test and `androidTest` sources are scanned too.
+   - `make android-lint` is **Android Lint** (`:app:lintDebug`, checkDependencies across the whole
+     graph), gated by `app/lint-baseline.xml`. A string added to `values/strings.xml` without its
+     `values-fr` / `values-es` siblings passes every other rung and fails CI with
+     `MissingTranslation` — that is how PR #140 broke master.
+   - `make format` is Spotless; CI runs `spotlessCheck` and `format_fix.yml` can apply it for you.
 6. **Device** — instrumented tests, install, logcat: use the `billionbeers-android` skill, not
    ad-hoc `adb`
 
