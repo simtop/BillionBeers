@@ -12,15 +12,12 @@ dependencies {
   implementation(project(":core"))
   implementation(project(":core:designsystem"))
 
-  implementation(libs.androidxActivityCompose)
-  implementation(libs.androidx.foundation.android)
+  // activity-compose, foundation, material3 and ui-tooling-preview come from
+  // billionbeers.android.compose.
   implementation(libs.androidx.runtime.retain)
-  implementation(libs.androidx.material3.android)
   // TODO: think on how could I do it impl
   api(libs.androidPlayCore)
   api(libs.androidPlayCoreKtx)
-
-  implementation(libs.androidx.ui.tooling.preview.android)
 
   implementation(libs.coil3)
   implementation(libs.coil3.view)

@@ -27,6 +27,5 @@ dependencies {
 
   implementation(libs.androidPlayCore)
   implementation(libs.androidPlayCoreKtx)
-  implementation(libs.androidxActivityCompose)
   implementation(libs.kotlinx.serialization.json)
 }

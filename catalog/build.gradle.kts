@@ -20,11 +20,8 @@ dependencies {
   implementation(project(":presentation_utils"))
   implementation(project(":catalog-annotations"))
 
-  // Compose
-  implementation(libs.androidx.foundation.android)
-  implementation(libs.androidx.material3.android)
-  implementation(libs.androidx.ui.tooling.preview.android)
-  implementation(libs.androidxActivityCompose)
+  // Compose: foundation, material3, ui-tooling-preview and activity-compose come from
+  // billionbeers.android.compose.
   implementation(libs.androidx.navigation.compose)
 
   testImplementation(libs.junit)

@@ -12,8 +12,6 @@ dependencies {
   implementation(project(":core:designsystem"))
   implementation(project(":navigation"))
   implementation(libs.androidx.navigation3.runtime)
-  implementation(libs.androidx.material3.android)
-  implementation(libs.androidx.compose.material.icons.core)
   implementation(libs.kotlinx.serialization.json)
 
   testImplementation(project(":beerdomain:fakes"))
