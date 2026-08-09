@@ -8,10 +8,10 @@ import org.junit.jupiter.api.Test
 /**
  * Domain models are values: two `Beer`s with the same fields are the same beer, and nothing that
  * receives one can change what the sender sees. The app leans on this. `PagedListReducer` folds
- * pages into a list and hands it to Compose, which decides what to recompose by comparing old
- * state to new - a model mutated in place is the same reference, so the comparison says
- * "unchanged" and the UI silently keeps rendering stale data. The mappers and the pager pass the
- * same instances around on the same assumption.
+ * pages into a list and hands it to Compose, which decides what to recompose by comparing old state
+ * to new - a model mutated in place is the same reference, so the comparison says "unchanged" and
+ * the UI silently keeps rendering stale data. The mappers and the pager pass the same instances
+ * around on the same assumption.
  *
  * Two ways to break it, so two rules:
  *
@@ -62,10 +62,9 @@ class DomainModelImmutabilityTest {
         "rule would pass vacuously"
     }
 
-    val violations =
-      classes.flatMap { koClass ->
-        koClass.properties().filter { it.hasVarModifier }.map { "${koClass.name}.${it.name}" }
-      }
+    val violations = classes.flatMap { koClass ->
+      koClass.properties().filter { it.hasVarModifier }.map { "${koClass.name}.${it.name}" }
+    }
 
     assertTrue(violations.isEmpty()) {
       "Domain models must be immutable, but these are `var`: $violations. Model a change as a new " +

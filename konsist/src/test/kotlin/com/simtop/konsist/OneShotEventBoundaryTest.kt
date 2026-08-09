@@ -22,13 +22,10 @@ class OneShotEventBoundaryTest {
 
   @Test
   fun `ViewModels do not use MutableSharedFlow for events`() {
-    Konsist.scopeFromProject()
-      .classes()
-      .withNameEndingWith("ViewModel")
-      .assertFalse { viewModel ->
-        viewModel.containingFile.hasImport { import ->
-          import.name == "kotlinx.coroutines.flow.MutableSharedFlow"
-        }
+    Konsist.scopeFromProject().classes().withNameEndingWith("ViewModel").assertFalse { viewModel ->
+      viewModel.containingFile.hasImport { import ->
+        import.name == "kotlinx.coroutines.flow.MutableSharedFlow"
       }
+    }
   }
 }

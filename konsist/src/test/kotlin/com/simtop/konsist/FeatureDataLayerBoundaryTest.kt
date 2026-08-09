@@ -8,8 +8,8 @@ import org.junit.jupiter.api.Test
  * A feature module reaches persistence and the network only through the repository *interfaces* in
  * `:beerdomain:api`, whose implementations are bound in `:app`'s Metro graph. Declaring
  * `:beer_data`, `:beer_database` or `:beer_network` in a feature's build script skips that seam:
- * the feature gains Room entities, DTOs and Retrofit services as compile-time types, and the
- * domain boundary becomes advisory.
+ * the feature gains Room entities, DTOs and Retrofit services as compile-time types, and the domain
+ * boundary becomes advisory.
  *
  * This is the *unnamed* edge the existing rules leave open, and it is worth stating explicitly:
  * - `FeatureModuleBoundaryTest` reads imports, and only for the beerslist/beerdetail pair.
@@ -50,8 +50,9 @@ class FeatureDataLayerBoundaryTest {
 
     featureBuildScripts.forEach { script ->
       val text = script.uncommentedText()
-      val violations =
-        forbiddenDataLayerModules.filter { module -> text.contains("project(\"$module\")") }
+      val violations = forbiddenDataLayerModules.filter { module ->
+        text.contains("project(\"$module\")")
+      }
       assertTrue(violations.isEmpty()) {
         ":feature:${script.parentFile.name} declares data-layer module(s) $violations - a feature " +
           "depends on the repository interfaces in :beerdomain:api, and :app binds the " +

@@ -38,7 +38,9 @@ class InstrumentedTestOptInBoundaryTest {
     val modulesWithInstrumentedTests =
       buildScripts(root)
         .filter { File(it.parentFile, "src/androidTest").isDirectory }
-        .filterNot { it.parentFile.relativeTo(root).invariantSeparatorsPath.startsWith("benchmark/") }
+        .filterNot {
+          it.parentFile.relativeTo(root).invariantSeparatorsPath.startsWith("benchmark/")
+        }
 
     assertTrue(modulesWithInstrumentedTests.isNotEmpty()) {
       "No module with a src/androidTest directory found under $root - the layout changed and this " +
