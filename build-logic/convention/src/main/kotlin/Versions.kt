@@ -8,5 +8,9 @@ val PROJECT_TEST_RUNNER = "androidx.test.runner.AndroidJUnitRunner"
 val PROJECT_JAVA_VERSION = JavaVersion.VERSION_23
 val DETEKT_JAVA_VERSION = "22"
 val PROJECT_JACOCO_VERSION = "0.8.13"
-val PROJECT_VERSION_CODE = 67
-val PROJECT_VERSION_NAME = "67"
+
+// The app's versionCode/versionName are deliberately NOT here. They live in gradle.properties
+// (billionbeers.versionCode / billionbeers.versionName), because they are the values in this build
+// that change most often and a constant here is compiled into the convention jar: bumping the
+// version recompiled build-logic, which invalidates every module's configuration and misses the
+// configuration cache. A Gradle property is read at configuration time and costs none of that.

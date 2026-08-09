@@ -23,8 +23,9 @@ val android = the<ApplicationExtension>()
 android.apply {
     defaultConfig {
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = PROJECT_VERSION_CODE
-        versionName = PROJECT_VERSION_NAME
+        // From gradle.properties, not a constant in the convention jar - see Versions.kt for why.
+        versionCode = providers.gradleProperty("billionbeers.versionCode").get().toInt()
+        versionName = providers.gradleProperty("billionbeers.versionName").get()
         multiDexEnabled = true
     }
 

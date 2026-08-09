@@ -81,8 +81,8 @@ file_bytes() { stat -f%z "$1" 2>/dev/null || stat -c%s "$1"; }
 cmd_init() {
   mkdir -p "$SHOTS_DIR" "$METADATA_DIR/changelogs"
   local version
-  version=$(grep -oE 'PROJECT_VERSION_NAME = "[^"]*"' \
-    "$REPO_ROOT/build-logic/convention/src/main/kotlin/Versions.kt" | cut -d'"' -f2)
+  version=$(grep -oE '^billionbeers\.versionName=.*' \
+    "$REPO_ROOT/gradle.properties" | cut -d'=' -f2)
 
   [ -f "$METADATA_DIR/title.txt" ] || printf 'BillionBeers\n' > "$METADATA_DIR/title.txt"
   [ -f "$METADATA_DIR/short_description.txt" ] || \
