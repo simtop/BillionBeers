@@ -7,6 +7,10 @@ plugins {
 
 val libs = the<LibrariesForLibs>()
 
+dependencies {
+    "detektPlugins"(libs.compose.rules.detekt)
+}
+
 configure<DetektExtension> {
     toolVersion = libs.versions.detekt.get()
     // Test sources are scanned too. They were excluded, so a third of the repo's Kotlin - the part

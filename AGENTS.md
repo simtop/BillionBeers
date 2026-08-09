@@ -185,6 +185,14 @@ declaring done.
      (same rule as `lint-baseline.xml`). To grandfather something deliberately:
      `make detekt-baseline MODULE=:foo`, or dispatch `detekt_baseline.yml` against the branch — the
      committed diff is the review. Test and `androidTest` sources are scanned too.
+     Compose-specific rules (`Compose:` block in `config/detekt/detekt.yml`) come from
+     [`mrmans0n/compose-rules`](https://github.com/mrmans0n/compose-rules), the actively
+     maintained continuation of `twitter/compose-rules` (frozen since 2023 — `slackhq/compose-lints`
+     is a different project, an Android Lint port, not a Detekt ruleset). Pinned to `0.4.x` because
+     `0.5.0+` requires Detekt 2.0.0-alpha, which would invalidate every `detekt-baseline.xml`.
+     `UnstableCollections`, `Material2`, `ComposableNestingDepth`, and `PreviewNaming` are
+     deliberately off; `ViewModelInjection` is repointed at `metroViewModel`/`assistedMetroViewModel`
+     since this project is on Metro, not Hilt.
    - `make android-lint` is **Android Lint** (`:app:lintDebug`, checkDependencies across the whole
      graph), gated by `app/lint-baseline.xml`. A string added to `values/strings.xml` without its
      `values-fr` / `values-es` siblings passes every other rung and fails CI with

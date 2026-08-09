@@ -63,6 +63,95 @@ complexity:
   LongMethod:
     ignoreAnnotated: ['Composable']
 
+Compose:
+  # Rules ported from twitter/compose-rules, continued at mrmans0n/compose-rules since Twitter
+  # stopped maintaining the original. Version pinned to the last release built against Detekt
+  # 1.23.x (0.5.0+ requires Detekt 2.0.0-alpha, which we are not adopting - it would invalidate
+  # every per-module detekt-baseline.xml).
+  ComposableAnnotationNaming:
+    active: true
+  ComposableNaming:
+    active: true
+  ComposableNestingDepth:
+    active: false # Opt-in; we don't enforce a max nesting depth today.
+  ComposableParamOrder:
+    active: true
+  CompositionLocalAllowlist:
+    active: true
+    allowedCompositionLocals: LocalSpacing,LocalColors,LocalTypography,LocalDebugDrawerToggle,LocalSplitInstallManager
+  CompositionLocalNaming:
+    active: true
+  ConditionHoist:
+    active: true
+  ContentEmitterReturningValues:
+    active: true
+  ContentTrailingLambda:
+    active: true
+  ContentSlotReused:
+    active: true
+  DefaultsVisibility:
+    active: true
+  InvalidReadOnlyComposable:
+    active: true
+  LambdaParameterEventTrailing:
+    active: true
+  LambdaParameterInRestartableEffect:
+    active: true
+  Material2:
+    active: false # Opt-in; the design system deliberately still uses material.icons.core (M2 icons).
+  MissingReadOnlyComposable:
+    active: true
+  ModifierClickableOrder:
+    active: true
+  ModifierComposed:
+    active: true
+  ModifierMissing:
+    active: true
+  ModifierNaming:
+    active: true
+  ModifierNotUsedAtRoot:
+    active: true
+  ModifierReused:
+    active: true
+  ModifierWithoutDefault:
+    active: true
+  MultipleEmitters:
+    active: true
+  MutableParams:
+    active: true
+  MutableStateAutoboxing:
+    active: true
+  MutableStateParam:
+    active: true
+  ParameterNaming:
+    active: true
+  PreviewAnnotationNaming:
+    active: true
+  PreviewNaming:
+    active: false # Opt-in; @LightDarkPreviews (see :core:designsystem) doesn't follow the suffix convention this expects.
+  PreviewPublic:
+    active: true
+  RememberContentMissing:
+    active: true
+  RememberMissing:
+    active: true
+  StaleRememberUpdatedStateInRemember:
+    active: true
+  StateParam:
+    active: true
+  UnnecessaryComposable:
+    active: true
+  UnstableCollections:
+    active: false # Opt-in; only relevant with strong skipping disabled, and compose-stability.conf already covers our stability gaps.
+  VarsWithoutStateBacking:
+    active: true
+  ViewModelForwarding:
+    active: true
+  ViewModelInjection:
+    active: true
+    # Default factory names are Hilt-shaped (hiltViewModel); this project is on Metro DI.
+    viewModelFactories: metroViewModel,assistedMetroViewModel
+
 style:
   WildcardImport:
     excludeImports:
