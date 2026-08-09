@@ -29,6 +29,17 @@ val filesUnderRules =
 
 // useJUnitPlatform() is not repeated here - billionbeers.jvm.library sets it for this tier.
 tasks.withType<Test>().configureEach {
+  // Gradle forks test workers with a 512 MB heap by default, and org.gradle.jvmargs does not
+  // reach them - it sizes the daemon, not the worker. These rules parse every .kt file in the repo
+  // into an in-memory Konsist model, and since this module joined billionbeers.jvm.library it also
+  // carries jacoco instrumentation, so 512 MB is not enough: a full run died with
+  // "OutOfMemoryError thrown from the UncaughtExceptionHandler in thread Test worker".
+  //
+  // It hid well. A single-class run (`--tests "*OneRuleTest*"`) fits in the default heap and
+  // passes, and an unchanged repo leaves the task UP-TO-DATE, so the gate looked green from both
+  // directions. Only a full, non-cached run reaches the ceiling - which is the run CI does.
+  maxHeapSize = "2g"
+
   inputs
     .files(filesUnderRules)
     .withPropertyName("filesUnderArchitectureRules")
