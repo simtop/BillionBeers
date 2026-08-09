@@ -170,6 +170,38 @@ detekt-gradlePlugin = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plug
 android-junit5-plugin = { module = "de.mannodermaus.gradle.plugins:android-junit5", version.ref = "androidJunit5" }
 paparazzi-plugin = { module = "app.cash.paparazzi:paparazzi-gradle-plugin", version.ref = "paparazzi" }
 
+# Test-dependency sets, so the convention plugins declare one line instead of ten. These lists were
+# previously repeated verbatim across billionbeers.android.{application,library,dynamic.feature},
+# which is how they drifted apart.
+#
+# Anything added here is subject to invariant 12 exactly as a bare library is: TestLibraryBoundary-
+# Test resolves each bundle to its members, so a bundle holding one test-only library can no more
+# sit on `implementation` than the library itself can.
+[bundles]
+# Assertion/mocking libraries shared by every tier, independent of the test framework.
+unitTest = ["mockk", "coreTesting", "coroutinesTest", "kluentAndroid", "turbine"]
+
+# The JUnit 5 API, for modules on the mannodermaus + useJUnitPlatform() path.
+unitTestJunit5 = ["junit-jupiter-api", "junit-jupiter-params"]
+
+# Engines, runtime-only. Jupiter runs the JUnit 5 tests; vintage runs the JUnit 4 ones that still
+# sit beside them, which is why both are always declared together.
+unitTestJunit5Runtime = ["junit-jupiter-engine", "junit-vintage-engine"]
+
+# The instrumented baseline. :app and every android.library module declared exactly this list.
+instrumentedTest = [
+    "junit",
+    "kotlinTestJunit",
+    "coroutinesTest",
+    "espressoCore",
+    "testRunner",
+    "testRules",
+    "testCoreKtx",
+    "mockkAndroid",
+    "junitKtx",
+    "coreTesting",
+]
+
 [plugins]
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "org-jetbrains-kotlin" }
 com-google-devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "com-google-devtools-ksp" }

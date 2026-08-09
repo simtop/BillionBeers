@@ -135,21 +135,11 @@ plugins.withId("androidx.baselineprofile") {
 dependencies {
     "implementation"(libs.tracing.perfetto)
     "implementation"(libs.tracing.perfetto.binary)
+    // JUnit 4, deliberately: this tier applies neither android-junit5 nor useJUnitPlatform(), and
+    // :app's unit tests are `org.junit.Test`. It shares the bundles with the JUnit 5 tiers but not
+    // the platform - see billionbeers.android.testing for why that split is intentional.
     "testImplementation"(libs.junit)
-    "testImplementation"(libs.mockk)
-    "testImplementation"(libs.coreTesting)
-    "testImplementation"(libs.coroutinesTest)
-    "testImplementation"(libs.kluentAndroid)
-    "testImplementation"(libs.turbine)
+    "testImplementation"(libs.bundles.unitTest)
 
-    "androidTestImplementation"(libs.junit)
-    "androidTestImplementation"(libs.kotlinTestJunit)
-    "androidTestImplementation"(libs.coroutinesTest)
-    "androidTestImplementation"(libs.espressoCore)
-    "androidTestImplementation"(libs.testRunner)
-    "androidTestImplementation"(libs.testRules)
-    "androidTestImplementation"(libs.testCoreKtx)
-    "androidTestImplementation"(libs.mockkAndroid)
-    "androidTestImplementation"(libs.junitKtx)
-    "androidTestImplementation"(libs.coreTesting)
+    "androidTestImplementation"(libs.bundles.instrumentedTest)
 }

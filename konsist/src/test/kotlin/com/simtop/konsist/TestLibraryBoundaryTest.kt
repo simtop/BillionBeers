@@ -109,6 +109,83 @@ class TestLibraryBoundaryTest {
     }
   }
 
+  /**
+   * Every `[libraries]` alias, in the dotted form a build script uses, paired with its coordinate.
+   * Needed by [testOnlyBundleAliases], which has to resolve a bundle's members back to coordinates.
+   */
+  private fun allAliasCoordinates(root: File): Map<String, String> {
+    val toml = File(root, "gradle/libs.versions.toml").readLines()
+    val librariesSection =
+      toml
+        .dropWhile { it.trim() != "[libraries]" }
+        .drop(1)
+        .takeWhile { !it.trim().startsWith("[") }
+
+    return librariesSection.mapNotNull { rawLine ->
+        val line = rawLine.substringBefore('#').trim()
+        if (line.isEmpty() || '=' !in line) return@mapNotNull null
+        val alias = line.substringBefore('=').trim()
+        val value = line.substringAfter('=').trim()
+
+        val coordinate =
+          when {
+            value.startsWith("\"") -> value.trim('"')
+            "module" in value -> Regex("""module\s*=\s*"([^"]+)"""").find(value)?.groupValues?.get(1)
+            else -> {
+              val group = Regex("""group\s*=\s*"([^"]+)"""").find(value)?.groupValues?.get(1)
+              val name = Regex("""name\s*=\s*"([^"]+)"""").find(value)?.groupValues?.get(1)
+              if (group != null && name != null) "$group:$name" else null
+            }
+          } ?: return@mapNotNull null
+
+        alias to coordinate
+      }
+      .toMap()
+  }
+
+  /**
+   * Bundle aliases holding at least one test-only library, in the dotted form a build script uses
+   * (`unitTest` -> `libs.bundles.unitTest`).
+   *
+   * A bundle is a single name for a list of libraries, so without this the catalog offers a way
+   * straight through this rule: `implementation(libs.bundles.unitTest)` ships five test libraries
+   * while matching none of the `libs.<alias>` patterns the rule looks for. **One** test-only member
+   * condemns the bundle - that member ships just as surely as it would on its own line.
+   *
+   * The `[bundles]` section is TOML arrays, which may be written on one line or across several, so
+   * the section text is joined before the entries are split out.
+   */
+  private fun testOnlyBundleAliases(root: File): List<String> {
+    val toml = File(root, "gradle/libs.versions.toml").readLines()
+    val bundlesSection =
+      toml
+        .dropWhile { it.trim() != "[bundles]" }
+        .drop(1)
+        .takeWhile { !it.trim().startsWith("[") }
+        .joinToString("\n") { it.substringBefore('#') }
+
+    if (bundlesSection.isBlank()) return emptyList()
+
+    val aliasCoordinates = allAliasCoordinates(root)
+
+    return Regex("""([\w.-]+)\s*=\s*\[([^]]*)]""", RegexOption.DOT_MATCHES_ALL)
+      .findAll(bundlesSection)
+      .mapNotNull { match ->
+        val bundleAlias = match.groupValues[1].trim()
+        val members =
+          match.groupValues[2].split(',').map { it.trim().trim('"') }.filter { it.isNotEmpty() }
+
+        val holdsTestLibrary =
+          members.any { member ->
+            val coordinate = aliasCoordinates[member]
+            coordinate != null && isTestOnly(coordinate)
+          }
+
+        if (holdsTestLibrary) bundleAlias.replace('-', '.') else null
+      }
+      .toList()
+  }
+
   @Test
   fun `test-only libraries never reach a production configuration`() {
     val root = repoRoot()
@@ -118,6 +195,11 @@ class TestLibraryBoundaryTest {
       "No test-only aliases found in gradle/libs.versions.toml - the catalog format changed and " +
         "this rule would pass vacuously"
     }
+
+    // `libs.<alias>` for a bare library, `libs.bundles.<alias>` for a bundle. Both reach a release
+    // classpath the same way, so both are checked against the same production configurations.
+    val referencePaths =
+      aliases.map { "libs.$it" } + testOnlyBundleAliases(root).map { "libs.bundles.$it" }
 
     val violations = mutableListOf<String>()
 
@@ -131,11 +213,11 @@ class TestLibraryBoundaryTest {
         script.uncommentedText().lines().forEachIndexed { index, line ->
           val declaration = line.trim()
           productionConfigurations.forEach { configuration ->
-            aliases.forEach { alias ->
-              if (declaration.startsWith("$configuration(libs.$alias)") ||
-                declaration.startsWith("\"$configuration\"(libs.$alias)")
+            referencePaths.forEach { reference ->
+              if (declaration.startsWith("$configuration($reference)") ||
+                declaration.startsWith("\"$configuration\"($reference)")
               ) {
-                violations += "$relativePath:${index + 1}  $configuration(libs.$alias)"
+                violations += "$relativePath:${index + 1}  $configuration($reference)"
               }
             }
           }
