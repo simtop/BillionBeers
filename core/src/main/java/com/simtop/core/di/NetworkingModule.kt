@@ -2,12 +2,12 @@ package com.simtop.core.di
 
 import android.content.Context
 import com.simtop.core.BuildConfig
+import com.simtop.core.core.EnvironmentConfig
 import com.simtop.core.core.NetworkFaultController
 import com.simtop.core.network.NetworkFaultInterceptor
 import com.simtop.core.network.NetworkJson
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesTo
-import dev.zacsweers.metro.Named
 import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
 import java.io.File
@@ -25,9 +25,6 @@ import retrofit2.converter.kotlinx.serialization.asConverterFactory
 interface NetworkingModule {
 
   companion object {
-    const val BASE_URL = "baseUrl"
-    private const val CONNECT_TIMEOUT_SECONDS = 10L
-    private const val READ_TIMEOUT_SECONDS = 30L
     private const val HTTP_CACHE_SIZE_BYTES = 5L * 1024 * 1024
 
     /**
@@ -66,13 +63,15 @@ interface NetworkingModule {
   @Provides
   @SingleIn(AppScope::class)
   fun provideOkHttpClient(
+    environmentConfig: EnvironmentConfig,
     loggingInterceptor: HttpLoggingInterceptor,
     networkFaultController: NetworkFaultController,
     @ApplicationContext context: Context,
   ): OkHttpClient {
     return OkHttpClient.Builder()
-      .connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-      .readTimeout(READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+      .connectTimeout(environmentConfig.connectTimeout.inWholeMilliseconds, TimeUnit.MILLISECONDS)
+      .readTimeout(environmentConfig.readTimeout.inWholeMilliseconds, TimeUnit.MILLISECONDS)
+      .writeTimeout(environmentConfig.writeTimeout.inWholeMilliseconds, TimeUnit.MILLISECONDS)
       .cache(Cache(httpCacheDir(context), HTTP_CACHE_SIZE_BYTES))
       .apply {
         if (BuildConfig.DEBUG) {
@@ -86,13 +85,13 @@ interface NetworkingModule {
   @Provides
   @SingleIn(AppScope::class)
   fun provideRetrofit(
-    @Named(BASE_URL) baseUrl: String,
+    environmentConfig: EnvironmentConfig,
     converterFactory: Converter.Factory,
     okHttpClient: OkHttpClient,
   ): Retrofit {
     return Retrofit.Builder()
       .addConverterFactory(converterFactory)
-      .baseUrl(baseUrl)
+      .baseUrl(environmentConfig.apiBaseUrl)
       .client(okHttpClient)
       .build()
   }

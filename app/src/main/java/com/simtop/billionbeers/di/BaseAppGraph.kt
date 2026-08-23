@@ -19,4 +19,5 @@ interface BaseAppGraph : DynamicDependencies, MetroViewModelMultibindings {
   val themeController: ThemeController
   val networkFaultController: NetworkFaultController
   val featureFlagProvider: FeatureFlagProvider
+  val apiEnvironmentController: ApiEnvironmentController
 }

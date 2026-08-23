@@ -22,7 +22,12 @@ class BillionBeersApplication : SplitCompatApplication(), GraphProvider {
     super.onCreate()
     enableStrictMode()
     if (!::appGraph.isInitialized) {
-      appGraph = createGraphFactory<AppGraph.Factory>().create(this)
+      rebuildAppGraph()
     }
+  }
+
+  /** Recreates app-scoped dependencies after a debug-only API environment change. */
+  internal fun rebuildAppGraph() {
+    appGraph = createGraphFactory<AppGraph.Factory>().create(this)
   }
 }
