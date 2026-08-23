@@ -1,6 +1,7 @@
 package com.simtop.feature.beerslist
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.test.junit4.createComposeRule
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.fakes.fakeBeerModel
@@ -118,6 +119,31 @@ class BeersListPagingUiTest {
       0,
       loadMoreCount,
     )
+  }
+
+  @Test
+  fun screenErrorsAreAnnouncedPolitely() {
+    val message = "The catalog could not be refreshed."
+    composeTestRule.setContent {
+      BillionBeersTheme {
+        BeersListContent(
+          viewState = CommonUiState.Error(message = message),
+          onBeerClick = {},
+          onSearchClick = {},
+          onBrowseClick = {},
+          onScrollToBottom = {},
+          onRefresh = {},
+          onRetry = {},
+          onRetryLoadMore = {},
+        )
+      }
+    }
+
+    beersList(composeTestRule) {
+      assertTextIsDisplayed(message)
+      assertTextHasLiveRegion(message, LiveRegionMode.Polite)
+      assertEveryClickableIsLabelled()
+    }
   }
 
   private companion object {

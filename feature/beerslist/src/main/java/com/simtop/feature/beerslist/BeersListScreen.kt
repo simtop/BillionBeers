@@ -63,6 +63,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.billionbeers.core.designsystem.component.AccessibilityMatrixPreview
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.component.shimmerBrush
 import com.simtop.billionbeers.core.designsystem.component.showToast
@@ -377,6 +378,43 @@ fun BeersListScreenPreview(
   BillionBeersTheme {
     BeersListContent(
       viewState = state.uiState,
+      onBeerClick = {},
+      onSearchClick = {},
+      onBrowseClick = {},
+      onScrollToBottom = {},
+      onRefresh = {},
+      onRetry = {},
+      onRetryLoadMore = {},
+    )
+  }
+}
+
+@AccessibilityMatrixPreview
+@Composable
+@Suppress("PreviewPublic")
+internal fun BeersListAccessibilityMatrixPreview() {
+  BillionBeersTheme {
+    BeersListContent(
+      viewState =
+        CommonUiState.Success(
+          PagedListUiModel(
+            items =
+              listOf(
+                Beer.empty.copy(
+                  name = "A Very Long Beer Name That Must Wrap Correctly",
+                  tagline = "A detailed bitter experience with a deliberately long description.",
+                  availability = true,
+                ),
+                Beer.empty.copy(
+                  name = "Another Seasonal Beer",
+                  tagline = "A second item keeps list spacing and actions visible.",
+                  availability = false,
+                ),
+              ),
+            footer = PagedListFooter.Retry,
+            totalCount = 24,
+          )
+        ),
       onBeerClick = {},
       onSearchClick = {},
       onBrowseClick = {},

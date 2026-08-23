@@ -70,7 +70,11 @@ val generatePaparazziTest = tasks.register("generatePaparazziTest") {
 
             import app.cash.paparazzi.DeviceConfig
             import app.cash.paparazzi.Paparazzi
+            import com.android.resources.LayoutDirection
+            import com.android.resources.NightMode
+            import com.android.resources.UiMode
             import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+            import com.simtop.billionbeers.snapshot_testing.PreviewConfiguration
             import com.simtop.billionbeers.snapshot_testing.PreviewProvider
             import com.simtop.billionbeers.snapshot_testing.SnapshotImageEnvironment
             import org.junit.Assume
@@ -83,19 +87,24 @@ val generatePaparazziTest = tasks.register("generatePaparazziTest") {
             @RunWith(Parameterized::class)
             class ${safeClassName}(
                 private val snapshotName: String,
-                private val content: @androidx.compose.runtime.Composable () -> Unit
+                private val content: @androidx.compose.runtime.Composable () -> Unit,
+                private val configuration: PreviewConfiguration
             ) {
 
                 @get:Rule
                 val paparazzi = Paparazzi(
-                    deviceConfig = DeviceConfig.PIXEL_5,
-                    theme = "android:Theme.Material.Light.NoActionBar"
+                    deviceConfig = deviceConfig(configuration),
+                    theme = if (configuration.theme == "dark") {
+                        "android:Theme.Material.NoActionBar"
+                    } else {
+                        "android:Theme.Material.Light.NoActionBar"
+                    }
                 )
 
                 @Test
                 fun snapshot() {
                     Assume.assumeTrue("Skipping dummy snapshot", snapshotName != "DUMMY_NO_PREVIEWS_FOUND")
-                    
+
                     paparazzi.snapshot(name = snapshotName) {
                         SnapshotImageEnvironment {
                             BillionBeersTheme {
@@ -103,6 +112,29 @@ val generatePaparazziTest = tasks.register("generatePaparazziTest") {
                             }
                         }
                     }
+                }
+
+                private fun deviceConfig(configuration: PreviewConfiguration): DeviceConfig {
+                    val base = if (configuration.width == "expanded") {
+                        DeviceConfig.PIXEL_TABLET
+                    } else {
+                        DeviceConfig.PIXEL_5
+                    }
+                    return base.copy(
+                        fontScale = configuration.fontScale,
+                        locale = configuration.locale,
+                        layoutDirection = if (configuration.layoutDirection == "rtl") {
+                            LayoutDirection.RTL
+                        } else {
+                            LayoutDirection.LTR
+                        },
+                        uiMode = UiMode.NORMAL,
+                        nightMode = if (configuration.theme == "dark") {
+                            NightMode.NIGHT
+                        } else {
+                            NightMode.NOTNIGHT
+                        },
+                    )
                 }
 
                 companion object {
@@ -119,11 +151,17 @@ val generatePaparazziTest = tasks.register("generatePaparazziTest") {
                         val allSnapshots = localProviders.flatMap { it.snapshots }
                         
                         if (allSnapshots.isEmpty()) {
-                            return listOf(arrayOf("DUMMY_NO_PREVIEWS_FOUND", @androidx.compose.runtime.Composable {}))
+                            return listOf(
+                                arrayOf(
+                                    "DUMMY_NO_PREVIEWS_FOUND",
+                                    @androidx.compose.runtime.Composable {},
+                                    PreviewConfiguration.Default,
+                                )
+                            )
                         }
 
                         return allSnapshots.map { snapshot ->
-                            arrayOf(snapshot.name, snapshot.content)
+                            arrayOf(snapshot.name, snapshot.content, snapshot.configuration)
                         }
                     }
                 }

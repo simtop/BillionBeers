@@ -92,9 +92,11 @@ class MainActivityComposeTest {
       detailScreen {
         waitUntilNodeWithTextIsDisplayed(fakeBeer.description)
         assertToggleButtonShowsMarkAsEmpty()
+        assertAvailabilityActionSemantics(com.simtop.presentation_utils.R.string.beer_available)
         clickToggleAvailability()
         waitUntilToggleButtonShowsRefillBarrels()
         assertToggleButtonShowsRefillBarrels()
+        assertAvailabilityActionSemantics(com.simtop.presentation_utils.R.string.beer_out_of_stock)
         navigateBack()
       }
 
@@ -124,6 +126,7 @@ class MainActivityComposeTest {
         assertEveryClickableIsLabelled()
 
         clickOnBreweriesTab()
+        assertBreweriesTabIsSelected()
         waitUntilNodeWithTextIsDisplayed(fakeBrewery.name)
         assertBreweryIsDisplayed(fakeBrewery.name)
 

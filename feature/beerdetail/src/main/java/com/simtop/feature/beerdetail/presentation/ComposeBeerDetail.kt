@@ -39,6 +39,7 @@ import coil3.request.crossfade
 import coil3.request.error
 import coil3.request.placeholder
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.billionbeers.core.designsystem.component.AccessibilityMatrixPreview
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.presentation_utils.R
@@ -401,6 +402,34 @@ fun ComposeBeerDetailWithoutEnrichedFieldsPreview() {
           description = "A light, crisp and bitter IPA.",
           abv = 4.5,
           ibu = 60.0,
+        ),
+      onBackClick = {},
+      onToggleAvailability = {},
+    )
+  }
+}
+
+@AccessibilityMatrixPreview
+@Composable
+@Suppress("PreviewPublic")
+internal fun ComposeBeerDetailAccessibilityMatrixPreview() {
+  BillionBeersTheme {
+    ComposeBeerDetail(
+      beer =
+        Beer.empty.copy(
+          name = "A Very Long Beer Name That Must Wrap Correctly",
+          tagline = "A long tagline for large-font accessibility coverage.",
+          description =
+            "A deliberately long description that exercises scrolling, wrapping, RTL layout, and " +
+              "compact versus expanded widths.",
+          abv = 5.6,
+          ibu = 41.5,
+          foodPairing = listOf("Spicy chicken tikka masala", "Grilled chicken quesadilla"),
+          styleName = "IPA (Indian Pale Ale)",
+          breweryName = "A Brewery With A Deliberately Long Name For Accessibility Testing",
+          availability = true,
+          ingredients = listOf("Pale malt", "Cascade hops", "American ale yeast"),
+          recommendedGlasses = listOf("Pint glass", "Tulip"),
         ),
       onBackClick = {},
       onToggleAvailability = {},

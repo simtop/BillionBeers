@@ -1,13 +1,17 @@
 package com.simtop.testing_utils_android
 
 import androidx.annotation.StringRes
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.ComposeTestRule
@@ -96,6 +100,10 @@ open class BaseTestRobot(private val composeTestRule: ComposeTestRule) {
     composeTestRule.onNodeWithText(text).assertIsDisplayed()
   }
 
+  fun assertTextIsSelected(text: String) {
+    composeTestRule.onNodeWithText(text).assertIsSelected()
+  }
+
   fun assertNodeWithTagIsDisplayed(testTag: String) {
     composeTestRule.onNodeWithTag(testTag).assertIsDisplayed()
   }
@@ -114,6 +122,24 @@ open class BaseTestRobot(private val composeTestRule: ComposeTestRule) {
 
   fun assertNodeWithTagIsFocused(testTag: String) {
     composeTestRule.onNodeWithTag(testTag).assertIsFocused()
+  }
+
+  fun assertNodeWithTagHasRole(testTag: String, role: Role) {
+    composeTestRule
+      .onNodeWithTag(testTag)
+      .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, role))
+  }
+
+  fun assertNodeWithTagHasStateDescription(testTag: String, description: String) {
+    composeTestRule
+      .onNodeWithTag(testTag)
+      .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, description))
+  }
+
+  fun assertTextHasLiveRegion(text: String, mode: LiveRegionMode) {
+    composeTestRule
+      .onNodeWithText(text)
+      .assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, mode))
   }
 
   /**

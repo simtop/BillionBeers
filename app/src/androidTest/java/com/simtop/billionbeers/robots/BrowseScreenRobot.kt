@@ -18,6 +18,10 @@ class BrowseScreenRobot(composeTestRule: ComposeTestRule) : BaseTestRobot(compos
     clickOnNodeWithText(string(R.string.browse_tab_breweries))
   }
 
+  fun assertBreweriesTabIsSelected() {
+    assertTextIsSelected(string(R.string.browse_tab_breweries))
+  }
+
   fun assertBreweryIsDisplayed(breweryName: String) {
     assertTextIsDisplayed(breweryName)
   }

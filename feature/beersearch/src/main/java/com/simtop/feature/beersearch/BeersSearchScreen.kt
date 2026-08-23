@@ -41,6 +41,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.billionbeers.core.designsystem.component.AccessibilityMatrixPreview
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.component.showToast
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
@@ -274,6 +275,39 @@ fun BeersSearchScreenPreview(
     BeersSearchContent(
       viewState = case.state,
       query = case.query,
+      onQueryChange = {},
+      onBeerClick = {},
+      onBack = {},
+      onScrollToBottom = {},
+      onRetryLoadMore = {},
+      onRetrySearch = {},
+      autoFocus = false,
+    )
+  }
+}
+
+@AccessibilityMatrixPreview
+@Composable
+@Suppress("PreviewPublic")
+internal fun BeersSearchAccessibilityMatrixPreview() {
+  BillionBeersTheme {
+    BeersSearchContent(
+      viewState =
+        CommonUiState.Success(
+          PagedListUiModel(
+            items =
+              listOf(
+                Beer.empty.copy(
+                  name = "A Very Long Search Result Name That Must Wrap",
+                  tagline =
+                    "A long tagline exercises the search result layout at large font sizes.",
+                ),
+                Beer.empty.copy(name = "Second Result", tagline = "Another result"),
+              ),
+            totalCount = 2,
+          )
+        ),
+      query = "a very long query that should remain understandable",
       onQueryChange = {},
       onBeerClick = {},
       onBack = {},
