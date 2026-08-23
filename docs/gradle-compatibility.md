@@ -32,3 +32,12 @@ JDK and network behavior are deliberately revisited.
 
 This file should be updated in the same change as a Gradle/AGP/Detekt/AndroidX upgrade. A clean
 warning report is a release criterion for moving to Gradle 10, not a reason to suppress warnings.
+
+## Automated forward-compatibility check
+
+`.github/workflows/weekly-build-tool-compat.yml` runs every Saturday and on demand. It configures
+the full project with the checked-in Gradle wrapper, runs the convention-plugin contract tests, and
+repeats the same smoke check with Gradle nightly. The nightly job is intentionally outside the
+required PR gate: it is an early signal for Gradle/AGP changes, not a claim that nightly is a
+supported release. Both runs use `--warning-mode all`; `scripts/check-gradle-warnings.sh` fails on
+new deprecations while allowing only the two upstream warnings listed above.

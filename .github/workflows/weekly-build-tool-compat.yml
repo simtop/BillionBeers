@@ -1,0 +1,70 @@
+name: Weekly Build-Tool Forward Compatibility
+
+# This is deliberately separate from ci.yml. It exercises the build platform on the supported
+# wrapper and Gradle's next distribution without becoming a required per-PR release pipeline.
+# A failure is still visible on the scheduled workflow and can be run manually when Gradle or AGP
+# publishes a release candidate.
+on:
+  schedule:
+    # 05:00 UTC every Saturday, before the device-compatibility and health-report workflows.
+    - cron: '0 5 * * 6'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-tool-compat:
+    name: ${{ matrix.label }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: Supported Gradle wrapper
+            gradle-version: wrapper
+            command: ./gradlew
+          - label: Gradle nightly forward-compat
+            gradle-version: nightly
+            command: gradle
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up JDK 23
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+        with:
+          java-version: '23'
+          distribution: temurin
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6
+        with:
+          gradle-version: ${{ matrix.gradle-version }}
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Configure and test build-tool compatibility
+        env:
+          GRADLE_COMMAND: ${{ matrix.command }}
+          WARNING_LOG: gradle-build-tool-compat.log
+        run: |
+          set -o pipefail
+          "$GRADLE_COMMAND" help \
+            --no-configuration-cache \
+            --warning-mode all \
+            --console=plain 2>&1 | tee "$WARNING_LOG"
+          "$GRADLE_COMMAND" -p build-logic :convention:test \
+            --no-configuration-cache \
+            --warning-mode all \
+            --console=plain 2>&1 | tee -a "$WARNING_LOG"
+          bash scripts/check-gradle-warnings.sh "$WARNING_LOG"
+
+      - name: Archive build-tool compatibility log
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: build-tool-compat-${{ matrix.gradle-version }}
+          path: gradle-build-tool-compat.log
