@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -60,7 +61,7 @@ fun DialogWithProgressBar(
 fun DialogWithProgressBarDemo(number: Float, text: String) {
   var showDialog by remember { mutableStateOf(false) }
   var animate by remember { mutableStateOf(false) }
-  var simulatedNumber by remember { mutableStateOf(number) }
+  var simulatedNumber by remember { mutableFloatStateOf(number) }
 
   // Sync simulatedNumber with the external number control when not animating
   LaunchedEffect(number) {

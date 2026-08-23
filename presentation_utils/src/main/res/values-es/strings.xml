@@ -35,8 +35,16 @@
     <string name="browse_tab_styles">Estilos</string>
     <string name="browse_tab_breweries">Cervecerías</string>
     <string name="browse_brewery_founded">%1$s · Fundada en %2$d</string>
-    <string name="browse_beers_count">%1$d cervezas</string>
-    <string name="browse_beers_end_of_list">Eso es todo: %1$d cervezas</string>
+    <plurals name="browse_beers_count">
+        <item quantity="one">%1$d cerveza</item>
+        <item quantity="many">%1$d cervezas</item>
+        <item quantity="other">%1$d cervezas</item>
+    </plurals>
+    <plurals name="browse_beers_end_of_list">
+        <item quantity="one">Eso es todo: %1$d cerveza</item>
+        <item quantity="many">Eso es todo: %1$d cervezas</item>
+        <item quantity="other">Eso es todo: %1$d cervezas</item>
+    </plurals>
     <string name="browse_no_beers">Aún no hay cervezas aquí</string>
     <string name="beer_detail_style_and_brewery">%1$s · %2$s</string>
     <string name="beer_detail_details">Detalles</string>

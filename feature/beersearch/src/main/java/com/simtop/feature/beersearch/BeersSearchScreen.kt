@@ -32,6 +32,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewParameter
@@ -190,7 +191,7 @@ private fun SearchResults(
   Column {
     model.totalCount?.let { count ->
       Text(
-        text = stringResource(R.string.search_result_count, count),
+        text = pluralStringResource(R.plurals.search_result_count, count, count),
         style = MaterialTheme.typography.labelLarge,
         modifier =
           Modifier.fillMaxWidth()
@@ -206,7 +207,8 @@ private fun SearchResults(
       InfiniteListHandler(listState = listState, onLoadMore = onScrollToBottom)
     }
 
-    val endOfListText = stringResource(R.string.search_end_of_list, model.items.size)
+    val endOfListText =
+      pluralStringResource(R.plurals.search_end_of_list, model.items.size, model.items.size)
     LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
       items(model.items.size) { index ->
         ComposeBeersListItem(beer = model.items[index], onClick = onBeerClick)
