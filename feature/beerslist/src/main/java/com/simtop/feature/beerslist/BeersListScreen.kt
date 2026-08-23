@@ -55,6 +55,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
@@ -240,7 +241,8 @@ fun BeersListContent(
 
             val layoutDirection = LocalLayoutDirection.current
             val navBarsPadding = WindowInsets.navigationBars.asPaddingValues()
-            val endOfListText = stringResource(R.string.beers_end_of_list, beers.size)
+            val endOfListText =
+              pluralStringResource(R.plurals.beers_end_of_list, beers.size, beers.size)
 
             LazyColumn(
               state = listState,

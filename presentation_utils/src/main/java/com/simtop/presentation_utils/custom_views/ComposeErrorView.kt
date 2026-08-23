@@ -30,9 +30,9 @@ import com.simtop.presentation_utils.R
 @CatalogComponent(tab = "Utilities")
 @Composable
 fun ComposeErrorView(
+  modifier: Modifier = Modifier,
   message: String = stringResource(R.string.empty_state),
   onRetry: () -> Unit = {},
-  modifier: Modifier = Modifier,
 ) {
   Column(
     modifier = modifier.fillMaxSize().padding(BillionBeersTheme.spacing.large),

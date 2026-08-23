@@ -3,7 +3,10 @@
     <string name="billion_beers_list">"Billion Beers List"</string>
     <string name="beers_count_of_total">%1$d of %2$d</string>
     <string name="beers_refresh_failed">Couldn\'t refresh</string>
-    <string name="beers_end_of_list">That\'s all %1$d beers</string>
+    <plurals name="beers_end_of_list">
+        <item quantity="one">That\'s all %1$d beer</item>
+        <item quantity="other">That\'s all %1$d beers</item>
+    </plurals>
     <string name="beers_search">Search</string>
     <string name="beers_browse">Browse</string>
 </resources>
