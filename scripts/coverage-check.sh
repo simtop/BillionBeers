@@ -4,11 +4,16 @@
 # config/coverage-floor.txt. Lowering the floor is a deliberate, reviewable edit to that file;
 # raising it when coverage improves is encouraged (the script nudges when there's headroom).
 #
+# The floor was reset from 52.5 to 29.6 when the report stopped excluding production screens,
+# models, DI, applications and Compose code by filename. That is a scope correction, not a quality
+# regression: the new number is the honest baseline for the larger production-code denominator.
+#
 # Expects jacocoRootReport to have run already (build/reports/.../jacocoRootReport.xml). `make
 # coverage-check` runs the report first; the CI unit-tests job reuses the tests it already ran.
 #
-# Scope note: the root report currently aggregates the Android debug variants only (the JVM
-# modules' test.exec is excluded by the report's Debug filter), so this floor tracks that subset.
+# Scope note: the root report aggregates Android debug unit-test variants plus pure-JVM test tasks.
+# It excludes generated/framework plumbing and the database module, whose current coverage comes
+# only from instrumented tests. Production screens, models, DI and Compose code remain in scope.
 
 set -euo pipefail
 cd "$(dirname "$0")/.."

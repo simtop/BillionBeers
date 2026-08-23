@@ -99,13 +99,15 @@ tasks.register("ideSyncArtifacts") {
     }
 }
 
-// Modules deliberately kept out of the aggregate, by exact project path.
+// Modules deliberately kept out of the aggregate, by exact project path. A module belongs here
+// only when the current test tier cannot produce compatible JaCoCo execution data; do not use this
+// as a convenient way to improve the headline percentage.
 //
 // This used to be `it.name.contains("presentation_utils")`, a substring match on the *name*, which
 // is fragile twice over: a rename silently drops the exclusion - the module then re-enters the
 // aggregate and nobody notices - and `contains` would also swallow any future module whose name
 // happens to embed one of these strings. Exact paths plus the check below fail loudly instead.
-val coverageExcludedProjects = setOf(":presentation_utils", ":beer_database")
+val coverageExcludedProjects = setOf(":beer_database")
 
 tasks.register<JacocoReport>("jacocoRootReport") {
     // Android debug unit tests + JVM-module `test`. The Android `test` *lifecycle* task aggregates
@@ -135,6 +137,10 @@ tasks.register<JacocoReport>("jacocoRootReport") {
         it.plugins.hasPlugin("jacoco") && it.path !in coverageExcludedProjects
     }
 
+    // Exclude generated/framework plumbing only. Screens, activities, DI, models and Compose code
+    // are production behavior and must remain visible in the report. UI confidence comes from
+    // screenshot/device tests, but removing those classes from line coverage made the aggregate
+    // percentage imply more coverage than the repository actually had.
     val excludes = listOf(
         "**/R.class",
         "**/R$*.class",
@@ -144,21 +150,11 @@ tasks.register<JacocoReport>("jacocoRootReport") {
         "android/**/*.*",
         "**/databinding/*",
         "**/generated/*",
-        "**/model/*",
-        "**/di/*",
-        "**/*Activity*.*",
-        "**/*Fragment*.*",
         "**/*_MetroGraph*.*",
         "**/Metro_*.*",
         "**/*_Factory*.*",
         "**/*_MembersInjector*.*",
         "**/*MapperImpl*.*",
-        "**/*Module*.*",
-        "**/*Component*.*",
-        "**/*Screen*.*",
-        "**/*Application*.*",
-        "**/*CommonUiState*.*",
-        "**/*Compose*.*",
         "**/*.Companion*.*",
         "**/navigation/*"
     )

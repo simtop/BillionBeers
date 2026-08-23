@@ -109,7 +109,7 @@ else:
     print("?")
 PY
 )
-    row "Line coverage" "${pct}%" "ℹ️" "raise covered paths; see jacocoRootReport"
+    row "Line coverage" "${pct}%" "ℹ️" "JVM + Android debug unit tests; generated plumbing and database module excluded; see ${bt}jacocoRootReport${bt}"
   else
     row "Line coverage" "n/a" "🔴 broken" "${bt}jacocoRootReport${bt} fails: benchmark variant wants a non-existent testBenchmarkReleaseUnitTest — repair to restore coverage"
   fi

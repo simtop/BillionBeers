@@ -77,20 +77,11 @@ if (androidComponents != null && debugVariants != null) androidComponents.onVari
                         "android/**/*.*",
                         "**/databinding/*",
                         "**/generated/*",
-                        "**/model/*",
-                        "**/di/*",
-                        "**/*Activity*.*",
-                        "**/*Fragment*.*",
                         "**/*_HiltModules*.*",
                         "**/Hilt_*.*",
                         "**/*_Factory*.*",
                         "**/*_MembersInjector*.*",
-                        "**/*MapperImpl*.*",
-                        "**/*Module*.*",
-                        "**/*Component*.*",
-                        "**/*Screen*.*",
-                        "**/*Application*.*",
-                        "**/*CommonUiState*.*"
+                        "**/*MapperImpl*.*"
                     )
                 }
             }
