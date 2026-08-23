@@ -11,7 +11,7 @@ android {
 }
 
 dependencies {
-  api(project(":core-common"))
+  api(this.project(":core-common"))
   implementation(libs.coreKtx)
   implementation(libs.appcompat)
   implementation(libs.material)

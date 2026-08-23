@@ -28,7 +28,7 @@ configure<DetektExtension> {
         )
     )
     config.setFrom(files("$rootDir/config/detekt/detekt.yml"))
-    baseline = file("detekt-baseline.xml").takeIf { it.exists() }
+    baseline = layout.projectDirectory.file("detekt-baseline.xml").asFile.takeIf { it.exists() }
     buildUponDefaultConfig = true
     autoCorrect = false
     // A NEW finding fails the build; the backlog present at adoption does not, because it is

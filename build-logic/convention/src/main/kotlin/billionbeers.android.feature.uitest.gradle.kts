@@ -26,11 +26,11 @@ val libs = the<LibrariesForLibs>()
 
 dependencies {
     // Fakes for the domain interfaces, so a screen test drives state without the data layer.
-    "androidTestImplementation"(project(":beerdomain:fakes"))
+    "androidTestImplementation"(this.project(":beerdomain:fakes"))
 
     // Shared robot base. Brings the Compose test rules and Espresso with it (they are `api` there),
     // so a screen robot needs nothing else.
-    "androidTestImplementation"(project(":testing-utils-android"))
+    "androidTestImplementation"(this.project(":testing-utils-android"))
 
     // Versionless: the Compose BOM is already on androidTestImplementation via
     // billionbeers.android.compose, which billionbeers.android.feature applies.
