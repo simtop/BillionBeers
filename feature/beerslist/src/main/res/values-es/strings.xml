@@ -3,7 +3,11 @@
     <string name="billion_beers_list">"Lista de mil millones de cervezas"</string>
     <string name="beers_count_of_total">%1$d de %2$d</string>
     <string name="beers_refresh_failed">No se pudo actualizar</string>
-    <string name="beers_end_of_list">Eso es todo: %1$d cervezas</string>
+    <plurals name="beers_end_of_list">
+        <item quantity="one">Eso es todo: %1$d cerveza</item>
+        <item quantity="many">Eso es todo: %1$d cervezas</item>
+        <item quantity="other">Eso es todo: %1$d cervezas</item>
+    </plurals>
     <string name="beers_search">Buscar</string>
     <string name="beers_browse">Explorar</string>
 </resources>

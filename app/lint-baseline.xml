@@ -24,97 +24,6 @@
     </issue>
 
     <issue
-        id="ModifierParameter"
-        message="Modifier parameter should be the first optional parameter"
-        errorLine1="  modifier: Modifier = Modifier,"
-        errorLine2="  ~~~~~~~~">
-        <location
-            file="src/main/java/com/simtop/presentation_utils/custom_views/ComposeErrorView.kt"
-            line="35"
-            column="3"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;beers&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;beers_end_of_list&quot;>That\&apos;s all %1$d beers&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="6"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;results&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;search_result_count&quot;>%1$d results&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="6"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;results&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;search_end_of_list&quot;>That\&apos;s all %1$d results&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="7"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;beers&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;browse_beers_count&quot;>%1$d beers&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="37"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;beers&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;browse_beers_end_of_list&quot;>That\&apos;s all %1$d beers&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="38"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="This folder configuration (`v24`) is unnecessary; `minSdkVersion` is 28. Merge all the resources in this folder into `drawable`.">
-        <location
-            file="src/main/res/drawable-v24"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="This folder configuration (`v26`) is unnecessary; `minSdkVersion` is 28. Merge all the resources in this folder into `mipmap-anydpi`.">
-        <location
-            file="src/main/res/mipmap-anydpi-v26"/>
-    </issue>
-
-    <issue
-        id="AutoboxingStateCreation"
-        message="Prefer `mutableFloatStateOf` instead of `mutableStateOf`"
-        errorLine1="  var simulatedNumber by remember { mutableStateOf(number) }"
-        errorLine2="                                    ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/simtop/billionbeers/core/designsystem/component/DialogWithProgressBar.kt"
-            line="63"
-            column="37"/>
-    </issue>
-
-    <issue
         id="UnusedResources"
         message="The resource `R.color.colorBlack` appears to be unused"
         errorLine1="    &lt;color name=&quot;colorBlack&quot;>#000000&lt;/color>"
@@ -218,28 +127,6 @@
         message="The resource `R.mipmap.ic_launcher` appears to be unused">
         <location
             file="src/main/res/mipmap-hdpi/ic_launcher.png"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.ic_launcher_background` appears to be unused"
-        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/ic_launcher_background.xml"
-            line="2"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.drawable.ic_launcher_foreground` appears to be unused"
-        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable-v24/ic_launcher_foreground.xml"
-            line="1"
-            column="1"/>
     </issue>
 
     <issue
@@ -357,17 +244,6 @@
 
     <issue
         id="UnusedResources"
-        message="The resource `R.string.search_open` appears to be unused"
-        errorLine1="    &lt;string name=&quot;search_open&quot;>Search&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~">
-        <location
-            file="../feature/beersearch/src/main/res/values/strings.xml"
-            line="10"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
         message="The resource `R.string.abv` appears to be unused"
         errorLine1="    &lt;string name=&quot;abv&quot;>&quot;ABV: %s&quot;&lt;/string>"
         errorLine2="            ~~~~~~~~~~">
@@ -407,6 +283,17 @@
         <location
             file="../core/src/main/res/values/strings.xml"
             line="14"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.search_open` appears to be unused"
+        errorLine1="    &lt;string name=&quot;search_open&quot;>Search&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="../feature/beersearch/src/main/res/values/strings.xml"
+            line="16"
             column="13"/>
     </issue>
 
@@ -522,30 +409,8 @@
         errorLine2="                                                                          ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/debug/java/com/simtop/billionbeers/debug/DebugDrawerContent.kt"
-            line="104"
+            line="101"
             column="75"/>
-    </issue>
-
-    <issue
-        id="UseTomlInstead"
-        message="Use version catalog instead"
-        errorLine1="  androidTestImplementation(&quot;androidx.compose.ui:ui-test-junit4&quot;)"
-        errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="build.gradle.kts"
-            line="65"
-            column="29"/>
-    </issue>
-
-    <issue
-        id="UseTomlInstead"
-        message="Use version catalog instead"
-        errorLine1="  debugImplementation(&quot;androidx.compose.ui:ui-test-manifest&quot;)"
-        errorLine2="                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="build.gradle.kts"
-            line="66"
-            column="23"/>
     </issue>
 
 </issues>

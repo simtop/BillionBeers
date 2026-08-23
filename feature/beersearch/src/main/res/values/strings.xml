@@ -3,8 +3,14 @@
     <string name="search_hint">Search beers</string>
     <string name="search_prompt">Type at least 2 letters to search</string>
     <string name="search_no_results">No beers match “%1$s”</string>
-    <string name="search_result_count">%1$d results</string>
-    <string name="search_end_of_list">That\'s all %1$d results</string>
+    <plurals name="search_result_count">
+        <item quantity="one">%1$d result</item>
+        <item quantity="other">%1$d results</item>
+    </plurals>
+    <plurals name="search_end_of_list">
+        <item quantity="one">That\'s all %1$d result</item>
+        <item quantity="other">That\'s all %1$d results</item>
+    </plurals>
     <string name="search_clear">Clear search</string>
     <string name="search_back">Back</string>
     <string name="search_open">Search</string>
