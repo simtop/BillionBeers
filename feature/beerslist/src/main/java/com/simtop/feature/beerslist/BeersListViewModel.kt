@@ -7,7 +7,6 @@ import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.CatalogCacheStatus
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
-import com.simtop.core.core.CachePolicy
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.PagedListReducer
 import com.simtop.core.core.PagedListUiModel
@@ -95,7 +94,7 @@ class BeersListViewModel(
    */
   private fun loadFirstPageUnlessCacheIsFresh() {
     viewModelScope.launch {
-      if (beersRepository.catalogCacheStatus(CACHE_POLICY) != CatalogCacheStatus.Fresh) {
+      if (beersRepository.catalogCacheStatus() != CatalogCacheStatus.Fresh) {
         pager.loadFirstPage()
       }
     }
@@ -112,12 +111,6 @@ class BeersListViewModel(
 
   fun refresh() {
     viewModelScope.launch { pager.loadFirstPage() }
-  }
-
-  private companion object {
-    // The default 24h TTL; becomes an injected/screen-specific value only when a second surface
-    // wants a different one.
-    val CACHE_POLICY = CachePolicy()
   }
 }
 

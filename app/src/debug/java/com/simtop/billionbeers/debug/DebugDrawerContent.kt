@@ -1,5 +1,8 @@
 package com.simtop.billionbeers.debug
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.clickable
@@ -29,6 +32,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import com.simtop.billionbeers.BillionBeersApplication
+import com.simtop.billionbeers.di.ApiEnvironment
+import com.simtop.billionbeers.di.ApiEnvironmentController
 import com.simtop.billionbeers.di.BaseAppGraph
 import com.simtop.core.core.FeatureFlag
 import com.simtop.core.core.NetworkFaultMode
@@ -43,6 +49,24 @@ fun DebugDrawerContent(appGraph: BaseAppGraph, modifier: Modifier = Modifier) {
 
   Column(modifier = modifier.verticalScroll(rememberScrollState()).padding(16.dp)) {
     Text(text = "Debug Drawer", style = MaterialTheme.typography.titleLarge)
+
+    Spacer(modifier = Modifier.padding(top = 12.dp))
+    SectionTitle("API environment")
+    val selectedEnvironment by
+      appGraph.apiEnvironmentController.selectedEnvironment.collectAsState()
+    ApiEnvironment.entries.forEach { environment ->
+      RadioRow(
+        label = "${environment.displayName} — ${environment.apiBaseUrl}",
+        selected = selectedEnvironment == environment,
+        onClick = {
+          applyApiEnvironment(
+            context = context,
+            controller = appGraph.apiEnvironmentController,
+            environment = environment,
+          )
+        },
+      )
+    }
 
     Spacer(modifier = Modifier.padding(top = 12.dp))
     SectionTitle("Network fault injection")
@@ -112,6 +136,26 @@ fun DebugDrawerContent(appGraph: BaseAppGraph, modifier: Modifier = Modifier) {
     }
   }
 }
+
+private fun applyApiEnvironment(
+  context: Context,
+  controller: ApiEnvironmentController,
+  environment: ApiEnvironment,
+) {
+  if (controller.selectedEnvironment.value == environment) return
+
+  val activity = context.findActivity() ?: return
+  controller.selectEnvironment(environment)
+  (activity.application as BillionBeersApplication).rebuildAppGraph()
+  activity.startActivity(Intent.makeRestartActivityTask(activity.componentName))
+}
+
+private tailrec fun Context.findActivity(): Activity? =
+  when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+  }
 
 @Composable
 private fun SectionTitle(text: String) {
