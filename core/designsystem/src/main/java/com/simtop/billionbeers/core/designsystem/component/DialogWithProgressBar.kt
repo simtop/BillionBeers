@@ -142,3 +142,16 @@ class DialogProgressProvider : PreviewParameterProvider<Float> {
 fun DialogContentPreview(@PreviewParameter(DialogProgressProvider::class) progress: Float) {
   BillionBeersTheme { DialogContent(number = progress, text = "Downloading feature...") }
 }
+
+@AccessibilityMatrixPreview
+@Composable
+@Suppress("PreviewPublic")
+internal fun DialogContentAccessibilityMatrixPreview() {
+  BillionBeersTheme {
+    DialogContent(
+      number = 0.5f,
+      text =
+        "Downloading a very long feature description that must remain readable at large font sizes.",
+    )
+  }
+}

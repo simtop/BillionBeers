@@ -31,3 +31,16 @@ annotation class PreviewFontScales
 @Preview(name = "Foldable", group = "Devices", device = PIXEL_FOLD, showBackground = true)
 @Preview(name = "Tablet", group = "Devices", device = PIXEL_TABLET, showBackground = true)
 annotation class PreviewDevices
+
+/**
+ * Marks a representative screen or component for the screenshot accessibility matrix.
+ *
+ * The screenshot convention expands this marker into the canonical light/dark, font, locale, and
+ * width variants. Keep it on a small number of representative previews; ordinary previews retain
+ * their existing one-case behavior.
+ */
+@Preview(name = "Accessibility Matrix", group = "Accessibility", showBackground = true)
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.BINARY)
+@Suppress("PreviewAnnotationNaming")
+annotation class AccessibilityMatrixPreview

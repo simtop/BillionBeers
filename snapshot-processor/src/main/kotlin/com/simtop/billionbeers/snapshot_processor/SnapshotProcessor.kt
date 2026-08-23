@@ -70,27 +70,39 @@ class SnapshotProcessor(
   }
 
   private fun isValidPreview(func: KSFunctionDeclaration): Boolean {
-    // Check for direct @Preview or meta-annotation
+    // Check for direct @Preview, a one-level preview meta-annotation, or the matrix marker.
     for (annotation in func.annotations) {
       val annotationType = annotation.annotationType.resolve()
-      if (
-        annotationType.declaration.qualifiedName?.asString() ==
-          "androidx.compose.ui.tooling.preview.Preview"
-      ) {
+      val qualifiedName = annotationType.declaration.qualifiedName?.asString()
+      if (qualifiedName == ACCESSIBILITY_MATRIX_PREVIEW) {
+        return true
+      }
+      if (qualifiedName == PREVIEW_ANNOTATION) {
         return true
       }
       // Check meta-annotations
       val metaAnnotations = annotationType.declaration.annotations
       for (meta in metaAnnotations) {
         if (
-          meta.annotationType.resolve().declaration.qualifiedName?.asString() ==
-            "androidx.compose.ui.tooling.preview.Preview"
+          meta.annotationType.resolve().declaration.qualifiedName?.asString() == PREVIEW_ANNOTATION
         ) {
           return true
         }
       }
     }
     return false
+  }
+
+  private fun isAccessibilityMatrixPreview(func: KSFunctionDeclaration): Boolean =
+    func.annotations.any {
+      it.annotationType.resolve().declaration.qualifiedName?.asString() ==
+        ACCESSIBILITY_MATRIX_PREVIEW
+    }
+
+  private companion object {
+    const val PREVIEW_ANNOTATION = "androidx.compose.ui.tooling.preview.Preview"
+    const val ACCESSIBILITY_MATRIX_PREVIEW =
+      "com.simtop.billionbeers.core.designsystem.component.AccessibilityMatrixPreview"
   }
 
   private fun generatePreviewProvider(functions: List<KSFunctionDeclaration>, resolver: Resolver) {
@@ -162,62 +174,118 @@ class SnapshotProcessor(
     }
   }
 
+  private fun addSnapshotsForFunction(
+    builder: CodeBlock.Builder,
+    packageName: String,
+    snapshotClass: ClassName,
+    accessibilityMatrixClass: ClassName,
+    function: KSFunctionDeclaration,
+  ) {
+    val functionName = function.simpleName.asString()
+    if (function.parameters.isEmpty()) {
+      addNoParameterSnapshots(
+        builder = builder,
+        packageName = packageName,
+        snapshotClass = snapshotClass,
+        accessibilityMatrixClass = accessibilityMatrixClass,
+        function = function,
+      )
+      return
+    }
+
+    val parameter = function.parameters.first()
+    val annotation = parameter.annotations.find { previewParameterAnnotation(it) }
+    if (annotation != null) {
+      addParameterizedSnapshots(
+        builder = builder,
+        packageName = packageName,
+        snapshotClass = snapshotClass,
+        functionName = functionName,
+        annotation = annotation,
+      )
+    }
+  }
+
+  private fun addNoParameterSnapshots(
+    builder: CodeBlock.Builder,
+    packageName: String,
+    snapshotClass: ClassName,
+    accessibilityMatrixClass: ClassName,
+    function: KSFunctionDeclaration,
+  ) {
+    val functionName = function.simpleName.asString()
+    if (isAccessibilityMatrixPreview(function)) {
+      builder.add(
+        """
+                         |    *%T.configurations.map { configuration ->
+                         |        %T("${functionName}_" + configuration.name, { %M() }, configuration)
+                         |    }.toTypedArray(),
+                         |"""
+          .trimMargin(),
+        accessibilityMatrixClass,
+        snapshotClass,
+        MemberName(packageName, functionName),
+      )
+    } else {
+      builder.add(
+        "    %T(%S, { %M() }),\n",
+        snapshotClass,
+        functionName,
+        MemberName(packageName, functionName),
+      )
+    }
+  }
+
+  private fun addParameterizedSnapshots(
+    builder: CodeBlock.Builder,
+    packageName: String,
+    snapshotClass: ClassName,
+    functionName: String,
+    annotation: KSAnnotation,
+  ) {
+    val providerType = annotation.arguments.first().value as KSType
+    val providerClassName = providerType.declaration.qualifiedName?.asString() ?: ""
+    builder.add(
+      """
+                       |    *%T().let { provider ->
+                       |        provider.values.mapIndexed { index, value ->
+                       |            val nameSuffix = (value as? Enum<*>)?.name ?: index.toString()
+                       |            %T("${functionName}_" + nameSuffix, { %M(value) })
+                       |        }.toList().toTypedArray()
+                       |    },
+                       |"""
+        .trimMargin(),
+      ClassName.bestGuess(providerClassName),
+      snapshotClass,
+      MemberName(packageName, functionName),
+    )
+  }
+
+  private fun previewParameterAnnotation(annotation: KSAnnotation): Boolean =
+    annotation.annotationType.resolve().declaration.qualifiedName?.asString() ==
+      "androidx.compose.ui.tooling.preview.PreviewParameter"
+
   private fun generateFile(
     packageName: String,
     className: String,
     functions: List<KSFunctionDeclaration>,
     sourceFile: KSFile,
   ) {
-    val snapshotClass = ClassName("com.simtop.billionbeers.snapshot_testing", "Snapshot")
-    val previewProviderInterface =
-      ClassName("com.simtop.billionbeers.snapshot_testing", "PreviewProvider")
-
+    val snapshotPackage = "com.simtop.billionbeers.snapshot_testing"
+    val snapshotClass = ClassName(snapshotPackage, "Snapshot")
+    val accessibilityMatrixClass = ClassName(snapshotPackage, "AccessibilityMatrix")
+    val previewProviderInterface = ClassName(snapshotPackage, "PreviewProvider")
     val codeBlockBuilder = CodeBlock.builder().add("listOf(\n")
 
-    functions.forEach { func ->
-      val funcName = func.simpleName.asString()
-      val parameters = func.parameters
-
-      if (parameters.isEmpty()) {
-        codeBlockBuilder.add(
-          "    %T(%S, { %M() }),\n",
-          snapshotClass,
-          "${funcName}",
-          MemberName(packageName, funcName),
-        )
-      } else {
-        // Handle PreviewParameter
-        val param = parameters.first()
-        val previewParamAnnotation =
-          param.annotations.find {
-            it.annotationType.resolve().declaration.qualifiedName?.asString() ==
-              "androidx.compose.ui.tooling.preview.PreviewParameter"
-          }
-
-        if (previewParamAnnotation != null) {
-          val providerType = previewParamAnnotation.arguments.first().value as KSType
-          val providerClassName = providerType.declaration.qualifiedName?.asString() ?: ""
-
-          val providerClass = ClassName.bestGuess(providerClassName)
-
-          codeBlockBuilder.add(
-            """
-                             |    *%T().let { provider -> 
-                             |        provider.values.mapIndexed { index, value ->
-                             |            val nameSuffix = (value as? Enum<*>)?.name ?: index.toString()
-                             |            %T("${funcName}_" + nameSuffix, { %M(value) })
-                             |        }.toList().toTypedArray()
-                             |    },
-                             |"""
-              .trimMargin(),
-            providerClass,
-            snapshotClass,
-            MemberName(packageName, funcName),
-          )
-        }
-      }
+    functions.forEach { function ->
+      addSnapshotsForFunction(
+        builder = codeBlockBuilder,
+        packageName = packageName,
+        snapshotClass = snapshotClass,
+        accessibilityMatrixClass = accessibilityMatrixClass,
+        function = function,
+      )
     }
-
     codeBlockBuilder.add(")")
 
     val propertySpec =

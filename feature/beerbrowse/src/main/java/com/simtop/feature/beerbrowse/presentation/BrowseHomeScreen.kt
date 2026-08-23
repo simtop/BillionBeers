@@ -35,6 +35,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.beerdomain.domain.models.Brewery
+import com.simtop.billionbeers.core.designsystem.component.AccessibilityMatrixPreview
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.core.core.CommonUiState
@@ -246,6 +247,42 @@ fun BrowseHomeScreenPreview(
       styles = case.styles,
       breweries = case.breweries,
       selectedTab = case.selectedTab,
+      onTabSelected = {},
+      onStyleClick = {},
+      onBreweryClick = {},
+      onBack = {},
+      onRetryStyles = {},
+      onRetryBreweries = {},
+    )
+  }
+}
+
+@AccessibilityMatrixPreview
+@Composable
+@Suppress("PreviewPublic")
+internal fun BrowseHomeAccessibilityMatrixPreview() {
+  BillionBeersTheme {
+    BrowseHomeContent(
+      styles =
+        CommonUiState.Success(
+          listOf(
+            BeerStyle(id = "long-style", name = "A Very Long Beer Style Name That Must Wrap"),
+            BeerStyle(id = "stout", name = "Imperial Stout"),
+          )
+        ),
+      breweries =
+        CommonUiState.Success(
+          listOf(
+            Brewery(
+              id = "long-brewery",
+              name = "A Brewery With A Deliberately Long Name For Accessibility Testing",
+              countryCode = "ES",
+              foundedYear = 1972,
+              imageUrl = "",
+            )
+          )
+        ),
+      selectedTab = TAB_BREWERIES,
       onTabSelected = {},
       onStyleClick = {},
       onBreweryClick = {},

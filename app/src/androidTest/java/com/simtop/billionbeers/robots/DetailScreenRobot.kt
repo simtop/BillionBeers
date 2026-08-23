@@ -1,5 +1,6 @@
 package com.simtop.billionbeers.robots
 
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import com.simtop.presentation_utils.R
 import com.simtop.testing_utils_android.BaseTestRobot
@@ -20,6 +21,11 @@ class DetailScreenRobot(composeTestRule: ComposeTestRule) : BaseTestRobot(compos
 
   fun assertToggleButtonShowsMarkAsEmpty() {
     assertTextIsDisplayed(string(R.string.mark_as_empty))
+  }
+
+  fun assertAvailabilityActionSemantics(stateDescription: Int) {
+    assertNodeWithTagHasRole("toggle_availability", Role.Button)
+    assertNodeWithTagHasStateDescription("toggle_availability", string(stateDescription))
   }
 
   fun waitUntilToggleButtonShowsRefillBarrels() {

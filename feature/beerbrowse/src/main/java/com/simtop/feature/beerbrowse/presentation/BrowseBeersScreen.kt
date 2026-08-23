@@ -33,6 +33,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.billionbeers.core.designsystem.component.AccessibilityMatrixPreview
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.component.showToast
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
@@ -224,6 +225,37 @@ fun BrowseBeersScreenPreview(
     BrowseBeersContent(
       title = case.title,
       viewState = case.state,
+      onBack = {},
+      onBeerClick = {},
+      onScrollToBottom = {},
+      onRetryLoadMore = {},
+      onRetryFirstPage = {},
+    )
+  }
+}
+
+@AccessibilityMatrixPreview
+@Composable
+@Suppress("PreviewPublic")
+internal fun BrowseBeersAccessibilityMatrixPreview() {
+  BillionBeersTheme {
+    BrowseBeersContent(
+      title = "A Very Long Beer Style Name That Must Wrap Correctly",
+      viewState =
+        CommonUiState.Success(
+          PagedListUiModel(
+            items =
+              listOf(
+                Beer.empty.copy(
+                  name = "A Very Long Beer Name That Must Wrap Correctly",
+                  tagline = "A long tagline exercises the browse result layout.",
+                ),
+                Beer.empty.copy(name = "Second Beer", tagline = "Another beer"),
+              ),
+            totalCount = 2,
+            footer = PagedListFooter.EndReached,
+          )
+        ),
       onBack = {},
       onBeerClick = {},
       onScrollToBottom = {},
