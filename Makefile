@@ -96,6 +96,7 @@ JVM_TEST_MODULES := :core-common :testing-utils
 test: ## Run unit tests for the specified module (or all).
 ifeq ($(MODULE_TRIMMED),)
 	$(GRADLE_RUNNER) testDebugUnitTest $(addsuffix :test,$(JVM_TEST_MODULES)) --continue
+	$(GRADLE_RUNNER) -p build-logic :convention:test --continue
 else ifneq ($(filter $(MODULE_TRIMMED),$(JVM_TEST_MODULES) :konsist),)
 	$(GRADLE_RUNNER) $(MODULE_TRIMMED):test --continue
 else

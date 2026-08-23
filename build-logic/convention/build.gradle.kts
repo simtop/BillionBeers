@@ -16,4 +16,13 @@ dependencies {
     implementation(libs.detekt.gradlePlugin)
     implementation(libs.paparazzi.plugin)
     implementation(files(files((libs as Any).javaClass.superclass.protectionDomain.codeSource.location)))
+
+    testImplementation(gradleTestKit())
+    testImplementation(libs.junit.jupiter.api)
+    testRuntimeOnly(libs.junit.jupiter.engine)
+    testRuntimeOnly(libs.junit.platform.launcher)
+}
+
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
 }
