@@ -15,6 +15,10 @@ class DetailScreenRobot(composeTestRule: ComposeTestRule) : BaseTestRobot(compos
     assertTextIsDisplayed(beerDescription)
   }
 
+  fun assertBeerDescriptionIsDisplayed(beerDescription: String) {
+    assertTextIsDisplayed(beerDescription)
+  }
+
   fun clickToggleAvailability() {
     clickOnNodeWithTag("toggle_availability")
   }

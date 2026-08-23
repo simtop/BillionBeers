@@ -11,7 +11,16 @@ import com.simtop.navigation.DynamicFeatureContentProvider
 class BeerDetailProviderImpl : DynamicFeatureContentProvider<BeerDetail> {
   // Detail is a leaf screen: it never navigates forward, so onNavigate is unused.
   @Composable
-  override fun Content(key: BeerDetail, onBack: () -> Unit, onNavigate: (NavKey) -> Unit) {
-    BeerDetailScreenImpl(beer = key.beer, onBackClick = onBack)
+  override fun Content(
+    key: BeerDetail,
+    onBack: () -> Unit,
+    onNavigate: (NavKey) -> Unit,
+    showBackButton: Boolean,
+  ) {
+    BeerDetailScreenImpl(
+      beer = key.beer,
+      onBackClick = onBack,
+      showBackButton = showBackButton,
+    )
   }
 }

@@ -73,6 +73,7 @@ dependencies {
   implementation(libs.androidPlayCoreKtx)
   implementation(libs.androidx.navigation3.runtime)
   implementation(libs.androidx.navigation3.ui)
+  implementation(libs.androidx.compose.material3.adaptive.navigation3)
   // appcompat stays: the manifest's @style/AppTheme resolves to a Theme.AppCompat parent
   // (core/src/main/res/values/styles.xml), which no import scan can see.
   implementation(libs.appcompat)

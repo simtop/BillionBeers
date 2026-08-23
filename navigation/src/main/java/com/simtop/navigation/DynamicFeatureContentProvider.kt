@@ -16,7 +16,13 @@ import androidx.navigation3.runtime.NavKey
  * it.
  */
 fun interface DynamicFeatureContentProvider<T : NavKey> {
-  @Composable fun Content(key: T, onBack: () -> Unit, onNavigate: (NavKey) -> Unit)
+  @Composable
+  fun Content(
+    key: T,
+    onBack: () -> Unit,
+    onNavigate: (NavKey) -> Unit,
+    showBackButton: Boolean,
+  )
 }
 
 /**
@@ -33,6 +39,7 @@ fun <T : DynamicFeatureKey> DynamicFeatureContent(
   key: T,
   onBack: () -> Unit,
   onNavigate: (NavKey) -> Unit = {},
+  showBackButton: Boolean = true,
 ) {
   val className = key.feature.providerClass
   val provider =
@@ -41,5 +48,10 @@ fun <T : DynamicFeatureKey> DynamicFeatureContent(
       (Class.forName(className).getDeclaredConstructor().newInstance()
         as DynamicFeatureContentProvider<T>)
     }
-  provider.Content(key = key, onBack = onBack, onNavigate = onNavigate)
+  provider.Content(
+    key = key,
+    onBack = onBack,
+    onNavigate = onNavigate,
+    showBackButton = showBackButton,
+  )
 }

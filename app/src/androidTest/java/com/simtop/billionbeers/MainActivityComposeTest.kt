@@ -2,6 +2,7 @@ package com.simtop.billionbeers
 
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_EXPANDED_LOWER_BOUND
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.beerdomain.domain.models.Brewery
@@ -13,6 +14,7 @@ import com.simtop.billionbeers.utils.homeScreen
 import com.simtop.billionbeers.utils.runMainActivityTest
 import com.simtop.core.core.Either
 import dev.zacsweers.metro.createGraphFactory
+import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -36,6 +38,13 @@ class MainActivityComposeTest {
       availability = true,
     )
 
+  private val secondFakeBeer =
+    fakeBeer.copy(
+      id = "2",
+      name = "Another Buzz",
+      description = "A second beer used to verify detail replacement.",
+    )
+
   private val fakeStyle = BeerStyle(id = "style-1", name = "IPA (Indian Pale Ale)")
   private val fakeBrewery =
     Brewery(
@@ -51,7 +60,7 @@ class MainActivityComposeTest {
     val context = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
     val app = context as BillionBeersApplication
 
-    FakeBeersRepositoryModule.fakeBeersRepository.setBeers(listOf(fakeBeer))
+    FakeBeersRepositoryModule.fakeBeersRepository.setBeers(listOf(fakeBeer, secondFakeBeer))
     FakeBeersRepositoryModule.fakeBeersRepository.beerStyles = Either.Right(listOf(fakeStyle))
     FakeBeersRepositoryModule.fakeBeersRepository.breweries = Either.Right(listOf(fakeBrewery))
     val testGraph =
@@ -103,6 +112,63 @@ class MainActivityComposeTest {
       homeScreen {
         waitUntilNodeWithTextIsDisplayed(fakeBeer.name)
         assertBeerIsUnavailable(fakeBeer.name)
+      }
+    }
+
+  @Test
+  fun expandedListDetailKeepsTheListVisibleAfterSelection() {
+    val widthDp =
+      InstrumentationRegistry.getInstrumentation()
+        .targetContext
+        .resources
+        .configuration
+        .screenWidthDp
+    assumeTrue(
+      "Requires an expanded-width device",
+      widthDp >= WIDTH_DP_EXPANDED_LOWER_BOUND,
+    )
+
+    runMainActivityTest(composeTestRule) {
+      homeScreen {
+        waitUntilNodeWithTextIsDisplayed(fakeBeer.name)
+        clickOnBeer(fakeBeer.name)
+        assertBeerListIsDisplayed()
+      }
+
+      detailScreen {
+        waitUntilNodeWithTextIsDisplayed(fakeBeer.description)
+        assertBeerDescriptionIsDisplayed(fakeBeer.description)
+      }
+    }
+  }
+
+  @Test
+  fun selectingAnotherBeerReplacesDetailAndBackReturnsToList() =
+    runMainActivityTest(composeTestRule) {
+      homeScreen {
+        waitUntilNodeWithTextIsDisplayed(fakeBeer.name)
+        clickOnBeer(fakeBeer.name)
+      }
+
+      detailScreen {
+        waitUntilNodeWithTextIsDisplayed(fakeBeer.description)
+        navigateBack()
+      }
+
+      homeScreen {
+        waitUntilNodeWithTextIsDisplayed(secondFakeBeer.name)
+        clickOnBeer(secondFakeBeer.name)
+      }
+
+      detailScreen {
+        waitUntilNodeWithTextIsDisplayed(secondFakeBeer.description)
+        assertBeerDetailIsDisplayed(secondFakeBeer.name, secondFakeBeer.description)
+        navigateBack()
+      }
+
+      homeScreen {
+        waitUntilNodeWithTextIsDisplayed(fakeBeer.name)
+        assertBeerNameIsDisplayed(secondFakeBeer.name)
       }
     }
 
