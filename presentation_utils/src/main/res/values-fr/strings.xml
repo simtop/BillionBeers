@@ -35,8 +35,16 @@
     <string name="browse_tab_styles">Styles</string>
     <string name="browse_tab_breweries">Brasseries</string>
     <string name="browse_brewery_founded">%1$s · Fondée en %2$d</string>
-    <string name="browse_beers_count">%1$d bières</string>
-    <string name="browse_beers_end_of_list">C\'est tout : %1$d bières</string>
+    <plurals name="browse_beers_count">
+        <item quantity="one">%1$d bière</item>
+        <item quantity="many">%1$d bières</item>
+        <item quantity="other">%1$d bières</item>
+    </plurals>
+    <plurals name="browse_beers_end_of_list">
+        <item quantity="one">C\'est tout : %1$d bière</item>
+        <item quantity="many">C\'est tout : %1$d bières</item>
+        <item quantity="other">C\'est tout : %1$d bières</item>
+    </plurals>
     <string name="browse_no_beers">Pas encore de bières ici</string>
     <string name="beer_detail_style_and_brewery">%1$s · %2$s</string>
     <string name="beer_detail_details">Détails</string>

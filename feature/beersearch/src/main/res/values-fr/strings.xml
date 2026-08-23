@@ -3,8 +3,16 @@
     <string name="search_hint">Rechercher des bières</string>
     <string name="search_prompt">Saisissez au moins 2 lettres pour rechercher</string>
     <string name="search_no_results">Aucune bière ne correspond à « %1$s »</string>
-    <string name="search_result_count">%1$d résultats</string>
-    <string name="search_end_of_list">C\'est tout : %1$d résultats</string>
+    <plurals name="search_result_count">
+        <item quantity="one">%1$d résultat</item>
+        <item quantity="many">%1$d résultats</item>
+        <item quantity="other">%1$d résultats</item>
+    </plurals>
+    <plurals name="search_end_of_list">
+        <item quantity="one">C\'est tout : %1$d résultat</item>
+        <item quantity="many">C\'est tout : %1$d résultats</item>
+        <item quantity="other">C\'est tout : %1$d résultats</item>
+    </plurals>
     <string name="search_clear">Effacer la recherche</string>
     <string name="search_back">Retour</string>
     <string name="search_open">Rechercher</string>
