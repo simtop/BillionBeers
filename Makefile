@@ -1,5 +1,7 @@
 # Variables
 MODULE ?=
+REPO ?=
+BRANCH ?=
 SCENARIO ?= clean_build_warm
 # Warm-ups matter here: at 1 warm-up every scenario was still descending (ADR 0011).
 BUILD_BUDGET_WARMUPS ?= 6
@@ -17,7 +19,7 @@ UI_TEST_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,:app:)
 # Wrapper for Gradle to support build-brief (bb) or rtk if available
 GRADLE_RUNNER := $(shell if command -v bb >/dev/null 2>&1; then echo "bb ./gradlew"; elif command -v build-brief >/dev/null 2>&1; then echo "build-brief --gradle ./gradlew"; elif command -v rtk >/dev/null 2>&1; then echo "rtk ./gradlew"; else echo "./gradlew"; fi)
 
-.PHONY: detekt-baseline help setup setup-ai-tools update-android-skills build bundle-release install clean test konsist check-data-layer-boundary compose-metrics ui-test screenshot-record screenshot-verify screenshot-clean lint android-lint format check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline verification-metadata health benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark build-budget build-budget-check jacoco-report coverage-check install-profiler install-diffuse new-feature-module new-dev-app play-listing-check play-listing-capture play-listing-reset store-frames
+.PHONY: detekt-baseline help setup setup-ai-tools update-android-skills build bundle-release install clean test konsist check-data-layer-boundary compose-metrics ui-test screenshot-record screenshot-verify screenshot-clean lint android-lint format check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline verification-metadata health repo-doctor benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark build-budget build-budget-check jacoco-report coverage-check install-profiler install-diffuse new-feature-module new-dev-app play-listing-check play-listing-capture play-listing-reset store-frames
 
 help: ## Show this help message.
 	@echo "\n📊 BillionBeers Makefile Help"
@@ -195,6 +197,9 @@ verification-metadata: ## Regenerate gradle/verification-metadata.xml over the f
 
 health: ## Aggregate the read-only health checks into a markdown report (docs/health/REPORT.md).
 	@bash scripts/health-report.sh --run docs/health/REPORT.md
+
+repo-doctor: ## Verify read-only GitHub repository settings and CODEOWNERS coverage.
+	@REPO="$(REPO)" BRANCH="$(BRANCH)" bash scripts/repo-doctor.sh
 
 # Benchmarking
 benchmark-micro: ## Run microbenchmarks on a connected device.
