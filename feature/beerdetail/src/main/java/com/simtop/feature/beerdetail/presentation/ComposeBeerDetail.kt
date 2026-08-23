@@ -46,7 +46,12 @@ import com.simtop.presentation_utils.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability: () -> Unit) {
+fun ComposeBeerDetail(
+  beer: Beer,
+  onBackClick: () -> Unit,
+  onToggleAvailability: () -> Unit,
+  showBackButton: Boolean = true,
+) {
   val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
   // Honours the system "Remove animations" accessibility setting (animator duration scale 0)
   // instead of always animating for a fixed duration. Read via Settings.Global (API 17+) rather
@@ -92,12 +97,14 @@ fun ComposeBeerDetail(beer: Beer, onBackClick: () -> Unit, onToggleAvailability:
           },
           expandedHeight = 350.dp,
           navigationIcon = {
-            IconButton(onClick = onBackClick) {
-              Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = stringResource(R.string.beer_detail_back),
-                tint = Color.White,
-              )
+            if (showBackButton) {
+              IconButton(onClick = onBackClick) {
+                Icon(
+                  imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                  contentDescription = stringResource(R.string.beer_detail_back),
+                  tint = Color.White,
+                )
+              }
             }
           },
           colors =

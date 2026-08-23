@@ -27,7 +27,7 @@ import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 import dev.zacsweers.metrox.viewmodel.assistedMetroViewModel
 
 @Composable
-fun BeerDetailScreenImpl(beer: Beer, onBackClick: () -> Unit) {
+fun BeerDetailScreenImpl(beer: Beer, onBackClick: () -> Unit, showBackButton: Boolean = true) {
   val context = LocalContext.current
 
   val factory = remember {
@@ -64,6 +64,7 @@ fun BeerDetailScreenImpl(beer: Beer, onBackClick: () -> Unit) {
           beer = state.data,
           onBackClick = onBackClick,
           onToggleAvailability = { viewModel.updateAvailability(state.data) },
+          showBackButton = showBackButton,
         )
       }
       is CommonUiState.Error -> Unit

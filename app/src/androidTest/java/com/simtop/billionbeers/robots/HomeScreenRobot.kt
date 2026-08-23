@@ -18,6 +18,10 @@ class HomeScreenRobot(composeTestRule: ComposeTestRule) : BaseTestRobot(composeT
     assertTextIsDisplayed(beerName)
   }
 
+  fun assertBeerListIsDisplayed() {
+    assertNodeWithTagIsDisplayed("beer_list")
+  }
+
   fun clickOnBeer(beerName: String) {
     clickOnNodeWithText(beerName)
   }

@@ -10,7 +10,12 @@ import com.simtop.navigation.DynamicFeatureContentProvider
 @Keep
 class BeerBrowseProviderImpl : DynamicFeatureContentProvider<BeerBrowse> {
   @Composable
-  override fun Content(key: BeerBrowse, onBack: () -> Unit, onNavigate: (NavKey) -> Unit) {
+  override fun Content(
+    key: BeerBrowse,
+    onBack: () -> Unit,
+    onNavigate: (NavKey) -> Unit,
+    showBackButton: Boolean,
+  ) {
     BeerBrowseScreenImpl(onBack = onBack, onNavigate = onNavigate)
   }
 }
