@@ -30,7 +30,7 @@ configure<DynamicFeatureExtension> {
 }
 
 dependencies {
-    "implementation"(project(":app"))
+    "implementation"(this.project(":app"))
     "implementation"(libs.coreKtx)
     "implementation"(libs.appcompat)
     "implementation"(libs.material)

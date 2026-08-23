@@ -30,10 +30,10 @@ dependencies {
     "implementation"(libs.testCoreKtx)
     "implementation"(libs.junitKtx)
 
-    "implementation"(project(":beer_data"))
-    "implementation"(project(":beerdomain:api"))
-    "implementation"(project(":beer_database"))
-    "implementation"(project(":beer_network"))
+    "implementation"(this.project(":beer_data"))
+    "implementation"(this.project(":beerdomain:api"))
+    "implementation"(this.project(":beer_database"))
+    "implementation"(this.project(":beer_network"))
     // BeersMapper's constructor takes LanguageProvider/Logger from core-common.
-    "implementation"(project(":core-common"))
+    "implementation"(this.project(":core-common"))
 }

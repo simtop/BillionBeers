@@ -53,7 +53,8 @@ val debugVariants = androidComponents?.selector()?.withBuildType("debug")
 if (androidComponents != null && debugVariants != null) androidComponents.onVariants(debugVariants) { variant ->
     val testTaskName = "test${variant.name.capitalized()}UnitTest"
 
-    val reportTask = tasks.register<JacocoReport>("jacoco${variant.name.capitalize()}Report") {
+    val reportTask =
+        tasks.register<JacocoReport>("jacoco${variant.name.replaceFirstChar { it.uppercase() }}Report") {
         dependsOn(testTaskName)
 
         reports {

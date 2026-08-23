@@ -12,6 +12,10 @@ plugins {
 }
 
 baselineProfile {
+  // The AndroidX baseline-profile plugin currently requires a Project object here. Gradle 9.6
+  // reports its generic Project-as-dependency notation as deprecated, but the consumer extension's
+  // public API is `from(Project)` (see the plugin source). Remove this exception when AndroidX
+  // exposes a path/Provider overload.
   from(project(":benchmark:baselineprofile"))
   automaticGenerationDuringBuild = true
 }
@@ -46,22 +50,22 @@ android {
 }
 
 dependencies {
-  implementation(project(":beerdomain:api"))
-  androidTestImplementation(project(":beerdomain:fakes"))
-  testImplementation(project(":testing-utils"))
-  androidTestImplementation(project(":testing-utils"))
-  androidTestImplementation(project(":testing-utils-android"))
-  implementation(project(":feature:beerslist"))
-  implementation(project(":feature:beersearch"))
-  androidTestImplementation(project(":feature:beerdetail"))
-  androidTestImplementation(project(":feature:beerbrowse"))
-  implementation(project(":core"))
-  implementation(project(":core:designsystem"))
-  implementation(project(":navigation"))
-  implementation(project(":beer_data"))
-  implementation(project(":beer_database"))
-  implementation(project(":beer_network"))
-  implementation(project(":presentation_utils"))
+  implementation(this.project(":beerdomain:api"))
+  androidTestImplementation(this.project(":beerdomain:fakes"))
+  testImplementation(this.project(":testing-utils"))
+  androidTestImplementation(this.project(":testing-utils"))
+  androidTestImplementation(this.project(":testing-utils-android"))
+  implementation(this.project(":feature:beerslist"))
+  implementation(this.project(":feature:beersearch"))
+  androidTestImplementation(this.project(":feature:beerdetail"))
+  androidTestImplementation(this.project(":feature:beerbrowse"))
+  implementation(this.project(":core"))
+  implementation(this.project(":core:designsystem"))
+  implementation(this.project(":navigation"))
+  implementation(this.project(":beer_data"))
+  implementation(this.project(":beer_database"))
+  implementation(this.project(":beer_network"))
+  implementation(this.project(":presentation_utils"))
 
   implementation(libs.androidPlayCore)
   implementation(libs.androidPlayCoreKtx)
