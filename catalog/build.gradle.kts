@@ -15,10 +15,10 @@ android {
 }
 
 dependencies {
-  implementation(project(":feature:beerslist"))
-  implementation(project(":core:designsystem"))
-  implementation(project(":presentation_utils"))
-  implementation(project(":catalog-annotations"))
+  implementation(this.project(":feature:beerslist"))
+  implementation(this.project(":core:designsystem"))
+  implementation(this.project(":presentation_utils"))
+  implementation(this.project(":catalog-annotations"))
 
   // Compose: foundation, material3, ui-tooling-preview and activity-compose come from
   // billionbeers.android.compose.

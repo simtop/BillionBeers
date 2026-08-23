@@ -17,13 +17,13 @@ android {
 dependencies {
   // Only the module under active development, plus its fakes - no :beer_data, :beer_database,
   // :beer_network, or :feature:beerdetail, so this assembles in seconds instead of minutes.
-  implementation(project(":feature:beerslist"))
-  implementation(project(":beerdomain:api"))
-  implementation(project(":beerdomain:fakes"))
-  implementation(project(":core"))
-  implementation(project(":core:designsystem"))
-  implementation(project(":navigation"))
-  implementation(project(":presentation_utils"))
+  implementation(this.project(":feature:beerslist"))
+  implementation(this.project(":beerdomain:api"))
+  implementation(this.project(":beerdomain:fakes"))
+  implementation(this.project(":core"))
+  implementation(this.project(":core:designsystem"))
+  implementation(this.project(":navigation"))
+  implementation(this.project(":presentation_utils"))
 
   implementation(libs.androidPlayCore)
   implementation(libs.androidPlayCoreKtx)

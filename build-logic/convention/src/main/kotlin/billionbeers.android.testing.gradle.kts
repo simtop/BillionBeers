@@ -21,7 +21,7 @@ dependencies {
 
   // The shared MainDispatcherExtension. Every ViewModel test needs Dispatchers.setMain, and
   // hand-rolling it in each module is how the JUnit 4 rule this replaced drifted out of use.
-  "testImplementation"(project(":testing-utils"))
+  "testImplementation"(this.project(":testing-utils"))
 
   "testRuntimeOnly"(libs.bundles.unitTestJunit5Runtime)
 }

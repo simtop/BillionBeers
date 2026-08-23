@@ -12,8 +12,8 @@ plugins {
 val libs = the<LibrariesForLibs>()
 
 dependencies {
-    add("implementation", project(":snapshot-testing"))
-    add("ksp", project(":snapshot-processor"))
+    add("implementation", this.project(":snapshot-testing"))
+    add("ksp", this.project(":snapshot-processor"))
 }
 
 // Paparazzi's plugin calls Test.setTestReporter(PaparazziTestReporter) on every Test task in the
@@ -140,22 +140,22 @@ val generatedKspTestResourcesDir = layout.buildDirectory.dir("generated/ksp/debu
 
 pluginManager.withPlugin("com.android.application") {
     extensions.configure<ApplicationExtension>() {
-        sourceSets.getByName("test").java.srcDir(generatedPaparazziTestDir)
-        sourceSets.getByName("test").resources.srcDir(generatedKspTestResourcesDir)
+        sourceSets.getByName("test").java.directories.add(generatedPaparazziTestDir.path)
+        sourceSets.getByName("test").resources.directories.add(generatedKspTestResourcesDir.path)
     }
 }
 
 pluginManager.withPlugin("com.android.library") {
     extensions.configure<LibraryExtension>(){
-        sourceSets.getByName("test").java.srcDir(generatedPaparazziTestDir)
-        sourceSets.getByName("test").resources.srcDir(generatedKspTestResourcesDir)
+        sourceSets.getByName("test").java.directories.add(generatedPaparazziTestDir.path)
+        sourceSets.getByName("test").resources.directories.add(generatedKspTestResourcesDir.path)
     }
 }
 
 pluginManager.withPlugin("com.android.dynamic-feature") {
     extensions.configure<DynamicFeatureExtension>(){
-        sourceSets.getByName("test").java.srcDir(generatedPaparazziTestDir)
-        sourceSets.getByName("test").resources.srcDir(generatedKspTestResourcesDir)
+        sourceSets.getByName("test").java.directories.add(generatedPaparazziTestDir.path)
+        sourceSets.getByName("test").resources.directories.add(generatedKspTestResourcesDir.path)
     }
 }
 
@@ -225,4 +225,3 @@ tasks.withType<Test>().configureEach {
         }
     }
 }
-

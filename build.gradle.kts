@@ -58,8 +58,8 @@ val ideSyncGroovyModules: List<String> =
         .map { it.removeSuffix("-$ideSyncGroovyVersion.jar") }
         .sorted()
 
-val ideSyncMetadata: Configuration by configurations.creating
-val ideSyncSources: Configuration by configurations.creating { isTransitive = false }
+val ideSyncMetadata = configurations.create("ideSyncMetadata")
+val ideSyncSources = configurations.create("ideSyncSources") { isTransitive = false }
 
 ideSyncGroovyModules.forEach { module ->
     val coordinate = "org.apache.groovy:$module:$ideSyncGroovyVersion"

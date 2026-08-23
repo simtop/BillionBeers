@@ -5,5 +5,5 @@ dependencies {
   // own test source, so the JUnit 5 and coroutines-test types are part of this module's surface.
   api(libs.junit.jupiter.api)
   api(libs.coroutinesTest)
-  implementation(project(":core-common"))
+  implementation(this.project(":core-common"))
 }

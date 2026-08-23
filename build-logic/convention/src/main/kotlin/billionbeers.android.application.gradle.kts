@@ -79,7 +79,7 @@ android.apply {
     // nonMinifiedRelease) already extend release; this gives the hand-rolled build type the same.
     // AGP 9's built-in kotlinc compiles from the source set's kotlin dirs, so the .kt stub must be
     // added there (java.srcDir alone does not reach kotlin compilation).
-    sourceSets.getByName("benchmark").kotlin.srcDir("src/release/java")
+    sourceSets.getByName("benchmark").kotlin.directories.add("src/release/java")
 
     packaging {
         resources {
@@ -97,7 +97,7 @@ android.apply {
         // none of which understand the framework. New errors fail CI; everything present at
         // adoption is grandfathered in lint-baseline.xml and burned down over time - never by
         // regenerating the baseline to bury a regression.
-        baseline = file("lint-baseline.xml")
+        baseline = project.layout.projectDirectory.file("lint-baseline.xml").asFile
         checkDependencies = true
         abortOnError = true
         warningsAsErrors = false
