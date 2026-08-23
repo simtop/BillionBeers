@@ -8,7 +8,7 @@ plugins {
 android { namespace = "com.simtop.beer_database" }
 
 dependencies {
-  implementation(project(":core"))
+  implementation(this.project(":core"))
   implementation(libs.kotlinx.serialization.json)
   // MigrationTestHelper; the Room Gradle plugin exposes the exported schemas to the test.
   androidTestImplementation(libs.roomTesting)

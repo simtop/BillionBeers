@@ -3,6 +3,6 @@ plugins {
 }
 
 dependencies {
-    add("implementation", project(":catalog-annotations"))
-    add("ksp", project(":catalog-processor"))
+    add("implementation", this.project(":catalog-annotations"))
+    add("ksp", this.project(":catalog-processor"))
 }

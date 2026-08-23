@@ -8,9 +8,9 @@ plugins {
 android { namespace = "com.simtop.presentation_utils" }
 
 dependencies {
-  implementation(project(":beerdomain:api"))
-  implementation(project(":core"))
-  implementation(project(":core:designsystem"))
+  implementation(this.project(":beerdomain:api"))
+  implementation(this.project(":core"))
+  implementation(this.project(":core:designsystem"))
 
   // activity-compose, foundation, material3 and ui-tooling-preview come from
   // billionbeers.android.compose.

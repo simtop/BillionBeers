@@ -6,11 +6,11 @@ plugins {
 android { namespace = "com.simtop.feature.beerdetail" }
 
 dependencies {
-  implementation(project(":beerdomain:api"))
-  implementation(project(":presentation_utils"))
-  implementation(project(":core"))
-  implementation(project(":core:designsystem"))
-  implementation(project(":navigation"))
+  implementation(this.project(":beerdomain:api"))
+  implementation(this.project(":presentation_utils"))
+  implementation(this.project(":core"))
+  implementation(this.project(":core:designsystem"))
+  implementation(this.project(":navigation"))
   implementation(libs.androidx.navigation3.runtime)
   implementation(libs.kotlinx.serialization.json)
   implementation(libs.lifecycle.viewmodel.savedstate)
@@ -39,7 +39,7 @@ dependencies {
   androidTestImplementation(libs.mockkAndroid)
   androidTestImplementation(libs.junitKtx)
 
-  testImplementation(project(":beerdomain:fakes"))
+  testImplementation(this.project(":beerdomain:fakes"))
   testImplementation(libs.striktCore)
   androidTestImplementation(libs.striktCore)
 }
