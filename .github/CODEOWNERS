@@ -25,6 +25,8 @@
 # nastiest bugs came from here (ADR 0009 records both - a generated Paparazzi runner leaking into
 # androidTest, and a test runner naming a class only :app contained).
 /build-logic/                   @simtop
+/core/designsystem/             @simtop
+/catalog/                       @simtop
 /gradle/libs.versions.toml      @simtop
 
 # Supply chain: the dependency ledger and the resolved-graph baseline. A careless regeneration here

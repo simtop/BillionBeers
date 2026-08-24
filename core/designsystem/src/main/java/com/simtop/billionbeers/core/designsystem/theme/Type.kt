@@ -7,7 +7,12 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-/** BillionBeers Typography Tokens Standardizing text styles across the app. */
+/**
+ * Typography tokens for reusable design-system components.
+ *
+ * Use the semantic styles exposed through [BillionBeersTheme.typography] instead of defining
+ * component-local text styles.
+ */
 val BillionBeersTypography =
   Typography(
     headlineLarge =
@@ -60,4 +65,5 @@ val BillionBeersTypography =
       ),
   )
 
+/** Composition-local override for the current typography tokens. */
 val LocalTypography = staticCompositionLocalOf { BillionBeersTypography }

@@ -11,6 +11,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
+/**
+ * Creates the loading brush used by skeleton content.
+ *
+ * The caller should apply this only to loading content and provide a non-animated state when
+ * reduced motion is required.
+ */
 @Composable
 fun shimmerBrush(showShimmer: Boolean = true, targetValue: Float = SHIMMER_TARGET_VALUE): Brush {
   return if (showShimmer) {

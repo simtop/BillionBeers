@@ -31,6 +31,7 @@ import com.simtop.billionbeers.catalog_annotations.CatalogComponent
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import kotlinx.coroutines.delay
 
+/** Configuration exposed to the catalog and consumers of [DialogWithProgressBar]. */
 data class CatalogSettings(val dismissOnClickOutside: Boolean = false)
 
 @CatalogComponent(
@@ -38,6 +39,12 @@ data class CatalogSettings(val dismissOnClickOutside: Boolean = false)
   name = "Progress Dialog",
   demoContainer = "DialogWithProgressBarDemo",
 )
+/**
+ * Displays modal progress content.
+ *
+ * This component supports loading/progress and long-text states. Disabled, selected, and error
+ * states do not apply; callers should model those states outside the progress dialog.
+ */
 @Composable
 fun DialogWithProgressBar(
   setShowDialog: (Boolean) -> Unit = {},
@@ -57,6 +64,7 @@ fun DialogWithProgressBar(
   }
 }
 
+/** Catalog-only interactive demo for [DialogWithProgressBar]. */
 @Composable
 fun DialogWithProgressBarDemo(number: Float, text: String) {
   var showDialog by remember { mutableStateOf(false) }
@@ -113,6 +121,7 @@ fun DialogWithProgressBarDemo(number: Float, text: String) {
   }
 }
 
+/** Renders the reusable progress surface used by [DialogWithProgressBar]. */
 @Composable
 fun DialogContent(number: Float, text: String, modifier: Modifier = Modifier) {
   Surface(
@@ -133,6 +142,7 @@ fun DialogContent(number: Float, text: String, modifier: Modifier = Modifier) {
   }
 }
 
+/** Preview-only progress values for the dialog's supported loading states. */
 class DialogProgressProvider : PreviewParameterProvider<Float> {
   override val values = sequenceOf(0f, 0.5f, 1f)
 }

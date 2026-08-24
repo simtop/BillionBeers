@@ -8,6 +8,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 
+/**
+ * Clickable modifier without a visual indication.
+ *
+ * The caller remains responsible for supplying a meaningful label and role through surrounding
+ * semantics. Prefer a Material interactive component when it provides the required behavior.
+ */
 fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
   this.clickable(
     interactionSource = remember { MutableInteractionSource() },
@@ -16,6 +22,7 @@ fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
   )
 }
 
+/** Shows a short-lived platform toast; preview environments may not support it. */
 fun showToast(context: Context, message: String) {
   try {
     Toast.makeText(context, message, Toast.LENGTH_SHORT).show()

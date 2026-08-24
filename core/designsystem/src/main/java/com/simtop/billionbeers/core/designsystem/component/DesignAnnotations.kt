@@ -6,6 +6,7 @@ import androidx.compose.ui.tooling.preview.Devices.PIXEL_FOLD
 import androidx.compose.ui.tooling.preview.Devices.PIXEL_TABLET
 import androidx.compose.ui.tooling.preview.Preview
 
+/** Generates light and dark previews for a composable. */
 @Preview(
   name = "Light Mode",
   group = "Themes",
@@ -18,18 +19,25 @@ import androidx.compose.ui.tooling.preview.Preview
   uiMode = Configuration.UI_MODE_NIGHT_YES,
   showBackground = true,
 )
+@Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
 annotation class PreviewLightDark
 
+/** Generates the standard font-scale previews for a composable. */
 @Preview(name = "Small Font", group = "Font Scales", fontScale = 0.85f, showBackground = true)
 @Preview(name = "Normal Font", group = "Font Scales", fontScale = 1.0f, showBackground = true)
 @Preview(name = "Large Font", group = "Font Scales", fontScale = 1.5f, showBackground = true)
 @Preview(name = "Extra Large Font", group = "Font Scales", fontScale = 2.0f, showBackground = true)
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.BINARY)
 annotation class PreviewFontScales
 
+/** Generates representative phone, foldable, and tablet previews for a composable. */
 @Preview(name = "Phone", group = "Devices", device = PIXEL_7, showBackground = true)
 @Preview(name = "Foldable", group = "Devices", device = PIXEL_FOLD, showBackground = true)
 @Preview(name = "Tablet", group = "Devices", device = PIXEL_TABLET, showBackground = true)
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.BINARY)
 annotation class PreviewDevices
 
 /**

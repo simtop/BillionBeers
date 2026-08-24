@@ -1,5 +1,6 @@
 package com.simtop.billionbeers.core.designsystem.theme
 
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
@@ -62,6 +63,8 @@ internal val BillionBeersDarkColors =
     onError = Error20,
   )
 
+/** Semantic color roles exposed by [BillionBeersTheme]. */
+@Immutable
 data class BillionBeersColors(
   val primary: Color,
   val onPrimary: Color,
@@ -77,4 +80,5 @@ data class BillionBeersColors(
   val onError: Color,
 )
 
+/** Composition-local override for the current semantic color roles. */
 val LocalColors = staticCompositionLocalOf { BillionBeersLightColors }
