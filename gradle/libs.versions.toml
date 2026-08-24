@@ -24,6 +24,7 @@ androidx-baseline-profile = "1.5.0-alpha07"
 androidx-appcompat = "1.7.1"
 androidx-constraintlayout = "2.2.1"
 androidx-core-ktx = "1.19.0"
+androidx-splashscreen = "1.2.0"
 androidx-annotation = "1.10.0"
 androidx-lifecycle = "2.11.0"
 
@@ -59,6 +60,7 @@ kotlinpoet = "2.3.0"
 # AndroidX Base
 appcompat = { module = "androidx.appcompat:appcompat", version.ref = "androidx-appcompat" }
 coreKtx = { module = "androidx.core:core-ktx", version.ref = "androidx-core-ktx" }
+androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "androidx-splashscreen" }
 androidx-annotation = { module = "androidx.annotation:annotation", version.ref = "androidx-annotation" }
 constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "androidx-constraintlayout" }
 lifecycleRuntimeKtx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "androidx-lifecycle" }
