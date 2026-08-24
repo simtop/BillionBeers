@@ -222,12 +222,26 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
     }
 }
 
-// Fix implicit dependency for KSP
-tasks.matching { it.name.contains("ksp", ignoreCase = true) && it.name.contains("UnitTest", ignoreCase = true) }.configureEach {
+// Fix implicit dependencies for generated test sources. Kotlin and KSP already declare the
+// relationship through source()/dependsOn(), but AGP's unit-test lint model discovers the same
+// directory through the Android source set and validates it independently.
+tasks.matching {
+    it.name.contains("UnitTest", ignoreCase = true) &&
+        (it.name.contains("ksp", ignoreCase = true) || it.name.contains("lint", ignoreCase = true))
+}.configureEach {
     dependsOn(generatePaparazziTest)
 }
 
-
+// The KSP-generated PreviewProvider service is also wired into every unit-test resource source set.
+// Release and benchmark unit-test resource processing therefore needs the debug KSP task explicitly,
+// even though those variants reuse the generated debug service file.
+tasks.matching {
+    it.name.startsWith("process") &&
+        it.name.contains("UnitTest", ignoreCase = true) &&
+        it.name.endsWith("JavaRes")
+}.configureEach {
+    dependsOn(tasks.matching { it.name == "kspDebugKotlin" })
+}
 
 // Isolate ordinary tests from Paparazzi screenshot tests entirely
 tasks.withType<Test>().configureEach {

@@ -16,7 +16,7 @@
         android:fullBackupContent="@xml/backup_descriptor">
         <activity
             android:name=".presentation.MainActivity"
-            android:theme="@style/AppTheme.NoActionBar"
+            android:theme="@style/AppTheme.Splash"
             android:launchMode="singleTask"
             android:exported="true">
             <intent-filter>

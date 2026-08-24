@@ -77,6 +77,7 @@ dependencies {
   // appcompat stays: the manifest's @style/AppTheme resolves to a Theme.AppCompat parent
   // (core/src/main/res/values/styles.xml), which no import scan can see.
   implementation(libs.appcompat)
+  implementation(libs.androidx.core.splashscreen)
   testImplementation(libs.striktCore)
   androidTestImplementation(libs.striktCore)
 

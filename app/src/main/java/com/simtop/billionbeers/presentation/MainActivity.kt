@@ -12,6 +12,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.google.android.play.core.splitinstall.SplitInstallManager
 import com.simtop.billionbeers.BillionBeersApplication
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
@@ -30,6 +31,7 @@ class MainActivity : ComponentActivity() {
   private var deepLinkUri by mutableStateOf<android.net.Uri?>(null)
 
   override fun onCreate(savedInstanceState: Bundle?) {
+    installSplashScreen()
     val appGraph = (applicationContext as BillionBeersApplication).appGraph
     splitInstallManager = appGraph.splitInstallManager
     super.onCreate(savedInstanceState)
