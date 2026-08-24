@@ -32,9 +32,9 @@ class MainActivity : ComponentActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     installSplashScreen()
+    super.onCreate(savedInstanceState)
     val appGraph = (applicationContext as BillionBeersApplication).appGraph
     splitInstallManager = appGraph.splitInstallManager
-    super.onCreate(savedInstanceState)
     enableEdgeToEdge()
     deepLinkUri = intent?.data
     setContent {
