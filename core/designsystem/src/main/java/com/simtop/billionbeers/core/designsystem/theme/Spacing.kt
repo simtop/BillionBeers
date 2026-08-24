@@ -5,7 +5,11 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-/** BillionBeers Spacing Tokens Using a standard 4dp/8dp grid system. */
+/**
+ * Semantic spacing tokens for reusable design-system components.
+ *
+ * Use these roles instead of adding one-off dimensions to a governed component.
+ */
 @Immutable
 data class BillionBeersSpacing(
   val default: Dp = 0.dp,
@@ -18,4 +22,7 @@ data class BillionBeersSpacing(
   val extraHuge: Dp = 64.dp,
 )
 
+/**
+ * Composition-local override for the current spacing tokens. Prefer [BillionBeersTheme.spacing].
+ */
 val LocalSpacing = staticCompositionLocalOf { BillionBeersSpacing() }

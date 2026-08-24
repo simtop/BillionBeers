@@ -11,8 +11,10 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 
 /**
- * BillionBeers Design System Theme wrapper. This integrates our custom tiered tokens with the
- * standard Material3 system.
+ * Applies the BillionBeers semantic tokens and maps them to the standard Material3 theme.
+ *
+ * This is the supported entry point for application and feature UI. Reusable components should read
+ * colors, spacing, and typography through [BillionBeersTheme] inside this scope.
  */
 @Composable
 fun BillionBeersTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
@@ -30,14 +32,22 @@ fun BillionBeersTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Comp
   }
 }
 
-/** Convenience object to access tokens within Composable functions. */
+/**
+ * Supported composable accessors for the BillionBeers design-system tokens.
+ *
+ * These accessors intentionally hide the underlying composition locals so consumers depend on
+ * semantic roles rather than primitive palette values.
+ */
 object BillionBeersTheme {
+  /** Current semantic spacing tokens. */
   val spacing: BillionBeersSpacing
     @Composable @ReadOnlyComposable get() = LocalSpacing.current
 
+  /** Current semantic color roles. */
   val colors: BillionBeersColors
     @Composable @ReadOnlyComposable get() = LocalColors.current
 
+  /** Current typography tokens. */
   val typography: Typography
     @Composable @ReadOnlyComposable get() = LocalTypography.current
 }
