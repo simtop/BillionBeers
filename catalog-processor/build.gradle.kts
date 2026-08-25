@@ -1,5 +1,5 @@
-// Formatting and static analysis only. See the note in snapshot-processor: the jvm.library
-// convention pins Java 23, which the JDK 17 toolchain below cannot produce.
+// Formatting and static analysis only. The jvm.library convention pins Java 23, which the
+// JDK 17 toolchain below cannot produce.
 plugins {
   kotlin("jvm")
   id("billionbeers.spotless")

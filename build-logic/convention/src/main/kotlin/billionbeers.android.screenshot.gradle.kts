@@ -6,14 +6,12 @@ import org.gradle.accessors.dm.LibrariesForLibs
 
 plugins {
     id("app.cash.paparazzi")
-    id("com.google.devtools.ksp")
 }
 
 val libs = the<LibrariesForLibs>()
 
 dependencies {
     add("implementation", this.project(":snapshot-testing"))
-    add("ksp", this.project(":snapshot-processor"))
 }
 
 // Paparazzi's plugin calls Test.setTestReporter(PaparazziTestReporter) on every Test task in the
@@ -36,31 +34,51 @@ val namespaceProvider = provider {
     project.extensions.findByType(com.android.build.api.dsl.CommonExtension::class.java)?.namespace ?: project.name
 }
 
+// A module may own handwritten Paparazzi tests without owning Compose @Preview functions. The
+// catalog is intentionally such a module: its one screenshot is a direct Paparazzi test, not a
+// preview inventory. Keep CPS discovery opt-out explicit rather than turning an empty inventory
+// into a silently green generated runner.
+val cpsDiscoveryEnabledProvider = provider {
+    project.findProperty("billionbeers.screenshot.cpsDiscovery")?.toString()?.toBoolean() ?: true
+}
+
+// Resolve CPS only for modules that generate preview runners. Manual-only Paparazzi modules such
+// as :catalog still use this convention for its tasks, but do not need the scanner on their test
+// classpath.
+project.afterEvaluate {
+    if (cpsDiscoveryEnabledProvider.get()) {
+        dependencies.add("testImplementation", libs.composablePreviewScannerAndroid)
+        dependencies.add("testImplementation", libs.classgraph)
+    }
+}
+
 val generatePaparazziTest = tasks.register("generatePaparazziTest") {
     val outputDir = layout.buildDirectory.dir("generated/paparazzi-test/kotlin")
     outputs.dir(outputDir)
+    inputs.property("cpsDiscoveryEnabled", cpsDiscoveryEnabledProvider)
 
     // The module namespace is the task's only input, and it must be declared. Without it the task
     // had outputs and no inputs, so Gradle held it UP-TO-DATE forever once the file existed.
     //
-    // That is not cosmetic. The namespace is baked into the generated runner twice: as the class
-    // name, and as the prefix it filters PreviewProviders by. Renaming a module's namespace left
-    // the stale prefix in place, so the runner would match zero providers, fall through to the
-    // DUMMY_NO_PREVIEWS_FOUND branch, and report a green screenshot run that asserted nothing.
+    // That is not cosmetic. The namespace is baked into the generated runner as its class name
+    // and as the package tree passed to CPS. Renaming a module's namespace left the stale class in
+    // place, so the runner could scan the wrong package and report an empty inventory.
     // Measured before this fix: changing :core:designsystem's namespace regenerated nothing and
     // the file kept the old value.
     inputs.property("moduleNamespace", namespaceProvider)
 
     val nsProvider = namespaceProvider
+    val cpsProvider = cpsDiscoveryEnabledProvider
     doLast {
-        val capturedModuleNamespace = nsProvider.get()
-        val safeClassName = capturedModuleNamespace.replace(".", "_").replaceFirstChar { it.uppercase() } + "ScreenshotTest"
-        
         val outDirFile = outputDir.get().asFile
         // Wipe first: the class name is derived from the namespace, so regenerating after a rename
         // writes a *new* file and would otherwise leave the old one beside it - a second runner
         // class still filtering on the dead prefix, which compiles and asserts nothing.
         outDirFile.deleteRecursively()
+        if (!cpsProvider.get()) return@doLast
+
+        val capturedModuleNamespace = nsProvider.get()
+        val safeClassName = capturedModuleNamespace.replace(".", "_").replaceFirstChar { it.uppercase() } + "ScreenshotTest"
         val packageDir = File(outDirFile, "com/simtop/billionbeers/screenshot")
         packageDir.mkdirs()
         
@@ -74,21 +92,42 @@ val generatePaparazziTest = tasks.register("generatePaparazziTest") {
             import com.android.resources.NightMode
             import com.android.resources.UiMode
             import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+            import com.simtop.billionbeers.snapshot_testing.AccessibilityMatrix
             import com.simtop.billionbeers.snapshot_testing.PreviewConfiguration
-            import com.simtop.billionbeers.snapshot_testing.PreviewProvider
             import com.simtop.billionbeers.snapshot_testing.SnapshotImageEnvironment
-            import org.junit.Assume
+            import java.io.File
             import org.junit.Rule
             import org.junit.Test
             import org.junit.runner.RunWith
             import org.junit.runners.Parameterized
-            import java.util.ServiceLoader
+            import sergio.sastre.composable.preview.scanner.android.AndroidComposablePreviewScanner
+            import sergio.sastre.composable.preview.scanner.android.AndroidPreviewInfo
+            import sergio.sastre.composable.preview.scanner.android.screenshotid.AndroidPreviewScreenshotIdBuilder
+            import sergio.sastre.composable.preview.scanner.core.preview.ComposablePreview
+            import sergio.sastre.composable.preview.scanner.core.scanner.config.classpath.Classpath
+
+            private const val MODULE_NAMESPACE = "$capturedModuleNamespace"
+            private const val MATRIX_ANNOTATION =
+                "com.simtop.billionbeers.core.designsystem.component.AccessibilityMatrixPreview"
+            private const val CUSTOM_PREVIEW_PACKAGE =
+                "com.simtop.billionbeers.core.designsystem.component"
+            private val COMPILED_MAIN_CLASSES_BY_VARIANT =
+                mapOf(
+                    "debug" to "build/intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes",
+                    "release" to "build/intermediates/built_in_kotlinc/release/compileReleaseKotlin/classes",
+                )
+
+            private data class PreviewCase(
+                val snapshotName: String,
+                val preview: ComposablePreview<AndroidPreviewInfo>,
+                val configuration: PreviewConfiguration,
+            )
 
             @RunWith(Parameterized::class)
             class ${safeClassName}(
                 private val snapshotName: String,
-                private val content: @androidx.compose.runtime.Composable () -> Unit,
-                private val configuration: PreviewConfiguration
+                private val preview: ComposablePreview<AndroidPreviewInfo>,
+                private val configuration: PreviewConfiguration,
             ) {
 
                 @get:Rule
@@ -103,12 +142,10 @@ val generatePaparazziTest = tasks.register("generatePaparazziTest") {
 
                 @Test
                 fun snapshot() {
-                    Assume.assumeTrue("Skipping dummy snapshot", snapshotName != "DUMMY_NO_PREVIEWS_FOUND")
-
                     paparazzi.snapshot(name = snapshotName) {
                         SnapshotImageEnvironment {
                             BillionBeersTheme {
-                                content()
+                                preview()
                             }
                         }
                     }
@@ -141,28 +178,147 @@ val generatePaparazziTest = tasks.register("generatePaparazziTest") {
                     @JvmStatic
                     @Parameterized.Parameters(name = "{0}")
                     fun data(): Collection<Array<Any>> {
-                        val allProviders = ServiceLoader.load(PreviewProvider::class.java).toList()
-                        
-                        val namespace = "$capturedModuleNamespace"
-                        val localProviders = allProviders.filter { provider ->
-                            provider::class.java.name.startsWith(namespace)
+                        val cases = discoverCases()
+                        check(cases.isNotEmpty()) {
+                            "CPS discovered no previews for " + MODULE_NAMESPACE +
+                                "; expected compiled classes under " +
+                                COMPILED_MAIN_CLASSES_BY_VARIANT.values.joinToString()
                         }
-                        
-                        val allSnapshots = localProviders.flatMap { it.snapshots }
-                        
-                        if (allSnapshots.isEmpty()) {
-                            return listOf(
-                                arrayOf(
-                                    "DUMMY_NO_PREVIEWS_FOUND",
-                                    @androidx.compose.runtime.Composable {},
-                                    PreviewConfiguration.Default,
-                                )
-                            )
+                        check(cases.map { it.snapshotName }.toSet().size == cases.size) {
+                            "CPS produced duplicate screenshot IDs for " + MODULE_NAMESPACE
                         }
+                        return cases.map { case ->
+                            arrayOf<Any>(case.snapshotName, case.preview, case.configuration)
+                        }
+                    }
 
-                        return allSnapshots.map { snapshot ->
-                            arrayOf(snapshot.name, snapshot.content, snapshot.configuration)
+                    private fun discoverCases(): List<PreviewCase> {
+                        val preferredVariant =
+                            if (System.getProperty("java.class.path").orEmpty().contains("releaseUnitTest")) {
+                                "release"
+                            } else {
+                                "debug"
+                            }
+                        val compiledMainClasses =
+                            listOf(preferredVariant, if (preferredVariant == "debug") "release" else "debug")
+                                .mapNotNull { COMPILED_MAIN_CLASSES_BY_VARIANT[it] }
+                                .firstOrNull { File(it).isDirectory }
+                                ?: error(
+                                    "CPS compiled preview scan requires one of " +
+                                        COMPILED_MAIN_CLASSES_BY_VARIANT.values.joinToString() +
+                                        "; compile the module's debug or release Kotlin sources first"
+                                )
+                        val scanner =
+                            AndroidComposablePreviewScanner()
+                                .setTargetSourceSet(
+                                    Classpath(compiledMainClasses, File(".").absolutePath),
+                                    packageTreesOfCrossModuleCustomPreviews =
+                                        listOf(CUSTOM_PREVIEW_PACKAGE),
+                                )
+                        val filter =
+                            scanner
+                                .scanPackageTrees(MODULE_NAMESPACE)
+                                .includePrivatePreviews()
+                        filter.includeAnnotationInfoForAllOf(
+                            Class.forName(MATRIX_ANNOTATION).asSubclass(Annotation::class.java)
+                        )
+                        val previews =
+                            filter
+                                .getPreviews()
+                                .distinctBy { AndroidPreviewScreenshotIdBuilder(it).build() }
+                                .sortedWith(
+                                    compareBy<ComposablePreview<AndroidPreviewInfo>>(
+                                        { it.methodName },
+                                        { if (isDark(it)) 1 else 0 },
+                                        { it.previewIndex ?: -1 },
+                                        { AndroidPreviewScreenshotIdBuilder(it).build() },
+                                    )
+                                )
+                        val usedNames = mutableSetOf<String>()
+                        val cases =
+                            previews.flatMap { preview ->
+                                if (isAccessibilityMatrix(preview)) {
+                                    AccessibilityMatrix.configurations.map { configuration ->
+                                        PreviewCase(
+                                            preview.methodName + "_" + configuration.name,
+                                            preview,
+                                            configuration,
+                                        )
+                                    }
+                                } else {
+                                    val name = ordinaryName(preview, usedNames)
+                                    listOf(PreviewCase(name, preview, previewConfiguration(name, preview)))
+                                }
+                            }
+                        val matrixPreviewCount = previews.count(::isAccessibilityMatrix)
+                        val matrixCaseCount = cases.count { isAccessibilityMatrix(it.preview) }
+                        check(matrixCaseCount == matrixPreviewCount * AccessibilityMatrix.configurations.size) {
+                            "CPS accessibility matrix expansion mismatch for " + MODULE_NAMESPACE +
+                                ": expected " + matrixPreviewCount * AccessibilityMatrix.configurations.size +
+                                ", got " + matrixCaseCount
                         }
+                        return cases
+                    }
+
+                    private fun isAccessibilityMatrix(preview: ComposablePreview<AndroidPreviewInfo>): Boolean =
+                        preview.otherAnnotationsInfo?.any { it.name == MATRIX_ANNOTATION } == true
+
+                    private fun isDark(preview: ComposablePreview<AndroidPreviewInfo>): Boolean =
+                        preview.previewInfo.uiMode and 0x30 == 0x20
+
+                    private fun ordinaryName(
+                        preview: ComposablePreview<AndroidPreviewInfo>,
+                        usedNames: MutableSet<String>,
+                    ): String {
+                        val parameterSuffix =
+                            if (preview.methodParametersType.isNotBlank()) {
+                                preview.previewIndexDisplayName.orEmpty().ifBlank {
+                                    preview.previewIndex?.toString() ?: "0"
+                                }
+                            } else {
+                                ""
+                            }
+                        val baseName =
+                            if (parameterSuffix.isEmpty()) {
+                                preview.methodName
+                            } else {
+                                preview.methodName + "_" + parameterSuffix
+                            }
+                        if (usedNames.add(baseName)) return baseName
+
+                        val info = preview.previewInfo
+                        val suffix = buildList {
+                            if (isDark(preview)) add("dark")
+                            if (info.fontScale != 1f) add("font" + (info.fontScale * 100).toInt())
+                            if (info.locale.isNotBlank()) add(info.locale.replace('-', '_'))
+                            if (info.device.isNotBlank()) add("device")
+                        }.ifEmpty {
+                            listOf(preview.previewIndex?.toString() ?: "variant")
+                        }.joinToString("_")
+                        val candidate = baseName + "_" + suffix
+                        if (usedNames.add(candidate)) return candidate
+                        return candidate + "_" + AndroidPreviewScreenshotIdBuilder(preview).build().hashCode()
+                    }
+
+                    private fun previewConfiguration(
+                        name: String,
+                        preview: ComposablePreview<AndroidPreviewInfo>,
+                    ): PreviewConfiguration {
+                        val info = preview.previewInfo
+                        val width =
+                            if (info.widthDp >= 600 || info.device.orEmpty().contains("TABLET", ignoreCase = true)) {
+                                "expanded"
+                            } else {
+                                "compact"
+                            }
+                        return PreviewConfiguration(
+                            name = name,
+                            theme = if (isDark(preview)) "dark" else "light",
+                            fontScale = info.fontScale,
+                            locale = info.locale.orEmpty().ifBlank { "en" },
+                            layoutDirection = "ltr",
+                            width = width,
+                        )
                     }
                 }
             }
@@ -172,7 +328,8 @@ val generatePaparazziTest = tasks.register("generatePaparazziTest") {
 
 // AGP 9 forbids passing Providers to AndroidSourceSet.srcDir (android.sourceset.disallowProvider),
 // so the generated dirs are registered as plain paths. Task dependencies are wired explicitly
-// below: KotlinCompile tasks source(generatePaparazziTest) and the unit-test KSP tasks dependsOn it.
+// below: KotlinCompile tasks source(generatePaparazziTest) and unit-test resource processing depends on
+// any KSP task used by the module's other conventions.
 val generatedPaparazziTestDir = layout.buildDirectory.dir("generated/paparazzi-test/kotlin").get().asFile
 val generatedKspTestResourcesDir = layout.buildDirectory.dir("generated/ksp/debug/resources").get().asFile
 
@@ -197,20 +354,6 @@ pluginManager.withPlugin("com.android.dynamic-feature") {
     }
 }
 
-// The KSP-generated PreviewProvider service file is only consumed by the generated Paparazzi
-// unit test (via ServiceLoader on the test resources wired up above) - it must never ship in
-// APKs/bundles: bundletool rejects the app bundle because the base module and the beerdetail
-// dynamic feature both contain the same entry path with different content.
-// packaging.resources.excludes cannot strip it because AGP merges META-INF/services/** by
-// default and merge rules take precedence over excludes, so it is filtered out of the java
-// resources before packaging instead. Unit-test variants keep it.
-tasks.matching {
-    it.name.startsWith("process") && it.name.endsWith("JavaRes") && !it.name.contains("UnitTest")
-}.configureEach {
-    (this as? org.gradle.api.tasks.Sync)
-        ?.exclude("META-INF/services/com.simtop.billionbeers.snapshot_testing.PreviewProvider")
-}
-
 // UnitTest, not Test: the generated runner is a Paparazzi (JVM-only) test and belongs solely to the
 // unit-test compilation. Matching "Test" also matched compileDebugAndroidTestKotlin, which fed the
 // generated file into the *instrumented* compile - where Paparazzi is not on the classpath. That was
@@ -222,9 +365,9 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
     }
 }
 
-// Fix implicit dependencies for generated test sources. Kotlin and KSP already declare the
-// relationship through source()/dependsOn(), but AGP's unit-test lint model discovers the same
-// directory through the Android source set and validates it independently.
+// Fix implicit dependencies for generated test sources. Kotlin already declares the relationship
+// through source(), but AGP's unit-test lint model discovers the same directory through the Android
+// source set and validates it independently.
 tasks.matching {
     it.name.contains("UnitTest", ignoreCase = true) &&
         (it.name.contains("ksp", ignoreCase = true) || it.name.contains("lint", ignoreCase = true))
@@ -232,9 +375,9 @@ tasks.matching {
     dependsOn(generatePaparazziTest)
 }
 
-// The KSP-generated PreviewProvider service is also wired into every unit-test resource source set.
-// Release and benchmark unit-test resource processing therefore needs the debug KSP task explicitly,
-// even though those variants reuse the generated debug service file.
+// KSP-generated resources from other module conventions are wired into every unit-test resource
+// source set. Release and benchmark unit-test resource processing therefore needs the debug KSP task
+// explicitly when a module applies such a convention.
 tasks.matching {
     it.name.startsWith("process") &&
         it.name.contains("UnitTest", ignoreCase = true) &&

@@ -1,11 +1,5 @@
 package com.simtop.billionbeers.snapshot_testing
 
-import androidx.compose.runtime.Composable
-
-interface PreviewProvider {
-  val snapshots: List<Snapshot>
-}
-
 data class PreviewConfiguration(
   val name: String,
   val theme: String,
@@ -13,11 +7,7 @@ data class PreviewConfiguration(
   val locale: String,
   val layoutDirection: String,
   val width: String,
-) {
-  companion object {
-    val Default = PreviewConfiguration("default", "light", 1f, "en", "ltr", "compact")
-  }
-}
+)
 
 object AccessibilityMatrix {
   private const val LARGE_FONT_SCALE = 1.5f
@@ -51,9 +41,3 @@ object AccessibilityMatrix {
       }
     }
 }
-
-data class Snapshot(
-  val name: String,
-  val content: @Composable () -> Unit,
-  val configuration: PreviewConfiguration = PreviewConfiguration.Default,
-)
