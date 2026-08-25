@@ -61,9 +61,7 @@ Stop an emulator: `"$ADB" -s emulator-5554 emu kill`.
 
 ## 2. Install the app
 
-`make install` works (PR #30, merged 2026-07-04, fixed the bundletool
-duplicate-`META-INF/services/...PreviewProvider` rejection that used to break
-`:app:installDebug`) — use it first:
+`make install` is the normal install path for the app — use it first:
 
 ```bash
 make install

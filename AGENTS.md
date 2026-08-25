@@ -43,7 +43,7 @@ tooling rather than by memory, and deviations need a written reason.
 | `:konsist` | The architecture rules. Pure JVM — see the gotcha in §5 |
 | `:testing-utils` | Pure-JVM shared test helpers |
 | `:testing-utils-android` | `BaseTestRobot` — the shared instrumented-test robot base, consumed by `:app` and by every feature module in the UI-test tier (ADR 0009) |
-| `:snapshot-testing`, `:snapshot-processor` | Paparazzi harness + KSP generation of screenshot tests from previews |
+| `:snapshot-testing` | Paparazzi harness, deterministic screenshot environment, and the shared accessibility matrix; preview runners use ComposablePreviewScanner |
 | `:catalog`, `:catalog-annotations`, `:catalog-processor` | Demo/component catalog app + its KSP generator |
 | `:benchmark:{macrobenchmark,microbenchmark,baselineprofile}` | Perf budgets and baseline profile generation |
 | `build-logic` | Convention plugins (`billionbeers.android.feature`, `…dynamic.feature`, `…screenshot`, unused-deps, duplicate-classes). A separate composite build |
@@ -233,9 +233,6 @@ silently never ran for a while because of exactly this.
 **Gotcha: `adb shell pm clear` breaks on-demand installs.** It wipes bundletool local-testing's
 staged splits; installs then fail with SplitInstall error −5 until `scripts/install-local-testing.sh`
 is re-run. Not an app bug.
-
-**Gotcha: `installDebug` is broken** by a duplicate PreviewProvider service entry — install the
-split APKs with `adb install-multiple` (the `billionbeers-android` skill handles this).
 
 **Adding `androidTest` to a module: two traps, both now fixed in build-logic.** Recorded because
 the symptoms point away from the cause. (1) The screenshot convention used to feed its generated
