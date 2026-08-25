@@ -93,7 +93,7 @@ deep-clean: ## Stop daemon and deeply clean all gradle caches to fix corrupted s
 # Testing
 # Pure-JVM modules have no testDebugUnitTest task, so they are invisible to the Android-flavored
 # test invocation and must be listed here explicitly (:konsist has its own target).
-JVM_TEST_MODULES := :core-common :testing-utils
+JVM_TEST_MODULES := :core-common :testing-utils :snapshot-processor
 
 test: ## Run unit tests for the specified module (or all).
 ifeq ($(MODULE_TRIMMED),)

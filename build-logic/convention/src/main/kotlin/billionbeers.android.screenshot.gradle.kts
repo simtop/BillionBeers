@@ -9,6 +9,7 @@ plugins {
 }
 
 val libs = the<LibrariesForLibs>()
+val inventoryPathProvider = providers.gradleProperty("billionbeers.screenshot.inventory")
 
 dependencies {
     add("implementation", this.project(":snapshot-testing"))
@@ -28,6 +29,9 @@ dependencies {
 tasks.withType<Test>().configureEach {
     reports.html.required.set(false)
     reports.junitXml.required.set(true)
+    inventoryPathProvider.orNull?.let { path ->
+        systemProperty("billionbeers.screenshot.inventory", path)
+    }
 }
 
 val namespaceProvider = provider {
@@ -36,19 +40,54 @@ val namespaceProvider = provider {
 
 // A module may own handwritten Paparazzi tests without owning Compose @Preview functions. The
 // catalog is intentionally such a module: its one screenshot is a direct Paparazzi test, not a
-// preview inventory. Keep CPS discovery opt-out explicit rather than turning an empty inventory
-// into a silently green generated runner.
-val cpsDiscoveryEnabledProvider = provider {
-    project.findProperty("billionbeers.screenshot.cpsDiscovery")?.toString()?.toBoolean() ?: true
+// preview inventory. Keep the opt-out explicit rather than turning an empty inventory into a
+// silently green generated runner.
+val cpsDiscoveryEnabledProvider =
+    providers.gradleProperty("billionbeers.screenshot.cpsDiscovery")
+        .map(String::toBoolean)
+        .orElse(
+            providers.provider {
+                project.extensions.extraProperties.properties["billionbeers.screenshot.cpsDiscovery"]
+                    ?.toString()
+                    ?.toBoolean()
+                    ?: true
+            },
+        )
+
+val discoveryBackendProvider =
+    providers.gradleProperty("billionbeers.screenshot.discovery")
+        .map(String::lowercase)
+        .orElse("cps")
+
+require(discoveryBackendProvider.get() in setOf("cps", "ksp")) {
+    "billionbeers.screenshot.discovery must be cps or ksp"
 }
 
-// Resolve CPS only for modules that generate preview runners. Manual-only Paparazzi modules such
-// as :catalog still use this convention for its tasks, but do not need the scanner on their test
-// classpath.
+if (discoveryBackendProvider.get() == "ksp") {
+    pluginManager.apply("com.google.devtools.ksp")
+}
+
+// Resolve only the selected discovery backend. CPS remains the default; KSP is deliberately
+// opt-in so normal CI continues to exercise the runtime scanner until the comparison is complete.
 project.afterEvaluate {
-    if (cpsDiscoveryEnabledProvider.get()) {
+    if (!cpsDiscoveryEnabledProvider.get()) return@afterEvaluate
+    if (discoveryBackendProvider.get() == "cps") {
         dependencies.add("testImplementation", libs.composablePreviewScannerAndroid)
         dependencies.add("testImplementation", libs.classgraph)
+    }
+}
+
+project.afterEvaluate {
+    if (discoveryBackendProvider.get() == "ksp" && cpsDiscoveryEnabledProvider.get()) {
+        dependencies.add("ksp", project.project(":snapshot-processor"))
+    }
+}
+
+project.afterEvaluate {
+    pluginManager.withPlugin("com.google.devtools.ksp") {
+        extensions.configure<com.google.devtools.ksp.gradle.KspExtension> {
+            arg("billionbeers.screenshot.namespace", namespaceProvider.get())
+        }
     }
 }
 
@@ -56,6 +95,7 @@ val generatePaparazziTest = tasks.register("generatePaparazziTest") {
     val outputDir = layout.buildDirectory.dir("generated/paparazzi-test/kotlin")
     outputs.dir(outputDir)
     inputs.property("cpsDiscoveryEnabled", cpsDiscoveryEnabledProvider)
+    inputs.property("discoveryBackend", discoveryBackendProvider.get())
 
     // The module namespace is the task's only input, and it must be declared. Without it the task
     // had outputs and no inputs, so Gradle held it UP-TO-DATE forever once the file existed.
@@ -65,10 +105,11 @@ val generatePaparazziTest = tasks.register("generatePaparazziTest") {
     // place, so the runner could scan the wrong package and report an empty inventory.
     // Measured before this fix: changing :core:designsystem's namespace regenerated nothing and
     // the file kept the old value.
-    inputs.property("moduleNamespace", namespaceProvider)
+    inputs.property("moduleNamespace", namespaceProvider.get())
 
     val nsProvider = namespaceProvider
     val cpsProvider = cpsDiscoveryEnabledProvider
+    val backendProvider = discoveryBackendProvider
     doLast {
         val outDirFile = outputDir.get().asFile
         // Wipe first: the class name is derived from the namespace, so regenerating after a rename
@@ -78,11 +119,127 @@ val generatePaparazziTest = tasks.register("generatePaparazziTest") {
         if (!cpsProvider.get()) return@doLast
 
         val capturedModuleNamespace = nsProvider.get()
+        val backend = backendProvider.get()
         val safeClassName = capturedModuleNamespace.replace(".", "_").replaceFirstChar { it.uppercase() } + "ScreenshotTest"
         val packageDir = File(outDirFile, "com/simtop/billionbeers/screenshot")
         packageDir.mkdirs()
         
         val testFile = File(packageDir, "${safeClassName}.kt")
+        if (backend == "ksp") {
+            testFile.writeText("""
+                package com.simtop.billionbeers.screenshot
+
+                import app.cash.paparazzi.DeviceConfig
+                import app.cash.paparazzi.Paparazzi
+                import com.android.resources.LayoutDirection
+                import com.android.resources.NightMode
+                import com.android.resources.UiMode
+                import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+                import com.simtop.billionbeers.snapshot_testing.PreviewConfiguration
+                import com.simtop.billionbeers.snapshot_testing.SnapshotImageEnvironment
+                import ${capturedModuleNamespace}.GeneratedPreviewInventory
+                import java.io.File
+                import org.junit.Rule
+                import org.junit.Test
+                import org.junit.runner.RunWith
+                import org.junit.runners.Parameterized
+
+                private const val MODULE_NAMESPACE = "$capturedModuleNamespace"
+
+                @RunWith(Parameterized::class)
+                class ${safeClassName}(
+                    private val snapshotName: String,
+                    private val content: @androidx.compose.runtime.Composable () -> Unit,
+                    private val configuration: PreviewConfiguration,
+                ) {
+
+                    @get:Rule
+                    val paparazzi = Paparazzi(
+                        deviceConfig = deviceConfig(configuration),
+                        theme = if (configuration.theme == "dark") {
+                            "android:Theme.Material.NoActionBar"
+                        } else {
+                            "android:Theme.Material.Light.NoActionBar"
+                        },
+                    )
+
+                    @Test
+                    fun snapshot() {
+                        paparazzi.snapshot(name = snapshotName) {
+                            SnapshotImageEnvironment {
+                                BillionBeersTheme {
+                                    content()
+                                }
+                            }
+                        }
+                    }
+
+                    private fun deviceConfig(configuration: PreviewConfiguration): DeviceConfig {
+                        val base = if (configuration.width == "expanded") {
+                            DeviceConfig.PIXEL_TABLET
+                        } else {
+                            DeviceConfig.PIXEL_5
+                        }
+                        return base.copy(
+                            fontScale = configuration.fontScale,
+                            locale = configuration.locale,
+                            layoutDirection = if (configuration.layoutDirection == "rtl") {
+                                LayoutDirection.RTL
+                            } else {
+                                LayoutDirection.LTR
+                            },
+                            uiMode = UiMode.NORMAL,
+                            nightMode = if (configuration.theme == "dark") {
+                                NightMode.NIGHT
+                            } else {
+                                NightMode.NOTNIGHT
+                            },
+                        )
+                    }
+
+                    companion object {
+                        @JvmStatic
+                        @Parameterized.Parameters(name = "{0}")
+                        fun data(): Collection<Array<Any>> {
+                            val snapshots = GeneratedPreviewInventory.snapshots
+                            check(snapshots.isNotEmpty()) {
+                                "KSP discovered no previews for " + MODULE_NAMESPACE
+                            }
+                            check(snapshots.map { it.name }.toSet().size == snapshots.size) {
+                                "KSP produced duplicate screenshot IDs for " + MODULE_NAMESPACE
+                            }
+                            writeInventory(snapshots)
+                            return snapshots.map { snapshot ->
+                                arrayOf<Any>(snapshot.name, snapshot.content, snapshot.configuration)
+                            }
+                        }
+
+                        private fun writeInventory(snapshots: List<com.simtop.billionbeers.snapshot_testing.Snapshot>) {
+                            val path = System.getProperty("billionbeers.screenshot.inventory") ?: return
+                            val file = File(path)
+                            file.parentFile?.mkdirs()
+                            file.writeText(
+                                snapshots.joinToString(separator = "") { snapshot ->
+                                    listOf(
+                                        MODULE_NAMESPACE,
+                                        snapshot.name,
+                                        snapshot.configuration.theme,
+                                        snapshot.configuration.fontScale,
+                                        snapshot.configuration.locale,
+                                        snapshot.configuration.layoutDirection,
+                                        snapshot.configuration.width,
+                                        snapshot.configuration.previewName,
+                                        snapshot.configuration.previewGroup,
+                                        snapshot.configuration.device,
+                                    ).joinToString("\t") + "\n"
+                                },
+                            )
+                        }
+                    }
+                }
+            """.trimIndent())
+            return@doLast
+        }
         testFile.writeText("""
             package com.simtop.billionbeers.screenshot
 
@@ -187,9 +344,29 @@ val generatePaparazziTest = tasks.register("generatePaparazziTest") {
                         check(cases.map { it.snapshotName }.toSet().size == cases.size) {
                             "CPS produced duplicate screenshot IDs for " + MODULE_NAMESPACE
                         }
+                        writeInventory(cases)
                         return cases.map { case ->
                             arrayOf<Any>(case.snapshotName, case.preview, case.configuration)
                         }
+                    }
+
+                    private fun writeInventory(cases: List<PreviewCase>) {
+                        val path = System.getProperty("billionbeers.screenshot.inventory") ?: return
+                        val file = File(path)
+                        file.parentFile?.mkdirs()
+                        file.writeText(
+                            cases.joinToString(separator = "") { case ->
+                                listOf(
+                                    MODULE_NAMESPACE,
+                                    case.snapshotName,
+                                    case.configuration.theme,
+                                    case.configuration.fontScale,
+                                    case.configuration.locale,
+                                    case.configuration.layoutDirection,
+                                    case.configuration.width,
+                                ).joinToString("\t") + "\n"
+                            },
+                        )
                     }
 
                     private fun discoverCases(): List<PreviewCase> {
