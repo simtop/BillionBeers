@@ -34,11 +34,13 @@ the same normalized inventory:
 | **Total** | **272** | **272** |
 
 Both produced 216 accessibility-matrix cases and 28 ordinary dark cases, and both passed the
-existing golden images. In the repeated equal-case end-to-end measurement, repaired KSP was faster:
-its median was 74.22 seconds versus 92.73 seconds for CPS. Configuration measurements were close
-and the available whole-process memory sample was approximate and inconclusive. The runtime result
-is useful evidence, but it is a machine- and workload-specific measurement rather than a universal
-performance claim.
+existing golden images. After repairing clean-build processor wiring, a repeated equal-case
+end-to-end measurement used one discarded warm-up and five measured runs per backend, alternating
+backend order. Each run disabled the build cache, configuration cache, and daemon, reran every task,
+and verified the same 273 goldens. Repaired KSP's median was 83.48 seconds (range 76.27-125.00)
+versus 99.95 seconds for CPS (range 92.07-130.52), a 16.5% lower median. The wide ranges make this
+useful directional evidence, not a universal performance claim; the result remains machine- and
+workload-specific.
 
 CPS and KSP have different failure and maintenance surfaces:
 
