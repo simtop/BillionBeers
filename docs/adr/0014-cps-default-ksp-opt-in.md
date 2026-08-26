@@ -99,5 +99,3 @@ performance measurements alone are not sufficient.
   timings are not CI gates.
 - PR #179 — CPS migration: https://github.com/simtop/BillionBeers/pull/179
 - PR #180 — repaired KSP comparison: https://github.com/simtop/BillionBeers/pull/180
-- `rod/CPS_VS_KSP_SCREENSHOT_DISCOVERY.md` — local comparison record (ignored; not part of the
-  committed documentation set).

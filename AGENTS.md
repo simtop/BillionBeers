@@ -43,7 +43,7 @@ tooling rather than by memory, and deviations need a written reason.
 | `:konsist` | The architecture rules. Pure JVM — see the gotcha in §5 |
 | `:testing-utils` | Pure-JVM shared test helpers |
 | `:testing-utils-android` | `BaseTestRobot` — the shared instrumented-test robot base, consumed by `:app` and by every feature module in the UI-test tier (ADR 0009) |
-| `:snapshot-testing` | Paparazzi harness, deterministic screenshot environment, and the shared accessibility matrix; preview runners use ComposablePreviewScanner |
+| `:snapshot-testing`, `:snapshot-processor` | Paparazzi harness, deterministic screenshot environment, and the shared accessibility matrix; preview discovery defaults to CPS, with the KSP processor retained as an opt-in backend |
 | `:catalog`, `:catalog-annotations`, `:catalog-processor` | Demo/component catalog app + its KSP generator |
 | `:benchmark:{macrobenchmark,microbenchmark,baselineprofile}` | Perf budgets and baseline profile generation |
 | `build-logic` | Convention plugins (`billionbeers.android.feature`, `…dynamic.feature`, `…screenshot`, unused-deps, duplicate-classes). A separate composite build |

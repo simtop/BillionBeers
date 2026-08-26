@@ -98,7 +98,7 @@ class SnapshotProcessorFunctionalTest {
         .trimIndent()
     )
 
-    val second = runKsp("--rerun-tasks").generatedInventory().readText()
+    val second = runKsp().generatedInventory().readText()
     assertTrue(second.contains("freshPreview"))
     assertFalse(second.contains("stalePreview"))
   }
@@ -124,7 +124,7 @@ class SnapshotProcessorFunctionalTest {
     setupProject()
     return GradleRunner.create()
       .withProjectDir(projectDir.toFile())
-      .withArguments(listOf("kspKotlin", "--stacktrace") + extraArguments)
+      .withArguments(listOf("compileKotlin", "--stacktrace") + extraArguments)
       .forwardOutput()
       .build()
   }

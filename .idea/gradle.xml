@@ -47,6 +47,7 @@
             <option value="$PROJECT_DIR$/feature/beerslist" />
             <option value="$PROJECT_DIR$/navigation" />
             <option value="$PROJECT_DIR$/presentation_utils" />
+            <option value="$PROJECT_DIR$/snapshot-processor" />
             <option value="$PROJECT_DIR$/snapshot-testing" />
           </set>
         </option>

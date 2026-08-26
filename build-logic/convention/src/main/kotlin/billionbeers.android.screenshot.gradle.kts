@@ -65,6 +65,9 @@ require(discoveryBackendProvider.get() in setOf("cps", "ksp")) {
 
 if (discoveryBackendProvider.get() == "ksp") {
     pluginManager.apply("com.google.devtools.ksp")
+    if (cpsDiscoveryEnabledProvider.get()) {
+        dependencies.add("ksp", project.project(":snapshot-processor"))
+    }
 }
 
 // Resolve only the selected discovery backend. CPS remains the default; KSP is deliberately
@@ -74,12 +77,6 @@ project.afterEvaluate {
     if (discoveryBackendProvider.get() == "cps") {
         dependencies.add("testImplementation", libs.composablePreviewScannerAndroid)
         dependencies.add("testImplementation", libs.classgraph)
-    }
-}
-
-project.afterEvaluate {
-    if (discoveryBackendProvider.get() == "ksp" && cpsDiscoveryEnabledProvider.get()) {
-        dependencies.add("ksp", project.project(":snapshot-processor"))
     }
 }
 
