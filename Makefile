@@ -12,6 +12,40 @@ FEATURE ?=
 GRADLE_PATH ?=
 LOCALE ?=
 
+# Local resizable emulator defaults. Override one setting for a one-off run, or edit these values
+# when changing the normal QA device. API 37 requires EMULATOR_IMAGE_TAG=google_apis_ps16k.
+EMULATOR_AVD ?= BillionBeers_Resizable
+EMULATOR_API ?= 35
+EMULATOR_IMAGE_TAG ?= google_apis
+EMULATOR_ABI ?= arm64-v8a
+EMULATOR_DEVICE_PROFILE ?= resizable
+EMULATOR_RAM_MB ?= 3072
+EMULATOR_DATA_DISK ?= 8G
+EMULATOR_CPU_CORES ?= 4
+EMULATOR_LCD_WIDTH ?= 1080
+EMULATOR_LCD_HEIGHT ?= 2400
+EMULATOR_LCD_DENSITY ?= 420
+EMULATOR_GPU_MODE ?= auto
+CONFIRM ?= 0
+ACCEPT_ANDROID_LICENSES ?= 0
+
+EMULATOR_SCRIPT_ENV = \
+	AVD_NAME="$(EMULATOR_AVD)" \
+	ANDROID_API="$(EMULATOR_API)" \
+	SYSTEM_IMAGE_TAG="$(EMULATOR_IMAGE_TAG)" \
+	ABI="$(EMULATOR_ABI)" \
+	DEVICE_PROFILE="$(EMULATOR_DEVICE_PROFILE)" \
+	RAM_MB="$(EMULATOR_RAM_MB)" \
+	DATA_DISK="$(EMULATOR_DATA_DISK)" \
+	CPU_CORES="$(EMULATOR_CPU_CORES)" \
+	LCD_WIDTH="$(EMULATOR_LCD_WIDTH)" \
+	LCD_HEIGHT="$(EMULATOR_LCD_HEIGHT)" \
+	LCD_DENSITY="$(EMULATOR_LCD_DENSITY)" \
+	GPU_MODE="$(EMULATOR_GPU_MODE)" \
+	CONFIRM="$(CONFIRM)" \
+	ACCEPT_ANDROID_LICENSES="$(ACCEPT_ANDROID_LICENSES)"
+EMULATOR_RUN = $(EMULATOR_SCRIPT_ENV) bash scripts/emulator.sh
+
 MODULE_TRIMMED := $(strip $(MODULE))
 MODULE_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,)
 UI_TEST_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,:app:)
@@ -19,7 +53,7 @@ UI_TEST_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,:app:)
 # Wrapper for Gradle to support build-brief (bb) or rtk if available
 GRADLE_RUNNER := $(shell if command -v bb >/dev/null 2>&1; then echo "bb ./gradlew"; elif command -v build-brief >/dev/null 2>&1; then echo "build-brief --gradle ./gradlew"; elif command -v rtk >/dev/null 2>&1; then echo "rtk ./gradlew"; else echo "./gradlew"; fi)
 
-.PHONY: detekt-baseline help setup setup-ai-tools update-android-skills build bundle-release install clean test konsist check-data-layer-boundary compose-metrics ui-test screenshot-record screenshot-verify screenshot-clean lint android-lint format check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline verification-metadata health repo-doctor benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark build-budget build-budget-check jacoco-report coverage-check install-profiler install-diffuse new-feature-module new-dev-app play-listing-check play-listing-capture play-listing-reset store-frames
+.PHONY: detekt-baseline help setup setup-ai-tools update-android-skills build bundle-release install clean test konsist check-data-layer-boundary compose-metrics ui-test ui-test-local ui-test-managed ui-test-managed-newest ui-test-managed-ci ui-test-managed-all emulator-create emulator-recreate emulator-start emulator-stop emulator-status emulator-delete screenshot-record screenshot-verify screenshot-clean lint android-lint format check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline verification-metadata health repo-doctor benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark build-budget build-budget-check jacoco-report coverage-check install-profiler install-diffuse new-feature-module new-dev-app play-listing-check play-listing-capture play-listing-reset store-frames
 
 help: ## Show this help message.
 	@echo "\n📊 BillionBeers Makefile Help"
@@ -120,6 +154,28 @@ compose-metrics: ## Regenerate Compose compiler stability/skippability reports i
 
 ui-test: ## Run connected Android tests (UI tests) on an already-running device/emulator.
 	$(GRADLE_RUNNER) $(UI_TEST_PREFIX)connectedDebugAndroidTest
+
+ui-test-local: emulator-start ## Start/reuse the local resizable emulator, then run connected UI tests.
+	$(GRADLE_RUNNER) $(UI_TEST_PREFIX)connectedDebugAndroidTest
+
+# Local emulator lifecycle. Settings are explicit above and can be overridden with EMULATOR_*.
+emulator-create: ## Create the local resizable emulator and install its system image if needed.
+	@$(EMULATOR_RUN) create
+
+emulator-recreate: ## Recreate the local emulator with current settings (wipes data; CONFIRM=1 required).
+	@$(EMULATOR_RUN) recreate
+
+emulator-start: ## Start/reuse the local resizable emulator and wait for Android to boot.
+	@$(EMULATOR_RUN) start
+
+emulator-stop: ## Stop the local resizable emulator.
+	@$(EMULATOR_RUN) stop
+
+emulator-status: ## Show local emulator settings and running state.
+	@$(EMULATOR_RUN) status
+
+emulator-delete: ## Delete the local emulator (wipes data; CONFIRM=1 required).
+	@$(EMULATOR_RUN) delete
 
 ui-test-managed: ## Run instrumented tests on the ATD fast-lane managed device (boots/tears down its own emulator).
 	$(GRADLE_RUNNER) $(UI_TEST_PREFIX)atdApi35DebugAndroidTest
