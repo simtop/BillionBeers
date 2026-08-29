@@ -1,8 +1,8 @@
-# 0014: Select a screenshot preview-discovery implementation
+# 0014: Use KSP for screenshot preview discovery
 
 ## Status
 
-Proposed.
+Accepted.
 
 ## Context
 
@@ -57,57 +57,54 @@ machine-specific evidence rather than a universal performance claim.
 CPS and KSP have different failure and maintenance surfaces:
 
 - CPS discovers compiled Compose classes in the screenshot test process. It avoids a custom
-  processor and generated invocation code, but adds runtime scanning and classpath dependencies.
+  processor and generated invocation code, supports private-preview invocation through its compiled
+  scanning path, but adds runtime scanning and classpath dependencies.
 - KSP moves discovery to compilation and avoids runtime scanning, but the repository owns processor
   compatibility, generated source, aggregating invalidation, and explicit Gradle wiring. The current
-  implementation assumes top-level preview functions and needs broader compatibility coverage before
-  it can be published as a general-purpose library.
+  implementation assumes top-level, non-private preview functions and needs broader compatibility
+  coverage before it can be published as a general-purpose library.
 
-## Evaluation decision
+## Decision
 
-**PR #180 uses repaired KSP exclusively while the final choice is evaluated.** The screenshot
+**Use the repaired KSP implementation from PR #180.** The screenshot
 convention applies KSP and `:snapshot-processor` directly; it has no CPS dependencies, runtime
 scanner implementation, or backend-selection property.
 
-**PR #179 remains the CPS alternative.** Keeping the implementations on separate branches makes the
-next benchmark compare the wiring each candidate would actually ship, rather than two modes carried
-by one convention plugin.
+The branch-isolated measurement preserves equal golden coverage and clean-build correctness with a
+repeatable 21.9% KSP median advantage. That is material enough to accept the repository-owned
+processor and its maintenance surface for this project.
 
-The final application default and the branch retained only as historical fallback will be selected
-after the KSP-only and CPS-only branches are measured with equal correctness, task inputs, golden
-coverage, and benchmark conditions.
-
-That branch-isolated measurement now favors KSP: it preserves equal golden coverage and clean-build
-correctness with a repeatable 21.9% median advantage. The ADR remains proposed until the project
-owner makes the final selection.
+**Keep PR #179 as the historical CPS alternative.** It preserves a working compiled-scanner
+implementation for later reevaluation without carrying two backends in the application convention.
 
 ## Consequences
 
-- Normal screenshot builds on PR #180 generate module-local KSP inventories.
+- Normal screenshot builds generate module-local KSP inventories.
 - The catalog keeps its handwritten Paparazzi test and explicitly disables generated preview
   discovery.
 - PR #180 does not resolve CPS or ClassGraph artifacts.
-- The repaired processor and its functional tests become production build infrastructure if KSP is
-  selected, so clean and incremental execution remain release-blocking requirements.
+- The repaired processor and its functional tests are production build infrastructure, so clean and
+  incremental execution remain release-blocking requirements.
 - PR #179 preserves the CPS implementation for later reevaluation if its compatibility or
   performance improves.
 - Case counts remain scoped as 272 discovered previews plus one handwritten catalog case.
 
-## Selection criteria
+## Reconsideration criteria
 
-Select KSP if repeated branch-isolated measurements preserve a material speed advantage and its
-clean/incremental correctness remains equal. Select CPS if the performance difference collapses or
-processor compatibility creates a larger ongoing cost than runtime discovery.
+Reconsider CPS if KSP's performance advantage collapses, a required preview shape cannot reasonably
+be generated or bridged, or processor compatibility creates a larger ongoing cost than runtime
+discovery.
 
 Before publishing the processor as a standalone library, add coverage for member-contained previews,
-supported Compose annotation versions, Kotlin/KSP compatibility, and consumer Gradle wiring. App use
-does not need to wait for all of that library compatibility surface when the repository's own preview
-shape is covered.
+decide whether private previews are supported through a reflection/bridge path, test supported
+Compose annotation versions and Kotlin/KSP combinations, and document consumer Gradle wiring. These
+are implementable compatibility gaps rather than missing discovery semantics. App use does not need
+to wait for that general-library surface when the repository's own preview shape is covered.
 
 ## Related
 
 - `docs/adr/0009-feature-module-ui-test-tier.md` — Paparazzi and device-test boundaries.
 - `docs/adr/0011-build-time-budget.md` — local measurement methodology and why machine-specific
   timings are not CI gates.
-- PR #179 — CPS candidate: https://github.com/simtop/BillionBeers/pull/179
-- PR #180 — repaired KSP candidate: https://github.com/simtop/BillionBeers/pull/180
+- PR #179 — historical CPS alternative: https://github.com/simtop/BillionBeers/pull/179
+- PR #180 — selected repaired KSP implementation: https://github.com/simtop/BillionBeers/pull/180
