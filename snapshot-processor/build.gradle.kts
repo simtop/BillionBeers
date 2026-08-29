@@ -20,4 +20,14 @@ dependencies {
   api(libs.kotlinpoet)
   api(libs.kotlinpoet.ksp)
   implementation(kotlin("stdlib"))
+  testImplementation(libs.junit.jupiter.api)
+  testRuntimeOnly(libs.junit.jupiter.engine)
+  testRuntimeOnly(libs.junit.platform.launcher)
+  testImplementation(gradleTestKit())
+}
+
+tasks.test {
+  dependsOn(tasks.jar)
+  systemProperty("billionbeers.repo.root", rootProject.projectDir.absolutePath)
+  useJUnitPlatform()
 }

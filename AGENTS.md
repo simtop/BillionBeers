@@ -43,7 +43,7 @@ tooling rather than by memory, and deviations need a written reason.
 | `:konsist` | The architecture rules. Pure JVM — see the gotcha in §5 |
 | `:testing-utils` | Pure-JVM shared test helpers |
 | `:testing-utils-android` | `BaseTestRobot` — the shared instrumented-test robot base, consumed by `:app` and by every feature module in the UI-test tier (ADR 0009) |
-| `:snapshot-testing`, `:snapshot-processor` | Paparazzi harness + KSP generation of screenshot tests from previews |
+| `:snapshot-testing`, `:snapshot-processor` | Paparazzi harness, deterministic screenshot environment, and the shared accessibility matrix; the KSP processor generates module-local preview inventories |
 | `:catalog`, `:catalog-annotations`, `:catalog-processor` | Demo/component catalog app + its KSP generator |
 | `:benchmark:{macrobenchmark,microbenchmark,baselineprofile}` | Perf budgets and baseline profile generation |
 | `build-logic` | Convention plugins (`billionbeers.android.feature`, `…dynamic.feature`, `…screenshot`, unused-deps, duplicate-classes). A separate composite build |
@@ -162,6 +162,7 @@ left `make konsist` green at "3 up-to-date". The whole gate, not one rule.
 | Dispatchers are chosen where the work is, not where the coroutine starts. ViewModels use a bare `viewModelScope.launch { }` — Room and Retrofit suspend calls are already main-safe, so an IO hop only moves state assignment off Main. Inject `CoroutineDispatcherProvider` only where a class actually calls `withContext`/`flowOn` (a blocking SDK, CPU work). StrictMode in debug is the detector that makes this safe | `docs/adr/0012` |
 | Build time is budgeted in `config/build-time-budget.txt` and measured **locally** by `make build-budget`, never in CI — a CI wall-clock number measures which runner the job drew. Clean build 37s cold / 4s warm; a deep ABI change costs only 1.11x a leaf one, so **per-build overhead dominates, not compilation** — do not justify a new module by build speed | `docs/adr/0011` |
 | Convention plugins stay **precompiled script plugins**; the project moved to them from binary plugins on purpose. Do not propose converting back on the usual grounds — precompiled scripts *can* share helper functions (see `AndroidCommon.kt`), and the configuration-time argument is largely neutralised by the configuration cache. Converting is a *measurement* task with a written method, not a judgement call. Declarative Gradle sits on top of this, not against it | `docs/adr/0013` |
+| Screenshot preview discovery uses the repository-owned KSP processor. It matched CPS across all 273 goldens and had a 21.9% lower branch-isolated median; PR #179 preserves CPS as the historical fallback. Reconsider if the speed advantage collapses or a required preview shape cannot reasonably be generated or bridged | `docs/adr/0014` |
 
 Also settled, without an ADR:
 
@@ -233,9 +234,6 @@ silently never ran for a while because of exactly this.
 **Gotcha: `adb shell pm clear` breaks on-demand installs.** It wipes bundletool local-testing's
 staged splits; installs then fail with SplitInstall error −5 until `scripts/install-local-testing.sh`
 is re-run. Not an app bug.
-
-**Gotcha: `installDebug` is broken** by a duplicate PreviewProvider service entry — install the
-split APKs with `adb install-multiple` (the `billionbeers-android` skill handles this).
 
 **Adding `androidTest` to a module: two traps, both now fixed in build-logic.** Recorded because
 the symptoms point away from the cause. (1) The screenshot convention used to feed its generated

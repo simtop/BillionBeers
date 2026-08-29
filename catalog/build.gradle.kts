@@ -4,6 +4,9 @@ plugins {
   id("billionbeers.android.screenshot")
 }
 
+// This module's screenshot is handwritten rather than generated from a Compose @Preview.
+project.extensions.extraProperties["billionbeers.screenshot.previewDiscovery"] = false
+
 android {
   namespace = "com.simtop.billionbeers.catalog"
 

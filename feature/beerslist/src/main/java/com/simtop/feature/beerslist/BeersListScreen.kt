@@ -367,6 +367,8 @@ class BeersListPreviewParameterProvider :
   }
 
   override val values = State.Preview.entries.asSequence()
+
+  override fun getDisplayName(index: Int): String = State.Preview.entries[index].name
 }
 
 @PreviewLightDark

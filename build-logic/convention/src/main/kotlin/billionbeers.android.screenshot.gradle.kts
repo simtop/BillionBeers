@@ -2,14 +2,12 @@ import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.DynamicFeatureExtension
 import com.android.build.api.dsl.LibraryExtension
 import java.io.File
-import org.gradle.accessors.dm.LibrariesForLibs
 
 plugins {
     id("app.cash.paparazzi")
     id("com.google.devtools.ksp")
 }
-
-val libs = the<LibrariesForLibs>()
+val inventoryPathProvider = providers.gradleProperty("billionbeers.screenshot.inventory")
 
 dependencies {
     add("implementation", this.project(":snapshot-testing"))
@@ -30,185 +28,206 @@ dependencies {
 tasks.withType<Test>().configureEach {
     reports.html.required.set(false)
     reports.junitXml.required.set(true)
+    inventoryPathProvider.orNull?.let { path ->
+        systemProperty("billionbeers.screenshot.inventory", path)
+    }
 }
 
 val namespaceProvider = provider {
     project.extensions.findByType(com.android.build.api.dsl.CommonExtension::class.java)?.namespace ?: project.name
 }
 
+// A module may own handwritten Paparazzi tests without owning Compose @Preview functions. The
+// catalog is intentionally such a module: its one screenshot is a direct Paparazzi test, not a
+// preview inventory. Keep the opt-out explicit rather than turning an empty inventory into a
+// silently green generated runner.
+val previewDiscoveryEnabledProvider =
+    providers.gradleProperty("billionbeers.screenshot.previewDiscovery")
+        .map(String::toBoolean)
+        .orElse(
+            providers.provider {
+                project.extensions.extraProperties.properties["billionbeers.screenshot.previewDiscovery"]
+                    ?.toString()
+                    ?.toBoolean()
+                    ?: true
+            },
+        )
+
+project.afterEvaluate {
+    pluginManager.withPlugin("com.google.devtools.ksp") {
+        extensions.configure<com.google.devtools.ksp.gradle.KspExtension> {
+            arg("billionbeers.screenshot.namespace", namespaceProvider.get())
+        }
+    }
+}
+
 val generatePaparazziTest = tasks.register("generatePaparazziTest") {
     val outputDir = layout.buildDirectory.dir("generated/paparazzi-test/kotlin")
     outputs.dir(outputDir)
+    inputs.property("previewDiscoveryEnabled", previewDiscoveryEnabledProvider)
 
     // The module namespace is the task's only input, and it must be declared. Without it the task
     // had outputs and no inputs, so Gradle held it UP-TO-DATE forever once the file existed.
     //
-    // That is not cosmetic. The namespace is baked into the generated runner twice: as the class
-    // name, and as the prefix it filters PreviewProviders by. Renaming a module's namespace left
-    // the stale prefix in place, so the runner would match zero providers, fall through to the
-    // DUMMY_NO_PREVIEWS_FOUND branch, and report a green screenshot run that asserted nothing.
+    // That is not cosmetic. The namespace is baked into the generated runner as its class name
+    // and as the import path of the generated KSP inventory. Renaming a module's namespace left the
+    // stale class in place, so the runner could import the wrong inventory.
     // Measured before this fix: changing :core:designsystem's namespace regenerated nothing and
     // the file kept the old value.
-    inputs.property("moduleNamespace", namespaceProvider)
+    inputs.property("moduleNamespace", namespaceProvider.get())
 
     val nsProvider = namespaceProvider
+    val previewDiscoveryProvider = previewDiscoveryEnabledProvider
     doLast {
-        val capturedModuleNamespace = nsProvider.get()
-        val safeClassName = capturedModuleNamespace.replace(".", "_").replaceFirstChar { it.uppercase() } + "ScreenshotTest"
-        
         val outDirFile = outputDir.get().asFile
         // Wipe first: the class name is derived from the namespace, so regenerating after a rename
         // writes a *new* file and would otherwise leave the old one beside it - a second runner
         // class still filtering on the dead prefix, which compiles and asserts nothing.
         outDirFile.deleteRecursively()
+        if (!previewDiscoveryProvider.get()) return@doLast
+
+        val capturedModuleNamespace = nsProvider.get()
+        val safeClassName = capturedModuleNamespace.replace(".", "_").replaceFirstChar { it.uppercase() } + "ScreenshotTest"
         val packageDir = File(outDirFile, "com/simtop/billionbeers/screenshot")
         packageDir.mkdirs()
         
         val testFile = File(packageDir, "${safeClassName}.kt")
         testFile.writeText("""
-            package com.simtop.billionbeers.screenshot
+                package com.simtop.billionbeers.screenshot
 
-            import app.cash.paparazzi.DeviceConfig
-            import app.cash.paparazzi.Paparazzi
-            import com.android.resources.LayoutDirection
-            import com.android.resources.NightMode
-            import com.android.resources.UiMode
-            import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
-            import com.simtop.billionbeers.snapshot_testing.PreviewConfiguration
-            import com.simtop.billionbeers.snapshot_testing.PreviewProvider
-            import com.simtop.billionbeers.snapshot_testing.SnapshotImageEnvironment
-            import org.junit.Assume
-            import org.junit.Rule
-            import org.junit.Test
-            import org.junit.runner.RunWith
-            import org.junit.runners.Parameterized
-            import java.util.ServiceLoader
+                import app.cash.paparazzi.DeviceConfig
+                import app.cash.paparazzi.Paparazzi
+                import com.android.resources.LayoutDirection
+                import com.android.resources.NightMode
+                import com.android.resources.UiMode
+                import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+                import com.simtop.billionbeers.snapshot_testing.PreviewConfiguration
+                import com.simtop.billionbeers.snapshot_testing.SnapshotImageEnvironment
+                import ${capturedModuleNamespace}.GeneratedPreviewInventory
+                import java.io.File
+                import org.junit.Rule
+                import org.junit.Test
+                import org.junit.runner.RunWith
+                import org.junit.runners.Parameterized
 
-            @RunWith(Parameterized::class)
-            class ${safeClassName}(
-                private val snapshotName: String,
-                private val content: @androidx.compose.runtime.Composable () -> Unit,
-                private val configuration: PreviewConfiguration
-            ) {
+                private const val MODULE_NAMESPACE = "$capturedModuleNamespace"
 
-                @get:Rule
-                val paparazzi = Paparazzi(
-                    deviceConfig = deviceConfig(configuration),
-                    theme = if (configuration.theme == "dark") {
-                        "android:Theme.Material.NoActionBar"
-                    } else {
-                        "android:Theme.Material.Light.NoActionBar"
-                    }
-                )
+                @RunWith(Parameterized::class)
+                class ${safeClassName}(
+                    private val snapshotName: String,
+                    private val content: @androidx.compose.runtime.Composable () -> Unit,
+                    private val configuration: PreviewConfiguration,
+                ) {
 
-                @Test
-                fun snapshot() {
-                    Assume.assumeTrue("Skipping dummy snapshot", snapshotName != "DUMMY_NO_PREVIEWS_FOUND")
+                    @get:Rule
+                    val paparazzi = Paparazzi(
+                        deviceConfig = deviceConfig(configuration),
+                        theme = if (configuration.theme == "dark") {
+                            "android:Theme.Material.NoActionBar"
+                        } else {
+                            "android:Theme.Material.Light.NoActionBar"
+                        },
+                    )
 
-                    paparazzi.snapshot(name = snapshotName) {
-                        SnapshotImageEnvironment {
-                            BillionBeersTheme {
-                                content()
+                    @Test
+                    fun snapshot() {
+                        paparazzi.snapshot(name = snapshotName) {
+                            SnapshotImageEnvironment {
+                                BillionBeersTheme {
+                                    content()
+                                }
                             }
                         }
                     }
-                }
 
-                private fun deviceConfig(configuration: PreviewConfiguration): DeviceConfig {
-                    val base = if (configuration.width == "expanded") {
-                        DeviceConfig.PIXEL_TABLET
-                    } else {
-                        DeviceConfig.PIXEL_5
-                    }
-                    return base.copy(
-                        fontScale = configuration.fontScale,
-                        locale = configuration.locale,
-                        layoutDirection = if (configuration.layoutDirection == "rtl") {
-                            LayoutDirection.RTL
+                    private fun deviceConfig(configuration: PreviewConfiguration): DeviceConfig {
+                        val base = if (configuration.width == "expanded") {
+                            DeviceConfig.PIXEL_TABLET
                         } else {
-                            LayoutDirection.LTR
-                        },
-                        uiMode = UiMode.NORMAL,
-                        nightMode = if (configuration.theme == "dark") {
-                            NightMode.NIGHT
-                        } else {
-                            NightMode.NOTNIGHT
-                        },
-                    )
-                }
-
-                companion object {
-                    @JvmStatic
-                    @Parameterized.Parameters(name = "{0}")
-                    fun data(): Collection<Array<Any>> {
-                        val allProviders = ServiceLoader.load(PreviewProvider::class.java).toList()
-                        
-                        val namespace = "$capturedModuleNamespace"
-                        val localProviders = allProviders.filter { provider ->
-                            provider::class.java.name.startsWith(namespace)
+                            DeviceConfig.PIXEL_5
                         }
-                        
-                        val allSnapshots = localProviders.flatMap { it.snapshots }
-                        
-                        if (allSnapshots.isEmpty()) {
-                            return listOf(
-                                arrayOf(
-                                    "DUMMY_NO_PREVIEWS_FOUND",
-                                    @androidx.compose.runtime.Composable {},
-                                    PreviewConfiguration.Default,
-                                )
+                        return base.copy(
+                            fontScale = configuration.fontScale,
+                            locale = configuration.locale,
+                            layoutDirection = if (configuration.layoutDirection == "rtl") {
+                                LayoutDirection.RTL
+                            } else {
+                                LayoutDirection.LTR
+                            },
+                            uiMode = UiMode.NORMAL,
+                            nightMode = if (configuration.theme == "dark") {
+                                NightMode.NIGHT
+                            } else {
+                                NightMode.NOTNIGHT
+                            },
+                        )
+                    }
+
+                    companion object {
+                        @JvmStatic
+                        @Parameterized.Parameters(name = "{0}")
+                        fun data(): Collection<Array<Any>> {
+                            val snapshots = GeneratedPreviewInventory.snapshots
+                            check(snapshots.isNotEmpty()) {
+                                "KSP discovered no previews for " + MODULE_NAMESPACE
+                            }
+                            check(snapshots.map { it.name }.toSet().size == snapshots.size) {
+                                "KSP produced duplicate screenshot IDs for " + MODULE_NAMESPACE
+                            }
+                            writeInventory(snapshots)
+                            return snapshots.map { snapshot ->
+                                arrayOf<Any>(snapshot.name, snapshot.content, snapshot.configuration)
+                            }
+                        }
+
+                        private fun writeInventory(snapshots: List<com.simtop.billionbeers.snapshot_testing.Snapshot>) {
+                            val path = System.getProperty("billionbeers.screenshot.inventory") ?: return
+                            val file = File(path)
+                            file.parentFile?.mkdirs()
+                            file.writeText(
+                                snapshots.joinToString(separator = "") { snapshot ->
+                                    listOf(
+                                        MODULE_NAMESPACE,
+                                        snapshot.name,
+                                        snapshot.configuration.theme,
+                                        snapshot.configuration.fontScale,
+                                        snapshot.configuration.locale,
+                                        snapshot.configuration.layoutDirection,
+                                        snapshot.configuration.width,
+                                        snapshot.configuration.previewName,
+                                        snapshot.configuration.previewGroup,
+                                        snapshot.configuration.device,
+                                    ).joinToString("\t") + "\n"
+                                },
                             )
                         }
-
-                        return allSnapshots.map { snapshot ->
-                            arrayOf(snapshot.name, snapshot.content, snapshot.configuration)
-                        }
                     }
                 }
-            }
         """.trimIndent())
     }
 }
 
 // AGP 9 forbids passing Providers to AndroidSourceSet.srcDir (android.sourceset.disallowProvider),
 // so the generated dirs are registered as plain paths. Task dependencies are wired explicitly
-// below: KotlinCompile tasks source(generatePaparazziTest) and the unit-test KSP tasks dependsOn it.
+// below: KotlinCompile tasks source(generatePaparazziTest).
 val generatedPaparazziTestDir = layout.buildDirectory.dir("generated/paparazzi-test/kotlin").get().asFile
-val generatedKspTestResourcesDir = layout.buildDirectory.dir("generated/ksp/debug/resources").get().asFile
 
 pluginManager.withPlugin("com.android.application") {
     extensions.configure<ApplicationExtension>() {
         sourceSets.getByName("test").java.directories.add(generatedPaparazziTestDir.path)
-        sourceSets.getByName("test").resources.directories.add(generatedKspTestResourcesDir.path)
     }
 }
 
 pluginManager.withPlugin("com.android.library") {
     extensions.configure<LibraryExtension>(){
         sourceSets.getByName("test").java.directories.add(generatedPaparazziTestDir.path)
-        sourceSets.getByName("test").resources.directories.add(generatedKspTestResourcesDir.path)
     }
 }
 
 pluginManager.withPlugin("com.android.dynamic-feature") {
     extensions.configure<DynamicFeatureExtension>(){
         sourceSets.getByName("test").java.directories.add(generatedPaparazziTestDir.path)
-        sourceSets.getByName("test").resources.directories.add(generatedKspTestResourcesDir.path)
     }
-}
-
-// The KSP-generated PreviewProvider service file is only consumed by the generated Paparazzi
-// unit test (via ServiceLoader on the test resources wired up above) - it must never ship in
-// APKs/bundles: bundletool rejects the app bundle because the base module and the beerdetail
-// dynamic feature both contain the same entry path with different content.
-// packaging.resources.excludes cannot strip it because AGP merges META-INF/services/** by
-// default and merge rules take precedence over excludes, so it is filtered out of the java
-// resources before packaging instead. Unit-test variants keep it.
-tasks.matching {
-    it.name.startsWith("process") && it.name.endsWith("JavaRes") && !it.name.contains("UnitTest")
-}.configureEach {
-    (this as? org.gradle.api.tasks.Sync)
-        ?.exclude("META-INF/services/com.simtop.billionbeers.snapshot_testing.PreviewProvider")
 }
 
 // UnitTest, not Test: the generated runner is a Paparazzi (JVM-only) test and belongs solely to the
@@ -222,25 +241,14 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
     }
 }
 
-// Fix implicit dependencies for generated test sources. Kotlin and KSP already declare the
-// relationship through source()/dependsOn(), but AGP's unit-test lint model discovers the same
-// directory through the Android source set and validates it independently.
+// Fix implicit dependencies for generated test sources. Kotlin already declares the relationship
+// through source(), but AGP's unit-test lint model discovers the same directory through the Android
+// source set and validates it independently.
 tasks.matching {
     it.name.contains("UnitTest", ignoreCase = true) &&
         (it.name.contains("ksp", ignoreCase = true) || it.name.contains("lint", ignoreCase = true))
 }.configureEach {
     dependsOn(generatePaparazziTest)
-}
-
-// The KSP-generated PreviewProvider service is also wired into every unit-test resource source set.
-// Release and benchmark unit-test resource processing therefore needs the debug KSP task explicitly,
-// even though those variants reuse the generated debug service file.
-tasks.matching {
-    it.name.startsWith("process") &&
-        it.name.contains("UnitTest", ignoreCase = true) &&
-        it.name.endsWith("JavaRes")
-}.configureEach {
-    dependsOn(tasks.matching { it.name == "kspDebugKotlin" })
 }
 
 // Isolate ordinary tests from Paparazzi screenshot tests entirely
