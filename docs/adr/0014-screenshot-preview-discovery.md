@@ -32,12 +32,27 @@ preview cases, plus that one manual case, for 273 tracked screenshot PNGs in the
 | **Total** | **272** | **272** |
 
 Both produced 216 accessibility-matrix cases and 28 ordinary dark cases, and both passed the
-existing golden images. A prior dual-backend comparison used one discarded warm-up and five measured
-runs per backend, alternating backend order. Each run disabled the build cache, configuration cache,
-and daemon, reran every task, and verified the same 273 goldens. Repaired KSP's median was 83.48
-seconds (range 76.27-125.00) versus 99.95 seconds for CPS (range 92.07-130.52), a 16.5% lower median.
-The wide ranges make this directional, machine-specific evidence rather than a universal performance
-claim.
+existing golden images.
+
+The final comparison measured the independently wired branches rather than two backends carried by
+one convention plugin:
+
+- repaired KSP at `2b056b1ae1ae12af4230eb3e43d7656ab948f849`;
+- CPS at `87e3b5305761da76c9dc96e441314386dec58529`.
+
+Each candidate had its own worktree and one discarded warm-up. Five measured rounds alternated
+backend order and ran `verifyPaparazziDebug` with the build cache, configuration cache, and daemon
+disabled and every task rerun. Every run verified all 273 goldens. KSP executed 388 tasks per run;
+CPS executed 380.
+
+| Candidate | Measured samples (seconds) | Median | Range |
+|---|---|---:|---:|
+| Repaired KSP | 77.60, 72.19, 85.05, 77.99, 66.05 | 77.60 | 66.05-85.05 |
+| CPS | 88.68, 99.34, 105.40, 102.53, 91.42 | 99.34 | 88.68-105.40 |
+
+KSP's median was 21.74 seconds, or 21.9%, lower. It won all five paired rounds, and its slowest
+sample (85.05 seconds) was faster than CPS's fastest (88.68 seconds). This is repeatable,
+machine-specific evidence rather than a universal performance claim.
 
 CPS and KSP have different failure and maintenance surfaces:
 
@@ -61,6 +76,10 @@ by one convention plugin.
 The final application default and the branch retained only as historical fallback will be selected
 after the KSP-only and CPS-only branches are measured with equal correctness, task inputs, golden
 coverage, and benchmark conditions.
+
+That branch-isolated measurement now favors KSP: it preserves equal golden coverage and clean-build
+correctness with a repeatable 21.9% median advantage. The ADR remains proposed until the project
+owner makes the final selection.
 
 ## Consequences
 
