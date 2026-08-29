@@ -4,8 +4,8 @@ plugins {
   id("billionbeers.android.screenshot")
 }
 
-// This module's screenshot is a handwritten Paparazzi test rather than a Compose @Preview.
-project.extensions.extraProperties["billionbeers.screenshot.cpsDiscovery"] = false
+// This module's screenshot is handwritten rather than generated from a Compose @Preview.
+project.extensions.extraProperties["billionbeers.screenshot.previewDiscovery"] = false
 
 android {
   namespace = "com.simtop.billionbeers.catalog"

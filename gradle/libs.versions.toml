@@ -44,8 +44,6 @@ strikt = "0.35.1"
 kluent = "1.73"
 konsist = "0.17.3"
 paparazzi = "2.0.0-alpha05"
-composablePreviewScanner = "0.9.3"
-classgraph = "4.8.184"
 
 # KotlinX
 kotlinx-coroutines = "1.11.0"
@@ -176,8 +174,6 @@ detekt-gradlePlugin = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plug
 compose-rules-detekt = { module = "io.nlopez.compose.rules:detekt", version.ref = "compose-rules" }
 android-junit5-plugin = { module = "de.mannodermaus.gradle.plugins:android-junit5", version.ref = "androidJunit5" }
 paparazzi-plugin = { module = "app.cash.paparazzi:paparazzi-gradle-plugin", version.ref = "paparazzi" }
-composablePreviewScannerAndroid = { module = "io.github.sergio-sastre.ComposablePreviewScanner:android", version.ref = "composablePreviewScanner" }
-classgraph = { module = "io.github.classgraph:classgraph", version.ref = "classgraph" }
 
 # Test-dependency sets, so the convention plugins declare one line instead of ten. These lists were
 # previously repeated verbatim across billionbeers.android.{application,library,dynamic.feature},
