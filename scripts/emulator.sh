@@ -96,6 +96,15 @@ require_avdmanager() {
   [ -n "$AVDMANAGER_BIN" ] || die "avdmanager not found (install Android command-line tools)"
 }
 
+run_avdmanager() {
+  # Homebrew's command-line tools derive the SDK root from this property instead of reliably
+  # honoring ANDROID_HOME. Without it, avdmanager can report installed images as missing.
+  local tools_dir="${ANDROID_HOME}/cmdline-tools/latest"
+  local opts="${AVDMANAGER_OPTS:-}"
+  opts="${opts:+$opts }-Dcom.android.sdkmanager.toolsdir=${tools_dir}"
+  AVDMANAGER_OPTS="$opts" "$AVDMANAGER_BIN" "$@"
+}
+
 require_tools() {
   require_adb
   require_emulator
@@ -189,7 +198,7 @@ create_avd() {
     return
   fi
 
-  printf 'no\n' | "$AVDMANAGER_BIN" create avd \
+  printf 'no\n' | run_avdmanager create avd \
     --name "$AVD_NAME" \
     --package "$SYSTEM_IMAGE_PACKAGE" \
     --device "$DEVICE_PROFILE" \
@@ -326,7 +335,7 @@ recreate_avd() {
   ensure_system_image
   stop_avd
   mkdir -p "$AVD_ROOT"
-  printf 'no\n' | "$AVDMANAGER_BIN" create avd \
+  printf 'no\n' | run_avdmanager create avd \
     --name "$AVD_NAME" \
     --package "$SYSTEM_IMAGE_PACKAGE" \
     --device "$DEVICE_PROFILE" \
@@ -340,7 +349,7 @@ delete_avd() {
   confirm_destructive delete
   stop_avd
   if avd_exists; then
-    "$AVDMANAGER_BIN" delete avd --name "$AVD_NAME"
+    run_avdmanager delete avd --name "$AVD_NAME"
     grn "$AVD_NAME deleted"
   else
     echo "$AVD_NAME does not exist"
