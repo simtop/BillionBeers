@@ -1,13 +1,8 @@
 name: Weekly Health Report
 
-# Aggregates the read-only health checks (Lint backlog, Detekt, Compose stability, coverage,
-# dependency graph) into one markdown table - "what's wrong and what needs solving." Written to the
-# run's Step Summary, which renders the table on every run. Weekly, because these are burn-down
-# signals, not per-PR gates.
-#
-# It does NOT commit the report to master: master's required status checks reject a direct push
-# (GH006, "protected branch hook declined"), so the Step Summary is the live view. The committed
-# docs/health/REPORT.md is a point-in-time sample checked in when the report was added.
+# Aggregates read-only health checks into Markdown and versioned JSON. The current report is
+# published in the run's Step Summary and retained as a downloadable artifact. The tracked
+# docs/health/SAMPLE.md is explicitly historical and is never overwritten by this workflow.
 
 on:
   schedule:
@@ -16,6 +11,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: read
   contents: read
 
 jobs:
@@ -40,9 +36,63 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
+      - name: Download previous health data
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p build/previous-health
+          if ! runs_json=$(gh api --method GET \
+            "repos/${GITHUB_REPOSITORY}/actions/workflows/health-report.yml/runs?status=success&per_page=20"); then
+            echo "Previous health run lookup failed; generating without deltas."
+            exit 0
+          fi
+          run_id=$(python3 -c 'import json,sys; runs=json.load(sys.stdin).get("workflow_runs", []); print(runs[0]["id"] if runs else "")' <<< "$runs_json")
+          if [ -z "$run_id" ]; then
+            echo "No previous successful health run; generating without deltas."
+            exit 0
+          fi
+          if ! artifacts_json=$(gh api --method GET \
+            "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/artifacts?per_page=100"); then
+            echo "Previous artifact lookup failed; generating without deltas."
+            exit 0
+          fi
+          artifact_id=$(python3 -c 'import json,sys; artifacts=json.load(sys.stdin).get("artifacts", []); matches=[a for a in artifacts if a.get("name") == "health-report" and not a.get("expired")]; print(matches[0]["id"] if matches else "")' <<< "$artifacts_json")
+          if [ -z "$artifact_id" ]; then
+            echo "No retained health-report artifact; generating without deltas."
+            exit 0
+          fi
+          if ! gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" > build/previous-health.zip; then
+            echo "Previous artifact download failed; generating without deltas."
+            exit 0
+          fi
+          if ! python3 -m zipfile -e build/previous-health.zip build/previous-health; then
+            echo "Previous artifact extraction failed; generating without deltas."
+            exit 0
+          fi
+          echo "Downloaded health data from workflow run ${run_id}."
+
       - name: Generate health report
-        run: bash scripts/health-report.sh --run docs/health/REPORT.md
+        run: |
+          previous_args=()
+          previous_json=$(find build/previous-health -name health.json -print -quit 2>/dev/null || true)
+          if [ -n "$previous_json" ]; then
+            previous_args=(--previous-json "$previous_json")
+          fi
+          bash scripts/health-report.sh --run \
+            --json build/reports/health/health.json \
+            "${previous_args[@]}" \
+            build/reports/health/report.md
+          python3 -m json.tool build/reports/health/health.json >/dev/null
 
       - name: Publish to run summary
         if: always()
-        run: cat docs/health/REPORT.md >> "$GITHUB_STEP_SUMMARY"
+        run: cat build/reports/health/report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Archive health report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: health-report
+          path: build/reports/health
+          retention-days: 30
+          if-no-files-found: error

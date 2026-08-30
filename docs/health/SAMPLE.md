@@ -1,6 +1,12 @@
-# BillionBeers Health Report
+# BillionBeers Health Report — Historical Sample
 
-_Generated 2026-07-23 21:26 UTC_ · read-only checks only. Regenerate with `make health`.
+> [!WARNING]
+> This is a historical example captured on **2026-07-23**, not the repository's current health.
+> Download the latest `health-report` artifact or read the Step Summary from the
+> [Weekly Health Report workflow](https://github.com/simtop/BillionBeers/actions/workflows/health-report.yml).
+> Run `make health` to generate current local reports under `build/reports/health/`.
+
+_Generated 2026-07-23 21:26 UTC_ · retained only to show the report format that existed when health reporting was introduced.
 
 | Check | Metric | Status | What to do |
 |---|---|---|---|
