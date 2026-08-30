@@ -55,6 +55,7 @@ detekt = "1.23.8"
 compose-rules = "0.4.23"
 dependency-guard = "0.5.0"
 kotlinpoet = "2.3.0"
+cytoscape = "3.34.1"
 
 [libraries]
 # AndroidX Base
@@ -174,6 +175,7 @@ detekt-gradlePlugin = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plug
 compose-rules-detekt = { module = "io.nlopez.compose.rules:detekt", version.ref = "compose-rules" }
 android-junit5-plugin = { module = "de.mannodermaus.gradle.plugins:android-junit5", version.ref = "androidJunit5" }
 paparazzi-plugin = { module = "app.cash.paparazzi:paparazzi-gradle-plugin", version.ref = "paparazzi" }
+cytoscape-webjar = { module = "org.webjars.npm:cytoscape", version.ref = "cytoscape" }
 
 # Test-dependency sets, so the convention plugins declare one line instead of ten. These lists were
 # previously repeated verbatim across billionbeers.android.{application,library,dynamic.feature},

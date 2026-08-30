@@ -70,6 +70,44 @@ class ConventionPluginFunctionalTest {
   }
 
   @Test
+  fun `Metro graph reports stay opt-in`() {
+    writeSettings()
+    writeBuildFile(
+      """
+      import dev.zacsweers.metro.gradle.MetroPluginExtension
+
+      plugins {
+        id("com.android.library") version "9.2.1"
+        id("dev.zacsweers.metro")
+      }
+
+      android {
+        namespace = "com.simtop.metroreporttest"
+        compileSdk = 37
+      }
+
+      gradle.projectsEvaluated {
+        val destination =
+          project.extensions.getByType<MetroPluginExtension>().reportsDestination.orNull
+        println(
+          "METRO_REPORT_DESTINATION=" +
+            (destination?.asFile?.invariantSeparatorsPath ?: "absent")
+        )
+      }
+      """.trimIndent(),
+    )
+
+    val ordinary = runner().withArguments("help", "--stacktrace").build()
+    assertTrue(ordinary.output.contains("METRO_REPORT_DESTINATION=absent"))
+
+    val reporting =
+      runner()
+        .withArguments("help", "-Pmetro.reportsDestination=reports/metro", "--stacktrace")
+        .build()
+    assertTrue(reporting.output.contains("/build/reports/metro"))
+  }
+
+  @Test
   fun `managed device convention creates both device lanes and their groups`() {
     writeSettings()
     writeBuildFile(
