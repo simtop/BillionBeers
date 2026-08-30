@@ -251,8 +251,10 @@ verification-metadata: ## Regenerate gradle/verification-metadata.xml over the f
 		assembleDebug testDebugUnitTest :konsist:test :core-common:test :testing-utils:test \
 		verifyPaparazziDebug jacocoRootReport ciGroupDebugAndroidTest
 
-health: ## Aggregate the read-only health checks into a markdown report (docs/health/REPORT.md).
-	@bash scripts/health-report.sh --run docs/health/REPORT.md
+health: ## Generate current Markdown and JSON health reports under build/reports/health.
+	@bash scripts/health-report.sh --run --json build/reports/health/health.json build/reports/health/report.md
+	@echo "📊 Markdown: build/reports/health/report.md"
+	@echo "📊 JSON:     build/reports/health/health.json"
 
 repo-doctor: ## Verify read-only GitHub repository settings and CODEOWNERS coverage.
 	@REPO="$(REPO)" BRANCH="$(BRANCH)" bash scripts/repo-doctor.sh
