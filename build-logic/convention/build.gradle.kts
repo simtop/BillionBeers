@@ -15,6 +15,7 @@ dependencies {
     implementation(libs.spotless.gradlePlugin)
     implementation(libs.detekt.gradlePlugin)
     implementation(libs.paparazzi.plugin)
+    implementation(libs.cytoscape.webjar)
     implementation(files(files((libs as Any).javaClass.superclass.protectionDomain.codeSource.location)))
 
     testImplementation(gradleTestKit())

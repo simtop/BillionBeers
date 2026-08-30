@@ -53,7 +53,7 @@ UI_TEST_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,:app:)
 # Wrapper for Gradle to support build-brief (bb) or rtk if available
 GRADLE_RUNNER := $(shell if command -v bb >/dev/null 2>&1; then echo "bb ./gradlew"; elif command -v build-brief >/dev/null 2>&1; then echo "build-brief --gradle ./gradlew"; elif command -v rtk >/dev/null 2>&1; then echo "rtk ./gradlew"; else echo "./gradlew"; fi)
 
-.PHONY: detekt-baseline help setup setup-ai-tools update-android-skills build bundle-release release-smoke install clean test test-tier-inventory konsist check-data-layer-boundary compose-metrics ui-test ui-test-local ui-test-managed ui-test-managed-newest ui-test-managed-ci ui-test-managed-all emulator-create emulator-recreate emulator-start emulator-stop emulator-status emulator-delete screenshot-record screenshot-verify screenshot-clean lint android-lint format check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline verification-metadata health repo-doctor benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark build-budget build-budget-check jacoco-report coverage-check install-profiler install-diffuse new-feature-module new-dev-app play-listing-check play-listing-capture play-listing-reset store-frames
+.PHONY: detekt-baseline help setup setup-ai-tools update-android-skills build bundle-release release-smoke install clean test test-tier-inventory konsist check-data-layer-boundary compose-metrics ui-test ui-test-local ui-test-managed ui-test-managed-newest ui-test-managed-ci ui-test-managed-all emulator-create emulator-recreate emulator-start emulator-stop emulator-status emulator-delete screenshot-record screenshot-verify screenshot-clean lint android-lint format check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline verification-metadata health module-graph metro-graph architecture-report repo-doctor benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark build-budget build-budget-check jacoco-report coverage-check install-profiler install-diffuse new-feature-module new-dev-app play-listing-check play-listing-capture play-listing-reset store-frames
 
 help: ## Show this help message.
 	@echo "\n📊 BillionBeers Makefile Help"
@@ -262,6 +262,24 @@ health: ## Generate current Markdown and JSON health reports under build/reports
 	@bash scripts/health-report.sh --run --json build/reports/health/health.json build/reports/health/report.md
 	@echo "📊 Markdown: build/reports/health/report.md"
 	@echo "📊 JSON:     build/reports/health/health.json"
+
+module-graph: ## Generate JSON and an interactive webpage for direct Gradle project dependencies.
+	$(GRADLE_RUNNER) generateModuleGraph
+	@echo "🧭 JSON: build/reports/module-graph/modules.json"
+	@if [ -n "$(MODULE_TRIMMED)" ]; then \
+		encoded=$$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$(MODULE_TRIMMED)"); \
+		echo "🌐 HTML: file://$(CURDIR)/build/reports/module-graph/index.html#module=$$encoded&focus=1"; \
+	else \
+		echo "🌐 HTML: file://$(CURDIR)/build/reports/module-graph/index.html"; \
+	fi
+
+metro-graph: ## Generate Metro's DI binding graph (not the Gradle module graph).
+	$(GRADLE_RUNNER) --rerun-tasks -Pmetro.reportsDestination=reports/metro :app:generateMetroGraphHtml
+	@echo "💉 Metro analysis: app/build/reports/metro/analysis.json"
+	@echo "🌐 Metro HTML:    file://$(CURDIR)/app/build/reports/metro/html/index.html"
+
+architecture-report: module-graph metro-graph ## Generate both the Gradle module graph and Metro DI graph.
+	@echo "✅ Architecture reports generated: module edges describe Gradle projects; Metro describes DI bindings."
 
 repo-doctor: ## Verify read-only GitHub repository settings and CODEOWNERS coverage.
 	@REPO="$(REPO)" BRANCH="$(BRANCH)" bash scripts/repo-doctor.sh
