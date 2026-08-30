@@ -1,7 +1,9 @@
 package com.simtop.billionbeers.buildlogic
 
 import java.nio.file.Path
+import kotlin.io.path.copyTo
 import kotlin.io.path.createDirectories
+import kotlin.io.path.exists
 import kotlin.io.path.writeText
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
@@ -70,6 +72,55 @@ class ConventionPluginFunctionalTest {
   }
 
   @Test
+  fun `configuration cache is reusable for managed device task discovery`() {
+    writeAndroidFixture()
+    writeBuildFile(
+      """
+      plugins {
+        id("com.android.library") version "9.2.1"
+        id("billionbeers.android.managed.device")
+      }
+
+      android {
+        namespace = "com.simtop.conventiontest"
+        compileSdk = 37
+      }
+      """.trimIndent(),
+    )
+
+    runner().withArguments("tasks", "--configuration-cache").build()
+    val reused = runner().withArguments("tasks", "--configuration-cache").build()
+
+    assertTrue(reused.output.contains("Reusing configuration cache"))
+  }
+
+  @Test
+  fun `screenshot generation is not attached to instrumented compilation`() {
+    writeScreenshotFixture()
+    writeBuildFile(
+      """
+      plugins {
+        id("com.android.library") version "9.2.1"
+        id("billionbeers.android.screenshot")
+      }
+
+      android {
+        namespace = "com.simtop.conventiontest"
+        compileSdk = 37
+      }
+      """.trimIndent(),
+    )
+
+    val result = runner().withArguments("compileDebugAndroidTestKotlin").build()
+
+    assertTrue(
+      result.task(":compileDebugAndroidTestKotlin")?.outcome in
+        setOf(TaskOutcome.SUCCESS, TaskOutcome.NO_SOURCE, TaskOutcome.UP_TO_DATE),
+    )
+    assertTrue(result.output.contains("compileDebugAndroidTestKotlin"))
+  }
+
+  @Test
   fun `managed device convention creates both device lanes and their groups`() {
     writeSettings()
     writeBuildFile(
@@ -94,13 +145,233 @@ class ConventionPluginFunctionalTest {
     assertTrue(result.output.contains("compatGroupDebugAndroidTest"))
   }
 
+  @Test
+  fun `application convention exposes debug quality and coverage tasks`() {
+    writeAndroidFixture()
+    writeBuildFile(
+      """
+      plugins { id("billionbeers.android.application") }
+
+      android {
+        namespace = "com.simtop.conventiontest"
+        compileSdk = 37
+      }
+      """.trimIndent(),
+    )
+
+    val result = runner().withArguments("tasks", "--all").build()
+
+    assertTrue(result.output.contains("assembleDebug"))
+    assertTrue(result.output.contains("lintDebug"))
+    assertTrue(result.output.contains("jacocoDebugReport"))
+  }
+
+  @Test
+  fun `library convention exposes debug coverage and verification tasks`() {
+    writeAndroidFixture("include(\":testing-utils\")")
+    writeFile("testing-utils/build.gradle.kts", "")
+    writeBuildFile(
+      """
+      plugins { id("billionbeers.android.library") }
+
+      android {
+        namespace = "com.simtop.conventiontest"
+        compileSdk = 37
+      }
+      """.trimIndent(),
+    )
+
+    val result = runner().withArguments("tasks", "--all").build()
+
+    assertTrue(result.output.contains("assembleDebug"))
+    assertTrue(result.output.contains("jacocoDebugReport"))
+    assertTrue(result.output.contains("detekt"))
+  }
+
+  @Test
+  fun `regular feature convention registers the data layer boundary check`() {
+    writeFeatureFixture()
+    writeBuildFile(
+      """
+      plugins { id("billionbeers.android.feature") }
+
+      android {
+        namespace = "com.simtop.conventiontest.feature"
+        compileSdk = 37
+      }
+      """.trimIndent(),
+    )
+
+    val result = runner().withArguments("tasks", "--all").build()
+
+    assertTrue(result.output.contains("checkDataLayerClasspathBoundary"))
+    assertTrue(result.output.contains("jacocoDebugReport"))
+  }
+
+  @Test
+  fun `dynamic feature convention registers the data layer boundary check`() {
+    writeDynamicFeatureFixture()
+    writeBuildFile(
+      """
+      plugins { id("billionbeers.android.dynamic.feature") }
+
+      android {
+        namespace = "com.simtop.conventiontest.dynamicfeature"
+        compileSdk = 37
+      }
+      """.trimIndent(),
+    )
+
+    val result = runner().withArguments("tasks", "--all").build()
+
+    assertTrue(result.output.contains("checkDataLayerClasspathBoundary"))
+    assertTrue(result.output.contains("jacocoDebugReport"))
+  }
+
+  @Test
+  fun `feature boundary rejects a data layer arriving through an api dependency`() {
+    writeFeatureFixture(includeDataLayerBridge = true)
+    writeBuildFile(
+      """
+      plugins { id("billionbeers.android.feature") }
+
+      android {
+        namespace = "com.simtop.conventiontest.feature"
+        compileSdk = 37
+      }
+
+      dependencies {
+        implementation(project(":bridge"))
+      }
+      """.trimIndent(),
+    )
+
+    val result = runner().withArguments("checkDataLayerClasspathBoundary").buildAndFail()
+
+    assertTrue(result.output.contains("resolves data-layer module(s)"))
+    assertTrue(result.output.contains(":beer_data"))
+  }
+
+  @Test
+  fun `release validation reports missing signing credentials`() {
+    writeAndroidFixture()
+    writeFile(
+      "src/main/AndroidManifest.xml",
+      """
+      <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+        <application android:theme="@android:style/Theme.Material.Light" />
+      </manifest>
+      """.trimIndent(),
+    )
+    writeFile("proguard-rules.pro", "")
+    writeBuildFile(
+      """
+      plugins { id("billionbeers.android.application") }
+
+      android {
+        namespace = "com.simtop.conventiontest"
+        compileSdk = 37
+      }
+      """.trimIndent(),
+    )
+
+    val result = runner().withArguments("assembleRelease").buildAndFail()
+
+    assertTrue(
+      result.output.contains("keystore") ||
+        result.output.contains("signing") ||
+        result.output.contains("SigningConfig"),
+      result.output,
+    )
+  }
+
   private fun runner(): GradleRunner =
     GradleRunner.create()
       .withProjectDir(testProjectDir.toFile())
       .withPluginClasspath()
       .forwardOutput()
 
-  private fun writeSettings() {
+  private fun writeScreenshotFixture() {
+    writeSettings("include(\":snapshot-testing\", \":snapshot-processor\")")
+    writeFile(
+      "snapshot-testing/build.gradle.kts",
+      """
+      plugins { id("com.android.library") }
+      android {
+        namespace = "com.simtop.snapshot.testing"
+        compileSdk = 37
+      }
+      """.trimIndent(),
+    )
+    writeFile(
+      "snapshot-processor/build.gradle.kts",
+      """
+      plugins { id("java-library") }
+      """.trimIndent(),
+    )
+  }
+
+  private fun writeAndroidFixture(includes: String = "") {
+    writeSettings(includes)
+    val catalog =
+      generateSequence(Path.of(System.getProperty("user.dir"))) { it.parent }
+        .map { it.resolve("gradle/libs.versions.toml") }
+        .firstOrNull { it.exists() }
+    check(catalog != null) { "Could not locate the repository version catalog" }
+    testProjectDir.resolve("gradle").createDirectories()
+    catalog.copyTo(testProjectDir.resolve("gradle/libs.versions.toml"), overwrite = true)
+    testProjectDir.resolve("gradle.properties").writeText(
+      "billionbeers.versionCode=1\nbillionbeers.versionName=1.0\n",
+    )
+  }
+
+  private fun writeFeatureFixture(includeDataLayerBridge: Boolean = false) {
+    val includes =
+      listOf(
+          ":core",
+          ":core-common",
+          ":presentation_utils",
+          ":beerdomain:api",
+          ":testing-utils",
+          if (includeDataLayerBridge) ":bridge" else null,
+          if (includeDataLayerBridge) ":beer_data" else null,
+        )
+        .filterNotNull()
+        .joinToString(", ") { "\"$it\"" }
+    writeAndroidFixture("include($includes)")
+    listOf("core", "core-common", "presentation_utils", "testing-utils").forEach {
+      writeFile("$it/build.gradle.kts", "")
+    }
+    writeFile("beerdomain/api/build.gradle.kts", "")
+    if (includeDataLayerBridge) {
+      writeFile("beer_data/build.gradle.kts", "plugins { id(\"java-library\") }")
+      writeFile(
+        "bridge/build.gradle.kts",
+        """
+        plugins { id("java-library") }
+        dependencies { api(project(":beer_data")) }
+        """.trimIndent(),
+      )
+    }
+  }
+
+  private fun writeDynamicFeatureFixture() {
+    writeAndroidFixture("include(\":app\", \":testing-utils\")")
+    writeFile("testing-utils/build.gradle.kts", "")
+    writeFile(
+      "app/build.gradle.kts",
+      """
+      plugins { id("com.android.application") }
+      android {
+        namespace = "com.simtop.conventiontest.app"
+        compileSdk = 37
+        defaultConfig { applicationId = "com.simtop.conventiontest.app" }
+      }
+      """.trimIndent(),
+    )
+  }
+
+  private fun writeSettings(includes: String = "") {
     testProjectDir.resolve("settings.gradle.kts").writeText(
       """
       pluginManagement {
@@ -116,6 +387,7 @@ class ConventionPluginFunctionalTest {
           mavenCentral()
         }
       }
+      $includes
       rootProject.name = "convention-plugin-test"
       """.trimIndent(),
     )

@@ -6,7 +6,7 @@ plugins {
     id("jacoco")
 }
 
-val libs = the<org.gradle.accessors.dm.LibrariesForLibs>()
+val libs = billionBeersCatalog()
 
 configure<JacocoPluginExtension> {
     toolVersion = PROJECT_JACOCO_VERSION

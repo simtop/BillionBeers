@@ -17,12 +17,12 @@ apply(plugin = "billionbeers.spotless")
 apply(plugin = "billionbeers.detekt")
 apply(plugin = "billionbeers.unused-dependencies")
 
-val libs = the<org.gradle.accessors.dm.LibrariesForLibs>()
+val libs = billionBeersCatalog()
 val android = the<ApplicationExtension>()
 
 android.apply {
     defaultConfig {
-        targetSdk = libs.versions.targetSdk.get().toInt()
+        targetSdk = libs.billionBeersVersion("targetSdk").toInt()
         // From gradle.properties, not a constant in the convention jar - see Versions.kt for why.
         versionCode = providers.gradleProperty("billionbeers.versionCode").get().toInt()
         versionName = providers.gradleProperty("billionbeers.versionName").get()
@@ -134,13 +134,13 @@ plugins.withId("androidx.baselineprofile") {
 }
 
 dependencies {
-    "implementation"(libs.tracing.perfetto)
-    "implementation"(libs.tracing.perfetto.binary)
+    "implementation"(libs.billionBeersLibrary("tracing-perfetto"))
+    "implementation"(libs.billionBeersLibrary("tracing-perfetto-binary"))
     // JUnit 4, deliberately: this tier applies neither android-junit5 nor useJUnitPlatform(), and
     // :app's unit tests are `org.junit.Test`. It shares the bundles with the JUnit 5 tiers but not
     // the platform - see billionbeers.android.testing for why that split is intentional.
-    "testImplementation"(libs.junit)
-    "testImplementation"(libs.bundles.unitTest)
+    "testImplementation"(libs.billionBeersLibrary("junit"))
+    "testImplementation"(libs.billionBeersBundle("unitTest"))
 
-    "androidTestImplementation"(libs.bundles.instrumentedTest)
+    "androidTestImplementation"(libs.billionBeersBundle("instrumentedTest"))
 }

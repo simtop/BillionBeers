@@ -307,6 +307,9 @@ jobs:
       - name: Run Unit Tests
         run: make test
 
+      - name: Verify test-tier inventory
+        run: make test-tier-inventory
+
       - name: Run Konsist Architecture Rules
         run: make konsist
 
@@ -333,6 +336,7 @@ jobs:
           path: |
             **/build/test-results/
             **/build/reports/tests/
+            build/reports/test-tier-inventory.md
 
   screenshot-tests:
     name: Screenshot Tests (Paparazzi)
@@ -462,6 +466,11 @@ jobs:
         # runs weekly (.github/workflows/weekly-compat.yml). Which devices those mean is defined
         # in build-logic, not here.
         run: ./gradlew ciGroupDebugAndroidTest
+
+      # Debug UI tests prove screen behavior; this separate app-only lane proves the minified graph
+      # starts and resolves its production dependencies without requiring a Play signing identity.
+      - name: Run minified release graph smoke test
+        run: ./gradlew :app-release-smoke:atdApi35ReleaseSmokeAndroidTest
 
       - name: Archive instrumented test reports
         if: always()

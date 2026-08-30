@@ -1,5 +1,4 @@
 import com.android.build.api.dsl.DynamicFeatureExtension
-import org.gradle.accessors.dm.LibrariesForLibs
 
 plugins {
     id("com.android.dynamic-feature")
@@ -19,7 +18,7 @@ apply(plugin = "billionbeers.unused-dependencies")
 
 registerDataLayerClasspathBoundaryCheck()
 
-val libs = the<LibrariesForLibs>()
+val libs = billionBeersCatalog()
 
 configure<DynamicFeatureExtension> {
     packaging {
@@ -31,18 +30,18 @@ configure<DynamicFeatureExtension> {
 
 dependencies {
     "implementation"(this.project(":app"))
-    "implementation"(libs.coreKtx)
-    "implementation"(libs.appcompat)
-    "implementation"(libs.material)
-    "implementation"(libs.constraintlayout)
+    "implementation"(libs.billionBeersLibrary("coreKtx"))
+    "implementation"(libs.billionBeersLibrary("appcompat"))
+    "implementation"(libs.billionBeersLibrary("material"))
+    "implementation"(libs.billionBeersLibrary("constraintlayout"))
     
-    "implementation"(libs.lifecycleRuntimeKtx)
-    "implementation"(libs.navigationFragmentKtx)
-    "implementation"(libs.navigationUi)
+    "implementation"(libs.billionBeersLibrary("lifecycleRuntimeKtx"))
+    "implementation"(libs.billionBeersLibrary("navigationFragmentKtx"))
+    "implementation"(libs.billionBeersLibrary("navigationUi"))
 
     // The JUnit 5 tier, :testing-utils and useJUnitPlatform() come from billionbeers.android.testing.
     // This tier declares no JUnit 4: dynamic-feature modules have no `org.junit.Test` sources.
-    "androidTestImplementation"(libs.junit)
-    "androidTestImplementation"(libs.espressoCore)
-    "androidTestImplementation"(libs.coreTesting)
+    "androidTestImplementation"(libs.billionBeersLibrary("junit"))
+    "androidTestImplementation"(libs.billionBeersLibrary("espressoCore"))
+    "androidTestImplementation"(libs.billionBeersLibrary("coreTesting"))
 }

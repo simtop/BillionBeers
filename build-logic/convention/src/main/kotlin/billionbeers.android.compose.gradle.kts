@@ -2,13 +2,12 @@ import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.dsl.DynamicFeatureExtension
-import org.gradle.accessors.dm.LibrariesForLibs
 
 plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
-val libs = the<LibrariesForLibs>()
+val libs = billionBeersCatalog()
 
 composeCompiler {
     // Classes the compiler cannot infer as stable but that we know are: see the file's header
@@ -28,15 +27,15 @@ composeCompiler {
 
 pluginManager.withPlugin("com.android.base") {
     dependencies {
-        "implementation"(platform(libs.androidxComposeBom))
-        "androidTestImplementation"(platform(libs.androidxComposeBom))
+        "implementation"(platform(libs.billionBeersLibrary("androidxComposeBom")))
+        "androidTestImplementation"(platform(libs.billionBeersLibrary("androidxComposeBom")))
         
-        "implementation"(libs.androidxActivityCompose)
-        "implementation"(libs.androidx.foundation.android)
-        "implementation"(libs.androidx.material3.android)
-        "implementation"(libs.androidx.compose.material.icons.core)
-        "implementation"(libs.androidx.ui.tooling.preview.android)
-        "implementation"(libs.androidx.runtime.livedata)
-        "implementation"(libs.metrox.viewmodel.compose)
+        "implementation"(libs.billionBeersLibrary("androidxActivityCompose"))
+        "implementation"(libs.billionBeersLibrary("androidx-foundation-android"))
+        "implementation"(libs.billionBeersLibrary("androidx-material3-android"))
+        "implementation"(libs.billionBeersLibrary("androidx-compose-material-icons-core"))
+        "implementation"(libs.billionBeersLibrary("androidx-ui-tooling-preview-android"))
+        "implementation"(libs.billionBeersLibrary("androidx-runtime-livedata"))
+        "implementation"(libs.billionBeersLibrary("metrox-viewmodel-compose"))
     }
 }

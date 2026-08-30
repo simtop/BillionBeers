@@ -1,13 +1,12 @@
-import org.gradle.accessors.dm.LibrariesForLibs
 
-val libs = the<LibrariesForLibs>()
+val libs = billionBeersCatalog()
 
 pluginManager.withPlugin("com.android.base") {
     pluginManager.apply("dev.zacsweers.metro")
     
     dependencies {
-        add("implementation", libs.metro.runtime)
-        add("implementation", libs.metrox.viewmodel)
+        add("implementation", libs.billionBeersLibrary("metro-runtime"))
+        add("implementation", libs.billionBeersLibrary("metrox-viewmodel"))
     }
 
     extensions.getByType<dev.zacsweers.metro.gradle.MetroPluginExtension>().apply {

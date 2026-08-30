@@ -21,11 +21,15 @@ dependencies { testImplementation(libs.konsist) }
 // .kts files feed the build-script rules; build/, bin/ and the VCS/Gradle metadata are pruned for
 // the reason in AGENTS.md §2 - stale bin/ trees hold deleted sources and would fail rules on code
 // that no longer exists.
-val filesUnderRules =
+val ruleFileTree =
   rootProject.layout.projectDirectory.asFileTree.matching {
     include("**/*.kt", "**/*.kts")
     exclude("**/build/**", "**/bin/**", "**/.git/**", "**/.gradle/**", "**/gradle-user-home/**")
   }
+val filesUnderRules = ruleFileTree.files
+val fileNamesUnderRules = filesUnderRules.map {
+  it.relativeTo(rootProject.projectDir).invariantSeparatorsPath
+}
 
 // useJUnitPlatform() is not repeated here - billionbeers.jvm.library sets it for this tier.
 tasks.withType<Test>().configureEach {
@@ -40,10 +44,15 @@ tasks.withType<Test>().configureEach {
   // directions. Only a full, non-cached run reaches the ceiling - which is the run CI does.
   maxHeapSize = "2g"
 
+  // Use the resolved file set rather than the file-tree root. The latter overlaps with
+  // :app:dependencyGuard's generated baseline when the aggregate `check` task runs, which Gradle
+  // correctly rejects as an implicit dependency. The filename property keeps additions/removals
+  // observable so a new source file still invalidates this task.
   inputs
     .files(filesUnderRules)
     .withPropertyName("filesUnderArchitectureRules")
     .withPathSensitivity(PathSensitivity.RELATIVE)
+  inputs.property("architectureRuleFileNames", fileNamesUnderRules)
 }
 
 // Every rule file must actually have run.

@@ -2,6 +2,7 @@ import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.DynamicFeatureExtension
 import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.dsl.ManagedDevices
+import com.android.build.api.dsl.TestExtension
 import com.android.build.api.dsl.ManagedVirtualDevice
 
 /**
@@ -82,6 +83,11 @@ pluginManager.withPlugin("com.android.library") {
 }
 pluginManager.withPlugin("com.android.dynamic-feature") {
     extensions.configure<DynamicFeatureExtension> {
+        testOptions.managedDevices.configureBillionBeersDevices()
+    }
+}
+pluginManager.withPlugin("com.android.test") {
+    extensions.configure<TestExtension> {
         testOptions.managedDevices.configureBillionBeersDevices()
     }
 }

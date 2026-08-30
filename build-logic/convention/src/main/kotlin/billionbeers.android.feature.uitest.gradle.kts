@@ -1,4 +1,3 @@
-import org.gradle.accessors.dm.LibrariesForLibs
 
 /**
  * Opts a feature module into the instrumented UI-test tier: one plugin id instead of the six
@@ -22,7 +21,7 @@ import org.gradle.accessors.dm.LibrariesForLibs
  */
 apply(plugin = "billionbeers.android.managed.device")
 
-val libs = the<LibrariesForLibs>()
+val libs = billionBeersCatalog()
 
 dependencies {
     // Fakes for the domain interfaces, so a screen test drives state without the data layer.
@@ -34,10 +33,10 @@ dependencies {
 
     // Versionless: the Compose BOM is already on androidTestImplementation via
     // billionbeers.android.compose, which billionbeers.android.feature applies.
-    "androidTestImplementation"(libs.androidx.ui.test.junit4)
+    "androidTestImplementation"(libs.billionBeersLibrary("androidx-ui-test-junit4"))
 
     // Provides the empty ComponentActivity that createComposeRule() hosts the content in. It is a
     // debug-only manifest contribution, hence debugImplementation rather than an androidTest
     // configuration - the test APK reads it from the module under test.
-    "debugImplementation"(libs.androidx.ui.test.manifest)
+    "debugImplementation"(libs.billionBeersLibrary("androidx-ui-test-manifest"))
 }
