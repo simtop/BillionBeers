@@ -63,6 +63,7 @@ done
 DETEKT_RUN_STATUS="not-run"
 COMPOSE_RUN_STATUS="not-run"
 COVERAGE_RUN_STATUS="not-run"
+ARCHITECTURE_RUN_STATUS="not-run"
 if [[ "$RUN" == "1" ]]; then
   echo "Running health checks (this builds the project)..." >&2
   # Clear only the artifacts parsed below so a failed producer cannot make a previous run look
@@ -88,6 +89,12 @@ if [[ "$RUN" == "1" ]]; then
     COMPOSE_RUN_STATUS="success"
   else
     COMPOSE_RUN_STATUS="failed"
+  fi
+
+  if ./gradlew --console=plain generateModuleGraph verifyArchitectureGraph >&2 2>&1; then
+    ARCHITECTURE_RUN_STATUS="success"
+  else
+    ARCHITECTURE_RUN_STATUS="failed"
   fi
 fi
 
@@ -318,12 +325,61 @@ depguard_metric() {
   fi
 }
 
+# --- 7. Resolved architecture graph shape -----------------------------------------------------
+architecture_metrics() {
+  local file="build/reports/module-graph/modules.json"
+  if [[ ! -f "$file" ]]; then
+    metric "architecture_graph_nodes" "Architecture graph modules" "n/a" "" "modules" \
+      "unavailable" "⚪ not measured" "run with ${bt}--run${bt} (or ${bt}make module-graph${bt})"
+    metric "architecture_graph_edges" "Architecture graph edges" "n/a" "" "edges" \
+      "unavailable" "⚪ not measured" "run with ${bt}--run${bt} (or ${bt}make module-graph${bt})"
+    metric "architecture_graph_max_fan_in" "Architecture graph maximum fan-in" "n/a" "" "modules" \
+      "unavailable" "⚪ not measured" "run with ${bt}--run${bt} (or ${bt}make module-graph${bt})"
+    metric "architecture_graph_max_fan_out" "Architecture graph maximum fan-out" "n/a" "" "modules" \
+      "unavailable" "⚪ not measured" "run with ${bt}--run${bt} (or ${bt}make module-graph${bt})"
+    metric "architecture_graph_api_project_edges" "Architecture project API edges" "n/a" "" "edges" \
+      "unavailable" "⚪ not measured" "run with ${bt}--run${bt} (or ${bt}make module-graph${bt})"
+    return
+  fi
+
+  local values
+  values=$(python3 - "$file" <<'PY'
+import json
+import sys
+
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+summary = data.get("summary", {})
+print("\t".join(str(summary.get(key, "")) for key in (
+    "nodeCount", "edgeCount", "maxFanIn", "maxFanOut", "apiProjectEdgeCount"
+)))
+PY
+) || values=""
+  local nodes edges max_in max_out api_edges
+  IFS=$'\t' read -r nodes edges max_in max_out api_edges <<< "$values"
+  if [[ "$ARCHITECTURE_RUN_STATUS" == "failed" ]]; then
+    local status="unavailable" status_label="⚪ incomplete"
+  else
+    local status="info" status_label="ℹ️ tracked"
+  fi
+  metric "architecture_graph_nodes" "Architecture graph modules" "${nodes:-n/a}" "${nodes:-}" "modules" \
+    "$status" "$status_label" "role coverage is policy-driven; inspect ${bt}build/reports/module-graph/modules.json${bt}"
+  metric "architecture_graph_edges" "Architecture graph edges" "${edges:-n/a}" "${edges:-}" "edges" \
+    "$status" "$status_label" "direct project edges; inspect policy changes in review"
+  metric "architecture_graph_max_fan_in" "Architecture graph maximum fan-in" "${max_in:-n/a}" "${max_in:-}" "modules" \
+    "$status" "$status_label" "trend only; not a module-split target"
+  metric "architecture_graph_max_fan_out" "Architecture graph maximum fan-out" "${max_out:-n/a}" "${max_out:-}" "modules" \
+    "$status" "$status_label" "trend only; not a module-split target"
+  metric "architecture_graph_api_project_edges" "Architecture project API edges" "${api_edges:-n/a}" "${api_edges:-}" "edges" \
+    "$status" "$status_label" "review growth against the previous health artifact; every production API edge needs policy approval"
+}
+
 lint_metric
 detekt_metrics
 baseline_age_metric
 compose_metric
 coverage_metric
 depguard_metric
+architecture_metrics
 
 GENERATED_AT=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
 SOURCE_REVISION=$(git rev-parse HEAD 2>/dev/null || printf 'unknown')

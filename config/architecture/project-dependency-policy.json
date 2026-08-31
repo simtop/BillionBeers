@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "roles": [
+    { "name": "application", "match": "exact", "value": ":app" },
+    { "name": "dev-application", "match": "prefix", "value": ":app-dev-" },
+    { "name": "release-smoke", "match": "exact", "value": ":app-release-smoke" },
+    { "name": "dynamic-feature", "match": "prefix", "value": ":feature:", "plugin": "com.android.dynamic-feature" },
+    { "name": "regular-feature", "match": "prefix", "value": ":feature:" },
+    { "name": "domain-api", "match": "exact", "value": ":beerdomain:api" },
+    { "name": "domain-fakes", "match": "exact", "value": ":beerdomain:fakes" },
+    { "name": "data", "match": "exact", "value": ":beer_data" },
+    { "name": "database", "match": "exact", "value": ":beer_database" },
+    { "name": "network-fixture", "match": "prefix", "value": ":beer_network:" },
+    { "name": "network", "match": "exact", "value": ":beer_network" },
+    { "name": "core-common", "match": "exact", "value": ":core-common" },
+    { "name": "design-system", "match": "exact", "value": ":core:designsystem" },
+    { "name": "core", "match": "exact", "value": ":core" },
+    { "name": "navigation", "match": "exact", "value": ":navigation" },
+    { "name": "presentation", "match": "exact", "value": ":presentation_utils" },
+    { "name": "test-support", "match": "exact", "value": ":testing-utils" },
+    { "name": "test-support", "match": "exact", "value": ":testing-utils-android" },
+    { "name": "catalog", "match": "exact", "value": ":catalog" },
+    { "name": "catalog-annotations", "match": "exact", "value": ":catalog-annotations" },
+    { "name": "catalog-processor", "match": "exact", "value": ":catalog-processor" },
+    { "name": "snapshot-testing", "match": "exact", "value": ":snapshot-testing" },
+    { "name": "snapshot-processor", "match": "exact", "value": ":snapshot-processor" },
+    { "name": "benchmark", "match": "prefix", "value": ":benchmark:" },
+    { "name": "konsist", "match": "exact", "value": ":konsist" }
+  ],
+  "allowedEdges": [
+    { "source": "application", "targets": ["domain-api", "regular-feature", "dynamic-feature", "core", "design-system", "navigation", "data", "database", "network", "presentation"], "scopes": ["main"] },
+    { "source": "dev-application", "targets": ["regular-feature", "domain-api", "domain-fakes", "core", "design-system", "navigation", "presentation"], "scopes": ["main"] },
+    { "source": "regular-feature", "targets": ["domain-api", "core", "core-common", "presentation", "design-system", "navigation", "snapshot-testing"], "scopes": ["main"] },
+    { "source": "dynamic-feature", "targets": ["application", "domain-api", "core", "design-system", "presentation", "navigation", "snapshot-testing"], "scopes": ["main"] },
+    { "source": "domain-api", "targets": ["core-common"], "scopes": ["main"] },
+    { "source": "domain-fakes", "targets": ["domain-api", "core-common"], "scopes": ["main"] },
+    { "source": "data", "targets": ["core", "domain-api", "database", "network"], "scopes": ["main"] },
+    { "source": "database", "targets": ["core"], "scopes": ["main"] },
+    { "source": "network", "targets": ["core"], "scopes": ["main"] },
+    { "source": "network-fixture", "targets": ["network"], "scopes": ["main"] },
+    { "source": "core", "targets": ["core-common"], "scopes": ["main"] },
+    { "source": "design-system", "targets": ["catalog-annotations", "snapshot-testing"], "scopes": ["main"] },
+    { "source": "navigation", "targets": ["domain-api"], "scopes": ["main"] },
+    { "source": "presentation", "targets": ["domain-api", "catalog-annotations", "core", "design-system", "snapshot-testing"], "scopes": ["main"] },
+    { "source": "test-support", "targets": ["core-common"], "scopes": ["main"] },
+    { "source": "catalog", "targets": ["regular-feature", "design-system", "presentation", "catalog-annotations", "snapshot-testing"], "scopes": ["main"] },
+    { "source": "benchmark", "targets": ["data", "domain-api", "database", "network", "core-common"], "scopes": ["main"] }
+  ],
+  "allowedApiEdges": [
+    { "source": "core", "target": "core-common", "reason": "core is the Android facade that exposes the pure-JVM core contract" },
+    { "source": "network-fixture", "target": "network", "reason": "the fixture module deliberately re-exports the service contract for tests" }
+  ],
+  "forbiddenCompileClasspathRoles": [
+    { "source": "regular-feature", "targets": ["regular-feature", "dynamic-feature", "data", "database", "network"] },
+    { "source": "dynamic-feature", "targets": ["regular-feature", "dynamic-feature", "data", "database", "network"] },
+    { "source": "domain-api", "targets": ["application", "dev-application", "regular-feature", "dynamic-feature", "data", "database", "network", "core", "design-system", "navigation", "presentation"] }
+  ]
+}
