@@ -21,15 +21,3 @@
 #-renamesourcefileattribute SourceFile
 -keep class * extends androidx.fragment.app.Fragment{}
 -keepnames class * extends android.os.Parcelable
-
-# The release smoke path loads the application by manifest name and exercises the Metro graph through
-# the shared instrumentation class loader. Keep the runtime contracts that cross that boundary.
--keep class com.simtop.billionbeers.BillionBeersApplication { *; }
--keep interface com.simtop.core.di.GraphProvider { *; }
--keep class com.simtop.** { *; }
--keep class dev.zacsweers.metro.** { *; }
--keep class dev.zacsweers.metrox.** { *; }
--keep class kotlin.** { *; }
--keep class kotlinx.coroutines.** { *; }
--keep class androidx.** { *; }
--keep class com.google.android.play.core.** { *; }

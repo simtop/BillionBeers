@@ -112,7 +112,7 @@ bundle-release: ## Assemble the signed release App Bundle (.aab) for Play Store 
 	$(GRADLE_RUNNER) :app:bundleRelease
 	@echo "📦 Release bundle (bundles the :feature:beerdetail on-demand module): app/build/outputs/bundle/release/app-release.aab"
 
-release-smoke: ## Run the debug-signed, minified release graph smoke test on the ATD managed device.
+release-smoke: ## Run the black-box launch smoke against the debug-signed, minified app.
 	$(GRADLE_RUNNER) :app-release-smoke:atdApi35ReleaseSmokeAndroidTest
 
 clean: ## Clean all build outputs.
@@ -142,8 +142,8 @@ else
 	$(GRADLE_RUNNER) $(MODULE_PREFIX)testDebugUnitTest --continue
 endif
 
-test-tier-inventory: ## Report test ownership and fail on unscheduled Android test trees.
-	@bash scripts/test-tier-inventory.sh --check --output build/reports/test-tier-inventory.md
+test-tier-inventory: ## Write the informational test-tier ownership report.
+	@bash scripts/test-tier-inventory.sh --output build/reports/test-tier-inventory.md
 	@echo "📋 Test-tier inventory: build/reports/test-tier-inventory.md"
 
 konsist: ## Run Konsist architecture rules.

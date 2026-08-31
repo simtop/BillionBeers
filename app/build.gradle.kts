@@ -41,7 +41,7 @@ android {
   // Debug tests opt into MockTestRunner through src/debugAndroidTest/AndroidManifest.xml; the
   // dedicated :app-release-smoke test module uses the stock runner against releaseSmoke.
 
-  // Minified, but debug-signed, variant for release-graph smoke tests. It exercises R8 and resource
+  // Minified, but debug-signed, target for the black-box launch smoke. It exercises R8 and resource
   // shrinking without requiring an adopter's Play signing identity.
   buildTypes {
     create("releaseSmoke") {
