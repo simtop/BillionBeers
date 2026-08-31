@@ -1,18 +1,17 @@
 import io.gitlab.arturbosch.detekt.extensions.DetektExtension
-import org.gradle.accessors.dm.LibrariesForLibs
 
 plugins {
     id("io.gitlab.arturbosch.detekt")
 }
 
-val libs = the<LibrariesForLibs>()
+val libs = billionBeersCatalog()
 
 dependencies {
-    "detektPlugins"(libs.compose.rules.detekt)
+    "detektPlugins"(libs.billionBeersLibrary("compose-rules-detekt"))
 }
 
 configure<DetektExtension> {
-    toolVersion = libs.versions.detekt.get()
+    toolVersion = libs.billionBeersVersion("detekt")
     // Test sources are scanned too. They were excluded, so a third of the repo's Kotlin - the part
     // that decides whether the rest is correct - was invisible to static analysis even in the
     // advisory mode this used to run in. Measured cost of adding them: 13 findings across 6

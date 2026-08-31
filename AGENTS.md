@@ -25,6 +25,7 @@ tooling rather than by memory, and deviations need a written reason.
 | Module | What lives there |
 |---|---|
 | `:app` | The shipping app: Metro graph assembly, `MainActivity`, nav host, `dynamicFeatures` declaration |
+| `:app-release-smoke` | Standalone `com.android.test` module for a black-box launch smoke against the debug-signed, minified app |
 | `:app-dev-beerslist` | Standalone dev-app for fast feature iteration (see `scripts/new-dev-app.sh`, `new-dev-app` skill) |
 | `:core` | Android-side core: DI modules (networking, observability), production `Logger` binding |
 | `:core:designsystem` | Theme, tokens, `@LightDarkPreviews` multipreview, `PreviewTheme` |
@@ -250,10 +251,18 @@ sets it in its own `android { defaultConfig { … } }`, which overrides the conv
 — directly, or via `billionbeers.android.feature.uitest` — for `atdApi35DebugAndroidTest` to exist
 and for CI's `ciGroupDebugAndroidTest` to pick it up. Without it the tests compile and never run,
 the `:konsist:test` failure mode; invariant 10 now enforces this. Opted in today: `:app`,
-`:beer_database`, `:feature:beerslist`, `:feature:beersearch`. `:benchmark:microbenchmark` has `androidTest` sources but is
+`:beer_database`, `:feature:beerbrowse`, `:feature:beerdetail`, `:feature:beerslist`, `:feature:beersearch`. `:benchmark:microbenchmark` has `androidTest` sources but is
 *deliberately* out — it declares `AndroidBenchmarkRunner`, builds against
 `testBuildType = "release"`, and suppresses the `EMULATOR` error class, because a measurement taken
 on a managed virtual device is meaningless. It runs via `make benchmark-check`.
+
+The standalone `:app-release-smoke` module is also deliberately outside the debug UI group: its
+black-box test launches and displays the minified `:app` `releaseSmoke` target without importing
+production internals. Run it with `make release-smoke`.
+
+`make test-tier-inventory` writes an informational ownership matrix, including standalone
+`com.android.test` APKs. Scheduling and source-tree enforcement stay solely in
+`InstrumentedTestOptInBoundaryTest` and `OrphanedSourceTreeTest`; the report is not a second gate.
 
 ---
 
@@ -262,8 +271,9 @@ on a managed virtual device is meaningless. It runs via `make benchmark-check`.
 Use the `Makefile` wrappers — they auto-detect `bb`/`rtk` and route through them.
 
 `make clean` · `deep-clean` · `build` · `install` · `test [MODULE=…]` · `konsist` · `lint` ·
-`format` · `check` · `screenshot-record` · `screenshot-verify` · `ui-test` · `benchmark-check` ·
-`generate-baseline` · `new-feature-module` · `new-dev-app` · `update-android-skills`
+`format` · `check` · `screenshot-record` · `screenshot-verify` · `ui-test` · `release-smoke` ·
+`test-tier-inventory` · `benchmark-check` · `generate-baseline` · `new-feature-module` ·
+`new-dev-app` · `update-android-skills`
 (`make help` lists them all.)
 
 ### Token optimization tools

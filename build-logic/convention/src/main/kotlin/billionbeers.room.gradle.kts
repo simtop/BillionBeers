@@ -1,19 +1,18 @@
 import androidx.room.gradle.RoomExtension
-import org.gradle.accessors.dm.LibrariesForLibs
 
 plugins {
     id("androidx.room")
     id("com.google.devtools.ksp")
 }
 
-val libs = the<LibrariesForLibs>()
+val libs = billionBeersCatalog()
 
 configure<RoomExtension> {
     schemaDirectory("$projectDir/schemas")
 }
 
 dependencies {
-    add("implementation", libs.roomRuntime)
-    add("implementation", libs.roomKtx)
-    add("ksp", libs.roomCompiler)
+    add("implementation", libs.billionBeersLibrary("roomRuntime"))
+    add("implementation", libs.billionBeersLibrary("roomKtx"))
+    add("ksp", libs.billionBeersLibrary("roomCompiler"))
 }

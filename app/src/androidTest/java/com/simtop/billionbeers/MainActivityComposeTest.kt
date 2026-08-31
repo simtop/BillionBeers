@@ -12,6 +12,7 @@ import com.simtop.billionbeers.utils.browseScreen
 import com.simtop.billionbeers.utils.detailScreen
 import com.simtop.billionbeers.utils.homeScreen
 import com.simtop.billionbeers.utils.runMainActivityTest
+import com.simtop.billionbeers.utils.searchScreen
 import com.simtop.core.core.Either
 import dev.zacsweers.metro.createGraphFactory
 import org.junit.Assume.assumeTrue
@@ -169,6 +170,44 @@ class MainActivityComposeTest {
       homeScreen {
         waitUntilNodeWithTextIsDisplayed(fakeBeer.name)
         assertBeerNameIsDisplayed(secondFakeBeer.name)
+      }
+    }
+
+  @Test
+  fun representativeJourneysKeepInteractiveControlsAccessible() =
+    runMainActivityTest(composeTestRule) {
+      homeScreen {
+        waitUntilNodeWithTextIsDisplayed(fakeBeer.name)
+        assertEveryClickableIsLabelled()
+        clickOnBeer(fakeBeer.name)
+      }
+
+      detailScreen {
+        waitUntilNodeWithTextIsDisplayed(fakeBeer.description)
+        assertEveryClickableIsLabelled()
+        navigateBack()
+      }
+
+      homeScreen {
+        waitUntilNodeWithTextIsDisplayed(fakeBeer.name)
+        clickOnBrowse()
+      }
+
+      browseScreen {
+        waitUntilNodeWithTextIsDisplayed(fakeStyle.name)
+        assertEveryClickableIsLabelled()
+        pressBack()
+      }
+
+      homeScreen {
+        waitUntilNodeWithTextIsDisplayed(fakeBeer.name)
+        clickOnSearch()
+      }
+
+      searchScreen {
+        assertSearchFieldIsDisplayed()
+        assertBackButtonIsDisplayed()
+        assertEveryClickableIsLabelled()
       }
     }
 

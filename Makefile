@@ -53,7 +53,7 @@ UI_TEST_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,:app:)
 # Wrapper for Gradle to support build-brief (bb) or rtk if available
 GRADLE_RUNNER := $(shell if command -v bb >/dev/null 2>&1; then echo "bb ./gradlew"; elif command -v build-brief >/dev/null 2>&1; then echo "build-brief --gradle ./gradlew"; elif command -v rtk >/dev/null 2>&1; then echo "rtk ./gradlew"; else echo "./gradlew"; fi)
 
-.PHONY: detekt-baseline help setup setup-ai-tools update-android-skills build bundle-release install clean test konsist check-data-layer-boundary compose-metrics ui-test ui-test-local ui-test-managed ui-test-managed-newest ui-test-managed-ci ui-test-managed-all emulator-create emulator-recreate emulator-start emulator-stop emulator-status emulator-delete screenshot-record screenshot-verify screenshot-clean lint android-lint format check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline verification-metadata health repo-doctor benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark build-budget build-budget-check jacoco-report coverage-check install-profiler install-diffuse new-feature-module new-dev-app play-listing-check play-listing-capture play-listing-reset store-frames
+.PHONY: detekt-baseline help setup setup-ai-tools update-android-skills build bundle-release release-smoke install clean test test-tier-inventory konsist check-data-layer-boundary compose-metrics ui-test ui-test-local ui-test-managed ui-test-managed-newest ui-test-managed-ci ui-test-managed-all emulator-create emulator-recreate emulator-start emulator-stop emulator-status emulator-delete screenshot-record screenshot-verify screenshot-clean lint android-lint format check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline verification-metadata health repo-doctor benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark build-budget build-budget-check jacoco-report coverage-check install-profiler install-diffuse new-feature-module new-dev-app play-listing-check play-listing-capture play-listing-reset store-frames
 
 help: ## Show this help message.
 	@echo "\n📊 BillionBeers Makefile Help"
@@ -112,6 +112,9 @@ bundle-release: ## Assemble the signed release App Bundle (.aab) for Play Store 
 	$(GRADLE_RUNNER) :app:bundleRelease
 	@echo "📦 Release bundle (bundles the :feature:beerdetail on-demand module): app/build/outputs/bundle/release/app-release.aab"
 
+release-smoke: ## Run the black-box launch smoke against the debug-signed, minified app.
+	$(GRADLE_RUNNER) :app-release-smoke:atdApi35ReleaseSmokeAndroidTest
+
 clean: ## Clean all build outputs.
 	$(GRADLE_RUNNER) clean
 
@@ -138,6 +141,10 @@ else ifneq ($(filter $(MODULE_TRIMMED),$(JVM_TEST_MODULES) :konsist),)
 else
 	$(GRADLE_RUNNER) $(MODULE_PREFIX)testDebugUnitTest --continue
 endif
+
+test-tier-inventory: ## Write the informational test-tier ownership report.
+	@bash scripts/test-tier-inventory.sh --output build/reports/test-tier-inventory.md
+	@echo "📋 Test-tier inventory: build/reports/test-tier-inventory.md"
 
 konsist: ## Run Konsist architecture rules.
 	$(GRADLE_RUNNER) :konsist:test

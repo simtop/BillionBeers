@@ -1,6 +1,7 @@
 plugins {
   id("billionbeers.android.dynamic.feature")
   id("billionbeers.android.screenshot")
+  id("billionbeers.android.managed.device")
 }
 
 android { namespace = "com.simtop.feature.beerdetail" }
@@ -42,4 +43,7 @@ dependencies {
   testImplementation(this.project(":beerdomain:fakes"))
   testImplementation(libs.striktCore)
   androidTestImplementation(libs.striktCore)
+  androidTestImplementation(this.project(":testing-utils-android"))
+  androidTestImplementation(libs.androidx.ui.test.junit4)
+  debugImplementation(libs.androidx.ui.test.manifest)
 }

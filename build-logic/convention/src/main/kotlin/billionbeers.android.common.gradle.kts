@@ -3,10 +3,10 @@ import kotlin.text.toInt
 
 apply(plugin = "billionbeers.kotlin.options")
 
-val libs = the<org.gradle.accessors.dm.LibrariesForLibs>()
+val libs = billionBeersCatalog()
 
-val PROJECT_COMPILE_SDK = libs.versions.compileSdk.get().toInt()
-val PROJECT_MIN_SDK = libs.versions.minSdk.get().toInt()
+val PROJECT_COMPILE_SDK = libs.billionBeersVersion("compileSdk").toInt()
+val PROJECT_MIN_SDK = libs.billionBeersVersion("minSdk").toInt()
 
 // One block, not four. `com.android.base` is applied by every AGP plugin (application, library,
 // dynamic-feature and test), and in AGP 9 `CommonExtension` is a non-generic supertype of all four

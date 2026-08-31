@@ -17,7 +17,10 @@ baselineProfile {
   // public API is `from(Project)` (see the plugin source). Remove this exception when AndroidX
   // exposes a path/Provider overload.
   from(project(":benchmark:baselineprofile"))
-  automaticGenerationDuringBuild = true
+  // Keep ordinary and release-smoke builds hermetic. Baseline profiles are generated deliberately
+  // by
+  // `make generate-baseline`, which runs the benchmark lane on a connected device.
+  automaticGenerationDuringBuild = false
 }
 
 dependencyGuard {
@@ -35,10 +38,22 @@ android {
 
   buildFeatures { buildConfig = true }
 
-  // Opt up from the shared default (androidx.test.runner.AndroidJUnitRunner). MockTestRunner
-  // substitutes BillionBeersApplication so the instrumented tests can swap in the fake Metro graph
-  // - it lives in this module's androidTest source set, so only this module can name it.
-  defaultConfig { testInstrumentationRunner = "com.simtop.billionbeers.di.MockTestRunner" }
+  // Debug tests opt into MockTestRunner through src/debugAndroidTest/AndroidManifest.xml; the
+  // dedicated :app-release-smoke test module uses the stock runner against releaseSmoke.
+
+  // Minified, but debug-signed, target for the black-box launch smoke. It exercises R8 and resource
+  // shrinking without requiring an adopter's Play signing identity.
+  buildTypes {
+    create("releaseSmoke") {
+      initWith(getByName("release"))
+      matchingFallbacks += "release"
+      signingConfig = signingConfigs.getByName("debug")
+    }
+  }
+
+  // initWith copies build-type settings, not source sets. The smoke variant uses the release twins
+  // for the debug drawer and StrictMode hook, just like the benchmark variant above.
+  sourceSets.getByName("releaseSmoke").kotlin.directories.add("src/release/java")
 
   packaging {
     resources {

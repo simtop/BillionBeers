@@ -1,4 +1,3 @@
-import org.gradle.accessors.dm.LibrariesForLibs
 
 plugins {
     id("com.android.library")
@@ -13,13 +12,13 @@ apply(plugin = "billionbeers.spotless")
 apply(plugin = "billionbeers.detekt")
 apply(plugin = "billionbeers.unused-dependencies")
 
-val libs = the<LibrariesForLibs>()
+val libs = billionBeersCatalog()
 
 dependencies {
     // The JUnit 5 tier and useJUnitPlatform() come from billionbeers.android.testing. JUnit 4 stays
     // declared here: library modules still hold `org.junit.Test` tests, which the vintage engine
     // (also supplied there) runs alongside the Jupiter ones.
-    "testImplementation"(libs.junit)
+    "testImplementation"(libs.billionBeersLibrary("junit"))
 
-    "androidTestImplementation"(libs.bundles.instrumentedTest)
+    "androidTestImplementation"(libs.billionBeersBundle("instrumentedTest"))
 }

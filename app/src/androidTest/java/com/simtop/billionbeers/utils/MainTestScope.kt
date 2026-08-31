@@ -6,6 +6,7 @@ import com.simtop.billionbeers.presentation.MainActivity
 import com.simtop.billionbeers.robots.BrowseScreenRobot
 import com.simtop.billionbeers.robots.DetailScreenRobot
 import com.simtop.billionbeers.robots.HomeScreenRobot
+import com.simtop.billionbeers.robots.SearchScreenRobot
 
 fun ComposeTestRule.homeScreen(func: HomeScreenRobot.() -> Unit) {
   HomeScreenRobot(this).apply(func)
@@ -17,6 +18,10 @@ fun ComposeTestRule.detailScreen(func: DetailScreenRobot.() -> Unit) {
 
 fun ComposeTestRule.browseScreen(func: BrowseScreenRobot.() -> Unit) {
   BrowseScreenRobot(this).apply(func)
+}
+
+fun ComposeTestRule.searchScreen(func: SearchScreenRobot.() -> Unit) {
+  SearchScreenRobot(this).apply(func)
 }
 
 fun runMainActivityTest(composeTestRule: ComposeTestRule, block: ComposeTestRule.() -> Unit) {

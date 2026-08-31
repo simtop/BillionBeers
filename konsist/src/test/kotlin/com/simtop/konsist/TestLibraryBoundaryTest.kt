@@ -43,11 +43,17 @@ class TestLibraryBoundaryTest {
    *
    * `:benchmark:*` modules apply `com.android.test`, which produces a standalone test APK and no
    * shipped artifact. Their `src/main` *is* the test code, so there is no `testImplementation` to
-   * move these to - `implementation` is the only correct configuration. Invariant 10 exempts the
-   * same modules for the same underlying reason: benchmarks are a separate kind of thing.
+   * move these to - `implementation` is the only correct configuration. The release-smoke test
+   * module has the same standalone-test-APK shape, so it is exempt for the same reason.
    */
   private val exemptPathPrefixes =
-    listOf("testing-utils/", "testing-utils-android/", "build-logic/", "benchmark/")
+    listOf(
+      "testing-utils/",
+      "testing-utils-android/",
+      "build-logic/",
+      "benchmark/",
+      "app-release-smoke/",
+    )
 
   /**
    * Coordinates that are test-only but do not say so in their name. Everything else is caught by

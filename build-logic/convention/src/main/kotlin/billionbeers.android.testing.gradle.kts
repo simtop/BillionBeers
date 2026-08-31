@@ -1,4 +1,3 @@
-import org.gradle.accessors.dm.LibrariesForLibs
 
 /**
  * The JUnit 5 unit-test tier: the dependency set and the platform switch that
@@ -13,17 +12,17 @@ import org.gradle.accessors.dm.LibrariesForLibs
  *
  * `useJUnitPlatform()` moved here from the two convention plugins that each declared it.
  */
-val libs = the<LibrariesForLibs>()
+val libs = billionBeersCatalog()
 
 dependencies {
-  "testImplementation"(libs.bundles.unitTest)
-  "testImplementation"(libs.bundles.unitTestJunit5)
+  "testImplementation"(libs.billionBeersBundle("unitTest"))
+  "testImplementation"(libs.billionBeersBundle("unitTestJunit5"))
 
   // The shared MainDispatcherExtension. Every ViewModel test needs Dispatchers.setMain, and
   // hand-rolling it in each module is how the JUnit 4 rule this replaced drifted out of use.
   "testImplementation"(this.project(":testing-utils"))
 
-  "testRuntimeOnly"(libs.bundles.unitTestJunit5Runtime)
+  "testRuntimeOnly"(libs.billionBeersBundle("unitTestJunit5Runtime"))
 }
 
 tasks.withType<Test>().configureEach { useJUnitPlatform() }
