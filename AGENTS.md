@@ -62,7 +62,7 @@ when they get in the way. (`:konsist`'s build-script rules skip `bin/` for this 
 
 ## 3. Invariants — break these and the build (or an instrumented test) breaks
 
-All thirteen are enforced by `:konsist`; the wording here is from the tests themselves.
+The original thirteen are enforced by `:konsist`; the wording here is from the tests themselves.
 
 1. **Repository interfaces do not import data-layer types.** (`RepositoryBoundaryTest`)
 2. **Feature modules never depend on other feature modules** — `beerslist` ⊥ `beerdetail`, and so
@@ -139,6 +139,16 @@ All thirteen are enforced by `:konsist`; the wording here is from the tests them
 Every invariant in this list is now mechanically enforced. If you add one, add its rule in the
 same change — a convention with no test is a convention that drifts.
 
+14. **Production project dependencies follow the checked-in architecture policy.**
+    `config/architecture/project-dependency-policy.json` defines path-pattern roles, permitted
+    production directions, intentional project `api(...)` exposures, and forbidden compile-classpath
+    roles. `verifyArchitectureGraph` resolves each module's compile classpath, so direct and
+    transitive project edges are checked; `make architecture-policy` is the local/CI entry point.
+    New `:feature:*` modules are classified by the generic feature pattern and do not require a
+    package list update. (`ArchitecturePolicyFunctionalTest` and
+    `ArchitecturePolicyTest` cover the forbidden fixture edges and the structural dynamic-feature
+    → app exception.)
+
 **`:konsist:test` declares the repo's `.kt`/`.kts` files as task inputs, and must keep doing so.**
 The rules read the project off the filesystem, which Gradle cannot see, so without that declaration
 the task goes UP-TO-DATE while the code it guards changes — measured, a flat invariant-2 violation
@@ -190,7 +200,7 @@ declaring done.
 3. **Architecture** — `make konsist`
 4. **Screenshots** — `make screenshot-verify` (record with `make screenshot-record` and inspect the
    PNGs; they are your eyes on the UI)
-5. **Lint / format** — `make lint`, `make format`, and **`make android-lint` whenever resources
+5. **Architecture, lint / format** — `make architecture-policy`, `make lint`, `make format`, and **`make android-lint` whenever resources
    change**. These are three separate gates and all three now fail:
    - `make lint` is **Detekt**, and since the gate was adopted it **fails on new findings** and runs
      in CI on the `format-check` job. The backlog present at adoption is frozen in per-module

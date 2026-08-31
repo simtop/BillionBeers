@@ -2,7 +2,9 @@ package com.simtop.billionbeers.buildlogic
 
 import groovy.json.JsonSlurper
 import java.nio.file.Path
+import kotlin.io.path.copyTo
 import kotlin.io.path.createDirectories
+import kotlin.io.path.exists
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 import org.gradle.testkit.runner.GradleRunner
@@ -35,8 +37,15 @@ class ModuleGraphPluginFunctionalTest {
     val nodes = model["nodes"] as List<Map<String, Any>>
     val edges = model["edges"] as List<Map<String, Any>>
     val cycles = model["cycles"] as List<Map<String, Any>>
+    val summary = model["summary"] as Map<*, *>
 
     assertEquals(1, model["schemaVersion"])
+    assertEquals(3, summary["nodeCount"])
+    assertEquals(3, summary["edgeCount"])
+    assertEquals(1, summary["cycleCount"])
+    assertEquals(1, summary["maxFanIn"])
+    assertEquals(1, summary["maxFanOut"])
+    assertEquals(1, summary["apiProjectEdgeCount"])
     assertEquals(listOf(":a", ":b", ":c"), nodes.map { it["path"] })
     assertEquals(
       listOf(
@@ -85,6 +94,15 @@ class ModuleGraphPluginFunctionalTest {
   }
 
   private fun writeFixture() {
+    val policy = generateSequence(Path.of(System.getProperty("user.dir"))) { it.parent }
+      .map { it.resolve("config/architecture/project-dependency-policy.json") }
+      .firstOrNull { it.exists() }
+      ?: error("Could not find the checked-in architecture policy")
+    testProjectDir.resolve("config/architecture").createDirectories()
+    policy.copyTo(
+      testProjectDir.resolve("config/architecture/project-dependency-policy.json"),
+      overwrite = true,
+    )
     writeFile(
       "settings.gradle.kts",
       """

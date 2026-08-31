@@ -34,6 +34,27 @@ fun dependencyScope(configurationName: String): String {
   }
 }
 
+fun isArchitectureProductionConfiguration(configurationName: String): Boolean {
+  val name = configurationName.lowercase()
+  if ("test" in name || "androidtest" in name || name == "ksp" || name.startsWith("ksp")) return false
+  return name == "api" || name.endsWith("api") ||
+    name == "implementation" || name.endsWith("implementation") ||
+    name == "compileonly" || name.endsWith("compileonly") ||
+    name == "runtimeonly" || name.endsWith("runtimeonly")
+}
+
+val architecturePolicyFile = rootProject.file("config/architecture/project-dependency-policy.json")
+check(architecturePolicyFile.isFile) {
+  "Missing checked-in architecture policy: ${architecturePolicyFile.invariantSeparatorsPath}"
+}
+
+val architecturePolicy = ArchitecturePolicy.load(architecturePolicyFile)
+val verifyArchitectureGraph =
+  tasks.register("verifyArchitectureGraph") {
+    group = "verification"
+    description = "Verifies the resolved project dependency graph against the checked-in architecture policy."
+  }
+
 val generateModuleGraph =
   tasks.register<GenerateModuleGraphTask>("generateModuleGraph") {
     group = "reporting"
@@ -79,4 +100,43 @@ gradle.projectsEvaluated {
     )
     includedBuildNames.set(gradle.includedBuilds.map { it.name }.sorted())
   }
+
+    val moduleRoleRecords = modules.map { project ->
+      listOf(project.path, architecturePolicy.role(project)).joinToString(separator)
+    }
+    modules.forEach { project ->
+      val compileClasspath = listOf("debugCompileClasspath", "compileClasspath")
+        .firstOrNull { project.configurations.findByName(it) != null }
+      if (compileClasspath == null) return@forEach
+
+      val rootComponent = project.configurations
+        .getByName(compileClasspath)
+        .incoming.resolutionResult.rootComponent
+      val declarations = project.configurations.flatMap { configuration ->
+        if (!isArchitectureProductionConfiguration(configuration.name)) return@flatMap emptyList()
+        configuration.dependencies.withType(ProjectDependency::class.java).mapNotNull { dependency ->
+          if (dependency.path == project.path || dependency.path !in modulePaths) return@mapNotNull null
+          listOf(project.path, dependency.path, configuration.name).joinToString(separator)
+        }
+      }.sorted()
+      val task = project.tasks.register<VerifyArchitecturePolicyTask>("verifyArchitecturePolicy") {
+        group = "verification"
+        description = "Verifies this module's resolved compile classpath against the architecture policy."
+        projectPath.set(project.path)
+        projectRole.set(architecturePolicy.role(project))
+        policyFile.set(architecturePolicyFile)
+        this.declarations.set(declarations)
+        this.moduleRoleRecords.set(moduleRoleRecords)
+        this.rootComponent.set(rootComponent)
+      }
+      verifyArchitectureGraph.configure { dependsOn(task) }
+    }
+    if (tasks.findByName("check") == null) {
+      tasks.register("check") {
+        group = "verification"
+        dependsOn(verifyArchitectureGraph)
+      }
+    } else {
+      tasks.named("check") { dependsOn(verifyArchitectureGraph) }
+    }
 }

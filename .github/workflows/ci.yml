@@ -319,6 +319,12 @@ jobs:
       - name: Check data-layer classpath boundary
         run: make check-data-layer-boundary
 
+      # The checked-in graph policy validates direct and resolved transitive production project
+      # edges, including explicit API exposure. It complements Konsist's faster source/build-script
+      # diagnostics with the classpath Gradle actually gives each consumer.
+      - name: Check resolved architecture graph policy
+        run: make architecture-policy
+
       # High-water ratchet: jacocoRootReport reuses the debug unit tests just run above (they're
       # up-to-date), then fails if line coverage dropped below config/coverage-floor.txt.
       - name: Coverage floor check

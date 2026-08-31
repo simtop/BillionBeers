@@ -47,7 +47,7 @@ a fragment that selects and focuses that module, so the underlying JSON remains 
 - `nodes` — Gradle path, display name, repository-relative directory, and broad plugin-derived kind;
 - `edges` — source, target, merged and sorted declaring configurations, and coarse scopes;
 - `cycles` — sorted strongly connected components containing at least two real modules;
-- `summary` — node, edge, and cycle counts.
+- `summary` — node, edge, cycle, fan-in and fan-out counts, plus project `api` edge count.
 
 The report uses Gradle's configured `ProjectDependency` model. It does not parse build-script text,
 resolve external libraries, infer relationships from imports, or include synthetic container
@@ -91,6 +91,11 @@ make architecture-report
 ```
 
 Use the Gradle report to understand project boundaries and dependency direction. Use the Metro report
-to investigate how an object is provided through the assembled application graph. A later
-architecture-policy task can consume the same normalized module JSON, but the visualization itself
-does not guess or enforce an allowlist.
+to investigate how an object is provided through the assembled application graph. The visualization
+itself does not guess or enforce an allowlist. The checked-in
+`config/architecture/project-dependency-policy.json` is the authority for production dependency
+direction. Run `make architecture-policy` to resolve each module's compile classpath and fail on
+forbidden direct or transitive project edges. Role rules match architectural path patterns, so
+adding `:feature:new-screen` does not require editing a feature/package list. Every production
+project `api(...)` edge also needs an explicit entry in `allowedApiEdges`, which makes API exposure
+growth visible in review.

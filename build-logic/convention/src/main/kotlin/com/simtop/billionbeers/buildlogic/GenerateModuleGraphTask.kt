@@ -45,6 +45,11 @@ abstract class GenerateModuleGraphTask : DefaultTask() {
         }
         .sortedWith(compareBy(ModuleEdge::source, ModuleEdge::target))
     val cycles = stronglyConnectedComponents(nodes.map { it.path }, edges)
+    val fanIn = edges.groupingBy { it.target }.eachCount()
+    val fanOut = edges.groupingBy { it.source }.eachCount()
+    val apiProjectEdgeCount = edges.count { edge ->
+      edge.configurations.any { it.equals("api", ignoreCase = true) }
+    }
     val model =
       linkedMapOf<String, Any>(
         "schemaVersion" to 1,
@@ -80,6 +85,9 @@ abstract class GenerateModuleGraphTask : DefaultTask() {
             "nodeCount" to nodes.size,
             "edgeCount" to edges.size,
             "cycleCount" to cycles.size,
+            "maxFanIn" to (fanIn.values.maxOrNull() ?: 0),
+            "maxFanOut" to (fanOut.values.maxOrNull() ?: 0),
+            "apiProjectEdgeCount" to apiProjectEdgeCount,
           ),
       )
     val json = JsonOutput.prettyPrint(JsonOutput.toJson(model)) + "\n"
