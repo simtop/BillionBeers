@@ -1,3 +1,4 @@
 <resources>
+    <string name="app_name">BillionBeers</string>
     <string name="title_dynamicfeature">beerdetail</string>
 </resources>

@@ -22,5 +22,6 @@ fun interface Logger {
 }
 
 class NoOpLogger : Logger {
-  override fun log(priority: LogPriority, tag: String, message: String, throwable: Throwable?) {}
+  override fun log(priority: LogPriority, tag: String, message: String, throwable: Throwable?) =
+    Unit
 }

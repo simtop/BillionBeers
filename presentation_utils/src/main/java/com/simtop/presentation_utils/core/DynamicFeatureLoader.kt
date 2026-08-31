@@ -196,7 +196,7 @@ private fun installErrorMessage(errorCode: Int): Int =
 
 @PreviewLightDark
 @Composable
-fun InstallFailedContentPreview() {
+internal fun InstallFailedContentPreview() {
   BillionBeersTheme { InstallFailedContent(errorCode = -6, onRetry = {}, onCancel = {}) }
 }
 

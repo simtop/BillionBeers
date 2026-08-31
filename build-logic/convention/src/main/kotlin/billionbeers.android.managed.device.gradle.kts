@@ -14,9 +14,9 @@ import com.android.build.api.dsl.ManagedVirtualDevice
  * - **`atdApi35`** - the fast lane. ATD (Automated Test Device) images are headless and stripped
  *   of most system apps, so they boot faster and use far less RAM than a full image. API 35 is the
  *   *highest* level Google publishes ATD images for, so this is as new as the fast lane can get.
- * - **`pixel9Api37`** - the newest lane, one API above the project's `targetSdk` (36), which is
- *   what makes it forward-compatibility coverage rather than a duplicate of the fast lane. There
- *   are no ATD images for 37, so this one pays full price.
+ * - **`pixel9Api37`** - the newest lane, matching the project's `targetSdk` (37) on a full image.
+ *   It remains a separate compatibility lane because it exercises the latest platform APIs and
+ *   the production target behavior; there are no ATD images for 37, so this one pays full price.
  *
  * The fast lane runs on every push; the newest lane runs weekly, because booting its full image
  * costs ~2m28s against the ATD's ~30s.

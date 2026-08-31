@@ -99,6 +99,9 @@ fun BeersSearchScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+// The search surface exposes each user action independently to keep the screen easy to test and
+// wire from navigation. Its callback-heavy shape is intentional at this UI boundary.
+@Suppress("ComposableParamOrder", "LongParameterList")
 fun BeersSearchContent(
   viewState: CommonUiState<PagedListUiModel<Beer>>,
   query: String,
@@ -108,9 +111,11 @@ fun BeersSearchContent(
   onScrollToBottom: () -> Unit,
   onRetryLoadMore: () -> Unit,
   onRetrySearch: () -> Unit,
+  modifier: Modifier = Modifier,
   autoFocus: Boolean = true,
 ) {
   Scaffold(
+    modifier = modifier,
     topBar = {
       TopAppBar(
         navigationIcon = {
@@ -132,7 +137,7 @@ fun BeersSearchContent(
           }
         },
       )
-    }
+    },
   ) { padding ->
     Box(modifier = Modifier.fillMaxSize().padding(top = padding.calculateTopPadding())) {
       when (val state = viewState) {
@@ -267,7 +272,7 @@ class BeersSearchPreviewParameterProvider :
 
 @PreviewLightDark
 @Composable
-fun BeersSearchScreenPreview(
+internal fun BeersSearchScreenPreview(
   @PreviewParameter(BeersSearchPreviewParameterProvider::class)
   case: BeersSearchPreviewParameterProvider.Case
 ) {

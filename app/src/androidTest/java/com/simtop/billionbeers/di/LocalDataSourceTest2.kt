@@ -17,7 +17,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
 
-class LocalDataSourceTest {
+class LocalDataSourceTest2 {
 
   private lateinit var localSource: BeersLocalSource
   private lateinit var db: BeersDatabase

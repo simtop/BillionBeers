@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="beer_detail">beerdetail</string>
     <string name="loading_dynamic_feature">Chargement de la fonctionnalité</string>
-    <string name="emergency_emergency_we_run_out_of_this_beer">URGENCE!!\nURGENCE!!\nNOUS N\'AVONS PLUS CETTE BIÈRE</string>
     <string name="retry">Réessayer</string>
     <string name="paged_list_load_more_failed">Impossible de charger plus de bières</string>
     <string name="paged_list_refresh_failed">Impossible d\'actualiser</string>

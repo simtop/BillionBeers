@@ -50,6 +50,7 @@ fun ComposeBeerDetail(
   beer: Beer,
   onBackClick: () -> Unit,
   onToggleAvailability: () -> Unit,
+  modifier: Modifier = Modifier,
   showBackButton: Boolean = true,
 ) {
   val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -65,7 +66,7 @@ fun ComposeBeerDetail(
   val animationDurationMs = if (animationsDisabled) 0 else AVAILABILITY_ANIMATION_DURATION_MS
 
   Scaffold(
-    modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+    modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
     topBar = {
       Box(modifier = Modifier.wrapContentSize()) {
         BeerDetailImage(
@@ -321,11 +322,17 @@ private fun BeerDetailBulletSection(title: String, items: List<String>) {
 }
 
 @Composable
-fun StatCard(label: String, value: String, color: Color, textColor: Color) {
+fun StatCard(
+  label: String,
+  value: String,
+  color: Color,
+  textColor: Color,
+  modifier: Modifier = Modifier,
+) {
   Card(
     colors = CardDefaults.cardColors(containerColor = color),
     shape = RoundedCornerShape(BillionBeersTheme.spacing.medium),
-    modifier = Modifier.width(100.dp),
+    modifier = modifier.width(100.dp),
   ) {
     Column(
       modifier = Modifier.padding(BillionBeersTheme.spacing.medium),
@@ -366,7 +373,7 @@ fun BeerDetailImage(imageUrl: String, contentDescription: String?, modifier: Mod
 
 @PreviewLightDark
 @Composable
-fun ComposeBeerDetailPreview() {
+internal fun ComposeBeerDetailPreview() {
   BillionBeersTheme {
     ComposeBeerDetail(
       beer =
@@ -399,7 +406,7 @@ fun ComposeBeerDetailPreview() {
 // Glasses sections must not render at all, not render with blanks.
 @PreviewLightDark
 @Composable
-fun ComposeBeerDetailWithoutEnrichedFieldsPreview() {
+internal fun ComposeBeerDetailWithoutEnrichedFieldsPreview() {
   BillionBeersTheme {
     ComposeBeerDetail(
       beer =

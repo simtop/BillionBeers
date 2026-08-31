@@ -28,8 +28,5 @@
     <ID>ModifierMissing:CatalogDemos.kt$TypographyCatalogDemo</ID>
     <ID>ModifierMissing:DialogWithProgressBar.kt$DialogWithProgressBarDemo</ID>
     <ID>MutableStateAutoboxing:DialogWithProgressBar.kt$mutableStateOf(number)</ID>
-    <ID>PreviewPublic:DialogWithProgressBar.kt$DialogContentPreview</ID>
-    <ID>SwallowedException:ComposeExtensions.kt$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:ComposeExtensions.kt$e: Exception</ID>
   </CurrentIssues>
 </SmellBaseline>

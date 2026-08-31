@@ -121,6 +121,9 @@ fun BeersListScreen(
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
+// The screen API keeps its event callbacks explicit so callers cannot accidentally omit a user
+// action. This is a deliberate UI boundary; the design-system components below remain compact.
+@Suppress("ComposableParamOrder", "LambdaParameterEventTrailing", "LongParameterList")
 fun BeersListContent(
   viewState: CommonUiState<PagedListUiModel<Beer>>,
   onBeerClick: (Beer) -> Unit,
@@ -129,11 +132,13 @@ fun BeersListContent(
   onScrollToBottom: () -> Unit,
   onRefresh: () -> Unit,
   onRetry: () -> Unit,
+  modifier: Modifier = Modifier,
   onRetryLoadMore: () -> Unit,
 ) {
   val context = LocalContext.current
   val toggleDebugDrawer = LocalDebugDrawerToggle.current
   Scaffold(
+    modifier = modifier,
     topBar = {
       TopAppBar(
         title = {
@@ -373,7 +378,7 @@ class BeersListPreviewParameterProvider :
 
 @PreviewLightDark
 @Composable
-fun BeersListScreenPreview(
+internal fun BeersListScreenPreview(
   @PreviewParameter(BeersListPreviewParameterProvider::class)
   state: BeersListPreviewParameterProvider.State
 ) {
@@ -436,12 +441,13 @@ fun BeersListSkeleton(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun BeersListItemSkeleton() {
+fun BeersListItemSkeleton(modifier: Modifier = Modifier) {
   val shimmerBrush = shimmerBrush(targetValue = SHIMMER_TARGET_VALUE)
 
   Card(
     modifier =
-      Modifier.fillMaxWidth()
+      modifier
+        .fillMaxWidth()
         .padding(
           horizontal = BillionBeersTheme.spacing.medium,
           vertical = BillionBeersTheme.spacing.small,

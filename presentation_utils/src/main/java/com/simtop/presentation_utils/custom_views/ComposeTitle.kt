@@ -13,11 +13,12 @@ import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 
 @CatalogComponent(tab = "Utilities")
 @Composable
-fun ComposeTitle(name: String) {
+fun ComposeTitle(name: String, modifier: Modifier = Modifier) {
   Text(
     text = name,
     modifier =
-      Modifier.padding(
+      modifier
+        .padding(
           start = BillionBeersTheme.spacing.large,
           top = BillionBeersTheme.spacing.small,
           bottom = BillionBeersTheme.spacing.small,
@@ -31,6 +32,6 @@ fun ComposeTitle(name: String) {
 
 @PreviewLightDark
 @Composable
-fun ComposeTitlePreview() {
+internal fun ComposeTitlePreview() {
   BillionBeersTheme { ComposeTitle("Hello") }
 }

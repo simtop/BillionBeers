@@ -2,13 +2,10 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>EmptyFunctionBlock:BrowseBeersViewModelTest.kt$BrowseBeersViewModelTest${}</ID>
     <ID>LongParameterList:BrowseBeersScreen.kt$( title: String, viewState: CommonUiState&lt;PagedListUiModel&lt;Beer&gt;&gt;, onBack: () -&gt; Unit, onBeerClick: (Beer) -&gt; Unit, onScrollToBottom: () -&gt; Unit, onRetryLoadMore: () -&gt; Unit, // Serves both first-page reloads: the full-screen error retry and the pull-to-refresh gesture. onRetryFirstPage: () -&gt; Unit, )</ID>
     <ID>LongParameterList:BrowseHomeScreen.kt$( styles: CommonUiState&lt;List&lt;BeerStyle&gt;&gt;, breweries: CommonUiState&lt;List&lt;Brewery&gt;&gt;, selectedTab: Int, onTabSelected: (Int) -&gt; Unit, onStyleClick: (BeerStyle) -&gt; Unit, onBreweryClick: (Brewery) -&gt; Unit, onBack: () -&gt; Unit, onRetryStyles: () -&gt; Unit, onRetryBreweries: () -&gt; Unit, )</ID>
     <ID>MatchingDeclarationName:BeerBrowseScreenImpl.kt$BrowseSelection</ID>
     <ID>ParameterNaming:BrowseHomeScreen.kt$onTabSelected</ID>
-    <ID>PreviewPublic:BrowseBeersScreen.kt$BrowseBeersScreenPreview</ID>
-    <ID>PreviewPublic:BrowseHomeScreen.kt$BrowseHomeScreenPreview</ID>
     <ID>ViewModelInjection:BrowseBeersScreen.kt$viewModel</ID>
   </CurrentIssues>
 </SmellBaseline>

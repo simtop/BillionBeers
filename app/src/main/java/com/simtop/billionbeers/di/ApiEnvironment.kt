@@ -1,6 +1,7 @@
 package com.simtop.billionbeers.di
 
 import android.content.Context
+import androidx.core.content.edit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,7 +35,7 @@ internal class DefaultApiEnvironmentController(
   override fun selectEnvironment(environment: ApiEnvironment) {
     if (!debugSelectionEnabled || environment == _selectedEnvironment.value) return
 
-    preferences.edit().putString(ENVIRONMENT_KEY, environment.name).apply()
+    preferences.edit { putString(ENVIRONMENT_KEY, environment.name) }
     _selectedEnvironment.value = environment
   }
 

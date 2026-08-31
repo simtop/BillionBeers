@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -32,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import com.simtop.billionbeers.BillionBeersApplication
 import com.simtop.billionbeers.di.ApiEnvironment
 import com.simtop.billionbeers.di.ApiEnvironmentController
@@ -122,7 +122,7 @@ fun DebugDrawerContent(appGraph: BaseAppGraph, modifier: Modifier = Modifier) {
       Column(
         modifier =
           Modifier.fillMaxWidth()
-            .clickable { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(entry.uri))) }
+            .clickable { context.startActivity(Intent(Intent.ACTION_VIEW, entry.uri.toUri())) }
             .padding(vertical = 8.dp)
       ) {
         Text(text = entry.label, style = MaterialTheme.typography.bodyLarge)

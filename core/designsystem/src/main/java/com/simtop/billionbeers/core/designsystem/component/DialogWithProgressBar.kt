@@ -66,7 +66,7 @@ fun DialogWithProgressBar(
 
 /** Catalog-only interactive demo for [DialogWithProgressBar]. */
 @Composable
-fun DialogWithProgressBarDemo(number: Float, text: String) {
+fun DialogWithProgressBarDemo(number: Float, text: String, modifier: Modifier = Modifier) {
   var showDialog by remember { mutableStateOf(false) }
   var animate by remember { mutableStateOf(false) }
   var simulatedNumber by remember { mutableFloatStateOf(number) }
@@ -94,7 +94,7 @@ fun DialogWithProgressBarDemo(number: Float, text: String) {
   }
 
   Column(
-    modifier = Modifier.fillMaxWidth().padding(16.dp),
+    modifier = modifier.fillMaxWidth().padding(16.dp),
     horizontalAlignment = Alignment.CenterHorizontally,
   ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -149,7 +149,9 @@ class DialogProgressProvider : PreviewParameterProvider<Float> {
 
 @PreviewLightDark
 @Composable
-fun DialogContentPreview(@PreviewParameter(DialogProgressProvider::class) progress: Float) {
+internal fun DialogContentPreview(
+  @PreviewParameter(DialogProgressProvider::class) progress: Float
+) {
   BillionBeersTheme { DialogContent(number = progress, text = "Downloading feature...") }
 }
 

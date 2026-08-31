@@ -3,8 +3,6 @@
   <ManuallySuppressedIssues/>
   <CurrentIssues>
     <ID>CyclomaticComplexMethod:PagedListReducer.kt$PagedListReducer$fun reduce(items: List&lt;T&gt;, state: PagingState&lt;E&gt;): CommonUiState&lt;PagedListUiModel&lt;T&gt;&gt;</ID>
-    <ID>EmptyFunctionBlock:AnalyticsTracker.kt$NoOpAnalyticsTracker${}</ID>
-    <ID>EmptyFunctionBlock:Logger.kt$NoOpLogger${}</ID>
     <ID>ReturnCount:PagingMediator.kt$PagingMediator$@Suppress("TooGenericExceptionCaught") override suspend fun loadNextPage()</ID>
     <ID>TooGenericExceptionThrown:PagingMediatorTest.kt$PagingMediatorTest$throw RuntimeException("count failed")</ID>
     <ID>TooGenericExceptionThrown:PagingMediatorTest.kt$PagingMediatorTest.Harness$throw RuntimeException("fetch $key failed")</ID>

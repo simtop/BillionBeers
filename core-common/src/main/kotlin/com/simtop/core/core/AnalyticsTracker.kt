@@ -7,5 +7,5 @@ fun interface AnalyticsTracker {
 fun AnalyticsTracker.logEvent(name: String) = logEvent(name, emptyMap())
 
 class NoOpAnalyticsTracker : AnalyticsTracker {
-  override fun logEvent(name: String, params: Map<String, String>) {}
+  override fun logEvent(name: String, params: Map<String, String>) = Unit
 }

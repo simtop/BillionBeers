@@ -2,9 +2,7 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>LongParameterList:BeersListScreen.kt$( viewState: CommonUiState&lt;PagedListUiModel&lt;Beer&gt;&gt;, onBeerClick: (Beer) -&gt; Unit, onSearchClick: () -&gt; Unit, onBrowseClick: () -&gt; Unit, onScrollToBottom: () -&gt; Unit, onRefresh: () -&gt; Unit, onRetry: () -&gt; Unit, onRetryLoadMore: () -&gt; Unit, )</ID>
     <ID>ModifierMissing:BeersListScreen.kt$BeersListContent</ID>
     <ID>ModifierMissing:BeersListScreen.kt$BeersListItemSkeleton</ID>
-    <ID>PreviewPublic:BeersListScreen.kt$BeersListScreenPreview</ID>
   </CurrentIssues>
 </SmellBaseline>

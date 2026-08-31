@@ -3,7 +3,6 @@
   <ManuallySuppressedIssues/>
   <CurrentIssues>
     <ID>EmptyFunctionBlock:FakeSplitInstallManager.kt$FakeSplitInstallManager${}</ID>
-    <ID>MatchingDeclarationName:LocalDataSourceTest2.kt$LocalDataSourceTest</ID>
     <ID>MutableParams:DynamicFeatureNavigator.kt$backStack</ID>
     <ID>RememberMissing:DynamicFeatureNavigator.kt$mutableStateOf&lt;DynamicFeatureKey?&gt;(null)</ID>
   </CurrentIssues>

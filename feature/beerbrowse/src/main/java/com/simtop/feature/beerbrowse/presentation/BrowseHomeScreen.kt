@@ -238,7 +238,7 @@ class BrowseHomePreviewParameterProvider :
 
 @PreviewLightDark
 @Composable
-fun BrowseHomeScreenPreview(
+internal fun BrowseHomeScreenPreview(
   @PreviewParameter(BrowseHomePreviewParameterProvider::class)
   case: BrowseHomePreviewParameterProvider.Case
 ) {

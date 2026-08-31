@@ -6,8 +6,6 @@
     <ID>ModifierMissing:ComposeBeerDetail.kt$ComposeBeerDetail</ID>
     <ID>ModifierMissing:ComposeBeerDetail.kt$StatCard</ID>
     <ID>MultipleEmitters:ComposeBeerDetail.kt$BeerDetailBulletSection</ID>
-    <ID>PreviewPublic:ComposeBeerDetail.kt$ComposeBeerDetailPreview</ID>
-    <ID>PreviewPublic:ComposeBeerDetail.kt$ComposeBeerDetailWithoutEnrichedFieldsPreview</ID>
     <ID>ViewModelInjection:BeerDetailScreen.kt$viewModel</ID>
   </CurrentIssues>
 </SmellBaseline>

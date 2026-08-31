@@ -23,10 +23,14 @@ fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
 }
 
 /** Shows a short-lived platform toast; preview environments may not support it. */
+@Suppress(
+  "SwallowedException",
+  "TooGenericExceptionCaught",
+) // Toast is best-effort UI feedback; preview hosts may not provide a Toast-capable context.
 fun showToast(context: Context, message: String) {
   try {
     Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-  } catch (e: Exception) {
-    // Ignore for Paparazzi Tests/previews where Toast might not be supported
+  } catch (_: RuntimeException) {
+    // Ignore for Paparazzi tests/previews where Toast might not be supported.
   }
 }

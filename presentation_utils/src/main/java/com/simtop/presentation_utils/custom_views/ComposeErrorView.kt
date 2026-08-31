@@ -64,6 +64,6 @@ fun ComposeErrorView(
 
 @PreviewLightDark
 @Composable
-fun ComposeErrorViewPreview() {
+internal fun ComposeErrorViewPreview() {
   BillionBeersTheme { ComposeErrorView() }
 }

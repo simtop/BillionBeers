@@ -217,7 +217,7 @@ class BrowseBeersPreviewParameterProvider :
 
 @PreviewLightDark
 @Composable
-fun BrowseBeersScreenPreview(
+internal fun BrowseBeersScreenPreview(
   @PreviewParameter(BrowseBeersPreviewParameterProvider::class)
   case: BrowseBeersPreviewParameterProvider.Case
 ) {

@@ -19,7 +19,6 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 import strikt.api.expectThat
@@ -37,8 +36,6 @@ class BeersSearchViewModelTest {
   private val fakeFactory = FakeBeersPagerFactory(fakeRepository)
 
   private val pastDebounce = 701L // just over the 700ms debounce
-
-  @BeforeEach fun setUp() {}
 
   @AfterEach fun tearDown() = Dispatchers.resetMain()
 

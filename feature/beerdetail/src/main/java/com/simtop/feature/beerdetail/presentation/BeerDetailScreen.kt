@@ -27,7 +27,12 @@ import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 import dev.zacsweers.metrox.viewmodel.assistedMetroViewModel
 
 @Composable
-fun BeerDetailScreenImpl(beer: Beer, onBackClick: () -> Unit, showBackButton: Boolean = true) {
+fun BeerDetailScreenImpl(
+  beer: Beer,
+  onBackClick: () -> Unit,
+  modifier: Modifier = Modifier,
+  showBackButton: Boolean = true,
+) {
   val context = LocalContext.current
 
   val factory = remember {
@@ -64,12 +69,13 @@ fun BeerDetailScreenImpl(beer: Beer, onBackClick: () -> Unit, showBackButton: Bo
           beer = state.data,
           onBackClick = onBackClick,
           onToggleAvailability = { viewModel.updateAvailability(state.data) },
+          modifier = modifier,
           showBackButton = showBackButton,
         )
       }
       is CommonUiState.Error -> Unit
       CommonUiState.Loading -> {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
           CircularProgressIndicator()
         }
       }

@@ -16,7 +16,7 @@ import com.simtop.billionbeers.catalog_annotations.CatalogComponent
 
 @CatalogComponent(tab = "Design System", name = "Colors")
 @Composable
-fun ColorCatalogDemo() {
+fun ColorCatalogDemo(modifier: Modifier = Modifier) {
   val colorRoles =
     listOf(
       "Primary" to BillionBeersTheme.colors.primary,
@@ -33,7 +33,7 @@ fun ColorCatalogDemo() {
       "OnError" to BillionBeersTheme.colors.onError,
     )
 
-  LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+  LazyColumn(modifier = modifier.fillMaxSize().padding(16.dp)) {
     items(colorRoles) { (name, color) -> ColorRow(name, color) }
   }
 }
@@ -57,10 +57,11 @@ private fun ColorRow(name: String, color: Color) {
 
 @CatalogComponent(tab = "Design System", name = "Typography")
 @Composable
-fun TypographyCatalogDemo() {
+fun TypographyCatalogDemo(modifier: Modifier = Modifier) {
   Column(
     modifier =
-      Modifier.fillMaxSize()
+      modifier
+        .fillMaxSize()
         .padding(16.dp)
         .verticalScroll(androidx.compose.foundation.rememberScrollState())
   ) {

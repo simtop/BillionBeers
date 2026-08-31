@@ -38,10 +38,15 @@ import com.simtop.presentation_utils.R
 
 @CatalogComponent(tab = "Utilities")
 @Composable
-fun ComposeBeersListItem(beer: Beer = Beer.empty, onClick: ((Beer) -> Unit)? = null) {
+fun ComposeBeersListItem(
+  modifier: Modifier = Modifier,
+  beer: Beer = Beer.empty,
+  onClick: ((Beer) -> Unit)? = null,
+) {
   Card(
     modifier =
-      Modifier.fillMaxWidth()
+      modifier
+        .fillMaxWidth()
         .padding(
           horizontal = BillionBeersTheme.spacing.medium,
           vertical = BillionBeersTheme.spacing.small,
@@ -130,7 +135,11 @@ fun ComposeBeersListItem(beer: Beer = Beer.empty, onClick: ((Beer) -> Unit)? = n
 
 @CatalogComponent(tab = "Utilities")
 @Composable
-fun BeerImage(imageUrl: String, contentDescription: String? = null) {
+fun BeerImage(
+  imageUrl: String,
+  modifier: Modifier = Modifier,
+  contentDescription: String? = null,
+) {
   // Keeps the list item's skeleton shimmer alive on the tile until Coil resolves, so the image
   // crossfades in from the shimmer instead of flashing a static placeholder first.
   var isLoading by remember { mutableStateOf(true) }
@@ -138,7 +147,8 @@ fun BeerImage(imageUrl: String, contentDescription: String? = null) {
 
   Box(
     modifier =
-      Modifier.size(BillionBeersTheme.spacing.extraHuge + BillionBeersTheme.spacing.medium)
+      modifier
+        .size(BillionBeersTheme.spacing.extraHuge + BillionBeersTheme.spacing.medium)
         .clip(
           RoundedCornerShape(BillionBeersTheme.spacing.small + BillionBeersTheme.spacing.extraSmall)
         )
@@ -162,8 +172,12 @@ fun BeerImage(imageUrl: String, contentDescription: String? = null) {
 }
 
 @Composable
-fun BeerChip(text: String, color: Color, textColor: Color) {
-  Surface(color = color, shape = RoundedCornerShape(BillionBeersTheme.spacing.small)) {
+fun BeerChip(text: String, color: Color, textColor: Color, modifier: Modifier = Modifier) {
+  Surface(
+    modifier = modifier,
+    color = color,
+    shape = RoundedCornerShape(BillionBeersTheme.spacing.small),
+  ) {
     Text(
       text = text,
       modifier =
@@ -202,7 +216,7 @@ class BeerPreviewParameterProvider : PreviewParameterProvider<Beer> {
 
 @PreviewLightDark
 @Composable
-fun ComposeBeersListItemPreview(
+internal fun ComposeBeersListItemPreview(
   @androidx.compose.ui.tooling.preview.PreviewParameter(BeerPreviewParameterProvider::class)
   beer: Beer
 ) {
