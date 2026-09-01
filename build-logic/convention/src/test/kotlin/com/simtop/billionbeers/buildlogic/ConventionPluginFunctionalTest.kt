@@ -178,11 +178,21 @@ class ConventionPluginFunctionalTest {
         namespace = "com.simtop.conventiontest"
         compileSdk = 37
       }
+
+      tasks.register("assertManagedDeviceContract") {
+        doLast {
+          val devices = android.testOptions.managedDevices.localDevices
+          check(devices.getByName("atdApi35").testedAbi == "x86_64")
+          println("MANAGED_DEVICE_CONTRACT_OK")
+        }
+      }
       """.trimIndent(),
     )
 
-    val result = runner().withArguments("tasks", "--all", "--stacktrace").build()
+    val result =
+      runner().withArguments("assertManagedDeviceContract", "tasks", "--all", "--stacktrace").build()
 
+    assertTrue(result.output.contains("MANAGED_DEVICE_CONTRACT_OK"), result.output)
     assertTrue(result.output.contains("atdApi35Setup"))
     assertTrue(result.output.contains("pixel9Api37Setup"))
     assertTrue(result.output.contains("ciGroupDebugAndroidTest"))

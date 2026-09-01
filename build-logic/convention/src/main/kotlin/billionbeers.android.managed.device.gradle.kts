@@ -35,6 +35,9 @@ fun ManagedDevices.configureBillionBeersDevices() {
     val fastLane = localDevices.create("atdApi35") {
         device = "Pixel 6"
         sdkVersion = 35
+        // AGP 10 changes the tested-APK default to arm64-v8a. The ATD lane resolves an x86_64
+        // image on Linux, so pin the APK ABI rather than inheriting a future incompatible default.
+        testedAbi = "x86_64"
         // google_atd, not aosp_atd: the app depends on Play Core (SplitInstall) and needs the
         // Google APIs present. ATD images have Google APIs but no Play Store - fine here, since
         // dynamic features are staged by bundletool local-testing rather than fetched from Play.

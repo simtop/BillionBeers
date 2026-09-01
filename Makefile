@@ -237,16 +237,29 @@ dependency-guard: ## Verify the app's release runtime dependency graph against i
 dependency-guard-baseline: ## Re-baseline the dependency graph after an intentional change (review the diff before committing).
 	$(GRADLE_RUNNER) :app:dependencyGuardBaseline
 
-# The task set mirrors what CI executes (ci.yml) plus assembleDebug for local builds - the ledger
-# only covers configurations a build actually resolves, so anything CI runs must be resolved here
-# or CI fails verification. Two passes on purpose, mirroring CI's separate lanes: writes merge
-# into the existing file, and combining :app:lintDebug with verifyPaparazziDebug in ONE invocation
-# trips Gradle's implicit-dependency validation on generatePaparazziTest outputs (a combination CI
-# never runs). Don't add broader tasks (e.g. root assembleDebugAndroidTest) for the same reason.
+# The task set mirrors every root-build task CI executes plus assembleDebug for local builds - the
+# ledger only covers configurations a build actually resolves, so anything CI runs must be resolved
+# here or CI fails verification. This includes the pure-JVM snapshot processor, architecture
+# classpath checks, and the standalone minified-app smoke test; naming them explicitly keeps this
+# reference graph auditable even when another task currently resolves the same artifacts.
+#
+# Two passes on purpose, mirroring CI's separate lanes: writes merge into the existing file, and
+# combining :app:lintDebug with verifyPaparazziDebug in ONE invocation trips Gradle's
+# implicit-dependency validation on generatePaparazziTest outputs (a combination CI never runs).
+# Don't add broader tasks (e.g. root assembleDebugAndroidTest) for the same reason.
+#
+# build-logic's convention tests run as a separate Gradle build (`-p build-logic`). That build has no
+# verification-metadata.xml of its own, so it is not governed by this root ledger; invoking it here
+# would execute tests without adding root-ledger coverage. ADR 0007 records that boundary.
+#
+# The reference target is the production writer. The candidate is deliberately an experiment: it
+# assembles each supported test APK without booting a device, then its cold-Linux ledger is compared
+# with the reference. Do not switch the alias until that comparison proves equivalent.
+#
 # ideSyncArtifacts is the deliberate exception to "mirrors what CI executes": it resolves what
-# Android Studio's sync needs and no build does, which the CI graph by definition cannot cover.
-# It reads the bundled Groovy version off the running distribution, so a Gradle upgrade re-records
-# the right coordinates instead of leaving the ledger pinned to the old ones (ADR 0007).
+# Android Studio's sync needs and no build does, which the CI graph by definition cannot cover. It
+# reads the bundled Groovy version off the running distribution, so a Gradle upgrade re-records the
+# right coordinates instead of leaving the ledger pinned to the old ones (ADR 0007).
 # The jvmargs override is needed because these are no-configuration-cache builds of the whole
 # graph; the default 2g heap GC-thrashes.
 # ORDER MATTERS after a dependency bump: :app:dependencyGuard below fails on a stale baseline and
@@ -254,12 +267,35 @@ dependency-guard-baseline: ## Re-baseline the dependency graph after an intentio
 # regen workflow does this automatically on Dependabot branches - ADR 0007).
 VERIFICATION_WRITE_FLAGS := --write-verification-metadata sha256 --no-configuration-cache --continue \
 	"-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8"
-verification-metadata: ## Regenerate gradle/verification-metadata.xml over the full CI task graph (ADR 0007).
+VERIFICATION_METADATA_PASS_ONE := \
+	help spotlessCheck detekt :app:lintDebug :app:dependencyGuard ideSyncArtifacts
+VERIFICATION_METADATA_PASS_TWO := \
+	assembleDebug testDebugUnitTest :konsist:test :core-common:test :testing-utils:test \
+	:snapshot-processor:test checkDataLayerClasspathBoundary verifyArchitectureGraph \
+	verifyPaparazziDebug jacocoRootReport
+VERIFICATION_METADATA_REFERENCE_DEVICE_TASKS := \
+	ciGroupDebugAndroidTest :app-release-smoke:atdApi35ReleaseSmokeAndroidTest
+VERIFICATION_METADATA_CANDIDATE_DEVICE_TASKS := \
+	:app:assembleDebugAndroidTest \
+	:beer_database:assembleDebugAndroidTest \
+	:feature:beerbrowse:assembleDebugAndroidTest \
+	:feature:beerdetail:assembleDebugAndroidTest \
+	:feature:beerslist:assembleDebugAndroidTest \
+	:feature:beersearch:assembleDebugAndroidTest \
+	:app:assembleReleaseSmoke \
+	:app-release-smoke:assembleReleaseSmoke
+
+verification-metadata: verification-metadata-reference ## Regenerate verification metadata with the proven reference graph (ADR 0007).
+
+verification-metadata-reference: ## Run the complete reference metadata graph, including managed-device execution.
+	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) $(VERIFICATION_METADATA_PASS_ONE)
 	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) \
-		help spotlessCheck detekt :app:lintDebug :app:dependencyGuard ideSyncArtifacts
+		$(VERIFICATION_METADATA_PASS_TWO) $(VERIFICATION_METADATA_REFERENCE_DEVICE_TASKS)
+
+verification-metadata-candidate: ## Experiment: replace managed-device execution with explicit test APK assembly.
+	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) $(VERIFICATION_METADATA_PASS_ONE)
 	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) \
-		assembleDebug testDebugUnitTest :konsist:test :core-common:test :testing-utils:test \
-		verifyPaparazziDebug jacocoRootReport ciGroupDebugAndroidTest
+		$(VERIFICATION_METADATA_PASS_TWO) $(VERIFICATION_METADATA_CANDIDATE_DEVICE_TASKS)
 
 health: ## Generate current Markdown and JSON health reports under build/reports/health.
 	@bash scripts/health-report.sh --run --json build/reports/health/health.json build/reports/health/report.md

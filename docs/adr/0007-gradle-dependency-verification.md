@@ -24,15 +24,19 @@ that are easy to get wrong.
    every Gradle invocation (local and CI) verifies sha256 checksums automatically from then on.
    No CI change is needed for enforcement — the file's existence is the switch.
 2. **Regenerate via `make verification-metadata`.** The target runs
-   `--write-verification-metadata sha256` **attached to the full CI task graph** (build, unit,
-   paparazzi, lint, dependency-guard, jacoco, and the GMD instrumented lane). A bare
+   `--write-verification-metadata sha256` **attached to the full root-build CI task graph**: build,
+   Android and pure-JVM unit tests, Konsist and resolved architecture checks, Paparazzi, lint,
+   dependency-guard, Jacoco, the GMD debug lane, and the standalone minified-app smoke test. A bare
    `--write-verification-metadata` invocation only runs `help` and resolves almost nothing —
    the ledger only covers configurations a build actually resolves, so the regen must execute
    what CI executes. `--no-configuration-cache` because the flag is incompatible with it.
-3. **A regen workflow keeps Dependabot auto-merge alive**
-   (`.github/workflows/regen-verification-metadata.yml`). On Dependabot PRs it regenerates the
-   ledger and pushes the diff back to the branch; CI re-runs on the new head and the existing
-   `--auto` merge gate resolves normally.
+3. **A narrowly triggered regen workflow keeps Dependabot auto-merge alive**
+   (`.github/workflows/regen-verification-metadata.yml`). On Dependabot PRs that change a Gradle
+   dependency input, it regenerates the ledger and pushes the diff back to the branch; CI re-runs
+   on the new head and the existing `--auto` merge gate resolves normally. GitHub Actions-only
+   bumps do not resolve Gradle artifacts and therefore do not pay for this workflow. A successful
+   run also executes `make update-docs` and includes the generated README version table in the same
+   commit, so a catalog bump does not need a second formatting-fix commit.
 4. **The workflow re-baselines dependency-guard first, and only for version-only drift.** See
    below — this is what makes (3) actually complete on a real bump.
 
@@ -93,10 +97,66 @@ since patch/minor Dependabot PRs auto-merge unread. The workflow therefore compa
   `./gradlew --dependency-verification off :app:dependencyGuardBaseline`, commit, push — the
   coordinate sets then match and the workflow finishes the ledger itself.
 
+### Complete task coverage is explicit
+
+The reference writer names CI tasks even when another task currently resolves the same artifacts.
+That includes `:snapshot-processor:test`, `checkDataLayerClasspathBoundary`,
+`verifyArchitectureGraph`, and `:app-release-smoke:atdApi35ReleaseSmokeAndroidTest`. The redundancy
+is deliberate: if task internals diverge later, the ledger still follows the CI contract instead of
+silently relying on incidental overlap.
+
+The convention-plugin tests are the one apparent omission. CI runs them through
+`./gradlew -p build-logic :convention:test`, which is a separate Gradle build with no
+`build-logic/gradle/verification-metadata.xml`; the root ledger does not govern that invocation.
+Executing it from this target would add runtime without adding entries to the root ledger. The
+included build is still resolved while configuring the root build, so the convention plugins needed
+by root tasks remain covered.
+
+### Resolution-only writer is an experiment, not an assumption
+
+`verification-metadata-reference` retains actual GMD and release-smoke execution and remains the
+production writer behind `make verification-metadata`. `verification-metadata-candidate` replaces
+those two executions with explicit assembly of the six opted-in debug test APKs, the minified
+`releaseSmoke` app, and its standalone test APK. It intentionally names each supported module rather
+than calling a broad root `assembleDebugAndroidTest`, which would pull unsupported benchmark or
+container variants into the graph.
+
+Manual dispatch accepts `reference` and `candidate` modes. Both regenerate on a clean Linux runner,
+run the pre-write safety check, upload the ledger and dependency-guard baseline, and never commit or
+push. After downloading artifacts from runs on the same SHA, compare them with:
+
+```bash
+python3 .github/scripts/check-verification-metadata-update.py --require-equivalent \
+  reference/verification-metadata.xml candidate/verification-metadata.xml
+```
+
+The comparison canonicalizes the verification policy and compares every component, artifact, and
+accepted checksum, including Gradle's nested `<also-trust>` alternatives. The default writer must
+not switch until cold-Linux runs are equivalent or every missing candidate artifact is understood
+and resolved by a narrowly scoped task. Assembly alone is only the first candidate; GMD/UTP tooling
+may be resolved lazily during device tasks.
+
 ### Loop termination
 
 The bot's own push re-triggers the workflow. A guard step exits early when HEAD is already the
 regen commit; even without it, the second run would produce no diff and commit nothing.
+
+### Write mode must not bless changed bytes
+
+`--write-verification-metadata` is necessary to record a bumped version, but it also changes normal
+mismatch behavior: Gradle can append the newly observed hash as an alternative instead of failing.
+The workflow therefore snapshots the ledger before its first write-mode invocation and compares it
+to the final generated XML. New components and artifacts are allowed; any checksum-set change for
+an artifact already in the snapshot is rejected before commit. The same check rejects changes to
+the `<configuration>` block, so regeneration cannot silently weaken trusted-artifact policy.
+
+### Failure classification is diagnostic, not recovery
+
+The workflow summary separates coordinate-set rejection, a still-unlisted artifact, changed bytes
+for a recorded artifact, verification-policy drift, build/test/policy failure, and an operational
+termination such as exit 143. It never retries automatically. In particular, a checksum mismatch
+remains an alarm: classification only makes the next human action clear and never writes over the
+evidence.
 
 ## Operational notes
 
@@ -178,9 +238,10 @@ regen commit; even without it, the second run would produce no diff and commit n
 
 ## Cost accepted
 
-- The regen workflow runs a full CI-sized task graph on each Dependabot PR head (monthly,
-  grouped) — roughly doubling CI cost for those PRs. That is the price of a complete ledger;
-  resolution cannot be faked without executing the resolving tasks.
+- The regen workflow runs a full CI-sized task graph on each Gradle-related Dependabot PR head
+  (monthly, grouped) — roughly doubling CI cost for those PRs. Actions-only bumps are path-filtered
+  out. The remaining cost is the price of the reference ledger until a smaller resolution graph is
+  proven equivalent; resolution coverage must not be assumed.
 - A ~1000+ line generated XML file lives in the repo and churns with every bump. Reviewers should
   treat its diffs as machine output: sanity-check *which* coordinates changed, not the hashes.
 - Verification trusts the ledger's first write (trust-on-first-resolution). It defends against

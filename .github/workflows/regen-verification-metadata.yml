@@ -18,7 +18,25 @@ name: Regenerate Verification Metadata
 on:
   pull_request:
     branches: [main, master]
-  workflow_dispatch: {}
+    paths:
+      - 'gradle/libs.versions.toml'
+      - 'gradle/wrapper/**'
+      - 'gradle.properties'
+      - 'settings.gradle.kts'
+      - 'build.gradle.kts'
+      - '**/build.gradle.kts'
+      - 'build-logic/**'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Write the reference ledger, or upload a non-pushing experiment ledger
+        required: true
+        default: write
+        type: choice
+        options:
+          - write
+          - reference
+          - candidate
 
 # The deploy key gives push access; the token needs nothing beyond checkout.
 permissions:
@@ -47,10 +65,23 @@ jobs:
           # files and Paparazzi NPEs on them.
           lfs: true
 
+      - name: Select writer mode
+        id: mode
+        env:
+          REQUESTED_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'write' }}
+        run: |
+          echo "value=$REQUESTED_MODE" >> "$GITHUB_OUTPUT"
+          if [ "$REQUESTED_MODE" = "candidate" ]; then
+            echo "graph=candidate" >> "$GITHUB_OUTPUT"
+          else
+            echo "graph=reference" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Skip if HEAD is already a regen commit
         id: guard
         run: |
-          if [ "$(git log -1 --pretty=%s)" = "chore: regenerate dependency verification metadata" ]; then
+          if [ "${{ steps.mode.outputs.value }}" = "write" ] \
+              && [ "$(git log -1 --pretty=%s)" = "chore: regenerate dependency verification metadata" ]; then
             echo "HEAD is this workflow's own commit - nothing new to resolve."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           fi
@@ -93,9 +124,11 @@ jobs:
       # Gradle records checksums instead of enforcing them, so the bump's not-yet-listed
       # artifacts don't block the very resolution needed to list them.
       - name: Re-baseline dependency guard
+        id: guard_baseline
         if: steps.guard.outputs.skip != 'true'
         run: |
           cp app/dependencies/releaseRuntimeClasspath.txt "$RUNNER_TEMP/guard-before.txt"
+          cp gradle/verification-metadata.xml "$RUNNER_TEMP/verification-metadata-before.xml"
           ./gradlew --write-verification-metadata sha256 --no-configuration-cache \
             "-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8" \
             :app:dependencyGuardBaseline
@@ -108,11 +141,13 @@ jobs:
       # new or dropped transitive dependency - the signal the guard is actually for - so that
       # stops here, red, and the auto-merge never resolves.
       - name: Fail if the bump added or removed a coordinate
+        id: coordinate_check
         if: steps.guard.outputs.skip != 'true'
         run: |
           coords() { sed 's/:[^:]*$//' "$1" | sort -u; }
           if ! delta=$(diff <(coords "$RUNNER_TEMP/guard-before.txt") \
                             <(coords app/dependencies/releaseRuntimeClasspath.txt)); then
+            echo "classification=coordinate_change" >> "$GITHUB_OUTPUT"
             echo "::error::This bump adds or removes dependency coordinates, not just versions."
             echo "$delta"
             echo
@@ -124,23 +159,175 @@ jobs:
             echo "Once the coordinate sets match again, this workflow re-runs and finishes the job."
             exit 1
           fi
+          echo "classification=version_only" >> "$GITHUB_OUTPUT"
           echo "Release classpath drift is version-only - safe to re-baseline automatically."
 
       # Strict on purpose (no continue-on-error): if the task graph fails, the bump needs a
-      # human anyway, and committing a partially-resolved ledger would only mask that.
+      # human anyway, and committing a partially-resolved ledger would only mask that. Capture the
+      # log only to classify the failure in the job summary; the original exit status still fails.
       - name: Regenerate verification metadata
+        id: regenerate
         if: steps.guard.outputs.skip != 'true'
-        run: make verification-metadata
+        run: |
+          set +e
+          make "verification-metadata-${{ steps.mode.outputs.graph }}" 2>&1 \
+            | tee "$RUNNER_TEMP/verification-metadata.log"
+          status=${PIPESTATUS[0]}
+          set -e
 
-      - name: Commit and push if the ledger changed
+          classification=success
+          if [ "$status" -ne 0 ]; then
+            if grep -Fq "is not verified because it is not listed in the verification metadata" \
+                "$RUNNER_TEMP/verification-metadata.log"; then
+              classification=unlisted_artifact
+            elif grep -Eiq "checksum.*(failed|mismatch|expected)|expected.*checksum|has been compromised" \
+                "$RUNNER_TEMP/verification-metadata.log"; then
+              classification=checksum_mismatch
+            elif [ "$status" -eq 143 ] || [ "$status" -eq 130 ] \
+                || grep -Eq "(^|[[:space:]])Terminated$" "$RUNNER_TEMP/verification-metadata.log"; then
+              classification=operational_termination
+            else
+              classification=build_test_or_policy_failure
+            fi
+          fi
+          echo "classification=$classification" >> "$GITHUB_OUTPUT"
+          exit "$status"
+
+      # Write mode records new coordinates, but it can also append a second checksum when bytes for
+      # an already-recorded artifact change. Reject that before the generated ledger can be pushed.
+      - name: Reject changed checksums and verification policy
+        id: verify_update
         if: steps.guard.outputs.skip != 'true'
+        run: |
+          set +e
+          python3 .github/scripts/check-verification-metadata-update.py \
+            "$RUNNER_TEMP/verification-metadata-before.xml" \
+            gradle/verification-metadata.xml
+          status=$?
+          set -e
+
+          case "$status" in
+            0) classification=safe ;;
+            10) classification=checksum_mismatch ;;
+            11) classification=verification_policy_change ;;
+            *) classification=metadata_validation_failure ;;
+          esac
+          echo "classification=$classification" >> "$GITHUB_OUTPUT"
+          exit "$status"
+
+      - name: Update generated documentation
+        id: update_docs
+        if: steps.guard.outputs.skip != 'true' && steps.mode.outputs.value == 'write'
+        run: make update-docs
+
+      - name: Upload experiment ledger
+        id: upload_experiment
+        if: steps.guard.outputs.skip != 'true' && steps.mode.outputs.value != 'write'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: verification-metadata-${{ steps.mode.outputs.value }}-${{ github.sha }}
+          path: |
+            gradle/verification-metadata.xml
+            app/dependencies/releaseRuntimeClasspath.txt
+          retention-days: 14
+
+      - name: Commit and push if generated files changed
+        id: commit
+        if: steps.guard.outputs.skip != 'true' && steps.mode.outputs.value == 'write'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add gradle/verification-metadata.xml app/dependencies/releaseRuntimeClasspath.txt
+          git add gradle/verification-metadata.xml app/dependencies/releaseRuntimeClasspath.txt README.md
           if git diff --cached --quiet; then
-            echo "Ledger already current - nothing to commit."
+            echo "result=no_diff" >> "$GITHUB_OUTPUT"
+            echo "Generated files are already current - nothing to commit."
           else
             git commit -m "chore: regenerate dependency verification metadata"
             git push
+            echo "result=pushed" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Summarize result
+        if: always()
+        env:
+          MODE: ${{ steps.mode.outputs.value }}
+          SKIPPED: ${{ steps.guard.outputs.skip }}
+          GUARD_BASELINE_OUTCOME: ${{ steps.guard_baseline.outcome }}
+          COORDINATE_OUTCOME: ${{ steps.coordinate_check.outcome }}
+          COORDINATE_CLASSIFICATION: ${{ steps.coordinate_check.outputs.classification }}
+          REGENERATE_OUTCOME: ${{ steps.regenerate.outcome }}
+          REGENERATE_CLASSIFICATION: ${{ steps.regenerate.outputs.classification }}
+          VERIFY_UPDATE_OUTCOME: ${{ steps.verify_update.outcome }}
+          VERIFY_UPDATE_CLASSIFICATION: ${{ steps.verify_update.outputs.classification }}
+          UPDATE_DOCS_OUTCOME: ${{ steps.update_docs.outcome }}
+          UPLOAD_OUTCOME: ${{ steps.upload_experiment.outcome }}
+          COMMIT_OUTCOME: ${{ steps.commit.outcome }}
+          COMMIT_RESULT: ${{ steps.commit.outputs.result }}
+        run: |
+          result="unknown failure"
+          action="Inspect the first failed step; no generated files were pushed."
+
+          if [ "$SKIPPED" = "true" ]; then
+            result="skipped: HEAD is already the workflow's regeneration commit"
+            action="No action needed."
+          elif [ "$GUARD_BASELINE_OUTCOME" = "failure" ]; then
+            result="dependency-guard re-baseline failed"
+          elif [ "$COORDINATE_CLASSIFICATION" = "coordinate_change" ]; then
+            result="rejected: dependency coordinates were added or removed"
+            action="Review the transitive graph and re-baseline manually if the change is intended."
+          elif [ "$REGENERATE_OUTCOME" = "failure" ]; then
+            case "$REGENERATE_CLASSIFICATION" in
+              unlisted_artifact)
+                result="failed: an artifact is still absent from the generated ledger"
+                action="Extend the reference task graph; do not retry blindly."
+                ;;
+              checksum_mismatch)
+                result="ALARM: a recorded artifact checksum does not match"
+                action="Verify the artifact independently. Do not regenerate over the mismatch."
+                ;;
+              operational_termination)
+                result="cancelled or terminated while resolving the reference graph"
+                action="Check the run conclusion and runner logs before deciding whether one retry is justified."
+                ;;
+              *)
+                result="failed: build, test, or policy task rejected the generated graph"
+                ;;
+            esac
+          elif [ "$VERIFY_UPDATE_OUTCOME" = "failure" ]; then
+            case "$VERIFY_UPDATE_CLASSIFICATION" in
+              checksum_mismatch)
+                result="ALARM: regeneration found changed bytes for a recorded artifact"
+                action="Verify the artifact independently. Do not commit the generated checksum."
+                ;;
+              verification_policy_change)
+                result="rejected: regeneration changed dependency-verification policy"
+                action="Review changes to trusted-artifact rules by hand."
+                ;;
+              *)
+                result="failed: generated verification metadata could not be validated"
+                ;;
+            esac
+          elif [ "$MODE" != "write" ] && [ "$UPLOAD_OUTCOME" = "failure" ]; then
+            result="the $MODE experiment completed but its ledger artifact upload failed"
+          elif [ "$MODE" != "write" ]; then
+            result="uploaded the non-pushing $MODE experiment ledger"
+            action="Run the other mode on this SHA, then compare the downloaded XML files with --require-equivalent."
+          elif [ "$UPDATE_DOCS_OUTCOME" = "failure" ]; then
+            result="README version generation failed"
+          elif [ "$COMMIT_OUTCOME" = "failure" ]; then
+            result="generated files were ready but the commit or push failed"
+          elif [ "$COMMIT_RESULT" = "pushed" ]; then
+            result="pushed regenerated ledger, dependency baseline, and README"
+            action="CI will rerun on the new PR head."
+          elif [ "$COMMIT_RESULT" = "no_diff" ]; then
+            result="completed: generated files already match the branch"
+            action="No action needed."
+          fi
+
+          {
+            echo "### Dependency verification metadata"
+            echo
+            echo "**Result:** $result"
+            echo
+            echo "**Next step:** $action"
+          } >> "$GITHUB_STEP_SUMMARY"
