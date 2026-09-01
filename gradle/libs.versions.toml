@@ -33,7 +33,7 @@ composeBom = "2026.06.01"
 activityCompose = "1.13.0"
 
 # Networking
-com-squareup-okhttp3 = "5.4.0"
+com-squareup-okhttp3 = "5.5.0"
 com-squareup-retrofit2 = "3.0.0"
 
 # Testing
