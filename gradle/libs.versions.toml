@@ -108,9 +108,9 @@ metrox-viewmodel = { module = "dev.zacsweers.metro:metrox-viewmodel", version.re
 metrox-viewmodel-compose = { module = "dev.zacsweers.metro:metrox-viewmodel-compose", version.ref = "dev-zacsweers-metro" }
 
 # Image Loading
-coil3 = "io.coil-kt.coil3:coil-compose:3.5.0"
-coil3-view = "io.coil-kt.coil3:coil:3.5.0"
-coil3-network = "io.coil-kt.coil3:coil-network-okhttp:3.5.0"
+coil3 = "io.coil-kt.coil3:coil-compose:3.6.0"
+coil3-view = "io.coil-kt.coil3:coil:3.6.0"
+coil3-network = "io.coil-kt.coil3:coil-network-okhttp:3.6.0"
 
 # Networking
 okhttp3 = { module = "com.squareup.okhttp3:okhttp", version.ref = "com-squareup-okhttp3" }
