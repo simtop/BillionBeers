@@ -7,6 +7,7 @@ import kotlin.io.path.exists
 import kotlin.io.path.writeText
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -88,10 +89,11 @@ class ConventionPluginFunctionalTest {
       """.trimIndent(),
     )
 
-    runner().withArguments("tasks", "--configuration-cache").build()
+    val stored = runner().withArguments("tasks", "--configuration-cache").build()
+    assertTrue(stored.output.contains("Configuration cache entry stored"), stored.output)
     val reused = runner().withArguments("tasks", "--configuration-cache").build()
 
-    assertTrue(reused.output.contains("Reusing configuration cache"))
+    assertTrue(reused.output.contains("Configuration cache entry reused"), reused.output)
   }
 
   @Test
@@ -111,13 +113,17 @@ class ConventionPluginFunctionalTest {
       """.trimIndent(),
     )
 
-    val result = runner().withArguments("compileDebugAndroidTestKotlin").build()
+    val instrumented =
+      runner().withArguments("compileDebugAndroidTestKotlin", "--dry-run").build()
+
+    assertFalse(instrumented.output.contains("generatePaparazziTest"), instrumented.output)
+
+    val unit = runner().withArguments("compileDebugUnitTestKotlin", "--dry-run").build()
 
     assertTrue(
-      result.task(":compileDebugAndroidTestKotlin")?.outcome in
-        setOf(TaskOutcome.SUCCESS, TaskOutcome.NO_SOURCE, TaskOutcome.UP_TO_DATE),
+      unit.output.contains("generatePaparazziTest"),
+      unit.output,
     )
-    assertTrue(result.output.contains("compileDebugAndroidTestKotlin"))
   }
 
   @Test
@@ -194,14 +200,21 @@ class ConventionPluginFunctionalTest {
         namespace = "com.simtop.conventiontest"
         compileSdk = 37
       }
+
+      tasks.register("assertApplicationContract") {
+        doLast {
+          check(tasks.findByName("assembleDebug") != null)
+          check(tasks.findByName("lintDebug") != null)
+          check(tasks.findByName("jacocoDebugReport") != null)
+          println("APPLICATION_CONTRACT_OK")
+        }
+      }
       """.trimIndent(),
     )
 
-    val result = runner().withArguments("tasks", "--all").build()
+    val result = runner().withArguments("assertApplicationContract").build()
 
-    assertTrue(result.output.contains("assembleDebug"))
-    assertTrue(result.output.contains("lintDebug"))
-    assertTrue(result.output.contains("jacocoDebugReport"))
+    assertTrue(result.output.contains("APPLICATION_CONTRACT_OK"), result.output)
   }
 
   @Test
@@ -210,20 +223,36 @@ class ConventionPluginFunctionalTest {
     writeFile("testing-utils/build.gradle.kts", "")
     writeBuildFile(
       """
+      import org.gradle.testing.jacoco.tasks.JacocoReport
+
       plugins { id("billionbeers.android.library") }
 
       android {
         namespace = "com.simtop.conventiontest"
         compileSdk = 37
       }
+
+      tasks.register("assertCoverageContract") {
+        doLast {
+          check(tasks.findByName("assembleDebug") != null)
+          check(tasks.findByName("detekt") != null)
+          check(tasks.findByName("jacocoDebugReport") != null)
+          val report = tasks.named<JacocoReport>("jacocoDebugReport").get()
+          check(
+            report.taskDependencies.getDependencies(report).any { it.name == "testDebugUnitTest" },
+          ) { "jacocoDebugReport must run testDebugUnitTest first" }
+          check(report.executionData.files.any { it.name == "testDebugUnitTest.exec" }) {
+            "jacocoDebugReport must consume testDebugUnitTest.exec"
+          }
+          println("COVERAGE_CONTRACT_OK")
+        }
+      }
       """.trimIndent(),
     )
 
-    val result = runner().withArguments("tasks", "--all").build()
+    val result = runner().withArguments("assertCoverageContract", "tasks", "--all").build()
 
-    assertTrue(result.output.contains("assembleDebug"))
-    assertTrue(result.output.contains("jacocoDebugReport"))
-    assertTrue(result.output.contains("detekt"))
+    assertTrue(result.output.contains("COVERAGE_CONTRACT_OK"), result.output)
   }
 
   @Test
@@ -237,13 +266,25 @@ class ConventionPluginFunctionalTest {
         namespace = "com.simtop.conventiontest.feature"
         compileSdk = 37
       }
+
+      tasks.register("assertBoundaryContract") {
+        doLast {
+          val verification = tasks.named("check").get()
+          check(tasks.findByName("checkDataLayerClasspathBoundary") != null)
+          check(tasks.findByName("jacocoDebugReport") != null)
+          check(
+            verification.taskDependencies.getDependencies(verification)
+              .any { it.name == "checkDataLayerClasspathBoundary" },
+          ) { "check must depend on checkDataLayerClasspathBoundary" }
+          println("BOUNDARY_CONTRACT_OK")
+        }
+      }
       """.trimIndent(),
     )
 
-    val result = runner().withArguments("tasks", "--all").build()
+    val result = runner().withArguments("assertBoundaryContract").build()
 
-    assertTrue(result.output.contains("checkDataLayerClasspathBoundary"))
-    assertTrue(result.output.contains("jacocoDebugReport"))
+    assertTrue(result.output.contains("BOUNDARY_CONTRACT_OK"), result.output)
   }
 
   @Test
@@ -257,13 +298,25 @@ class ConventionPluginFunctionalTest {
         namespace = "com.simtop.conventiontest.dynamicfeature"
         compileSdk = 37
       }
+
+      tasks.register("assertBoundaryContract") {
+        doLast {
+          val verification = tasks.named("check").get()
+          check(tasks.findByName("checkDataLayerClasspathBoundary") != null)
+          check(tasks.findByName("jacocoDebugReport") != null)
+          check(
+            verification.taskDependencies.getDependencies(verification)
+              .any { it.name == "checkDataLayerClasspathBoundary" },
+          ) { "check must depend on checkDataLayerClasspathBoundary" }
+          println("BOUNDARY_CONTRACT_OK")
+        }
+      }
       """.trimIndent(),
     )
 
-    val result = runner().withArguments("tasks", "--all").build()
+    val result = runner().withArguments("assertBoundaryContract").build()
 
-    assertTrue(result.output.contains("checkDataLayerClasspathBoundary"))
-    assertTrue(result.output.contains("jacocoDebugReport"))
+    assertTrue(result.output.contains("BOUNDARY_CONTRACT_OK"), result.output)
   }
 
   @Test
@@ -316,9 +369,7 @@ class ConventionPluginFunctionalTest {
     val result = runner().withArguments("assembleRelease").buildAndFail()
 
     assertTrue(
-      result.output.contains("keystore") ||
-        result.output.contains("signing") ||
-        result.output.contains("SigningConfig"),
+      result.output.contains("SigningConfig \"release\" is missing required property \"storeFile\""),
       result.output,
     )
   }
