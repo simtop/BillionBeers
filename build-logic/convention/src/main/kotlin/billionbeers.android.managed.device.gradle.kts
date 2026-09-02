@@ -30,14 +30,15 @@ import com.android.build.api.dsl.ManagedVirtualDevice
  * the shared convention - only modules with an `androidTest` source set have anything to run, and
  * applying it everywhere would generate dead tasks in every module.
  */
-fun ManagedDevices.configureBillionBeersDevices() {
+fun ManagedDevices.configureBillionBeersDevices(testedAbiForHost: String) {
     // Task names derive from the device names: `atdApi35DebugAndroidTest`, `atdApi35Setup`, ...
     val fastLane = localDevices.create("atdApi35") {
         device = "Pixel 6"
         sdkVersion = 35
-        // AGP 10 changes the tested-APK default to arm64-v8a. The ATD lane resolves an x86_64
-        // image on Linux, so pin the APK ABI rather than inheriting a future incompatible default.
-        testedAbi = "x86_64"
+        // AGP 10 changes the tested-APK default to arm64-v8a. Pin the APK to the managed image's
+        // host-native ABI: x86_64 on Linux CI, arm64-v8a on Apple Silicon. An unconditional x86_64
+        // pin makes dynamic-feature split installation fail locally with NO_MATCHING_ABIS.
+        testedAbi = testedAbiForHost
         // google_atd, not aosp_atd: the app depends on Play Core (SplitInstall) and needs the
         // Google APIs present. ATD images have Google APIs but no Play Store - fine here, since
         // dynamic features are staged by bundletool local-testing rather than fetched from Play.
@@ -74,23 +75,30 @@ fun ManagedDevices.configureBillionBeersDevices() {
     }
 }
 
+val testedAbiForHost = providers.systemProperty("os.arch").map { architecture ->
+    when (architecture) {
+        "aarch64", "arm64" -> "arm64-v8a"
+        else -> "x86_64"
+    }
+}.get()
+
 pluginManager.withPlugin("com.android.application") {
     extensions.configure<ApplicationExtension> {
-        testOptions.managedDevices.configureBillionBeersDevices()
+        testOptions.managedDevices.configureBillionBeersDevices(testedAbiForHost)
     }
 }
 pluginManager.withPlugin("com.android.library") {
     extensions.configure<LibraryExtension> {
-        testOptions.managedDevices.configureBillionBeersDevices()
+        testOptions.managedDevices.configureBillionBeersDevices(testedAbiForHost)
     }
 }
 pluginManager.withPlugin("com.android.dynamic-feature") {
     extensions.configure<DynamicFeatureExtension> {
-        testOptions.managedDevices.configureBillionBeersDevices()
+        testOptions.managedDevices.configureBillionBeersDevices(testedAbiForHost)
     }
 }
 pluginManager.withPlugin("com.android.test") {
     extensions.configure<TestExtension> {
-        testOptions.managedDevices.configureBillionBeersDevices()
+        testOptions.managedDevices.configureBillionBeersDevices(testedAbiForHost)
     }
 }

@@ -330,10 +330,29 @@ jobs:
             **/build/reports/tests/
             build/reports/test-tier-inventory.md
 
-  screenshot-tests:
-    name: Screenshot Tests (Paparazzi)
+  # Two profile-balanced Paparazzi shards cut the lane's wall clock while preserving one stable
+  # aggregate name for verdict adoption and CI Gate. Keep the explicit task union aligned with every
+  # module applying billionbeers.android.screenshot; the local make target remains unsharded.
+  screenshot_test_shards:
+    name: Screenshot Test Shard (${{ matrix.shard }})
     needs: [format-check, changes]
     if: needs.changes.outputs.screenshot == 'true'
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - shard: browse-detail
+            tasks: >-
+              :feature:beerbrowse:verifyPaparazziDebug
+              :feature:beerdetail:verifyPaparazziDebug
+              :catalog:verifyPaparazziDebug
+          - shard: design-list-search
+            tasks: >-
+              :core:designsystem:verifyPaparazziDebug
+              :feature:beersearch:verifyPaparazziDebug
+              :feature:beerslist:verifyPaparazziDebug
+              :presentation_utils:verifyPaparazziDebug
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -355,68 +374,115 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      - name: Verify Screenshot Tests
+      - name: Verify screenshot shard
         id: verify-paparazzi
-        run: make screenshot-verify
+        run: ./gradlew ${{ matrix.tasks }} --continue
         continue-on-error: true
 
-      - name: Identify Failed Modules
+      - name: Identify failed modules
         if: always() && steps.verify-paparazzi.outcome == 'failure'
         id: failed-modules
         run: |
           FAILED_MODS=$(find . -name "failures" -type d -path "*/build/paparazzi/failures" | sed 's|^./||' | sed 's|/build/paparazzi/failures||' | sed 's|/|:|g' | sed 's|^|:|' | xargs | tr ',' ' ')
-          echo "modules=$FAILED_MODS" >> $GITHUB_OUTPUT
-          echo "Failed modules detected: $FAILED_MODS"
+          echo "modules=$FAILED_MODS" >> "$GITHUB_OUTPUT"
+          echo "Failed modules detected in ${{ matrix.shard }}: $FAILED_MODS"
 
-      - name: Generate Screenshot Failure Report
-        if: always() && steps.verify-paparazzi.outcome == 'failure'
+      - name: Summarize screenshot shard
+        if: always()
         run: |
-          FAILED_MODS="${{ steps.failed-modules.outputs.modules }}"
-          BRANCH_NAME="${{ github.head_ref || github.ref_name }}"
-          
-          echo "### 📸 Screenshot Verification Failed" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "The following modules have screenshot regressions:" >> $GITHUB_STEP_SUMMARY
-          for mod in $FAILED_MODS; do
-            echo "- \`$mod\`" >> $GITHUB_STEP_SUMMARY
-          done
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "#### 🛠️ How to fix" >> $GITHUB_STEP_SUMMARY
-          echo "To update the screenshots for these modules, you can trigger the recording workflow:" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-          echo "gh workflow run record_screenshots.yml --ref $BRANCH_NAME -f modules=\"$FAILED_MODS\"" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Alternatively, you can manually check the failure diffs in the artifacts below. ⬇️" >> $GITHUB_STEP_SUMMARY
+          echo "### 📸 Screenshot shard: ${{ matrix.shard }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Tasks: \`${{ matrix.tasks }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Outcome: **${{ steps.verify-paparazzi.outcome }}**" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.verify-paparazzi.outcome }}" = "failure" ]; then
+            FAILED_MODS="${{ steps.failed-modules.outputs.modules }}"
+            BRANCH_NAME="${{ github.head_ref || github.ref_name }}"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Failed modules:" >> "$GITHUB_STEP_SUMMARY"
+            for mod in $FAILED_MODS; do
+              echo "- \`$mod\`" >> "$GITHUB_STEP_SUMMARY"
+            done
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Record only this shard's failures with:" >> "$GITHUB_STEP_SUMMARY"
+            echo "\`gh workflow run record_screenshots.yml --ref $BRANCH_NAME -f modules=\"$FAILED_MODS\"\`" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
-      - name: Upload Screenshot Failures
+      - name: Upload screenshot failures
         if: always() && steps.verify-paparazzi.outcome == 'failure'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: screenshot-failures
+          name: screenshot-failures-${{ matrix.shard }}
           path: '**/build/paparazzi/failures/'
 
-      - name: Signal Failure
-        if: always() && steps.verify-paparazzi.outcome == 'failure'
-        run: exit 1
-
-      - name: Archive Screenshot Reports
+      - name: Archive screenshot test results
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: screenshot-test-reports
-          path: '**/build/reports/paparazzi/'
+          name: screenshot-test-results-${{ matrix.shard }}
+          path: '**/build/test-results/'
+          if-no-files-found: error
 
-  # Instrumented tests on a Gradle Managed Device. Replaces the previous Flank / Firebase Test
-  # Lab job, which never ran because it needed GCP credentials that were never set up. GMD runs
-  # the emulator on the runner itself via KVM - free, no cloud account, and the device spec lives
-  # in build-logic so CI and local runs are identical. Firebase Test Lab remains the right answer
-  # only for a *physical* device matrix, which this project does not need.
-  instrumented-tests:
-    name: Instrumented Tests (Gradle Managed Device)
+      - name: Signal screenshot failure
+        if: always() && steps.verify-paparazzi.outcome == 'failure'
+        run: exit 1
+
+  screenshot-tests:
+    name: Screenshot Tests (Paparazzi)
+    needs: [changes, screenshot_test_shards]
+    if: always() && needs.changes.result == 'success' && needs.changes.outputs.screenshot == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summarize screenshot shards
+        run: |
+          echo "### 📸 Screenshot shards" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Matrix result: **${{ needs.screenshot_test_shards.result }}**" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Download screenshot failures
+        id: download-failures
+        if: needs.screenshot_test_shards.result != 'success'
+        continue-on-error: true
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: screenshot-failures-*
+          path: /tmp/screenshot-failures
+          merge-multiple: true
+
+      - name: List failed screenshot modules
+        if: steps.download-failures.outcome == 'success'
+        run: |
+          FAILED_MODS=$(find /tmp/screenshot-failures -name "failures" -type d -path "*/build/paparazzi/failures" | sed 's|^/tmp/screenshot-failures/||' | sed 's|/build/paparazzi/failures||' | sed 's|/|:|g' | sed 's|^|:|' | sort -u | xargs)
+          if [ -n "$FAILED_MODS" ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Failed modules: \`$FAILED_MODS\`" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Fail if a screenshot shard failed or was cancelled
+        if: needs.screenshot_test_shards.result != 'success'
+        run: exit 1
+
+  # GMD runs on the runner through KVM. CI splits the seven owned test tasks across two runners;
+  # local ciGroupDebugAndroidTest stays the single source of truth for the six debug modules.
+  instrumented_test_shards:
+    name: Instrumented Test Shard (${{ matrix.shard }})
     needs: [format-check, changes]
     if: needs.changes.outputs.instrumented == 'true'
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - shard: integration
+            tasks: >-
+              :app:atdApi35DebugAndroidTest
+              :feature:beerbrowse:atdApi35DebugAndroidTest
+              :feature:beerdetail:atdApi35DebugAndroidTest
+              :app-release-smoke:atdApi35ReleaseSmokeAndroidTest
+          - shard: standalone
+            tasks: >-
+              :beer_database:atdApi35DebugAndroidTest
+              :feature:beerslist:atdApi35DebugAndroidTest
+              :feature:beersearch:atdApi35DebugAndroidTest
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -453,23 +519,41 @@ jobs:
       # `system-images` cache - a correct re-introduction has to capture the whole SDK/AVD state
       # (licenses + package registry + the created AVD), and must be proven on a live CI run.
 
-      - name: Run instrumented tests on the managed devices
-        # The `ci` group is the ATD fast lane. The slower API 37 lane is the `compat` group and
-        # runs weekly (.github/workflows/weekly-compat.yml). Which devices those mean is defined
-        # in build-logic, not here.
-        run: ./gradlew ciGroupDebugAndroidTest
+      - name: Run instrumented shard
+        run: ./gradlew ${{ matrix.tasks }}
 
-      # Debug UI tests prove screen behavior; this black-box lane proves the minified target launches
-      # and shows its production activity without requiring a Play signing identity.
-      - name: Run minified release launch smoke test
-        run: ./gradlew :app-release-smoke:atdApi35ReleaseSmokeAndroidTest
+      - name: Summarize instrumented shard
+        if: always()
+        run: |
+          echo "### 🤖 Instrumented shard: ${{ matrix.shard }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Tasks: \`${{ matrix.tasks }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Job status: **${{ job.status }}**" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Archive instrumented test reports
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: instrumented-test-reports
-          path: '**/build/reports/androidTests/managedDevice/'
+          name: instrumented-test-reports-${{ matrix.shard }}
+          path: |
+            **/build/reports/androidTests/managedDevice/
+            **/build/outputs/androidTest-results/managedDevice/
+
+  instrumented-tests:
+    name: Instrumented Tests (Gradle Managed Device)
+    needs: [changes, instrumented_test_shards]
+    if: always() && needs.changes.result == 'success' && needs.changes.outputs.instrumented == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summarize instrumented shards
+        run: |
+          echo "### 🤖 Instrumented shards" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Matrix result: **${{ needs.instrumented_test_shards.result }}**" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail if an instrumented shard failed or was cancelled
+        if: needs.instrumented_test_shards.result != 'success'
+        run: exit 1
 
   # Single aggregate gate - make THIS the only required status check in branch protection, not the
   # individual jobs. Why: a `skipped` job (secret-scan is PR-only; future path-filtered lanes will

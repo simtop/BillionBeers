@@ -106,18 +106,30 @@ the tier costs ~2s, while one more *module* costs ~49s: a factor of about 27.
 modules deliberately.** Two tests each across six feature modules would spend ~300s of overhead to
 run twelve tests worth ~23s.
 
-**Dynamic features cannot use the tier.** `:feature:beerdetail` and `:feature:beerbrowse` are
-on-demand modules, and invariant 5 exists because resources declared inside them crash instrumented
-tests — a failure this project has hit twice. Their UI coverage stays in `:app`, where the install
-gate lives anyway. This hole is permanent unless the dynamic-feature resource problem is solved.
+**Dynamic features now use the tier without owning user-facing resources.**
+`:feature:beerdetail` and `:feature:beerbrowse` have module-local screen tests, while invariant 5
+keeps the strings those tests need in `:presentation_utils`. The resource boundary, not dynamic
+feature status itself, was the constraint. Cross-feature navigation and split-install behaviour
+still stay in `:app`.
+
+**The six-module threshold for CI sharding has been reached.** CI runs two static GMD shards:
+
+- `integration`: `:app`, `:feature:beerbrowse`, `:feature:beerdetail`, and the standalone
+  `:app-release-smoke` release task;
+- `standalone`: `:beer_database`, `:feature:beerslist`, and `:feature:beersearch`.
+
+A stable `instrumented-tests` aggregate fails on any failed or cancelled shard and remains the only
+instrumented dependency of `CI Gate`. This is CI orchestration only: local
+`ciGroupDebugAndroidTest` remains the complete six-module debug command, and release smoke remains a
+separate local target.
 
 ## When to revisit
 
-- **Sharding the GMD group across matrix runners** becomes worth it at roughly five or six opted-in
-  modules. Below that, per-shard fixed cost (checkout, Gradle setup, emulator boot) exceeds the
-  serial device work it would parallelise — at three modules that work is ~161s total.
-- **If the dynamic-feature resource crash is ever fixed**, `beerdetail` and `beerbrowse` become
-  candidates and the `:app` integration tier shrinks.
+- Rebalance or remove the two-way matrix if representative CI measurements no longer clear its
+  wall-clock benefit or runner-minute cost becomes disproportionate. Correct task/report coverage
+  takes precedence over the speedup.
+- If another module joins the tier, add its task to both `ciGroupDebugAndroidTest` through the
+  managed-device convention and exactly one CI shard in the same change.
 
 ## Note on measuring any of this
 

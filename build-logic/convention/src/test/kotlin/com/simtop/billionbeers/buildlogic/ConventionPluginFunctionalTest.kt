@@ -166,6 +166,12 @@ class ConventionPluginFunctionalTest {
 
   @Test
   fun `managed device convention creates both device lanes and their groups`() {
+    val expectedTestedAbi =
+      when (System.getProperty("os.arch")) {
+        "aarch64", "arm64" -> "arm64-v8a"
+        else -> "x86_64"
+      }
+
     writeSettings()
     writeBuildFile(
       """
@@ -182,7 +188,7 @@ class ConventionPluginFunctionalTest {
       tasks.register("assertManagedDeviceContract") {
         doLast {
           val devices = android.testOptions.managedDevices.localDevices
-          check(devices.getByName("atdApi35").testedAbi == "x86_64")
+          check(devices.getByName("atdApi35").testedAbi == "$expectedTestedAbi")
           println("MANAGED_DEVICE_CONTRACT_OK")
         }
       }

@@ -81,6 +81,31 @@ the orphaned commit is never fetched), no or unreadable previous run, a non-nume
 renamed job, and a previous run still in flight all run the full suite. Skipping a real test is the
 costly mistake; an extra run is minutes.
 
+### 6. Shards execute behind stable aggregate jobs
+
+The screenshot and instrumented lanes each use a static two-entry matrix, but verdict adoption and
+`CI Gate` depend only on stable aggregate jobs:
+
+- `screenshot-tests` / `Screenshot Tests (Paparazzi)` wraps `screenshot_test_shards`;
+- `instrumented-tests` / `Instrumented Tests (Gradle Managed Device)` wraps
+  `instrumented_test_shards`.
+
+Matrix executor names include their shard and therefore are not a durable status-check contract.
+Each aggregate is skipped when the classifier says its lane is unaffected, succeeds only when the
+whole matrix succeeds, and fails if any shard fails or is cancelled. This preserves the induction
+rule for an adopted `skipped` verdict while letting shard count and assignments change without
+renaming the checks looked up by `detect-change-scope.sh`.
+
+The Paparazzi split is explicit and exhaustive over the seven screenshot modules:
+
+- `browse-detail`: `:feature:beerbrowse`, `:feature:beerdetail`, `:catalog`;
+- `design-list-search`: `:core:designsystem`, `:feature:beersearch`,
+  `:feature:beerslist`, `:presentation_utils`.
+
+Each shard uploads uniquely named JUnit results and failures. The aggregate downloads the available
+failure artifacts to report their module paths; it never assumes one runner can inspect another
+runner's filesystem. The local `make screenshot-verify` command remains unsharded.
+
 ## Consequences
 
 Validated live rather than by argument. A docs-only push skipped all three lanes with the gate
