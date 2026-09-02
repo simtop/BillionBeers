@@ -106,24 +106,50 @@ the tier costs ~2s, while one more *module* costs ~49s: a factor of about 27.
 modules deliberately.** Two tests each across six feature modules would spend ~300s of overhead to
 run twelve tests worth ~23s.
 
-**Dynamic features cannot use the tier.** `:feature:beerdetail` and `:feature:beerbrowse` are
-on-demand modules, and invariant 5 exists because resources declared inside them crash instrumented
-tests — a failure this project has hit twice. Their UI coverage stays in `:app`, where the install
-gate lives anyway. This hole is permanent unless the dynamic-feature resource problem is solved.
+**Dynamic features now use the tier without owning user-facing resources.**
+`:feature:beerdetail` and `:feature:beerbrowse` have module-local screen tests, while invariant 5
+keeps the strings those tests need in `:presentation_utils`. The resource boundary, not dynamic
+feature status itself, was the constraint. Cross-feature navigation and split-install behaviour
+still stay in `:app`.
+
+**The six-module threshold for CI sharding was reached and evaluated, but the two-way matrix was
+rejected.** PR #200 tested this split:
+
+- `integration`: `:app`, `:feature:beerbrowse`, `:feature:beerdetail`, and the standalone
+  `:app-release-smoke` release task;
+- `standalone`: `:beer_database`, `:feature:beerslist`, and `:feature:beersearch`.
+
+Stable aggregate semantics and report coverage worked, but performance did not:
+
+| Run | `integration` | `standalone` | Lane wall clock | Total job work |
+|---|---:|---:|---:|---:|
+| `33597137353` | 11m54s | 6m37s | 11m59s | 18m34s |
+| `33598554628` | 10m33s | 6m27s | 10m38s | 17m03s |
+
+Against the ten-run `master` median of 9m36s, the candidate median was about 17.8% slower and used
+about 85.5% more runner time. Reassigning modules cannot remove the duplicated fixed costs; moving a
+dynamic feature would also duplicate more app assembly, while moving release smoke trades shared
+build outputs for nominal balance. Keep one job running `ciGroupDebugAndroidTest` followed by release
+smoke.
+
+The single instrumented artifact includes both the HTML report and raw managed-device JUnit/logcat
+outputs. Those paths preserve the owning module, and failed test cases retain their class and method,
+so a failure is diagnosable without a matrix.
 
 ## When to revisit
 
-- **Sharding the GMD group across matrix runners** becomes worth it at roughly five or six opted-in
-  modules. Below that, per-shard fixed cost (checkout, Gradle setup, emulator boot) exceeds the
-  serial device work it would parallelise — at three modules that work is ~161s total.
-- **If the dynamic-feature resource crash is ever fixed**, `beerdetail` and `beerbrowse` become
-  candidates and the `:app` integration tier shrinks.
+- Reconsider sharding only after the fixed setup/device cost falls materially or the module graph
+  grows enough that execution dominates it. Profile by task before choosing a new split.
+- If another module joins the tier, its managed-device convention opt-in automatically adds it to
+  `ciGroupDebugAndroidTest`; no CI task list should duplicate that ownership.
 
 ## Note on measuring any of this
 
-Do not evaluate a change to the instrumented lane by comparing CI run durations. Across 19 master
-runs every lane correlates r = 0.93–0.99 with Detekt, which no test change can affect: a lane's
-duration is mostly which runner the run drew. The instrumented baseline is a 3m42s median with a
-65s standard deviation and a 3m05s–7m21s range, so detecting a ~50s change needs about ten runs per
-side, and normalising against the unaffected lanes only gets that to six. Profile locally
-(`--profile --rerun`) instead — that is where the numbers above come from.
+Do not use one or two hosted runs to claim a small speedup. Earlier measurements found every lane
+correlating r = 0.93–0.99 with Detekt, which no test change can affect: runner allocation dominates
+normal variance. A performance claim still needs about ten runs per side, or six when normalized
+against unaffected lanes, plus local `--profile --rerun` evidence.
+
+The rejected matrix did not depend on a precise small regression estimate: neither candidate run beat
+the existing median, and duplicating the job increased measured runner work by roughly 85%. That is a
+stop condition even before a larger sample.

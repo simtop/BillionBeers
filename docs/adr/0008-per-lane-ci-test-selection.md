@@ -104,6 +104,28 @@ Costs and sharp edges worth knowing:
   *compilation* is still covered (a compile break fails whichever lane re-runs); shared *behaviour*
   is not.
 
+## Rejected: two-way screenshot sharding
+
+PR #200 evaluated a static two-runner split over all seven modules and 273 goldens. Stable aggregate
+semantics worked, and both assignments were already balanced:
+
+| Run | `browse-detail` | `design-list-search` | Lane wall clock | Total job work |
+|---|---:|---:|---:|---:|
+| `33597137353` | 4m15s | 4m28s | 4m34s | 8m47s |
+| `33598554628` | 4m22s | 4m15s | 4m30s | 8m42s |
+
+Against the ten-run `master` median of 5m18s, the candidate median improved wall clock by only about
+14.5% while increasing runner work by about 65%. That misses both experiment thresholds (20% faster,
+less than 50% more work). A greedy module repartition cannot fix this: the existing shards differed
+by only 13 seconds and then 7 seconds; duplicated checkout, JDK/Gradle setup, LFS, and shared
+compilation are the cost. Keep one screenshot job unless the module graph or runner setup changes
+materially.
+
+The experiment also exposed a pre-existing empty artifact: Paparazzi's HTML reporter is disabled for
+Gradle 9 compatibility, so `build/reports/paparazzi` contains no files on a green run. CI now archives
+the JUnit XML under `build/test-results` instead. Screenshot failures remain separate PNG artifacts
+whose filenames identify the failed snapshot configuration.
+
 ## Rejected: walking back more than one run
 
 When the previous run was cancelled or is still in flight, its lanes are untrusted and re-run. The
