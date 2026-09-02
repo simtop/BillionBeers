@@ -133,6 +133,35 @@ Gradle 9 compatibility, so `build/reports/paparazzi` contains no files on a gree
 the JUnit XML under `build/test-results` instead. Screenshot failures remain separate PNG artifacts
 whose filenames identify the failed snapshot configuration.
 
+## Rejected: splitting architecture checks out of the unit lane
+
+PR #203 added timing-only instrumentation around the unit lane's six existing commands. Six live
+samples were then normalized against the unaffected Detekt job from the same run; the sixth was a
+full rerun of the post-merge PR #204 commit rather than a different code change.
+
+| Run | Unit tests | Architecture checks | Coverage | Measured phases | Whole job | Detekt | Job / Detekt |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `33652279325` | 3m43s | 11s | 11s | 4m05s | 4m31s | 1m00s | 4.52x |
+| `33653205398` | 4m26s | 12s | 12s | 4m50s | 5m35s | 57s | 5.88x |
+| `33657305914` | 2m53s | 11s | 11s | 3m15s | 3m38s | 50s | 4.36x |
+| `33659002183` | 3m12s | 16s | 12s | 3m40s | 4m07s | 53s | 4.66x |
+| `33660584195`, attempt 1 | 2m34s | 9s | 8s | 2m51s | 3m36s | 42s | 5.14x |
+| `33660584195`, attempt 3 | 3m33s | 8s | 9s | 3m51s | 4m28s | 1m12s | 3.72x |
+
+The medians are 3m23s for `make test`, 11s for Konsist plus both resolved architecture checks,
+11s for coverage, 3m46s for all measured phases, and 4m18s for the whole job. Unit execution is
+about 90.3% of measured phase time; the architecture bundle is about 4.9%. Dividing each sample by
+its same-run Detekt duration changes the variance, not the conclusion: architecture remains only
+8–16 seconds while runner allocation moves the whole job between 3m36s and 5m35s.
+
+Moving the architecture checks to a parallel job therefore has a theoretical median saving of only
+11 seconds, about 4% of the existing job and far below the 20% experiment threshold, before paying
+for another checkout, JDK/Gradle setup, and configuration. Unit-test sharding is also premature:
+it needs artifact-based JaCoCo merging and an omission mutation to prove aggregate coverage cannot
+silently pass, while the unit lane already finishes well before the managed-device lane that sets
+the current CI critical path. Keep the single unit job and its timing summary. Revisit only if unit
+execution becomes the critical path or its topology changes materially.
+
 ## Rejected: walking back more than one run
 
 When the previous run was cancelled or is still in flight, its lanes are untrusted and re-run. The
