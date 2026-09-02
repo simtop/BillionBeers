@@ -238,6 +238,7 @@ jobs:
         with:
           name: android-lint-reports
           path: '**/build/reports/lint-results-*.html'
+          retention-days: 7
 
   dependency-guard:
     name: Dependency Guard
@@ -329,6 +330,7 @@ jobs:
             **/build/test-results/
             **/build/reports/tests/
             build/reports/test-tier-inventory.md
+          retention-days: 7
 
   screenshot-tests:
     name: Screenshot Tests (Paparazzi)
@@ -373,7 +375,7 @@ jobs:
         run: |
           FAILED_MODS="${{ steps.failed-modules.outputs.modules }}"
           BRANCH_NAME="${{ github.head_ref || github.ref_name }}"
-          
+
           echo "### 📸 Screenshot Verification Failed" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "The following modules have screenshot regressions:" >> $GITHUB_STEP_SUMMARY
@@ -396,17 +398,22 @@ jobs:
         with:
           name: screenshot-failures
           path: '**/build/paparazzi/failures/'
+          retention-days: 7
 
       - name: Signal Failure
         if: always() && steps.verify-paparazzi.outcome == 'failure'
         run: exit 1
 
-      - name: Archive Screenshot Reports
+      - name: Archive screenshot test results
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: screenshot-test-reports
-          path: '**/build/reports/paparazzi/'
+          name: screenshot-test-results
+          # Paparazzi's HTML reporter is disabled for Gradle 9 compatibility; JUnit XML is the
+          # machine-readable evidence. The old reports/paparazzi path was empty on green runs.
+          path: '**/build/test-results/'
+          if-no-files-found: error
+          retention-days: 7
 
   # Instrumented tests on a Gradle Managed Device. Replaces the previous Flank / Firebase Test
   # Lab job, which never ran because it needed GCP credentials that were never set up. GMD runs
@@ -469,7 +476,11 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: instrumented-test-reports
-          path: '**/build/reports/androidTests/managedDevice/'
+          path: |
+            **/build/reports/androidTests/managedDevice/
+            **/build/outputs/androidTest-results/managedDevice/
+          if-no-files-found: error
+          retention-days: 7
 
   # Single aggregate gate - make THIS the only required status check in branch protection, not the
   # individual jobs. Why: a `skipped` job (secret-scan is PR-only; future path-filtered lanes will
