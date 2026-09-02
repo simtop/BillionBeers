@@ -17,6 +17,6 @@ class SimpleScreenshotTest {
 
   @Test
   fun simple_text_screenshot() {
-    paparazzi.snapshot { Text("Hello Paparazzi mutation") }
+    paparazzi.snapshot { Text("Hello Paparazzi") }
   }
 }
