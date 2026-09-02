@@ -5,6 +5,8 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+  merge_group:
+    types: [checks_requested]
 
 # Cancel superseded runs on the same ref. Scoped to PRs only: a new push to a PR makes the
 # in-flight run obsolete, so killing it saves a full emulator boot + 29-module test pass. Master
