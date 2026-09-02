@@ -238,6 +238,7 @@ jobs:
         with:
           name: android-lint-reports
           path: '**/build/reports/lint-results-*.html'
+          retention-days: 7
 
   dependency-guard:
     name: Dependency Guard
@@ -329,6 +330,7 @@ jobs:
             **/build/test-results/
             **/build/reports/tests/
             build/reports/test-tier-inventory.md
+          retention-days: 7
 
   # Two profile-balanced Paparazzi shards cut the lane's wall clock while preserving one stable
   # aggregate name for verdict adoption and CI Gate. Keep the explicit task union aligned with every
@@ -413,6 +415,7 @@ jobs:
         with:
           name: screenshot-failures-${{ matrix.shard }}
           path: '**/build/paparazzi/failures/'
+          retention-days: 7
 
       - name: Archive screenshot test results
         if: always()
@@ -421,6 +424,7 @@ jobs:
           name: screenshot-test-results-${{ matrix.shard }}
           path: '**/build/test-results/'
           if-no-files-found: error
+          retention-days: 7
 
       - name: Signal screenshot failure
         if: always() && steps.verify-paparazzi.outcome == 'failure'
@@ -538,6 +542,7 @@ jobs:
           path: |
             **/build/reports/androidTests/managedDevice/
             **/build/outputs/androidTest-results/managedDevice/
+          retention-days: 7
 
   instrumented-tests:
     name: Instrumented Tests (Gradle Managed Device)
