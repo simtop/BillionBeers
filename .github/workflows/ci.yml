@@ -294,30 +294,91 @@ jobs:
         run: chmod +x gradlew
 
       - name: Run Unit Tests
-        run: make test
+        id: unit_phase
+        run: bash .github/scripts/run-timed-command.sh make test
 
       - name: Generate test-tier ownership inventory
-        run: make test-tier-inventory
+        id: inventory_phase
+        run: bash .github/scripts/run-timed-command.sh make test-tier-inventory
 
       - name: Run Konsist Architecture Rules
-        run: make konsist
+        id: konsist_phase
+        run: bash .github/scripts/run-timed-command.sh make konsist
 
       # Konsist reads each feature's own build-script text, so it can't see a data-layer module
       # arriving through an intermediate dependency's api(...) declaration. This resolves the
       # actual compile classpath instead - same invariant (13, AGENTS.md), the gap Konsist leaves.
       - name: Check data-layer classpath boundary
-        run: make check-data-layer-boundary
+        id: classpath_phase
+        run: bash .github/scripts/run-timed-command.sh make check-data-layer-boundary
 
       # The checked-in graph policy validates direct and resolved transitive production project
       # edges, including explicit API exposure. It complements Konsist's faster source/build-script
       # diagnostics with the classpath Gradle actually gives each consumer.
       - name: Check resolved architecture graph policy
-        run: make architecture-policy
+        id: architecture_phase
+        run: bash .github/scripts/run-timed-command.sh make architecture-policy
 
       # High-water ratchet: jacocoRootReport reuses the debug unit tests just run above (they're
       # up-to-date), then fails if line coverage dropped below config/coverage-floor.txt.
       - name: Coverage floor check
-        run: make coverage-check
+        id: coverage_phase
+        run: bash .github/scripts/run-timed-command.sh make coverage-check
+
+      - name: Summarize unit lane timings
+        if: always()
+        env:
+          UNIT_OUTCOME: ${{ steps.unit_phase.outcome }}
+          UNIT_SECONDS: ${{ steps.unit_phase.outputs.elapsed_seconds }}
+          INVENTORY_OUTCOME: ${{ steps.inventory_phase.outcome }}
+          INVENTORY_SECONDS: ${{ steps.inventory_phase.outputs.elapsed_seconds }}
+          KONSIST_OUTCOME: ${{ steps.konsist_phase.outcome }}
+          KONSIST_SECONDS: ${{ steps.konsist_phase.outputs.elapsed_seconds }}
+          CLASSPATH_OUTCOME: ${{ steps.classpath_phase.outcome }}
+          CLASSPATH_SECONDS: ${{ steps.classpath_phase.outputs.elapsed_seconds }}
+          ARCHITECTURE_OUTCOME: ${{ steps.architecture_phase.outcome }}
+          ARCHITECTURE_SECONDS: ${{ steps.architecture_phase.outputs.elapsed_seconds }}
+          COVERAGE_OUTCOME: ${{ steps.coverage_phase.outcome }}
+          COVERAGE_SECONDS: ${{ steps.coverage_phase.outputs.elapsed_seconds }}
+        run: |
+          format_duration() {
+            local seconds="${1:-}"
+            if [[ ! "$seconds" =~ ^[0-9]+$ ]]; then
+              printf '—'
+              return
+            fi
+            printf '%dm %02ds' "$((seconds / 60))" "$((seconds % 60))"
+          }
+
+          phase_total=0
+          for seconds in \
+            "$UNIT_SECONDS" \
+            "$INVENTORY_SECONDS" \
+            "$KONSIST_SECONDS" \
+            "$CLASSPATH_SECONDS" \
+            "$ARCHITECTURE_SECONDS" \
+            "$COVERAGE_SECONDS"; do
+            if [[ "$seconds" =~ ^[0-9]+$ ]]; then
+              phase_total=$((phase_total + seconds))
+            fi
+          done
+
+          {
+            echo "### Unit lane phase timings"
+            echo ""
+            echo "| Phase | Outcome | Elapsed |"
+            echo "|---|---|---:|"
+            printf '| Unit tests | `%s` | %s |\n' "$UNIT_OUTCOME" "$(format_duration "$UNIT_SECONDS")"
+            printf '| Test-tier inventory | `%s` | %s |\n' "$INVENTORY_OUTCOME" "$(format_duration "$INVENTORY_SECONDS")"
+            printf '| Konsist | `%s` | %s |\n' "$KONSIST_OUTCOME" "$(format_duration "$KONSIST_SECONDS")"
+            printf '| Data-layer classpath | `%s` | %s |\n' "$CLASSPATH_OUTCOME" "$(format_duration "$CLASSPATH_SECONDS")"
+            printf '| Architecture policy | `%s` | %s |\n' "$ARCHITECTURE_OUTCOME" "$(format_duration "$ARCHITECTURE_SECONDS")"
+            printf '| Coverage floor | `%s` | %s |\n' "$COVERAGE_OUTCOME" "$(format_duration "$COVERAGE_SECONDS")"
+            echo ""
+            echo "Measured phase total: **$(format_duration "$phase_total")**"
+            echo ""
+            echo "_Excludes checkout, JDK/Gradle setup, report upload, and skipped phases._"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Archive Test Reports
         if: always()
