@@ -24,6 +24,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
+      - name: Test CI failure summary parser
+        run: python3 .github/scripts/test_summarize_test_failures.py
+
       - name: Set up JDK 23
         uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v5
         with:
@@ -425,35 +428,13 @@ jobs:
         run: make screenshot-verify
         continue-on-error: true
 
-      - name: Identify Failed Modules
+      - name: Summarize screenshot failures
         if: always() && steps.verify-paparazzi.outcome == 'failure'
-        id: failed-modules
-        run: |
-          FAILED_MODS=$(find . -name "failures" -type d -path "*/build/paparazzi/failures" | sed 's|^./||' | sed 's|/build/paparazzi/failures||' | sed 's|/|:|g' | sed 's|^|:|' | xargs | tr ',' ' ')
-          echo "modules=$FAILED_MODS" >> $GITHUB_OUTPUT
-          echo "Failed modules detected: $FAILED_MODS"
-
-      - name: Generate Screenshot Failure Report
-        if: always() && steps.verify-paparazzi.outcome == 'failure'
-        run: |
-          FAILED_MODS="${{ steps.failed-modules.outputs.modules }}"
-          BRANCH_NAME="${{ github.head_ref || github.ref_name }}"
-
-          echo "### 📸 Screenshot Verification Failed" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "The following modules have screenshot regressions:" >> $GITHUB_STEP_SUMMARY
-          for mod in $FAILED_MODS; do
-            echo "- \`$mod\`" >> $GITHUB_STEP_SUMMARY
-          done
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "#### 🛠️ How to fix" >> $GITHUB_STEP_SUMMARY
-          echo "To update the screenshots for these modules, you can trigger the recording workflow:" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-          echo "gh workflow run record_screenshots.yml --ref $BRANCH_NAME -f modules=\"$FAILED_MODS\"" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Alternatively, you can manually check the failure diffs in the artifacts below. ⬇️" >> $GITHUB_STEP_SUMMARY
+        env:
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+        run: >-
+          python3 .github/scripts/summarize-test-failures.py paparazzi
+          --branch "$BRANCH_NAME"
 
       - name: Upload Screenshot Failures
         if: always() && steps.verify-paparazzi.outcome == 'failure'
@@ -524,6 +505,7 @@ jobs:
       # (licenses + package registry + the created AVD), and must be proven on a live CI run.
 
       - name: Run instrumented tests on the managed devices
+        id: managed_device_tests
         # The `ci` group is the ATD fast lane. The slower API 37 lane is the `compat` group and
         # runs weekly (.github/workflows/weekly-compat.yml). Which devices those mean is defined
         # in build-logic, not here.
@@ -532,7 +514,15 @@ jobs:
       # Debug UI tests prove screen behavior; this black-box lane proves the minified target launches
       # and shows its production activity without requiring a Play signing identity.
       - name: Run minified release launch smoke test
+        id: release_smoke_tests
         run: ./gradlew :app-release-smoke:atdApi35ReleaseSmokeAndroidTest
+
+      - name: Summarize instrumented test failures
+        if: >-
+          always() &&
+          (steps.managed_device_tests.outcome == 'failure' ||
+          steps.release_smoke_tests.outcome == 'failure')
+        run: python3 .github/scripts/summarize-test-failures.py managed-device
 
       - name: Archive instrumented test reports
         if: always()
