@@ -90,7 +90,7 @@ class BeersSearchInputUiTest {
 
     // performTextInput commits through the real input connection, so the callback sees the whole
     // committed string rather than one emission per character.
-    assertEquals("punk", typed.last())
+    assertEquals("probe-mutation", typed.last())
   }
 
   /**
