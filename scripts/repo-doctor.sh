@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
-# This script only calls GET endpoints through gh. It checks names and metadata, never secret
-# values. The defaults describe BillionBeers; REPO_DOCTOR_* overrides let an adopting repository
-# keep the same doctor while it changes its branch/check/secret names.
+# This script only reads metadata through gh: REST GETs plus a read-only GraphQL query. It checks
+# names and metadata, never secret values. The defaults describe BillionBeers; REPO_DOCTOR_*
+# overrides let an adopting repository keep the same doctor while it changes its branch/check/secret
+# names.
 repo="${REPO:-${1:-}}"
 requested_branch="${BRANCH:-${2:-}}"
 expected_default_branch="${REPO_DOCTOR_DEFAULT_BRANCH:-master}"
@@ -77,11 +78,11 @@ else
   if jq -e --arg check "$required_check" '
       .required_status_checks != null and
       .required_status_checks.strict == true and
-      ((.required_status_checks.contexts // []) | index($check) != null)
+      (.required_status_checks.contexts // []) == [$check]
     ' >/dev/null <<<"$protection_json"; then
-    pass "branch protection requires strict status check: $required_check"
+    pass "branch protection requires only the strict status check: $required_check"
   else
-    fail "branch protection does not require strict status check: $required_check"
+    fail "branch protection does not require exactly one strict status check: $required_check"
   fi
 
   if jq -e '.allow_force_pushes.enabled == false and .allow_deletions.enabled == false' \
@@ -97,6 +98,30 @@ if [[ -f .github/workflows/ci.yml ]] && rg -q '^  ci-gate:' .github/workflows/ci
   pass 'ci.yml defines the CI Gate aggregate job'
 else
   fail 'ci.yml does not define the expected CI Gate aggregate job'
+fi
+
+if [[ -f .github/workflows/ci.yml ]] && rg -q '^  merge_group:' .github/workflows/ci.yml; then
+  pass 'ci.yml subscribes to merge-group checks'
+else
+  fail 'ci.yml does not subscribe to merge-group checks'
+fi
+
+repo_owner="${repo%%/*}"
+repo_name="${repo#*/}"
+merge_queue_json="$(gh api graphql \
+  -f query='query($owner: String!, $name: String!, $branch: String!) { repository(owner: $owner, name: $name) { owner { __typename } mergeQueue(branch: $branch) { id } } }' \
+  -F owner="$repo_owner" -F name="$repo_name" -F branch="$branch" 2>/dev/null || true)"
+if [[ -z "$merge_queue_json" ]] || jq -e '.errors | length > 0' >/dev/null 2>&1 <<<"$merge_queue_json"; then
+  fail "merge queue state could not be read for $branch"
+else
+  owner_type="$(jq -r '.data.repository.owner.__typename // empty' <<<"$merge_queue_json")"
+  if jq -e '.data.repository.mergeQueue != null' >/dev/null <<<"$merge_queue_json"; then
+    pass "native merge queue is active for $branch"
+  elif [[ "$owner_type" == 'User' ]]; then
+    note "native merge queue is unavailable while $repo is owned by a personal account"
+  else
+    fail "native merge queue is not active for $branch"
+  fi
 fi
 
 if [[ -f .github/dependabot.yml ]] \

@@ -26,9 +26,11 @@
 #   from the second push onward every unaffected lane rerun, which is the exact case (a PR being
 #   fixed over several pushes) the mechanism exists to speed up. A cancelled run is still handled:
 #   its unstarted lanes are `cancelled`, not `skipped`, so they fail open.
-# - Every uncertainty fails open to running everything: non-PR events, first run of a PR,
-#   unreachable BEFORE, no or unreadable previous run, renamed jobs, a previous run still in
-#   flight. Skipping a real test is the costly mistake; an extra run is just minutes.
+# - Every uncertainty fails open to running everything: non-PR events (including merge-group
+#   candidates), first run of a PR, unreachable BEFORE, no or unreadable previous run, renamed
+#   jobs, a previous run still in flight. Skipping a real test is the costly mistake; an extra run
+#   is just minutes. Merge groups must validate their synthetic base-plus-queue SHA from scratch,
+#   never inherit a verdict from the PR head.
 # - The unit/screenshot split mirrors the test filter in
 #   build-logic/convention/src/main/kotlin/billionbeers.android.screenshot.gradle.kts: plain test
 #   runs exclude com.simtop.billionbeers.screenshot.*, Paparazzi runs include only it, and the
@@ -112,7 +114,7 @@ classify_all() {
 }
 
 if [ "$EVENT_NAME" != "pull_request" ]; then
-  emit true true true "not a PR - post-merge validation is always complete"
+  emit true true true "non-PR event - complete validation"
   exit 0
 fi
 

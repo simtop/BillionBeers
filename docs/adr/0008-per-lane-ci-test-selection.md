@@ -81,6 +81,13 @@ the orphaned commit is never fetched), no or unreadable previous run, a non-nume
 renamed job, and a previous run still in flight all run the full suite. Skipping a real test is the
 costly mistake; an extra run is minutes.
 
+### 6. Merge-group candidates always run complete validation
+
+The required workflow subscribes to GitHub's `merge_group: checks_requested` event. A merge-group
+SHA represents the latest base plus the queued entries, not the already-tested pull-request head, so
+it goes through the existing non-PR fail-open branch and runs all three heavy lanes. It never adopts
+a PR-head verdict. The same stable `CI Gate` is then reported for branch protection.
+
 ## Consequences
 
 Validated live rather than by argument. A docs-only push skipped all three lanes with the gate

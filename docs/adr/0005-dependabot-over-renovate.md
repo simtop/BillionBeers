@@ -12,7 +12,9 @@ Mend Renovate GitHub App. Both handle Gradle version catalogs adequately as of t
 
 ## Decision
 
-Use Dependabot (`.github/dependabot.yml`), not Renovate.
+Use Dependabot (`.github/dependabot.yml`), not Renovate. Use GitHub's native merge queue to
+sequence eligible updates when repository ownership makes that feature available; do not maintain a
+home-grown queue script in parallel with GitHub's required-check model.
 
 ## Why
 
@@ -44,6 +46,16 @@ Renovate's real advantages are given up deliberately:
   status checks, and enabling the repo's `allow_auto_merge` setting. Both are now in place. Major
   version bumps are never auto-merged (checked independently of `dependabot.yml`'s own
   `update-types` group filter, as a second gate in the auto-merge workflow itself).
-- Revisit if the ~130-entry catalog's monthly PR volume becomes unmanageable even with grouping,
-  or if this ever grows into a multi-repo/team setup where Renovate's dashboard earns its third-
-  party-trust cost.
+- `gh pr merge --auto --squash` remains the enrollment command. With a required merge queue, GitHub
+  makes it queue-aware: an eligible PR enters the queue, while a PR still waiting on requirements
+  keeps auto-merge armed and enters when eligible. The required workflow subscribes to
+  `merge_group`, and those synthetic candidates run complete validation rather than adopting a
+  verdict from the PR head.
+- The repository is currently personal-account-owned, so GitHub's native merge queue is unavailable
+  and activation is deferred. `scripts/repo-doctor.sh` reports this as an informational external
+  constraint. Transfer to organization ownership is the reopen trigger; after a transfer, configure
+  and validate the native queue before considering a custom sequencer. A transfer is not implied by
+  this ADR because it changes repository ownership and URLs.
+- Revisit Dependabot versus Renovate if the ~130-entry catalog's monthly PR volume becomes
+  unmanageable even with grouping, or if this ever grows into a multi-repo/team setup where
+  Renovate's dashboard earns its third-party-trust cost.
