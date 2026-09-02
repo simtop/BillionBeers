@@ -45,9 +45,7 @@ def report_paths(root: Path, mode: str) -> list[Path]:
     reports = []
     for path in root.rglob("TEST-*.xml"):
         if mode == "paparazzi":
-            if contains_path(path, ("build", "test-results")) and any(
-                "paparazzi" in part.lower() for part in path.parts
-            ):
+            if contains_path(path, ("build", "test-results")):
                 reports.append(path)
         elif contains_path(
             path,

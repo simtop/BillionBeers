@@ -31,7 +31,7 @@ class TestFailureSummaryTest(unittest.TestCase):
             root = Path(directory)
             write(
                 root,
-                "feature/beerslist/build/test-results/verifyPaparazziDebug/TEST-screenshots.xml",
+                "feature/beerslist/build/test-results/testDebugUnitTest/TEST-screenshots.xml",
                 """<testsuite>
   <testcase classname="com.simtop.billionbeers.screenshot.BeersListScreenshotTest" name="snapshot[BeerList_dark_fr_rtl]"><failure/></testcase>
   <testcase classname="com.simtop.billionbeers.screenshot.BeersListScreenshotTest" name="snapshot[BeerList_light_en]"><error/></testcase>
@@ -112,7 +112,7 @@ class TestFailureSummaryTest(unittest.TestCase):
             root = Path(directory)
             malformed = write(
                 root,
-                "catalog/build/test-results/verifyPaparazziDebug/TEST-broken.xml",
+                "catalog/build/test-results/testDebugUnitTest/TEST-broken.xml",
                 "<testsuite>",
             )
             write(root, "catalog/build/paparazzi/failures/delta-example.png")
