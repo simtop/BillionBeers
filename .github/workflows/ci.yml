@@ -497,12 +497,24 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      # A `system-images` cache was removed here on purpose. Restoring a partial system-image cache
-      # breaks Gradle Managed Devices' `atdApi35Setup` (device provisioning) task: every CI run
-      # with a cache *miss* (fresh sdkmanager download) passed, and every run with a cache *hit*
-      # failed at setup. GMD now downloads the image each run (~2m45s). Do NOT re-add a bare
-      # `system-images` cache - a correct re-introduction has to capture the whole SDK/AVD state
-      # (licenses + package registry + the created AVD), and must be proven on a live CI run.
+      - name: Restore coherent managed-device experiment cache
+        id: managed_device_cache
+        # Experiment-only: the run id gives the first attempt a guaranteed miss and its rerun a
+        # hit without letting restored device state leak into another commit or ordinary CI run.
+        # The old system-image-only cache failed at atdApi35Setup. This candidate keeps the package
+        # registry, licenses, emulator, image, and created AVD together while excluding live locks.
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            /usr/local/lib/android/sdk/.knownPackages
+            /usr/local/lib/android/sdk/emulator/
+            /usr/local/lib/android/sdk/licenses/
+            /usr/local/lib/android/sdk/system-images/android-35/google_atd/x86_64/
+            /home/runner/.android/cache/
+            /home/runner/.android/avd/gradle-managed/dev35_google_atd_x86_64_Pixel_6.avd/
+            /home/runner/.android/avd/gradle-managed/dev35_google_atd_x86_64_Pixel_6.ini
+            !/home/runner/.android/avd/gradle-managed/**/*.lock
+          key: managed-device-experiment-${{ runner.os }}-${{ runner.arch }}-${{ github.run_id }}-${{ hashFiles('build-logic/convention/src/main/kotlin/billionbeers.android.managed.device.gradle.kts') }}
 
       - name: Run instrumented tests on the managed devices
         id: managed_device_tests
@@ -531,6 +543,7 @@ jobs:
           MANAGED_DEVICE_SECONDS: ${{ steps.managed_device_tests.outputs.elapsed_seconds }}
           RELEASE_SMOKE_OUTCOME: ${{ steps.release_smoke_tests.outcome }}
           RELEASE_SMOKE_SECONDS: ${{ steps.release_smoke_tests.outputs.elapsed_seconds }}
+          MANAGED_DEVICE_CACHE_HIT: ${{ steps.managed_device_cache.outputs.cache-hit }}
         run: |
           format_duration() {
             local seconds="${1:-}"
@@ -559,6 +572,8 @@ jobs:
               "$RELEASE_SMOKE_OUTCOME" "$(format_duration "$RELEASE_SMOKE_SECONDS")"
             echo ""
             echo "Measured phase total: **$(format_duration "$phase_total")**"
+            echo ""
+            printf 'Experiment cache hit: **`%s`**\n' "${MANAGED_DEVICE_CACHE_HIT:-false}"
             echo ""
             echo "_Task-level Gradle profiles are attached as a separate artifact._"
           } >> "$GITHUB_STEP_SUMMARY"
