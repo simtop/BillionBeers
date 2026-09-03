@@ -502,13 +502,13 @@ jobs:
         # Experiment-only: the run id gives the first attempt a guaranteed miss and its rerun a
         # hit without letting restored device state leak into another commit or ordinary CI run.
         # The old system-image-only cache failed at atdApi35Setup. This candidate keeps the package
-        # registry, licenses, emulator, image, and created AVD together while excluding live locks.
+        # registry, emulator, image, and created AVD together while excluding live locks. Licenses
+        # stay runner-provided: restoring their root-owned directory fails on hosted runners.
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             /usr/local/lib/android/sdk/.knownPackages
             /usr/local/lib/android/sdk/emulator/
-            /usr/local/lib/android/sdk/licenses/
             /usr/local/lib/android/sdk/system-images/android-35/google_atd/x86_64/
             /home/runner/.android/cache/
             /home/runner/.android/avd/gradle-managed/dev35_google_atd_x86_64_Pixel_6.avd/
