@@ -136,10 +136,40 @@ The single instrumented artifact includes both the HTML report and raw managed-d
 outputs. Those paths preserve the owning module, and failed test cases retain their class and method,
 so a failure is diagnosable without a matrix.
 
+**The remaining single job was profiled before considering a device cache.** PR #206 added
+timing-only Gradle profiles without changing the tasks, their order, or the gate contract. Six live
+samples met the normalized-run threshold:
+
+| Run | Debug managed device | Release smoke | Measured phases | Whole job | Detekt | Job / Detekt |
+|---|---:|---:|---:|---:|---:|---:|
+| `33687414992` | 5m07s | 47s | 5m54s | 6m27s | 50s | 7.74x |
+| `33688959440`, attempt 1 | 5m09s | 45s | 5m54s | 6m32s | 44s | 8.91x |
+| `33688959440`, attempt 2 | 4m25s | 33s | 4m58s | 5m41s | 1m02s | 5.50x |
+| `33688959440`, attempt 3 | 4m13s | 35s | 4m48s | 5m33s | 1m01s | 5.46x |
+| `33688959440`, attempt 4 | 4m12s | 26s | 4m38s | 5m18s | 1m24s | 3.79x |
+| `33688959440`, attempt 5 | 4m37s | 34s | 5m11s | 5m46s | 1m03s | 5.49x |
+
+The medians are 4m31s for the debug managed-device build, 35s for release smoke, 5m05s for
+measured phases, and 5m44s for the whole job. The debug build is about 89% of measured phase time.
+Four preserved profiles put summed `atdApi35Setup` work in a narrow 6m27s–6m55s band and the
+leading `:app:atdApi35Setup` task at 1m34s–1m41s; those task durations overlap and must not be added
+and reported as wall clock.
+
+A bare system-image cache is still rejected, now on performance as well as correctness. Historical
+cache-hit run `29949691071` restored its 732 MB entry in about 12 seconds and then failed
+`:app:atdApi35Setup` because an AGP setup input had no value. The inspected current run downloaded
+the ATD image in about 17 seconds, so even a repaired image-only cache has a theoretical saving of
+roughly five seconds. A coherent SDK plus created-AVD cache is a separate experiment: it has at most
+the leading setup task's ~1m40s ceiling before restore overhead, must exclude active-device locks,
+must invalidate on the device definition and runner OS, and must pass a live cache-hit run. Keep it
+only if the normalized whole-job gain reaches 20%; one green hit is a correctness proof, not a speed
+claim.
+
 ## When to revisit
 
 - Reconsider sharding only after the fixed setup/device cost falls materially or the module graph
   grows enough that execution dominates it. Profile by task before choosing a new split.
+- Reconsider caching only as a coherent SDK/AVD experiment; never restore `system-images` alone.
 - If another module joins the tier, its managed-device convention opt-in automatically adds it to
   `ciGroupDebugAndroidTest`; no CI task list should duplicate that ownership.
 
