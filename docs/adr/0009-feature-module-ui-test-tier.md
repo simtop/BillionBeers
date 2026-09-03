@@ -165,11 +165,39 @@ must invalidate on the device definition and runner OS, and must pass a live cac
 only if the normalized whole-job gain reaches 20%; one green hit is a correctness proof, not a speed
 claim.
 
+**The coherent SDK/AVD cache was tested and rejected.** PR #208 isolated the candidate with a
+run-ID key, so attempt 1 had to miss and its rerun had to hit without leaking cached device state
+into ordinary CI. The first archive also included the preinstalled SDK `licenses` directory; its
+restore failed because the hosted runner could not change that root-owned directory's timestamps or
+mode. The corrected archive left licenses runner-provided and cached the SDK package registry,
+emulator, ATD image, Android repository cache, created AVD, and AVD metadata while excluding locks.
+Both corrected attempts were green:
+
+| Run | Cache | Debug managed device | Release smoke | Measured phases | Whole job | Detekt | Job / Detekt |
+|---|---|---:|---:|---:|---:|---:|---:|
+| `33736989531`, attempt 1 | miss | 4m52s | 45s | 5m37s | 6m24s | 53s | 7.25x |
+| `33736989531`, attempt 2 | hit | 4m54s | 43s | 5m37s | 6m27s | 53s | 7.30x |
+
+The hit restored a 1,087,542,503-byte compressed archive in about 13 seconds. It saved no measured
+phase time and made the whole job three seconds slower despite an identical same-run Detekt time.
+The profiles explain why: summed setup-task work changed from about 6m45s on the miss to 7m05s on
+the hit, while device-test work changed from about 4m51s to 4m33s. The restored AVD did not remove
+the per-module provisioning and boot work; ordinary runner variance merely moved time between the
+overlapping setup and execution tasks.
+
+More samples would be necessary to claim a small improvement, but not to reject a candidate whose
+paired normalizer and measured total are identical and whose profile shows that its intended work
+was not eliminated. It is already on the wrong side of the 20% acceptance threshold. Keep the
+single job with timing profiles and no managed-device cache. PR #208 remains the implementation
+archive.
+
 ## When to revisit
 
 - Reconsider sharding only after the fixed setup/device cost falls materially or the module graph
   grows enough that execution dominates it. Profile by task before choosing a new split.
-- Reconsider caching only as a coherent SDK/AVD experiment; never restore `system-images` alone.
+- Reconsider caching only if AGP can reuse restored device state without repeating the per-module
+  setup work, or if a new profile shows at least a 20% whole-job ceiling after archive restore;
+  never restore `system-images` alone.
 - If another module joins the tier, its managed-device convention opt-in automatically adds it to
   `ciGroupDebugAndroidTest`; no CI task list should duplicate that ownership.
 
