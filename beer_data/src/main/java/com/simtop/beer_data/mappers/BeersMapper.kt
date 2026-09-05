@@ -10,7 +10,12 @@ import com.simtop.beer_network.network.BeersService
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.beerdomain.domain.models.Brewery
+import com.simtop.core.core.Diagnostic
+import com.simtop.core.core.DiagnosticArea
+import com.simtop.core.core.DiagnosticCode
+import com.simtop.core.core.DiagnosticLevel
 import com.simtop.core.core.LanguageProvider
+import com.simtop.core.core.LogTag
 import com.simtop.core.core.Logger
 import dev.zacsweers.metro.Inject
 
@@ -23,9 +28,9 @@ constructor(private val languageProvider: LanguageProvider, private val logger: 
     val translation =
       response?.translations?.find { it.language.code == languageCode }
         ?: response?.translations?.find { it.language.code == BeersService.DEFAULT_LANGUAGE_CODE }
-    if (response?.id == null) logMissingField("id", response)
-    if (response?.name == null) logMissingField("name", response)
-    if (translation == null) logMissingField("translations (matching language)", response)
+    if (response?.id == null) logger.warn(LogTag.BEERS_MAPPER, MISSING_BEER_ID)
+    if (response?.name == null) logger.warn(LogTag.BEERS_MAPPER, MISSING_BEER_NAME)
+    if (translation == null) logger.warn(LogTag.BEERS_MAPPER, MISSING_BEER_TRANSLATION)
 
     return Beer(
       id = response?.id ?: "",
@@ -67,20 +72,16 @@ constructor(private val languageProvider: LanguageProvider, private val logger: 
   private fun List<NamedEntity>?.localizedNames(languageCode: String): List<String> =
     orEmpty().map { it.localizedName(languageCode) }.filter { it.isNotEmpty() }
 
-  private fun logMissingField(field: String, response: BeersApiResponseItem?) {
-    logger.warn(TAG, "missing $field for beer id=${response?.id}, defaulting")
-  }
-
   fun fromTypologyToBeerStyle(response: TypologyApiResponseItem): BeerStyle {
     if (response.id == null || response.name == null) {
-      logger.warn(TAG, "missing id or name for typology id=${response.id}, defaulting")
+      logger.warn(LogTag.BEERS_MAPPER, MISSING_STYLE_ID_OR_NAME)
     }
     return BeerStyle(id = response.id ?: "", name = response.name ?: "")
   }
 
   fun fromBreweryApiResponseItemToBrewery(response: BreweryApiResponseItem): Brewery {
     if (response.id == null || response.name == null) {
-      logger.warn(TAG, "missing id or name for brewery id=${response.id}, defaulting")
+      logger.warn(LogTag.BEERS_MAPPER, MISSING_BREWERY_ID_OR_NAME)
     }
     return Brewery(
       id = response.id ?: "",
@@ -136,6 +137,35 @@ constructor(private val languageProvider: LanguageProvider, private val logger: 
     )
 
   private companion object {
-    const val TAG = "BeersMapper"
+    val MISSING_BEER_ID =
+      Diagnostic(
+        DiagnosticArea.DATA_MAPPING,
+        DiagnosticCode.MISSING_BEER_ID,
+        DiagnosticLevel.WARNING,
+      )
+    val MISSING_BEER_NAME =
+      Diagnostic(
+        DiagnosticArea.DATA_MAPPING,
+        DiagnosticCode.MISSING_BEER_NAME,
+        DiagnosticLevel.WARNING,
+      )
+    val MISSING_BEER_TRANSLATION =
+      Diagnostic(
+        DiagnosticArea.DATA_MAPPING,
+        DiagnosticCode.MISSING_BEER_TRANSLATION,
+        DiagnosticLevel.WARNING,
+      )
+    val MISSING_STYLE_ID_OR_NAME =
+      Diagnostic(
+        DiagnosticArea.DATA_MAPPING,
+        DiagnosticCode.MISSING_STYLE_ID_OR_NAME,
+        DiagnosticLevel.WARNING,
+      )
+    val MISSING_BREWERY_ID_OR_NAME =
+      Diagnostic(
+        DiagnosticArea.DATA_MAPPING,
+        DiagnosticCode.MISSING_BREWERY_ID_OR_NAME,
+        DiagnosticLevel.WARNING,
+      )
   }
 }
