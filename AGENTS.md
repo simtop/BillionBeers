@@ -1,331 +1,114 @@
 # BillionBeers — agent onboarding
 
-Read this first. It exists so an agent doesn't have to re-derive the same facts by grepping every
-session: what the modules are, what the rules are, and what's already been decided.
+A multi-module Android beer catalog over the read-only `brewbuddy.dev` API: Compose,
+Metro DI, Room SSOT, hand-rolled paging and two on-demand dynamic features.
+The architecture is part of the product; follow enforced conventions.
 
-**Ground truth beats this file.** Where it names an ADR or a Konsist test, that file is
-authoritative — this is the map, not the territory. If you find a contradiction, the code wins and
-this file needs a fix.
+Code, build scripts, ADRs and Konsist tests are authoritative. Correct this guide when
+it disagrees with them. Read the relevant ADR or enforcement test for rationale.
 
----
+## Where work belongs
 
-## 1. What this project is
-
-A production-shaped multi-module Android app (beer catalog) over `brewbuddy.dev`, a read-only
-json-server-style REST API. Compose UI, Metro DI, Room SSOT, hand-rolled paging, two on-demand
-dynamic feature modules, architecture rules enforced by Konsist in CI.
-
-It is a portfolio and template base, so the *shape* is the product: conventions are enforced by
-tooling rather than by memory, and deviations need a written reason.
-
----
-
-## 2. Module map
-
-| Module | What lives there |
+| Area | Modules / responsibility |
 |---|---|
-| `:app` | The shipping app: Metro graph assembly, `MainActivity`, nav host, `dynamicFeatures` declaration |
-| `:app-release-smoke` | Standalone `com.android.test` module for a black-box launch smoke against the debug-signed, minified app |
-| `:app-dev-beerslist` | Standalone dev-app for fast feature iteration (see `scripts/new-dev-app.sh`, `new-dev-app` skill) |
-| `:core` | Android-side core: DI modules (networking, observability), production `Logger` binding |
-| `:core:designsystem` | Theme, tokens, `@LightDarkPreviews` multipreview, `PreviewTheme` |
-| `:core-common` | **Pure JVM.** `PagingMediator`, `PagedListReducer`, `CachePolicy`, `Either`, `CommonUiState`, dispatchers, `Logger`/`AnalyticsTracker`/`CrashReporter` interfaces + no-op impls, `FeatureFlagProvider`, `LanguageProvider`, `ThemeController`, `NetworkFaultController` |
-| `:beerdomain:api` | Domain models + repository *interfaces* + typed sealed errors + nav values |
-| `:beerdomain:fakes` | Fakes for the domain interfaces, consumed by feature tests and dev-apps |
-| `:beer_network` | Retrofit service, DTOs (`@Serializable`), `BeersPage` header envelope |
-| `:beer_database` | Room database, DAOs, entities, migrations (currently v3) |
-| `:beer_data` | Repository impls, `BeersMapper`, `BeersPagerFactoryImpl`, error mapping at the data boundary |
-| `:feature:beerslist` | Catalog (paged) — regular feature module |
-| `:feature:beersearch` | Search-as-you-type (paged, in-memory) — regular feature module |
-| `:feature:beerdetail` | Detail — **on-demand dynamic feature** |
-| `:feature:beerbrowse` | Browse by style / brewery (tabs, paged) — **on-demand dynamic feature** |
-| `:presentation_utils` | Shared UI: paged-list scaffolding, `InfiniteListHandler`, dynamic-feature install (`InstallStatus`, `DynamicFeatureInstaller`, `DynamicFeatureLoader`), **and the strings dynamic features need** (see §3) |
-| `:navigation` | Nav keys / typed routes shared across features |
-| `:konsist` | The architecture rules. Pure JVM — see the gotcha in §5 |
-| `:testing-utils` | Pure-JVM shared test helpers |
-| `:testing-utils-android` | `BaseTestRobot` — the shared instrumented-test robot base, consumed by `:app` and by every feature module in the UI-test tier (ADR 0009) |
-| `:snapshot-testing`, `:snapshot-processor` | Paparazzi harness, deterministic screenshot environment, and the shared accessibility matrix; the KSP processor generates module-local preview inventories |
-| `:catalog`, `:catalog-annotations`, `:catalog-processor` | Demo/component catalog app + its KSP generator |
-| `:benchmark:{macrobenchmark,microbenchmark,baselineprofile}` | Perf budgets and baseline profile generation |
-| `build-logic` | Convention plugins (`billionbeers.android.feature`, `…dynamic.feature`, `…screenshot`, unused-deps, duplicate-classes). A separate composite build |
+| Assembly | `:app`: graph, navigation host, dynamic feature declarations |
+| Core | `:core`: Android DI/logger; `:core-common`: pure-JVM paging, errors and shared interfaces |
+| Domain | `:beerdomain:api`: immutable models/repository interfaces; `:beerdomain:fakes`: test fakes |
+| Data | `:beer_network`: Retrofit/DTOs; `:beer_database`: Room; `:beer_data`: repositories/mappers/pager factory |
+| Features | `:feature:beerslist`, `:feature:beersearch`; on-demand `:feature:beerdetail`, `:feature:beerbrowse` |
+| Shared UI | `:presentation_utils`: paging UI, split installation and dynamic-feature strings; `:navigation`: routes; `:core:designsystem`: theme/tokens/previews |
+| Catalog | `:catalog*`: component catalog/generator |
+| Tests | `:testing-utils` (JVM), `:testing-utils-android` (robots), `:snapshot-testing`, `:snapshot-processor`, `:konsist`, `:app-release-smoke` |
+| Build/perf | `build-logic`: composite build/conventions; `:benchmark:*`: physical-device measurements |
 
-Modules are **auto-discovered** by `settings.gradle.kts` — any directory with a build script is
-included. Adding a module needs no `settings.gradle.kts` edit.
+Modules are auto-discovered from build scripts; do not edit `settings.gradle.kts` to add one.
+Search `src/`, excluding `bin/` and `build/`: ignored IDE output can contain deleted sources.
 
-**`bin/` directories will mislead a grep.** `core-common/bin/` and `build-logic/convention/bin/`
-are leftover IDE output trees holding *deleted* sources — including `BaseUseCase.kt`, which was
-removed from the project. Both are gitignored and untracked, so they never reach a clone; the cost
-is local only. If a search hits `bin/`, you're reading a ghost — search `src/`, and `rm -rf` them
-when they get in the way. (`:konsist`'s build-script rules skip `bin/` for this reason.)
+## Enforced boundaries
 
----
+The exact source rules live in `konsist/src/test/`; resolved graph rules live in
+`build-logic` and `config/architecture/project-dependency-policy.json`.
 
-## 3. Invariants — break these and the build (or an instrumented test) breaks
+- Repository interfaces never import data types. Domain has no Android imports and uses
+  immutable models/collections. ViewModels depend only on domain-layer types.
+- Features do not depend on sibling features or declare data-layer modules; navigate via
+  `:navigation`. Resolved compile-classpath checks also reject transitive data exposure.
+- Dynamic-feature user-facing strings live in `:presentation_utils`, with translations;
+  importing a dynamic feature's own `R` breaks instrumented tests.
+- Fixtures belong in sibling `:fakes` / `:fixtures` modules, never `java-test-fixtures`.
+- One-shot UI events use `Channel(BUFFERED).receiveAsFlow()`, not `MutableSharedFlow`.
+- Every `src/` tree has a sibling build script. A module with `src/androidTest/` opts into
+  the managed-device convention. Benchmark and standalone release-smoke tiers are deliberate exceptions.
+- Test libraries never ship on production `implementation`/`api`; test infrastructure and
+  benchmarks have documented exceptions.
+- Production project edges and intentional `api` exposures follow
+  `config/architecture/project-dependency-policy.json`; run `make architecture-policy`.
+- New invariants require enforcement in the same change. `:konsist:test` must retain the
+  repository `.kt`/`.kts` task inputs or its filesystem checks can silently go UP-TO-DATE.
 
-The original thirteen are enforced by `:konsist`; the wording here is from the tests themselves.
+## Settled decisions
 
-1. **Repository interfaces do not import data-layer types.** (`RepositoryBoundaryTest`)
-2. **Feature modules never depend on other feature modules** — `beerslist` ⊥ `beerdetail`, and so
-   on. Cross-feature navigation goes through `:navigation`. (`FeatureModuleBoundaryTest`)
-3. **The `beerdomain` domain layer has no Android imports.** (`DomainLayerPurityTest`)
-4. **ViewModels depend only on domain-layer types.** This is the load-bearing precondition for the
-   use-case policy in ADR 0003 — without it, "inject the repository directly" becomes "inject
-   whatever you like". (`ViewModelBoundaryTest`)
-5. **User-facing strings for dynamic-feature modules live in `:presentation_utils`.** Resources
-   declared inside a dynamic feature module crash instrumented tests. This has bitten twice.
-   (`DynamicFeatureResourceBoundaryTest` — it catches the failure path, a dynamic-feature file
-   importing its *own* module `R`. Being Kotlin-only it can't see a stray `strings.xml` that
-   nothing references, which is harmless anyway.)
-6. **Dev-apps depend only on `api` + `fakes` modules** — that's what keeps their build fast.
-   (`DevAppDependencyBoundaryTest` enforces the load-bearing half: no `app-dev-*` build script may
-   declare `:beer_data`, `:beer_database` or `:beer_network`. It reads the build scripts directly,
-   since Konsist doesn't scan `.kts`.)
+Read the relevant [ADR](docs/adr/) before changing a settled choice.
 
-7. **Test fixtures live in sibling `:module:fakes` / `:module:fixtures` modules**, never Gradle's
-   `java-test-fixtures` plugin (ADR 0001 — measured build-time cost).
-   (`TestFixturesPluginBoundaryTest` — reads the build scripts, ignoring comment lines.)
-8. **One-shot UI events use `Channel(BUFFERED).receiveAsFlow()`**, never `MutableSharedFlow`, which
-   drops events when nothing is collecting. (`OneShotEventBoundaryTest`.)
+Keep hand-rolled paging, `Either<L, R>` with typed sealed errors, injected mapper classes,
+local-only availability. Add a use case only for behavior a
+repository call does not provide. ViewModels use bare `viewModelScope.launch`; choose a
+dispatcher where blocking/CPU work actually happens. Keep precompiled convention scripts
+and the measured repository-owned KSP screenshot discovery. Do not justify new modules
+by assumed build speed.
 
-9. **Domain models are immutable** — no `var`, and no `val` holding a mutable collection
-   (`MutableList`, `HashMap`, `Array`, …), which is the half that slips through review.
-   (`DomainModelImmutabilityTest`.)
+ADR 0010 defines declined infrastructure and reopen triggers; auth, remote writes, a shipped
+analytics/crash SDK and other backend-dependent features are not generic completeness work.
+ADR 0008 owns CI lane selection (`classify_path` in `.github/scripts/detect-change-scope.sh`).
+ADRs 0008/0009 preserve rejected sharding and cache experiments, including the coherent
+SDK/AVD cache: do not repeat them without changed inputs and a measurement hypothesis.
 
-10. **A module with `src/androidTest/` opts into the managed device** — via
-    `billionbeers.android.feature.uitest` (feature modules) or `billionbeers.android.managed.device`
-    directly. Without it the module has no `atdApi35DebugAndroidTest` task and is absent from
-    `ciGroupDebugAndroidTest`, so its tests compile, look like coverage, and never run.
-    `:benchmark:*` is exempt — benchmarks use their own runner and real hardware, not the ATD lane.
-    `make benchmark-check`'s startup budget is 500ms, calibrated on a Pixel 8 (medians 202-282ms) and
-    **enforced only on physical devices**; an emulator run reports its number and never gates.
-    (`InstrumentedTestOptInBoundaryTest` — reads the build scripts.)
+## Verification and tools
 
-11. **A `src/` directory has a build script beside it.** Otherwise nothing compiles, tests or ships
-    it, but a grep still finds it — the same failure mode as the stale `bin/` trees in §2. Note that
-    `./gradlew projects` is not proof a module is real: `:beerdomain`, `:feature` and `:benchmark`
-    appear there as containers Gradle synthesizes from nested includes, with no build script of
-    their own. (`OrphanedSourceTreeTest` — reads the filesystem. Caught
-    `beerdomain/src/main/AndroidManifest.xml` on adoption, orphaned when `:beerdomain` split into
-    `api`/`fakes`.)
+Use Makefile wrappers; `make help` lists commands. Choose checks that can falsify the change,
+then complete applicable architecture/static/UI gates. Do not rerun passed checks without
+new changes, failures or unresolved evidence. Do not run Android builds for prose-only edits.
 
-12. **Test-only libraries never sit on `implementation`/`api`** — they ship. `:core-common` had
-    `implementation(libs.coroutinesTest)` beside the `coroutines-core` line that replaced it, so
-    `kotlinx-coroutines-test` reached `:app`'s release classpath and its `TestMainDispatcherFactory`
-    was in the shipped APK's `META-INF/services`. `dependency-guard` could not catch it: the
-    baseline was recorded *with* the dependency already present, so it protected the defect.
-    `:benchmark:*`, `testing-utils*` and `build-logic` are exempt — for them a test library on
-    `implementation` is correct. (`TestLibraryBoundaryTest` — reads the catalog and build scripts.)
+- Compile the affected module, then `make test MODULE=:module`. Unscoped `make test` includes
+  the named JVM modules and build-logic; check `JVM_TEST_MODULES` when adding a JVM module.
+- `make konsist` checks source boundaries. `make architecture-policy` resolves project edges.
+- UI changes: `make screenshot-verify`; record with `make screenshot-record` and inspect PNGs.
+- `make lint` is Detekt, `make format` is Spotless, and `make android-lint` is Android Lint.
+  Resources require Android Lint and translated strings. Never regenerate a baseline to hide
+  a new finding.
+- Use `android-cli` for device/emulator work; check `android <command> --help` for syntax.
+  Install BillionBeers with `make install`: it stages on-demand splits through bundletool
+  local testing, which an ordinary APK install does not replace. `pm clear` removes that
+  staging; rerun `make install`. Run instrumented tests through the Makefile device targets.
+  For capabilities the installed CLI lacks (such as logcat), use adb from `ANDROID_HOME`.
+- Build-time measurements: `make build-budget` after material build/toolchain changes on a
+  quiet local machine; 15–20 minutes, not a CI wall-clock substitute. `make benchmark-check`
+  gates startup only on physical hardware.
+- Use one output-compression layer. Native sessions can use RTK; the Makefile selects
+  `rtk gradlew` when installed. Gateway-compressed sessions should set
+  `GRADLE_RUNNER=./gradlew` and use ordinary shell commands without RTK/snip wrappers.
+  The Makefile respects that environment override. Keep raw diffs and full failure evidence
+  available; output-token estimates are not subscription quota or money saved.
 
-13. **Feature modules never declare a data-layer module.** No `feature/*` build script may name
-    `:beer_data`, `:beer_database` or `:beer_network`; a feature reaches persistence and the network
-    through the `:beerdomain:api` repository interfaces, whose implementations `:app` binds. This is
-    a different concern from invariant 2, which discovers all feature siblings and rejects their
-    cross-feature imports and declarations. Invariant 4 covers ViewModel imports, and invariant 6
-    covers `app-dev-*`; neither replaces this feature-wide data dependency check. `:app` is exempt
-    — assembling the graph is its job. (`FeatureDataLayerBoundaryTest` — reads the build scripts.)
+## Skills and collaboration
 
-    `FeatureDataLayerBoundaryTest` only sees a data-layer module named in the feature's *own* build
-    script. It cannot see one arriving through an intermediate dependency's `api(...)` declaration —
-    a type the feature's compiler genuinely resolves, with nothing in the feature's own text to
-    catch it. `checkDataLayerClasspathBoundary`, a real Gradle task (not a Konsist test — it needs a
-    resolved dependency graph, which Konsist's static scan doesn't have) wired into `check` on every
-    `billionbeers.android.feature` / `billionbeers.android.dynamic.feature` module, closes that:
-    it resolves the module's own `debugCompileClasspath` and fails if a forbidden module shows up
-    anywhere in it. An `implementation(...)`-declared path is correctly not flagged — Gradle's own
-    configuration elision already keeps that off the compile classpath, so there is no real
-    violation to catch there. (`build-logic/convention/src/main/kotlin/FeatureBoundaryChecks.kt`.)
+Project skills live in `.claude/skills/`. A local `.agents/skills` symlink exposes the same
+source to Codex; read a relevant skill directly if it is absent from the session catalog.
+Use `android-cli` for Android tooling and `land` for commit/push/PR work.
+`make update-android-skills` is the skill-management entry point; it respects local pins
+and `.android-skills-ignore`. Do not run `android init` or `android skills add/remove` to
+create a second installation path. Read skill bodies only when relevant.
 
-Every invariant in this list is now mechanically enforced. If you add one, add its rule in the
-same change — a convention with no test is a convention that drifts.
+Use one agent by default. Delegate only when requested or when an independent bounded task
+clearly benefits and the session permits delegation. Give it a concise task and relevant
+paths; account for duplicated context and verification cost. Never require model-branded
+roles, multiple reviews or fable-mode for routine work. Keep model/provider preferences local.
 
-14. **Production project dependencies follow the checked-in architecture policy.**
-    `config/architecture/project-dependency-policy.json` defines path-pattern roles, permitted
-    production directions, intentional project `api(...)` exposures, and forbidden compile-classpath
-    roles. `verifyArchitectureGraph` resolves each module's compile classpath, so direct and
-    transitive project edges are checked; `make architecture-policy` is the local/CI entry point.
-    New `:feature:*` modules are classified by the generic feature pattern and do not require a
-    package list update. (`ArchitecturePolicyFunctionalTest` and
-    `ArchitecturePolicyTest` cover the forbidden fixture edges and the structural dynamic-feature
-    → app exception.)
+## Documentation and memory
 
-**`:konsist:test` declares the repo's `.kt`/`.kts` files as task inputs, and must keep doing so.**
-The rules read the project off the filesystem, which Gradle cannot see, so without that declaration
-the task goes UP-TO-DATE while the code it guards changes — measured, a flat invariant-2 violation
-left `make konsist` green at "3 up-to-date". The whole gate, not one rule.
-
----
-
-## 4. Settled decisions — don't re-litigate, read the ADR
-
-| Decision | Where |
-|---|---|
-| Test fixtures via sibling modules, not `java-test-fixtures` | `docs/adr/0001` |
-| Hand-rolled paging, no Paging3 (`PagingData` leaks through every layer) | `docs/adr/0002` |
-| A use case exists iff it does something a repository call doesn't — in practice **none survive today**; ViewModels inject `BeersRepository` directly, which is only safe because invariant 4 is enforced | `docs/adr/0003` |
-| Dev-apps can't host dynamic features | `docs/adr/0004` |
-| Dependabot over Renovate | `docs/adr/0005` |
-| CI supply-chain hardening: Actions SHA-pinned, gitleaks on PR ranges | `docs/adr/0006` |
-| Dependency verification enforced; `make verification-metadata` regenerates the ledger, and a CI workflow does it on Dependabot branches so auto-merge survives — it re-baselines dependency-guard first (else the regen aborts on stale-baseline drift), but only when the drift is version-only | `docs/adr/0007` |
-| Per-lane CI test selection: a lane runs if the push could affect it or it was red last time, else it adopts the green verdict. Rules live in one function in `.github/scripts/detect-change-scope.sh` | `docs/adr/0008` |
-| Instrumented UI tests live in the feature module that owns the screen; cross-feature and install-gate tests stay in `:app`. Cost is ~49s per *module* vs ~2s per *test*, so concentrate tests and add modules deliberately | `docs/adr/0009` |
-| **Non-goals** — auth, cert pinning, encrypted storage, integrity/anti-tamper, push, server-side `available` sync, a shipped analytics/crash SDK, consent flows, automatic retry, multi-process. All declined because the premise is absent (the backend isn't ours, is read-only, and is unauthenticated), each with its reopen trigger. Read it before "adding what a real app has" — and delete a row in the same PR that builds it | `docs/adr/0010` |
-| Dispatchers are chosen where the work is, not where the coroutine starts. ViewModels use a bare `viewModelScope.launch { }` — Room and Retrofit suspend calls are already main-safe, so an IO hop only moves state assignment off Main. Inject `CoroutineDispatcherProvider` only where a class actually calls `withContext`/`flowOn` (a blocking SDK, CPU work). StrictMode in debug is the detector that makes this safe | `docs/adr/0012` |
-| Build time is budgeted in `config/build-time-budget.txt` and measured **locally** by `make build-budget`, never in CI — a CI wall-clock number measures which runner the job drew. Clean build 37s cold / 4s warm; a deep ABI change costs only 1.11x a leaf one, so **per-build overhead dominates, not compilation** — do not justify a new module by build speed | `docs/adr/0011` |
-| Convention plugins stay **precompiled script plugins**; the project moved to them from binary plugins on purpose. Do not propose converting back on the usual grounds — precompiled scripts *can* share helper functions (see `AndroidCommon.kt`), and the configuration-time argument is largely neutralised by the configuration cache. Converting is a *measurement* task with a written method, not a judgement call. Declarative Gradle sits on top of this, not against it | `docs/adr/0013` |
-| Screenshot preview discovery uses the repository-owned KSP processor. It matched CPS across all 273 goldens and had a 21.9% lower branch-isolated median; PR #179 preserves CPS as the historical fallback. Reconsider if the speed advantage collapses or a required preview shape cannot reasonably be generated or bridged | `docs/adr/0014` |
-
-Also settled, without an ADR:
-
-- **Typed errors reuse `Either<L, R>` parameterized with a sealed error type** — the problem was
-  `Either<Exception, T>`'s untyped left, not `Either`. No new `Result`/`Outcome` type.
-- **`available` is local-only** even though the API has the field. The server value seeds a row on
-  first insert; nothing writes back. Now has an ADR — the reasoning and its reopen trigger live in
-  `docs/adr/0010`.
-- **The N+1 image fetch is gone** — list responses embed `image.url`. Don't reintroduce
-  `GET /images/{id}`.
-- **Paging is complete and plug-and-play** (5 phases, 8/8 criteria). A new filtered surface needs a
-  wider `BeersQuery` and a screen — **not** `core-common` changes.
-- **Mappers are injected classes, not objects**, so they're testable and swappable.
-
----
-
-## 5. Verification ladder
-
-Cheapest first. Run the narrowest rung that can falsify your change, then the ones above it before
-declaring done.
-
-1. **Compile** — `./gradlew :module:compileDebugKotlin --console=plain`
-2. **Unit tests** — `make test [MODULE=:feature:beerslist]`
-3. **Architecture** — `make konsist`
-4. **Screenshots** — `make screenshot-verify` (record with `make screenshot-record` and inspect the
-   PNGs; they are your eyes on the UI)
-5. **Architecture, lint / format** — `make architecture-policy`, `make lint`, `make format`, and **`make android-lint` whenever resources
-   change**. These are three separate gates and all three now fail:
-   - `make lint` is **Detekt**, and since the gate was adopted it **fails on new findings** and runs
-     in CI on the `format-check` job. The backlog present at adoption is frozen in per-module
-     `detekt-baseline.xml`; burn those down, and **never regenerate one to bury a new finding**
-     (same rule as `lint-baseline.xml`). To grandfather something deliberately:
-     `make detekt-baseline MODULE=:foo`, or dispatch `detekt_baseline.yml` against the branch — the
-     committed diff is the review. Test and `androidTest` sources are scanned too.
-     Compose-specific rules (`Compose:` block in `config/detekt/detekt.yml`) come from
-     [`mrmans0n/compose-rules`](https://github.com/mrmans0n/compose-rules), the actively
-     maintained continuation of `twitter/compose-rules` (frozen since 2023 — `slackhq/compose-lints`
-     is a different project, an Android Lint port, not a Detekt ruleset). Pinned to `0.4.x` because
-     `0.5.0+` requires Detekt 2.0.0-alpha, which would invalidate every `detekt-baseline.xml`.
-     `UnstableCollections`, `Material2`, `ComposableNestingDepth`, and `PreviewNaming` are
-     deliberately off; `ViewModelInjection` is repointed at `metroViewModel`/`assistedMetroViewModel`
-     since this project is on Metro, not Hilt.
-   - `make android-lint` is **Android Lint** (`:app:lintDebug`, checkDependencies across the whole
-     graph), gated by `app/lint-baseline.xml`. A string added to `values/strings.xml` without its
-     `values-fr` / `values-es` siblings passes every other rung and fails CI with
-     `MissingTranslation` — that is how PR #140 broke master.
-   - `make format` is Spotless; CI runs `spotlessCheck` and `format_fix.yml` can apply it for you.
-6. **Device** — instrumented tests, install, logcat: use the `billionbeers-android` skill, not
-   ad-hoc `adb`
-
-**Off the ladder, on purpose: `make build-budget` and `make benchmark-check`.** Both measure
-wall-clock, so both are local-and-deliberate rather than per-change gates — CI cannot control for
-hardware (ADR 0009 §"Note on measuring any of this", ADR 0011). Run `build-budget` when you change
-the build itself: a convention plugin, an annotation processor, the module graph. It takes 15–20
-minutes and it measures *your* machine, so close anything heavy first.
-
-**CI note: heavy lanes skip per-lane on PR pushes.** A push to an open PR reruns only the test
-lanes its diff can affect (goldens and `screenshot/` test folders → screenshot; `src/androidTest/`
-→ instrumented; other `src/test/` → unit; anything else → all) plus any lane that was red on the
-previous head; unaffected green lanes adopt their previous verdict. Docs/skills/scripts-only PRs
-still skip all heavy lanes. **To change what runs when, edit the single `classify_path` function**
-in `.github/scripts/detect-change-scope.sh`; the reasoning is in ADR 0008.
-
-**Gotcha: pure-JVM modules are invisible to `make test`.** It targets `testDebugUnitTest`, which
-plain `org.jetbrains.kotlin.jvm` modules (`:core-common`, `:konsist`, `:testing-utils`) don't have.
-Their tests need explicit invocation (`./gradlew :core-common:test`) or `make check`. `:konsist:test`
-silently never ran for a while because of exactly this.
-
-**Gotcha: `adb shell pm clear` breaks on-demand installs.** It wipes bundletool local-testing's
-staged splits; installs then fail with SplitInstall error −5 until `scripts/install-local-testing.sh`
-is re-run. Not an app bug.
-
-**Adding `androidTest` to a module: two traps, both now fixed in build-logic.** Recorded because
-the symptoms point away from the cause. (1) The screenshot convention used to feed its generated
-Paparazzi runner into *every* compile task matching `"Test"`, including
-`compileDebugAndroidTestKotlin` — so the first screenshot-enabled module to gain an androidTest
-source set failed with `Unresolved reference 'Paparazzi'` in a file it never wrote. The filter now
-matches `"UnitTest"`. (2) `PROJECT_TEST_RUNNER` used to name `MockTestRunner`, which lives in
-`app/src/androidTest` — every other module built a test APK referencing a class it did not contain
-and died on device with `ClassNotFoundException`. The default is now the stock
-`AndroidJUnitRunner`; `:app` opts up in its own build script. A module that needs a custom runner
-sets it in its own `android { defaultConfig { … } }`, which overrides the convention.
-
-**Instrumented tests are opt-in per module.** A module needs `billionbeers.android.managed.device`
-— directly, or via `billionbeers.android.feature.uitest` — for `atdApi35DebugAndroidTest` to exist
-and for CI's `ciGroupDebugAndroidTest` to pick it up. Without it the tests compile and never run,
-the `:konsist:test` failure mode; invariant 10 now enforces this. Opted in today: `:app`,
-`:beer_database`, `:feature:beerbrowse`, `:feature:beerdetail`, `:feature:beerslist`, `:feature:beersearch`. `:benchmark:microbenchmark` has `androidTest` sources but is
-*deliberately* out — it declares `AndroidBenchmarkRunner`, builds against
-`testBuildType = "release"`, and suppresses the `EMULATOR` error class, because a measurement taken
-on a managed virtual device is meaningless. It runs via `make benchmark-check`.
-
-The standalone `:app-release-smoke` module is also deliberately outside the debug UI group: its
-black-box test launches and displays the minified `:app` `releaseSmoke` target without importing
-production internals. Run it with `make release-smoke`.
-
-`make test-tier-inventory` writes an informational ownership matrix, including standalone
-`com.android.test` APKs. Scheduling and source-tree enforcement stay solely in
-`InstrumentedTestOptInBoundaryTest` and `OrphanedSourceTreeTest`; the report is not a second gate.
-
----
-
-## 6. Build & development commands
-
-Use the `Makefile` wrappers — they auto-detect `bb`/`rtk` and route through them.
-
-`make clean` · `deep-clean` · `build` · `install` · `test [MODULE=…]` · `konsist` · `lint` ·
-`format` · `check` · `screenshot-record` · `screenshot-verify` · `ui-test` · `release-smoke` ·
-`test-tier-inventory` · `benchmark-check` · `generate-baseline` · `new-feature-module` ·
-`new-dev-app` · `update-android-skills`
-(`make help` lists them all.)
-
-### Token optimization tools
-
-Three optional tools cut stdout volume; the Makefile uses them when installed.
-
-- **`rtk`** — compresses stdout from `git status`, test runners, etc. `rtk git status`
-- **`snip`** — YAML-driven CLI proxy filtering LLM context inputs. `snip git diff`
-- **`bb` (build-brief)** — filters Gradle output to summaries + failures, raw log to `/tmp`.
-  `bb ./gradlew assembleDebug`
-
----
-
-## 7. Skills
-
-Skills live in `.claude/skills/`. Reach for one whenever the task matches its domain.
-
-**Project skills:**
-- **`billionbeers-android`** — **always** for anything touching a device or emulator: emulators,
-  devices/SDK status, install/launch, screenshots, logcat, instrumented tests. It knows the correct
-  `adb` path (`$ANDROID_HOME/platform-tools/adb`) and the `installDebug` workaround.
-- **`new-dev-app`** — scaffold *and finish* a `app-dev-<feature>` sandbox module.
-- **`land`** — commit / push / PR with this repo's hygiene gates.
-
-**Official Android skills** — a curated subset of [android/skills](https://github.com/android/skills)
-is vendored (each carries a `.android-skill-source` marker): `android-cli`, `navigation-3`,
-`r8-analyzer`, `perfetto-trace-analysis`, `testing-setup`, `edge-to-edge`, `adaptive`,
-`android-intent-security`, and more.
-
-- **Sync:** `make update-android-skills` — installs new upstream skills, prunes removed ones, never
-  touches locally-authored skills.
-- **Opt out:** add the name to `.claude/skills/.android-skills-ignore`. Currently ignored:
-  `agp-9-upgrade`, `camera1-to-camerax`, `display-glasses-with-jetpack-compose-glimmer`,
-  `migrate-xml-views-to-jetpack-compose`, `wear-compose-m3`.
-
----
-
-## 8. Docs & planning
-
-- **`docs/`** — committed, load-bearing docs only. `docs/adr/` is the decision record.
-- **Planning notes are local-only and gitignored**, so nothing in a clone points at them and no
-  committed file should cite one. **They also have no git history, so deleting one is permanent** —
-  never delete or overwrite a file in an ignored notes directory without being asked to.
-- Work that is decided but not built is described in `docs/adr/0010` as planned future work, not as
-  a pointer to a plan the reader cannot open.
-- A note that becomes load-bearing gets rewritten into `docs/` and committed.
+`docs/` contains committed, load-bearing documentation; ADRs own decisions. Planning notes
+are ignored and local-only: never cite them from committed files, and never delete or
+replace them without being asked. Promote load-bearing decisions into self-contained docs.
+Memory is optional recall, not authority for project facts or current backlog. Verify it
+against source and ADRs; do not copy resolved task histories into always-loaded instructions.
+Local permissions, provider configuration and private user preferences stay untracked.

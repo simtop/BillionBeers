@@ -42,7 +42,7 @@ installed. `build/play-listing-raw/` holds the unconverted PNGs and is throwaway
 
 ## Capturing screenshots
 
-Needs a booted device. For emulator lifecycle, use the `billionbeers-android` skill.
+Needs a booted device. For emulator lifecycle, use the `android-cli` skill.
 
 The app must be **installed with its dynamic features staged**, or the detail and browse
 screens will not open:
