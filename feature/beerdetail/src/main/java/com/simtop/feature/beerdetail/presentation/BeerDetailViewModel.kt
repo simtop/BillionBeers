@@ -23,6 +23,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 class BeerDetailViewModel
 @AssistedInject
@@ -53,15 +55,23 @@ constructor(
   private val _events = Channel<BeerDetailEvent>(Channel.BUFFERED)
   val events: Flow<BeerDetailEvent> = _events.receiveAsFlow()
 
+  private val availabilityUpdateMutex = Mutex()
+
   init {
     setBeer(lastKnownBeer)
   }
 
   fun updateAvailability(beer: Beer) {
     viewModelScope.launch {
-      val newBeer = beer.copy(availability = !beer.availability)
-      setBeer(newBeer)
-      treatResponse(result = beersRepository.updateAvailability(newBeer), originalBeer = beer)
+      availabilityUpdateMutex.withLock {
+        val originalBeer = beer
+        val newBeer = beer.copy(availability = !beer.availability)
+        setBeer(newBeer)
+        treatResponse(
+          result = beersRepository.updateAvailability(newBeer),
+          originalBeer = originalBeer,
+        )
+      }
     }
   }
 

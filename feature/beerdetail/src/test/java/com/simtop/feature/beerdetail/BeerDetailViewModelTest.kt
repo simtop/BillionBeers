@@ -2,12 +2,18 @@ package com.simtop.feature.beerdetail
 
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
+import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.beerdomain.fakes.fakeBeerModel
 import com.simtop.beerdomain.fakes.fakeException
 import com.simtop.core.core.CommonUiState
+import com.simtop.core.core.Either
 import com.simtop.feature.beerdetail.presentation.BeerDetailViewModel
+import io.mockk.coEvery
+import io.mockk.mockk
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -55,6 +61,33 @@ internal class BeerDetailViewModelTest {
         expectThat((item as CommonUiState.Success).data).isEqualTo(fakeBeerModel)
         cancelAndIgnoreRemainingEvents()
       }
+    }
+
+  @Test
+  fun `when recreated we restore the last known beer from saved state`() =
+    runTest(testDispatcher) {
+      val savedStateHandle = SavedStateHandle()
+      val viewModel =
+        BeerDetailViewModel(
+          fakeBeersRepository,
+          fakeBeerModel,
+          savedStateHandle,
+        )
+      val toggledBeer = fakeBeerModel.copy(availability = !fakeBeerModel.availability)
+
+      viewModel.updateAvailability(fakeBeerModel)
+      testDispatcher.scheduler.advanceUntilIdle()
+
+      val restoredState = savedStateHandle.savedStateProvider().saveState()
+      val recreatedViewModel =
+        BeerDetailViewModel(
+          fakeBeersRepository,
+          fakeBeerModel,
+          SavedStateHandle.createHandle(restoredState, null),
+        )
+
+      expectThat((recreatedViewModel.beerDetailViewState.value as CommonUiState.Success).data)
+        .isEqualTo(toggledBeer)
     }
 
   @Test
@@ -116,28 +149,64 @@ internal class BeerDetailViewModelTest {
         )
 
       // Act
-      beerDetailViewModel.beerDetailViewState.test {
-        // Initial success state
-        expectThat(awaitItem()).isA<CommonUiState.Success<Beer>>()
+      beerDetailViewModel.events.test {
+        beerDetailViewModel.beerDetailViewState.test {
+          // Initial success state
+          expectThat(awaitItem()).isA<CommonUiState.Success<Beer>>()
 
-        beerDetailViewModel.updateAvailability(fakeBeerModel)
+          beerDetailViewModel.updateAvailability(fakeBeerModel)
 
-        // Optimistic update (toggled availability)
-        val updatedItem = awaitItem()
-        expectThat(updatedItem).isA<CommonUiState.Success<Beer>>()
-        expectThat((updatedItem as CommonUiState.Success).data.availability)
-          .isEqualTo(testExpectedResponse.availability)
+          // Optimistic update (toggled availability)
+          val updatedItem = awaitItem()
+          expectThat(updatedItem).isA<CommonUiState.Success<Beer>>()
+          expectThat((updatedItem as CommonUiState.Success).data.availability)
+            .isEqualTo(testExpectedResponse.availability)
+          cancelAndIgnoreRemainingEvents()
+        }
 
-        // Since usecase succeeds, we don't expect another emission because the optimistic update
-        // was correct
-        // and the usecase success doesn't trigger a new state emission in the current
-        // implementation
-        // (it only emits on error).
+        expectNoEvents()
 
         val storedBeer = fakeBeersRepository.getBeers().first()
         expectThat(storedBeer.availability).isEqualTo(testExpectedResponse.availability)
-
         cancelAndIgnoreRemainingEvents()
       }
+    }
+
+  @Test
+  fun `overlapping updates are serialized so a failed update cannot roll back a newer update`() =
+    runTest(testDispatcher) {
+      val firstUpdateStarted = CompletableDeferred<Unit>()
+      val releaseFirstUpdate = CompletableDeferred<Unit>()
+      val secondUpdateStarted = CompletableDeferred<Unit>()
+      val repository = mockk<BeersRepository>()
+      val firstUpdatedBeer = fakeBeerModel.copy(availability = !fakeBeerModel.availability)
+      val secondUpdatedBeer = firstUpdatedBeer.copy(availability = fakeBeerModel.availability)
+      coEvery { repository.updateAvailability(firstUpdatedBeer) } coAnswers
+        {
+          firstUpdateStarted.complete(Unit)
+          releaseFirstUpdate.await()
+          Either.Left(UpdateAvailabilityError.Unknown(fakeException))
+        }
+      coEvery { repository.updateAvailability(secondUpdatedBeer) } coAnswers
+        {
+          secondUpdateStarted.complete(Unit)
+          Either.Right(Unit)
+        }
+      val viewModel = BeerDetailViewModel(repository, fakeBeerModel, SavedStateHandle())
+
+      viewModel.updateAvailability(fakeBeerModel)
+      testDispatcher.scheduler.runCurrent()
+      firstUpdateStarted.await()
+
+      viewModel.updateAvailability(firstUpdatedBeer)
+      testDispatcher.scheduler.runCurrent()
+      expectThat(secondUpdateStarted.isCompleted).isEqualTo(false)
+
+      releaseFirstUpdate.complete(Unit)
+      testDispatcher.scheduler.advanceUntilIdle()
+      secondUpdateStarted.await()
+
+      expectThat((viewModel.beerDetailViewState.value as CommonUiState.Success).data)
+        .isEqualTo(secondUpdatedBeer)
     }
 }
