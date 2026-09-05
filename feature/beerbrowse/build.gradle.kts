@@ -4,7 +4,16 @@ plugins {
   id("billionbeers.android.managed.device")
 }
 
-android { namespace = "com.simtop.feature.beerbrowse" }
+android {
+  namespace = "com.simtop.feature.beerbrowse"
+
+  buildTypes {
+    create("releaseSmoke") {
+      initWith(getByName("release"))
+      matchingFallbacks += "release"
+    }
+  }
+}
 
 dependencies {
   implementation(this.project(":beerdomain:api"))

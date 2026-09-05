@@ -1,17 +1,17 @@
 package com.simtop.core.core
 
 interface CrashReporter {
-  fun recordException(throwable: Throwable)
+  fun record(diagnostic: Diagnostic)
 
-  fun log(message: String)
+  fun log(diagnostic: Diagnostic)
 
-  fun setCustomKey(key: String, value: String)
+  fun setContext(context: CrashContext)
 }
 
 class NoOpCrashReporter : CrashReporter {
-  override fun recordException(throwable: Throwable) = Unit
+  override fun record(diagnostic: Diagnostic) = Unit
 
-  override fun log(message: String) = Unit
+  override fun log(diagnostic: Diagnostic) = Unit
 
-  override fun setCustomKey(key: String, value: String) = Unit
+  override fun setContext(context: CrashContext) = Unit
 }

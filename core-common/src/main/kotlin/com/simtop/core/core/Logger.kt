@@ -8,20 +8,21 @@ enum class LogPriority {
 }
 
 fun interface Logger {
-  fun log(priority: LogPriority, tag: String, message: String, throwable: Throwable?)
+  fun log(priority: LogPriority, tag: LogTag, diagnostic: Diagnostic)
 
-  fun debug(tag: String, message: String) = log(LogPriority.DEBUG, tag, message, null)
+  fun debug(tag: LogTag, diagnostic: Diagnostic) = log(LogPriority.DEBUG, tag, diagnostic)
 
-  fun info(tag: String, message: String) = log(LogPriority.INFO, tag, message, null)
+  fun info(tag: LogTag, diagnostic: Diagnostic) = log(LogPriority.INFO, tag, diagnostic)
 
-  fun warn(tag: String, message: String, throwable: Throwable? = null) =
-    log(LogPriority.WARN, tag, message, throwable)
+  fun warn(tag: LogTag, diagnostic: Diagnostic) = log(LogPriority.WARN, tag, diagnostic)
 
-  fun error(tag: String, message: String, throwable: Throwable? = null) =
-    log(LogPriority.ERROR, tag, message, throwable)
+  fun error(tag: LogTag, diagnostic: Diagnostic) = log(LogPriority.ERROR, tag, diagnostic)
+}
+
+enum class LogTag(val value: String) {
+  BEERS_MAPPER("BeersMapper")
 }
 
 class NoOpLogger : Logger {
-  override fun log(priority: LogPriority, tag: String, message: String, throwable: Throwable?) =
-    Unit
+  override fun log(priority: LogPriority, tag: LogTag, diagnostic: Diagnostic) = Unit
 }

@@ -1,0 +1,8 @@
+-dontoptimize
+-dontobfuscate
+-dontwarn **
+-keep class androidx.test.** { *; }
+-keep class androidx.uiautomator.** { *; }
+-keep class org.junit.** { *; }
+-keep class com.simtop.billionbeers.** { *; }
+-keep class kotlin.** { *; }
