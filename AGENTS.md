@@ -119,11 +119,10 @@ The original thirteen are enforced by `:konsist`; the wording here is from the t
 13. **Feature modules never declare a data-layer module.** No `feature/*` build script may name
     `:beer_data`, `:beer_database` or `:beer_network`; a feature reaches persistence and the network
     through the `:beerdomain:api` repository interfaces, whose implementations `:app` binds. This is
-    the edge the neighbouring rules leave open: invariant 2 reads *imports* and only for the
-    beerslist/beerdetail pair, invariant 4 fires only when a **ViewModel** imports a data type (a
-    mapper or composable in the same module passes), and invariant 6 covers `app-dev-*` only. So
-    the dependency could be declared and used with nothing firing. `:app` is exempt — assembling the
-    graph is its job. (`FeatureDataLayerBoundaryTest` — reads the build scripts.)
+    a different concern from invariant 2, which discovers all feature siblings and rejects their
+    cross-feature imports and declarations. Invariant 4 covers ViewModel imports, and invariant 6
+    covers `app-dev-*`; neither replaces this feature-wide data dependency check. `:app` is exempt
+    — assembling the graph is its job. (`FeatureDataLayerBoundaryTest` — reads the build scripts.)
 
     `FeatureDataLayerBoundaryTest` only sees a data-layer module named in the feature's *own* build
     script. It cannot see one arriving through an intermediate dependency's `api(...)` declaration —
@@ -324,6 +323,8 @@ is vendored (each carries a `.android-skill-source` marker): `android-cli`, `nav
 ## 8. Docs & planning
 
 - **`docs/`** — committed, load-bearing docs only. `docs/adr/` is the decision record.
+- **`docs/ROADMAP_ASTRA.md`** — consolidated next steps and dated implementation evidence. Keep
+  completed work out of its active queue; ADRs remain authoritative for decisions and non-goals.
 - **Planning notes are local-only and gitignored**, so nothing in a clone points at them and no
   committed file should cite one. **They also have no git history, so deleting one is permanent** —
   never delete or overwrite a file in an ignored notes directory without being asked to.

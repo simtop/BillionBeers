@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-Ffor `app-dev-<feature>` modules: standalone applications that
+`app-dev-<feature>` modules are standalone applications that
 compile only one feature module + fakes, for a seconds-scale build/install loop instead of the
 full `:app`. `app-dev-beerslist` (`:feature:beerslist`, a regular feature module) proved this out
 successfully. `scripts/new-dev-app.sh` and `.claude/skills/new-dev-app/SKILL.md` generalized the
@@ -50,10 +50,10 @@ seconds-scale build this pattern exists for.
 
 ## Cost accepted
 
-No fast dev-loop for dynamic features. Today that's exactly one screen
-(`:feature:beerdetail`) - iterating on it still requires the full `:app` build/install (or
-Paparazzi screenshot tests, which already cover this screen's layout without needing a running
-app at all).
+No standalone dev-app loop for dynamic features. Both `:feature:beerdetail` and
+`:feature:beerbrowse` are now on-demand features. App-assembly and install-flow iteration still
+uses `:app`; Paparazzi covers static rendering, and feature-owned instrumented tests cover
+single-screen device behavior under ADR 0009. Neither test path is a standalone dev-app.
 
 ## Consequences
 
@@ -62,5 +62,6 @@ app at all).
   module both the dynamic feature and a dev-app could depend on (the structurally correct fix,
   real module-boundary work), or source-duplicating the composable into the dev-app (works
   immediately, drifts out of sync silently, should stay a last resort).
-- If a second dynamic feature is ever added and the same need comes up twice, that's the signal
-  to actually do the module-extraction fix rather than route around it per-feature again.
+- The second dynamic feature now exists, but module count alone does not justify extracting UI
+  modules. Revisit extraction when repeated, measured dev-loop pain warrants it; the unsupported
+  direct dev-app dependency remains unsupported meanwhile.

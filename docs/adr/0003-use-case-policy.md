@@ -68,7 +68,7 @@ Adopt policy 2, **coupled to mechanical boundary enforcement**:
   Retrofit services, or DAOs.
 
 The Konsist rule is not optional hardening; it is the load-bearing half of this decision. Deleting
-the pass-throughs is only safe because the invariant they represented is now compiler-enforced
+the pass-throughs is only safe because the invariant they represented is now build-enforced
 instead of convention-enforced.
 
 ## Why
@@ -103,11 +103,11 @@ instead of convention-enforced.
 
 - `LoadNextPageUseCase`, `RefreshBeersUseCase`, `ObservePagingStateUseCase`, and
   `UpdateAvailabilityUseCase` are deleted; `BeersListViewModel` / `BeerDetailViewModel` inject
-  `BeersRepository`. `GetAllBeersUseCase` survives only if it grows behaviour (per §2.4 of the
-  audit).
-- The Konsist suite (`konsist/`) must gain the ViewModel-boundary rule **in the same change** that
-  deletes the pass-throughs. A PR that does the deletion without the rule reintroduces the
-  unenforced-floor situation this ADR exists to prevent.
+  `BeersRepository`. No use-case implementation survives today; add one only when it owns real
+  behavior rather than mirroring a repository method.
+- The Konsist suite (`konsist/`) contains `ViewModelBoundaryTest`. Keep this check and the resolved
+  architecture policy active whenever removing or changing a layer: deleting pass-throughs without
+  equivalent enforcement would reintroduce the unenforced-floor situation this ADR prevents.
 - **Revisit trigger:** if this codebase is ever worked on by multiple teams *without* Konsist (or
   equivalent) in CI, flip to policy 1. "Use case always" is the correct rule for
   convention-enforced codebases; this ADR's choice is strictly conditional on mechanical

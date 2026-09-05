@@ -27,10 +27,10 @@ it once is how it survives.
 
 **A capability is a non-goal when the premise it serves is absent — not when it is merely unbuilt.**
 
-Auth is a non-goal because there is no credential anywhere in the system. An offline write queue is
-*deferred*, not declined, because its premise already exists: `available` is a real local write with
-optimistic UI, and the queue simply hasn't been built. The distinction matters because it makes the
-revisit trigger fall out for free — for a non-goal, the trigger is always "the premise arrives."
+Auth is a non-goal because there is no credential anywhere in the system. An offline server-write
+queue is also a non-goal: `available` is already persisted locally, but there is no remote write
+destination to queue it for. Optimistic UI alone does not create a synchronization requirement.
+For a non-goal, the trigger is always "the premise arrives."
 
 The two lists below are therefore kept separate on purpose. Mistaking a deferral for a decline is
 how a plan quietly loses items.
@@ -45,24 +45,24 @@ how a plan quietly loses items.
 | **Play Integrity / SafetyNet, root or tamper detection** | No entitlement, no revenue, no server trust decision. Nothing is gated on the client being honest | A paid or licensed artifact ships |
 | **Push notifications (FCM)** | No server we control, so nothing to send | A backend of ours exists |
 | **Server-side sync of `available`** | The backend isn't ours, so a sync could only ever one-way-overwrite the user's edit. The server value seeds a row on first insert and is local-only thereafter | We own the write path |
-| **A shipped analytics or crash SDK** | The *seam* is built and deliberate — `AnalyticsTracker` / `CrashReporter` / `Logger` with no-op bindings in `ObservabilityModule`, swappable one binding at a time. Declining the *dependency* is the separate call: no `google-services.json` exists anywhere, so this repo clones and builds with zero external account setup. That property is worth more to a public template than a wired-up dashboard | A real distribution needs the data, or one integration lands behind a flag to prove the seam |
+| **Offline server-write queue**, WorkManager sync, conflict resolution, idempotency | A Room write already works offline. There is no server mutation to deliver or reconcile | A real remote write contract exists, with an explicit conflict/idempotency policy |
+| **A shipped analytics or crash SDK** | The *seam* is built and deliberate — `ObservabilityModule` binds no-op `AnalyticsTracker` / `CrashReporter` implementations and a real Logcat `Logger`, swappable one binding at a time. Declining the vendor *dependency* is the separate call: no `google-services.json` exists anywhere, so this repo clones and builds with zero external account setup. Log output still needs its own privacy review; the no-op reporters do not make every diagnostic path inert | A real distribution needs the data, or one integration lands behind a flag to prove the seam |
 | **Consent, GDPR, and ad-ID flows** | Falls out of the row above: no SDK ships, no personal data is collected, no advertising ID is read. Play's Data Safety declaration is trivially satisfied because the honest answer is "nothing" | The row above changes |
 | **Automatic network retry and backoff** | Failure is surfaced to the user and retried explicitly (`PagedListFooter.Retry`, `LoadMoreRetryFooter`) rather than silently re-attempted. On a read-only catalog a silent retry buys little and hides the failure the paging tests are written against. OkHttp's connection-level `retryOnConnectionFailure` default is left on; nothing sits above it | A write path exists, where transparent retry is load-bearing rather than cosmetic |
 | **Multi-process** | Nothing declares `android:process`. No component needs isolation, and the second process would cost a second graph | A component needs its own lifetime or crash domain |
 
 ## Deferred, not declined
 
-Planned for the future and simply not built yet. Recorded here only so nothing in this file is
-mistaken for a closed question — none of these is waiting on a missing premise, so none of them
-belongs in the table above.
+These are candidates, not prerequisites for a complete reference app. Their scope and priority
+live in [ROADMAP_ASTRA](../ROADMAP_ASTRA.md); an existing abstraction or a useful learning topic is
+not by itself a commitment to ship an integration.
 
-| Deferred | Why it is a deferral, not a decline |
+| Candidate | Current boundary |
 |---|---|
-| Offline write queue (WorkManager, conflict resolution, idempotency) | The local write it would queue already exists — `available`, with optimistic UI |
-| Remote config, kill switch, staged rollout, force-update | The premise is present, unlike push: `FeatureFlagProvider` already exists with a local implementation, and a remote source needs no backend of ours. Only the remote half is unbuilt — and the certificate-pinning row above is blocked behind it |
-| Release-build health in CI, APK size budget, diffuse-on-PR | `make bundle-release` already runs R8 and regenerates the baseline profile locally; only the CI gate is missing |
-| Adaptive two-pane layout; favorites + Glance widget | Ordinary feature work. The `adaptive` and `navigation-3` skills are already vendored |
-| Kotlin Multiplatform | The domain and `:core-common` are already pure-JVM and Metro is KMP-capable, so the groundwork is in place |
+| Remote config, kill switch, staged rollout, force-update | Local `FeatureFlagProvider` exists; a remote adapter does not. Start only for a named operational use or an explicitly chosen learning milestone, with offline defaults and recovery policy |
+| Deeper release-build health, artifact verification and a size budget | The debug-signed, minified `releaseSmoke` target already launches in CI. Remaining work is deterministic behavior and mapping/profile artifact verification; size reporting needs a defined artifact before any threshold |
+| Adaptive two-pane layout; favorites + Glance widget | Accessibility/expanded-width previews and release QA already exist. A real two-pane navigation layout and a local favorites/widget product remain separate feature choices |
+| Kotlin Multiplatform | Pure-JVM domain/core boundaries are useful groundwork, not proof of common-source compatibility. Choose a target and validate platform APIs, DI, persistence and tests before committing to migration |
 
 The implementation choices named in the Context above — plus dev-apps for dynamic features (0004) —
 keep their own ADRs and are not reopened here.
@@ -97,11 +97,10 @@ declines is a better signal than a token-refresh interceptor with no token behin
 
 Concrete triggers, in the order the rows actually unlock:
 
-1. **A write path to a server we own.** This does not reopen one row, it reopens five — auth,
-   encrypted storage, server-side `available` sync, automatic retry, and (only afterwards)
-   certificate pinning. Pinning is last on purpose: shipping a pin without a remote kill switch is
-   how a fleet gets bricked by a certificate rotation, so it depends on the remote-config work in
-   the deferred table.
+1. **A write path to a server we own.** Reassess identity, sensitive storage, `available` sync,
+   offline delivery and retry against that contract rather than enabling them automatically.
+   Certificate pinning remains a separate threat-model and recovery-policy decision; it is not a
+   prerequisite for demonstrating a local write.
 2. **A paid or licensed artifact ships** — planned, but not scheduled. Integrity/anti-tamper and a
    real observability backend both acquire a premise the day one does.
 3. **The app collects anything about a person** — consent and Data Safety stop being trivial the
