@@ -24,11 +24,13 @@ The case for converting back is real but narrower than it first appears:
   `apply(plugin = "billionbeers.…")` instead of a `plugins { }` block, to route around an
   accessor-generation bug. Binary plugins generate no accessors, so the bug cannot apply and the
   workaround could be deleted.
-- **Build logic would become unit-testable** with `ProjectBuilder`/TestKit. In a repo that
-  mechanically enforces thirteen architecture invariants on application code, the build logic is
-  the only substantial untested part.
-- **Configuration time.** Gradle generates a precompiled script plugin's class at configuration
-  time, and the widely-cited Now in Android figure is 12.7s → 0.76s on conversion.
+- **Testing ergonomics can differ.** Binary classes offer a direct unit-test surface, but consumer
+  behavior can be tested with TestKit in either form. The lack of a suite when this ADR was first
+  written was a coverage gap, not a limitation of precompiled scripts.
+- **Build/configuration cost needs a local measurement.** Precompiled script classes are build
+  outputs of the convention build, not classes regenerated on every consumer configuration.
+  Accessor generation, compilation and consumer configuration must be measured separately;
+  another project's conversion benchmark does not establish the cost here.
 
 Two things weaken that third point specifically, which is the one usually used to justify the
 migration:
@@ -73,12 +75,14 @@ should measure it on this repo rather than argue from another project's numbers:
 - The `apply(plugin = "billionbeers.…")` workaround stays, and stays commented, until either the
   Gradle bug is confirmed fixed or the measurement above justifies conversion. Flipping one back to
   a `plugins { }` block and running `./gradlew help` is the cheap way to test the former.
-- Build logic remains untested. That is a real cost and the strongest argument on the other side;
-  it is accepted for now because the conventions are small and heavily commented, and because the
-  invariants in `:konsist` cover the *outcomes* the conventions produce.
+- **Update, 2026-09-05:** build logic now has behavioral TestKit coverage without changing plugin
+  form. `ConventionPluginFunctionalTest` covers convention application, managed-device task
+  discovery and configuration-cache reuse, screenshot unit-test wiring, transitive feature/data
+  boundaries, coverage inputs and missing signing credentials. Architecture-policy and module-graph
+  fixtures complement it. This is representative coverage, not proof of every task execution or
+  toolchain combination; extend it for a concrete missing contract, not to justify conversion.
 - **Reopen triggers:** a measured configuration-time difference that matters at this repo's scale;
-  a decision to publish a convention (Gradle's docs recommend converting to binary before
-  publishing — note the two artifacts currently earmarked for extraction are already binary); or a
+  an actual publishing requirement that the current form cannot satisfy; or a
   Gradle release that makes precompiled scripts materially worse.
 
 ## Related

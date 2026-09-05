@@ -8,6 +8,8 @@ ADRs instead of argued twice.
 Compose UI · Metro DI · Room as SSOT · hand-rolled paging · two on-demand dynamic feature modules ·
 architecture rules enforced by Konsist · JVM screenshot tests · dependency verification.
 
+This is a reference application, not a supported domain-neutral project generator.
+
 [![Google Play](https://img.shields.io/badge/Google%20Play-Get%20it%20now-green?logo=google-play)](https://play.google.com/store/apps/details?id=com.simtop.billionbeers)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/simtop/BillionBeers)
 
@@ -134,8 +136,9 @@ sequenceDiagram
 ## 🛡 Enforced Architecture
 
 The point of this repository is that **the conventions are enforced by tooling, not by memory**. A
-diagram that only lives in a README rots; these rules fail the build. They run as
-[Konsist](https://github.com/LemonAppDev/konsist) tests in the `:konsist` module, on every push.
+diagram that only lives in a README rots; these rules are build checks. The source rules run as
+[Konsist](https://github.com/LemonAppDev/konsist) tests in `:konsist`, complemented by resolved
+Gradle classpath checks. CI runs or adopts the applicable lane verdict under ADR 0008.
 
 | Rule | Test |
 |---|---|
@@ -143,7 +146,7 @@ diagram that only lives in a README rots; these rules fail the build. They run a
 | Feature modules never depend on other feature modules — cross-feature nav goes through `:navigation` | `FeatureModuleBoundaryTest` |
 | The domain layer has zero Android imports | `DomainLayerPurityTest` |
 | ViewModels depend only on domain types (the precondition that makes "no use cases" safe) | `ViewModelBoundaryTest` |
-| Dynamic features declare no resources of their own — they crash instrumented tests | `DynamicFeatureResourceBoundaryTest` |
+| Dynamic-feature code uses shared user-facing resources rather than importing its own module `R` | `DynamicFeatureResourceBoundaryTest` |
 | Dev-app sandboxes depend only on `api` + `fakes` modules, which is what keeps them fast | `DevAppDependencyBoundaryTest` |
 | No module applies `java-test-fixtures` — fixtures live in sibling `:fakes` modules (ADR 0001) | `TestFixturesPluginBoundaryTest` |
 | ViewModels never use `MutableSharedFlow` — it drops one-shot events when nothing is collecting | `OneShotEventBoundaryTest` |
@@ -151,17 +154,19 @@ diagram that only lives in a README rots; these rules fail the build. They run a
 | A module with `src/androidTest/` opts into the managed device — otherwise its tests compile, read as coverage, and never run | `InstrumentedTestOptInBoundaryTest` |
 | Every `src/` directory has a build script beside it — an orphaned source tree is invisible to Gradle but still found by grep | `OrphanedSourceTreeTest` |
 | Test-only libraries never sit on `implementation`/`api` — they ship in the release APK | `TestLibraryBoundaryTest` |
+| Features never declare data-layer modules; resolved compile classpaths also reject transitive leakage | `FeatureDataLayerBoundaryTest` + `checkDataLayerClasspathBoundary` |
+| Production project dependencies and intentional project `api` exposures follow the checked-in role policy | `verifyArchitectureGraph` + architecture-policy fixtures |
 
 Reinforced by:
 
-- **Supply chain** — Gradle dependency verification with a checked-in ledger (211 locked deps),
+- **Supply chain** — Gradle dependency verification with a checked-in ledger,
   `dependency-guard` on the resolved graph, GitHub Actions pinned to SHAs, and gitleaks on every PR
   range. See [ADR 0006](docs/adr/0006-ci-supply-chain-hardening.md) and
   [ADR 0007](docs/adr/0007-gradle-dependency-verification.md).
 - **Convention plugins** — module setup lives in `build-logic`, so a new feature module is a plugin
   id and a namespace, not a copied 80-line build script.
-- **Decision record** — twelve [ADRs](docs/adr/) covering the choices that are easy to second-guess:
-  no Paging3, no `java-test-fixtures`, no use-case layer — and
+- **Decision record** — [ADRs](docs/adr/) covering the choices that are easy to second-guess:
+  hand-rolled paging, sibling fixtures, use cases only when they add behavior — and
   [ADR 0010](docs/adr/0010-non-goals.md), which records the capabilities this project deliberately
   *doesn't* have (auth, pinning, push, background sync) and the premise each one is waiting on, so
   a deliberate absence never has to be mistaken for an oversight.

@@ -36,8 +36,9 @@ consumption story (`testImplementation(project(":beer_network:fixtures"))`) with
 ## Consequences
 
 - Every module that owns types needing fixtures gets a small sibling module (`:x:fakes` or
-  `:x:fixtures`) rather than a `testFixtures` source set inside `:x` itself. One more entry in
-  `settings.gradle.kts` per fixture set, but a simpler, cheaper build graph.
+  `:x:fixtures`) rather than a `testFixtures` source set inside `:x` itself. The root
+  `settings.gradle.kts` auto-discovers directories with build scripts, so a new fixture module
+  needs no manual `include(...)` entry. The separate `build-logic` composite remains explicit.
 - Revisit if a future Gradle/AGP release closes the performance gap — re-benchmark before
   reverting this decision, don't assume it's fixed.
 - The sibling module must use the same plugin (`billionbeers.android.library` vs.
