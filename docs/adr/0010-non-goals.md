@@ -53,9 +53,8 @@ how a plan quietly loses items.
 
 ## Deferred, not declined
 
-These are candidates, not prerequisites for a complete reference app. Their scope and priority
-live in [ROADMAP_ASTRA](../ROADMAP_ASTRA.md); an existing abstraction or a useful learning topic is
-not by itself a commitment to ship an integration.
+These are candidates, not prerequisites for a complete reference app. An existing abstraction or a
+useful learning topic is not by itself a commitment to ship an integration.
 
 | Candidate | Current boundary |
 |---|---|

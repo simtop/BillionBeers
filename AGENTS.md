@@ -323,8 +323,6 @@ is vendored (each carries a `.android-skill-source` marker): `android-cli`, `nav
 ## 8. Docs & planning
 
 - **`docs/`** — committed, load-bearing docs only. `docs/adr/` is the decision record.
-- **`docs/ROADMAP_ASTRA.md`** — consolidated next steps and dated implementation evidence. Keep
-  completed work out of its active queue; ADRs remain authoritative for decisions and non-goals.
 - **Planning notes are local-only and gitignored**, so nothing in a clone points at them and no
   committed file should cite one. **They also have no git history, so deleting one is permanent** —
   never delete or overwrite a file in an ignored notes directory without being asked to.

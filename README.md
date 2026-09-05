@@ -8,9 +8,7 @@ ADRs instead of argued twice.
 Compose UI · Metro DI · Room as SSOT · hand-rolled paging · two on-demand dynamic feature modules ·
 architecture rules enforced by Konsist · JVM screenshot tests · dependency verification.
 
-For the current priorities, completed-work ledger and explicit deferrals, see
-[ROADMAP_ASTRA](docs/ROADMAP_ASTRA.md). This is a reference application, not a supported
-domain-neutral project generator.
+This is a reference application, not a supported domain-neutral project generator.
 
 [![Google Play](https://img.shields.io/badge/Google%20Play-Get%20it%20now-green?logo=google-play)](https://play.google.com/store/apps/details?id=com.simtop.billionbeers)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/simtop/BillionBeers)
