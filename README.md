@@ -170,8 +170,6 @@ Reinforced by:
   [ADR 0010](docs/adr/0010-non-goals.md), which records the capabilities this project deliberately
   *doesn't* have (auth, pinning, push, background sync) and the premise each one is waiting on, so
   a deliberate absence never has to be mistaken for an oversight.
-- **Dev-app sandboxes** — `app-dev-<feature>` modules build a single feature against fakes for fast
-  iteration (`make new-dev-app`).
 - **A budget on the build itself, not just the app** — `make build-budget` measures clean,
   incremental and test builds with gradle-profiler and checks them against
   `config/build-time-budget.txt`. Clean build is 37s cold and 4s warm; a deep ABI change costs

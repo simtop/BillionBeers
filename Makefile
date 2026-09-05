@@ -50,8 +50,8 @@ MODULE_TRIMMED := $(strip $(MODULE))
 MODULE_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,)
 UI_TEST_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,:app:)
 
-# Wrapper for Gradle to support build-brief (bb) or rtk if available
-GRADLE_RUNNER := $(shell if command -v bb >/dev/null 2>&1; then echo "bb ./gradlew"; elif command -v build-brief >/dev/null 2>&1; then echo "build-brief --gradle ./gradlew"; elif command -v rtk >/dev/null 2>&1; then echo "rtk ./gradlew"; else echo "./gradlew"; fi)
+# One local output filter. Gateway sessions can export GRADLE_RUNNER=./gradlew.
+GRADLE_RUNNER ?= $(shell if command -v rtk >/dev/null 2>&1; then echo "rtk gradlew"; else echo "./gradlew"; fi)
 
 .PHONY: detekt-baseline help setup setup-ai-tools update-android-skills build bundle-release release-smoke install clean test test-tier-inventory konsist check-data-layer-boundary architecture-policy compose-metrics ui-test ui-test-local ui-test-managed ui-test-managed-newest ui-test-managed-ci ui-test-managed-all emulator-create emulator-recreate emulator-start emulator-stop emulator-status emulator-delete screenshot-record screenshot-verify screenshot-clean lint android-lint format check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline verification-metadata health module-graph metro-graph architecture-report repo-doctor benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark build-budget build-budget-check jacoco-report coverage-check install-profiler install-diffuse new-feature-module new-dev-app play-listing-check play-listing-capture play-listing-reset store-frames
 
@@ -82,12 +82,8 @@ setup: ## Setup local development environment (Git hooks, Git LFS, etc.).
 	@chmod +x .git/hooks/pre-commit
 	@echo "🎉 Setup complete! You're ready to build and test BillionBeers."
 
-setup-ai-tools: ## Install token-saving tools (rtk, build-brief, snip) via Homebrew.
-	@echo "🔧 Installing AI token-saving tools..."
-	brew tap static-var/tap && brew install build-brief || true
-	brew install rtk || true
-	brew install edouard-claude/tap/snip || true
-	@echo "🎉 AI tools setup complete!"
+setup-ai-tools: ## Install RTK for local output compression (optional outside gateway sessions).
+	brew install rtk
 
 update-android-skills: ## Sync official Android skills (github.com/android/skills) into .claude/skills.
 	@bash scripts/update-android-skills.sh
