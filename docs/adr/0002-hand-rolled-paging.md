@@ -27,21 +27,20 @@ Keep the hand-rolled `PagingMediator<Key, Value>` (a small state machine over `c
 
 ## Why
 
-Paging3's `PagingData<T>` type is designed to flow, unmodified, from repository to UI:
+The evaluated Paging3 integration exposed `Flow<PagingData<Beer>>` across the repository/UI
+boundary. This project instead chooses plain data and explicit paging state as its contract:
 
-- The repository would have to return `Flow<PagingData<Beer>>` instead of `Flow<List<Beer>>`.
-  `PagingData` is not a value type you can inspect, transform, or compare - it's a bespoke
-  stream of load/insert/drop events consumed only by `AsyncPagingDataDiffer` or a
-  `LazyPagingItems` composable. That means the domain layer can't meaningfully sit between the
-  repository and the UI: any use case wrapping `PagingData` becomes a pass-through, and the "no
-  data-layer types past the repository boundary" rule this project follows everywhere else
-  breaks specifically for paging.
-- ViewModel tests lose the plain-fake pattern used everywhere else in this codebase
-  (`FakeBeersRepository` + Turbine on a `StateFlow`). Asserting on `PagingData` requires
-  `AsyncPagingDataDiffer` with a real or fake `ListUpdateCallback`, a different and heavier test
-  setup than the rest of the suite.
+- A `List<Beer>` and a `PagingState` are ordinary values that our domain fakes, reducers and
+  ViewModel tests can inspect directly. Adopting a paging-library-specific stream would change
+  that contract or require an adapter whose complexity would need to earn its place.
+- The existing `FakeBeersRepository`/pager fakes and Turbine assertions share one testing model
+  across paged and unpaged screens. Keeping that model is a project preference, not a claim that
+  Paging3 cannot be transformed or tested without a UI differ.
 
-`PagingMediator` avoids both: it exposes a plain `StateFlow<PagingState>` and a `Flow<List<Value>>`
+The decision does not prohibit domain logic around a paging library. A pass-through use case is
+unnecessary under ADR 0003 regardless of which paging implementation is behind the repository.
+
+`PagingMediator` preserves this contract: it exposes a plain `StateFlow<PagingState>` and a `Flow<List<Value>>`
 for data, so the repository, domain layer, and ViewModel tests all stay in the same
 plain-Flow-and-fakes style as the rest of the codebase.
 
@@ -61,31 +60,30 @@ already retry-safe) - a mistake that wouldn't have been possible to make inside 
 
 ## Bonus
 
-`PagingMediator` is pure Kotlin with no Android dependency, so it ports to a future Kotlin
-Multiplatform migration for free. Paging3 is an AndroidX library with no multiplatform target as
-of this writing, so keeping paging logic in Paging3 would have blocked that migration path
-entirely.
+`PagingMediator` has no Android dependency, which reduces one migration constraint. This does not
+make the whole `:core-common` module multiplatform for free: its build, platform-specific APIs and
+tests still need a target-by-target audit. Do not infer an alternative library's target support
+from its AndroidX name; verify the artifacts and test APIs available when a migration is proposed.
 
 ## Consequences
 
-- Mid-list pagination errors (`PagingState.Error` for page N > 1) are the app's responsibility to
-  surface - today they're silently swallowed while keeping the existing list on screen. A
-  snackbar or footer-retry affordance for this case is follow-up work, not solved by this
-  decision.
-- Any future paged screen (favorites, search) needs to either reuse `PagingMediator` or accept
-  writing its own equivalent - there's no `RemoteMediator`-style reusable framework backing this,
-  by design.
+- Mid-list pagination errors remain the app's responsibility. This follow-up is complete:
+  `PagedListReducer` keeps existing items visible with `PagedListFooter.Retry`, and the shared
+  `LoadMoreRetryFooter` provides explicit retry. Do not reopen it as missing error UI.
+- Future paged screens reuse the screen-scoped `Pager`/`PagingStorage` and `BeersPagerFactory`
+  contracts. Search and browse already exercise that reuse; a new filtered surface is not a
+  reason to build a second paging framework.
 - (Update, July 2026) `PagingMediator` now implements a small `Pager` interface and delegates
   writes to a `PagingStorage` strategy - `InMemoryPagingStorage` for network-only paging, or a
   DB-backed implementation for SSOT (the beers one upserts and never deletes, so the local-only
   `availability` field survives pull-to-refresh). Screens get their own instance from a factory
   (`BeersPagerFactory`), keeping paging state screen-scoped instead of living on the AppScope
   repository. Because such a cache outlives any single pager (warm
-  launches) and survives refresh (upsert, no delete), a storage-derived key
-  (`nextKeyFromStorage`, e.g. `rowCount / pageSize + 1`) keeps the pager's position reconciled
-  with the data. Note the scoping boundary: the pager *position* is screen-scoped, but the beers
-  *data* is one shared table - fine for a single paged surface; a second filtered surface
-  (search, favorites) needs its own storage with parameter-scoped queries.
+  launches) and survives refresh (upsert, no delete), `nextKeyFromStorage` reads an exact
+  surface-scoped bookmark from `paging_state`, written transactionally with the page. The bookmark
+  is authoritative when present. On a miss, `BeersPagerFactoryImpl` restarts at page 1 for a
+  language mismatch and retains the row-count estimate for a fresh/legacy cache; the heuristic
+  has not been removed entirely. Search and browse use per-query in-memory storage instead.
 - (Update, July 2026) The repository's per-beer image fetch (a `GET
   /images/{id}` for every item in a page — an N+1, one list request plus 25 image requests) is
   removed. A live audit showed the `brewbuddy.dev` list response embeds `image.url` directly
@@ -104,5 +102,7 @@ entirely.
   styles (17 rows) and breweries (38 rows) are plain unpaged fetches, because a pager for a list
   that small is machinery without a customer. Pagers are per-query values (a changed query is a
   new pager, never a mutation), which is what keeps invalidation out of the mediator.
-- Revisit if Paging3 ships a multiplatform target and a `PagingData`-free consumption API; until
-  then this is the right trade for a KMP-bound clean-architecture codebase.
+- Revisit if a concrete product requirement exceeds this pager's supported behavior, or a measured
+  alternative reduces its correctness/maintenance cost while preserving the required boundaries.
+  Neither a hypothetical KMP migration nor an old claim about library target support is a trigger
+  by itself.

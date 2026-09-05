@@ -25,9 +25,9 @@ That matters more here than in most projects, because the repository's central c
 a deliberately modular graph, convention plugins, ten enforced invariants. The question a reviewer is
 entitled to ask is whether the split pays for itself, and the only honest answer is a number.
 
-(Deliberately no module count here. ADR 0009 quotes 27 for `:app`'s build; `./gradlew projects`
-reports a different figure for the whole build. The two are probably measuring different things, but
-until someone confirms which, a third number in a third document helps nobody.)
+(Deliberately no current module count here. ADR 0009's dated correction distinguishes the app's
+dependency closure from the whole configured build. Neither number substitutes for measuring build
+cost, and neither is a permanent property of a changing graph.)
 
 ## Decision
 
@@ -117,10 +117,10 @@ Recording these because the symptom in every case was a number that looked fine.
 
 **The absolute budgets are machine-specific.** They are calibrated on one laptop and a slower
 machine can fail them with nothing wrong. Mitigated two ways, not solved: budgets sit at roughly
-3–4x the measured median and comfortably above the worst of ten iterations, following the precedent
-in `check-benchmark-budget.sh` (3000 ms against an ~890 ms measurement, with its reasoning in the
-comment); and the `ratio` check between two scenarios in the same run cancels the hardware out
-entirely, which is why it is the line worth arguing from.
+3–4x the measured median and comfortably above the worst of ten iterations; and the `ratio` check
+between two scenarios in the same run reduces shared hardware variance. It does not eliminate all
+hardware or workload effects. The separate startup budget is now 500 ms on physical devices, as
+documented in `scripts/check-benchmark-budget.sh`, not the earlier emulator-derived 3000 ms policy.
 
 **A local gate depends on someone running it.** Unlike the coverage floor, nothing forces this
 before a merge. Accepted for the same reason `make benchmark-check` is accepted: a number that is

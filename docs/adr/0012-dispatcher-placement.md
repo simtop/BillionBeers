@@ -26,10 +26,11 @@ exists because answering them properly changed the shape of the fix.
 
 Half true, and the half that is false is the load-bearing one.
 
-`viewModelScope` is `SupervisorJob() + Dispatchers.Main.immediate`. **No injection can reach it** —
-`Dispatchers.setMain` is the only override. So a test needs `setMain` whether or not a dispatcher is
-injected, and every ViewModel test here already called it. The injected provider was a *second*
-control surface for something the first one already covered.
+These ViewModels use the default `viewModelScope`; they do not supply a custom scope. Injecting a
+`CoroutineDispatcherProvider` does not replace that scope's Main dispatcher. Their tests therefore
+use `Dispatchers.setMain`, which already controls the bare `launch` path. The injected provider was
+a *second* control surface for something the first one already covered, not evidence that custom
+ViewModel scopes are impossible.
 
 Settled empirically rather than by argument: `BeerDetailViewModel` was converted to a bare
 `viewModelScope.launch { }`, its `mockk` dispatcher stubs deleted, and its test still passed with
@@ -67,7 +68,7 @@ The argument is answerable only with a detector, so this ADR ships one — see *
 | Repository wrapping a **blocking** library or vendor SDK | that class | `withContext(io)` | **Yes** |
 | CPU-heavy transform in the data layer (parsing, crypto, large sorts) | that class | `withContext(default)` | **Yes** |
 | Direct disk, file or `SharedPreferences` access | that class | `withContext(io)` | **Yes** |
-| Testing a ViewModel | the test | `Dispatchers.setMain` | **N/A** — `viewModelScope` is not injectable |
+| Testing these default-scope ViewModels | the test | `Dispatchers.setMain` | **No** extra provider just to control `launch` |
 | Testing a class that selects a dispatcher | the test | pass `runTest`'s dispatcher | **Yes** — same scheduler |
 
 Applied here: three ViewModels lost the parameter entirely. Two kept it, because they genuinely
@@ -75,9 +76,8 @@ select a dispatcher — `combine(pager.data, pager.pagingState, reducer::reduce)
 growing list on every emission, real CPU work that would otherwise run on Main under
 `stateIn(viewModelScope)`.
 
-Those two moved from `io` to `default`. `Dispatchers.IO` is a 64-thread pool sized for threads
-parked on blocking waits; using it for computation oversubscribes the CPU. `Default` is sized to the
-core count, which is what CPU-bound work wants.
+Those two moved from `io` to `default`: choose the dispatcher intended for CPU work, not the one
+intended for blocking waits. This policy does not depend on a fixed thread-count claim.
 
 **`CoroutineDispatcherProvider` stays.** It is the right seam for every "Yes" row above. The change
 is where it is injected, not whether it exists.
