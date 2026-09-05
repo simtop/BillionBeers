@@ -111,6 +111,7 @@ bundle-release: ## Assemble the signed release App Bundle (.aab) for Play Store 
 release-smoke: ## Run black-box launch and behavior smoke against the debug-signed, minified app.
 	$(GRADLE_RUNNER) :app-release-smoke:atdApi35ReleaseSmokeAndroidTest
 	$(GRADLE_RUNNER) :app:atdApi35ReleaseSmokeAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.simtop.billionbeers.ReleaseConfidenceSmokeTest
+	$(GRADLE_RUNNER) :feature:beerdetail:assembleReleaseSmoke :feature:beerbrowse:assembleReleaseSmoke
 	@bash scripts/verify-release-smoke-artifacts.sh
 
 clean: ## Clean all build outputs.
