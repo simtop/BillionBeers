@@ -516,13 +516,22 @@ jobs:
           bash .github/scripts/run-timed-command.sh
           ./gradlew ciGroupDebugAndroidTest --profile
 
-      # Debug UI tests prove screen behavior; this black-box lane proves the minified target launches
-      # and shows its production activity without requiring a Play signing identity.
-      - name: Run minified release launch smoke test
+      # The standalone lane proves package-level launch isolation; the app-owned lane proves the
+      # minified graph, mapping, dynamic route and Room persistence without a Play signing identity.
+      - name: Run minified release confidence smoke tests
         id: release_smoke_tests
         run: >-
           bash .github/scripts/run-timed-command.sh
-          ./gradlew :app-release-smoke:atdApi35ReleaseSmokeAndroidTest --profile
+          env GRADLE_RUNNER="./gradlew --profile" make release-smoke
+
+      - name: Archive release confidence artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: release-confidence-artifacts
+          path: app/build/outputs/release-smoke/
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Summarize instrumented lane timings
         if: always()

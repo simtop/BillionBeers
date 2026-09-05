@@ -30,14 +30,27 @@ interface EnvironmentModule {
       apiEnvironmentController: ApiEnvironmentController
     ): EnvironmentConfig {
       val selectedEnvironment = apiEnvironmentController.selectedEnvironment.value
-      val config = EnvironmentConfig(apiBaseUrl = selectedEnvironment.apiBaseUrl)
+      val releaseSmokeBaseUrl = BuildConfig.RELEASE_SMOKE_API_BASE_URL
+      val config =
+        EnvironmentConfig(
+          apiBaseUrl = releaseSmokeBaseUrl.ifBlank { selectedEnvironment.apiBaseUrl }
+        )
       if (!BuildConfig.DEBUG) {
-        check(selectedEnvironment == ApiEnvironment.PRODUCTION) {
-          "Release builds must use the Production API environment"
+        if (BuildConfig.BUILD_TYPE == RELEASE_SMOKE_BUILD_TYPE) {
+          // The smoke target uses a local server, but still exercises the release guard against
+          // the exact production endpoint before swapping in that deterministic test endpoint.
+          EnvironmentConfig(apiBaseUrl = ApiEnvironment.PRODUCTION.apiBaseUrl)
+            .validateForRelease(expectedApiBaseUrl = ApiEnvironment.PRODUCTION.apiBaseUrl)
+        } else {
+          check(selectedEnvironment == ApiEnvironment.PRODUCTION) {
+            "Release builds must use the Production API environment"
+          }
+          config.validateForRelease(ApiEnvironment.PRODUCTION.apiBaseUrl)
         }
-        config.validateForRelease(ApiEnvironment.PRODUCTION.apiBaseUrl)
       }
       return config
     }
+
+    private const val RELEASE_SMOKE_BUILD_TYPE = "releaseSmoke"
   }
 }

@@ -108,8 +108,10 @@ bundle-release: ## Assemble the signed release App Bundle (.aab) for Play Store 
 	$(GRADLE_RUNNER) :app:bundleRelease
 	@echo "📦 Release bundle (bundles the :feature:beerdetail on-demand module): app/build/outputs/bundle/release/app-release.aab"
 
-release-smoke: ## Run the black-box launch smoke against the debug-signed, minified app.
+release-smoke: ## Run black-box launch and behavior smoke against the debug-signed, minified app.
 	$(GRADLE_RUNNER) :app-release-smoke:atdApi35ReleaseSmokeAndroidTest
+	$(GRADLE_RUNNER) :app:atdApi35ReleaseSmokeAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.simtop.billionbeers.ReleaseConfidenceSmokeTest
+	@bash scripts/verify-release-smoke-artifacts.sh
 
 clean: ## Clean all build outputs.
 	$(GRADLE_RUNNER) clean
@@ -270,7 +272,8 @@ VERIFICATION_METADATA_PASS_TWO := \
 	:snapshot-processor:test checkDataLayerClasspathBoundary verifyArchitectureGraph \
 	verifyPaparazziDebug jacocoRootReport
 VERIFICATION_METADATA_REFERENCE_DEVICE_TASKS := \
-	ciGroupDebugAndroidTest :app-release-smoke:atdApi35ReleaseSmokeAndroidTest
+	ciGroupDebugAndroidTest :app-release-smoke:atdApi35ReleaseSmokeAndroidTest \
+	:app:atdApi35ReleaseSmokeAndroidTest
 VERIFICATION_METADATA_CANDIDATE_DEVICE_TASKS := \
 	:app:assembleDebugAndroidTest \
 	:beer_database:assembleDebugAndroidTest \

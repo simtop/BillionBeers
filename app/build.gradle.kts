@@ -35,8 +35,13 @@ dependencyGuard {
 android {
   namespace = "com.simtop.billionbeers"
   dynamicFeatures += setOf(":feature:beerdetail", ":feature:beerbrowse")
+  testBuildType = "releaseSmoke"
 
   buildFeatures { buildConfig = true }
+
+  defaultConfig {
+    buildConfigField("String", "RELEASE_SMOKE_API_BASE_URL", "\"\"")
+  }
 
   // Debug tests opt into MockTestRunner through src/debugAndroidTest/AndroidManifest.xml; the
   // dedicated :app-release-smoke test module uses the stock runner against releaseSmoke.
@@ -48,12 +53,20 @@ android {
       initWith(getByName("release"))
       matchingFallbacks += "release"
       signingConfig = signingConfigs.getByName("debug")
+      proguardFiles("release-smoke-rules.pro")
+      testProguardFiles("release-smoke-test-rules.pro")
+      buildConfigField(
+        "String",
+        "RELEASE_SMOKE_API_BASE_URL",
+        "\"http://127.0.0.1:18080/\"",
+      )
     }
   }
 
   // initWith copies build-type settings, not source sets. The smoke variant uses the release twins
   // for the debug drawer and StrictMode hook, just like the benchmark variant above.
   sourceSets.getByName("releaseSmoke").kotlin.directories.add("src/release/java")
+  sourceSets.getByName("androidTest").kotlin.directories.add("src/releaseSmokeAndroidTest/java")
 
   packaging {
     resources {
@@ -97,6 +110,7 @@ dependencies {
   androidTestImplementation(libs.striktCore)
 
   androidTestImplementation(libs.androidx.ui.test.junit4)
+  androidTestImplementation(libs.uiautomator)
   debugImplementation(libs.androidx.ui.test.manifest)
 
   androidTestImplementation(libs.roomRuntime)
