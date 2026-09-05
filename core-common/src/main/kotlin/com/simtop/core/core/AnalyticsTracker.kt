@@ -1,11 +1,9 @@
 package com.simtop.core.core
 
 fun interface AnalyticsTracker {
-  fun logEvent(name: String, params: Map<String, String>)
+  fun logEvent(event: AnalyticsEvent)
 }
 
-fun AnalyticsTracker.logEvent(name: String) = logEvent(name, emptyMap())
-
 class NoOpAnalyticsTracker : AnalyticsTracker {
-  override fun logEvent(name: String, params: Map<String, String>) = Unit
+  override fun logEvent(event: AnalyticsEvent) = Unit
 }

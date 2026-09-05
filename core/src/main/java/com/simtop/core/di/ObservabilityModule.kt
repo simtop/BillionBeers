@@ -12,9 +12,10 @@ import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
 
 /**
- * The observability seam: swap [NoOpAnalyticsTracker] / [NoOpCrashReporter] for real backends
- * (Firebase Analytics, Crashlytics, Sentry, ...) here, one binding at a time, without touching any
- * call site.
+ * The account-free observability seam. The default bindings do nothing for analytics and crash
+ * reporting; the logger only receives the closed [com.simtop.core.core.Diagnostic] vocabulary. A
+ * future adapter may be bound here after a real provider and consent policy exist, without changing
+ * call sites or widening the data contract.
  */
 @ContributesTo(AppScope::class)
 interface ObservabilityModule {
