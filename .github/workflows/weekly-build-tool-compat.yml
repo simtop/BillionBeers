@@ -1,4 +1,4 @@
-name: Weekly Build-Tool Forward Compatibility
+name: Monthly Build-Tool Forward Compatibility
 
 # This is deliberately separate from ci.yml. It exercises the build platform on the supported
 # wrapper and Gradle's next distribution without becoming a required per-PR release pipeline.
@@ -6,8 +6,8 @@ name: Weekly Build-Tool Forward Compatibility
 # publishes a release candidate.
 on:
   schedule:
-    # 05:00 UTC every Saturday, before the device-compatibility and health-report workflows.
-    - cron: '0 5 * * 6'
+    # 05:00 UTC on the first day of each month.
+    - cron: '0 5 1 * *'
   workflow_dispatch:
 
 permissions:
@@ -60,6 +60,8 @@ jobs:
             --no-configuration-cache \
             --warning-mode all \
             --console=plain 2>&1 | tee -a "$WARNING_LOG"
+          GRADLE_COMMAND="$GRADLE_COMMAND" bash scripts/check-gradle-compatibility-flags.sh \
+            2>&1 | tee -a "$WARNING_LOG"
           bash scripts/check-gradle-warnings.sh "$WARNING_LOG"
 
       - name: Archive build-tool compatibility log

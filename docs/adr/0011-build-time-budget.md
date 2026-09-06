@@ -48,7 +48,7 @@ a runner-assignment detector with a build-time label on it, and the failure mode
 having no gate — it would go red for reasons no one can act on, and be disabled within a month.
 
 The local numbers below reinforce it independently: even on one quiet machine, `clean_build_cold`
-ranged 29.7s–59.3s across ten iterations. Adding shared-runner variance on top of that is not a
+ranged 24.4s–92.1s across ten iterations. Adding shared-runner variance on top of that is not a
 signal anyone can threshold.
 
 A deterministic, machine-independent CI check was considered — executed-task count or task-graph
@@ -56,21 +56,26 @@ size for a fixed change. Rejected for this ADR: it catches "a plugin added 200 t
 to incremental compilation breaking, which is the actual risk. Graph-shape enforcement belongs in
 `:konsist`, not here.
 
-## The baseline
+## The latest baseline
 
-Measured 2026-08-07 on an Apple M1 Pro (8 cores, 16 GB, macOS 26.5, JDK 24) with the settings
-`make build-budget` uses — 6 warm-ups and 10 measured iterations per scenario.
+Measured 2026-09-06 on the same Apple M1 Pro (8 cores, 16 GB, macOS 26.5, JDK 24), using Gradle
+9.7.1 and the settings `make build-budget` uses — 6 warm-ups and 10 measured iterations per
+scenario.
 
 | Scenario | median | min | max | spread | stdev |
 |---|---|---|---|---|---|
-| `clean_build_cold` | 37.3s | 29.7s | 59.3s | 79% | 9.6 |
-| `clean_build_warm` | 4.3s | 2.5s | 11.5s | 207% | 2.8 |
-| `incremental_leaf` | 2.3s | 1.8s | 3.7s | 81% | 0.6 |
-| `incremental_deep` | 2.5s | 2.0s | 3.4s | 58% | 0.5 |
-| `unit_tests` | 5.6s | 4.9s | 6.6s | 32% | 0.6 |
+| `clean_build_cold` | 26.8s | 24.4s | 92.1s | 253% | 20.7 |
+| `clean_build_warm` | 8.7s | 3.8s | 14.6s | 125% | 4.0 |
+| `incremental_leaf` | 3.0s | 2.5s | 3.5s | 33% | 0.3 |
+| `incremental_deep` | 2.8s | 2.5s | 3.5s | 35% | 0.3 |
+| `unit_tests` | 4.6s | 4.1s | 6.7s | 56% | 0.8 |
 
-**A clean build with no caches is 37s; with warm caches it is 4s.** That is the answer to the
+**A clean build with no caches is 27s; with warm caches it is 9s.** That is the answer to the
 question this ADR exists to make answerable.
+
+The previous baseline, measured 2026-08-07, was `37.3s / 4.3s / 2.3s / 2.5s / 5.6s` for the
+same five scenarios in table order. The change is retained here as dated history rather than
+treated as a regression signal: the cold and warm samples are noisy, machine-specific measurements.
 
 ### The finding that contradicts the scenario's own premise
 
@@ -80,9 +85,9 @@ incremental build, presented as the representative one. The replacement changes 
 `:beerdomain:api`, which ten modules depend on.
 
 The expectation was that the deep change would be substantially more expensive, and that the gap
-would quantify what modularization buys. **It measured 1.11x — 2.5s against 2.3s.**
+would quantify what modularization buys. **This run measured 0.95x — 2.8s against 3.0s.**
 
-The honest reading is not "incremental compilation is extraordinarily good." It is that at ~2.4s per
+The honest reading is not "incremental compilation is extraordinarily good." It is that at ~2.9s per
 build, **fixed per-build overhead dominates and compilation is not what you are paying for.**
 Configuration, task-graph construction and up-to-date checking swamp the difference between
 recompiling one module and recompiling eleven.

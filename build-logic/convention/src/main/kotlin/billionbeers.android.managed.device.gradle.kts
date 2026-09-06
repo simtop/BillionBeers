@@ -18,12 +18,12 @@ import com.android.build.api.dsl.ManagedVirtualDevice
  *   It remains a separate compatibility lane because it exercises the latest platform APIs and
  *   the production target behavior; there are no ATD images for 37, so this one pays full price.
  *
- * The fast lane runs on every push; the newest lane runs weekly, because booting its full image
+ * The fast lane runs on every push; the newest lane runs monthly, because booting its full image
  * costs ~2m28s against the ATD's ~30s.
  *
  *     ./gradlew :app:atdApi35DebugAndroidTest       # one device, one module
  *     ./gradlew ciGroupDebugAndroidTest             # fast lane, every opted-in module (per push)
- *     ./gradlew compatGroupDebugAndroidTest         # newest lane, every opted-in module (weekly)
+ *     ./gradlew compatGroupDebugAndroidTest         # newest lane, every opted-in module (monthly)
  *     ./gradlew allDevicesDebugAndroidTest          # every device, every opted-in module
  *
  * Opt in per module (`id("billionbeers.android.managed.device")`) rather than applying this from
@@ -61,14 +61,14 @@ fun ManagedDevices.configureBillionBeersDevices(testedAbiForHost: String) {
 
     // Groups exist so the workflows never name devices: lanes change here, CI stays untouched.
     // Both are currently groups of one, which is deliberate - it keeps that indirection while the
-    // split is "fast lane on every push, slow lane weekly".
+    // split is "fast lane on every push, slow lane monthly".
 
     // Every push and PR. Measured on a GitHub runner: ~1m for both modules.
     groups.create("ci") {
         targetDevices.add(fastLane)
     }
 
-    // Weekly only (.github/workflows/weekly-compat.yml). Measured at ~3m45s, of which 2m28s is
+    // Monthly only (.github/workflows/weekly-compat.yml). Measured at ~3m45s, of which 2m28s is
     // just booting the full image - which is why it is not on the per-push path.
     groups.create("compat") {
         targetDevices.add(newest)

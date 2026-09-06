@@ -112,6 +112,21 @@ Executing it from this target would add runtime without adding entries to the ro
 included build is still resolved while configuring the root build, so the convention plugins needed
 by root tasks remain covered.
 
+### Trust decision for standalone build-logic tests
+
+The standalone `./gradlew -p build-logic :convention:test` invocation is intentionally **not**
+claimed to be protected by the root verification ledger. It is a separate Gradle build with its own
+settings, dependency-resolution management and user-home state; the root
+`gradle/verification-metadata.xml` is not consulted for its test-only dependencies. The test task is
+still required in the normal unit-test and monthly build-tool compatibility checks, but execution
+coverage and dependency verification are different claims.
+
+If the standalone build is later brought under verification, it must get a sustainable, explicit
+path: a `build-logic/gradle/verification-metadata.xml` ledger, a documented
+`--write-verification-metadata` regeneration target that runs the complete `:convention:test` graph,
+and a CI check that uses that ledger. Merely invoking the test from the root writer, or asserting
+that the root ledger exists, would not provide that protection.
+
 ### Resolution-only writer is an experiment, not an assumption
 
 `verification-metadata-reference` retains actual GMD and release-smoke execution and remains the
