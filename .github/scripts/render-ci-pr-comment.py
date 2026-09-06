@@ -32,6 +32,14 @@ def render(data: dict, run_url: str, repository: str, run_id: str, diagnostics: 
         "Instrumented Tests (Gradle Managed Device)": "make ui-test-managed-ci",
         "Static Analysis (Detekt)": "make lint",
     }
+    cancelled = [job for job in failed if job.get("conclusion") == "cancelled"]
+    if cancelled:
+        lines += [
+            "### Cancellation note",
+            "",
+            "The job was cancelled before CI could establish a test result. This is not evidence of a test assertion failure; rerun the workflow before changing application or test code.",
+            "",
+        ]
     if failed:
         lines += ["### Reproduce or fix", ""]
         for job in failed:
