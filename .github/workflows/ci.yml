@@ -30,6 +30,9 @@ jobs:
       - name: Test CI comment publisher
         run: python3 .github/scripts/test_publish_ci_comment.py
 
+      - name: Test CI comment renderer
+        run: python3 .github/scripts/test_render_ci_pr_comment.py
+
       - name: Test Markdown checker
         run: python3 scripts/test_check_markdown_links.py
 
@@ -535,7 +538,9 @@ jobs:
         if: >-
           always() &&
           (steps.managed_device_tests.outcome == 'failure' ||
-          steps.release_smoke_tests.outcome == 'failure')
+          steps.managed_device_tests.outcome == 'cancelled' ||
+          steps.release_smoke_tests.outcome == 'failure' ||
+          steps.release_smoke_tests.outcome == 'cancelled')
         run: python3 .github/scripts/summarize-test-failures.py managed-device --detail
 
       - name: Archive instrumented test reports
@@ -546,7 +551,7 @@ jobs:
           path: |
             **/build/reports/androidTests/managedDevice/
             **/build/outputs/androidTest-results/managedDevice/
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 7
 
       - name: Archive managed-device Gradle profiles

@@ -38,8 +38,15 @@ jobs:
           while IFS=$'\t' read -r artifact_id artifact_name; do
             [[ "$artifact_name" == "screenshot-test-results" || "$artifact_name" == "unit-test-reports" || "$artifact_name" == "instrumented-test-reports" ]] || continue
             mkdir -p "$RUNNER_TEMP/evidence/$artifact_name"
-            gh api "repos/$REPOSITORY/actions/artifacts/$artifact_id/zip" --output "$RUNNER_TEMP/$artifact_name.zip"
-            unzip -q "$RUNNER_TEMP/$artifact_name.zip" -d "$RUNNER_TEMP/evidence/$artifact_name" || true
+            if ! gh api "repos/$REPOSITORY/actions/artifacts/$artifact_id/zip" > "$RUNNER_TEMP/$artifact_name.zip"; then
+              echo "::warning::Could not download CI artifact: $artifact_name ($artifact_id)"
+              rm -f "$RUNNER_TEMP/$artifact_name.zip"
+              continue
+            fi
+            if ! unzip -q "$RUNNER_TEMP/$artifact_name.zip" -d "$RUNNER_TEMP/evidence/$artifact_name"; then
+              echo "::warning::Could not extract CI artifact: $artifact_name ($artifact_id)"
+              rm -f "$RUNNER_TEMP/$artifact_name.zip"
+            fi
           done < <(jq -r '.artifacts[] | [.id, .name] | @tsv' "$RUNNER_TEMP/artifacts.json")
           python3 - "$RUNNER_TEMP/jobs.json" "$RUNNER_TEMP/artifacts.json" "$RUNNER_TEMP/ci-report.json" <<'PY'
           import json, sys
