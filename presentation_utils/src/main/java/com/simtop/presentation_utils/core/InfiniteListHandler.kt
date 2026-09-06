@@ -3,6 +3,8 @@ package com.simtop.presentation_utils.core
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -42,6 +44,7 @@ internal fun Flow<ListPosition>.loadMoreSignals(buffer: Int): Flow<Unit> =
  */
 @Composable
 fun InfiniteListHandler(listState: LazyListState, buffer: Int = 1, onLoadMore: () -> Unit) {
+  val currentOnLoadMore by rememberUpdatedState(onLoadMore)
   LaunchedEffect(listState, buffer) {
     snapshotFlow {
         val layoutInfo = listState.layoutInfo
@@ -51,6 +54,6 @@ fun InfiniteListHandler(listState: LazyListState, buffer: Int = 1, onLoadMore: (
         )
       }
       .loadMoreSignals(buffer)
-      .collect { onLoadMore() }
+      .collect { currentOnLoadMore() }
   }
 }

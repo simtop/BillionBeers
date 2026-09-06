@@ -80,12 +80,10 @@ declines is a better signal than a token-refresh interceptor with no token behin
 
 ## Consequences
 
-- **`ACCESS_NETWORK_STATE` is declared and unread by our code.** `app/src/main/AndroidManifest.xml:4`
-  requests it; no file under any `src/` touches `ConnectivityManager` or `NetworkCapabilities`. It is
-  a leftover from the connectivity-aware retry this ADR declines. Drop the explicit declaration —
-  if Play Core still needs it, its own manifest merges it in and the line was redundant; if not, the
-  app was asking for a permission it does not use, which is exactly the drift this repo otherwise
-  refuses to tolerate.
+- **`ACCESS_NETWORK_STATE` is not requested by the app.** No file under any `src/` touches
+  `ConnectivityManager` or `NetworkCapabilities`, and the explicit manifest declaration was removed
+  after manifest-merger inspection showed it came only from the app manifest. The connectivity-aware
+  retry this ADR declines therefore does not leave an unused permission in the shipped app.
 - **No `google-services.json` is a property to protect, not an accident.** Adding Firebase would
   make a public template require a private file to build. Any future integration must survive its
   absence.

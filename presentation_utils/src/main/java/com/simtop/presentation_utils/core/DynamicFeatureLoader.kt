@@ -17,6 +17,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.retain.retain
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,6 +47,7 @@ fun DynamicFeatureLoader(
   content: @Composable () -> Unit,
 ) {
   val installer = rememberDynamicFeatureInstaller(featureName)
+  val currentOnCancelled by rememberUpdatedState(onCancelled)
   val status = installer.status
 
   when (status) {
@@ -72,7 +75,7 @@ fun DynamicFeatureLoader(
         onCancel = installer::cancel,
       )
 
-    InstallStatus.Cancelled -> LaunchedEffect(installer) { onCancelled() }
+    InstallStatus.Cancelled -> LaunchedEffect(installer) { currentOnCancelled() }
 
     // The in-progress states render nothing here on purpose — see the single dialog call site
     // below.
