@@ -29,7 +29,7 @@ val excludedDirNames =
     setOf(
         ".git", ".gradle", ".idea", ".kotlin", ".vscode", ".circleci", ".github", ".claude",
         "build", "src", "build-logic", "gradle", "gradle-user-home", "config", "docs", "scripts",
-        "profile-out", "brain", "imagesForReadme",
+        "profile-out", "brain", "imagesForReadme", "rod",
     )
 
 fun File.hasBuildScript() = resolve("build.gradle.kts").exists() || resolve("build.gradle").exists()

@@ -38,10 +38,20 @@ tasks.withType<Test>().configureEach {
 // In Pure Kotlin Modules, applying id("jacoco") automatically creates a jacocoTestReport task.
 // In Android Modules, Applying id("jacoco") does NOT create the jacocoTestReport task
 // automatically. You have to create it yourself.
-val jacocoTestReport = if (tasks.findByName("jacocoTestReport") != null) {
-    tasks.named("jacocoTestReport")
+val jacocoTestReport: TaskProvider<JacocoReport> = if (tasks.findByName("jacocoTestReport") != null) {
+    tasks.named<JacocoReport>("jacocoTestReport")
 } else {
-    tasks.register("jacocoTestReport", JacocoReport::class)
+    tasks.register<JacocoReport>("jacocoTestReport")
+}
+
+// The mutation-testing and coverage-check tooling consume JaCoCo XML. The default pure-JVM
+// jacocoTestReport only enables HTML, which makes line coverage available to a browser but not to
+// source-aware tools. Android reports below already request XML explicitly.
+jacocoTestReport.configure {
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
 }
 
 val androidComponents = extensions.findByType(com.android.build.api.variant.AndroidComponentsExtension::class.java)
