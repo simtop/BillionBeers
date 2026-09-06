@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
-"""Publish exact failed test identifiers from Gradle JUnit XML."""
+"""Publish concise, exact failed test diagnostics from Gradle JUnit XML."""
 
 from __future__ import annotations
 
 import argparse
+import json
 import os
+import re
 import shlex
 import sys
 import xml.etree.ElementTree as ET
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 PAPARAZZI_PACKAGE = "com.simtop.billionbeers.screenshot"
+MAX_DETAIL_LENGTH = 360
+LOCATION_RE = re.compile(r"(?:^|[\s(])((?:[A-Za-z0-9_./:-]+\.(?:kt|java|xml)):\d+(?::\d+)?)")
 
 
 @dataclass(frozen=True, order=True)
@@ -20,10 +24,28 @@ class Failure:
     classname: str
     name: str
     kind: str
+    detail: str = field(default="", compare=False)
+    location: str = field(default="", compare=False)
+    report: str = field(default="", compare=False)
 
 
 def local_name(tag: str) -> str:
     return tag.rsplit("}", 1)[-1]
+
+
+def clean_detail(value: str) -> str:
+    value = " ".join(value.replace("\r", " ").replace("\n", " ").split())
+    return value[:MAX_DETAIL_LENGTH] + ("…" if len(value) > MAX_DETAIL_LENGTH else "")
+
+
+def testcase_detail(testcase: ET.Element) -> tuple[str, str]:
+    for child in testcase:
+        if local_name(child.tag) in {"failure", "error"}:
+            text = " ".join(part.strip() for part in child.itertext() if part.strip())
+            detail = clean_detail(text)
+            location_match = LOCATION_RE.search(text)
+            return detail, location_match.group(1) if location_match else ""
+    return "", ""
 
 
 def module_from_path(path: Path, root: Path) -> str | None:
@@ -44,12 +66,10 @@ def contains_path(path: Path, sequence: tuple[str, ...]) -> bool:
 def report_paths(root: Path, mode: str) -> list[Path]:
     reports = []
     for path in root.rglob("TEST-*.xml"):
-        if mode == "paparazzi":
-            if contains_path(path, ("build", "test-results")):
-                reports.append(path)
-        elif contains_path(
-            path,
-            ("build", "outputs", "androidTest-results", "managedDevice"),
+        if mode in {"paparazzi", "unit"} and contains_path(path, ("build", "test-results")):
+            reports.append(path)
+        elif mode == "managed-device" and contains_path(
+            path, ("build", "outputs", "androidTest-results", "managedDevice")
         ):
             reports.append(path)
     return sorted(reports)
@@ -69,9 +89,8 @@ def suite_project(suite: ET.Element) -> str | None:
 
 def failed_kind(testcase: ET.Element) -> str | None:
     for child in testcase:
-        kind = local_name(child.tag)
-        if kind in {"failure", "error"}:
-            return kind
+        if local_name(child.tag) in {"failure", "error"}:
+            return local_name(child.tag)
     return None
 
 
@@ -93,17 +112,19 @@ def parse_report(path: Path, root: Path, mode: str) -> list[Failure]:
                 continue
             if mode == "paparazzi" and not classname.startswith(PAPARAZZI_PACKAGE):
                 continue
-            failures.append(Failure(module, classname, name, kind))
+            if mode == "unit" and classname.startswith(PAPARAZZI_PACKAGE):
+                continue
+            detail, location = testcase_detail(testcase)
+            failures.append(
+                Failure(module, classname, name, kind, detail, location, path.as_posix())
+            )
     return failures
 
 
 def paparazzi_failure_modules(root: Path) -> list[str]:
     modules = set()
     for directory in root.rglob("failures"):
-        if not directory.is_dir() or not contains_path(
-            directory,
-            ("build", "paparazzi", "failures"),
-        ):
+        if not directory.is_dir() or not contains_path(directory, ("build", "paparazzi", "failures")):
             continue
         if not any(path.is_file() for path in directory.rglob("*")):
             continue
@@ -140,7 +161,7 @@ def inline_code(value: str) -> str:
     return f"{fence}{padding}{value}{padding}{fence}"
 
 
-def failure_lines(failures: list[Failure]) -> list[str]:
+def failure_lines(failures: list[Failure], include_detail: bool = False) -> list[str]:
     lines = []
     current_module = None
     for failure in failures:
@@ -148,7 +169,12 @@ def failure_lines(failures: list[Failure]) -> list[str]:
             current_module = failure.module
             lines.append(f"- {inline_code(failure.module)}")
         identifier = f"{failure.classname}#{failure.name}"
-        lines.append(f"  - {inline_code(identifier)} — {failure.kind}")
+        suffix = f" — {failure.kind}"
+        if include_detail and failure.location:
+            suffix += f" at {inline_code(failure.location)}"
+        if include_detail and failure.detail:
+            suffix += f" — {inline_code(failure.detail)}"
+        lines.append(f"  - {inline_code(identifier)}{suffix}")
     return lines
 
 
@@ -157,11 +183,14 @@ def render_paparazzi(
     unreadable: list[str],
     fallback_modules: list[str],
     branch: str | None,
+    run_url: str | None = None,
+    artifact_url: str | None = None,
+    include_detail: bool = False,
 ) -> str:
     lines = ["### 📸 Screenshot verification failed", ""]
     modules = sorted({failure.module for failure in failures} | set(fallback_modules))
     if failures:
-        lines.extend(["#### Failed snapshots/tests", "", *failure_lines(failures), ""])
+        lines.extend(["#### Failed snapshots/tests", "", *failure_lines(failures, include_detail), ""])
     elif fallback_modules:
         lines.extend(
             [
@@ -178,65 +207,48 @@ def render_paparazzi(
                 "",
             ]
         )
-
     if unreadable:
-        lines.extend(
-            [
-                f"_Could not parse {len(unreadable)} JUnit report(s); remaining reports were still inspected._",
-                "",
-            ]
-        )
-
+        lines.extend([f"_Could not parse {len(unreadable)} JUnit report(s); remaining reports were still inspected._", ""])
     if modules and branch:
         module_arg = " ".join(modules)
-        command = (
-            "gh workflow run record_screenshots.yml "
-            f"--ref {shlex.quote(branch)} -f modules={shlex.quote(module_arg)}"
-        )
-        lines.extend(
-            [
-                "#### 🛠️ How to fix",
-                "",
-                "Record updated screenshots for the affected modules:",
-                "",
-                "```bash",
-                command,
-                "```",
-                "",
-            ]
-        )
-
+        command = "gh workflow run record_screenshots.yml " f"--ref {shlex.quote(branch)} -f modules={shlex.quote(module_arg)}"
+        lines.extend(["#### 🛠️ How to fix", "", "Record updated screenshots for the affected modules:", "", "```bash", command, "```", ""])
+    if artifact_url:
+        lines.append(f"[Open screenshot failure artifact]({artifact_url})")
+    if run_url:
+        lines.append(f"[Open CI run]({run_url})")
     lines.append("Failure images and JUnit XML are available in the artifacts below. ⬇️")
     return "\n".join(lines) + "\n"
 
 
-def render_managed_device(failures: list[Failure], unreadable: list[str]) -> str:
+def render_managed_device(
+    failures: list[Failure], unreadable: list[str], run_url: str | None = None, artifact_url: str | None = None, include_detail: bool = False
+) -> str:
     lines = ["### 🧪 Instrumented test failures", ""]
     if failures:
-        lines.extend(["#### Failed tests", "", *failure_lines(failures), ""])
+        lines.extend(["#### Failed tests", "", *failure_lines(failures, include_detail), ""])
     else:
-        lines.extend(
-            [
-                "No failed JUnit testcase was emitted. Compilation, device provisioning, installation, or test-runner startup may have failed before a testcase completed.",
-                "",
-            ]
-        )
+        lines.extend(["No failed JUnit testcase was emitted. Compilation, device provisioning, installation, or test-runner startup may have failed before a testcase completed.", ""])
     if unreadable:
-        lines.extend(
-            [
-                f"_Could not parse {len(unreadable)} JUnit report(s); remaining reports were still inspected._",
-                "",
-            ]
-        )
+        lines.extend([f"_Could not parse {len(unreadable)} JUnit report(s); remaining reports were still inspected._", ""])
+    if artifact_url:
+        lines.append(f"[Open instrumented test artifact]({artifact_url})")
+    if run_url:
+        lines.append(f"[Open CI run]({run_url})")
     lines.append("See the failing Gradle step and the `instrumented-test-reports` artifact for details.")
     return "\n".join(lines) + "\n"
 
 
-def generate(root: Path, mode: str, branch: str | None = None) -> str:
+def generate(root: Path, mode: str, branch: str | None = None, **kwargs: object) -> str:
     failures, unreadable, fallback_modules = collect(root, mode)
     if mode == "paparazzi":
-        return render_paparazzi(failures, unreadable, fallback_modules, branch)
-    return render_managed_device(failures, unreadable)
+        return render_paparazzi(failures, unreadable, fallback_modules, branch, **kwargs)
+    return render_managed_device(failures, unreadable, **kwargs)
+
+
+def failures_json(root: Path, mode: str) -> dict[str, object]:
+    failures, unreadable, fallback_modules = collect(root, mode)
+    return {"mode": mode, "failures": [asdict(failure) for failure in failures], "unreadable": unreadable, "fallback_modules": fallback_modules}
 
 
 def publish(markdown: str, summary_path: Path | None) -> None:
@@ -252,18 +264,20 @@ def publish(markdown: str, summary_path: Path | None) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("mode", choices=("paparazzi", "managed-device"))
+    parser.add_argument("mode", choices=("paparazzi", "managed-device", "unit"))
     parser.add_argument("--root", type=Path, default=Path("."))
     parser.add_argument("--branch")
-    parser.add_argument(
-        "--summary",
-        type=Path,
-        default=Path(os.environ["GITHUB_STEP_SUMMARY"])
-        if os.environ.get("GITHUB_STEP_SUMMARY")
-        else None,
-    )
+    parser.add_argument("--run-url")
+    parser.add_argument("--artifact-url")
+    parser.add_argument("--detail", action="store_true")
+    parser.add_argument("--json", type=Path, help="write a machine-readable failure report")
+    parser.add_argument("--summary", type=Path, default=Path(os.environ["GITHUB_STEP_SUMMARY"]) if os.environ.get("GITHUB_STEP_SUMMARY") else None)
     args = parser.parse_args(argv)
-    publish(generate(args.root, args.mode, args.branch), args.summary)
+    if args.json:
+        args.json.parent.mkdir(parents=True, exist_ok=True)
+        args.json.write_text(json.dumps(failures_json(args.root, args.mode), indent=2) + "\n", encoding="utf-8")
+    markdown = generate(args.root, args.mode, args.branch, run_url=args.run_url, artifact_url=args.artifact_url, include_detail=args.detail)
+    publish(markdown, args.summary)
     return 0
 
 

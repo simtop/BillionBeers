@@ -29,8 +29,9 @@ jobs:
         # always-empty.
         run: |
           SINCE=$(date -u -d '35 days ago' +%Y-%m-%dT%H:%M:%SZ)
-          COUNT=$(gh api "repos/${{ github.repository }}/commits?sha=master&since=$SINCE" --jq 'length')
-          echo "Commits on master since $SINCE: $COUNT"
+          DEFAULT_BRANCH="${{ github.event.repository.default_branch }}"
+          COUNT=$(gh api "repos/${{ github.repository }}/commits?sha=$DEFAULT_BRANCH&since=$SINCE" --jq 'length')
+          echo "Commits on $DEFAULT_BRANCH since $SINCE: $COUNT"
           if [ "$COUNT" -gt 0 ]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else

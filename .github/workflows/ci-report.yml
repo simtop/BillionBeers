@@ -1,0 +1,83 @@
+name: CI PR Diagnosis
+
+on:
+  workflow_run:
+    workflows: [Android CI]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  comment:
+    name: Publish CI diagnosis
+    if: >-
+      github.event.workflow_run.conclusion != 'success' &&
+      github.event.workflow_run.conclusion != 'skipped' &&
+      github.event.workflow_run.pull_requests[0] != null
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout trusted reporting scripts
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Collect completed job and artifact metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+          gh api "repos/$REPOSITORY/actions/runs/$RUN_ID/jobs?per_page=100" > "$RUNNER_TEMP/jobs.json"
+          gh api "repos/$REPOSITORY/actions/runs/$RUN_ID/artifacts?per_page=100" > "$RUNNER_TEMP/artifacts.json"
+          mkdir -p "$RUNNER_TEMP/evidence"
+          while IFS=$'\t' read -r artifact_id artifact_name; do
+            [[ "$artifact_name" == "screenshot-test-results" || "$artifact_name" == "unit-test-reports" || "$artifact_name" == "instrumented-test-reports" ]] || continue
+            mkdir -p "$RUNNER_TEMP/evidence/$artifact_name"
+            gh api "repos/$REPOSITORY/actions/artifacts/$artifact_id/zip" --output "$RUNNER_TEMP/$artifact_name.zip"
+            unzip -q "$RUNNER_TEMP/$artifact_name.zip" -d "$RUNNER_TEMP/evidence/$artifact_name" || true
+          done < <(jq -r '.artifacts[] | [.id, .name] | @tsv' "$RUNNER_TEMP/artifacts.json")
+          python3 - "$RUNNER_TEMP/jobs.json" "$RUNNER_TEMP/artifacts.json" "$RUNNER_TEMP/ci-report.json" <<'PY'
+          import json, sys
+          jobs = json.load(open(sys.argv[1]))
+          artifacts = json.load(open(sys.argv[2]))
+          json.dump({"jobs": jobs.get("jobs", []), "artifacts": artifacts.get("artifacts", [])}, open(sys.argv[3], "w"))
+          PY
+
+      - name: Render exact test diagnostics
+        run: |
+          set +e
+          python3 .github/scripts/summarize-test-failures.py unit --root "$RUNNER_TEMP/evidence/unit-test-reports" --detail --summary /dev/null > "$RUNNER_TEMP/unit-diagnostics.md"
+          python3 .github/scripts/summarize-test-failures.py paparazzi --root "$RUNNER_TEMP/evidence/screenshot-test-results" --detail --summary /dev/null > "$RUNNER_TEMP/screenshot-diagnostics.md"
+          python3 .github/scripts/summarize-test-failures.py managed-device --root "$RUNNER_TEMP/evidence/instrumented-test-reports" --detail --summary /dev/null > "$RUNNER_TEMP/instrumented-diagnostics.md"
+
+      - name: Render diagnosis
+        env:
+          REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          SERVER_URL: ${{ github.server_url }}
+        run: >-
+          python3 .github/scripts/render-ci-pr-comment.py
+          "$RUNNER_TEMP/ci-report.json"
+          --repository "$REPOSITORY"
+          --run-id "$RUN_ID"
+          --run-url "$SERVER_URL/$REPOSITORY/actions/runs/$RUN_ID"
+          --diagnostics "$RUNNER_TEMP/unit-diagnostics.md"
+          --diagnostics "$RUNNER_TEMP/screenshot-diagnostics.md"
+          --diagnostics "$RUNNER_TEMP/instrumented-diagnostics.md"
+          --output "$RUNNER_TEMP/ci-comment.md"
+
+      - name: Upsert PR diagnosis comment
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/publish-ci-comment.py \
+            --marker '<!-- billionbeers-ci:diagnosis -->' \
+            --body-file "$RUNNER_TEMP/ci-comment.md"
