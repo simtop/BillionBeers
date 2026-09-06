@@ -27,6 +27,9 @@ jobs:
       - name: Test CI failure summary parser
         run: python3 .github/scripts/test_summarize_test_failures.py
 
+      - name: Test CI comment publisher
+        run: python3 .github/scripts/test_publish_ci_comment.py
+
       - name: Test Markdown checker
         run: python3 scripts/test_check_markdown_links.py
 
@@ -350,44 +353,19 @@ jobs:
           COVERAGE_OUTCOME: ${{ steps.coverage_phase.outcome }}
           COVERAGE_SECONDS: ${{ steps.coverage_phase.outputs.elapsed_seconds }}
         run: |
-          format_duration() {
-            local seconds="${1:-}"
-            if [[ ! "$seconds" =~ ^[0-9]+$ ]]; then
-              printf '—'
-              return
-            fi
-            printf '%dm %02ds' "$((seconds / 60))" "$((seconds % 60))"
-          }
+          python3 .github/scripts/render-phase-timings.py \
+            --title 'Unit lane phase timings' \
+            --phase "Unit tests|$UNIT_OUTCOME|$UNIT_SECONDS" \
+            --phase "Test-tier inventory|$INVENTORY_OUTCOME|$INVENTORY_SECONDS" \
+            --phase "Konsist|$KONSIST_OUTCOME|$KONSIST_SECONDS" \
+            --phase "Data-layer classpath|$CLASSPATH_OUTCOME|$CLASSPATH_SECONDS" \
+            --phase "Architecture policy|$ARCHITECTURE_OUTCOME|$ARCHITECTURE_SECONDS" \
+            --phase "Coverage floor|$COVERAGE_OUTCOME|$COVERAGE_SECONDS"
+          echo '_Excludes checkout, JDK/Gradle setup, report upload, and skipped phases._' >> "$GITHUB_STEP_SUMMARY"
 
-          phase_total=0
-          for seconds in \
-            "$UNIT_SECONDS" \
-            "$INVENTORY_SECONDS" \
-            "$KONSIST_SECONDS" \
-            "$CLASSPATH_SECONDS" \
-            "$ARCHITECTURE_SECONDS" \
-            "$COVERAGE_SECONDS"; do
-            if [[ "$seconds" =~ ^[0-9]+$ ]]; then
-              phase_total=$((phase_total + seconds))
-            fi
-          done
-
-          {
-            echo "### Unit lane phase timings"
-            echo ""
-            echo "| Phase | Outcome | Elapsed |"
-            echo "|---|---|---:|"
-            printf '| Unit tests | `%s` | %s |\n' "$UNIT_OUTCOME" "$(format_duration "$UNIT_SECONDS")"
-            printf '| Test-tier inventory | `%s` | %s |\n' "$INVENTORY_OUTCOME" "$(format_duration "$INVENTORY_SECONDS")"
-            printf '| Konsist | `%s` | %s |\n' "$KONSIST_OUTCOME" "$(format_duration "$KONSIST_SECONDS")"
-            printf '| Data-layer classpath | `%s` | %s |\n' "$CLASSPATH_OUTCOME" "$(format_duration "$CLASSPATH_SECONDS")"
-            printf '| Architecture policy | `%s` | %s |\n' "$ARCHITECTURE_OUTCOME" "$(format_duration "$ARCHITECTURE_SECONDS")"
-            printf '| Coverage floor | `%s` | %s |\n' "$COVERAGE_OUTCOME" "$(format_duration "$COVERAGE_SECONDS")"
-            echo ""
-            echo "Measured phase total: **$(format_duration "$phase_total")**"
-            echo ""
-            echo "_Excludes checkout, JDK/Gradle setup, report upload, and skipped phases._"
-          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Summarize unit test failures
+        if: always() && steps.unit_phase.outcome == 'failure'
+        run: python3 .github/scripts/summarize-test-failures.py unit --detail
 
       - name: Archive Test Reports
         if: always()
@@ -440,7 +418,7 @@ jobs:
           BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
         run: >-
           python3 .github/scripts/summarize-test-failures.py paparazzi
-          --branch "$BRANCH_NAME"
+          --branch "$BRANCH_NAME" --detail
 
       - name: Upload Screenshot Failures
         if: always() && steps.verify-paparazzi.outcome == 'failure'
@@ -547,43 +525,18 @@ jobs:
           RELEASE_SMOKE_OUTCOME: ${{ steps.release_smoke_tests.outcome }}
           RELEASE_SMOKE_SECONDS: ${{ steps.release_smoke_tests.outputs.elapsed_seconds }}
         run: |
-          format_duration() {
-            local seconds="${1:-}"
-            if [[ ! "$seconds" =~ ^[0-9]+$ ]]; then
-              printf '—'
-              return
-            fi
-            printf '%dm %02ds' "$((seconds / 60))" "$((seconds % 60))"
-          }
-
-          phase_total=0
-          for seconds in "$MANAGED_DEVICE_SECONDS" "$RELEASE_SMOKE_SECONDS"; do
-            if [[ "$seconds" =~ ^[0-9]+$ ]]; then
-              phase_total=$((phase_total + seconds))
-            fi
-          done
-
-          {
-            echo "### Instrumented lane phase timings"
-            echo ""
-            echo "| Phase | Outcome | Elapsed |"
-            echo "|---|---|---:|"
-            printf '| Debug managed-device tests | `%s` | %s |\n' \
-              "$MANAGED_DEVICE_OUTCOME" "$(format_duration "$MANAGED_DEVICE_SECONDS")"
-            printf '| Minified release smoke | `%s` | %s |\n' \
-              "$RELEASE_SMOKE_OUTCOME" "$(format_duration "$RELEASE_SMOKE_SECONDS")"
-            echo ""
-            echo "Measured phase total: **$(format_duration "$phase_total")**"
-            echo ""
-            echo "_Task-level Gradle profiles are attached as a separate artifact._"
-          } >> "$GITHUB_STEP_SUMMARY"
+          python3 .github/scripts/render-phase-timings.py \
+            --title 'Instrumented lane phase timings' \
+            --phase "Debug managed-device tests|$MANAGED_DEVICE_OUTCOME|$MANAGED_DEVICE_SECONDS" \
+            --phase "Minified release smoke|$RELEASE_SMOKE_OUTCOME|$RELEASE_SMOKE_SECONDS"
+          echo '_Task-level Gradle profiles are attached as a separate artifact._' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Summarize instrumented test failures
         if: >-
           always() &&
           (steps.managed_device_tests.outcome == 'failure' ||
           steps.release_smoke_tests.outcome == 'failure')
-        run: python3 .github/scripts/summarize-test-failures.py managed-device
+        run: python3 .github/scripts/summarize-test-failures.py managed-device --detail
 
       - name: Archive instrumented test reports
         if: always()

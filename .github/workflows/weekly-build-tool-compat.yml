@@ -51,7 +51,7 @@ jobs:
           GRADLE_COMMAND: ${{ matrix.command }}
           WARNING_LOG: gradle-build-tool-compat.log
         run: |
-          set -o pipefail
+          set -euo pipefail
           "$GRADLE_COMMAND" help \
             --no-configuration-cache \
             --warning-mode all \

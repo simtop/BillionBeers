@@ -143,6 +143,33 @@ class TestFailureSummaryTest(unittest.TestCase):
         self.assertIn("method|two", report)
         self.assertEqual(1, report.count("method|two"))
 
+    def test_failure_details_extract_location_and_are_bounded(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            write(
+                root,
+                "feature/beersearch/build/test-results/testDebugUnitTest/TEST-search.xml",
+                """<testsuite><testcase classname=\"com.example.SearchTest\" name=\"typingWorks\"><failure>Assertion failed at SearchScreen.kt:42: expected this value """ + "x" * 500 + "</failure></testcase></testsuite>",
+            )
+            failures, _, _ = MODULE.collect(root, "unit")
+            self.assertEqual("SearchScreen.kt:42", failures[0].location)
+            self.assertLessEqual(len(failures[0].detail), MODULE.MAX_DETAIL_LENGTH + 1)
+            report = MODULE.generate(root, "unit", include_detail=True)
+            self.assertIn("SearchScreen.kt:42", report)
+            self.assertIn("Assertion failed", report)
+
+    def test_json_report_contains_machine_readable_failure_fields(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            write(
+                root,
+                "feature/beerslist/build/test-results/testDebugUnitTest/TEST-screenshots.xml",
+                "<testsuite><testcase classname=\"com.example.Test\" name=\"fails\"><error>boom</error></testcase></testsuite>",
+            )
+            report = MODULE.failures_json(root, "unit")
+            self.assertEqual("boom", report["failures"][0]["detail"])
+            self.assertEqual("unit", report["mode"])
+
     def test_main_prints_and_appends_identical_markdown(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
