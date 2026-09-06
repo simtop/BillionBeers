@@ -2,7 +2,5 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>ModifierMissing:BeersListScreen.kt$BeersListContent</ID>
-    <ID>ModifierMissing:BeersListScreen.kt$BeersListItemSkeleton</ID>
   </CurrentIssues>
 </SmellBaseline>

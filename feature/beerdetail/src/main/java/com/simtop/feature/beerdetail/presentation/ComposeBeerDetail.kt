@@ -301,22 +301,24 @@ private fun Beer.detailRows(): List<Pair<String, String>> = buildList {
 @Composable
 private fun BeerDetailBulletSection(title: String, items: List<String>) {
   if (items.isEmpty()) return
-  Text(
-    text = title,
-    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-  )
-  Spacer(
-    modifier =
-      Modifier.height(BillionBeersTheme.spacing.medium - BillionBeersTheme.spacing.extraSmall)
-  )
-  items.forEach { item ->
-    Row(modifier = Modifier.padding(vertical = BillionBeersTheme.spacing.extraSmall)) {
-      Text(
-        text = "•",
-        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-        modifier = Modifier.padding(end = BillionBeersTheme.spacing.small),
-      )
-      Text(text = item, style = MaterialTheme.typography.bodyLarge)
+  Column {
+    Text(
+      text = title,
+      style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+    )
+    Spacer(
+      modifier =
+        Modifier.height(BillionBeersTheme.spacing.medium - BillionBeersTheme.spacing.extraSmall)
+    )
+    items.forEach { item ->
+      Row(modifier = Modifier.padding(vertical = BillionBeersTheme.spacing.extraSmall)) {
+        Text(
+          text = "•",
+          style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+          modifier = Modifier.padding(end = BillionBeersTheme.spacing.small),
+        )
+        Text(text = item, style = MaterialTheme.typography.bodyLarge)
+      }
     }
   }
 }

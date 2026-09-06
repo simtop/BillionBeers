@@ -2,10 +2,6 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>ModifierMissing:BeerDetailScreen.kt$BeerDetailScreenImpl</ID>
-    <ID>ModifierMissing:ComposeBeerDetail.kt$ComposeBeerDetail</ID>
-    <ID>ModifierMissing:ComposeBeerDetail.kt$StatCard</ID>
-    <ID>MultipleEmitters:ComposeBeerDetail.kt$BeerDetailBulletSection</ID>
     <ID>ViewModelInjection:BeerDetailScreen.kt$viewModel</ID>
   </CurrentIssues>
 </SmellBaseline>

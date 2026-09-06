@@ -2,9 +2,6 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>ComposableParamOrder:ComposeErrorView.kt$ComposeErrorView</ID>
-    <ID>LambdaParameterInRestartableEffect:DynamicFeatureLoader.kt$onCancelled</ID>
-    <ID>LambdaParameterInRestartableEffect:InfiniteListHandler.kt$onLoadMore</ID>
     <ID>LongParameterList:DynamicFeatureInstallerTest.kt$DynamicFeatureInstallerTest$( status: Int, sessionId: Int = SESSION_ID, errorCode: Int = SplitInstallErrorCode.NO_ERROR, downloaded: Long = 0, total: Long = 0, modules: List&lt;String&gt; = listOf(MODULE), )</ID>
     <ID>MatchingDeclarationName:InfiniteListHandler.kt$ListPosition</ID>
     <ID>ParameterNaming:DynamicFeatureLoader.kt$onCancelled</ID>
