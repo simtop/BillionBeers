@@ -4,11 +4,12 @@ name: Weekly Gitleaks Version Check
 # Action, so Dependabot never bumps it (ADR 0006 accepts the manual two-line update as the cost of
 # closing the mutable-supply-chain surface). Without a reminder it can silently drift behind CVE
 # fixes. This lane compares the pinned version against the latest release once a week and opens an
-# issue on drift - the bump itself stays a deliberate, human-reviewed change.
+# issue on drift - the bump itself stays a deliberate, human-reviewed change. The other scheduled
+# maintenance lanes run monthly.
 
 on:
   schedule:
-    # 05:00 UTC every Saturday (before the compat lane at 06:00 and health report at 07:00).
+    # 05:00 UTC every Saturday.
     - cron: '0 5 * * 6'
   workflow_dispatch:
 

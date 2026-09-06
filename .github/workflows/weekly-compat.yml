@@ -1,4 +1,4 @@
-name: Weekly Forward-Compat Tests
+name: Monthly Forward-Compat Tests
 
 # Instrumented tests on the newest device lane (API 37, one above targetSdk). Kept off the
 # per-push path because its full system image takes ~2m28s just to boot, against ~30s for the
@@ -10,8 +10,8 @@ name: Weekly Forward-Compat Tests
 
 on:
   schedule:
-    # 06:00 UTC every Saturday.
-    - cron: '0 6 * * 6'
+    # 06:00 UTC on the first day of each month.
+    - cron: '0 6 1 * *'
   workflow_dispatch:
 
 jobs:
@@ -21,20 +21,21 @@ jobs:
     outputs:
       run: ${{ steps.check.outputs.run }}
     steps:
-      - name: Check for commits in the last week
+      - name: Check for commits in the last 35 days
         id: check
-        # The schedule is weekly, so "commits in the last 7 days" is exactly "merged since the
-        # last scheduled run". Queried through the API rather than `git log` on purpose: a
-        # checkout defaults to depth 1, which would make the window silently always-empty.
+        # The schedule is monthly, so a 35-day window covers the interval since the last scheduled
+        # run even across short months or a delayed run. Queried through the API rather than
+        # `git log` on purpose: a checkout defaults to depth 1, which would make the window silently
+        # always-empty.
         run: |
-          SINCE=$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%SZ)
+          SINCE=$(date -u -d '35 days ago' +%Y-%m-%dT%H:%M:%SZ)
           COUNT=$(gh api "repos/${{ github.repository }}/commits?sha=master&since=$SINCE" --jq 'length')
           echo "Commits on master since $SINCE: $COUNT"
           if [ "$COUNT" -gt 0 ]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else
             echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "Nothing merged in the last week - skipping the compat run."
+            echo "Nothing merged in the last 35 days - skipping the compat run."
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -78,7 +79,7 @@ jobs:
       # package registry, and setup fails on an unset property). This lane's one run actually HIT
       # that cache and passed - but only because the cache held the API 35 ATD image while this
       # lane provisions the API 37 image, so its install path never saw the restored dir. That
-      # protection is one eviction cycle away from gone: a weekly run on a cache miss would save
+      # protection is one eviction cycle away from gone: a monthly run on a cache miss would save
       # the API 37 image and the next hit would fail setup exactly like ci.yml's lane did. See
       # ci.yml for the conditions a correct re-introduction must meet.
 

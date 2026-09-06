@@ -507,7 +507,7 @@ jobs:
       - name: Run instrumented tests on the managed devices
         id: managed_device_tests
         # The `ci` group is the ATD fast lane. The slower API 37 lane is the `compat` group and
-        # runs weekly (.github/workflows/weekly-compat.yml). Which devices those mean is defined
+        # runs monthly (.github/workflows/weekly-compat.yml). Which devices those mean is defined
         # in build-logic, not here.
         # --profile is timing-only and keeps the configuration cache enabled. Its task-level report
         # separates device setup, APK assembly, and managed-device execution so the next

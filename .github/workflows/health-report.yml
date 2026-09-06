@@ -1,4 +1,4 @@
-name: Weekly Health Report
+name: Monthly Health Report
 
 # Aggregates read-only health checks into Markdown and versioned JSON. The current report is
 # published in the run's Step Summary and retained as a downloadable artifact. The tracked
@@ -6,8 +6,8 @@ name: Weekly Health Report
 
 on:
   schedule:
-    # 07:00 UTC every Saturday (after the forward-compat lane at 06:00).
-    - cron: '0 7 * * 6'
+    # 07:00 UTC on the first day of each month (after the forward-compat lane at 06:00).
+    - cron: '0 7 1 * *'
   workflow_dispatch:
 
 permissions:
@@ -94,5 +94,5 @@ jobs:
         with:
           name: health-report
           path: build/reports/health
-          retention-days: 30
+          retention-days: 60
           if-no-files-found: error
