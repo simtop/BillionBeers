@@ -1,9 +1,11 @@
 package com.simtop.feature.beersearch
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -139,21 +141,36 @@ fun BeersSearchContent(
       )
     },
   ) { padding ->
-    Box(modifier = Modifier.fillMaxSize().padding(top = padding.calculateTopPadding())) {
+    Box(modifier = Modifier.fillMaxSize().consumeWindowInsets(padding).imePadding()) {
       when (val state = viewState) {
-        CommonUiState.Empty -> CenteredHint(stringResource(R.string.search_prompt))
+        CommonUiState.Empty ->
+          CenteredHint(
+            text = stringResource(R.string.search_prompt),
+            modifier = Modifier.fillMaxSize().padding(padding),
+          )
         CommonUiState.Loading ->
-          Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+          Box(
+            modifier = Modifier.fillMaxSize().padding(padding),
+            contentAlignment = Alignment.Center,
+          ) {
             CircularProgressIndicator()
           }
         is CommonUiState.Error ->
-          ComposeErrorView(message = state.resolvedMessage().orEmpty(), onRetry = onRetrySearch)
+          ComposeErrorView(
+            message = state.resolvedMessage().orEmpty(),
+            onRetry = onRetrySearch,
+            modifier = Modifier.fillMaxSize().padding(padding),
+          )
         is CommonUiState.Success ->
           if (state.data.items.isEmpty()) {
-            CenteredHint(stringResource(R.string.search_no_results, query))
+            CenteredHint(
+              text = stringResource(R.string.search_no_results, query),
+              modifier = Modifier.fillMaxSize().padding(padding),
+            )
           } else {
             SearchResults(
               model = state.data,
+              contentPadding = padding,
               onBeerClick = onBeerClick,
               onScrollToBottom = onScrollToBottom,
               onRetryLoadMore = onRetryLoadMore,
@@ -190,48 +207,52 @@ private fun SearchField(query: String, onQueryChange: (String) -> Unit, autoFocu
 @Composable
 private fun SearchResults(
   model: PagedListUiModel<Beer>,
+  contentPadding: PaddingValues,
   onBeerClick: (Beer) -> Unit,
   onScrollToBottom: () -> Unit,
   onRetryLoadMore: () -> Unit,
 ) {
-  Column {
+  val listState = rememberLazyListState()
+  if (model.footer !is PagedListFooter.Retry) {
+    InfiniteListHandler(listState = listState, onLoadMore = onScrollToBottom)
+  }
+
+  val endOfListText =
+    pluralStringResource(R.plurals.search_end_of_list, model.items.size, model.items.size)
+  LazyColumn(
+    state = listState,
+    modifier = Modifier.fillMaxSize().consumeWindowInsets(contentPadding),
+    contentPadding = contentPadding,
+  ) {
     model.totalCount?.let { count ->
-      Text(
-        text = pluralStringResource(R.plurals.search_result_count, count, count),
-        style = MaterialTheme.typography.labelLarge,
-        modifier =
-          Modifier.fillMaxWidth()
-            .padding(
-              horizontal = BillionBeersTheme.spacing.medium,
-              vertical = BillionBeersTheme.spacing.small,
-            ),
-      )
-    }
-
-    val listState = rememberLazyListState()
-    if (model.footer !is PagedListFooter.Retry) {
-      InfiniteListHandler(listState = listState, onLoadMore = onScrollToBottom)
-    }
-
-    val endOfListText =
-      pluralStringResource(R.plurals.search_end_of_list, model.items.size, model.items.size)
-    LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
-      items(model.items.size) { index ->
-        ComposeBeersListItem(beer = model.items[index], onClick = onBeerClick)
+      item {
+        Text(
+          text = pluralStringResource(R.plurals.search_result_count, count, count),
+          style = MaterialTheme.typography.labelLarge,
+          modifier =
+            Modifier.fillMaxWidth()
+              .padding(
+                horizontal = BillionBeersTheme.spacing.medium,
+                vertical = BillionBeersTheme.spacing.small,
+              ),
+        )
       }
-      pagedListFooter(
-        model = model,
-        endOfListText = endOfListText,
-        onRetryLoadMore = onRetryLoadMore,
-      )
     }
+    items(model.items.size) { index ->
+      ComposeBeersListItem(beer = model.items[index], onClick = onBeerClick)
+    }
+    pagedListFooter(
+      model = model,
+      endOfListText = endOfListText,
+      onRetryLoadMore = onRetryLoadMore,
+    )
   }
 }
 
 @Composable
-private fun CenteredHint(text: String) {
+private fun CenteredHint(text: String, modifier: Modifier = Modifier) {
   Box(
-    modifier = Modifier.fillMaxSize().padding(BillionBeersTheme.spacing.large),
+    modifier = modifier.padding(BillionBeersTheme.spacing.large),
     contentAlignment = Alignment.Center,
   ) {
     Text(
