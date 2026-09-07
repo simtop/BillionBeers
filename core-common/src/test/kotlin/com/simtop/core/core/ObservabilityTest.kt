@@ -25,6 +25,11 @@ class ObservabilityTest {
   }
 
   @Test
+  fun `analytics accepts zero results`() {
+    assertEquals(0, AnalyticsEvent.SearchSubmitted(resultCount = 0).resultCount)
+  }
+
+  @Test
   fun `catalog ids reject URLs queries fragments and free-form text`() {
     assertEquals("42", CatalogId.from("42")?.value)
     assertNull(CatalogId.from("https://brewbuddy.dev/beers/42"))
