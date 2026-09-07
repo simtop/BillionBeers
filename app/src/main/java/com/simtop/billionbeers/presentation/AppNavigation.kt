@@ -2,6 +2,7 @@ package com.simtop.billionbeers.presentation
 
 import android.net.Uri
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -109,7 +110,7 @@ fun AppNavigation(
     },
   ) { innerPadding ->
     NavDisplay(
-      modifier = Modifier.padding(innerPadding),
+      modifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding),
       backStack = backStack,
       onBack = { backStack.removeLastOrNull() },
       sceneStrategies = listOf(listDetailStrategy),

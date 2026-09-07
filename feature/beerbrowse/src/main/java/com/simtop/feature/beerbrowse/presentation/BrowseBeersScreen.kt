@@ -2,6 +2,8 @@ package com.simtop.feature.beerbrowse.presentation
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -118,21 +120,29 @@ internal fun BrowseBeersContent(
       )
     }
   ) { padding ->
-    Box(modifier = Modifier.fillMaxSize().padding(top = padding.calculateTopPadding())) {
+    Box(modifier = Modifier.fillMaxSize().consumeWindowInsets(padding)) {
       when (val state = viewState) {
         CommonUiState.Empty,
         CommonUiState.Loading ->
-          Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+          Box(
+            modifier = Modifier.fillMaxSize().padding(padding),
+            contentAlignment = Alignment.Center,
+          ) {
             CircularProgressIndicator()
           }
         is CommonUiState.Error ->
-          ComposeErrorView(message = state.resolvedMessage().orEmpty(), onRetry = onRetryFirstPage)
+          ComposeErrorView(
+            message = state.resolvedMessage().orEmpty(),
+            onRetry = onRetryFirstPage,
+            modifier = Modifier.fillMaxSize().padding(padding),
+          )
         is CommonUiState.Success ->
           if (state.data.items.isEmpty()) {
-            CenteredHint(stringResource(R.string.browse_no_beers))
+            CenteredHint(stringResource(R.string.browse_no_beers), Modifier.padding(padding))
           } else {
             BrowseBeersResults(
               model = state.data,
+              contentPadding = padding,
               onBeerClick = onBeerClick,
               onScrollToBottom = onScrollToBottom,
               onRefresh = onRetryFirstPage,
@@ -145,8 +155,10 @@ internal fun BrowseBeersContent(
 }
 
 @Composable
+@Suppress("LongParameterList")
 private fun BrowseBeersResults(
   model: PagedListUiModel<Beer>,
+  contentPadding: PaddingValues,
   onBeerClick: (Beer) -> Unit,
   onScrollToBottom: () -> Unit,
   onRefresh: () -> Unit,
@@ -179,7 +191,11 @@ private fun BrowseBeersResults(
           model.items.size,
           model.items.size,
         )
-      LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+      LazyColumn(
+        state = listState,
+        modifier = Modifier.fillMaxSize().consumeWindowInsets(contentPadding),
+        contentPadding = contentPadding,
+      ) {
         items(model.items.size) { index ->
           ComposeBeersListItem(beer = model.items[index], onClick = onBeerClick)
         }

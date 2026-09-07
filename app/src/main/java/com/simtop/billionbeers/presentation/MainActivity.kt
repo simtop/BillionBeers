@@ -1,6 +1,7 @@
 package com.simtop.billionbeers.presentation
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -36,6 +37,9 @@ class MainActivity : ComponentActivity() {
     val appGraph = (applicationContext as BillionBeersApplication).appGraph
     splitInstallManager = appGraph.splitInstallManager
     enableEdgeToEdge()
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+      window.isNavigationBarContrastEnforced = false
+    }
     deepLinkUri = intent?.data
     setContent {
       CompositionLocalProvider(

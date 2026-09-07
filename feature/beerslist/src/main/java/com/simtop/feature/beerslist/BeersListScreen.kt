@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -234,7 +235,7 @@ fun BeersListContent(
           PullToRefreshBox(
             isRefreshing = state.data.isRefreshing,
             onRefresh = onRefresh,
-            modifier = Modifier.fillMaxSize().padding(top = paddingValues.calculateTopPadding()),
+            modifier = Modifier.fillMaxSize(),
           ) {
             val listState = rememberLazyListState()
 
@@ -252,14 +253,16 @@ fun BeersListContent(
 
             LazyColumn(
               state = listState,
-              modifier = Modifier.testTag("beer_list"),
+              modifier = Modifier.testTag("beer_list").consumeWindowInsets(paddingValues),
               contentPadding =
                 PaddingValues(
                   start = navBarsPadding.calculateStartPadding(layoutDirection),
-                  top = navBarsPadding.calculateTopPadding(),
+                  top = paddingValues.calculateTopPadding(),
                   end = navBarsPadding.calculateEndPadding(layoutDirection),
                   bottom =
-                    navBarsPadding.calculateBottomPadding() + BillionBeersTheme.spacing.medium,
+                    paddingValues.calculateBottomPadding() +
+                      navBarsPadding.calculateBottomPadding() +
+                      BillionBeersTheme.spacing.medium,
                 ),
             ) {
               items(beers.count()) { index ->

@@ -3,6 +3,8 @@ package com.simtop.feature.beerbrowse.presentation
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -105,7 +107,12 @@ internal fun BrowseHomeContent(
       )
     }
   ) { padding ->
-    Column(modifier = Modifier.fillMaxSize().padding(top = padding.calculateTopPadding())) {
+    Column(
+      modifier =
+        Modifier.fillMaxSize()
+          .consumeWindowInsets(padding)
+          .padding(top = padding.calculateTopPadding())
+    ) {
       TabRow(selectedTabIndex = selectedTab) {
         Tab(
           selected = selectedTab == TAB_STYLES,
@@ -122,7 +129,10 @@ internal fun BrowseHomeContent(
       when (selectedTab) {
         TAB_STYLES ->
           BrowseListState(state = styles, onRetry = onRetryStyles) { items ->
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+              modifier = Modifier.fillMaxSize(),
+              contentPadding = PaddingValues(bottom = padding.calculateBottomPadding()),
+            ) {
               items(items.size) { index ->
                 val style = items[index]
                 ListItem(
@@ -135,7 +145,10 @@ internal fun BrowseHomeContent(
           }
         TAB_BREWERIES ->
           BrowseListState(state = breweries, onRetry = onRetryBreweries) { items ->
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+              modifier = Modifier.fillMaxSize(),
+              contentPadding = PaddingValues(bottom = padding.calculateBottomPadding()),
+            ) {
               items(items.size) { index ->
                 val brewery = items[index]
                 ListItem(
@@ -186,9 +199,9 @@ private fun breweryCaption(brewery: Brewery): String? {
 }
 
 @Composable
-internal fun CenteredHint(text: String) {
+internal fun CenteredHint(text: String, modifier: Modifier = Modifier) {
   Box(
-    modifier = Modifier.fillMaxSize().padding(BillionBeersTheme.spacing.large),
+    modifier = modifier.fillMaxSize().padding(BillionBeersTheme.spacing.large),
     contentAlignment = Alignment.Center,
   ) {
     Text(

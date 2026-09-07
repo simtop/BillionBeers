@@ -1,7 +1,7 @@
 package com.simtop.feature.favorites
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -70,8 +70,9 @@ fun FavoritesContent(
         }
       is CommonUiState.Success ->
         LazyColumn(
-          modifier = Modifier.fillMaxSize().padding(paddingValues).testTag("favorites_list"),
-          contentPadding = PaddingValues(vertical = BillionBeersTheme.spacing.small),
+          modifier =
+            Modifier.fillMaxSize().consumeWindowInsets(paddingValues).testTag("favorites_list"),
+          contentPadding = paddingValues,
         ) {
           items(viewState.data.size) { index ->
             ComposeBeersListItem(beer = viewState.data[index], onClick = onBeerClick)

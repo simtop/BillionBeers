@@ -3,6 +3,7 @@ package com.simtop.billionbeers.debug
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material3.DrawerValue
@@ -49,7 +50,7 @@ fun DebugDrawerHost(appGraph: BaseAppGraph, content: @Composable () -> Unit) {
         if (isFabVisible) {
           FloatingActionButton(
             onClick = { scope.launch { drawerState.open() } },
-            modifier = Modifier.align(Alignment.BottomStart).padding(16.dp),
+            modifier = Modifier.align(Alignment.BottomStart).safeDrawingPadding().padding(16.dp),
           ) {
             Icon(imageVector = Icons.Default.Build, contentDescription = "Open debug drawer")
           }
