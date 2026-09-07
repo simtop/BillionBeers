@@ -6,6 +6,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable object BeersList : NavKey
 
+@Serializable object Favorites : NavKey
+
 @Serializable object BeersSearch : NavKey
 
 // `get()` rather than a stored property: an initialised `override val` would have a backing field,

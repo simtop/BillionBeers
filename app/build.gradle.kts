@@ -86,6 +86,7 @@ dependencies {
   androidTestImplementation(this.project(":testing-utils"))
   androidTestImplementation(this.project(":testing-utils-android"))
   implementation(this.project(":feature:beerslist"))
+  implementation(this.project(":feature:favorites"))
   implementation(this.project(":feature:beersearch"))
   androidTestImplementation(this.project(":feature:beerdetail"))
   androidTestImplementation(this.project(":feature:beerbrowse"))

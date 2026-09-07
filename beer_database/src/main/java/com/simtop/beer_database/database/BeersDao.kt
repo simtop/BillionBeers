@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Upsert
 import com.simtop.beer_database.models.BeerDbModel
 import com.simtop.beer_database.models.PagingStateDbModel
@@ -13,6 +14,9 @@ import kotlinx.coroutines.flow.Flow
 abstract class BeersDao {
 
   @Query("SELECT * FROM beers") abstract fun getAllBeers(): Flow<List<BeerDbModel>>
+
+  @Query("SELECT * FROM beers WHERE is_favorite = 1 ORDER BY name, id")
+  abstract fun getFavoriteBeers(): Flow<List<BeerDbModel>>
 
   @Insert(onConflict = OnConflictStrategy.IGNORE)
   abstract suspend fun insertIgnoringConflicts(beers: List<BeerDbModel>): List<Long>
@@ -67,7 +71,7 @@ abstract class BeersDao {
     recommendedGlasses: String,
   )
 
-  @androidx.room.Transaction
+  @Transaction
   open suspend fun insertAll(beers: List<BeerDbModel>) {
     val results = insertIgnoringConflicts(beers)
     for (i in results.indices) {
@@ -113,9 +117,19 @@ abstract class BeersDao {
    *   instead of silently matching nothing. Once the row exists, the keyed upsert's
    *   availability-preserving rule protects the edit from later catalog fetches like any other.
    */
-  @androidx.room.Transaction
+  @Transaction
   open suspend fun upsertAvailability(beer: BeerDbModel) {
     if (updateBeer(beer.id, beer.availability) == 0) {
+      insertIgnoringConflicts(listOf(beer))
+    }
+  }
+
+  @Query("UPDATE beers SET is_favorite = :isFavorite WHERE id = :id")
+  abstract suspend fun updateFavorite(id: String, isFavorite: Boolean): Int
+
+  @Transaction
+  open suspend fun upsertFavorite(beer: BeerDbModel) {
+    if (updateFavorite(beer.id, beer.isFavorite) == 0) {
       insertIgnoringConflicts(listOf(beer))
     }
   }
@@ -141,7 +155,7 @@ abstract class BeersDao {
    * incoming [nextKey] (last page) leaves the bookmark untouched — end-of-pagination is decided by
    * the fetch's total-count math, not by persisting a null key.
    */
-  @androidx.room.Transaction
+  @Transaction
   open suspend fun insertPage(
     beers: List<BeerDbModel>,
     surface: String,

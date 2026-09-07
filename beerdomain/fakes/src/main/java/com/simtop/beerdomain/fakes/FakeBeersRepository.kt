@@ -2,6 +2,7 @@ package com.simtop.beerdomain.fakes
 
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
+import com.simtop.beerdomain.domain.errors.UpdateFavoriteError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeerPage
 import com.simtop.beerdomain.domain.models.BeerStyle
@@ -13,6 +14,7 @@ import com.simtop.core.core.CachePolicy
 import com.simtop.core.core.Either
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
 
 class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersRepository {
 
@@ -39,6 +41,10 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersReposit
     return beersFlow
   }
 
+  override fun observeFavoriteBeers(): Flow<List<Beer>> = beersFlow.map { beers ->
+    beers.filter { it.isFavorite }.sortedWith(compareBy({ it.name }, { it.id }))
+  }
+
   override suspend fun getAllBeersFromDB(): List<Beer> {
     return beersFlow.value
   }
@@ -53,7 +59,11 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersReposit
     beers.forEach { newBeer ->
       val index = current.indexOfFirst { it.id == newBeer.id }
       if (index != -1) {
-        current[index] = newBeer.copy(availability = current[index].availability)
+        current[index] =
+          newBeer.copy(
+            availability = current[index].availability,
+            isFavorite = current[index].isFavorite,
+          )
       } else {
         current.add(newBeer)
       }
@@ -99,12 +109,27 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersReposit
     val currentList = beersFlow.value.toMutableList()
     val index = currentList.indexOfFirst { it.id == beer.id }
     if (index != -1) {
-      currentList[index] = beer
+      currentList[index] = beer.copy(isFavorite = currentList[index].isFavorite)
       beersFlow.value = currentList
     } else {
       currentList.add(beer)
       beersFlow.value = currentList
     }
+    return Either.Right(Unit)
+  }
+
+  override suspend fun updateFavorite(beer: Beer): Either<UpdateFavoriteError, Unit> {
+    exceptionToThrow?.let {
+      return Either.Left(UpdateFavoriteError.Unknown(it))
+    }
+    val currentList = beersFlow.value.toMutableList()
+    val index = currentList.indexOfFirst { it.id == beer.id }
+    if (index != -1) {
+      currentList[index] = beer.copy(availability = currentList[index].availability)
+    } else {
+      currentList.add(beer)
+    }
+    beersFlow.value = currentList
     return Either.Right(Unit)
   }
 

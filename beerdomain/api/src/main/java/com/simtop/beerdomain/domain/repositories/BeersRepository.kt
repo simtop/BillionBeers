@@ -2,6 +2,7 @@ package com.simtop.beerdomain.domain.repositories
 
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
+import com.simtop.beerdomain.domain.errors.UpdateFavoriteError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeerPage
 import com.simtop.beerdomain.domain.models.BeerStyle
@@ -21,6 +22,8 @@ interface BeersRepository {
   suspend fun countDBEntries(): Int
 
   fun observeBeers(): Flow<List<Beer>>
+
+  fun observeFavoriteBeers(): Flow<List<Beer>>
 
   suspend fun getAllBeersFromDB(): List<Beer>
 
@@ -57,6 +60,8 @@ interface BeersRepository {
   suspend fun catalogCacheStatus(policy: CachePolicy = CachePolicy()): CatalogCacheStatus
 
   suspend fun updateAvailability(beer: Beer): Either<UpdateAvailabilityError, Unit>
+
+  suspend fun updateFavorite(beer: Beer): Either<UpdateFavoriteError, Unit>
 
   /**
    * Fetches one page from the API, carrying the server total for end-detection and "N of M" UI. The

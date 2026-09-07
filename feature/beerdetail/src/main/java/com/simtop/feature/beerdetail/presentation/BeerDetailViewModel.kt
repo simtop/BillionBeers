@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.serialization.saved
 import androidx.lifecycle.viewModelScope
 import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
+import com.simtop.beerdomain.domain.errors.UpdateFavoriteError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.CommonUiState
@@ -56,6 +57,7 @@ constructor(
   val events: Flow<BeerDetailEvent> = _events.receiveAsFlow()
 
   private val availabilityUpdateMutex = Mutex()
+  private val favoriteUpdateMutex = Mutex()
 
   init {
     setBeer(lastKnownBeer)
@@ -75,9 +77,36 @@ constructor(
     }
   }
 
+  fun updateFavorite(beer: Beer) {
+    viewModelScope.launch {
+      favoriteUpdateMutex.withLock {
+        val originalBeer = beer
+        val newBeer = beer.copy(isFavorite = !beer.isFavorite)
+        setBeer(newBeer)
+        treatFavoriteResponse(
+          result = beersRepository.updateFavorite(newBeer),
+          originalBeer = originalBeer,
+        )
+      }
+    }
+  }
+
   private fun setBeer(beer: Beer) {
     lastKnownBeer = beer
     _beerDetailViewState.value = CommonUiState.Success(beer)
+  }
+
+  private suspend fun treatFavoriteResponse(
+    result: Either<UpdateFavoriteError, Unit>,
+    originalBeer: Beer,
+  ) {
+    when (result) {
+      is Either.Left -> {
+        setBeer(originalBeer)
+        _events.send(BeerDetailEvent.ShowError(result.value.toUiMessage()))
+      }
+      is Either.Right -> _events.send(BeerDetailEvent.FavoriteUpdated)
+    }
   }
 
   private suspend fun treatResponse(
@@ -97,8 +126,15 @@ constructor(
     when (this) {
       is UpdateAvailabilityError.Unknown -> cause.message ?: "Unable to update availability"
     }
+
+  private fun UpdateFavoriteError.toUiMessage(): String =
+    when (this) {
+      is UpdateFavoriteError.Unknown -> cause.message ?: "Unable to update favorite"
+    }
 }
 
 sealed interface BeerDetailEvent {
   data class ShowError(val message: String) : BeerDetailEvent
+
+  data object FavoriteUpdated : BeerDetailEvent
 }

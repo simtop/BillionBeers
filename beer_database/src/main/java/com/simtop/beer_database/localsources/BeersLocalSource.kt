@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.Flow
 interface BeersLocalSource {
   fun getAllBeersFromDB(): Flow<List<BeerDbModel>>
 
+  fun getFavoriteBeersFromDB(): Flow<List<BeerDbModel>>
+
   /**
    * Keyed upsert: new ids are inserted (their `availability` seeded from the fetched row); existing
    * ids get every column updated *except* `availability`, which is treated as local-only and must
@@ -43,6 +45,8 @@ interface BeersLocalSource {
    */
   suspend fun upsertAvailability(beer: BeerDbModel)
 
+  suspend fun upsertFavorite(beer: BeerDbModel)
+
   suspend fun deleteAllFromDB()
 
   suspend fun getCountFromDB(): Int
@@ -52,6 +56,8 @@ interface BeersLocalSource {
 class BeersLocalSourceImpl(private val db: BeersDatabase) : BeersLocalSource {
 
   override fun getAllBeersFromDB(): Flow<List<BeerDbModel>> = db.beersDao().getAllBeers()
+
+  override fun getFavoriteBeersFromDB(): Flow<List<BeerDbModel>> = db.beersDao().getFavoriteBeers()
 
   override suspend fun insertAllToDB(beers: List<BeerDbModel>) = db.beersDao().insertAll(beers)
 
@@ -68,6 +74,8 @@ class BeersLocalSourceImpl(private val db: BeersDatabase) : BeersLocalSource {
 
   override suspend fun upsertAvailability(beer: BeerDbModel) =
     db.beersDao().upsertAvailability(beer)
+
+  override suspend fun upsertFavorite(beer: BeerDbModel) = db.beersDao().upsertFavorite(beer)
 
   override suspend fun deleteAllFromDB() = db.beersDao().deleteAll()
 

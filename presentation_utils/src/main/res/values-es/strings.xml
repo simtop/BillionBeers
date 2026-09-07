@@ -53,4 +53,10 @@
     <string name="beer_detail_fermentation_method_label">Fermentación</string>
     <string name="beer_detail_ingredients">Ingredientes</string>
     <string name="beer_detail_recommended_glasses">Copas recomendadas</string>
+    <string name="add_to_favorites">Añadir a favoritos</string>
+    <string name="remove_from_favorites">Quitar de favoritos</string>
+    <string name="favorites_title">Favoritos</string>
+    <string name="favorites_empty">Aún no hay cervezas favoritas</string>
+    <string name="favorite_update_failed">No se pudo actualizar el favorito</string>
+    <string name="home_tab">Inicio</string>
 </resources>

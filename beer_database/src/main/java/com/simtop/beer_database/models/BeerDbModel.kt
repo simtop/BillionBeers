@@ -15,6 +15,7 @@ data class BeerDbModel(
   @ColumnInfo(name = "ibu") val ibu: Double,
   @ColumnInfo(name = "food_pairing") val foodPairing: String,
   @ColumnInfo(name = "availability") val availability: Boolean = true,
+  @ColumnInfo(name = "is_favorite", defaultValue = "0") val isFavorite: Boolean = false,
   // Detail fields (v3). Kotlin defaults keep old call sites compiling; the SQL defaultValue
   // mirrors the v2->v3 ALTER TABLE statements, so a migrated row and a fresh row agree.
   @ColumnInfo(name = "style_name", defaultValue = "") val styleName: String = "",

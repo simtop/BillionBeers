@@ -44,6 +44,7 @@ constructor(private val languageProvider: LanguageProvider, private val logger: 
       // Seeds the row's initial availability on first insert only (the keyed upsert never rewrites
       // availability for an existing id, so a user's later edit survives refresh).
       availability = response?.available ?: true,
+      isFavorite = false,
       styleName = response?.typology?.name ?: "",
       breweryName = response?.brewery?.name ?: "",
       srm = response?.srm,
@@ -103,6 +104,7 @@ constructor(private val languageProvider: LanguageProvider, private val logger: 
       ibu = beer.ibu,
       foodPairing = Converters.listToJson(beer.foodPairing),
       availability = beer.availability,
+      isFavorite = beer.isFavorite,
       styleName = beer.styleName,
       breweryName = beer.breweryName,
       srm = beer.srm,
@@ -125,6 +127,7 @@ constructor(private val languageProvider: LanguageProvider, private val logger: 
       ibu = beerDbModel.ibu,
       foodPairing = Converters.jsonToList(beerDbModel.foodPairing),
       availability = beerDbModel.availability,
+      isFavorite = beerDbModel.isFavorite,
       styleName = beerDbModel.styleName,
       breweryName = beerDbModel.breweryName,
       srm = beerDbModel.srm,
