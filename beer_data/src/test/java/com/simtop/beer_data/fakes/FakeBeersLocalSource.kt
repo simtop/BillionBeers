@@ -5,6 +5,7 @@ import com.simtop.beer_database.models.BeerDbModel
 import com.simtop.beer_database.models.PagingStateDbModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
 
 class FakeBeersLocalSource : BeersLocalSource {
 
@@ -18,13 +19,21 @@ class FakeBeersLocalSource : BeersLocalSource {
     return beersFlow
   }
 
+  override fun getFavoriteBeersFromDB(): Flow<List<BeerDbModel>> = beersFlow.map { beers ->
+    beers.filter { it.isFavorite }.sortedWith(compareBy({ it.name }, { it.id }))
+  }
+
   // Mirrors the real DAO's upsert: existing rows keep their local-only availability.
   override suspend fun insertAllToDB(beers: List<BeerDbModel>) {
     val current = beersFlow.value.toMutableList()
     beers.forEach { newBeer ->
       val index = current.indexOfFirst { it.id == newBeer.id }
       if (index != -1) {
-        current[index] = newBeer.copy(availability = current[index].availability)
+        current[index] =
+          newBeer.copy(
+            availability = current[index].availability,
+            isFavorite = current[index].isFavorite,
+          )
       } else {
         current.add(newBeer)
       }
@@ -71,6 +80,17 @@ class FakeBeersLocalSource : BeersLocalSource {
     val index = current.indexOfFirst { it.id == beer.id }
     if (index != -1) {
       current[index] = current[index].copy(availability = beer.availability)
+    } else {
+      current.add(beer)
+    }
+    beersFlow.value = current
+  }
+
+  override suspend fun upsertFavorite(beer: BeerDbModel) {
+    val current = beersFlow.value.toMutableList()
+    val index = current.indexOfFirst { it.id == beer.id }
+    if (index != -1) {
+      current[index] = current[index].copy(isFavorite = beer.isFavorite)
     } else {
       current.add(beer)
     }

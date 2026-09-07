@@ -13,6 +13,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
@@ -46,11 +48,13 @@ import com.simtop.presentation_utils.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@Suppress("LongParameterList")
 fun ComposeBeerDetail(
   beer: Beer,
   onBackClick: () -> Unit,
   onToggleAvailability: () -> Unit,
   modifier: Modifier = Modifier,
+  onToggleFavorite: () -> Unit = {},
   showBackButton: Boolean = true,
 ) {
   val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -64,6 +68,10 @@ fun ComposeBeerDetail(
       1f,
     ) == 0f
   val animationDurationMs = if (animationsDisabled) 0 else AVAILABILITY_ANIMATION_DURATION_MS
+  val favoriteLabel =
+    stringResource(
+      if (beer.isFavorite) R.string.remove_from_favorites else R.string.add_to_favorites
+    )
 
   Scaffold(
     modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -106,6 +114,23 @@ fun ComposeBeerDetail(
                   tint = Color.White,
                 )
               }
+            }
+          },
+          actions = {
+            IconButton(
+              onClick = onToggleFavorite,
+              modifier =
+                Modifier.testTag("toggle_favorite").semantics {
+                  role = Role.Button
+                  stateDescription = favoriteLabel
+                },
+            ) {
+              Icon(
+                imageVector =
+                  if (beer.isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                contentDescription = favoriteLabel,
+                tint = Color.White,
+              )
             }
           },
           colors =

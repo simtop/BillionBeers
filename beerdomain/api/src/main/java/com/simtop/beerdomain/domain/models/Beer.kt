@@ -14,6 +14,8 @@ data class Beer(
   val ibu: Double,
   val foodPairing: List<String>,
   val availability: Boolean = true,
+  // User-owned local state; unlike catalog fields this survives API refreshes.
+  val isFavorite: Boolean = false,
   // Detail-screen fields from the embedded list-response objects (Paging 2.0 Phase 4). All
   // defaulted: a Beer serialized before they existed (nav key / SavedStateHandle across an app
   // update) must still decode.

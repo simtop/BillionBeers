@@ -58,6 +58,7 @@ fun BeerDetailScreenImpl(
         viewModel.events.collect { event ->
           when (event) {
             is BeerDetailEvent.ShowError -> showToast(context = context, message = event.message)
+            BeerDetailEvent.FavoriteUpdated -> Unit
           }
         }
       }
@@ -69,6 +70,7 @@ fun BeerDetailScreenImpl(
           beer = state.data,
           onBackClick = onBackClick,
           onToggleAvailability = { viewModel.updateAvailability(state.data) },
+          onToggleFavorite = { viewModel.updateFavorite(state.data) },
           modifier = modifier,
           showBackButton = showBackButton,
         )

@@ -3,6 +3,9 @@ package com.simtop.beer_database.database
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
+private const val DATABASE_VERSION_3 = 3
+private const val DATABASE_VERSION_4 = 4
+
 /**
  * v1 → v2: the project's first migration. Purely additive — it creates the `paging_state` bookmark
  * table and leaves `beers` (and the user-owned availability column) untouched, so an in-place
@@ -42,5 +45,13 @@ val MIGRATION_2_3 =
       db.execSQL("ALTER TABLE `beers` ADD COLUMN `fermentation_method` TEXT NOT NULL DEFAULT ''")
       db.execSQL("ALTER TABLE `beers` ADD COLUMN `ingredients` TEXT NOT NULL DEFAULT '[]'")
       db.execSQL("ALTER TABLE `beers` ADD COLUMN `recommended_glasses` TEXT NOT NULL DEFAULT '[]'")
+    }
+  }
+
+/** v3 → v4: additive local favorite state, defaulting existing catalog rows to false. */
+val MIGRATION_3_4 =
+  object : Migration(DATABASE_VERSION_3, DATABASE_VERSION_4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+      db.execSQL("ALTER TABLE `beers` ADD COLUMN `is_favorite` INTEGER NOT NULL DEFAULT 0")
     }
   }

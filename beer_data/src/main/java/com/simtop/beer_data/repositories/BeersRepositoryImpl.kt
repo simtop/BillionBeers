@@ -5,6 +5,7 @@ import com.simtop.beer_database.localsources.BeersLocalSource
 import com.simtop.beer_network.remotesources.BeersRemoteSource
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
+import com.simtop.beerdomain.domain.errors.UpdateFavoriteError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeerPage
 import com.simtop.beerdomain.domain.models.BeerStyle
@@ -77,6 +78,18 @@ class BeersRepositoryImpl(
     }
   }
 
+  @Suppress("TooGenericExceptionCaught")
+  override suspend fun updateFavorite(beer: Beer): Either<UpdateFavoriteError, Unit> {
+    return try {
+      beersLocalSource.upsertFavorite(beersMapper.fromBeerToBeerDbModel(beer))
+      Either.Right(Unit)
+    } catch (e: CancellationException) {
+      throw e
+    } catch (e: Exception) {
+      Either.Left(UpdateFavoriteError.Unknown(e))
+    }
+  }
+
   override suspend fun insertAllToDB(beers: List<Beer>) =
     beersLocalSource.insertAllToDB(beers.map { beersMapper.fromBeerToBeerDbModel(it) })
 
@@ -113,6 +126,11 @@ class BeersRepositoryImpl(
 
   override fun observeBeers(): Flow<List<Beer>> =
     beersLocalSource.getAllBeersFromDB().map { list ->
+      list.map { beersMapper.fromBeerDbModelToBeer(it) }
+    }
+
+  override fun observeFavoriteBeers(): Flow<List<Beer>> =
+    beersLocalSource.getFavoriteBeersFromDB().map { list ->
       list.map { beersMapper.fromBeerDbModelToBeer(it) }
     }
 
