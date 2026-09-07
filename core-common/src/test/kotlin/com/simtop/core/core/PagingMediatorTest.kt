@@ -138,6 +138,33 @@ class PagingMediatorTest {
   }
 
   @Test
+  fun `only the newest load-more event is retained while nobody collects`() = runTest {
+    var failureCount = 0
+    val mediator =
+      PagingMediator<Int, String, String>(
+        initialKey = 1,
+        fetchRemote = { key ->
+          if (key == 1) {
+            PageResult(listOf("item 1"), nextKey = 2)
+          } else {
+            failureCount++
+            error("failure $failureCount")
+          }
+        },
+        classifyError = { it.message ?: "unknown" },
+      )
+
+    mediator.loadFirstPage()
+    mediator.loadNextPage()
+    mediator.loadNextPage()
+
+    mediator.events.test {
+      assertEquals(PagingEvent.LoadMoreFailed("failure 2"), awaitItem())
+      expectNoEvents()
+    }
+  }
+
+  @Test
   fun `first page failure emits no LoadMoreFailed event`() = runTest {
     val harness = Harness()
     harness.failOnKey(1)

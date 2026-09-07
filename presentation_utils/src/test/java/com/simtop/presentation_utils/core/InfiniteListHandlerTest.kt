@@ -82,6 +82,13 @@ class InfiniteListHandlerTest {
   }
 
   @Test
+  fun `a single visible item is enough to fire at the bottom`() = runTest {
+    val count = signalsFor(ListPosition(totalItems = 1, lastVisibleIndex = 0))
+
+    count shouldBeEqualTo 1
+  }
+
+  @Test
   fun `buffer widens the near-bottom trigger`() = runTest {
     // With buffer 5, item 20 of 25 already counts as "near bottom" (20 + 1 > 25 - 5).
     val count = signalsFor(ListPosition(totalItems = 25, lastVisibleIndex = 20), buffer = 5)

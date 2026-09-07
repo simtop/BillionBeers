@@ -9,9 +9,16 @@ import com.simtop.beer_network.models.Language
 import com.simtop.beer_network.models.NamedEntity
 import com.simtop.beer_network.models.NamedTranslation
 import com.simtop.beer_network.models.Translation
+import com.simtop.beer_network.models.TypologyApiResponseItem
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.core.core.Diagnostic
+import com.simtop.core.core.DiagnosticArea
+import com.simtop.core.core.DiagnosticCode
+import com.simtop.core.core.DiagnosticLevel
 import com.simtop.core.core.LanguageProvider
-import com.simtop.core.core.NoOpLogger
+import com.simtop.core.core.LogPriority
+import com.simtop.core.core.LogTag
+import com.simtop.core.core.Logger
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
@@ -19,7 +26,8 @@ import strikt.assertions.isEqualTo
 class BeersMapperTest {
 
   private var languageCode = "en"
-  private val mapper = BeersMapper(LanguageProvider { languageCode }, NoOpLogger())
+  private val recordingLogger = RecordingLogger()
+  private val mapper = BeersMapper(LanguageProvider { languageCode }, recordingLogger)
 
   private fun fullResponse() =
     BeersApiResponseItem(
@@ -66,6 +74,34 @@ class BeersMapperTest {
           abv = 0.0,
           ibu = 0.0,
           foodPairing = emptyList(),
+        )
+      )
+  }
+
+  @Test
+  fun `fromBeersApiResponseItemToBeer reports missing identity and translation diagnostics`() {
+    recordingLogger.entries.clear()
+
+    mapper.fromBeersApiResponseItemToBeer(null)
+
+    expectThat(recordingLogger.entries)
+      .isEqualTo(
+        mutableListOf(
+          Diagnostic(
+            DiagnosticArea.DATA_MAPPING,
+            DiagnosticCode.MISSING_BEER_ID,
+            DiagnosticLevel.WARNING,
+          ),
+          Diagnostic(
+            DiagnosticArea.DATA_MAPPING,
+            DiagnosticCode.MISSING_BEER_NAME,
+            DiagnosticLevel.WARNING,
+          ),
+          Diagnostic(
+            DiagnosticArea.DATA_MAPPING,
+            DiagnosticCode.MISSING_BEER_TRANSLATION,
+            DiagnosticLevel.WARNING,
+          ),
         )
       )
   }
@@ -182,6 +218,66 @@ class BeersMapperTest {
     expectThat(beer.fermentationMethod).isEqualTo("Lager")
     expectThat(beer.ingredients).isEqualTo(listOf("Dark malt"))
     expectThat(beer.recommendedGlasses).isEqualTo(listOf("Chalice"))
+  }
+
+  @Test
+  fun `style and brewery mappers report incomplete identity diagnostics`() {
+    recordingLogger.entries.clear()
+
+    mapper.fromTypologyToBeerStyle(TypologyApiResponseItem(id = null, name = null))
+    mapper.fromBreweryApiResponseItemToBrewery(BreweryApiResponseItem(id = null, name = null))
+
+    expectThat(recordingLogger.entries)
+      .isEqualTo(
+        mutableListOf(
+          Diagnostic(
+            DiagnosticArea.DATA_MAPPING,
+            DiagnosticCode.MISSING_STYLE_ID_OR_NAME,
+            DiagnosticLevel.WARNING,
+          ),
+          Diagnostic(
+            DiagnosticArea.DATA_MAPPING,
+            DiagnosticCode.MISSING_BREWERY_ID_OR_NAME,
+            DiagnosticLevel.WARNING,
+          ),
+        )
+      )
+  }
+
+  @Test
+  fun `style and brewery diagnostics identify either missing identity field`() {
+    recordingLogger.entries.clear()
+
+    mapper.fromTypologyToBeerStyle(TypologyApiResponseItem(id = null, name = "Stout"))
+    mapper.fromTypologyToBeerStyle(TypologyApiResponseItem(id = "style", name = null))
+    mapper.fromBreweryApiResponseItemToBrewery(BreweryApiResponseItem(id = null, name = "Brewery"))
+    mapper.fromBreweryApiResponseItemToBrewery(BreweryApiResponseItem(id = "brewery", name = null))
+
+    expectThat(recordingLogger.entries)
+      .isEqualTo(
+        mutableListOf(
+          Diagnostic(
+            DiagnosticArea.DATA_MAPPING,
+            DiagnosticCode.MISSING_STYLE_ID_OR_NAME,
+            DiagnosticLevel.WARNING,
+          ),
+          Diagnostic(
+            DiagnosticArea.DATA_MAPPING,
+            DiagnosticCode.MISSING_STYLE_ID_OR_NAME,
+            DiagnosticLevel.WARNING,
+          ),
+          Diagnostic(
+            DiagnosticArea.DATA_MAPPING,
+            DiagnosticCode.MISSING_BREWERY_ID_OR_NAME,
+            DiagnosticLevel.WARNING,
+          ),
+          Diagnostic(
+            DiagnosticArea.DATA_MAPPING,
+            DiagnosticCode.MISSING_BREWERY_ID_OR_NAME,
+            DiagnosticLevel.WARNING,
+          ),
+        )
+      )
   }
 
   @Test
@@ -306,5 +402,13 @@ class BeersMapperTest {
           availability = false,
         )
       )
+  }
+
+  private class RecordingLogger : Logger {
+    val entries = mutableListOf<Diagnostic>()
+
+    override fun log(priority: LogPriority, tag: LogTag, diagnostic: Diagnostic) {
+      if (priority == LogPriority.WARN && tag == LogTag.BEERS_MAPPER) entries += diagnostic
+    }
   }
 }

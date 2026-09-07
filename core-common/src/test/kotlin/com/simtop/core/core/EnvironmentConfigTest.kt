@@ -1,5 +1,6 @@
 package com.simtop.core.core
 
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
@@ -38,7 +39,10 @@ class EnvironmentConfigTest {
 
   @Test
   fun `release validation rejects an endpoint other than configured production`() {
-    assertReleaseRejected("https://staging.brewbuddy.dev/")
+    assertReleaseRejected(
+      baseUrl = "https://staging.brewbuddy.dev/",
+      expectedApiBaseUrl = "https://api.brewbuddy.dev/",
+    )
   }
 
   @Test
@@ -65,9 +69,41 @@ class EnvironmentConfigTest {
     assertIllegalArgument { EnvironmentConfig("ftp://api.brewbuddy.dev/") }
   }
 
-  private fun assertReleaseRejected(baseUrl: String) {
+  @Test
+  fun `accepts case-insensitive HTTP schemes`() {
+    val config = EnvironmentConfig("HTTPS://api.brewbuddy.dev/")
+    EnvironmentConfig("HTTP://api.brewbuddy.dev/")
+
+    assertSame(config, config.validateForRelease("HTTPS://api.brewbuddy.dev/"))
+  }
+
+  @Test
+  fun `rejects a URL with a query even when it has no fragment`() {
+    assertIllegalArgument { EnvironmentConfig("https://api.brewbuddy.dev/?token=secret") }
+  }
+
+  @Test
+  fun `rejects infinite timeouts`() {
     assertIllegalArgument {
-      EnvironmentConfig(apiBaseUrl = baseUrl).validateForRelease("https://api.brewbuddy.dev/")
+      EnvironmentConfig("https://api.brewbuddy.dev/", connectTimeout = Duration.INFINITE)
+    }
+  }
+
+  @Test
+  fun `rejects every supported localhost form`() {
+    assertReleaseRejected("https://localhost/")
+    assertReleaseRejected("https://service.localhost/")
+    assertReleaseRejected("https://[::1]/")
+    assertReleaseRejected("https://127.0.0.1/")
+    assertReleaseRejected("https://0.0.0.0/")
+  }
+
+  private fun assertReleaseRejected(
+    baseUrl: String,
+    expectedApiBaseUrl: String = baseUrl,
+  ) {
+    assertIllegalArgument {
+      EnvironmentConfig(apiBaseUrl = baseUrl).validateForRelease(expectedApiBaseUrl)
     }
   }
 

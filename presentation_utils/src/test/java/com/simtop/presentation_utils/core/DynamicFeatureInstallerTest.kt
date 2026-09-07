@@ -63,6 +63,22 @@ class DynamicFeatureInstallerTest {
   }
 
   @Test
+  fun `an update for another module is ignored before session adoption`() {
+    installer.start()
+
+    manager.emit(
+      state(
+        SplitInstallSessionStatus.DOWNLOADING,
+        downloaded = 25,
+        total = 100,
+        modules = listOf("other"),
+      )
+    )
+
+    installer.status shouldBeEqualTo InstallStatus.Pending
+  }
+
+  @Test
   fun `updates from other sessions are ignored after adoption`() {
     installer.start()
     manager.startTasks.single().complete(SESSION_ID)
@@ -199,6 +215,29 @@ class DynamicFeatureInstallerTest {
     installer.status shouldBeEqualTo InstallStatus.Downloading(progress = 0.5f)
     manager.startTasks.size shouldBeEqualTo 1
     manager.listeners.size shouldBeEqualTo 1
+  }
+
+  @Test
+  fun `a failed install can register a listener again after retirement`() {
+    installer.start()
+    manager.startTasks.single().complete(SESSION_ID)
+    manager.emit(state(SplitInstallSessionStatus.FAILED))
+    installer.onRetired()
+
+    installer.start()
+
+    installer.status shouldBeEqualTo InstallStatus.Pending
+    manager.listeners.size shouldBeEqualTo 1
+  }
+
+  @Test
+  fun `one byte downloads report complete progress`() {
+    installer.start()
+    manager.startTasks.single().complete(SESSION_ID)
+
+    manager.emit(state(SplitInstallSessionStatus.DOWNLOADING, downloaded = 1, total = 1))
+
+    installer.status shouldBeEqualTo InstallStatus.Downloading(progress = 1f)
   }
 
   private fun state(
