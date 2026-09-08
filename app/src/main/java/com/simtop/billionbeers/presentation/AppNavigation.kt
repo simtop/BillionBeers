@@ -2,6 +2,7 @@ package com.simtop.billionbeers.presentation
 
 import android.net.Uri
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -84,6 +85,10 @@ fun AppNavigation(
 
   Scaffold(
     modifier = modifier,
+    // The destination screens own their top-bar and content insets. Keeping the root inset-free
+    // lets those top bars draw behind the status bar instead of placing the entire NavDisplay
+    // below it. NavigationBar still contributes its measured height to innerPadding.
+    contentWindowInsets = WindowInsets(0),
     bottomBar = {
       if (showBottomBar) {
         NavigationBar {
