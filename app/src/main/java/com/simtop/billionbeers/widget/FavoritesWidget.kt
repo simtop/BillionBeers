@@ -74,8 +74,7 @@ internal data class FavoritesWidgetDisplayItem(
 class FavoritesWidget : GlanceAppWidget() {
   override suspend fun provideGlance(context: Context, id: GlanceId): Nothing = coroutineScope {
     val imageLoader = SingletonImageLoader.get(context)
-    val imageSizePx =
-      (WIDGET_IMAGE_SIZE_DP * context.resources.displayMetrics.density).roundToInt()
+    val imageSizePx = (WIDGET_IMAGE_SIZE_DP * context.resources.displayMetrics.density).roundToInt()
     val displayItems =
       context
         .favoritesWidgetRepository()
@@ -126,10 +125,7 @@ internal fun FavoritesWidgetContent(
 ) {
   Column(
     modifier =
-      GlanceModifier.fillMaxWidth()
-        .background(WidgetBackground)
-        .cornerRadius(24.dp)
-        .padding(16.dp),
+      GlanceModifier.fillMaxWidth().background(WidgetBackground).cornerRadius(24.dp).padding(16.dp),
     verticalAlignment = Alignment.Vertical.Top,
   ) {
     Row(
@@ -199,12 +195,7 @@ private suspend fun ImageLoader.loadWidgetImage(
   return try {
     val result =
       withTimeoutOrNull(WIDGET_IMAGE_TIMEOUT_MS) {
-        execute(
-          ImageRequest.Builder(context)
-            .data(imageUrl)
-            .size(imageSizePx, imageSizePx)
-            .build()
-        )
+        execute(ImageRequest.Builder(context).data(imageUrl).size(imageSizePx, imageSizePx).build())
       }
     val bitmap = (result?.image as? BitmapImage)?.bitmap
     if (bitmap != null) ImageProvider(bitmap) else ImageProvider(R.drawable.blue_image)
