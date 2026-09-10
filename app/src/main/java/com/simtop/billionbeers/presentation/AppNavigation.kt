@@ -6,13 +6,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
@@ -21,7 +15,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -39,7 +32,6 @@ import com.simtop.navigation.DeepLinkDestination
 import com.simtop.navigation.DynamicFeatureContent
 import com.simtop.navigation.Favorites
 import com.simtop.navigation.toDeepLinkDestination
-import com.simtop.presentation_utils.R
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
@@ -95,26 +87,13 @@ fun AppNavigation(
     contentWindowInsets = WindowInsets(0),
     bottomBar = {
       if (showBottomBar) {
-        NavigationBar {
-          NavigationBarItem(
-            selected = selectedTab == BeersList,
-            onClick = {
-              backStack.clear()
-              backStack.add(BeersList)
-            },
-            icon = { androidx.compose.material3.Icon(Icons.Filled.Home, null) },
-            label = { Text(stringResource(R.string.home_tab)) },
-          )
-          NavigationBarItem(
-            selected = selectedTab == Favorites,
-            onClick = {
-              backStack.clear()
-              backStack.add(Favorites)
-            },
-            icon = { androidx.compose.material3.Icon(Icons.Filled.Favorite, null) },
-            label = { Text(stringResource(R.string.favorites_title)) },
-          )
-        }
+        AppBottomNavigation(
+          selectedTab = selectedTab,
+          onTabSelect = { tab ->
+            backStack.clear()
+            backStack.add(tab)
+          },
+        )
       }
     },
   ) { innerPadding ->
