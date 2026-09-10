@@ -81,6 +81,7 @@ android {
 
 dependencies {
   implementation(this.project(":beerdomain:api"))
+  testImplementation(this.project(":beerdomain:fakes"))
   androidTestImplementation(this.project(":beerdomain:fakes"))
   testImplementation(this.project(":testing-utils"))
   androidTestImplementation(this.project(":testing-utils"))
@@ -103,6 +104,9 @@ dependencies {
   implementation(libs.androidx.navigation3.runtime)
   implementation(libs.androidx.navigation3.ui)
   implementation(libs.androidx.compose.material3.adaptive.navigation3)
+  implementation(libs.androidx.glance.appwidget)
+  implementation(libs.coil3.view)
+  implementation(libs.coil3.network)
   // appcompat stays: the manifest's @style/AppTheme resolves to a Theme.AppCompat parent
   // (core/src/main/res/values/styles.xml), which no import scan can see.
   implementation(libs.appcompat)

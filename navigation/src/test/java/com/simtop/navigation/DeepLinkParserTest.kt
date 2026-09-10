@@ -22,6 +22,20 @@ class DeepLinkParserTest {
   }
 
   @Test
+  fun `parses favorites host`() {
+    val destination = DeepLinkParser.parse("billionbeers", "favorites", emptyList())
+
+    expectThat(destination).isEqualTo(DeepLinkDestination.Favorites)
+  }
+
+  @Test
+  fun `rejects a path on favorites host`() {
+    val destination = DeepLinkParser.parse("billionbeers", "favorites", listOf("extra"))
+
+    expectThat(destination).isNull()
+  }
+
+  @Test
   fun `returns null for a mismatched scheme`() {
     val destination = DeepLinkParser.parse("https", "beers", listOf("42"))
 
