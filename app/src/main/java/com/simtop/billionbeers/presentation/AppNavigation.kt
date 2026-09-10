@@ -74,6 +74,10 @@ fun AppNavigation(
         backStack.clear()
         backStack.add(BeersList)
       }
+      DeepLinkDestination.Favorites -> {
+        backStack.clear()
+        backStack.add(Favorites)
+      }
       // An unresolvable beer id stays on the current screen.
       is DeepLinkDestination.BeerDetail ->
         viewModel.resolveBeer(destination.beerId)?.let(::navigateToBeerDetail)

@@ -67,7 +67,7 @@ class MainActivityComposeTest {
     val testGraph =
       createGraphFactory<TestAppGraph.Factory>().create(context = context) as BaseAppGraph
 
-    app.appGraph = testGraph
+    app.activateAppGraph(testGraph)
   }
 
   @Test

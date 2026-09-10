@@ -8,6 +8,7 @@ import com.simtop.beer_database.database.BeersDatabase
 import com.simtop.beer_database.models.BeerDbModel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -84,10 +85,52 @@ class BeersLocalSourceTest {
     assertEquals("Refreshed", result.name)
   }
 
-  private fun beer() =
+  @Test
+  fun favoriteFlowReflectsCommittedWritesInDisplayOrder() = runBlocking {
+    assertEquals(emptyList<BeerDbModel>(), localSource.getFavoriteBeersFromDB().first())
+
+    localSource.upsertFavorite(beer(id = "2", name = "Bravo").copy(isFavorite = true))
+    assertEquals(
+      listOf("Bravo"),
+      withTimeout(1_000) { localSource.getFavoriteBeersFromDB().first { it.size == 1 } }
+        .map(BeerDbModel::name),
+    )
+
+    localSource.upsertFavorite(beer(id = "1", name = "Alpha").copy(isFavorite = true))
+    assertEquals(
+      listOf("Alpha", "Bravo"),
+      withTimeout(1_000) { localSource.getFavoriteBeersFromDB().first { it.size == 2 } }
+        .map(BeerDbModel::name),
+    )
+
+    localSource.upsertAvailability(
+      beer(id = "1", name = "Alpha").copy(isFavorite = true, availability = false)
+    )
+    assertEquals(
+      false,
+      withTimeout(1_000) {
+          localSource.getFavoriteBeersFromDB().first { favorites ->
+            favorites.any { it.id == "1" && !it.availability }
+          }
+        }
+        .first { it.id == "1" }
+        .availability,
+    )
+
+    localSource.upsertFavorite(
+      beer(id = "1", name = "Alpha").copy(isFavorite = false, availability = false)
+    )
+    assertEquals(
+      listOf("Bravo"),
+      withTimeout(1_000) { localSource.getFavoriteBeersFromDB().first { it.size == 1 } }
+        .map(BeerDbModel::name),
+    )
+  }
+
+  private fun beer(id: String = "1", name: String = "Buzz") =
     BeerDbModel(
-      id = "1",
-      name = "Buzz",
+      id = id,
+      name = name,
       tagline = "A Real Bitter Experience.",
       description = "",
       imageUrl = "",
