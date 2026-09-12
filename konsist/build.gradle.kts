@@ -26,7 +26,14 @@ val ruleFileTree =
     include("**/*.kt", "**/*.kts")
     exclude("**/build/**", "**/bin/**", "**/.git/**", "**/.gradle/**", "**/gradle-user-home/**")
   }
-val filesUnderRules = ruleFileTree.files
+val nonKotlinRuleInputs =
+  listOf(
+      "Makefile",
+      "app/src/debugAndroidTest/AndroidManifest.xml",
+    )
+    .map { rootProject.file(it) }
+    .filter { it.isFile }
+val filesUnderRules = ruleFileTree.files + nonKotlinRuleInputs
 val fileNamesUnderRules = filesUnderRules.map {
   it.relativeTo(rootProject.projectDir).invariantSeparatorsPath
 }

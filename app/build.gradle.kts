@@ -32,15 +32,28 @@ dependencyGuard {
   configuration("releaseRuntimeClasspath")
 }
 
+val appTestBuildType =
+  providers.gradleProperty("appTestBuildType").orElse("debug").get().also { selectedBuildType ->
+    require(selectedBuildType in setOf("debug", "releaseSmoke")) {
+      "appTestBuildType must be either 'debug' or 'releaseSmoke', but was '$selectedBuildType'"
+    }
+  }
+
 android {
   namespace = "com.simtop.billionbeers"
   dynamicFeatures += setOf(":feature:beerdetail", ":feature:beerbrowse")
-  testBuildType = "releaseSmoke"
+  testBuildType = appTestBuildType
 
   buildFeatures { buildConfig = true }
 
   defaultConfig {
     buildConfigField("String", "RELEASE_SMOKE_API_BASE_URL", "\"\"")
+    testInstrumentationRunner =
+      if (appTestBuildType == "debug") {
+        "com.simtop.billionbeers.di.MockTestRunner"
+      } else {
+        "androidx.test.runner.AndroidJUnitRunner"
+      }
   }
 
   // Debug tests opt into MockTestRunner through src/debugAndroidTest/AndroidManifest.xml; the
@@ -66,7 +79,25 @@ android {
   // initWith copies build-type settings, not source sets. The smoke variant uses the release twins
   // for the debug drawer and StrictMode hook, just like the benchmark variant above.
   sourceSets.getByName("releaseSmoke").kotlin.directories.add("src/release/java")
-  sourceSets.getByName("androidTest").kotlin.directories.add("src/releaseSmokeAndroidTest/java")
+
+  // Keep the two app-owned instrumentation suites disjoint. AGP's conventional androidTest roots
+  // are replaced explicitly so a smoke APK cannot inherit the mock/debug suite (or vice versa).
+  val appTestSourceSet = sourceSets.getByName("androidTest")
+  val appTestSources =
+    if (appTestBuildType == "debug") {
+      listOf("src/androidTest/java", "src/debugAndroidTest/java")
+    } else {
+      listOf("src/releaseSmokeAndroidTest/java")
+    }
+  appTestSourceSet.java.directories.clear()
+  appTestSourceSet.java.directories.addAll(appTestSources)
+  appTestSourceSet.kotlin.directories.clear()
+  appTestSourceSet.kotlin.directories.addAll(appTestSources)
+  if (appTestBuildType == "debug") {
+    appTestSourceSet.manifest.srcFile(
+      rootProject.file("app/src/debugAndroidTest/AndroidManifest.xml")
+    )
+  }
 
   packaging {
     resources {

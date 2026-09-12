@@ -66,4 +66,80 @@ class InstrumentedTestOptInBoundaryTest {
         "'billionbeers.android.managed.device' directly."
     }
   }
+
+  @Test
+  fun `app instrumentation defaults to isolated debug sources`() {
+    val root = repoRoot()
+    val script = File(root, "app/build.gradle.kts").uncommentedText()
+    val debugManifest = File(root, "app/src/debugAndroidTest/AndroidManifest.xml").readText()
+
+    assertTrue(debugManifest.contains("com.simtop.billionbeers.di.MockTestRunner")) {
+      "The Debug instrumentation manifest must keep the mock runner"
+    }
+    assertTrue(
+      script.contains("providers.gradleProperty(\"appTestBuildType\").orElse(\"debug\")")
+    ) {
+      "The app instrumentation selector must default to the mock/debug suite"
+    }
+    assertTrue(script.contains("testBuildType = appTestBuildType")) {
+      "The selected app instrumentation suite must control the Android test build type"
+    }
+    assertTrue(script.contains("selectedBuildType in setOf(\"debug\", \"releaseSmoke\")")) {
+      "Unsupported appTestBuildType values must fail during configuration"
+    }
+    assertTrue(script.contains("listOf(\"src/androidTest/java\", \"src/debugAndroidTest/java\")")) {
+      "Debug instrumentation must include the common and debug-only source roots"
+    }
+    assertTrue(script.contains("listOf(\"src/releaseSmokeAndroidTest/java\")")) {
+      "Smoke instrumentation must use only its dedicated source root"
+    }
+    assertTrue(
+      script.contains("appTestSourceSet.manifest.srcFile") &&
+        script.contains("app/src/debugAndroidTest/AndroidManifest.xml")
+    ) {
+      "Debug instrumentation must select the mock runner manifest explicitly"
+    }
+
+    listOf(
+        "app/src/androidTest/java",
+        "app/src/debugAndroidTest/java",
+        "app/src/releaseSmokeAndroidTest/java",
+      )
+      .forEach { relativePath ->
+        assertTrue(File(root, relativePath).isDirectory) {
+          "App instrumentation source root $relativePath is missing"
+        }
+      }
+  }
+
+  @Test
+  fun `make routes smoke tests in a separate selected-build-type invocation`() {
+    val root = repoRoot()
+    val makefile = File(root, "Makefile").readText()
+
+    assertTrue(
+      makefile.contains(":app:atdApi35ReleaseSmokeAndroidTest -PappTestBuildType=releaseSmoke")
+    ) {
+      "The app-owned release confidence smoke must select releaseSmoke explicitly"
+    }
+    assertTrue(
+      makefile.contains(
+        "VERIFICATION_METADATA_REFERENCE_DEBUG_DEVICE_TASKS := ciGroupDebugAndroidTest"
+      )
+    ) {
+      "Verification metadata must keep the Debug aggregate in its own invocation"
+    }
+    assertTrue(makefile.contains("VERIFICATION_METADATA_REFERENCE_SMOKE_DEVICE_TASKS")) {
+      "Verification metadata must keep smoke device tasks in their own invocation"
+    }
+    assertTrue(
+      makefile.contains("verification-metadata-reference: ##") &&
+        makefile.contains("-PappTestBuildType=releaseSmoke")
+    ) {
+      "Smoke metadata invocations must select releaseSmoke explicitly"
+    }
+    assertTrue(makefile.contains(":app:assembleReleaseSmokeAndroidTest")) {
+      "The candidate metadata graph must assemble the app-owned smoke test APK"
+    }
+  }
 }

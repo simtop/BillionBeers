@@ -269,6 +269,10 @@ To simplify development, we use a standardized **Makefile**. Run `make help` to 
 
 - **Build/Install**: `make build`, `make install`
 - **Testing**: `make test`, `make ui-test`
+
+App-owned UI tests default to the mock-backed Debug suite. The app confidence smoke selects the
+minified `releaseSmoke` suite with `-PappTestBuildType=releaseSmoke`; keep Debug and smoke app test
+invocations separate because the property controls source roots, runner selection and target variant.
 - **Screenshots**: `make screenshot-record`, `make screenshot-verify`
 - **Analysis**: `make check-unused-deps`, `make check-duplicates`
 - **Benchmarking**: `make benchmark-macro`, `make gradle-benchmark SCENARIO=clean_build`
