@@ -41,7 +41,7 @@ how a plan quietly loses items.
 |---|---|---|
 | **Auth, sessions, token refresh**, OkHttp `Authenticator` | The API takes no credential. There is no identity in the system to establish, store, or refresh | Any endpoint we call requires a token |
 | **Certificate pinning** | Nothing confidential is in flight — public catalog data, no credential. Pinning carries a real operational cost (rotation bricks old clients; it needs a backup pin *and* a remote kill switch, which is itself deferred below) | Auth lands — but only *after* remote config, never before |
-| **Encrypted storage** (SQLCipher, `EncryptedSharedPreferences`) | Room holds the public catalog plus one local boolean. There is no secret at rest | Any user-supplied or personal data is persisted |
+| **Encrypted storage** (SQLCipher, `EncryptedSharedPreferences`) | Room holds the public catalog plus local availability and favorite flags. There is no secret at rest | Any user-supplied or personal data is persisted |
 | **Play Integrity / SafetyNet, root or tamper detection** | No entitlement, no revenue, no server trust decision. Nothing is gated on the client being honest | A paid or licensed artifact ships |
 | **Push notifications (FCM)** | No server we control, so nothing to send | A backend of ours exists |
 | **Server-side sync of `available`** | The backend isn't ours, so a sync could only ever one-way-overwrite the user's edit. The server value seeds a row on first insert and is local-only thereafter | We own the write path |
@@ -60,8 +60,15 @@ useful learning topic is not by itself a commitment to ship an integration.
 |---|---|
 | Remote config, kill switch, staged rollout, force-update | Local `FeatureFlagProvider` exists; a remote adapter does not. Start only for a named operational use or an explicitly chosen learning milestone, with offline defaults and recovery policy |
 | Deeper release-build health, artifact verification and a size budget | The debug-signed, minified `releaseSmoke` target already launches in CI. Remaining work is deterministic behavior and mapping/profile artifact verification; size reporting needs a defined artifact before any threshold |
-| Adaptive two-pane layout; favorites + Glance widget | Accessibility/expanded-width previews and release QA already exist. A real two-pane navigation layout and a local favorites/widget product remain separate feature choices |
-| Kotlin Multiplatform | Pure-JVM domain/core boundaries are useful groundwork, not proof of common-source compatibility. Choose a target and validate platform APIs, DI, persistence and tests before committing to migration |
+
+Local favorites, expanded-width list/detail navigation and the Favorites Glance widget are now
+implemented, not deferred. Widget synchronization is governed by
+[ADR 0015](0015-room-backed-glance-widget-synchronization.md).
+
+Kotlin Multiplatform is now an accepted, incremental learning direction for Android, Desktop, iOS
+and Web under [ADR 0016](0016-incremental-kmp-targets-and-platform-adapters.md). This is a scope
+decision, not a claim that non-Android targets build or ship today. Target-specific compatibility,
+persistence and test proofs still gate implementation.
 
 The implementation choices named in the Context above — plus dev-apps for dynamic features (0004) —
 keep their own ADRs and are not reopened here.

@@ -110,7 +110,7 @@ bundle-release: ## Assemble the signed release App Bundle (.aab) for Play Store 
 
 release-smoke: ## Run black-box launch and behavior smoke against the debug-signed, minified app.
 	$(GRADLE_RUNNER) :app-release-smoke:atdApi35ReleaseSmokeAndroidTest
-	$(GRADLE_RUNNER) :app:atdApi35ReleaseSmokeAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.simtop.billionbeers.ReleaseConfidenceSmokeTest
+	$(GRADLE_RUNNER) :app:atdApi35ReleaseSmokeAndroidTest -PappTestBuildType=releaseSmoke -Pandroid.testInstrumentationRunnerArguments.class=com.simtop.billionbeers.ReleaseConfidenceSmokeTest
 	$(GRADLE_RUNNER) :feature:beerdetail:assembleReleaseSmoke :feature:beerbrowse:assembleReleaseSmoke
 	@bash scripts/verify-release-smoke-artifacts.sh
 
@@ -278,30 +278,37 @@ VERIFICATION_METADATA_PASS_TWO := \
 	assembleDebug testDebugUnitTest :konsist:test :core-common:test :testing-utils:test \
 	:snapshot-processor:test checkDataLayerClasspathBoundary verifyArchitectureGraph \
 	verifyPaparazziDebug jacocoRootReport
-VERIFICATION_METADATA_REFERENCE_DEVICE_TASKS := \
-	ciGroupDebugAndroidTest :app-release-smoke:atdApi35ReleaseSmokeAndroidTest \
+VERIFICATION_METADATA_REFERENCE_DEBUG_DEVICE_TASKS := ciGroupDebugAndroidTest
+VERIFICATION_METADATA_REFERENCE_SMOKE_DEVICE_TASKS := \
+	:app-release-smoke:atdApi35ReleaseSmokeAndroidTest \
 	:app:atdApi35ReleaseSmokeAndroidTest
-VERIFICATION_METADATA_CANDIDATE_DEVICE_TASKS := \
+VERIFICATION_METADATA_CANDIDATE_DEBUG_DEVICE_TASKS := \
 	:app:assembleDebugAndroidTest \
 	:beer_database:assembleDebugAndroidTest \
 	:feature:beerbrowse:assembleDebugAndroidTest \
 	:feature:beerdetail:assembleDebugAndroidTest \
 	:feature:beerslist:assembleDebugAndroidTest \
 	:feature:beersearch:assembleDebugAndroidTest \
-	:app:assembleReleaseSmoke \
 	:app-release-smoke:assembleReleaseSmoke
+VERIFICATION_METADATA_CANDIDATE_SMOKE_DEVICE_TASKS := \
+	:app:assembleReleaseSmoke \
+	:app:assembleReleaseSmokeAndroidTest
 
 verification-metadata: verification-metadata-reference ## Regenerate verification metadata with the proven reference graph (ADR 0007).
 
 verification-metadata-reference: ## Run the complete reference metadata graph, including managed-device execution.
 	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) $(VERIFICATION_METADATA_PASS_ONE)
 	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) \
-		$(VERIFICATION_METADATA_PASS_TWO) $(VERIFICATION_METADATA_REFERENCE_DEVICE_TASKS)
+		$(VERIFICATION_METADATA_PASS_TWO) $(VERIFICATION_METADATA_REFERENCE_DEBUG_DEVICE_TASKS)
+	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) -PappTestBuildType=releaseSmoke \
+		$(VERIFICATION_METADATA_REFERENCE_SMOKE_DEVICE_TASKS)
 
 verification-metadata-candidate: ## Experiment: replace managed-device execution with explicit test APK assembly.
 	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) $(VERIFICATION_METADATA_PASS_ONE)
 	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) \
-		$(VERIFICATION_METADATA_PASS_TWO) $(VERIFICATION_METADATA_CANDIDATE_DEVICE_TASKS)
+		$(VERIFICATION_METADATA_PASS_TWO) $(VERIFICATION_METADATA_CANDIDATE_DEBUG_DEVICE_TASKS)
+	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) -PappTestBuildType=releaseSmoke \
+		$(VERIFICATION_METADATA_CANDIDATE_SMOKE_DEVICE_TASKS)
 
 health: ## Generate current Markdown and JSON health reports under build/reports/health.
 	@bash scripts/health-report.sh --run --json build/reports/health/health.json build/reports/health/report.md

@@ -11,11 +11,11 @@ it disagrees with them. Read the relevant ADR or enforcement test for rationale.
 
 | Area | Modules / responsibility |
 |---|---|
-| Assembly | `:app`: graph, navigation host, dynamic feature declarations |
+| Assembly | `:app`: graph, adaptive navigation host, dynamic feature declarations and Room-backed Favorites Glance widget |
 | Core | `:core`: Android DI/logger; `:core-common`: pure-JVM paging, errors and shared interfaces |
 | Domain | `:beerdomain:api`: immutable models/repository interfaces; `:beerdomain:fakes`: test fakes |
 | Data | `:beer_network`: Retrofit/DTOs; `:beer_database`: Room; `:beer_data`: repositories/mappers/pager factory |
-| Features | `:feature:beerslist`, `:feature:beersearch`; on-demand `:feature:beerdetail`, `:feature:beerbrowse` |
+| Features | `:feature:beerslist`, `:feature:favorites`, `:feature:beersearch`; on-demand `:feature:beerdetail`, `:feature:beerbrowse` |
 | Shared UI | `:presentation_utils`: paging UI, split installation and dynamic-feature strings; `:navigation`: routes; `:core:designsystem`: theme/tokens/previews |
 | Catalog | `:catalog*`: component catalog/generator |
 | Tests | `:testing-utils` (JVM), `:testing-utils-android` (robots), `:snapshot-testing`, `:snapshot-processor`, `:konsist`, `:app-release-smoke` |
@@ -55,7 +55,8 @@ local-only availability. Add a use case only for behavior a
 repository call does not provide. ViewModels use bare `viewModelScope.launch`; choose a
 dispatcher where blocking/CPU work actually happens. Keep precompiled convention scripts
 and the measured repository-owned KSP screenshot discovery. Do not justify new modules
-by assumed build speed.
+by assumed build speed. ADR 0015 owns Android widget synchronization; ADR 0016 accepts an
+incremental Android/Desktop/iOS/Web KMP direction, not already-implemented target support.
 
 ADR 0010 defines declined infrastructure and reopen triggers; auth, remote writes, a shipped
 analytics/crash SDK and other backend-dependent features are not generic completeness work.
