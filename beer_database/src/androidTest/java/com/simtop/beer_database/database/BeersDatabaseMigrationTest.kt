@@ -60,6 +60,94 @@ class BeersDatabaseMigrationTest {
   }
 
   @Test
+  fun migrate3To4_keepsLocalDataAndDefaultsFavoriteToFalse() {
+    val dbName = "migration-test-3-4"
+
+    helper.createDatabase(dbName, 3).apply {
+      execSQL(
+        "INSERT INTO beers " +
+          "(id, name, tagline, description, image_url, abv, ibu, food_pairing, availability, " +
+          "style_name, brewery_name, srm, released_year, min_serving_temperature, " +
+          "max_serving_temperature, fermentation_method, ingredients, recommended_glasses) " +
+          "VALUES ('1', 'Beer 1', 'Tagline', 'Description', 'image', 5.0, 40.0, '[\\\"Food\\\"]', 0, " +
+          "'IPA', 'Brewery', 8, 2024, 4, 8, 'Ale', '[\\\"Water\\\"]', '[\\\"Pint\\\"]')"
+      )
+      execSQL(
+        "INSERT INTO paging_state (surface, next_key, total_count, refreshed_at) " +
+          "VALUES ('catalog:en', 3, 206, 1234)"
+      )
+      close()
+    }
+
+    val db = helper.runMigrationsAndValidate(dbName, 4, true, MIGRATION_3_4)
+
+    db
+      .query(
+        "SELECT availability, name, style_name, brewery_name, is_favorite FROM beers WHERE id = '1'"
+      )
+      .use { cursor ->
+        assertTrue(cursor.moveToFirst())
+        assertEquals(0, cursor.getInt(0))
+        assertEquals("Beer 1", cursor.getString(1))
+        assertEquals("IPA", cursor.getString(2))
+        assertEquals("Brewery", cursor.getString(3))
+        assertEquals(0, cursor.getInt(4))
+      }
+    db.query("SELECT next_key, total_count, refreshed_at FROM paging_state").use { cursor ->
+      assertTrue(cursor.moveToFirst())
+      assertEquals(3, cursor.getInt(0))
+      assertEquals(206, cursor.getInt(1))
+      assertEquals(1234, cursor.getLong(2))
+    }
+    db.close()
+  }
+
+  @Test
+  fun migrate1To4_preservesRowsLocalDataAndPagingStateAcrossFullChain() {
+    val dbName = "migration-test-1-4"
+
+    helper.createDatabase(dbName, 1).apply {
+      execSQL(
+        "INSERT INTO beers " +
+          "(id, name, tagline, description, image_url, abv, ibu, food_pairing, availability) " +
+          "VALUES ('1', 'Beer 1', '', '', '', 0.0, 0.0, '[]', 0)"
+      )
+      close()
+    }
+
+    val db =
+      helper.runMigrationsAndValidate(
+        dbName,
+        4,
+        true,
+        MIGRATION_1_2,
+        MIGRATION_2_3,
+        MIGRATION_3_4,
+      )
+
+    db
+      .query("SELECT availability, style_name, ingredients, is_favorite FROM beers WHERE id = '1'")
+      .use { cursor ->
+        assertTrue(cursor.moveToFirst())
+        assertEquals(0, cursor.getInt(0))
+        assertEquals("", cursor.getString(1))
+        assertEquals("[]", cursor.getString(2))
+        assertEquals(0, cursor.getInt(3))
+      }
+    db.execSQL(
+      "INSERT INTO paging_state (surface, next_key, total_count, refreshed_at) " +
+        "VALUES ('catalog:en', 2, 206, 5678)"
+    )
+    db.query("SELECT next_key, total_count FROM paging_state WHERE surface = 'catalog:en'").use {
+      cursor ->
+      assertTrue(cursor.moveToFirst())
+      assertEquals(2, cursor.getInt(0))
+      assertEquals(206, cursor.getInt(1))
+    }
+    db.close()
+  }
+
+  @Test
   fun migrate2To3_keepsBeersAndPagingState_andAddsDetailColumnsWithDefaults() {
     val dbName = "migration-test-2-3"
 

@@ -12,4 +12,6 @@ dependencies {
 
   testImplementation(this.project(":beerdomain:fakes"))
   testImplementation(libs.striktCore)
+  testImplementation(libs.mockk)
+  testImplementation(libs.turbine)
 }

@@ -3,6 +3,7 @@ package com.simtop.feature.beerdetail
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
+import com.simtop.beerdomain.domain.errors.UpdateFavoriteError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.beerdomain.fakes.FakeBeersRepository
@@ -10,6 +11,7 @@ import com.simtop.beerdomain.fakes.fakeBeerModel
 import com.simtop.beerdomain.fakes.fakeException
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.Either
+import com.simtop.feature.beerdetail.presentation.BeerDetailEvent
 import com.simtop.feature.beerdetail.presentation.BeerDetailViewModel
 import io.mockk.coEvery
 import io.mockk.mockk
@@ -171,6 +173,127 @@ internal class BeerDetailViewModelTest {
         cancelAndIgnoreRemainingEvents()
       }
     }
+
+  @Test
+  fun `favorite update optimistically changes state and emits success event`() =
+    runTest(testDispatcher) {
+      val repository = mockk<BeersRepository>()
+      val toggledBeer = fakeBeerModel.copy(isFavorite = !fakeBeerModel.isFavorite)
+      coEvery { repository.updateFavorite(toggledBeer) } returns Either.Right(Unit)
+      val viewModel = BeerDetailViewModel(repository, fakeBeerModel, SavedStateHandle())
+
+      viewModel.events.test {
+        viewModel.beerDetailViewState.test {
+          expectThat(awaitItem()).isA<CommonUiState.Success<Beer>>()
+          viewModel.updateFavorite(fakeBeerModel)
+          val updated = awaitItem()
+          expectThat((updated as CommonUiState.Success).data).isEqualTo(toggledBeer)
+          cancelAndIgnoreRemainingEvents()
+        }
+
+        expectThat(awaitItem()).isEqualTo(BeerDetailEvent.FavoriteUpdated)
+        cancelAndIgnoreRemainingEvents()
+      }
+    }
+
+  @Test
+  fun `failed favorite update rolls back and emits error event`() =
+    runTest(testDispatcher) {
+      val repository = mockk<BeersRepository>()
+      val toggledBeer = fakeBeerModel.copy(isFavorite = !fakeBeerModel.isFavorite)
+      coEvery { repository.updateFavorite(toggledBeer) } returns
+        Either.Left(UpdateFavoriteError.Unknown(fakeException))
+      val viewModel = BeerDetailViewModel(repository, fakeBeerModel, SavedStateHandle())
+
+      viewModel.events.test {
+        viewModel.beerDetailViewState.test {
+          expectThat(awaitItem()).isA<CommonUiState.Success<Beer>>()
+          viewModel.updateFavorite(fakeBeerModel)
+          expectThat((awaitItem() as CommonUiState.Success).data).isEqualTo(toggledBeer)
+          expectThat((awaitItem() as CommonUiState.Success).data).isEqualTo(fakeBeerModel)
+          cancelAndIgnoreRemainingEvents()
+        }
+
+        expectThat(awaitItem()).isEqualTo(BeerDetailEvent.ShowError(fakeException.message!!))
+        cancelAndIgnoreRemainingEvents()
+      }
+    }
+
+  @Test
+  fun `overlapping favorite updates are serialized`() =
+    runTest(testDispatcher) {
+      val firstStarted = CompletableDeferred<Unit>()
+      val releaseFirst = CompletableDeferred<Unit>()
+      val repository = mockk<BeersRepository>()
+      val firstBeer = fakeBeerModel.copy(isFavorite = !fakeBeerModel.isFavorite)
+      val secondBeer = firstBeer.copy(isFavorite = fakeBeerModel.isFavorite)
+      coEvery { repository.updateFavorite(firstBeer) } coAnswers
+        {
+          firstStarted.complete(Unit)
+          releaseFirst.await()
+          Either.Left(UpdateFavoriteError.Unknown(fakeException))
+        }
+      coEvery { repository.updateFavorite(secondBeer) } returns Either.Right(Unit)
+      val viewModel = BeerDetailViewModel(repository, fakeBeerModel, SavedStateHandle())
+
+      viewModel.updateFavorite(fakeBeerModel)
+      testDispatcher.scheduler.runCurrent()
+      firstStarted.await()
+      viewModel.updateFavorite(firstBeer)
+      testDispatcher.scheduler.runCurrent()
+      expectThat(viewModel.beerDetailViewState.value).isEqualTo(CommonUiState.Success(firstBeer))
+
+      releaseFirst.complete(Unit)
+      testDispatcher.scheduler.advanceUntilIdle()
+      expectThat(viewModel.beerDetailViewState.value).isEqualTo(CommonUiState.Success(secondBeer))
+    }
+
+  @Test
+  fun `availability and favorite updates can be in flight independently`() =
+    runTest(testDispatcher) {
+      val availabilityStarted = CompletableDeferred<Unit>()
+      val favoriteStarted = CompletableDeferred<Unit>()
+      val release = CompletableDeferred<Unit>()
+      val repository = mockk<BeersRepository>()
+      val availabilityBeer = fakeBeerModel.copy(availability = !fakeBeerModel.availability)
+      val favoriteBeer = fakeBeerModel.copy(isFavorite = !fakeBeerModel.isFavorite)
+      coEvery { repository.updateAvailability(availabilityBeer) } coAnswers
+        {
+          availabilityStarted.complete(Unit)
+          release.await()
+          Either.Right(Unit)
+        }
+      coEvery { repository.updateFavorite(favoriteBeer) } coAnswers
+        {
+          favoriteStarted.complete(Unit)
+          release.await()
+          Either.Right(Unit)
+        }
+      val viewModel = BeerDetailViewModel(repository, fakeBeerModel, SavedStateHandle())
+
+      viewModel.updateAvailability(fakeBeerModel)
+      viewModel.updateFavorite(fakeBeerModel)
+      testDispatcher.scheduler.runCurrent()
+      availabilityStarted.await()
+      favoriteStarted.await()
+      release.complete(Unit)
+      testDispatcher.scheduler.advanceUntilIdle()
+    }
+
+  @Test
+  fun `older serialized beer payload receives current default fields`() = runTest {
+    val oldPayload =
+      "{\"id\":\"1\",\"name\":\"Old\",\"tagline\":\"\",\"description\":\"\",\"imageUrl\":\"\",\"abv\":0.0," +
+        "\"ibu\":0.0,\"foodPairing\":[],\"availability\":true}"
+
+    val decoded = kotlinx.serialization.json.Json.decodeFromString<Beer>(oldPayload)
+
+    expectThat(decoded.isFavorite).isEqualTo(false)
+    expectThat(decoded.styleName).isEqualTo("")
+    expectThat(decoded.breweryName).isEqualTo("")
+    expectThat(decoded.srm).isEqualTo(null)
+    expectThat(decoded.ingredients).isEqualTo(emptyList())
+  }
 
   @Test
   fun `overlapping updates are serialized so a failed update cannot roll back a newer update`() =

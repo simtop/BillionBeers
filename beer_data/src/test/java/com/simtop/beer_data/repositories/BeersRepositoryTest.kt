@@ -254,6 +254,55 @@ class BeersRepositoryTest {
     }
 
   @Test
+  fun `refresh preserves availability and favorite flags while updating catalog fields`() =
+    runTest(testDispatcher) {
+      val initial =
+        Beer.empty.copy(id = "7", name = "Before", availability = false, isFavorite = true)
+      beersRepository.insertAllToDB(listOf(initial))
+
+      beersRepository.insertAllToDB(
+        listOf(initial.copy(name = "After", availability = true, isFavorite = false))
+      )
+
+      val refreshed = beersRepository.getAllBeersFromDB().single()
+      expectThat(refreshed.name).isEqualTo("After")
+      expectThat(refreshed.availability).isEqualTo(false)
+      expectThat(refreshed.isFavorite).isEqualTo(true)
+    }
+
+  @Test
+  fun `updateFavorite persists an edit for a beer not yet cached`() =
+    runTest(testDispatcher) {
+      val beer = Beer.empty.copy(id = "42", isFavorite = true, availability = false)
+
+      beersRepository.updateFavorite(beer)
+
+      val inserted = beersRepository.getAllBeersFromDB().single()
+      expectThat(inserted.id).isEqualTo("42")
+      expectThat(inserted.isFavorite).isEqualTo(true)
+      expectThat(inserted.availability).isEqualTo(false)
+    }
+
+  @Test
+  fun `observeFavoriteBeers emits sorted local favorites only`() =
+    runTest(testDispatcher) {
+      beersRepository.observeFavoriteBeers().test {
+        expectThat(awaitItem()).isEqualTo(emptyList())
+
+        beersRepository.insertAllToDB(
+          listOf(
+            Beer.empty.copy(id = "2", name = "Bravo", isFavorite = true),
+            Beer.empty.copy(id = "1", name = "Alpha", isFavorite = true),
+            Beer.empty.copy(id = "3", name = "Charlie", isFavorite = false),
+          )
+        )
+
+        expectThat(awaitItem().map(Beer::name)).isEqualTo(listOf("Alpha", "Bravo"))
+        cancelAndIgnoreRemainingEvents()
+      }
+    }
+
+  @Test
   fun `insertAllToDB should call local source`() =
     runTest(testDispatcher) {
       // Arrange
