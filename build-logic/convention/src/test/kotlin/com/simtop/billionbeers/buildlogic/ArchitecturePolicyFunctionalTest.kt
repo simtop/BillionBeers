@@ -6,6 +6,7 @@ import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
 import kotlin.io.path.writeText
 import org.gradle.testkit.runner.GradleRunner
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -77,6 +78,33 @@ class ArchitecturePolicyFunctionalTest {
     assertTrue(result.output.contains("project API exposure is not listed"), result.output)
   }
 
+  @Test
+  fun `KMP source set api exposure is checked on every target graph`() {
+    writeKmpFixture(api = true)
+
+    val result = runner().withArguments(":feature:alpha:verifyArchitecturePolicy").buildAndFail()
+
+    assertTrue(result.output.contains("commonMainApi"), result.output)
+    assertTrue(result.output.contains("project API exposure is not listed"), result.output)
+  }
+
+  @Test
+  fun `KMP source set implementation remains subject to edge policy without api exposure`() {
+    writeKmpFixture(api = false)
+
+    val result = runner()
+      .withArguments(":feature:alpha:verifyArchitecturePolicy", "--configuration-cache")
+      .build()
+
+    assertTrue(result.output.contains("verifyArchitecturePolicy"), result.output)
+    assertFalse(result.output.contains("project API exposure is not listed"), result.output)
+
+    val cached = runner()
+      .withArguments(":feature:alpha:verifyArchitecturePolicy", "--configuration-cache")
+      .build()
+    assertTrue(cached.output.contains("Configuration cache entry reused."), cached.output)
+  }
+
   private fun writeFixture(includes: List<String>, dependencies: String) {
     val repoPolicy = generateSequence(Path.of(System.getProperty("user.dir"))) { it.parent }
       .map { it.resolve("config/architecture/project-dependency-policy.json") }
@@ -106,6 +134,56 @@ class ArchitecturePolicyFunctionalTest {
       testProjectDir.resolve("$directory/build.gradle.kts").apply {
         parent.createDirectories()
         writeText("")
+      }
+    }
+  }
+
+  private fun writeKmpFixture(api: Boolean) {
+    val repoPolicy = generateSequence(Path.of(System.getProperty("user.dir"))) { it.parent }
+      .map { it.resolve("config/architecture/project-dependency-policy.json") }
+      .firstOrNull { it.exists() }
+      ?: error("Could not find the checked-in architecture policy")
+    testProjectDir.resolve("config/architecture").createDirectories()
+    repoPolicy.copyTo(testProjectDir.resolve("config/architecture/project-dependency-policy.json"), overwrite = true)
+    testProjectDir.resolve("settings.gradle.kts").writeText(
+      """
+      pluginManagement {
+        repositories { google(); mavenCentral(); gradlePluginPortal() }
+        plugins { id("org.jetbrains.kotlin.multiplatform") version "2.4.10" }
+      }
+      rootProject.name = "kmp-architecture-fixture"
+      include(":core", ":feature:alpha")
+      """.trimIndent(),
+    )
+    testProjectDir.resolve("build.gradle.kts").writeText(
+      """
+      plugins { id("billionbeers.module.graph") }
+      """.trimIndent(),
+    )
+    listOf(":core", ":feature:alpha").forEach { module ->
+      val directory = module.removePrefix(":").replace(":", "/")
+      testProjectDir.resolve("$directory/build.gradle.kts").apply {
+        parent.createDirectories()
+        writeText(
+          if (module == ":feature:alpha") {
+            """
+            plugins { id("org.jetbrains.kotlin.multiplatform") }
+            kotlin {
+              jvm()
+              sourceSets {
+                commonMain.dependencies {
+                  ${if (api) "api" else "implementation"}(project(":core"))
+                }
+              }
+            }
+            """.trimIndent()
+          } else {
+            """
+            plugins { id("org.jetbrains.kotlin.multiplatform") }
+            kotlin { jvm() }
+            """.trimIndent()
+          },
+        )
       }
     }
   }
