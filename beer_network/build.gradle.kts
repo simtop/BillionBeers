@@ -7,7 +7,8 @@ plugins {
 android { namespace = "com.simtop.beer_network" }
 
 dependencies {
-  implementation(this.project(":core"))
+  // Main uses only the reusable language contract; Android HTTP construction stays in :core.
+  implementation(this.project(":core-common"))
 
   // Main declares the service and DTOs, so it needs Retrofit itself. It used to reach it only
   // transitively through the converter below - which main never actually used.
@@ -16,6 +17,8 @@ dependencies {
 
   // The converter and logging interceptor are test-only: the production Retrofit/OkHttp stack is
   // assembled in :core's NetworkingModule, and only TestMockWebService builds one by hand.
+  // TestMockWebService reuses the production NetworkJson owned by the Android provider module.
+  testImplementation(this.project(":core"))
   testImplementation(this.project(":beer_network:fixtures"))
   testImplementation(libs.okhttp3Mockwebserver)
   testImplementation(libs.retrofit2ConverterSerialization)
