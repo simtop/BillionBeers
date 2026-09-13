@@ -26,6 +26,7 @@ abstract class VerifyArchitecturePolicyTask : DefaultTask() {
 
   @get:Input abstract val projectPath: Property<String>
   @get:Input abstract val projectRole: Property<String>
+  @get:Input abstract val configurationName: Property<String>
   @get:Input abstract val declarations: ListProperty<String>
   @get:Input abstract val moduleRoleRecords: ListProperty<String>
 
@@ -56,11 +57,11 @@ abstract class VerifyArchitecturePolicyTask : DefaultTask() {
           "${declaration.source} -> ${declaration.target} ($targetRole) via ${declaration.configuration}: " +
             "edge is not allowed for $sourceRole"
       }
-      if (targetRole != "unknown" && declaration.configuration.equals("api", ignoreCase = true) &&
+      if (targetRole != "unknown" && isApiConfiguration(declaration.configuration) &&
         !policy.allowsApi(sourceRole, targetRole)
       ) {
         violations +=
-          "${declaration.source} -> ${declaration.target} ($targetRole) via api: " +
+          "${declaration.source} -> ${declaration.target} ($targetRole) via ${declaration.configuration}: " +
             "project API exposure is not listed in allowedApiEdges"
       }
     }
@@ -84,8 +85,14 @@ abstract class VerifyArchitecturePolicyTask : DefaultTask() {
     }
 
     check(violations.isEmpty()) {
-      "Architecture policy violations for $source ($sourceRole):\n- " + violations.sorted().joinToString("\n- ")
+      "Architecture policy violations for $source ($sourceRole, ${configurationName.get()}):\n- " +
+        violations.sorted().joinToString("\n- ")
     }
+  }
+
+  private fun isApiConfiguration(configuration: String): Boolean {
+    val name = configuration.lowercase()
+    return name == "api" || name.endsWith("api")
   }
 
   private fun parseDeclaration(record: String): ArchitectureDeclaration {

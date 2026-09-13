@@ -9,9 +9,25 @@ fun moduleKind(project: Project): String =
     project.plugins.hasPlugin("com.android.dynamic-feature") -> "android-dynamic-feature"
     project.plugins.hasPlugin("com.android.test") -> "android-test"
     project.plugins.hasPlugin("com.android.library") -> "android-library"
+    project.plugins.hasPlugin("org.jetbrains.kotlin.multiplatform") -> "kmp-library"
     project.plugins.hasPlugin("org.jetbrains.kotlin.jvm") -> "jvm-library"
     else -> "other"
   }
+
+fun isKmpProject(project: Project): Boolean =
+  project.plugins.hasPlugin("org.jetbrains.kotlin.multiplatform")
+
+fun architectureCompileConfigurations(project: Project): List<org.gradle.api.artifacts.Configuration> {
+  val targetConfigurations = project.configurations.filter { configuration ->
+    val name = configuration.name.lowercase()
+    configuration.name.endsWith("MainCompileClasspath", ignoreCase = true) &&
+      "test" !in name && "androidtest" !in name && "ksp" !in name
+  }
+  if (isKmpProject(project)) return targetConfigurations.sortedBy { it.name }
+  return listOf("debugCompileClasspath", "compileClasspath")
+    .mapNotNull(project.configurations::findByName)
+    .take(1)
+}
 
 fun dependencyScope(configurationName: String): String {
   val name = configurationName.lowercase()
@@ -105,31 +121,45 @@ gradle.projectsEvaluated {
       listOf(project.path, architecturePolicy.role(project)).joinToString(separator)
     }
     modules.forEach { project ->
-      val compileClasspath = listOf("debugCompileClasspath", "compileClasspath")
-        .firstOrNull { project.configurations.findByName(it) != null }
-      if (compileClasspath == null) return@forEach
-
-      val rootComponent = project.configurations
-        .getByName(compileClasspath)
-        .incoming.resolutionResult.rootComponent
-      val declarations = project.configurations.flatMap { configuration ->
-        if (!isArchitectureProductionConfiguration(configuration.name)) return@flatMap emptyList()
-        configuration.dependencies.withType(ProjectDependency::class.java).mapNotNull { dependency ->
-          if (dependency.path == project.path || dependency.path !in modulePaths) return@mapNotNull null
-          listOf(project.path, dependency.path, configuration.name).joinToString(separator)
-        }
-      }.sorted()
-      val task = project.tasks.register<VerifyArchitecturePolicyTask>("verifyArchitecturePolicy") {
-        group = "verification"
-        description = "Verifies this module's resolved compile classpath against the architecture policy."
-        projectPath.set(project.path)
-        projectRole.set(architecturePolicy.role(project))
-        policyFile.set(architecturePolicyFile)
-        this.declarations.set(declarations)
-        this.moduleRoleRecords.set(moduleRoleRecords)
-        this.rootComponent.set(rootComponent)
+      val compileConfigurations = architectureCompileConfigurations(project)
+      check(compileConfigurations.isNotEmpty() || !isKmpProject(project)) {
+        "${project.path} applies Kotlin Multiplatform but has no production *MainCompileClasspath " +
+          "configuration for architecture verification"
       }
-      verifyArchitectureGraph.configure { dependsOn(task) }
+      if (compileConfigurations.isEmpty()) return@forEach
+
+      val checks = compileConfigurations.map { configuration ->
+        val configurationName = configuration.name
+        val rootComponent = configuration.incoming.resolutionResult.rootComponent
+        val declarations = project.configurations.flatMap { declarationConfiguration ->
+          if (!isArchitectureProductionConfiguration(declarationConfiguration.name)) return@flatMap emptyList()
+          declarationConfiguration.dependencies
+            .withType(ProjectDependency::class.java)
+            .mapNotNull { dependency ->
+              if (dependency.path == project.path || dependency.path !in modulePaths) return@mapNotNull null
+              listOf(project.path, dependency.path, declarationConfiguration.name).joinToString(separator)
+            }
+        }.sorted()
+        val taskName = "verifyArchitecturePolicy${configurationName.replaceFirstChar { it.uppercase() }}"
+        project.tasks.register<VerifyArchitecturePolicyTask>(taskName) {
+          group = "verification"
+          description =
+            "Verifies this module's resolved $configurationName against the architecture policy."
+          projectPath.set(project.path)
+          projectRole.set(architecturePolicy.role(project))
+          policyFile.set(architecturePolicyFile)
+          this.configurationName.set(configurationName)
+          this.declarations.set(declarations)
+          this.moduleRoleRecords.set(moduleRoleRecords)
+          this.rootComponent.set(rootComponent)
+        }
+      }
+      val aggregate = project.tasks.register("verifyArchitecturePolicy") {
+        group = "verification"
+        description = "Verifies this module's resolved compile graphs against the architecture policy."
+        dependsOn(checks)
+      }
+      verifyArchitectureGraph.configure { dependsOn(aggregate) }
     }
     if (tasks.findByName("check") == null) {
       tasks.register("check") {
