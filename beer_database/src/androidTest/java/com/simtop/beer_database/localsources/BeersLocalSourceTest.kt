@@ -86,6 +86,44 @@ class BeersLocalSourceTest {
   }
 
   @Test
+  fun refreshPreservesAvailabilityAndFavoriteWhileUpdatingCatalogFields() = runBlocking {
+    localSource.insertAllToDB(
+      listOf(beer(name = "Before").copy(availability = false, isFavorite = true))
+    )
+
+    localSource.insertAllToDB(
+      listOf(beer(name = "After").copy(availability = true, isFavorite = false))
+    )
+
+    val refreshed = localSource.getAllBeersFromDB().first().single()
+    assertEquals("After", refreshed.name)
+    assertEquals(false, refreshed.availability)
+    assertEquals(true, refreshed.isFavorite)
+  }
+
+  @Test
+  fun favoriteEditForUncachedBeerInsertsCompleteRow() = runBlocking {
+    val uncached = beer(id = "42", name = "Uncached").copy(isFavorite = true, availability = false)
+
+    localSource.upsertFavorite(uncached)
+
+    assertEquals(uncached, localSource.getAllBeersFromDB().first().single())
+  }
+
+  @Test
+  fun uncachedAvailabilityAndFavoriteEditsAreBothPersisted() = runBlocking {
+    val uncached = beer(id = "42", name = "Uncached").copy(isFavorite = true, availability = false)
+
+    localSource.upsertAvailability(uncached)
+    localSource.upsertFavorite(uncached)
+
+    val stored = localSource.getAllBeersFromDB().first().single()
+    assertEquals(false, stored.availability)
+    assertEquals(true, stored.isFavorite)
+    assertEquals("Uncached", stored.name)
+  }
+
+  @Test
   fun favoriteFlowReflectsCommittedWritesInDisplayOrder() = runBlocking {
     assertEquals(emptyList<BeerDbModel>(), localSource.getFavoriteBeersFromDB().first())
 

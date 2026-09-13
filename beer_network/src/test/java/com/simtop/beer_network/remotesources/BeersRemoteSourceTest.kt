@@ -7,6 +7,8 @@ import com.simtop.beer_network.fixtures.FAKE_TYPOLOGIES_JSON
 import com.simtop.core.core.LanguageProvider
 import java.net.HttpURLConnection
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.SerializationException
+import okhttp3.mockwebserver.MockResponse
 import org.amshove.kluent.shouldBeEqualTo
 import org.junit.Assert.assertThrows
 import org.junit.Test
@@ -15,6 +17,47 @@ import retrofit2.HttpException
 class BeersRemoteSourceTest : TestMockWebService() {
 
   private val remoteSource by lazy { BeersRemoteSourceImpl(apiService, LanguageProvider { "en" }) }
+
+  @Test
+  fun `catalog request uses the documented defaults and omits null filters`() {
+    mockHttpResponse(FAKE_JSON, HttpURLConnection.HTTP_OK)
+
+    runBlocking { remoteSource.getListOfBeers(page = 3) }
+
+    val request = mockServer.takeRequest()
+    request.method shouldBeEqualTo "GET"
+    request.path shouldBeEqualTo "/beers?_page=3&_limit=25&translations.language.code=en"
+  }
+
+  @Test
+  fun `filtered request encodes values and sends all filters`() {
+    mockHttpResponse(FAKE_JSON, HttpURLConnection.HTTP_OK)
+
+    runBlocking {
+      remoteSource.getListOfBeers(
+        page = 2,
+        search = "ipa & stout",
+        typologyId = "style/1",
+        breweryId = "brewery 1",
+      )
+    }
+
+    val path = mockServer.takeRequest().path.orEmpty()
+    path shouldBeEqualTo
+      "/beers?_page=2&_limit=25&translations.language.code=en" +
+        "&q=ipa%20%26%20stout&typology.id=style%2F1&brewery.id=brewery%201"
+  }
+
+  @Test
+  fun `malformed body is not treated as a successful empty page`() {
+    mockServer.enqueue(
+      MockResponse().setResponseCode(HttpURLConnection.HTTP_OK).setBody("not-json")
+    )
+
+    assertThrows(SerializationException::class.java) {
+      runBlocking { remoteSource.getListOfBeers(1) }
+    }
+  }
 
   @Test
   fun `returns the parsed body and total count from the X-Total-Count header`() {
