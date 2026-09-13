@@ -2,11 +2,8 @@ package com.simtop.feature.favorites
 
 import app.cash.turbine.test
 import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.core.core.CommonUiState
-import io.mockk.every
-import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flow
@@ -58,11 +55,12 @@ internal class FavoritesViewModelTest {
   fun `upstream failure maps to error state`() =
     runTest(dispatcher) {
       val repository =
-        mockk<BeersRepository> {
-          every { observeFavoriteBeers() } returns
+        FakeBeersRepository().apply {
+          setFavoriteBeersObservationFlow(
             flow {
               throw IllegalStateException("favorites unavailable")
             }
+          )
         }
       val viewModel = FavoritesViewModel(repository)
 
@@ -80,13 +78,14 @@ internal class FavoritesViewModelTest {
     runTest(dispatcher) {
       var subscriptions = 0
       val repository =
-        mockk<BeersRepository> {
-          every { observeFavoriteBeers() } returns
+        FakeBeersRepository().apply {
+          setFavoriteBeersObservationFlow(
             flow {
               subscriptions++
               emit(emptyList())
               kotlinx.coroutines.awaitCancellation()
             }
+          )
         }
       val viewModel = FavoritesViewModel(repository)
 

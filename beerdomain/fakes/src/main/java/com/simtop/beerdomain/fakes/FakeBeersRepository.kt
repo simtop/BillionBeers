@@ -27,6 +27,12 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersReposit
     beersFlow.value = beers
   }
 
+  private var favoriteBeersFlowOverride: Flow<List<Beer>>? = null
+
+  fun setFavoriteBeersObservationFlow(flow: Flow<List<Beer>>?) {
+    favoriteBeersFlowOverride = flow
+  }
+
   private var exceptionToThrow: Exception? = null
 
   fun setExceptionToThrow(exception: Exception?) {
@@ -41,9 +47,11 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersReposit
     return beersFlow
   }
 
-  override fun observeFavoriteBeers(): Flow<List<Beer>> = beersFlow.map { beers ->
-    beers.filter { it.isFavorite }.sortedWith(compareBy({ it.name }, { it.id }))
-  }
+  override fun observeFavoriteBeers(): Flow<List<Beer>> =
+    favoriteBeersFlowOverride
+      ?: beersFlow.map { beers ->
+        beers.filter { it.isFavorite }.sortedWith(compareBy({ it.name }, { it.id }))
+      }
 
   override suspend fun getAllBeersFromDB(): List<Beer> {
     return beersFlow.value
