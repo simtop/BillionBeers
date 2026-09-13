@@ -3,12 +3,12 @@ package com.simtop.feature.favorites
 import app.cash.turbine.test
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.core.core.CommonUiState
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
@@ -34,11 +34,7 @@ internal class FavoritesViewModelTest {
   @Test
   fun `view state starts loading and maps empty and favorite emissions`() =
     runTest(dispatcher) {
-      val favorites = MutableSharedFlow<List<Beer>>()
-      val repository =
-        mockk<BeersRepository> {
-          every { observeFavoriteBeers() } returns favorites
-        }
+      val repository = FakeBeersRepository()
       val viewModel = FavoritesViewModel(repository)
 
       expectThat(viewModel.viewState.value).isA<CommonUiState.Loading>()
@@ -46,11 +42,11 @@ internal class FavoritesViewModelTest {
         expectThat(awaitItem()).isA<CommonUiState.Loading>()
         dispatcher.scheduler.runCurrent()
 
-        favorites.emit(emptyList())
+        repository.setBeers(emptyList())
         expectThat(awaitItem()).isA<CommonUiState.Empty>()
 
         val beer = Beer.empty.copy(id = "1", name = "Favorite", isFavorite = true)
-        favorites.emit(listOf(beer))
+        repository.setBeers(listOf(beer))
         val success = awaitItem()
         expectThat(success).isA<CommonUiState.Success<List<Beer>>>()
         expectThat((success as CommonUiState.Success).data).isEqualTo(listOf(beer))

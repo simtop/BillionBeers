@@ -177,9 +177,8 @@ internal class BeerDetailViewModelTest {
   @Test
   fun `favorite update optimistically changes state and emits success event`() =
     runTest(testDispatcher) {
-      val repository = mockk<BeersRepository>()
+      val repository = FakeBeersRepository()
       val toggledBeer = fakeBeerModel.copy(isFavorite = !fakeBeerModel.isFavorite)
-      coEvery { repository.updateFavorite(toggledBeer) } returns Either.Right(Unit)
       val viewModel = BeerDetailViewModel(repository, fakeBeerModel, SavedStateHandle())
 
       viewModel.events.test {
