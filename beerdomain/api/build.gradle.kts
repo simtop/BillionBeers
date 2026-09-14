@@ -1,19 +1,16 @@
 plugins {
-  id("billionbeers.android.library")
-
-  id("kotlin-parcelize")
+  id("billionbeers.kmp.library")
   alias(libs.plugins.kotlin.serialization)
 }
 
-android {
-  namespace = "com.simtop.beerdomain.api"
-
-  //  @Suppress("UnstableApiUsage")
-  //  testFixtures.enable = true
+kotlin {
+  android {
+    namespace = "com.simtop.beerdomain.api"
+  }
 }
 
 dependencies {
-  implementation(this.project(":core-common"))
-  implementation(libs.kotlinx.serialization.json)
-  implementation(libs.kotlinx.coroutines.core)
+  commonMainImplementation(this.project(":core-common"))
+  commonMainImplementation(libs.kotlinx.serialization.json)
+  commonMainImplementation(libs.kotlinx.coroutines.core)
 }

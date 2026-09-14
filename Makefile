@@ -131,12 +131,12 @@ deep-clean: ## Stop daemon and deeply clean all gradle caches to fix corrupted s
 # test invocation and must be listed here explicitly (:konsist has its own target).
 JVM_TEST_MODULES := :testing-utils :snapshot-processor
 
-# KMP modules are intentionally classified by the task they expose. Keep these lists empty until a
-# production KMP module exists; a KMP module must never fall through to `test` or
-# `testDebugUnitTest`, because those tasks either do not exist or omit the target under test.
-KMP_JVM_TEST_MODULES := :core-common
-KMP_METADATA_MODULES := :core-common
-KMP_ANDROID_HOST_TEST_MODULES := :core-common
+# KMP modules are intentionally classified by the task they expose. A KMP module must never fall
+# through to `test` or `testDebugUnitTest`, because those tasks either do not exist or omit the target
+# under test.
+KMP_JVM_TEST_MODULES := :core-common :beerdomain:api
+KMP_METADATA_MODULES := :core-common :beerdomain:api
+KMP_ANDROID_HOST_TEST_MODULES := :core-common :beerdomain:api
 KMP_BROWSER_TEST_MODULES :=
 KMP_TEST_MODULES := $(KMP_JVM_TEST_MODULES) $(KMP_METADATA_MODULES) \
 	$(KMP_ANDROID_HOST_TEST_MODULES) $(KMP_BROWSER_TEST_MODULES)
