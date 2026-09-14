@@ -134,9 +134,9 @@ JVM_TEST_MODULES := :testing-utils :snapshot-processor
 # KMP modules are intentionally classified by the task they expose. A KMP module must never fall
 # through to `test` or `testDebugUnitTest`, because those tasks either do not exist or omit the target
 # under test.
-KMP_JVM_TEST_MODULES := :core-common :beerdomain:api
-KMP_METADATA_MODULES := :core-common :beerdomain:api
-KMP_ANDROID_HOST_TEST_MODULES := :core-common :beerdomain:api
+KMP_JVM_TEST_MODULES := :core-common :beerdomain:api :beerdomain:fakes
+KMP_METADATA_MODULES := :core-common :beerdomain:api :beerdomain:fakes
+KMP_ANDROID_HOST_TEST_MODULES := :core-common :beerdomain:api :beerdomain:fakes
 KMP_BROWSER_TEST_MODULES :=
 KMP_TEST_MODULES := $(KMP_JVM_TEST_MODULES) $(KMP_METADATA_MODULES) \
 	$(KMP_ANDROID_HOST_TEST_MODULES) $(KMP_BROWSER_TEST_MODULES)
@@ -300,7 +300,7 @@ VERIFICATION_WRITE_FLAGS := --write-verification-metadata sha256 --no-configurat
 VERIFICATION_METADATA_PASS_ONE := \
 	help spotlessCheck detekt :app:lintDebug :app:dependencyGuard ideSyncArtifacts
 VERIFICATION_METADATA_PASS_TWO := \
-	assembleDebug testDebugUnitTest :konsist:test :core-common:jvmTest :core-common:allMetadataJar :core-common:testAndroidHostTest :testing-utils:test \
+	assembleDebug testDebugUnitTest :konsist:test :core-common:jvmTest :core-common:allMetadataJar :core-common:testAndroidHostTest :beerdomain:fakes:jvmTest :beerdomain:fakes:allMetadataJar :beerdomain:fakes:testAndroidHostTest :testing-utils:test \
 	:snapshot-processor:test checkDataLayerClasspathBoundary verifyArchitectureGraph \
 	verifyPaparazziDebug jacocoRootReport
 VERIFICATION_METADATA_REFERENCE_DEBUG_DEVICE_TASKS := ciGroupDebugAndroidTest
