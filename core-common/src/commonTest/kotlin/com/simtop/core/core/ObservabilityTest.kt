@@ -1,9 +1,9 @@
 package com.simtop.core.core
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertThrows
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 
 class ObservabilityTest {
 
@@ -14,12 +14,12 @@ class ObservabilityTest {
 
     tracker.logEvent(event)
 
-    assertEquals(listOf(event), tracker.events)
+    assertEquals(listOf<AnalyticsEvent>(event), tracker.events)
   }
 
   @Test
   fun `analytics rejects negative result counts`() {
-    assertThrows(IllegalArgumentException::class.java) {
+    assertFailsWith<IllegalArgumentException> {
       AnalyticsEvent.SearchSubmitted(resultCount = -1)
     }
   }

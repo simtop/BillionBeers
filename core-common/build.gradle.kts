@@ -6,10 +6,10 @@ dependencies {
   commonMainImplementation(libs.kotlinx.coroutines.core)
   commonMainImplementation(libs.androidx.annotation)
 
+  commonTestImplementation(libs.coroutinesTest)
+  commonTestImplementation(libs.turbine)
+
   jvmTestImplementation(libs.junit)
-  jvmTestImplementation(catalog.billionBeersBundle("unitTestJunit5"))
-  jvmTestImplementation(libs.coroutinesTest)
-  jvmTestImplementation(libs.turbine)
   jvmTestRuntimeOnly(catalog.billionBeersBundle("unitTestJunit5Runtime"))
   jvmTestRuntimeOnly(catalog.billionBeersLibrary("junit-platform-launcher"))
 }

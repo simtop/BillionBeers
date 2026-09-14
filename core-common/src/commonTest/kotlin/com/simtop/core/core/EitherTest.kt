@@ -1,9 +1,9 @@
 package com.simtop.core.core
 
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class EitherTest {
 
@@ -27,8 +27,8 @@ class EitherTest {
           it.length
         }
 
-    assertEquals(Either.Right(8), mappedRight)
-    assertEquals(left, mappedLeft)
+    assertEquals<Either<String, Int>>(Either.Right(8), mappedRight)
+    assertEquals<Either<String, Int>>(Either.Left("error"), mappedLeft)
     assertTrue(rightCallbackCalled)
     assertFalse(leftCallbackCalled)
   }
@@ -53,8 +53,8 @@ class EitherTest {
           it.length
         }
 
-    assertEquals(Either.Left(5), mappedLeft)
-    assertEquals(right, mappedRight)
+    assertEquals<Either<Int, String>>(Either.Left(5), mappedLeft)
+    assertEquals<Either<Int, String>>(Either.Right("value"), mappedRight)
     assertTrue(leftCallbackCalled)
     assertFalse(rightCallbackCalled)
   }
