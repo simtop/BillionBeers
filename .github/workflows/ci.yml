@@ -334,8 +334,8 @@ jobs:
         id: architecture_phase
         run: bash .github/scripts/run-timed-command.sh make architecture-policy
 
-      # High-water ratchet: jacocoRootReport reuses the debug unit tests just run above (they're
-      # up-to-date), then fails if line coverage dropped below config/coverage-floor.txt.
+      # High-water ratchet: jacocoRootReport reuses the Android/JVM/KMP-JVM tests just run above
+      # (they're up-to-date), then fails if line coverage dropped below config/coverage-floor.txt.
       - name: Coverage floor check
         id: coverage_phase
         run: bash .github/scripts/run-timed-command.sh make coverage-check
@@ -383,6 +383,16 @@ jobs:
             **/build/test-results/
             **/build/reports/tests/
             build/reports/test-tier-inventory.md
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Archive Unit Coverage Reports
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: unit-coverage-reports
+          path: '**/build/reports/jacoco/'
+          if-no-files-found: warn
           retention-days: 7
 
   screenshot-tests:

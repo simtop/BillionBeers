@@ -7,8 +7,9 @@
 # Expects jacocoRootReport to have run already (build/reports/.../jacocoRootReport.xml). `make
 # coverage-check` runs the report first; the CI unit-tests job reuses the tests it already ran.
 #
-# Scope note: the root report currently aggregates the Android debug variants only (the JVM
-# modules' test.exec is excluded by the report's Debug filter), so this floor tracks that subset.
+# Scope note: the root report aggregates Android debug variants, pure-JVM tests, and explicitly
+# selected KMP JVM tests. Native, Wasm and Android-host test execution remain outside this Jacoco
+# floor because they do not produce JVM execution data.
 
 set -euo pipefail
 cd "$(dirname "$0")/.."

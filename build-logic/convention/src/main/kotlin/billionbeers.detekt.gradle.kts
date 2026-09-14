@@ -24,7 +24,21 @@ configure<DetektExtension> {
             "src/test/kotlin",
             "src/androidTest/java",
             "src/androidTest/kotlin",
-        )
+        ),
+        fileTree(projectDir) {
+            include(
+                "src/commonMain/**/*.kt",
+                "src/commonTest/**/*.kt",
+                "src/jvmMain/**/*.kt",
+                "src/jvmTest/**/*.kt",
+                "src/androidMain/**/*.kt",
+                "src/androidHostTest/**/*.kt",
+                "src/wasmJsMain/**/*.kt",
+                "src/wasmJsTest/**/*.kt",
+                "src/ios*Main/**/*.kt",
+                "src/ios*Test/**/*.kt",
+            )
+        },
     )
     config.setFrom(files("$rootDir/config/detekt/detekt.yml"))
     baseline = layout.projectDirectory.file("detekt-baseline.xml").asFile.takeIf { it.exists() }

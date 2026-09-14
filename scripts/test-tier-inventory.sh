@@ -3,8 +3,8 @@
 # Android test source trees are scheduled and attached to real modules.
 
 set -uo pipefail
-cd "$(dirname "$0")/.."
-
+SCRIPT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$SCRIPT_ROOT"
 OUTPUT=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -13,10 +13,16 @@ while [[ $# -gt 0 ]]; do
       OUTPUT="$2"
       shift 2
       ;;
+    --root)
+      [[ $# -ge 2 ]] || { echo "error: --root needs a path" >&2; exit 2; }
+      ROOT="$2"
+      shift 2
+      ;;
     -h|--help)
       printf '%s\n' \
-        "Usage: scripts/test-tier-inventory.sh [--output PATH]" \
-        "  --output PATH write Markdown instead of stdout"
+        "Usage: scripts/test-tier-inventory.sh [--output PATH] [--root PATH]" \
+        "  --output PATH write Markdown instead of stdout" \
+        "  --root PATH scan a fixture or alternate repository root"
       exit 0
       ;;
     *)
@@ -26,12 +32,12 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-python3 - "$OUTPUT" <<'PY'
+python3 - "$OUTPUT" "$ROOT" <<'PY'
 from pathlib import Path
 import sys
 
 output_path = sys.argv[1]
-root = Path.cwd()
+root = Path(sys.argv[2]).resolve()
 
 
 def ignored(path: Path) -> bool:
@@ -72,7 +78,16 @@ for module_dir, build_file in module_dirs():
         and files_below(module_dir / "src/androidTest")
     )
     standalone = "com.android.test" in text and source_files_below(module_dir / "src/main")
-    if not (unit or screenshot or instrumented or standalone):
+    kmp_common = source_files_below(module_dir / "src/commonTest")
+    kmp_jvm = source_files_below(module_dir / "src/jvmTest")
+    kmp_host = source_files_below(module_dir / "src/androidHostTest")
+    kmp_browser = source_files_below(module_dir / "src/wasmJsTest")
+    kmp_native = any(
+        source_files_below(path)
+        for path in module_dir.glob("src/ios*Test")
+        if path.is_dir()
+    )
+    if not (unit or screenshot or instrumented or standalone or kmp_common or kmp_jvm or kmp_host or kmp_browser or kmp_native):
         continue
     rows.append((
         module_name(module_dir),
@@ -80,13 +95,18 @@ for module_dir, build_file in module_dirs():
         "yes" if screenshot else "—",
         "yes" if instrumented else "—",
         "yes" if standalone else "—",
+        "yes" if kmp_common else "—",
+        "yes" if kmp_jvm else "—",
+        "yes" if kmp_host else "—",
+        "yes" if kmp_browser else "—",
+        "unmeasured" if kmp_native else "—",
     ))
 
 lines = [
     "# Test-tier inventory",
     "",
-    "| Module | Local unit | Screenshot | Instrumented | Standalone test APK |",
-    "|---|---:|---:|---:|---:|",
+    "| Module | Local unit | Screenshot | Instrumented | Standalone test APK | KMP common | KMP JVM | Android host | Browser | Native coverage |",
+    "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
 ]
 for row in rows:
     lines.append("| " + " | ".join(row) + " |")
