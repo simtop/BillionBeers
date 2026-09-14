@@ -109,9 +109,11 @@ tasks.register("ideSyncArtifacts") {
 val coverageExcludedProjects = setOf(":presentation_utils", ":beer_database")
 
 tasks.register<JacocoReport>("jacocoRootReport") {
-    // Android debug unit tests + JVM-module `test`. The Android `test` *lifecycle* task aggregates
-    // every variant (incl. the non-compiling benchmark one), so it is excluded by only taking `test`
-    // from non-Android modules; Android modules contribute via testDebugUnitTest instead.
+    // Android debug unit tests + JVM-module `test` + explicitly measured KMP `jvmTest`. The Android
+    // `test` *lifecycle* task aggregates every variant (incl. the non-compiling benchmark one), so it
+    // is excluded by only taking `test` from non-Android modules; Android modules contribute via
+    // testDebugUnitTest instead. Native, Wasm and Android-host tests are deliberately not Jacoco
+    // inputs because this report measures JVM-executable coverage only.
     dependsOn(
         subprojects.flatMap { sp ->
             sp.tasks.matching { task ->
@@ -119,7 +121,10 @@ tasks.register<JacocoReport>("jacocoRootReport") {
                     sp.extensions.findByType(
                         com.android.build.api.variant.AndroidComponentsExtension::class.java
                     ) != null
-                task.name == "testDebugUnitTest" || (task.name == "test" && !isAndroid)
+                val isKmp = sp.plugins.hasPlugin("org.jetbrains.kotlin.multiplatform")
+                task.name == "testDebugUnitTest" ||
+                    (task.name == "test" && !isAndroid) ||
+                    (task.name == "jvmTest" && isKmp)
             }
         }
     )
@@ -165,17 +170,29 @@ tasks.register<JacocoReport>("jacocoRootReport") {
     )
 
     additionalSourceDirs.setFrom(subprojectsWithJacoco.map { it.extensions.getByType<JacocoPluginExtension>().reportsDirectory })
-    sourceDirectories.setFrom(subprojectsWithJacoco.flatMap {
-        listOf(
-            file("${it.projectDir}/src/main/java"),
-            file("${it.projectDir}/src/main/kotlin")
-        )
+    sourceDirectories.setFrom(subprojectsWithJacoco.flatMap { project ->
+        if (project.plugins.hasPlugin("org.jetbrains.kotlin.multiplatform")) {
+            listOf(
+                file("${project.projectDir}/src/commonMain/kotlin"),
+                file("${project.projectDir}/src/jvmMain/kotlin"),
+            )
+        } else {
+            listOf(
+                file("${project.projectDir}/src/main/java"),
+                file("${project.projectDir}/src/main/kotlin"),
+            )
+        }
     })
     // The report holding a module's data: jacocoDebugReport for Android modules, jacocoTestReport
     // for JVM modules. (Android modules also have an unconfigured jacocoTestReport aggregator, which
     // contributes empty class/exec data - harmless.)
     fun org.gradle.api.Project.dataReports() =
-        tasks.withType<JacocoReport>().matching { it.name.contains("Debug") || it.name == "jacocoTestReport" }
+        tasks.withType<JacocoReport>().matching {
+            it.name.contains("Debug") ||
+                it.name == "jacocoTestReport" ||
+                (plugins.hasPlugin("org.jetbrains.kotlin.multiplatform") &&
+                    it.name.contains("Jvm", ignoreCase = true))
+        }
 
     classDirectories.setFrom(subprojectsWithJacoco.flatMap {
         it.dataReports().map { reportTask ->

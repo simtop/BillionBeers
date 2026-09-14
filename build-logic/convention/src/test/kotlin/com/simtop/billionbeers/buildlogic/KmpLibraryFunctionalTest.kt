@@ -28,6 +28,11 @@ class KmpLibraryFunctionalTest {
     assertTrue(result.task(":jvmTest")?.outcome == TaskOutcome.SUCCESS, result.output)
     assertTrue(result.output.contains("FixtureCommonTest[jvm] > commonApiWorks[jvm] PASSED"), result.output)
     assertTrue(result.output.contains("FixtureJvmTest[jvm] > jvmApiWorks[jvm] PASSED"), result.output)
+    val junitReports = testProjectDir.resolve("build/test-results/jvmTest")
+    assertTrue(
+      junitReports.toFile().walkTopDown().any { it.name.startsWith("TEST-") && it.extension == "xml" },
+      "jvmTest must emit JUnit XML under build/test-results/jvmTest",
+    )
   }
 
   @Test

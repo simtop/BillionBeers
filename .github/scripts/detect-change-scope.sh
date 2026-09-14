@@ -95,6 +95,11 @@ classify_path() {
     a_screenshot=true # recorded goldens
   elif [[ "$f" == */src/test/* && "$f" == */screenshot/* ]]; then
     a_screenshot=true # screenshot-test source, excluded from plain test runs
+  elif [[ "$f" == */src/commonMain/* || "$f" == */src/androidMain/* || "$f" == */src/jvmMain/* || "$f" == */src/wasmJsMain/* || "$f" == */src/ios*Main/* ]]; then
+    # Shared KMP production code can affect every consumer lane until target ownership is explicit.
+    a_unit=true; a_screenshot=true; a_instrumented=true
+  elif [[ "$f" == */src/commonTest/* || "$f" == */src/jvmTest/* || "$f" == */src/androidHostTest/* || "$f" == */src/wasmJsTest/* || "$f" == */src/ios*Test/* ]]; then
+    a_unit=true # KMP test execution is part of the unit lane; host/browser/native are not device tests.
   elif [[ "$f" == */src/androidTest/* ]]; then
     a_instrumented=true
   elif [[ "$f" == */src/test/* ]]; then
@@ -112,6 +117,25 @@ classify_all() {
     classify_path "$f"
   done <<< "$1"
 }
+
+if [[ "${1:-}" == "--self-test" ]]; then
+  assert_lanes() {
+    local path="$1" expected_unit="$2" expected_screenshot="$3" expected_instrumented="$4"
+    classify_all "$path"
+    [[ "$a_unit" == "$expected_unit" && "$a_screenshot" == "$expected_screenshot" && "$a_instrumented" == "$expected_instrumented" ]] || {
+      echo "KMP change-scope classification failed for $path: unit=$a_unit screenshot=$a_screenshot instrumented=$a_instrumented" >&2
+      exit 1
+    }
+  }
+  assert_lanes "feature/src/commonMain/kotlin/Contract.kt" true true true
+  assert_lanes "feature/src/commonTest/kotlin/ContractTest.kt" true false false
+  assert_lanes "feature/src/jvmTest/kotlin/JvmTest.kt" true false false
+  assert_lanes "feature/src/androidHostTest/kotlin/HostTest.kt" true false false
+  assert_lanes "feature/src/wasmJsTest/kotlin/BrowserTest.kt" true false false
+  assert_lanes "feature/src/iosArm64Test/kotlin/NativeTest.kt" true false false
+  echo "KMP change-scope classifications passed"
+  exit 0
+fi
 
 if [ "$EVENT_NAME" != "pull_request" ]; then
   emit true true true "non-PR event - complete validation"

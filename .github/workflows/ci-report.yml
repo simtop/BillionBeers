@@ -36,7 +36,7 @@ jobs:
           gh api "repos/$REPOSITORY/actions/runs/$RUN_ID/artifacts?per_page=100" > "$RUNNER_TEMP/artifacts.json"
           mkdir -p "$RUNNER_TEMP/evidence"
           while IFS=$'\t' read -r artifact_id artifact_name; do
-            [[ "$artifact_name" == "screenshot-test-results" || "$artifact_name" == "unit-test-reports" || "$artifact_name" == "instrumented-test-reports" ]] || continue
+            [[ "$artifact_name" == "screenshot-test-results" || "$artifact_name" == "unit-test-reports" || "$artifact_name" == "instrumented-test-reports" || "$artifact_name" == "unit-coverage-reports" ]] || continue
             mkdir -p "$RUNNER_TEMP/evidence/$artifact_name"
             if ! gh api "repos/$REPOSITORY/actions/artifacts/$artifact_id/zip" > "$RUNNER_TEMP/$artifact_name.zip"; then
               echo "::warning::Could not download CI artifact: $artifact_name ($artifact_id)"

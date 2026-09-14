@@ -7,7 +7,17 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
-private val kmpSourceSets = setOf("commonMain", "androidMain", "jvmMain", "wasmJsMain")
+private val kmpSourceSets =
+  setOf(
+    "commonMain",
+    "commonTest",
+    "androidMain",
+    "androidHostTest",
+    "jvmMain",
+    "jvmTest",
+    "wasmJsMain",
+    "wasmJsTest",
+  )
 
 internal fun kmpSourceSet(path: String): String? =
   path
@@ -15,7 +25,8 @@ internal fun kmpSourceSet(path: String): String? =
     .windowed(2)
     .firstOrNull { (parent, child) ->
       parent == "src" &&
-        (child in kmpSourceSets || child.startsWith("ios") && child.endsWith("Main"))
+        (child in kmpSourceSets ||
+          child.startsWith("ios") && (child.endsWith("Main") || child.endsWith("Test")))
     }
     ?.last()
 
@@ -73,12 +84,17 @@ class KmpSourceSetBoundaryTest {
     val controls =
       mapOf(
         "src/commonMain/kotlin/Contract.kt" to "commonMain",
+        "src/commonTest/kotlin/ContractTest.kt" to "commonTest",
         "src/androidMain/kotlin/Platform.kt" to "androidMain",
+        "src/androidHostTest/kotlin/PlatformTest.kt" to "androidHostTest",
         "src/jvmMain/kotlin/Platform.kt" to "jvmMain",
+        "src/jvmTest/kotlin/PlatformTest.kt" to "jvmTest",
         "src/iosArm64Main/kotlin/Platform.kt" to "iosArm64Main",
+        "src/iosArm64Test/kotlin/PlatformTest.kt" to "iosArm64Test",
         "src/wasmJsMain/kotlin/Platform.kt" to "wasmJsMain",
+        "src/wasmJsTest/kotlin/PlatformTest.kt" to "wasmJsTest",
       )
-    assertEquals(5, controls.size)
+    assertEquals(10, controls.size)
     controls.forEach { (path, expected) -> assertEquals(expected, kmpSourceSet(path)) }
   }
 

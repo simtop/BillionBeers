@@ -131,10 +131,33 @@ deep-clean: ## Stop daemon and deeply clean all gradle caches to fix corrupted s
 # test invocation and must be listed here explicitly (:konsist has its own target).
 JVM_TEST_MODULES := :core-common :testing-utils :snapshot-processor
 
+# KMP modules are intentionally classified by the task they expose. Keep these lists empty until a
+# production KMP module exists; a KMP module must never fall through to `test` or
+# `testDebugUnitTest`, because those tasks either do not exist or omit the target under test.
+KMP_JVM_TEST_MODULES :=
+KMP_METADATA_MODULES :=
+KMP_ANDROID_HOST_TEST_MODULES :=
+KMP_BROWSER_TEST_MODULES :=
+KMP_TEST_MODULES := $(KMP_JVM_TEST_MODULES) $(KMP_METADATA_MODULES) \
+	$(KMP_ANDROID_HOST_TEST_MODULES) $(KMP_BROWSER_TEST_MODULES)
+
+kmp_test_tasks = $(foreach module,$(KMP_JVM_TEST_MODULES),$(module):jvmTest) \
+	$(foreach module,$(KMP_METADATA_MODULES),$(module):allMetadataJar) \
+	$(foreach module,$(KMP_ANDROID_HOST_TEST_MODULES),$(module):testAndroidHostTest) \
+	$(foreach module,$(KMP_BROWSER_TEST_MODULES),$(module):wasmJsBrowserTest)
+
 test: ## Run unit tests for the specified module (or all).
 ifeq ($(MODULE_TRIMMED),)
-	$(GRADLE_RUNNER) testDebugUnitTest $(addsuffix :test,$(JVM_TEST_MODULES)) --continue
+	$(GRADLE_RUNNER) testDebugUnitTest $(addsuffix :test,$(JVM_TEST_MODULES)) $(kmp_test_tasks) --continue
 	$(GRADLE_RUNNER) -p build-logic :convention:test --continue
+else ifneq ($(filter $(MODULE_TRIMMED),$(KMP_JVM_TEST_MODULES)),)
+	$(GRADLE_RUNNER) $(MODULE_TRIMMED):jvmTest --continue
+else ifneq ($(filter $(MODULE_TRIMMED),$(KMP_METADATA_MODULES)),)
+	$(GRADLE_RUNNER) $(MODULE_TRIMMED):allMetadataJar --continue
+else ifneq ($(filter $(MODULE_TRIMMED),$(KMP_ANDROID_HOST_TEST_MODULES)),)
+	$(GRADLE_RUNNER) $(MODULE_TRIMMED):testAndroidHostTest --continue
+else ifneq ($(filter $(MODULE_TRIMMED),$(KMP_BROWSER_TEST_MODULES)),)
+	$(GRADLE_RUNNER) $(MODULE_TRIMMED):wasmJsBrowserTest --continue
 else ifneq ($(filter $(MODULE_TRIMMED),$(JVM_TEST_MODULES) :konsist),)
 	$(GRADLE_RUNNER) $(MODULE_TRIMMED):test --continue
 else
@@ -142,6 +165,8 @@ else
 endif
 
 test-tier-inventory: ## Write the informational test-tier ownership report.
+	@bash .github/scripts/detect-change-scope.sh --self-test
+	@python3 scripts/test-tier-inventory-test.py
 	@bash scripts/test-tier-inventory.sh --output build/reports/test-tier-inventory.md
 	@echo "📋 Test-tier inventory: build/reports/test-tier-inventory.md"
 
