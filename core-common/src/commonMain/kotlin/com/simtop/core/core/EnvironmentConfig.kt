@@ -1,8 +1,18 @@
 package com.simtop.core.core
 
-import java.net.URI
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+
+internal data class ParsedUrl(
+  val scheme: String?,
+  val host: String?,
+  val userInfo: String?,
+  val query: String?,
+  val fragment: String?,
+  val path: String,
+)
+
+internal expect fun parseUrl(value: String): ParsedUrl
 
 /**
  * Runtime configuration for a product's network environment.
@@ -61,8 +71,8 @@ data class EnvironmentConfig(
     return this
   }
 
-  private fun parseBaseUrl(): URI =
-    runCatching { URI(apiBaseUrl) }
+  private fun parseBaseUrl(): ParsedUrl =
+    runCatching { parseUrl(apiBaseUrl) }
       .getOrElse { error ->
         throw IllegalArgumentException(
           "apiBaseUrl must be a valid absolute URL: $apiBaseUrl",

@@ -129,14 +129,14 @@ deep-clean: ## Stop daemon and deeply clean all gradle caches to fix corrupted s
 # Testing
 # Pure-JVM modules have no testDebugUnitTest task, so they are invisible to the Android-flavored
 # test invocation and must be listed here explicitly (:konsist has its own target).
-JVM_TEST_MODULES := :core-common :testing-utils :snapshot-processor
+JVM_TEST_MODULES := :testing-utils :snapshot-processor
 
 # KMP modules are intentionally classified by the task they expose. Keep these lists empty until a
 # production KMP module exists; a KMP module must never fall through to `test` or
 # `testDebugUnitTest`, because those tasks either do not exist or omit the target under test.
-KMP_JVM_TEST_MODULES :=
-KMP_METADATA_MODULES :=
-KMP_ANDROID_HOST_TEST_MODULES :=
+KMP_JVM_TEST_MODULES := :core-common
+KMP_METADATA_MODULES := :core-common
+KMP_ANDROID_HOST_TEST_MODULES := :core-common
 KMP_BROWSER_TEST_MODULES :=
 KMP_TEST_MODULES := $(KMP_JVM_TEST_MODULES) $(KMP_METADATA_MODULES) \
 	$(KMP_ANDROID_HOST_TEST_MODULES) $(KMP_BROWSER_TEST_MODULES)
@@ -300,7 +300,7 @@ VERIFICATION_WRITE_FLAGS := --write-verification-metadata sha256 --no-configurat
 VERIFICATION_METADATA_PASS_ONE := \
 	help spotlessCheck detekt :app:lintDebug :app:dependencyGuard ideSyncArtifacts
 VERIFICATION_METADATA_PASS_TWO := \
-	assembleDebug testDebugUnitTest :konsist:test :core-common:test :testing-utils:test \
+	assembleDebug testDebugUnitTest :konsist:test :core-common:jvmTest :core-common:allMetadataJar :core-common:testAndroidHostTest :testing-utils:test \
 	:snapshot-processor:test checkDataLayerClasspathBoundary verifyArchitectureGraph \
 	verifyPaparazziDebug jacocoRootReport
 VERIFICATION_METADATA_REFERENCE_DEBUG_DEVICE_TASKS := ciGroupDebugAndroidTest
