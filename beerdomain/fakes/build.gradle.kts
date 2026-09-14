@@ -1,9 +1,25 @@
-plugins { id("billionbeers.android.library") }
+plugins { id("billionbeers.kmp.library") }
 
-android { namespace = "com.simtop.beerdomain.fakes" }
+kotlin {
+  android {
+    namespace = "com.simtop.beerdomain.fakes"
+  }
+}
+
+val catalog = billionBeersCatalog()
 
 dependencies {
-  implementation(this.project(":beerdomain:api"))
-  implementation(this.project(":core-common"))
-  implementation(libs.kotlinx.coroutines.core)
+  commonMainImplementation(this.project(":beerdomain:api"))
+  commonMainImplementation(this.project(":core-common"))
+  commonMainImplementation(libs.kotlinx.coroutines.core)
+
+  commonTestImplementation(libs.coroutinesTest)
+  commonTestImplementation(libs.turbine)
+
+  jvmTestRuntimeOnly(catalog.billionBeersBundle("unitTestJunit5Runtime"))
+  jvmTestRuntimeOnly(catalog.billionBeersLibrary("junit-platform-launcher"))
+}
+
+tasks.withType<Test>().configureEach {
+  useJUnitPlatform()
 }
