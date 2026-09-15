@@ -17,9 +17,11 @@ dependencies {
   implementation(libs.material)
   implementation(libs.kotlinx.serialization.json)
 
-  implementation(libs.retrofit2)
-  implementation(libs.retrofit2ConverterSerialization)
   implementation(libs.okhttp3)
   implementation(libs.okhttp3LoggingInterceptor)
+  implementation(libs.ktorClientCore)
+  implementation(libs.ktorClientOkhttp)
+  implementation(libs.ktorClientContentNegotiation)
+  implementation(libs.ktorSerializationKotlinxJson)
   implementation(libs.lifecycleRuntimeKtx)
 }

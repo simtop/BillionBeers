@@ -10,16 +10,18 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.request.url
+import io.ktor.serialization.kotlinx.json.json
 import java.io.File
 import java.util.concurrent.TimeUnit
 import kotlinx.serialization.json.Json
 import okhttp3.Cache
-import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
-import retrofit2.Converter
-import retrofit2.Retrofit
-import retrofit2.converter.kotlinx.serialization.asConverterFactory
 
 @ContributesTo(AppScope::class)
 interface NetworkingModule {
@@ -42,11 +44,6 @@ interface NetworkingModule {
      * `DiskLruCache.initialize()` creates it lazily on the first cache read or write, which happens
      * on OkHttp's own dispatcher thread. So the disk work still happens, just not on the main
      * thread.
-     *
-     * Deferring the whole client with Retrofit's `callFactory` was considered and does not work:
-     * Retrofit calls `newCall()` synchronously on the calling thread, which for a
-     * `viewModelScope.launch` is the main thread (ADR 0012). That relocates the violation instead
-     * of removing it.
      */
     private fun httpCacheDir(context: Context): File =
       File(context.applicationInfo.dataDir, "cache/http")
@@ -84,21 +81,15 @@ interface NetworkingModule {
 
   @Provides
   @SingleIn(AppScope::class)
-  fun provideRetrofit(
+  fun provideHttpClient(
     environmentConfig: EnvironmentConfig,
-    converterFactory: Converter.Factory,
+    json: Json,
     okHttpClient: OkHttpClient,
-  ): Retrofit {
-    return Retrofit.Builder()
-      .addConverterFactory(converterFactory)
-      .baseUrl(environmentConfig.apiBaseUrl)
-      .client(okHttpClient)
-      .build()
-  }
-
-  @Provides
-  @SingleIn(AppScope::class)
-  fun provideConverterFactory(json: Json): Converter.Factory {
-    return json.asConverterFactory("application/json".toMediaType())
-  }
+  ): HttpClient =
+    HttpClient(OkHttp) {
+      engine { preconfigured = okHttpClient }
+      expectSuccess = false
+      defaultRequest { url(environmentConfig.apiBaseUrl) }
+      install(ContentNegotiation) { json(json) }
+    }
 }

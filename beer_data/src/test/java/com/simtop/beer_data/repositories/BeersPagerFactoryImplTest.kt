@@ -4,6 +4,7 @@ import com.simtop.beer_data.fakes.FakeBeersLocalSource
 import com.simtop.beer_data.fakes.FakeBeersRemoteSource
 import com.simtop.beer_data.mappers.BeersMapper
 import com.simtop.beer_network.models.BeersApiResponseItem
+import com.simtop.beer_network.network.BeersServiceHttpException
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
@@ -16,11 +17,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
-import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import retrofit2.HttpException
-import retrofit2.Response
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 import strikt.assertions.isNotNull
@@ -211,7 +209,7 @@ class BeersPagerFactoryImplTest {
   @Test
   fun `HTTP 429 is classified as RateLimited`() =
     runTest(testDispatcher) {
-      val http429 = HttpException(Response.error<Any>(429, "".toResponseBody(null)))
+      val http429 = BeersServiceHttpException(429)
       beersRemoteSource.setShouldThrowError(true, http429)
       val pager = factory.create()
 

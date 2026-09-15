@@ -12,8 +12,8 @@ dependencies {
   implementation(this.project(":beerdomain:api"))
   implementation(this.project(":beer_database"))
   implementation(this.project(":beer_network"))
+  implementation(this.project(":beer_network:api"))
   implementation(libs.kotlinx.coroutines.core)
   implementation(libs.kotlinx.serialization.json)
-  implementation(libs.retrofit2)
   testImplementation(libs.striktCore)
 }
