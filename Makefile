@@ -264,6 +264,9 @@ dependency-guard: ## Verify the app's release runtime dependency graph against i
 dependency-guard-baseline: ## Re-baseline the dependency graph after an intentional change (review the diff before committing).
 	$(GRADLE_RUNNER) :app:dependencyGuardBaseline
 
+dependency-guard-baseline-unverified: ## Re-baseline after reviewing an intentional coordinate change; bypasses dependency verification.
+	$(GRADLE_RUNNER) --dependency-verification off :app:dependencyGuardBaseline
+
 check-gradle-compatibility-flags: ## Probe whether AGP/Kotlin compatibility properties can be removed.
 	@bash scripts/check-gradle-compatibility-flags.sh
 
