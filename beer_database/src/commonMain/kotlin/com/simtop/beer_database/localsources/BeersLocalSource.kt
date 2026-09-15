@@ -3,6 +3,7 @@ package com.simtop.beer_database.localsources
 import com.simtop.beer_database.database.BeersDatabase
 import com.simtop.beer_database.models.BeerDbModel
 import com.simtop.beer_database.models.PagingStateDbModel
+import com.simtop.beer_database.utils.currentTimeMillis
 import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.flow.Flow
 
@@ -66,7 +67,7 @@ class BeersLocalSourceImpl(private val db: BeersDatabase) : BeersLocalSource {
     surface: String,
     nextKey: Int?,
     totalCount: Int?,
-  ) = db.beersDao().insertPage(beers, surface, nextKey, totalCount, System.currentTimeMillis())
+  ) = db.beersDao().insertPage(beers, surface, nextKey, totalCount, currentTimeMillis())
 
   override suspend fun getPagingState(surface: String) = db.beersDao().getPagingState(surface)
 

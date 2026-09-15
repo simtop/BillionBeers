@@ -1,10 +1,14 @@
 package com.simtop.beer_database.database
 
 import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.sqlite.SQLiteConnection
 
 private const val DATABASE_VERSION_3 = 3
 private const val DATABASE_VERSION_4 = 4
+
+private fun SQLiteConnection.execute(sql: String) {
+  prepare(sql).use { it.step() }
+}
 
 /**
  * v1 → v2: the project's first migration. Purely additive — it creates the `paging_state` bookmark
@@ -15,8 +19,8 @@ private const val DATABASE_VERSION_4 = 4
  */
 val MIGRATION_1_2 =
   object : Migration(1, 2) {
-    override fun migrate(db: SupportSQLiteDatabase) {
-      db.execSQL(
+    override fun migrate(connection: SQLiteConnection) {
+      connection.execute(
         "CREATE TABLE IF NOT EXISTS `paging_state` (" +
           "`surface` TEXT NOT NULL, " +
           "`next_key` INTEGER, " +
@@ -35,23 +39,23 @@ val MIGRATION_1_2 =
  */
 val MIGRATION_2_3 =
   object : Migration(2, 3) {
-    override fun migrate(db: SupportSQLiteDatabase) {
-      db.execSQL("ALTER TABLE `beers` ADD COLUMN `style_name` TEXT NOT NULL DEFAULT ''")
-      db.execSQL("ALTER TABLE `beers` ADD COLUMN `brewery_name` TEXT NOT NULL DEFAULT ''")
-      db.execSQL("ALTER TABLE `beers` ADD COLUMN `srm` INTEGER")
-      db.execSQL("ALTER TABLE `beers` ADD COLUMN `released_year` INTEGER")
-      db.execSQL("ALTER TABLE `beers` ADD COLUMN `min_serving_temperature` INTEGER")
-      db.execSQL("ALTER TABLE `beers` ADD COLUMN `max_serving_temperature` INTEGER")
-      db.execSQL("ALTER TABLE `beers` ADD COLUMN `fermentation_method` TEXT NOT NULL DEFAULT ''")
-      db.execSQL("ALTER TABLE `beers` ADD COLUMN `ingredients` TEXT NOT NULL DEFAULT '[]'")
-      db.execSQL("ALTER TABLE `beers` ADD COLUMN `recommended_glasses` TEXT NOT NULL DEFAULT '[]'")
+    override fun migrate(connection: SQLiteConnection) {
+      connection.execute("ALTER TABLE `beers` ADD COLUMN `style_name` TEXT NOT NULL DEFAULT ''")
+      connection.execute("ALTER TABLE `beers` ADD COLUMN `brewery_name` TEXT NOT NULL DEFAULT ''")
+      connection.execute("ALTER TABLE `beers` ADD COLUMN `srm` INTEGER")
+      connection.execute("ALTER TABLE `beers` ADD COLUMN `released_year` INTEGER")
+      connection.execute("ALTER TABLE `beers` ADD COLUMN `min_serving_temperature` INTEGER")
+      connection.execute("ALTER TABLE `beers` ADD COLUMN `max_serving_temperature` INTEGER")
+      connection.execute("ALTER TABLE `beers` ADD COLUMN `fermentation_method` TEXT NOT NULL DEFAULT ''")
+      connection.execute("ALTER TABLE `beers` ADD COLUMN `ingredients` TEXT NOT NULL DEFAULT '[]'")
+      connection.execute("ALTER TABLE `beers` ADD COLUMN `recommended_glasses` TEXT NOT NULL DEFAULT '[]'")
     }
   }
 
 /** v3 → v4: additive local favorite state, defaulting existing catalog rows to false. */
 val MIGRATION_3_4 =
   object : Migration(DATABASE_VERSION_3, DATABASE_VERSION_4) {
-    override fun migrate(db: SupportSQLiteDatabase) {
-      db.execSQL("ALTER TABLE `beers` ADD COLUMN `is_favorite` INTEGER NOT NULL DEFAULT 0")
+    override fun migrate(connection: SQLiteConnection) {
+      connection.execute("ALTER TABLE `beers` ADD COLUMN `is_favorite` INTEGER NOT NULL DEFAULT 0")
     }
   }
