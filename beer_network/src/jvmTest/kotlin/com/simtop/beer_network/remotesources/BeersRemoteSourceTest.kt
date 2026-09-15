@@ -4,15 +4,16 @@ import com.simtop.beer_network.TestMockWebService
 import com.simtop.beer_network.fixtures.FAKE_BREWERIES_JSON
 import com.simtop.beer_network.fixtures.FAKE_JSON
 import com.simtop.beer_network.fixtures.FAKE_TYPOLOGIES_JSON
+import com.simtop.beer_network.network.BeersServiceHttpException
 import com.simtop.core.core.LanguageProvider
 import java.net.HttpURLConnection
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.SerializationException
 import okhttp3.mockwebserver.MockResponse
-import org.amshove.kluent.shouldBeEqualTo
-import org.junit.Assert.assertThrows
-import org.junit.Test
-import retrofit2.HttpException
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 class BeersRemoteSourceTest : TestMockWebService() {
 
@@ -25,8 +26,8 @@ class BeersRemoteSourceTest : TestMockWebService() {
     runBlocking { remoteSource.getListOfBeers(page = 3) }
 
     val request = mockServer.takeRequest()
-    request.method shouldBeEqualTo "GET"
-    request.path shouldBeEqualTo "/beers?_page=3&_limit=25&translations.language.code=en"
+    assertEquals("GET", request.method)
+    assertEquals("/beers?_page=3&_limit=25&translations.language.code=en", request.path)
   }
 
   @Test
@@ -43,18 +44,23 @@ class BeersRemoteSourceTest : TestMockWebService() {
     }
 
     val path = mockServer.takeRequest().path.orEmpty()
-    path shouldBeEqualTo
+    assertEquals(
       "/beers?_page=2&_limit=25&translations.language.code=en" +
-        "&q=ipa%20%26%20stout&typology.id=style%2F1&brewery.id=brewery%201"
+        "&q=ipa%20%26%20stout&typology.id=style%2F1&brewery.id=brewery%201",
+      path,
+    )
   }
 
   @Test
   fun `malformed body is not treated as a successful empty page`() {
     mockServer.enqueue(
-      MockResponse().setResponseCode(HttpURLConnection.HTTP_OK).setBody("not-json")
+      MockResponse()
+        .setResponseCode(HttpURLConnection.HTTP_OK)
+        .setHeader("Content-Type", "application/json")
+        .setBody("not-json"),
     )
 
-    assertThrows(SerializationException::class.java) {
+    assertFailsWith<SerializationException> {
       runBlocking { remoteSource.getListOfBeers(1) }
     }
   }
@@ -65,8 +71,8 @@ class BeersRemoteSourceTest : TestMockWebService() {
 
     val page = runBlocking { remoteSource.getListOfBeers(1) }
 
-    page.items.map { it.id } shouldBeEqualTo listOf("1")
-    page.totalCount shouldBeEqualTo 206
+    assertEquals(listOf("1"), page.items.map { it.id })
+    assertEquals(206, page.totalCount)
   }
 
   @Test
@@ -75,7 +81,7 @@ class BeersRemoteSourceTest : TestMockWebService() {
 
     val page = runBlocking { remoteSource.getListOfBeers(1) }
 
-    page.totalCount shouldBeEqualTo null
+    assertEquals(null, page.totalCount)
   }
 
   @Test
@@ -84,30 +90,28 @@ class BeersRemoteSourceTest : TestMockWebService() {
 
     val page = runBlocking { remoteSource.getListOfBeers(1) }
 
-    page.totalCount shouldBeEqualTo null
+    assertEquals(null, page.totalCount)
   }
 
   @Test
-  fun `throws HttpException carrying the status code when the service fails`() {
+  fun `throws the neutral HTTP failure carrying the status code when the service fails`() {
     mockHttpResponse(FAKE_JSON, HttpURLConnection.HTTP_UNAVAILABLE)
 
     val thrown =
-      assertThrows(HttpException::class.java) { runBlocking { remoteSource.getListOfBeers(1) } }
+      assertFailsWith<BeersServiceHttpException> {
+        runBlocking { remoteSource.getListOfBeers(1) }
+      }
 
-    thrown.code() shouldBeEqualTo HttpURLConnection.HTTP_UNAVAILABLE
+    assertEquals(HttpURLConnection.HTTP_UNAVAILABLE, thrown.statusCode)
   }
 
-  /**
-   * The regression that matters: getListOfBeers returns Response<>, so Retrofit does not throw on
-   * non-2xx and a failed body is null. If that leaked through as an empty page, PagingMediator's
-   * empty-page probe would read it as end-of-pagination and silently truncate the list instead of
-   * surfacing an error the user can retry.
-   */
   @Test
   fun `a server error never surfaces as an empty page`() {
     mockHttpResponse(FAKE_JSON, HttpURLConnection.HTTP_INTERNAL_ERROR)
 
-    assertThrows(HttpException::class.java) { runBlocking { remoteSource.getListOfBeers(1) } }
+    assertFailsWith<BeersServiceHttpException> {
+      runBlocking { remoteSource.getListOfBeers(1) }
+    }
   }
 
   @Test
@@ -117,7 +121,7 @@ class BeersRemoteSourceTest : TestMockWebService() {
     runBlocking { remoteSource.getListOfBeers(1, search = "ipa") }
 
     val path = mockServer.takeRequest().path.orEmpty()
-    path.contains("q=ipa") shouldBeEqualTo true
+    assertTrue(path.contains("q=ipa"))
   }
 
   @Test
@@ -127,7 +131,7 @@ class BeersRemoteSourceTest : TestMockWebService() {
     runBlocking { remoteSource.getListOfBeers(1) }
 
     val path = mockServer.takeRequest().path.orEmpty()
-    path.contains("q=") shouldBeEqualTo false
+    assertTrue(!path.contains("q="))
   }
 
   @Test
@@ -137,7 +141,7 @@ class BeersRemoteSourceTest : TestMockWebService() {
     runBlocking { remoteSource.getListOfBeers(1, typologyId = "t1") }
 
     val path = mockServer.takeRequest().path.orEmpty()
-    path.contains("typology.id=t1") shouldBeEqualTo true
+    assertTrue(path.contains("typology.id=t1"))
   }
 
   @Test
@@ -147,7 +151,7 @@ class BeersRemoteSourceTest : TestMockWebService() {
     runBlocking { remoteSource.getListOfBeers(1, breweryId = "b1") }
 
     val path = mockServer.takeRequest().path.orEmpty()
-    path.contains("brewery.id=b1") shouldBeEqualTo true
+    assertTrue(path.contains("brewery.id=b1"))
   }
 
   @Test
@@ -157,8 +161,8 @@ class BeersRemoteSourceTest : TestMockWebService() {
     runBlocking { remoteSource.getListOfBeers(1) }
 
     val path = mockServer.takeRequest().path.orEmpty()
-    path.contains("typology.id=") shouldBeEqualTo false
-    path.contains("brewery.id=") shouldBeEqualTo false
+    assertTrue(!path.contains("typology.id="))
+    assertTrue(!path.contains("brewery.id="))
   }
 
   @Test
@@ -167,8 +171,8 @@ class BeersRemoteSourceTest : TestMockWebService() {
 
     val typologies = runBlocking { remoteSource.getTypologies() }
 
-    typologies.map { it.id } shouldBeEqualTo listOf("t1", "t2")
-    typologies.map { it.name } shouldBeEqualTo listOf("IPA (Indian Pale Ale)", "Stout")
+    assertEquals(listOf("t1", "t2"), typologies.map { it.id })
+    assertEquals(listOf("IPA (Indian Pale Ale)", "Stout"), typologies.map { it.name })
   }
 
   @Test
@@ -177,11 +181,11 @@ class BeersRemoteSourceTest : TestMockWebService() {
 
     val breweries = runBlocking { remoteSource.getBreweries() }
 
-    breweries.size shouldBeEqualTo 1
-    breweries[0].id shouldBeEqualTo "b1"
-    breweries[0].name shouldBeEqualTo "Supreme Suds Collective"
-    breweries[0].foundedYear shouldBeEqualTo 1972
-    breweries[0].country?.code shouldBeEqualTo "KP"
-    breweries[0].image?.url shouldBeEqualTo "https://brewbuddy.dev/images/b1.jpg"
+    assertEquals(1, breweries.size)
+    assertEquals("b1", breweries[0].id)
+    assertEquals("Supreme Suds Collective", breweries[0].name)
+    assertEquals(1972, breweries[0].foundedYear)
+    assertEquals("KP", breweries[0].country?.code)
+    assertEquals("https://brewbuddy.dev/images/b1.jpg", breweries[0].image?.url)
   }
 }

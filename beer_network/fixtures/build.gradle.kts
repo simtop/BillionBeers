@@ -1,5 +1,13 @@
-plugins { id("billionbeers.android.library") }
+plugins {
+  id("billionbeers.kmp.library")
+}
 
-android { namespace = "com.simtop.beer_network.fixtures" }
+kotlin {
+  android {
+    namespace = "com.simtop.beer_network.fixtures"
+  }
+}
 
-dependencies { api(this.project(":beer_network")) }
+dependencies {
+  commonMainApi(project(":beer_network:api"))
+}

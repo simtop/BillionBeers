@@ -1,26 +1,40 @@
 plugins {
-  id("billionbeers.android.library")
-  id("billionbeers.android.metro")
+  id("billionbeers.kmp.library")
   alias(libs.plugins.kotlin.serialization)
+  id("dev.zacsweers.metro")
 }
 
-android { namespace = "com.simtop.beer_network" }
+val catalog = billionBeersCatalog()
+
+kotlin {
+  android {
+    namespace = "com.simtop.beer_network"
+  }
+}
 
 dependencies {
-  // Main uses only the reusable language contract; Android HTTP construction stays in :core.
-  implementation(this.project(":core-common"))
+  commonMainImplementation(project(":beer_network:api"))
+  commonMainImplementation(project(":core-common"))
+  commonMainImplementation(libs.ktorClientCore)
+  commonMainImplementation(libs.ktorClientContentNegotiation)
+  commonMainImplementation(libs.ktorSerializationKotlinxJson)
+  commonMainImplementation(libs.kotlinx.serialization.json)
 
-  // Main declares the service and DTOs, so it needs Retrofit itself. It used to reach it only
-  // transitively through the converter below - which main never actually used.
-  implementation(libs.retrofit2)
-  implementation(libs.kotlinx.serialization.json)
+  commonTestImplementation(libs.ktorClientMock)
+  commonTestImplementation(libs.coroutinesTest)
 
-  // The converter and logging interceptor are test-only: the production Retrofit/OkHttp stack is
-  // assembled in :core's NetworkingModule, and only TestMockWebService builds one by hand.
-  // TestMockWebService reuses the production NetworkJson owned by the Android provider module.
-  testImplementation(this.project(":core"))
-  testImplementation(this.project(":beer_network:fixtures"))
-  testImplementation(libs.okhttp3Mockwebserver)
-  testImplementation(libs.retrofit2ConverterSerialization)
-  testImplementation(libs.okhttp3LoggingInterceptor)
+  jvmTestImplementation(project(":beer_network:fixtures"))
+  jvmTestImplementation(libs.junit)
+  jvmTestImplementation(libs.okhttp3Mockwebserver)
+  jvmTestImplementation(libs.ktorClientOkhttp)
+  jvmTestRuntimeOnly(catalog.billionBeersBundle("unitTestJunit5Runtime"))
+  jvmTestRuntimeOnly(catalog.billionBeersLibrary("junit-platform-launcher"))
+
+  androidHostTestImplementation(project(":beer_network:fixtures"))
+  androidHostTestImplementation(libs.okhttp3Mockwebserver)
+  androidHostTestImplementation(libs.ktorClientOkhttp)
+}
+
+tasks.withType<Test>().configureEach {
+  useJUnitPlatform()
 }

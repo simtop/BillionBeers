@@ -10,6 +10,7 @@
     { "name": "domain-fakes", "match": "exact", "value": ":beerdomain:fakes" },
     { "name": "data", "match": "exact", "value": ":beer_data" },
     { "name": "database", "match": "exact", "value": ":beer_database" },
+    { "name": "network-api", "match": "exact", "value": ":beer_network:api" },
     { "name": "network-fixture", "match": "prefix", "value": ":beer_network:" },
     { "name": "network", "match": "exact", "value": ":beer_network" },
     { "name": "core-common", "match": "exact", "value": ":core-common" },
@@ -34,10 +35,11 @@
     { "source": "dynamic-feature", "targets": ["application", "domain-api", "core", "design-system", "presentation", "navigation", "snapshot-testing"], "scopes": ["main"] },
     { "source": "domain-api", "targets": ["core-common"], "scopes": ["main"] },
     { "source": "domain-fakes", "targets": ["domain-api", "core-common"], "scopes": ["main"] },
-    { "source": "data", "targets": ["core", "core-common", "domain-api", "database", "network"], "scopes": ["main"] },
+    { "source": "data", "targets": ["core", "core-common", "domain-api", "database", "network", "network-api"], "scopes": ["main"] },
     { "source": "database", "targets": ["core", "core-common"], "scopes": ["main"] },
-    { "source": "network", "targets": ["core", "core-common"], "scopes": ["main"] },
-    { "source": "network-fixture", "targets": ["network"], "scopes": ["main"] },
+    { "source": "network", "targets": ["core-common", "network-api"], "scopes": ["main"] },
+    { "source": "network-fixture", "targets": ["network-api"], "scopes": ["main"] },
+    { "source": "network-api", "targets": [], "scopes": ["main"] },
     { "source": "core", "targets": ["core-common"], "scopes": ["main"] },
     { "source": "design-system", "targets": ["catalog-annotations", "snapshot-testing"], "scopes": ["main"] },
     { "source": "navigation", "targets": ["domain-api"], "scopes": ["main"] },
@@ -48,7 +50,7 @@
   ],
   "allowedApiEdges": [
     { "source": "core", "target": "core-common", "reason": "core is the Android facade that exposes the pure-JVM core contract" },
-    { "source": "network-fixture", "target": "network", "reason": "the fixture module deliberately re-exports the service contract for tests" }
+    { "source": "network-fixture", "target": "network-api", "reason": "the fixture module deliberately re-exports the transport-neutral service contract for tests" }
   ],
   "forbiddenCompileClasspathRoles": [
     { "source": "regular-feature", "targets": ["regular-feature", "dynamic-feature", "data", "database", "network"] },

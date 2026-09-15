@@ -1,13 +1,11 @@
 package com.simtop.beer_data.repositories
 
+import com.simtop.beer_network.network.BeersServiceHttpException
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import java.io.IOException
-import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
-import retrofit2.HttpException
-import retrofit2.Response
 
 class FetchBeersErrorsTest {
 
@@ -32,6 +30,5 @@ class FetchBeersErrorsTest {
     assertSame(other, (other.toFetchBeersError() as FetchBeersError.Unknown).cause)
   }
 
-  private fun httpException(code: Int) =
-    HttpException(Response.error<Unit>(code, "".toResponseBody(null)))
+  private fun httpException(code: Int) = BeersServiceHttpException(code)
 }
