@@ -88,6 +88,7 @@ roomCompiler = { module = "androidx.room:room-compiler", version.ref = "androidx
 roomKtx = { module = "androidx.room:room-ktx", version.ref = "androidx-room" }
 roomTesting = { module = "androidx.room:room-testing", version.ref = "androidx-room" }
 roomGradlePlugin = { module = "androidx.room:room-gradle-plugin", version.ref = "androidx-room" }
+sqliteBundled = { module = "androidx.sqlite:sqlite-bundled", version = "2.6.2" }
 
 # Compose (managed by BOM)
 androidxComposeBom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
