@@ -7,7 +7,11 @@ import androidx.room.RoomDatabaseConstructor
 import com.simtop.beer_database.models.BeerDbModel
 import com.simtop.beer_database.models.PagingStateDbModel
 
-@Database(entities = [BeerDbModel::class, PagingStateDbModel::class], version = 4)
+@Database(
+  entities = [BeerDbModel::class, PagingStateDbModel::class],
+  version = 4,
+  exportSchema = true,
+)
 @ConstructedBy(BeersDatabaseConstructor::class)
 abstract class BeersDatabase : RoomDatabase() {
   abstract fun beersDao(): BeersDao
