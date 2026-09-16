@@ -155,7 +155,7 @@ jobs:
             echo "branch and push - note that plain 'make dependency-guard-baseline' will NOT work"
             echo "here, because the bump's artifacts aren't in the ledger yet and verification"
             echo "blocks every Gradle invocation until they are:"
-            echo "  ./gradlew --dependency-verification off :app:dependencyGuardBaseline"
+            echo "  make dependency-guard-baseline-unverified"
             echo "Once the coordinate sets match again, this workflow re-runs and finishes the job."
             exit 1
           fi
