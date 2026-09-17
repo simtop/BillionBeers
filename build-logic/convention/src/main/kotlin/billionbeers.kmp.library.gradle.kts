@@ -17,6 +17,7 @@ kotlin {
   }
 
   android {
+    compilerOptions.jvmTarget.set(JvmTarget.JVM_23)
     namespace = "com.simtop.billionbeers.kmp.fixture"
     compileSdk = 37
     minSdk = 28
