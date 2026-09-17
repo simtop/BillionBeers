@@ -1,11 +1,11 @@
 package com.simtop.beer_data.repositories
 
 import com.simtop.beer_network.network.BeersServiceHttpException
+import com.simtop.beer_network.network.BeersServiceNetworkException
 import com.simtop.beerdomain.domain.errors.FetchBeersError
-import java.io.IOException
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertSame
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertSame
 
 class FetchBeersErrorsTest {
 
@@ -17,8 +17,8 @@ class FetchBeersErrorsTest {
   }
 
   @Test
-  fun `maps IO failures to Network`() {
-    assertEquals(FetchBeersError.Network, IOException("offline").toFetchBeersError())
+  fun `maps transport failures to Network`() {
+    assertEquals(FetchBeersError.Network, BeersServiceNetworkException().toFetchBeersError())
   }
 
   @Test

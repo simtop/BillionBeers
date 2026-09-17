@@ -122,3 +122,41 @@ if (androidComponents != null && debugVariants != null) androidComponents.onVari
 
     jacocoTestReport.configure { dependsOn(reportTask) }
 }
+
+// KMP modules execute their portable JVM tests through `jvmTest`, which the JaCoCo plugin does not
+// wire into a report automatically. Keep those tests in the root JVM coverage aggregate so moving a
+// covered Android source file to commonMain does not make it disappear from the report.
+if (plugins.hasPlugin("org.jetbrains.kotlin.multiplatform")) {
+    tasks.register<JacocoReport>("jacocoJvmTestReport") {
+        dependsOn("jvmTest")
+
+        reports {
+            xml.required.set(true)
+            html.required.set(true)
+        }
+
+        classDirectories.setFrom(
+            tasks.named("compileKotlinJvm").map { task ->
+                task.outputs.files.asFileTree.matching {
+                    exclude(
+                        "**/*Test*.*",
+                        "**/generated/*",
+                        "**/di/*",
+                        "**/*_Factory*.*",
+                        "**/*Module*.*",
+                        "**/*Component*.*",
+                        "**/*Application*.*",
+                        "**/*.Companion*.*",
+                    )
+                }
+            }
+        )
+        sourceDirectories.setFrom(
+            files(
+                "$projectDir/src/commonMain/kotlin",
+                "$projectDir/src/jvmMain/kotlin",
+            )
+        )
+        executionData.setFrom(layout.buildDirectory.file("jacoco/jvmTest.exec"))
+    }
+}

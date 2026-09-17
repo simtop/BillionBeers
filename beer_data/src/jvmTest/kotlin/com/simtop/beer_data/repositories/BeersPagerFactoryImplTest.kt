@@ -5,6 +5,7 @@ import com.simtop.beer_data.fakes.FakeBeersRemoteSource
 import com.simtop.beer_data.mappers.BeersMapper
 import com.simtop.beer_network.models.BeersApiResponseItem
 import com.simtop.beer_network.network.BeersServiceHttpException
+import com.simtop.beer_network.network.BeersServiceNetworkException
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
@@ -12,7 +13,6 @@ import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.LanguageProvider
 import com.simtop.core.core.NoOpLogger
 import com.simtop.core.core.PagingState
-import java.io.IOException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -194,9 +194,9 @@ class BeersPagerFactoryImplTest {
     }
 
   @Test
-  fun `IOException is classified as Network error`() =
+  fun `transport failure is classified as Network error`() =
     runTest(testDispatcher) {
-      beersRemoteSource.setShouldThrowError(true, IOException("no connection"))
+      beersRemoteSource.setShouldThrowError(true, BeersServiceNetworkException())
       val pager = factory.create()
 
       pager.loadFirstPage()

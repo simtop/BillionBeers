@@ -5,6 +5,8 @@ plugins {
   id("com.android.kotlin.multiplatform.library")
 }
 
+apply(plugin = "billionbeers.jacoco")
+
 val libs = billionBeersCatalog()
 
 kotlin {

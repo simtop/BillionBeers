@@ -9,6 +9,7 @@ import com.simtop.beer_network.models.BreweryApiResponseItem
 import com.simtop.beer_network.models.EmbeddedCountry
 import com.simtop.beer_network.models.EmbeddedImage
 import com.simtop.beer_network.models.TypologyApiResponseItem
+import com.simtop.beer_network.network.BeersServiceNetworkException
 import com.simtop.beer_storage.api.StoredBeer
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.Beer
@@ -17,9 +18,9 @@ import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.beerdomain.domain.models.CatalogCacheStatus
 import com.simtop.core.core.Either
+import com.simtop.core.core.EpochTimeProvider
 import com.simtop.core.core.LanguageProvider
 import com.simtop.core.core.NoOpLogger
-import java.io.IOException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -35,6 +36,7 @@ class BeersRepositoryTest {
   private lateinit var beersLocalSource: FakeBeersLocalSource
   private lateinit var beersRepository: BeersRepositoryImpl
   private val testDispatcher = UnconfinedTestDispatcher()
+  private val now = 100_000_000L
 
   @BeforeEach
   fun setUp() {
@@ -47,6 +49,7 @@ class BeersRepositoryTest {
         beersLocalSource,
         beersMapper,
         LanguageProvider { "en" },
+        EpochTimeProvider { now },
       )
   }
 
@@ -146,7 +149,7 @@ class BeersRepositoryTest {
   @Test
   fun `unpaged fetch failures come back as classified errors, not thrown`() =
     runTest(testDispatcher) {
-      beersRemoteSource.setShouldThrowError(true, IOException("no network"))
+      beersRemoteSource.setShouldThrowError(true, BeersServiceNetworkException())
 
       expectThat(beersRepository.getBeerStyles()).isEqualTo(Either.Left(FetchBeersError.Network))
       expectThat(beersRepository.getBreweries()).isEqualTo(Either.Left(FetchBeersError.Network))
@@ -165,7 +168,7 @@ class BeersRepositoryTest {
       beersLocalSource.setPagingState(
         "catalog:en",
         nextKey = 2,
-        refreshedAt = System.currentTimeMillis() - ONE_HOUR_MILLIS,
+        refreshedAt = now - ONE_HOUR_MILLIS,
       )
 
       expectThat(beersRepository.catalogCacheStatus()).isEqualTo(CatalogCacheStatus.Fresh)
@@ -178,10 +181,23 @@ class BeersRepositoryTest {
       beersLocalSource.setPagingState(
         "catalog:en",
         nextKey = 2,
-        refreshedAt = System.currentTimeMillis() - TWENTY_FIVE_HOURS_MILLIS,
+        refreshedAt = now - TWENTY_FIVE_HOURS_MILLIS,
       )
 
       expectThat(beersRepository.catalogCacheStatus()).isEqualTo(CatalogCacheStatus.Stale)
+    }
+
+  @Test
+  fun `cache status is Fresh exactly at the policy TTL boundary`() =
+    runTest(testDispatcher) {
+      beersLocalSource.insertAll(listOf(dbBeer("1")))
+      beersLocalSource.setPagingState(
+        "catalog:en",
+        nextKey = 2,
+        refreshedAt = now - TWENTY_FOUR_HOURS_MILLIS,
+      )
+
+      expectThat(beersRepository.catalogCacheStatus()).isEqualTo(CatalogCacheStatus.Fresh)
     }
 
   // A cache written before the paging_state table existed: rows but zero bookmarks anywhere.
@@ -201,7 +217,7 @@ class BeersRepositoryTest {
       beersLocalSource.setPagingState(
         "catalog:es",
         nextKey = 2,
-        refreshedAt = System.currentTimeMillis(),
+        refreshedAt = now,
       )
 
       expectThat(beersRepository.catalogCacheStatus())
@@ -372,6 +388,7 @@ class BeersRepositoryTest {
 
   private companion object {
     const val ONE_HOUR_MILLIS = 60 * 60 * 1000L
+    const val TWENTY_FOUR_HOURS_MILLIS = 24 * ONE_HOUR_MILLIS
     const val TWENTY_FIVE_HOURS_MILLIS = 25 * ONE_HOUR_MILLIS
   }
 }

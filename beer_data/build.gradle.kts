@@ -1,19 +1,34 @@
 plugins {
-  id("billionbeers.android.library")
-  id("billionbeers.android.metro")
+  id("billionbeers.kmp.library")
+  id("dev.zacsweers.metro")
 }
 
-android { namespace = "com.simtop.beer_data" }
+val catalog = billionBeersCatalog()
+
+kotlin {
+  android {
+    namespace = "com.simtop.beer_data"
+  }
+}
 
 dependencies {
-  // Reusable repository/paging code consumes :core-common contracts directly; Android providers
-  // stay in the application graph.
-  implementation(this.project(":core-common"))
-  implementation(this.project(":beerdomain:api"))
-  implementation(this.project(":beer_storage:api"))
-  implementation(this.project(":beer_network"))
-  implementation(this.project(":beer_network:api"))
-  implementation(libs.kotlinx.coroutines.core)
-  implementation(libs.kotlinx.serialization.json)
-  testImplementation(libs.striktCore)
+  commonMainImplementation(project(":core-common"))
+  commonMainImplementation(project(":beerdomain:api"))
+  commonMainImplementation(project(":beer_storage:api"))
+  commonMainImplementation(project(":beer_network"))
+  commonMainImplementation(project(":beer_network:api"))
+  commonMainImplementation(libs.kotlinx.coroutines.core)
+  commonMainImplementation(libs.kotlinx.serialization.json)
+
+  commonTestImplementation(libs.coroutinesTest)
+  commonTestImplementation(libs.turbine)
+
+  jvmTestImplementation(libs.striktCore)
+  jvmTestImplementation(catalog.billionBeersBundle("unitTestJunit5"))
+  jvmTestRuntimeOnly(catalog.billionBeersBundle("unitTestJunit5Runtime"))
+  jvmTestRuntimeOnly(catalog.billionBeersLibrary("junit-platform-launcher"))
+}
+
+tasks.withType<Test>().configureEach {
+  useJUnitPlatform()
 }
