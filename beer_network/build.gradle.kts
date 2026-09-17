@@ -23,6 +23,8 @@ dependencies {
   commonTestImplementation(libs.ktorClientMock)
   commonTestImplementation(libs.coroutinesTest)
 
+  jvmMainImplementation(libs.ktorClientOkhttp)
+
   jvmTestImplementation(project(":beer_network:fixtures"))
   jvmTestImplementation(libs.junit)
   jvmTestImplementation(libs.okhttp3Mockwebserver)

@@ -14,6 +14,8 @@ import io.ktor.serialization.JsonConvertException
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.SerializationException
 
+fun createKtorBeersService(client: HttpClient): BeersService = KtorBeersService(client)
+
 internal class KtorBeersService(private val client: HttpClient) : BeersService {
   override suspend fun getListOfBeers(
     page: Int,
