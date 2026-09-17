@@ -1,30 +1,28 @@
 package com.simtop.beer_data.fakes
 
-import com.simtop.beer_database.localsources.BeersLocalSource
-import com.simtop.beer_database.models.BeerDbModel
-import com.simtop.beer_database.models.PagingStateDbModel
+import com.simtop.beer_storage.api.BeersStorage
+import com.simtop.beer_storage.api.StoredBeer
+import com.simtop.beer_storage.api.StoredPagingState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 
-class FakeBeersLocalSource : BeersLocalSource {
+class FakeBeersLocalSource : BeersStorage {
 
-  private val beersFlow = MutableStateFlow<List<BeerDbModel>>(emptyList())
-  private val pagingState = mutableMapOf<String, PagingStateDbModel>()
+  private val beersFlow = MutableStateFlow<List<StoredBeer>>(emptyList())
+  private val pagingState = mutableMapOf<String, StoredPagingState>()
 
   // Helper to inspect state
-  fun getBeers(): List<BeerDbModel> = beersFlow.value
+  fun getBeers(): List<StoredBeer> = beersFlow.value
 
-  override fun getAllBeersFromDB(): Flow<List<BeerDbModel>> {
-    return beersFlow
-  }
+  override fun observeBeers(): Flow<List<StoredBeer>> = beersFlow
 
-  override fun getFavoriteBeersFromDB(): Flow<List<BeerDbModel>> = beersFlow.map { beers ->
+  override fun observeFavoriteBeers(): Flow<List<StoredBeer>> = beersFlow.map { beers ->
     beers.filter { it.isFavorite }.sortedWith(compareBy({ it.name }, { it.id }))
   }
 
   // Mirrors the real DAO's upsert: existing rows keep their local-only availability.
-  override suspend fun insertAllToDB(beers: List<BeerDbModel>) {
+  override suspend fun insertAll(beers: List<StoredBeer>) {
     val current = beersFlow.value.toMutableList()
     beers.forEach { newBeer ->
       val index = current.indexOfFirst { it.id == newBeer.id }
@@ -42,16 +40,16 @@ class FakeBeersLocalSource : BeersLocalSource {
   }
 
   // Mirrors BeersDao.insertPage: upsert the rows and merge the bookmark monotonically in one step.
-  override suspend fun insertPageToDB(
-    beers: List<BeerDbModel>,
+  override suspend fun insertPage(
+    beers: List<StoredBeer>,
     surface: String,
     nextKey: Int?,
     totalCount: Int?,
   ) {
-    insertAllToDB(beers)
+    insertAll(beers)
     val existing = pagingState[surface]
     pagingState[surface] =
-      PagingStateDbModel(
+      StoredPagingState(
         surface = surface,
         nextKey = listOfNotNull(existing?.nextKey, nextKey).maxOrNull(),
         totalCount = totalCount ?: existing?.totalCount,
@@ -59,14 +57,14 @@ class FakeBeersLocalSource : BeersLocalSource {
       )
   }
 
-  override suspend fun getPagingState(surface: String): PagingStateDbModel? = pagingState[surface]
+  override suspend fun getPagingState(surface: String): StoredPagingState? = pagingState[surface]
 
   override suspend fun countPagingStates(): Int = pagingState.size
 
   /** Test helper: seed a bookmark as a warm cache would leave it, with a steerable timestamp. */
   fun setPagingState(surface: String, nextKey: Int?, refreshedAt: Long) {
     pagingState[surface] =
-      PagingStateDbModel(
+      StoredPagingState(
         surface = surface,
         nextKey = nextKey,
         totalCount = null,
@@ -75,7 +73,7 @@ class FakeBeersLocalSource : BeersLocalSource {
   }
 
   // Mirrors BeersDao.upsertAvailability: update the cached row, insert the full row when absent.
-  override suspend fun upsertAvailability(beer: BeerDbModel) {
+  override suspend fun upsertAvailability(beer: StoredBeer) {
     val current = beersFlow.value.toMutableList()
     val index = current.indexOfFirst { it.id == beer.id }
     if (index != -1) {
@@ -86,7 +84,7 @@ class FakeBeersLocalSource : BeersLocalSource {
     beersFlow.value = current
   }
 
-  override suspend fun upsertFavorite(beer: BeerDbModel) {
+  override suspend fun upsertFavorite(beer: StoredBeer) {
     val current = beersFlow.value.toMutableList()
     val index = current.indexOfFirst { it.id == beer.id }
     if (index != -1) {
@@ -97,11 +95,9 @@ class FakeBeersLocalSource : BeersLocalSource {
     beersFlow.value = current
   }
 
-  override suspend fun deleteAllFromDB() {
+  override suspend fun deleteAll() {
     beersFlow.value = emptyList()
   }
 
-  override suspend fun getCountFromDB(): Int {
-    return beersFlow.value.size
-  }
+  override suspend fun count(): Int = beersFlow.value.size
 }

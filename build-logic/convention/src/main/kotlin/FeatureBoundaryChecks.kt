@@ -32,7 +32,7 @@ import org.gradle.kotlin.dsl.register
  *
  * `debugCompileClasspath`, not `debugRuntimeClasspath`, is the deliberate choice: dynamic-feature
  * modules declare `implementation(project(":app"))` to install correctly, and `:app` itself depends
- * on all three data-layer modules (assembling the graph is its exempted job). `:app` declares them
+ * on all data-layer modules (assembling the graph is its exempted job). `:app` declares them
  * on `implementation`, so ordinary Gradle configuration elision already keeps them off a consumer's
  * *compile* classpath - only `:app`'s `api` dependencies would leak through. Checking the runtime
  * classpath instead would flag that structurally-required edge as a violation, not a real one.
@@ -61,7 +61,7 @@ fun Project.registerDataLayerClasspathBoundaryCheck() {
           "Fails if this module's resolved debugCompileClasspath includes a data-layer module, " +
             "even transitively (invariant 13, AGENTS.md)."
         this.projectPath.set(path)
-        this.forbiddenModules.set(setOf(":beer_data", ":beer_database", ":beer_network"))
+        this.forbiddenModules.set(setOf(":beer_data", ":beer_database", ":beer_storage:api", ":beer_network"))
         this.rootComponent.set(rootComponent)
       }
 

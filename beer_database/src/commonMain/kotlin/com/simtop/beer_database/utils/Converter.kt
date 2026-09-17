@@ -3,9 +3,8 @@ package com.simtop.beer_database.utils
 import androidx.room.TypeConverter
 import kotlinx.serialization.json.Json
 
-// Not registered as a Room @TypeConverters - BeersMapper calls these directly at the
-// domain/DB boundary instead, keeping the List<String> <-> String conversion visible there
-// rather than implicit in Room.
+// Not registered as Room @TypeConverters - the Room adapter calls these explicitly at the
+// storage/DB boundary, keeping the List<String> <-> String conversion out of the portable contract.
 object Converters {
 
   @TypeConverter fun listToJson(value: List<String>?) = Json.encodeToString(value ?: emptyList())

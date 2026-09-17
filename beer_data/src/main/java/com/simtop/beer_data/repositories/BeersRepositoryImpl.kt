@@ -1,8 +1,8 @@
 package com.simtop.beer_data.repositories
 
 import com.simtop.beer_data.mappers.BeersMapper
-import com.simtop.beer_database.localsources.BeersLocalSource
 import com.simtop.beer_network.remotesources.BeersRemoteSource
+import com.simtop.beer_storage.api.BeersStorage
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
 import com.simtop.beerdomain.domain.errors.UpdateFavoriteError
@@ -28,7 +28,7 @@ import kotlinx.coroutines.flow.map
 @Inject
 class BeersRepositoryImpl(
   private val beersRemoteSource: BeersRemoteSource,
-  private val beersLocalSource: BeersLocalSource,
+  private val beersStorage: BeersStorage,
   private val beersMapper: BeersMapper,
   private val languageProvider: LanguageProvider,
 ) : BeersRepository {
@@ -69,7 +69,7 @@ class BeersRepositoryImpl(
     return try {
       // Upsert, not update: a beer reached through search/browse may not be in the catalog cache
       // yet, and a zero-row UPDATE would silently drop the user's edit.
-      beersLocalSource.upsertAvailability(beersMapper.fromBeerToBeerDbModel(beer))
+      beersStorage.upsertAvailability(beersMapper.fromBeerToStoredBeer(beer))
       Either.Right(Unit)
     } catch (e: CancellationException) {
       throw e
@@ -81,7 +81,7 @@ class BeersRepositoryImpl(
   @Suppress("TooGenericExceptionCaught")
   override suspend fun updateFavorite(beer: Beer): Either<UpdateFavoriteError, Unit> {
     return try {
-      beersLocalSource.upsertFavorite(beersMapper.fromBeerToBeerDbModel(beer))
+      beersStorage.upsertFavorite(beersMapper.fromBeerToStoredBeer(beer))
       Either.Right(Unit)
     } catch (e: CancellationException) {
       throw e
@@ -91,7 +91,7 @@ class BeersRepositoryImpl(
   }
 
   override suspend fun insertAllToDB(beers: List<Beer>) =
-    beersLocalSource.insertAllToDB(beers.map { beersMapper.fromBeerToBeerDbModel(it) })
+    beersStorage.insertAll(beers.map { beersMapper.fromBeerToStoredBeer(it) })
 
   override suspend fun insertPage(
     beers: List<Beer>,
@@ -99,24 +99,24 @@ class BeersRepositoryImpl(
     nextKey: Int?,
     totalCount: Int?,
   ) =
-    beersLocalSource.insertPageToDB(
-      beers.map { beersMapper.fromBeerToBeerDbModel(it) },
+    beersStorage.insertPage(
+      beers.map { beersMapper.fromBeerToStoredBeer(it) },
       surface,
       nextKey,
       totalCount,
     )
 
   override suspend fun pagingNextKey(surface: String): Int? =
-    beersLocalSource.getPagingState(surface)?.nextKey
+    beersStorage.getPagingState(surface)?.nextKey
 
   override suspend fun catalogCacheStatus(policy: CachePolicy): CatalogCacheStatus {
-    if (beersLocalSource.getCountFromDB() == 0) return CatalogCacheStatus.Empty
-    val state = beersLocalSource.getPagingState(catalogSurface(languageProvider))
+    if (beersStorage.count() == 0) return CatalogCacheStatus.Empty
+    val state = beersStorage.getPagingState(catalogSurface(languageProvider))
     return when {
       // No bookmark for this language: either a legacy cache from before paging_state existed
       // (age unknowable -> treat as stale) or bookmarks that all belong to another language.
       state == null ->
-        if (beersLocalSource.countPagingStates() == 0) CatalogCacheStatus.Stale
+        if (beersStorage.countPagingStates() == 0) CatalogCacheStatus.Stale
         else CatalogCacheStatus.LanguageMismatch
       System.currentTimeMillis() - state.refreshedAt > policy.staleAfter.inWholeMilliseconds ->
         CatalogCacheStatus.Stale
@@ -125,18 +125,18 @@ class BeersRepositoryImpl(
   }
 
   override fun observeBeers(): Flow<List<Beer>> =
-    beersLocalSource.getAllBeersFromDB().map { list ->
-      list.map { beersMapper.fromBeerDbModelToBeer(it) }
+    beersStorage.observeBeers().map { list ->
+      list.map { beersMapper.fromStoredBeerToBeer(it) }
     }
 
   override fun observeFavoriteBeers(): Flow<List<Beer>> =
-    beersLocalSource.getFavoriteBeersFromDB().map { list ->
-      list.map { beersMapper.fromBeerDbModelToBeer(it) }
+    beersStorage.observeFavoriteBeers().map { list ->
+      list.map { beersMapper.fromStoredBeerToBeer(it) }
     }
 
   override suspend fun getAllBeersFromDB() = observeBeers().first()
 
   override suspend fun getBeerById(id: String): Beer? = getAllBeersFromDB().find { it.id == id }
 
-  override suspend fun countDBEntries() = beersLocalSource.getCountFromDB()
+  override suspend fun countDBEntries() = beersStorage.count()
 }

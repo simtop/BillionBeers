@@ -1,6 +1,5 @@
 package com.simtop.beer_data.mappers
 
-import com.simtop.beer_database.models.BeerDbModel
 import com.simtop.beer_network.models.BeersApiResponseItem
 import com.simtop.beer_network.models.BreweryApiResponseItem
 import com.simtop.beer_network.models.EmbeddedImage
@@ -10,6 +9,7 @@ import com.simtop.beer_network.models.NamedEntity
 import com.simtop.beer_network.models.NamedTranslation
 import com.simtop.beer_network.models.Translation
 import com.simtop.beer_network.models.TypologyApiResponseItem
+import com.simtop.beer_storage.api.StoredBeer
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.core.core.Diagnostic
 import com.simtop.core.core.DiagnosticArea
@@ -311,7 +311,7 @@ class BeersMapperTest {
     )
 
   @Test
-  fun `fromBeerToBeerDbModel converts a Beer into a BeerDbModel`() {
+  fun `fromBeerToStoredBeer converts a Beer into a StoredBeer`() {
     val beer =
       Beer(
         id = "1",
@@ -325,11 +325,11 @@ class BeersMapperTest {
         availability = false,
       )
 
-    val dbModel = mapper.fromBeerToBeerDbModel(beer)
+    val dbModel = mapper.fromBeerToStoredBeer(beer)
 
     expectThat(dbModel)
       .isEqualTo(
-        BeerDbModel(
+        StoredBeer(
           id = "1",
           name = "Buzz",
           tagline = "A Real Bitter Experience.",
@@ -337,14 +337,14 @@ class BeersMapperTest {
           imageUrl = "https://brewbuddy.dev/images/42",
           abv = 4.5,
           ibu = 60.0,
-          foodPairing = "[\"Steak\"]",
+          foodPairing = listOf("Steak"),
           availability = false,
         )
       )
   }
 
   @Test
-  fun `fromBeerToBeerDbModel and back round-trips the detail fields`() {
+  fun `fromBeerToStoredBeer and back round-trips the detail fields`() {
     val beer =
       Beer(
         id = "1",
@@ -366,15 +366,15 @@ class BeersMapperTest {
         recommendedGlasses = listOf("Chalice"),
       )
 
-    val roundTripped = mapper.fromBeerDbModelToBeer(mapper.fromBeerToBeerDbModel(beer))
+    val roundTripped = mapper.fromStoredBeerToBeer(mapper.fromBeerToStoredBeer(beer))
 
     expectThat(roundTripped).isEqualTo(beer)
   }
 
   @Test
-  fun `fromBeerDbModelToBeer converts a BeerDbModel into a Beer`() {
+  fun `fromStoredBeerToBeer converts a StoredBeer into a Beer`() {
     val dbModel =
-      BeerDbModel(
+      StoredBeer(
         id = "1",
         name = "Buzz",
         tagline = "A Real Bitter Experience.",
@@ -382,11 +382,11 @@ class BeersMapperTest {
         imageUrl = "https://brewbuddy.dev/images/42",
         abv = 4.5,
         ibu = 60.0,
-        foodPairing = "[\"Steak\"]",
+        foodPairing = listOf("Steak"),
         availability = false,
       )
 
-    val beer = mapper.fromBeerDbModelToBeer(dbModel)
+    val beer = mapper.fromStoredBeerToBeer(dbModel)
 
     expectThat(beer)
       .isEqualTo(
