@@ -12,6 +12,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
@@ -84,6 +85,33 @@ class KtorBeersServiceTest {
 
     assertEquals(503, response.statusCode)
     assertEquals(null, response.body)
+    client.close()
+  }
+
+  @Test
+  fun `request failures are classified as network failures`() = runTest {
+    val failure = IllegalStateException("offline")
+    val client = mockClient { throw failure }
+
+    val exception = assertFailsWith<BeersServiceNetworkException> {
+      KtorBeersService(client).getListOfBeers(1)
+    }
+
+    assertEquals(IllegalStateException::class, exception.cause!!::class)
+    assertEquals(failure.message, exception.cause?.message)
+    client.close()
+  }
+
+  @Test
+  fun `request cancellation propagates unchanged`() = runTest {
+    val cancellation = CancellationException("cancelled")
+    val client = mockClient { throw cancellation }
+
+    val exception = assertFailsWith<CancellationException> {
+      KtorBeersService(client).getListOfBeers(1)
+    }
+
+    assertEquals(cancellation.message, exception.message)
     client.close()
   }
 

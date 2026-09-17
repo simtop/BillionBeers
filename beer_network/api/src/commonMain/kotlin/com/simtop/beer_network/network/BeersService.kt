@@ -20,6 +20,9 @@ data class BeersServiceResponse<T>(
 /** HTTP failure raised by a service adapter when the server returns a non-2xx response. */
 class BeersServiceHttpException(val statusCode: Int) : RuntimeException("HTTP $statusCode")
 
+/** Transport failure raised when a service adapter cannot obtain an HTTP response. */
+class BeersServiceNetworkException(cause: Throwable? = null) : RuntimeException(cause)
+
 interface BeersService {
   suspend fun getListOfBeers(
     page: Int,

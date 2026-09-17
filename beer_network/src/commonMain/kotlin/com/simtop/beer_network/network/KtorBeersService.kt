@@ -11,6 +11,7 @@ import io.ktor.client.request.parameter
 import io.ktor.client.request.url
 import io.ktor.client.statement.HttpResponse
 import io.ktor.serialization.JsonConvertException
+import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.SerializationException
 
 internal class KtorBeersService(private val client: HttpClient) : BeersService {
@@ -41,7 +42,14 @@ internal class KtorBeersService(private val client: HttpClient) : BeersService {
     path: String,
     crossinline configure: HttpRequestBuilder.() -> Unit = {},
   ): BeersServiceResponse<T> {
-    val response = client.get(path, configure)
+    val response =
+      try {
+        client.get(path, configure)
+      } catch (exception: CancellationException) {
+        throw exception
+      } catch (exception: Exception) {
+        throw BeersServiceNetworkException(exception)
+      }
     return BeersServiceResponse(
       body = response.bodyIfSuccessful(),
       statusCode = response.status.value,

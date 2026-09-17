@@ -15,7 +15,9 @@ import com.simtop.beerdomain.domain.models.CatalogCacheStatus
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.CachePolicy
 import com.simtop.core.core.Either
+import com.simtop.core.core.EpochTimeProvider
 import com.simtop.core.core.LanguageProvider
+import com.simtop.core.core.SystemEpochTimeProvider
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
@@ -31,6 +33,7 @@ class BeersRepositoryImpl(
   private val beersStorage: BeersStorage,
   private val beersMapper: BeersMapper,
   private val languageProvider: LanguageProvider,
+  private val epochTimeProvider: EpochTimeProvider = SystemEpochTimeProvider(),
 ) : BeersRepository {
 
   override suspend fun getBeersPageFromApi(page: Int, query: BeersQuery): BeerPage {
@@ -118,7 +121,7 @@ class BeersRepositoryImpl(
       state == null ->
         if (beersStorage.countPagingStates() == 0) CatalogCacheStatus.Stale
         else CatalogCacheStatus.LanguageMismatch
-      System.currentTimeMillis() - state.refreshedAt > policy.staleAfter.inWholeMilliseconds ->
+      epochTimeProvider.epochMillis() - state.refreshedAt > policy.staleAfter.inWholeMilliseconds ->
         CatalogCacheStatus.Stale
       else -> CatalogCacheStatus.Fresh
     }
