@@ -5,7 +5,8 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.simtop.beer_database.database.BeersDatabase
-import com.simtop.beer_database.models.BeerDbModel
+import com.simtop.beer_storage.api.BeersStorage
+import com.simtop.beer_storage.api.StoredBeer
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -19,7 +20,7 @@ import org.junit.runner.RunWith
 class BeersLocalSourceTest {
 
   private lateinit var db: BeersDatabase
-  private lateinit var localSource: BeersLocalSource
+  private lateinit var localSource: BeersStorage
 
   @Before
   fun setUp() {
@@ -36,30 +37,30 @@ class BeersLocalSourceTest {
 
   @Test
   fun insertListToDb() = runBlocking {
-    localSource.insertAllToDB(listOf(beer()))
+    localSource.insertAll(listOf(beer()))
 
-    assertEquals(listOf(beer()), localSource.getAllBeersFromDB().first())
+    assertEquals(listOf(beer()), localSource.observeBeers().first())
   }
 
   @Test
   fun insertingTheSameListTwiceKeepsOneRow() = runBlocking {
-    localSource.insertAllToDB(listOf(beer()))
-    localSource.insertAllToDB(listOf(beer()))
+    localSource.insertAll(listOf(beer()))
+    localSource.insertAll(listOf(beer()))
 
-    assertEquals(1, localSource.getCountFromDB())
+    assertEquals(1, localSource.count())
   }
 
   @Test
   fun deleteFromDb() = runBlocking {
-    localSource.insertAllToDB(listOf(beer()))
-    localSource.deleteAllFromDB()
+    localSource.insertAll(listOf(beer()))
+    localSource.deleteAll()
 
-    assertEquals(0, localSource.getCountFromDB())
+    assertEquals(0, localSource.count())
   }
 
   @Test(expected = SQLiteConstraintException::class)
   fun directDuplicateInsertViolatesPrimaryKeyConstraint() = runBlocking {
-    localSource.insertAllToDB(listOf(beer()))
+    localSource.insertAll(listOf(beer()))
     db.openHelper.writableDatabase.execSQL(
       "INSERT INTO beers " +
         "(id, name, tagline, description, image_url, abv, ibu, food_pairing, availability) " +
@@ -69,33 +70,33 @@ class BeersLocalSourceTest {
 
   @Test
   fun updateAvailability() = runBlocking {
-    localSource.insertAllToDB(listOf(beer()))
+    localSource.insertAll(listOf(beer()))
     localSource.upsertAvailability(beer().copy(availability = false))
 
-    assertEquals(false, localSource.getAllBeersFromDB().first().single().availability)
+    assertEquals(false, localSource.observeBeers().first().single().availability)
   }
 
   @Test
   fun refreshSeedsAvailabilityOnFirstInsertButNeverOverwritesIt() = runBlocking {
-    localSource.insertAllToDB(listOf(beer().copy(availability = false)))
-    localSource.insertAllToDB(listOf(beer().copy(availability = true, name = "Refreshed")))
+    localSource.insertAll(listOf(beer().copy(availability = false)))
+    localSource.insertAll(listOf(beer().copy(availability = true, name = "Refreshed")))
 
-    val result = localSource.getAllBeersFromDB().first().single()
+    val result = localSource.observeBeers().first().single()
     assertEquals(false, result.availability)
     assertEquals("Refreshed", result.name)
   }
 
   @Test
   fun refreshPreservesAvailabilityAndFavoriteWhileUpdatingCatalogFields() = runBlocking {
-    localSource.insertAllToDB(
+    localSource.insertAll(
       listOf(beer(name = "Before").copy(availability = false, isFavorite = true))
     )
 
-    localSource.insertAllToDB(
+    localSource.insertAll(
       listOf(beer(name = "After").copy(availability = true, isFavorite = false))
     )
 
-    val refreshed = localSource.getAllBeersFromDB().first().single()
+    val refreshed = localSource.observeBeers().first().single()
     assertEquals("After", refreshed.name)
     assertEquals(false, refreshed.availability)
     assertEquals(true, refreshed.isFavorite)
@@ -107,7 +108,7 @@ class BeersLocalSourceTest {
 
     localSource.upsertFavorite(uncached)
 
-    assertEquals(uncached, localSource.getAllBeersFromDB().first().single())
+    assertEquals(uncached, localSource.observeBeers().first().single())
   }
 
   @Test
@@ -117,7 +118,7 @@ class BeersLocalSourceTest {
     localSource.upsertAvailability(uncached)
     localSource.upsertFavorite(uncached)
 
-    val stored = localSource.getAllBeersFromDB().first().single()
+    val stored = localSource.observeBeers().first().single()
     assertEquals(false, stored.availability)
     assertEquals(true, stored.isFavorite)
     assertEquals("Uncached", stored.name)
@@ -125,20 +126,20 @@ class BeersLocalSourceTest {
 
   @Test
   fun favoriteFlowReflectsCommittedWritesInDisplayOrder() = runBlocking {
-    assertEquals(emptyList<BeerDbModel>(), localSource.getFavoriteBeersFromDB().first())
+    assertEquals(emptyList<StoredBeer>(), localSource.observeFavoriteBeers().first())
 
     localSource.upsertFavorite(beer(id = "2", name = "Bravo").copy(isFavorite = true))
     assertEquals(
       listOf("Bravo"),
-      withTimeout(1_000) { localSource.getFavoriteBeersFromDB().first { it.size == 1 } }
-        .map(BeerDbModel::name),
+      withTimeout(1_000) { localSource.observeFavoriteBeers().first { it.size == 1 } }
+        .map(StoredBeer::name),
     )
 
     localSource.upsertFavorite(beer(id = "1", name = "Alpha").copy(isFavorite = true))
     assertEquals(
       listOf("Alpha", "Bravo"),
-      withTimeout(1_000) { localSource.getFavoriteBeersFromDB().first { it.size == 2 } }
-        .map(BeerDbModel::name),
+      withTimeout(1_000) { localSource.observeFavoriteBeers().first { it.size == 2 } }
+        .map(StoredBeer::name),
     )
 
     localSource.upsertAvailability(
@@ -147,7 +148,7 @@ class BeersLocalSourceTest {
     assertEquals(
       false,
       withTimeout(1_000) {
-          localSource.getFavoriteBeersFromDB().first { favorites ->
+          localSource.observeFavoriteBeers().first { favorites ->
             favorites.any { it.id == "1" && !it.availability }
           }
         }
@@ -160,13 +161,13 @@ class BeersLocalSourceTest {
     )
     assertEquals(
       listOf("Bravo"),
-      withTimeout(1_000) { localSource.getFavoriteBeersFromDB().first { it.size == 1 } }
-        .map(BeerDbModel::name),
+      withTimeout(1_000) { localSource.observeFavoriteBeers().first { it.size == 1 } }
+        .map(StoredBeer::name),
     )
   }
 
   private fun beer(id: String = "1", name: String = "Buzz") =
-    BeerDbModel(
+    StoredBeer(
       id = id,
       name = name,
       tagline = "A Real Bitter Experience.",
@@ -174,6 +175,6 @@ class BeersLocalSourceTest {
       imageUrl = "",
       abv = 0.0,
       ibu = 0.0,
-      foodPairing = "[]",
+      foodPairing = emptyList(),
     )
 }

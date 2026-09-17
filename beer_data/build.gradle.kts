@@ -10,7 +10,7 @@ dependencies {
   // stay in the application graph.
   implementation(this.project(":core-common"))
   implementation(this.project(":beerdomain:api"))
-  implementation(this.project(":beer_database"))
+  implementation(this.project(":beer_storage:api"))
   implementation(this.project(":beer_network"))
   implementation(this.project(":beer_network:api"))
   implementation(libs.kotlinx.coroutines.core)

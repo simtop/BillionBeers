@@ -10,6 +10,7 @@
     { "name": "domain-fakes", "match": "exact", "value": ":beerdomain:fakes" },
     { "name": "data", "match": "exact", "value": ":beer_data" },
     { "name": "database", "match": "exact", "value": ":beer_database" },
+    { "name": "storage-api", "match": "exact", "value": ":beer_storage:api" },
     { "name": "network-api", "match": "exact", "value": ":beer_network:api" },
     { "name": "network-fixture", "match": "prefix", "value": ":beer_network:" },
     { "name": "network", "match": "exact", "value": ":beer_network" },
@@ -35,8 +36,9 @@
     { "source": "dynamic-feature", "targets": ["application", "domain-api", "core", "design-system", "presentation", "navigation", "snapshot-testing"], "scopes": ["main"] },
     { "source": "domain-api", "targets": ["core-common"], "scopes": ["main"] },
     { "source": "domain-fakes", "targets": ["domain-api", "core-common"], "scopes": ["main"] },
-    { "source": "data", "targets": ["core", "core-common", "domain-api", "database", "network", "network-api"], "scopes": ["main"] },
-    { "source": "database", "targets": ["core", "core-common"], "scopes": ["main"] },
+    { "source": "data", "targets": ["core", "core-common", "domain-api", "storage-api", "network", "network-api"], "scopes": ["main"] },
+    { "source": "database", "targets": ["core", "core-common", "storage-api"], "scopes": ["main"] },
+    { "source": "storage-api", "targets": [], "scopes": ["main"] },
     { "source": "network", "targets": ["core-common", "network-api"], "scopes": ["main"] },
     { "source": "network-fixture", "targets": ["network-api"], "scopes": ["main"] },
     { "source": "network-api", "targets": [], "scopes": ["main"] },
@@ -53,8 +55,8 @@
     { "source": "network-fixture", "target": "network-api", "reason": "the fixture module deliberately re-exports the transport-neutral service contract for tests" }
   ],
   "forbiddenCompileClasspathRoles": [
-    { "source": "regular-feature", "targets": ["regular-feature", "dynamic-feature", "data", "database", "network"] },
-    { "source": "dynamic-feature", "targets": ["regular-feature", "dynamic-feature", "data", "database", "network"] },
-    { "source": "domain-api", "targets": ["application", "dev-application", "regular-feature", "dynamic-feature", "data", "database", "network", "core", "design-system", "navigation", "presentation"] }
+    { "source": "regular-feature", "targets": ["regular-feature", "dynamic-feature", "data", "database", "storage-api", "network"] },
+    { "source": "dynamic-feature", "targets": ["regular-feature", "dynamic-feature", "data", "database", "storage-api", "network"] },
+    { "source": "domain-api", "targets": ["application", "dev-application", "regular-feature", "dynamic-feature", "data", "database", "storage-api", "network", "core", "design-system", "navigation", "presentation"] }
   ]
 }

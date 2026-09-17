@@ -1,12 +1,11 @@
 package com.simtop.beer_data.mappers
 
-import com.simtop.beer_database.models.BeerDbModel
-import com.simtop.beer_database.utils.Converters
 import com.simtop.beer_network.models.BeersApiResponseItem
 import com.simtop.beer_network.models.BreweryApiResponseItem
 import com.simtop.beer_network.models.NamedEntity
 import com.simtop.beer_network.models.TypologyApiResponseItem
 import com.simtop.beer_network.network.BeersService
+import com.simtop.beer_storage.api.StoredBeer
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.beerdomain.domain.models.Brewery
@@ -93,8 +92,8 @@ constructor(private val languageProvider: LanguageProvider, private val logger: 
     )
   }
 
-  fun fromBeerToBeerDbModel(beer: Beer) =
-    BeerDbModel(
+  fun fromBeerToStoredBeer(beer: Beer) =
+    StoredBeer(
       id = beer.id,
       name = beer.name,
       tagline = beer.tagline,
@@ -102,7 +101,7 @@ constructor(private val languageProvider: LanguageProvider, private val logger: 
       imageUrl = beer.imageUrl,
       abv = beer.abv,
       ibu = beer.ibu,
-      foodPairing = Converters.listToJson(beer.foodPairing),
+      foodPairing = beer.foodPairing,
       availability = beer.availability,
       isFavorite = beer.isFavorite,
       styleName = beer.styleName,
@@ -112,31 +111,31 @@ constructor(private val languageProvider: LanguageProvider, private val logger: 
       minServingTemperature = beer.minServingTemperature,
       maxServingTemperature = beer.maxServingTemperature,
       fermentationMethod = beer.fermentationMethod,
-      ingredients = Converters.listToJson(beer.ingredients),
-      recommendedGlasses = Converters.listToJson(beer.recommendedGlasses),
+      ingredients = beer.ingredients,
+      recommendedGlasses = beer.recommendedGlasses,
     )
 
-  fun fromBeerDbModelToBeer(beerDbModel: BeerDbModel) =
+  fun fromStoredBeerToBeer(storedBeer: StoredBeer) =
     Beer(
-      id = beerDbModel.id,
-      name = beerDbModel.name,
-      tagline = beerDbModel.tagline,
-      description = beerDbModel.description,
-      imageUrl = beerDbModel.imageUrl,
-      abv = beerDbModel.abv,
-      ibu = beerDbModel.ibu,
-      foodPairing = Converters.jsonToList(beerDbModel.foodPairing),
-      availability = beerDbModel.availability,
-      isFavorite = beerDbModel.isFavorite,
-      styleName = beerDbModel.styleName,
-      breweryName = beerDbModel.breweryName,
-      srm = beerDbModel.srm,
-      releasedYear = beerDbModel.releasedYear,
-      minServingTemperature = beerDbModel.minServingTemperature,
-      maxServingTemperature = beerDbModel.maxServingTemperature,
-      fermentationMethod = beerDbModel.fermentationMethod,
-      ingredients = Converters.jsonToList(beerDbModel.ingredients),
-      recommendedGlasses = Converters.jsonToList(beerDbModel.recommendedGlasses),
+      id = storedBeer.id,
+      name = storedBeer.name,
+      tagline = storedBeer.tagline,
+      description = storedBeer.description,
+      imageUrl = storedBeer.imageUrl,
+      abv = storedBeer.abv,
+      ibu = storedBeer.ibu,
+      foodPairing = storedBeer.foodPairing,
+      availability = storedBeer.availability,
+      isFavorite = storedBeer.isFavorite,
+      styleName = storedBeer.styleName,
+      breweryName = storedBeer.breweryName,
+      srm = storedBeer.srm,
+      releasedYear = storedBeer.releasedYear,
+      minServingTemperature = storedBeer.minServingTemperature,
+      maxServingTemperature = storedBeer.maxServingTemperature,
+      fermentationMethod = storedBeer.fermentationMethod,
+      ingredients = storedBeer.ingredients,
+      recommendedGlasses = storedBeer.recommendedGlasses,
     )
 
   private companion object {

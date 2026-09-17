@@ -7,15 +7,15 @@ import org.junit.jupiter.api.Test
 /**
  * A feature module reaches persistence and the network only through the repository *interfaces* in
  * `:beerdomain:api`, whose implementations are bound in `:app`'s Metro graph. Declaring
- * `:beer_data`, `:beer_database` or `:beer_network` in a feature's build script skips that seam:
- * the feature gains Room entities, DTOs and Retrofit services as compile-time types, and the domain
- * boundary becomes advisory.
+ * `:beer_data`, `:beer_database`, `:beer_storage:api` or `:beer_network` in a feature's build
+ * script skips that seam: the feature gains Room entities, DTOs and Retrofit services as
+ * compile-time types, and the domain boundary becomes advisory.
  *
  * This is the *unnamed* edge the existing rules leave open, and it is worth stating explicitly:
  * - `FeatureModuleBoundaryTest` reads imports, and only for the beerslist/beerdetail pair.
  * - `ViewModelBoundaryTest` catches a data-layer type only when a **ViewModel** imports it. A
  *   mapper, an extension or a composable in the same module would pass.
- * - `DevAppDependencyBoundaryTest` forbids the same three modules, but only for `app-dev-*`.
+ * - `DevAppDependencyBoundaryTest` forbids the same data-layer modules, but only for `app-dev-*`.
  *
  * So the dependency can be declared and used today without any rule firing. This closes that.
  *
@@ -29,7 +29,8 @@ import org.junit.jupiter.api.Test
  */
 class FeatureDataLayerBoundaryTest {
 
-  private val forbiddenDataLayerModules = listOf(":beer_data", ":beer_database", ":beer_network")
+  private val forbiddenDataLayerModules =
+    listOf(":beer_data", ":beer_database", ":beer_storage:api", ":beer_network")
 
   // A positive control on the list above: if one of those strings drifts (typo, or the module gets
   // renamed/moved), this fails loudly instead of the rule below silently matching nothing.

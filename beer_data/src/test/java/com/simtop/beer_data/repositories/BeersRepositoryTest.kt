@@ -4,12 +4,12 @@ import app.cash.turbine.test
 import com.simtop.beer_data.fakes.FakeBeersLocalSource
 import com.simtop.beer_data.fakes.FakeBeersRemoteSource
 import com.simtop.beer_data.mappers.BeersMapper
-import com.simtop.beer_database.models.BeerDbModel
 import com.simtop.beer_network.models.BeersApiResponseItem
 import com.simtop.beer_network.models.BreweryApiResponseItem
 import com.simtop.beer_network.models.EmbeddedCountry
 import com.simtop.beer_network.models.EmbeddedImage
 import com.simtop.beer_network.models.TypologyApiResponseItem
+import com.simtop.beer_storage.api.StoredBeer
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeerStyle
@@ -161,7 +161,7 @@ class BeersRepositoryTest {
   @Test
   fun `cache status is Fresh with a recent bookmark for the current language`() =
     runTest(testDispatcher) {
-      beersLocalSource.insertAllToDB(listOf(dbBeer("1")))
+      beersLocalSource.insertAll(listOf(dbBeer("1")))
       beersLocalSource.setPagingState(
         "catalog:en",
         nextKey = 2,
@@ -174,7 +174,7 @@ class BeersRepositoryTest {
   @Test
   fun `cache status is Stale once the bookmark is older than the policy TTL`() =
     runTest(testDispatcher) {
-      beersLocalSource.insertAllToDB(listOf(dbBeer("1")))
+      beersLocalSource.insertAll(listOf(dbBeer("1")))
       beersLocalSource.setPagingState(
         "catalog:en",
         nextKey = 2,
@@ -189,7 +189,7 @@ class BeersRepositoryTest {
   @Test
   fun `cache status is Stale for a legacy cache with no bookmarks at all`() =
     runTest(testDispatcher) {
-      beersLocalSource.insertAllToDB(listOf(dbBeer("1")))
+      beersLocalSource.insertAll(listOf(dbBeer("1")))
 
       expectThat(beersRepository.catalogCacheStatus()).isEqualTo(CatalogCacheStatus.Stale)
     }
@@ -197,7 +197,7 @@ class BeersRepositoryTest {
   @Test
   fun `cache status is LanguageMismatch when bookmarks belong to another language`() =
     runTest(testDispatcher) {
-      beersLocalSource.insertAllToDB(listOf(dbBeer("1")))
+      beersLocalSource.insertAll(listOf(dbBeer("1")))
       beersLocalSource.setPagingState(
         "catalog:es",
         nextKey = 2,
@@ -214,9 +214,9 @@ class BeersRepositoryTest {
       // Arrange
       val beer = Beer.empty.copy(id = "1", availability = true)
       // Pre-populate fake local source
-      beersLocalSource.insertAllToDB(
+      beersLocalSource.insertAll(
         listOf(
-          BeerDbModel(
+          StoredBeer(
             id = "1",
             name = "Beer 1",
             tagline = "",
@@ -224,7 +224,7 @@ class BeersRepositoryTest {
             imageUrl = "",
             abv = 0.0,
             ibu = 0.0,
-            foodPairing = "[]",
+            foodPairing = emptyList(),
             availability = true,
           )
         )
@@ -322,7 +322,7 @@ class BeersRepositoryTest {
     runTest(testDispatcher) {
       // Arrange
       val dbBeer =
-        BeerDbModel(
+        StoredBeer(
           id = "5",
           name = "Beer 5",
           tagline = "",
@@ -330,10 +330,10 @@ class BeersRepositoryTest {
           imageUrl = "",
           abv = 0.0,
           ibu = 0.0,
-          foodPairing = "[]",
+          foodPairing = emptyList(),
           availability = true,
         )
-      beersLocalSource.insertAllToDB(listOf(dbBeer))
+      beersLocalSource.insertAll(listOf(dbBeer))
 
       // Act
       val list = beersRepository.getAllBeersFromDB()
@@ -358,7 +358,7 @@ class BeersRepositoryTest {
     }
 
   private fun dbBeer(id: String) =
-    BeerDbModel(
+    StoredBeer(
       id = id,
       name = "Beer $id",
       tagline = "",
@@ -366,7 +366,7 @@ class BeersRepositoryTest {
       imageUrl = "",
       abv = 0.0,
       ibu = 0.0,
-      foodPairing = "[]",
+      foodPairing = emptyList(),
       availability = true,
     )
 
