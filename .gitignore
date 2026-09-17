@@ -18,6 +18,7 @@ keystore.properties
 .idea/misc.xml
 .idea/deploymentTargetSelector.xml
 .idea/kotlinc.xml
+.idea/artifacts/
 .kotlin/
 .vscode/
 bin/

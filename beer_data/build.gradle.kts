@@ -28,3 +28,7 @@ dependencies {
   jvmTestRuntimeOnly(catalog.billionBeersBundle("unitTestJunit5Runtime"))
   jvmTestRuntimeOnly(catalog.billionBeersLibrary("junit-platform-launcher"))
 }
+
+tasks.withType<Test>().configureEach {
+  useJUnitPlatform()
+}
