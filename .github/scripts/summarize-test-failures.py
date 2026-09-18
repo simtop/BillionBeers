@@ -203,7 +203,7 @@ def render_paparazzi(
     else:
         lines.extend(
             [
-                "No failed screenshot testcase or failure image was emitted. The build likely failed before comparison completed; inspect the Gradle log and `screenshot-test-results` artifact.",
+                "No failed screenshot testcase or failure image was found in the available reports. Inspect the failed step's log; missing reports alone do not establish the cause.",
                 "",
             ]
         )
@@ -217,7 +217,7 @@ def render_paparazzi(
         lines.append(f"[Open screenshot failure artifact]({artifact_url})")
     if run_url:
         lines.append(f"[Open CI run]({run_url})")
-    lines.append("Failure images and JUnit XML are available in the artifacts below. ⬇️")
+    lines.append("Inspect available screenshot reports and comparison images in the CI run; uploads may be absent if the build stopped early.")
     return "\n".join(lines) + "\n"
 
 
@@ -228,7 +228,7 @@ def render_managed_device(
     if failures:
         lines.extend(["#### Failed tests", "", *failure_lines(failures, include_detail), ""])
     else:
-        lines.extend(["No failed JUnit testcase was emitted. Compilation, device provisioning, installation, or test-runner startup may have failed before a testcase completed.", ""])
+        lines.extend(["No failed JUnit testcase was found in the available reports. Inspect the failed step's log for compilation, device provisioning, installation, or test-runner errors.", ""])
     if unreadable:
         lines.extend([f"_Could not parse {len(unreadable)} JUnit report(s); remaining reports were still inspected._", ""])
     if artifact_url:
@@ -239,10 +239,29 @@ def render_managed_device(
     return "\n".join(lines) + "\n"
 
 
+def render_unit(
+    failures: list[Failure], unreadable: list[str], run_url: str | None = None, artifact_url: str | None = None, include_detail: bool = False
+) -> str:
+    lines = ["### 🧪 Unit test failures", ""]
+    if failures:
+        lines.extend([*failure_lines(failures, include_detail), ""])
+    else:
+        lines.extend(["No failed unit testcase was found in the available reports. Inspect the failed step's log for compilation, setup, or other non-test errors.", ""])
+    if unreadable:
+        lines.extend([f"_Could not parse {len(unreadable)} JUnit report(s); remaining reports were still inspected._", ""])
+    if artifact_url:
+        lines.append(f"[Open unit test artifact]({artifact_url})")
+    if run_url:
+        lines.append(f"[Open CI run]({run_url})")
+    return "\n".join(lines) + "\n"
+
+
 def generate(root: Path, mode: str, branch: str | None = None, **kwargs: object) -> str:
     failures, unreadable, fallback_modules = collect(root, mode)
     if mode == "paparazzi":
         return render_paparazzi(failures, unreadable, fallback_modules, branch, **kwargs)
+    if mode == "unit":
+        return render_unit(failures, unreadable, **kwargs)
     return render_managed_device(failures, unreadable, **kwargs)
 
 

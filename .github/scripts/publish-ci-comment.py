@@ -34,20 +34,53 @@ def bounded_body(marker: str, body: str) -> str:
     body = body.strip()
     if marker not in body:
         body = f"{marker}\n{body}"
-    if len(body) <= MAX_COMMENT_LENGTH:
+    if len(body) < MAX_COMMENT_LENGTH:
         return body + "\n"
-    return body[: MAX_COMMENT_LENGTH - 40].rstrip() + "\n\n_Comment truncated; open the CI run for full details._\n"
+    suffix = "\n\n_Comment truncated; open the CI run for full details._\n"
+    return body[: MAX_COMMENT_LENGTH - len(suffix)].rstrip() + suffix
 
 
-def publish(token: str, repository: str, pr_number: str, marker: str, body: str) -> str:
+def find_comment(token: str, base: str, marker: str) -> dict | None:
+    page = 1
+    while True:
+        comments = api_request(token, f"{base}?per_page=100&page={page}")
+        for comment in comments:
+            author = comment.get("user", {})
+            if (
+                author.get("login") == "github-actions[bot]"
+                and author.get("type") == "Bot"
+                and marker in comment.get("body", "").splitlines()
+            ):
+                return comment
+        if len(comments) < 100:
+            return None
+        page += 1
+
+
+def publish(
+    token: str, repository: str, pr_number: str, marker: str, body: str,
+    *, create: bool = True, is_current=None, reset: bool = False,
+) -> str | None:
     base = f"https://api.github.com/repos/{repository}/issues/{pr_number}/comments"
-    comments = api_request(token, f"{base}?per_page=100")
-    existing = next((comment for comment in comments if marker in comment.get("body", "")), None)
+    existing = find_comment(token, base, marker)
     content = bounded_body(marker, body)
+    if existing and reset:
+        state = next((line for line in content.splitlines() if line.startswith("<!-- billionbeers-ci:state ")), None)
+        if state and state in existing.get("body", "").splitlines():
+            # A duplicate wake-up must not clear failures already known for this generation.
+            return existing["html_url"]
+    if existing and existing.get("body") == content:
+        return existing["html_url"]
+    if not existing and not create:
+        return None
+    # The caller holds the PR concurrency lock. Recheck after pagination, immediately before writing.
+    if is_current is not None and not is_current():
+        return None
     if existing:
         result = api_request(token, existing["url"], "PATCH", {"body": content})
-        return result["html_url"]
-    result = api_request(token, base, "POST", {"body": content})
+    else:
+        # On an ambiguous network failure the next reconciliation re-lists comments before POSTing.
+        result = api_request(token, base, "POST", {"body": content})
     return result["html_url"]
 
 
