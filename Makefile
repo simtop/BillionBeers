@@ -173,6 +173,11 @@ else
 	$(GRADLE_RUNNER) $(MODULE_PREFIX)testDebugUnitTest --continue
 endif
 
+.PHONY: ci-report-test
+ci-report-test: ## Test CI diagnosis, evidence parsing, and incremental comment lifecycle.
+	@python3 -m unittest discover -s .github/scripts -p 'test_*ci*.py'
+	@python3 .github/scripts/test_summarize_test_failures.py
+
 test-tier-inventory: ## Write the informational test-tier ownership report.
 	@bash .github/scripts/detect-change-scope.sh --self-test
 	@python3 scripts/test-tier-inventory-test.py

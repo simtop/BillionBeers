@@ -158,6 +158,23 @@ class TestFailureSummaryTest(unittest.TestCase):
             self.assertIn("SearchScreen.kt:42", report)
             self.assertIn("Assertion failed", report)
 
+    def test_unit_mode_has_its_own_heading_and_no_device_guidance(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            write(root, "core/build/test-results/test/TEST-core.xml", '<testsuite><testcase classname="CoreTest" name="fails"><failure>expected 1</failure></testcase></testsuite>')
+            report = MODULE.generate(root, "unit", include_detail=True)
+            self.assertIn("### 🧪 Unit test failures", report)
+            self.assertIn("CoreTest#fails", report)
+            self.assertNotIn("Instrumented", report)
+            self.assertNotIn("device", report)
+
+    def test_empty_screenshot_reports_do_not_promise_images(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            report = MODULE.generate(Path(directory), "paparazzi")
+            self.assertNotIn("build likely failed", report)
+            self.assertNotIn("images and JUnit XML are available", report)
+            self.assertIn("missing reports alone", report)
+
     def test_json_report_contains_machine_readable_failure_fields(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -189,7 +206,7 @@ class TestFailureSummaryTest(unittest.TestCase):
 
             self.assertEqual(0, result)
             self.assertEqual(output.getvalue(), summary.read_text())
-            self.assertIn("No failed JUnit testcase was emitted", output.getvalue())
+            self.assertIn("No failed JUnit testcase was found", output.getvalue())
 
 
 if __name__ == "__main__":

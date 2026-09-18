@@ -24,14 +24,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - name: Test CI failure summary parser
-        run: python3 .github/scripts/test_summarize_test_failures.py
-
-      - name: Test CI comment publisher
-        run: python3 .github/scripts/test_publish_ci_comment.py
-
-      - name: Test CI comment renderer
-        run: python3 .github/scripts/test_render_ci_pr_comment.py
+      - name: Test CI reporting
+        run: make ci-report-test
 
       - name: Test Markdown checker
         run: python3 scripts/test_check_markdown_links.py
@@ -423,7 +417,6 @@ jobs:
       - name: Verify Screenshot Tests
         id: verify-paparazzi
         run: make screenshot-verify
-        continue-on-error: true
 
       - name: Summarize screenshot failures
         if: always() && steps.verify-paparazzi.outcome == 'failure'
@@ -440,10 +433,6 @@ jobs:
           name: screenshot-failures
           path: '**/build/paparazzi/failures/'
           retention-days: 7
-
-      - name: Signal Failure
-        if: always() && steps.verify-paparazzi.outcome == 'failure'
-        run: exit 1
 
       - name: Archive screenshot test results
         if: always()
