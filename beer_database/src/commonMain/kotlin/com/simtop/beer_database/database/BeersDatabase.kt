@@ -18,4 +18,6 @@ abstract class BeersDatabase : RoomDatabase() {
 }
 
 @Suppress("NO_ACTUAL_FOR_EXPECT")
-expect object BeersDatabaseConstructor : RoomDatabaseConstructor<BeersDatabase>
+expect object BeersDatabaseConstructor : RoomDatabaseConstructor<BeersDatabase> {
+  override fun initialize(): BeersDatabase
+}

@@ -4,7 +4,6 @@ val catalog = billionBeersCatalog()
 
 dependencies {
   commonMainImplementation(libs.kotlinx.coroutines.core)
-  commonMainImplementation(libs.androidx.annotation)
 
   commonTestImplementation(libs.coroutinesTest)
   commonTestImplementation(libs.turbine)

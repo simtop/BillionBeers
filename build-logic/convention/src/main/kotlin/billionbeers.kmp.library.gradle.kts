@@ -18,6 +18,10 @@ kotlin {
     compilerOptions.jvmTarget.set(JvmTarget.JVM_23)
   }
 
+  iosArm64()
+  iosSimulatorArm64()
+  applyDefaultHierarchyTemplate()
+
   android {
     compilerOptions.jvmTarget.set(JvmTarget.JVM_23)
     namespace = "com.simtop.billionbeers.kmp.fixture"

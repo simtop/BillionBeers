@@ -1,0 +1,18 @@
+package com.simtop.beer_network.di
+
+import com.simtop.beer_network.network.BeersService
+import com.simtop.beer_network.network.createKtorBeersService
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesTo
+import dev.zacsweers.metro.Provides
+import dev.zacsweers.metro.SingleIn
+import io.ktor.client.HttpClient
+
+@ContributesTo(AppScope::class)
+interface BeersNetworkIosModule {
+
+  @Provides
+  @SingleIn(AppScope::class)
+  fun provideBeersService(httpClient: HttpClient): BeersService =
+    createKtorBeersService(httpClient)
+}

@@ -44,8 +44,7 @@ sealed interface AnalyticsEvent {
 }
 
 /** A bounded identifier for a public catalog item, never an arbitrary user or URL string. */
-@JvmInline
-value class CatalogId private constructor(val value: String) {
+data class CatalogId private constructor(val value: String) {
   companion object {
     private val SAFE_ID = Regex("[A-Za-z0-9_-]{1,64}")
 

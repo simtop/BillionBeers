@@ -10,6 +10,14 @@ kotlin {
   android {
     namespace = "com.simtop.beer_network"
   }
+
+  sourceSets {
+    val iosMain by getting {
+      dependencies {
+        implementation(libs.ktorClientDarwin)
+      }
+    }
+  }
 }
 
 dependencies {

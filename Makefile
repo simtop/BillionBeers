@@ -53,7 +53,7 @@ UI_TEST_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,:app:)
 # One local output filter. Gateway sessions can export GRADLE_RUNNER=./gradlew.
 GRADLE_RUNNER ?= $(shell if command -v rtk >/dev/null 2>&1; then echo "rtk gradlew"; else echo "./gradlew"; fi)
 
-.PHONY: detekt-baseline help setup setup-ai-tools update-android-skills build bundle-release release-smoke install desktop-test desktop-run desktop-live clean deep-clean test test-tier-inventory konsist check-data-layer-boundary architecture-policy compose-metrics ui-test ui-test-local ui-test-managed ui-test-managed-newest ui-test-managed-ci ui-test-managed-all emulator-create emulator-recreate emulator-start emulator-stop emulator-status emulator-delete screenshot-record screenshot-verify screenshot-clean lint android-lint format check docs-check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline check-gradle-compatibility-flags verification-metadata verification-metadata-reference verification-metadata-candidate health module-graph metro-graph architecture-report repo-doctor benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark build-budget build-budget-check jacoco-report coverage-check update-docs install-profiler install-diffuse new-feature-module new-dev-app play-listing-check play-listing-capture play-listing-reset store-frames
+.PHONY: detekt-baseline help setup setup-ai-tools update-android-skills build bundle-release release-smoke install desktop-test desktop-run desktop-live ios-compile ios-framework ios-test clean deep-clean test test-tier-inventory konsist check-data-layer-boundary architecture-policy compose-metrics ui-test ui-test-local ui-test-managed ui-test-managed-newest ui-test-managed-ci ui-test-managed-all emulator-create emulator-recreate emulator-start emulator-stop emulator-status emulator-delete screenshot-record screenshot-verify screenshot-clean lint android-lint format check docs-check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline check-gradle-compatibility-flags verification-metadata verification-metadata-reference verification-metadata-candidate health module-graph metro-graph architecture-report repo-doctor benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark build-budget build-budget-check jacoco-report coverage-check update-docs install-profiler install-diffuse new-feature-module new-dev-app play-listing-check play-listing-capture play-listing-reset store-frames
 
 help: ## Show this help message.
 	@echo "\n📊 BillionBeers Makefile Help"
@@ -122,6 +122,16 @@ desktop-run: ## Read the local desktop catalog from the stable default data dire
 
 desktop-live: ## Fetch one catalog page from the API (explicit opt-in; pass BASE_URL=... to override).
 	$(GRADLE_RUNNER) :desktop-app:run --args="--live $(if $(BASE_URL),--base-url $(BASE_URL),)"
+
+ios-compile: ## Compile all shared modules for both supported Apple targets.
+	$(GRADLE_RUNNER) :core-common:compileKotlinIosArm64 :beerdomain:api:compileKotlinIosArm64 :beerdomain:fakes:compileKotlinIosArm64 :beer_network:api:compileKotlinIosArm64 :beer_network:fixtures:compileKotlinIosArm64 :beer_network:compileKotlinIosArm64 :beer_storage:api:compileKotlinIosArm64 :beer_database:compileKotlinIosArm64 :beer_data:compileKotlinIosArm64 :ios-shared:compileKotlinIosArm64 # gitleaks:allow
+	$(GRADLE_RUNNER) :core-common:compileKotlinIosSimulatorArm64 :beerdomain:api:compileKotlinIosSimulatorArm64 :beerdomain:fakes:compileKotlinIosSimulatorArm64 :beer_network:api:compileKotlinIosSimulatorArm64 :beer_network:fixtures:compileKotlinIosSimulatorArm64 :beer_network:compileKotlinIosSimulatorArm64 :beer_storage:api:compileKotlinIosSimulatorArm64 :beer_database:compileKotlinIosSimulatorArm64 :beer_data:compileKotlinIosSimulatorArm64 :ios-shared:compileKotlinIosSimulatorArm64
+
+ios-framework: ## Link the consuming iOS data framework for simulator and device.
+	$(GRADLE_RUNNER) :ios-shared:linkDebugFrameworkIosSimulatorArm64 :ios-shared:linkDebugFrameworkIosArm64
+
+ios-test: ## Execute native core, network, and Room tests on the arm64 simulator.
+	$(GRADLE_RUNNER) :core-common:iosSimulatorArm64Test :beer_network:iosSimulatorArm64Test :beer_database:iosSimulatorArm64Test
 
 clean: ## Clean all build outputs.
 	$(GRADLE_RUNNER) clean
