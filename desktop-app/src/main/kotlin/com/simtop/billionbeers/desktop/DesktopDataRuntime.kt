@@ -46,8 +46,11 @@ class DesktopDataRuntime private constructor(private val graph: DesktopGraph) : 
 
   private val closed = AtomicBoolean(false)
 
-  val repository: BeersRepository get() = graph.repository
-  val pagerFactory: BeersPagerFactory get() = graph.pagerFactory
+  val repository: BeersRepository
+    get() = graph.repository
+
+  val pagerFactory: BeersPagerFactory
+    get() = graph.pagerFactory
 
   override fun close() {
     if (closed.compareAndSet(false, true)) {
@@ -59,9 +62,7 @@ class DesktopDataRuntime private constructor(private val graph: DesktopGraph) : 
   companion object {
     fun open(config: DesktopDataConfig): DesktopDataRuntime {
       File(config.databasePath).parentFile?.mkdirs()
-      return DesktopDataRuntime(
-        createGraphFactory<DesktopGraph.Factory>().create(config),
-      )
+      return DesktopDataRuntime(createGraphFactory<DesktopGraph.Factory>().create(config))
     }
   }
 }
@@ -88,14 +89,15 @@ interface DesktopHostModule {
     EnvironmentConfig(apiBaseUrl = config.apiBaseUrl)
 
   @Provides
-  fun provideLanguageProvider(config: DesktopDataConfig): LanguageProvider =
-    LanguageProvider { config.languageCode }
+  fun provideLanguageProvider(config: DesktopDataConfig): LanguageProvider = LanguageProvider {
+    config.languageCode
+  }
+
+  @Provides fun provideLogger(): Logger = NoOpLogger()
 
   @Provides
-  fun provideLogger(): Logger = NoOpLogger()
-
-  @Provides
-  fun provideDispatcherProvider(): CoroutineDispatcherProvider = DefaultCoroutineDispatcherProvider()
+  fun provideDispatcherProvider(): CoroutineDispatcherProvider =
+    DefaultCoroutineDispatcherProvider()
 
   @Provides
   @SingleIn(AppScope::class)

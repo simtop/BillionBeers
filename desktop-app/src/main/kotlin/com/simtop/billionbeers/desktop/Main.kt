@@ -13,21 +13,23 @@ fun main(args: Array<String>) = runBlocking {
       ?: File(System.getProperty("user.home"), ".billionbeers/beers_database.db").path
 
   DesktopDataRuntime.open(
-    DesktopDataConfig(
-      databasePath = databasePath,
-      apiBaseUrl = baseUrl,
+      DesktopDataConfig(
+        databasePath = databasePath,
+        apiBaseUrl = baseUrl,
+      )
     )
-  ).use { runtime ->
-    val beers = if (live) {
-      val pager = runtime.pagerFactory.create(BeersQuery())
-      pager.loadFirstPage()
-      pager.data.first()
-    } else {
-      println("Reading the local catalog at $databasePath")
-      runtime.repository.getAllBeersFromDB()
+    .use { runtime ->
+      val beers =
+        if (live) {
+          val pager = runtime.pagerFactory.create(BeersQuery())
+          pager.loadFirstPage()
+          pager.data.first()
+        } else {
+          println("Reading the local catalog at $databasePath")
+          runtime.repository.getAllBeersFromDB()
+        }
+      println("Loaded ${beers.size} beers from ${if (live) baseUrl else "local data"}")
     }
-    println("Loaded ${beers.size} beers from ${if (live) baseUrl else "local data"}")
-  }
 }
 
 private fun Array<String>.findValue(name: String): String? {

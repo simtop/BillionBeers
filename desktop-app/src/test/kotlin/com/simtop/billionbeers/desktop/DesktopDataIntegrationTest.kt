@@ -62,7 +62,10 @@ class DesktopDataIntegrationTest {
 
     val offlineRuntime = openRuntime(databasePath, "http://127.0.0.1:1/")
     try {
-      assertEquals(listOf("1", "2", "3", "4"), offlineRuntime.repository.getAllBeersFromDB().map(Beer::id))
+      assertEquals(
+        listOf("1", "2", "3", "4"),
+        offlineRuntime.repository.getAllBeersFromDB().map(Beer::id),
+      )
       assertTrue(offlineRuntime.repository.getBeerById("1")!!.isFavorite)
       assertFalse(offlineRuntime.repository.getBeerById("2")!!.availability)
       assertEquals(3, offlineRuntime.repository.pagingNextKey("catalog:en"))
@@ -127,7 +130,7 @@ class DesktopDataIntegrationTest {
         .setResponseCode(200)
         .addHeader("Content-Type", "application/json")
         .addHeader("X-Total-Count", totalCount)
-        .setBody("[${beerJson(firstId, firstName)},${beerJson(secondId, "Beer $secondId")}]"),
+        .setBody("[${beerJson(firstId, firstName)},${beerJson(secondId, "Beer $secondId")}]")
     )
   }
 
@@ -137,7 +140,7 @@ class DesktopDataIntegrationTest {
         .setResponseCode(200)
         .addHeader("Content-Type", "application/json")
         .addHeader("X-Total-Count", 1)
-        .setBody("[${beerJson(id, search)}]"),
+        .setBody("[${beerJson(id, search)}]")
     )
   }
 
