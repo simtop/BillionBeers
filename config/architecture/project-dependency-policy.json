@@ -16,6 +16,7 @@
     { "name": "network-fixture", "match": "prefix", "value": ":beer_network:" },
     { "name": "network", "match": "exact", "value": ":beer_network" },
     { "name": "core-common", "match": "exact", "value": ":core-common" },
+    { "name": "ios-shared", "match": "exact", "value": ":ios-shared" },
     { "name": "design-system", "match": "exact", "value": ":core:designsystem" },
     { "name": "core", "match": "exact", "value": ":core" },
     { "name": "navigation", "match": "exact", "value": ":navigation" },
@@ -33,6 +34,7 @@
   "allowedEdges": [
     { "source": "application", "targets": ["domain-api", "regular-feature", "dynamic-feature", "core", "design-system", "navigation", "data", "database", "network", "presentation"], "scopes": ["main"] },
     { "source": "desktop-application", "targets": ["domain-api", "data", "database", "network", "core-common"], "scopes": ["main"] },
+    { "source": "ios-shared", "targets": ["domain-api", "data", "database", "network", "core-common"], "scopes": ["main"] },
     { "source": "dev-application", "targets": ["regular-feature", "domain-api", "domain-fakes", "core", "design-system", "navigation", "presentation"], "scopes": ["main"] },
     { "source": "regular-feature", "targets": ["domain-api", "core", "core-common", "presentation", "design-system", "navigation", "snapshot-testing"], "scopes": ["main"] },
     { "source": "dynamic-feature", "targets": ["application", "domain-api", "core", "design-system", "presentation", "navigation", "snapshot-testing"], "scopes": ["main"] },

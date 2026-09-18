@@ -13,7 +13,8 @@ configure<RoomExtension> {
 
 dependencies {
     add("commonMainImplementation", libs.billionBeersLibrary("roomRuntime"))
-    add("kspCommonMainMetadata", libs.billionBeersLibrary("roomCompiler"))
     add("kspJvm", libs.billionBeersLibrary("roomCompiler"))
     add("kspAndroid", libs.billionBeersLibrary("roomCompiler"))
+    add("kspIosArm64", libs.billionBeersLibrary("roomCompiler"))
+    add("kspIosSimulatorArm64", libs.billionBeersLibrary("roomCompiler"))
 }

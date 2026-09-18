@@ -16,7 +16,7 @@ class PagedListReducerTest {
   private val items = listOf("a", "b")
 
   @Test
-  fun `nothing loaded yet is Loading for Idle, Loading and Success states`() {
+  fun `nothing loaded yet is Loading for Idle Loading and Success states`() {
     val reducer = reducer()
 
     assertEquals(CommonUiState.Loading, reducer.reduce(emptyList(), PagingState.Idle))

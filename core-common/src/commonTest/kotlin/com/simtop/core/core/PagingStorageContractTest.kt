@@ -40,7 +40,7 @@ abstract class PagingStorageContractTest {
   }
 
   @Test
-  fun `append adds a subsequent page after the first, in order`() = runTest {
+  fun `append adds a subsequent page after the first in order`() = runTest {
     val storage = createStorage()
     storage.storeFirstPage(page("a", "b"))
 

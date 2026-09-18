@@ -145,6 +145,8 @@ androidx.savedstate:savedstate-ktx:1.5.0
 androidx.savedstate:savedstate:1.5.0
 androidx.slidingpanelayout:slidingpanelayout:1.2.0
 androidx.sqlite:sqlite-android:2.6.2
+androidx.sqlite:sqlite-bundled-android:2.6.2
+androidx.sqlite:sqlite-bundled:2.6.2
 androidx.sqlite:sqlite-framework-android:2.6.2
 androidx.sqlite:sqlite-framework:2.6.2
 androidx.sqlite:sqlite:2.6.2
