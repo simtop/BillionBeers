@@ -53,7 +53,7 @@ UI_TEST_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,:app:)
 # One local output filter. Gateway sessions can export GRADLE_RUNNER=./gradlew.
 GRADLE_RUNNER ?= $(shell if command -v rtk >/dev/null 2>&1; then echo "rtk gradlew"; else echo "./gradlew"; fi)
 
-.PHONY: detekt-baseline help setup setup-ai-tools update-android-skills build bundle-release release-smoke install clean deep-clean test test-tier-inventory konsist check-data-layer-boundary architecture-policy compose-metrics ui-test ui-test-local ui-test-managed ui-test-managed-newest ui-test-managed-ci ui-test-managed-all emulator-create emulator-recreate emulator-start emulator-stop emulator-status emulator-delete screenshot-record screenshot-verify screenshot-clean lint android-lint format check docs-check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline check-gradle-compatibility-flags verification-metadata verification-metadata-reference verification-metadata-candidate health module-graph metro-graph architecture-report repo-doctor benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark build-budget build-budget-check jacoco-report coverage-check update-docs install-profiler install-diffuse new-feature-module new-dev-app play-listing-check play-listing-capture play-listing-reset store-frames
+.PHONY: detekt-baseline help setup setup-ai-tools update-android-skills build bundle-release release-smoke install desktop-test desktop-run desktop-live clean deep-clean test test-tier-inventory konsist check-data-layer-boundary architecture-policy compose-metrics ui-test ui-test-local ui-test-managed ui-test-managed-newest ui-test-managed-ci ui-test-managed-all emulator-create emulator-recreate emulator-start emulator-stop emulator-status emulator-delete screenshot-record screenshot-verify screenshot-clean lint android-lint format check docs-check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline check-gradle-compatibility-flags verification-metadata verification-metadata-reference verification-metadata-candidate health module-graph metro-graph architecture-report repo-doctor benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark build-budget build-budget-check jacoco-report coverage-check update-docs install-profiler install-diffuse new-feature-module new-dev-app play-listing-check play-listing-capture play-listing-reset store-frames
 
 help: ## Show this help message.
 	@echo "\n📊 BillionBeers Makefile Help"
@@ -114,6 +114,15 @@ release-smoke: ## Run black-box launch and behavior smoke against the debug-sign
 	$(GRADLE_RUNNER) :feature:beerdetail:assembleReleaseSmoke :feature:beerbrowse:assembleReleaseSmoke
 	@bash scripts/verify-release-smoke-artifacts.sh
 
+desktop-test: ## Run deterministic real JVM data vertical-slice integration tests.
+	$(GRADLE_RUNNER) :desktop-app:test
+
+desktop-run: ## Read the local desktop catalog from the stable default data directory.
+	$(GRADLE_RUNNER) :desktop-app:run
+
+desktop-live: ## Fetch one catalog page from the API (explicit opt-in; pass BASE_URL=... to override).
+	$(GRADLE_RUNNER) :desktop-app:run --args="--live $(if $(BASE_URL),--base-url $(BASE_URL),)"
+
 clean: ## Clean all build outputs.
 	$(GRADLE_RUNNER) clean
 
@@ -129,7 +138,7 @@ deep-clean: ## Stop daemon and deeply clean all gradle caches to fix corrupted s
 # Testing
 # Pure-JVM modules have no testDebugUnitTest task, so they are invisible to the Android-flavored
 # test invocation and must be listed here explicitly (:konsist has its own target).
-JVM_TEST_MODULES := :testing-utils :snapshot-processor
+JVM_TEST_MODULES := :testing-utils :snapshot-processor :desktop-app
 
 # KMP modules are intentionally classified by the task they expose. A KMP module must never fall
 # through to `test` or `testDebugUnitTest`, because those tasks either do not exist or omit the target
