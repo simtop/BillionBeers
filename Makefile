@@ -130,8 +130,8 @@ ios-compile: ## Compile all shared modules for both supported Apple targets.
 ios-framework: ## Link the consuming iOS data framework for simulator and device.
 	$(GRADLE_RUNNER) :ios-shared:linkDebugFrameworkIosSimulatorArm64 :ios-shared:linkDebugFrameworkIosArm64
 
-ios-test: ## Execute native core, network, and Room tests on the arm64 simulator.
-	$(GRADLE_RUNNER) :core-common:iosSimulatorArm64Test :beer_network:iosSimulatorArm64Test :beer_database:iosSimulatorArm64Test
+ios-test: ## Execute native core, network, Room, and iOS runtime tests on the arm64 simulator.
+	$(GRADLE_RUNNER) :core-common:iosSimulatorArm64Test :beer_network:iosSimulatorArm64Test :beer_database:iosSimulatorArm64Test :ios-shared:iosSimulatorArm64Test
 
 clean: ## Clean all build outputs.
 	$(GRADLE_RUNNER) clean
@@ -153,7 +153,7 @@ JVM_TEST_MODULES := :testing-utils :snapshot-processor :desktop-app
 # KMP modules are intentionally classified by the task they expose. A KMP module must never fall
 # through to `test` or `testDebugUnitTest`, because those tasks either do not exist or omit the target
 # under test.
-KMP_JVM_TEST_MODULES := :core-common :beerdomain:api :beerdomain:fakes :beer_network:api :beer_network :beer_storage:api :beer_database :beer_data
+KMP_JVM_TEST_MODULES := :core-common :beerdomain:api :beerdomain:fakes :beer_network:api :beer_network :beer_storage:api :beer_database :beer_data :ios-shared
 KMP_METADATA_MODULES := :core-common :beerdomain:api :beerdomain:fakes :beer_network:api :beer_network :beer_network:fixtures :beer_storage:api :beer_database :beer_data
 KMP_ANDROID_HOST_TEST_MODULES := :core-common :beerdomain:api :beerdomain:fakes :beer_network:api :beer_network :beer_storage:api :beer_database :beer_data
 KMP_BROWSER_TEST_MODULES := :beer_storage:browser
