@@ -1,5 +1,7 @@
 import org.gradle.testing.jacoco.tasks.JacocoReport
 import org.gradle.testing.jacoco.plugins.JacocoPluginExtension
+import org.jetbrains.kotlin.gradle.targets.wasm.nodejs.WasmNodeJsEnvSpec
+import org.jetbrains.kotlin.gradle.targets.wasm.yarn.WasmYarnRootEnvSpec
 
 buildscript {
     repositories {
@@ -34,8 +36,17 @@ plugins {
     id("jacoco")
 }
 
-tasks.register("clean", Delete::class) {
-    delete(rootProject.layout.buildDirectory)
+tasks.whenTaskAdded {
+    if (name == "clean" && this is Delete) {
+        delete(rootProject.layout.buildDirectory)
+    }
+}
+
+gradle.projectsEvaluated {
+    (listOf(rootProject) + subprojects).forEach { project ->
+        project.extensions.findByType<WasmNodeJsEnvSpec>()?.download = false
+        project.extensions.findByType<WasmYarnRootEnvSpec>()?.download = false
+    }
 }
 
 // Resolves the artifacts Android Studio's Gradle sync needs but no build ever asks for, so that

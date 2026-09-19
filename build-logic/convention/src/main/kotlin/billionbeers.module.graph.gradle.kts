@@ -20,7 +20,10 @@ fun isKmpProject(project: Project): Boolean =
 fun architectureCompileConfigurations(project: Project): List<org.gradle.api.artifacts.Configuration> {
   val targetConfigurations = project.configurations.filter { configuration ->
     val name = configuration.name.lowercase()
-    configuration.name.endsWith("MainCompileClasspath", ignoreCase = true) &&
+    val isProductionCompileClasspath =
+      configuration.name.endsWith("MainCompileClasspath", ignoreCase = true) ||
+        configuration.name.endsWith("CompileClasspath", ignoreCase = true)
+    isProductionCompileClasspath &&
       "test" !in name && "androidtest" !in name && "ksp" !in name
   }
   if (isKmpProject(project)) return targetConfigurations.sortedBy { it.name }

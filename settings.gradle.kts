@@ -10,10 +10,20 @@ plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    // Kotlin/Wasm's Node setup task adds its distribution Ivy repository during task resolution.
+    // Keep settings repositories authoritative while allowing that toolchain repository.
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
         google()
         mavenCentral()
+        ivy {
+            name = "Node.js distributions"
+            url = uri("https://nodejs.org/dist")
+            patternLayout {
+                artifact("[revision]/[artifact]-v[revision]-[classifier].[ext]")
+            }
+            metadataSources { artifact() }
+        }
     }
 }
 

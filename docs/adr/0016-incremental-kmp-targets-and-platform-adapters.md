@@ -100,6 +100,12 @@ supported persistent profile. No cross-device synchronization is implied. Ask fo
 grants only with a deliberate UX; denial must be handled. Stable deployment origin is a data-identity
 requirement just as a stable database filename is on Android.
 
+The T6.3 browser adapter uses database `billionbeers`, schema version 1, and keyed `beers` and
+`paging_state` stores. Its real-browser persistence proof runs with `wasmJsBrowserTest` against
+Chrome for Testing and verifies committed rows and paging state survive close/reopen. The adapter
+must continue to treat transaction completion as the write boundary; browser eviction remains an
+explicit limitation rather than a reason to add a fallback store.
+
 Room 3 plus a browser SQLite worker is an alternative to revisit if an executable spike shows the
 adapter cannot preserve required semantics at reasonable complexity. It is not a prerequisite or
 an approved global dependency upgrade. A browser storage contract remains useful even if its
