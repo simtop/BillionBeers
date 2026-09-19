@@ -175,6 +175,92 @@ private external fun executeIndexedDb(
   payload: String,
 ): Promise<JsString>
 
+@JsFun("""
+(name, callback) => {
+  const listeners = globalThis.__billionBeersStorageListeners || (globalThis.__billionBeersStorageListeners = new Map());
+  const id = (globalThis.__billionBeersStorageListenerId || 0) + 1;
+  globalThis.__billionBeersStorageListenerId = id;
+  const channelName = 'billionbeers-storage:' + name;
+  let channel = null;
+  let onMessage = null;
+  let onStorage = null;
+  let onVisibility = null;
+  let onPageShow = null;
+  const notify = () => callback();
+  if (typeof BroadcastChannel !== 'undefined') {
+    try {
+      channel = new BroadcastChannel(channelName);
+      onMessage = () => notify();
+      channel.addEventListener('message', onMessage);
+    } catch (_) {
+      channel = null;
+    }
+  }
+  if (!channel && typeof window !== 'undefined') {
+    onStorage = event => {
+      if (event.key === channelName) notify();
+    };
+    window.addEventListener('storage', onStorage);
+  }
+  if (typeof document !== 'undefined') {
+    onVisibility = () => {
+      if (document.visibilityState === 'visible') notify();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+  }
+  if (typeof window !== 'undefined') {
+    onPageShow = () => notify();
+    window.addEventListener('pageshow', onPageShow);
+  }
+  listeners.set(id, {channel, onMessage, onStorage, onVisibility, onPageShow, channelName});
+  return id;
+}
+""")
+private external fun registerInvalidationListener(databaseName: String, callback: () -> Unit): Int
+
+@JsFun("""
+(name) => {
+  const channelName = 'billionbeers-storage:' + name;
+  let published = false;
+  if (typeof BroadcastChannel !== 'undefined') {
+    try {
+      const channel = new BroadcastChannel(channelName);
+      channel.postMessage('committed');
+      channel.close();
+      published = true;
+    } catch (_) {}
+  }
+  if (!published && typeof localStorage !== 'undefined') {
+    localStorage.setItem(channelName, String(Date.now()));
+    localStorage.removeItem(channelName);
+  }
+}
+""")
+private external fun publishInvalidation(databaseName: String)
+
+@JsFun("""
+(id) => {
+  const listeners = globalThis.__billionBeersStorageListeners;
+  const entry = listeners && listeners.get(id);
+  if (!entry) return;
+  if (entry.channel) {
+    entry.channel.removeEventListener('message', entry.onMessage);
+    entry.channel.close();
+  }
+  if (typeof window !== 'undefined' && entry.onStorage) {
+    window.removeEventListener('storage', entry.onStorage);
+  }
+  if (typeof document !== 'undefined' && entry.onVisibility) {
+    document.removeEventListener('visibilitychange', entry.onVisibility);
+  }
+  if (typeof window !== 'undefined' && entry.onPageShow) {
+    window.removeEventListener('pageshow', entry.onPageShow);
+  }
+  listeners.delete(id);
+}
+""")
+private external fun unregisterInvalidationListener(listenerId: Int)
+
 @Serializable
 private data class BeerRecord(
   val id: String,
@@ -214,10 +300,17 @@ class IndexedDbBeersStorage(
 ) : BeersStorage {
   private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
   private val writeMutex = Mutex()
+  private val refreshMutex = Mutex()
   private val beersState = MutableStateFlow<List<StoredBeer>>(emptyList())
   private val favoritesState = MutableStateFlow<List<StoredBeer>>(emptyList())
   private val initialized = CompletableDeferred<Unit>()
   private var closed = false
+  private val listenerId = registerInvalidationListener(databaseName) {
+    scope.launch {
+      initialized.await()
+      refresh()
+    }
+  }
 
   init {
     liveStorages.getOrPut(databaseName) { mutableSetOf() }.add(this)
@@ -273,6 +366,7 @@ class IndexedDbBeersStorage(
   fun close() {
     if (closed) return
     closed = true
+    unregisterInvalidationListener(listenerId)
     liveStorages[databaseName]?.let { peers ->
       peers.remove(this)
       if (peers.isEmpty()) liveStorages.remove(databaseName)
@@ -290,6 +384,7 @@ class IndexedDbBeersStorage(
       liveStorages[databaseName]
         ?.filter { it !== this && !it.closed }
         ?.forEach { peer -> peer.scope.launch { peer.refresh() } }
+      publishInvalidation(databaseName)
     }
   }
 
@@ -309,10 +404,12 @@ class IndexedDbBeersStorage(
     }
 
   private suspend fun refresh() {
-    if (closed) return
-    val beers = json.decodeFromString<List<BeerRecord>>(execute("readBeers", "")).map(BeerRecord::toStored)
-    beersState.value = beers
-    favoritesState.value = beers.filter { it.isFavorite }.sortedWith(compareBy<StoredBeer> { it.name }.thenBy { it.id })
+    refreshMutex.withLock {
+      if (closed) return
+      val beers = json.decodeFromString<List<BeerRecord>>(execute("readBeers", "")).map(BeerRecord::toStored)
+      beersState.value = beers
+      favoritesState.value = beers.filter { it.isFavorite }.sortedWith(compareBy<StoredBeer> { it.name }.thenBy { it.id })
+    }
   }
 
   private companion object {
