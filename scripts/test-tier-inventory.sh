@@ -99,13 +99,13 @@ for module_dir, build_file in module_dirs():
         "yes" if kmp_jvm else "—",
         "yes" if kmp_host else "—",
         "yes" if kmp_browser else "—",
-        "unmeasured" if kmp_native else "—",
+        "yes" if kmp_native else "—",
     ))
 
 lines = [
     "# Test-tier inventory",
     "",
-    "| Module | Local unit | Screenshot | Instrumented | Standalone test APK | KMP common | KMP JVM | Android host | Browser | Native coverage |",
+    "| Module | Local unit | Screenshot | Instrumented | Standalone test APK | KMP common | KMP JVM | Android host | Browser | Native test execution |",
     "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
 ]
 for row in rows:
@@ -114,8 +114,9 @@ lines.extend([
     "",
     f"Modules reported: {len(rows)}",
     "",
-    "> This report is informational. `InstrumentedTestOptInBoundaryTest` and "
-    "`OrphanedSourceTreeTest` remain the authoritative scheduling and source-tree gates.",
+    "> This report is informational. Native test execution is CI-gated; native percentage coverage is "
+    "not measured. `InstrumentedTestOptInBoundaryTest` and `OrphanedSourceTreeTest` remain the "
+    "authoritative scheduling and source-tree gates.",
 ])
 
 markdown = "\n".join(lines) + "\n"

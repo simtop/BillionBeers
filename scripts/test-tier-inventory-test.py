@@ -37,7 +37,7 @@ with tempfile.TemporaryDirectory() as directory:
     )
     report = result.stdout
     expected = {
-        "| :fixture | yes | — | — | — | yes | yes | yes | yes | unmeasured |",
+        "| :fixture | yes | — | — | — | yes | yes | yes | yes | yes |",
     }
     missing = expected - set(report.splitlines())
     if missing:

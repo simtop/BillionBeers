@@ -134,6 +134,8 @@ Extend Make routing, per-target resolved architecture checks, static source root
 verification, CI lane selection and report discovery as targets arrive. Preserve current Android
 screenshot discovery and device tiers. Measure shared code once in JVM coverage rather than losing
 or double-counting it; Native/Wasm execution requires its own reports, not a fabricated Jacoco claim.
+The Apple data targets are now routed through CI as separate compile, framework-link and arm64
+simulator-test evidence; native percentage coverage remains intentionally unclaimed.
 
 Retain Android migration tests and a controlled, existing-install upgrade proof. Reading installed
 package metadata is not a backup; exporting installed app data requires permission for its source

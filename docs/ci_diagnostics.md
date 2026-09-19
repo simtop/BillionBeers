@@ -30,8 +30,10 @@ corrected by subsequent reconciliation rather than a strict zero-staleness guara
 ## Relevant evidence
 
 The report groups failures by job and identifies the failed **step**. For example, a coverage-floor
-failure in the Unit Tests lane recommends `make coverage-check` and links coverage reports; it
-never creates instrumented or screenshot failure sections. `CI Gate` is shown as a consequence
+failure in the Unit Tests lane recommends `make coverage-check` and links coverage reports; an
+Apple native compile, framework-link or simulator-test failure recommends the corresponding `make
+ios-*` target and links native test reports when available. It never creates instrumented or
+screenshot failure sections. `CI Gate` is shown as a consequence
 when another job failed, but a standalone gate failure remains visible.
 
 Only artifacts relevant to failed steps are linked. Available JUnit reports supply bounded exact
