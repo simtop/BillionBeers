@@ -92,9 +92,10 @@ import kotlinx.serialization.json.Json
         result = 'null';
       } else if (operation === 'insertAll') {
         const rows = JSON.parse(payload);
-        const existingRequest = beers.getAll();
-        existingRequest.onsuccess = () => {
-          const existingById = Object.fromEntries(existingRequest.result.map(row => [row.id, row]));
+        const ids = [...new Set(rows.map(row => row.id))];
+        const existingById = {};
+        let remaining = ids.length;
+        const mergeRows = () => {
           rows.forEach(row => {
             const existing = existingById[row.id] || {};
             const merged = {
@@ -107,7 +108,19 @@ import kotlinx.serialization.json.Json
             existingById[row.id] = merged;
           });
         };
-        existingRequest.onerror = () => fail(existingRequest.error);
+        if (remaining === 0) {
+          mergeRows();
+        } else {
+          ids.forEach(id => {
+            const request = beers.get(id);
+            request.onsuccess = () => {
+              existingById[id] = request.result || null;
+              remaining -= 1;
+              if (remaining === 0) mergeRows();
+            };
+            request.onerror = () => fail(request.error);
+          });
+        }
       } else if (operation === 'upsertAvailability' || operation === 'upsertFavorite') {
         const incoming = JSON.parse(payload);
         const existingRequest = beers.get(incoming.id);

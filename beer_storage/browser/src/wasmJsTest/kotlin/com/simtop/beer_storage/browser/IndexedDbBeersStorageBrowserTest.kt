@@ -101,6 +101,70 @@ class IndexedDbBeersStorageBrowserTest {
   }
 
   @Test
+  fun duplicateInsertRowsKeepFirstLocalFlagsAndLastCatalogFields() = runTest {
+    val databaseName = "billionbeers-duplicate-${hashCode()}"
+    val first = StoredBeer(
+      id = "duplicate-1",
+      name = "First Catalog Name",
+      tagline = "First",
+      description = "First description",
+      imageUrl = "https://example.test/first.png",
+      abv = 4.0,
+      ibu = 10.0,
+      foodPairing = listOf("first food"),
+      availability = false,
+      isFavorite = true,
+    )
+    val last = first.copy(
+      name = "Last Catalog Name",
+      tagline = "Last",
+      description = "Last description",
+      imageUrl = "https://example.test/last.png",
+      foodPairing = listOf("last food"),
+      availability = true,
+      isFavorite = false,
+    )
+    val storage = IndexedDbBeersStorage(databaseName)
+
+    storage.insertAll(listOf(first, last))
+
+    assertEquals(last.copy(availability = first.availability, isFavorite = first.isFavorite), storage.observeBeers().first().single())
+    storage.deleteAll()
+    storage.close()
+  }
+
+  @Test
+  fun insertAllPreservesFlagsForExistingRowsAndAddsNewRows() = runTest {
+    val databaseName = "billionbeers-mixed-${hashCode()}"
+    val existing = StoredBeer(
+      id = "mixed-existing",
+      name = "Existing Catalog",
+      tagline = "Existing",
+      description = "Existing description",
+      imageUrl = "https://example.test/existing.png",
+      abv = 5.0,
+      ibu = 30.0,
+      foodPairing = listOf("existing food"),
+      availability = false,
+      isFavorite = true,
+    )
+    val incomingExisting = existing.copy(name = "Refreshed Catalog", availability = true, isFavorite = false)
+    val incomingNew = existing.copy(id = "mixed-new", name = "New Catalog", availability = true, isFavorite = false)
+    val storage = IndexedDbBeersStorage(databaseName)
+    storage.insertAll(listOf(existing))
+
+    storage.insertAll(listOf(incomingExisting, incomingNew))
+
+    assertEquals(
+      listOf(incomingExisting.copy(availability = existing.availability, isFavorite = existing.isFavorite), incomingNew)
+        .sortedBy { it.name },
+      storage.observeBeers().first(),
+    )
+    storage.deleteAll()
+    storage.close()
+  }
+
+  @Test
   fun fieldUpdatesPreserveTheOtherLocalFlagAndCatalogFields() = runTest {
     val databaseName = "billionbeers-field-${hashCode()}"
     val stored = StoredBeer(
