@@ -148,74 +148,6 @@ tasks.register<JacocoReport>("jacocoRootReport") {
             "which would silently pull the module back into the coverage aggregate."
     }
 
-    val subprojectsWithJacoco = subprojects.filter {
-        it.plugins.hasPlugin("jacoco") && it.path !in coverageExcludedProjects
-    }
-
-    val excludes = listOf(
-        "**/R.class",
-        "**/R$*.class",
-        "**/BuildConfig.*",
-        "**/Manifest*.*",
-        "**/*Test*.*",
-        "android/**/*.*",
-        "**/databinding/*",
-        "**/generated/*",
-        "**/model/*",
-        "**/di/*",
-        "**/*Activity*.*",
-        "**/*Fragment*.*",
-        "**/*_MetroGraph*.*",
-        "**/Metro_*.*",
-        "**/*_Factory*.*",
-        "**/*_MembersInjector*.*",
-        "**/*MapperImpl*.*",
-        "**/*Module*.*",
-        "**/*Component*.*",
-        "**/*Screen*.*",
-        "**/*Application*.*",
-        "**/*CommonUiState*.*",
-        "**/*Compose*.*",
-        "**/*.Companion*.*",
-        "**/navigation/*"
-    )
-
-    additionalSourceDirs.setFrom(subprojectsWithJacoco.map { it.extensions.getByType<JacocoPluginExtension>().reportsDirectory })
-    sourceDirectories.setFrom(subprojectsWithJacoco.flatMap { project ->
-        if (project.plugins.hasPlugin("org.jetbrains.kotlin.multiplatform")) {
-            listOf(
-                file("${project.projectDir}/src/commonMain/kotlin"),
-                file("${project.projectDir}/src/jvmMain/kotlin"),
-            )
-        } else {
-            listOf(
-                file("${project.projectDir}/src/main/java"),
-                file("${project.projectDir}/src/main/kotlin"),
-            )
-        }
-    })
-    // The report holding a module's data: jacocoDebugReport for Android modules, jacocoTestReport
-    // for JVM modules. (Android modules also have an unconfigured jacocoTestReport aggregator, which
-    // contributes empty class/exec data - harmless.)
-    fun org.gradle.api.Project.dataReports() =
-        tasks.withType<JacocoReport>().matching {
-            it.name.contains("Debug") ||
-                it.name == "jacocoTestReport" ||
-                (plugins.hasPlugin("org.jetbrains.kotlin.multiplatform") &&
-                    it.name.contains("Jvm", ignoreCase = true))
-        }
-
-    classDirectories.setFrom(subprojectsWithJacoco.flatMap {
-        it.dataReports().map { reportTask ->
-            reportTask.classDirectories.asFileTree.matching {
-                exclude(excludes)
-            }
-        }
-    })
-    executionData.setFrom(subprojectsWithJacoco.flatMap {
-        it.dataReports().map { reportTask -> reportTask.executionData }
-    })
-
     reports {
         html.required.set(true)
         // XML on: the health report (scripts/health-report.sh) and any coverage tooling parse it.
@@ -230,5 +162,53 @@ tasks.register<JacocoReport>("jacocoRootReport") {
         println("=".repeat(80))
         println("📊 Report Location: file://${reportPath.absolutePath}")
         println("=".repeat(80) + "\n")
+    }
+}
+
+// Subproject plugins are applied after the root script is evaluated. Rebind the aggregate inputs
+// once that phase completes so a newly added non-JVM KMP module cannot make coverage discovery empty.
+gradle.projectsEvaluated {
+    val coverageProjects = subprojects.filter { it.path !in coverageExcludedProjects }
+    val jacocoProjects = coverageProjects.filter { it.plugins.hasPlugin("jacoco") }
+    val rootReport = tasks.named<JacocoReport>("jacocoRootReport")
+    val excludes = listOf(
+        "**/R.class", "**/R$*.class", "**/BuildConfig.*", "**/Manifest*.*", "**/*Test*.*",
+        "android/**/*.*", "**/databinding/*", "**/generated/*", "**/model/*", "**/di/*",
+        "**/*Activity*.*", "**/*Fragment*.*", "**/*_MetroGraph*.*", "**/Metro_*.*",
+        "**/*_Factory*.*", "**/*_MembersInjector*.*", "**/*MapperImpl*.*", "**/*Module*.*",
+        "**/*Component*.*", "**/*Screen*.*", "**/*Application*.*", "**/*CommonUiState*.*",
+        "**/*Compose*.*", "**/*.Companion*.*", "**/navigation/*",
+    )
+    fun org.gradle.api.Project.dataReports() =
+        tasks.withType<JacocoReport>().matching {
+            it.name.contains("Debug") ||
+                it.name == "jacocoTestReport" ||
+                (plugins.hasPlugin("org.jetbrains.kotlin.multiplatform") &&
+                    it.name.contains("Jvm", ignoreCase = true))
+        }
+
+    rootReport.configure {
+        additionalSourceDirs.setFrom(
+            jacocoProjects.map { it.extensions.getByType<JacocoPluginExtension>().reportsDirectory },
+        )
+        sourceDirectories.setFrom(jacocoProjects.flatMap { project ->
+            if (project.plugins.hasPlugin("org.jetbrains.kotlin.multiplatform")) {
+                listOf(file("${project.projectDir}/src/commonMain/kotlin"), file("${project.projectDir}/src/jvmMain/kotlin"))
+            } else {
+                listOf(file("${project.projectDir}/src/main/java"), file("${project.projectDir}/src/main/kotlin"))
+            }
+        })
+        classDirectories.setFrom(jacocoProjects.flatMap { project ->
+            project.dataReports().map { reportTask ->
+                reportTask.classDirectories.asFileTree.matching { exclude(excludes) }
+            }
+        })
+        executionData.setFrom(jacocoProjects.flatMap { project ->
+            listOf(
+                project.layout.buildDirectory.file("jacoco/testDebugUnitTest.exec").get().asFile,
+                project.layout.buildDirectory.file("jacoco/jvmTest.exec").get().asFile,
+                project.layout.buildDirectory.file("jacoco/test.exec").get().asFile,
+            )
+        })
     }
 }
