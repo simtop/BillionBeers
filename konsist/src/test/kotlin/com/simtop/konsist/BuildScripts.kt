@@ -26,7 +26,7 @@ internal fun repoRoot(): File {
 internal fun buildScripts(root: File = repoRoot()): List<File> =
   root
     .walkTopDown()
-    .onEnter { it.name !in setOf("build", "bin", ".git", ".gradle", "gradle-user-home") }
+    .onEnter { it.name !in setOf("build", "bin", ".git", ".gradle", "gradle-user-home", ".claude") }
     .filter { it.isFile && it.name == "build.gradle.kts" }
     .toList()
 

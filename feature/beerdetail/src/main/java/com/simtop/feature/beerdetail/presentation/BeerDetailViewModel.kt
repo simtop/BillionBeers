@@ -58,6 +58,8 @@ constructor(
 
   private val availabilityUpdateMutex = Mutex()
   private val favoriteUpdateMutex = Mutex()
+  private var availabilityUpdateVersion = 0L
+  private var favoriteUpdateVersion = 0L
 
   init {
     setBeer(lastKnownBeer)
@@ -66,12 +68,15 @@ constructor(
   fun updateAvailability(beer: Beer) {
     viewModelScope.launch {
       availabilityUpdateMutex.withLock {
-        val originalBeer = beer
-        val newBeer = beer.copy(availability = !beer.availability)
-        setBeer(newBeer)
+        val originalAvailability = beer.availability
+        val newAvailability = !originalAvailability
+        val version = ++availabilityUpdateVersion
+        setBeer(currentBeer().copy(availability = newAvailability))
         treatResponse(
-          result = beersRepository.updateAvailability(newBeer),
-          originalBeer = originalBeer,
+          result = beersRepository.updateAvailability(beer.copy(availability = newAvailability)),
+          originalAvailability = originalAvailability,
+          optimisticAvailability = newAvailability,
+          version = version,
         )
       }
     }
@@ -80,16 +85,25 @@ constructor(
   fun updateFavorite(beer: Beer) {
     viewModelScope.launch {
       favoriteUpdateMutex.withLock {
-        val originalBeer = beer
-        val newBeer = beer.copy(isFavorite = !beer.isFavorite)
-        setBeer(newBeer)
+        val originalFavorite = beer.isFavorite
+        val newFavorite = !originalFavorite
+        val version = ++favoriteUpdateVersion
+        setBeer(currentBeer().copy(isFavorite = newFavorite))
         treatFavoriteResponse(
-          result = beersRepository.updateFavorite(newBeer),
-          originalBeer = originalBeer,
+          result = beersRepository.updateFavorite(beer.copy(isFavorite = newFavorite)),
+          originalFavorite = originalFavorite,
+          optimisticFavorite = newFavorite,
+          version = version,
         )
       }
     }
   }
+
+  private fun currentBeer(): Beer =
+    when (val state = _beerDetailViewState.value) {
+      is CommonUiState.Success -> state.data
+      else -> lastKnownBeer
+    }
 
   private fun setBeer(beer: Beer) {
     lastKnownBeer = beer
@@ -98,11 +112,15 @@ constructor(
 
   private suspend fun treatFavoriteResponse(
     result: Either<UpdateFavoriteError, Unit>,
-    originalBeer: Beer,
+    originalFavorite: Boolean,
+    optimisticFavorite: Boolean,
+    version: Long,
   ) {
     when (result) {
       is Either.Left -> {
-        setBeer(originalBeer)
+        if (version == favoriteUpdateVersion && currentBeer().isFavorite == optimisticFavorite) {
+          setBeer(currentBeer().copy(isFavorite = originalFavorite))
+        }
         _events.send(BeerDetailEvent.ShowError(result.value.toUiMessage()))
       }
       is Either.Right -> _events.send(BeerDetailEvent.FavoriteUpdated)
@@ -111,11 +129,18 @@ constructor(
 
   private suspend fun treatResponse(
     result: Either<UpdateAvailabilityError, Unit>,
-    originalBeer: Beer,
+    originalAvailability: Boolean,
+    optimisticAvailability: Boolean,
+    version: Long,
   ) {
     when (result) {
       is Either.Left -> {
-        setBeer(originalBeer)
+        if (
+          version == availabilityUpdateVersion &&
+            currentBeer().availability == optimisticAvailability
+        ) {
+          setBeer(currentBeer().copy(availability = originalAvailability))
+        }
         _events.send(BeerDetailEvent.ShowError(result.value.toUiMessage()))
       }
       is Either.Right -> Unit

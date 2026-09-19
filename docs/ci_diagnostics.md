@@ -1,7 +1,7 @@
 # CI diagnostics
 
 `CI PR Diagnosis` maintains one `<!-- billionbeers-ci:diagnosis -->` bot comment per pull request.
-It starts when `Android CI` enters `in_progress` and reconciles again on `completed`, including
+It starts when `BillionBeers CI` enters `in_progress` and reconciles again on `completed`, including
 successful runs. It executes only reporting code from the default branch, never the PR checkout,
 its build scripts, or code from an artifact. Fork PRs do not receive comment-write permissions.
 Changes to this trusted reporter take effect after merging into the default branch.

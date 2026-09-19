@@ -632,11 +632,7 @@ jobs:
 
       - name: Verify native test reports
         if: steps.native_tests.outcome == 'success'
-        run: |
-          test -n "$(find . -path '*/build/test-results/iosSimulatorArm64Test/*.xml' -print -quit)" || {
-            echo "::error::Native tests passed without JUnit reports"
-            exit 1
-          }
+        run: python3 .github/scripts/validate-native-test-reports.py
 
       - name: Summarize native lane timings
         if: always()

@@ -8,6 +8,8 @@ import com.simtop.beer_storage.api.StoredPagingState
 import kotlin.JsFun
 import kotlin.js.JsString
 import kotlin.js.Promise
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -16,6 +18,8 @@ import kotlinx.coroutines.await
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -43,11 +47,24 @@ import kotlinx.serialization.json.Json
     const beers = stores.includes('beers') ? tx.objectStore('beers') : null;
     const paging = stores.includes('paging_state') ? tx.objectStore('paging_state') : null;
     let result = 'null';
+    let settled = false;
+    const close = () => { try { db.close(); } catch (_) {} };
     const finishRead = (value) => { result = JSON.stringify(value); };
-    const fail = (error) => { try { tx.abort(); } catch (_) {} reject(error || new Error('IndexedDB operation failed')); };
-    tx.onerror = () => reject(tx.error || new Error('IndexedDB transaction failed'));
-    tx.onabort = () => reject(tx.error || new Error('IndexedDB transaction aborted'));
-    tx.oncomplete = () => { db.close(); resolve(result); };
+    const fail = (error) => {
+      if (settled) return;
+      settled = true;
+      try { tx.abort(); } catch (_) {}
+      close();
+      reject(error || new Error('IndexedDB operation failed'));
+    };
+    tx.onerror = () => fail(tx.error || new Error('IndexedDB transaction failed'));
+    tx.onabort = () => fail(tx.error || new Error('IndexedDB transaction aborted'));
+    tx.oncomplete = () => {
+      if (settled) return;
+      settled = true;
+      close();
+      resolve(result);
+    };
     try {
       if (operation === 'readBeers' || operation === 'readFavorites') {
         const request = beers.getAll();
@@ -80,21 +97,32 @@ import kotlinx.serialization.json.Json
           const existingById = Object.fromEntries(existingRequest.result.map(row => [row.id, row]));
           rows.forEach(row => {
             const existing = existingById[row.id] || {};
-            beers.put({
+            const merged = {
               ...existing,
               ...row,
               availability: existing.id == null ? row.availability : existing.availability,
               isFavorite: existing.id == null ? row.isFavorite : existing.isFavorite,
-            });
+            };
+            beers.put(merged);
+            existingById[row.id] = merged;
           });
         };
         existingRequest.onerror = () => fail(existingRequest.error);
-      } else if (operation === 'upsert') {
+      } else if (operation === 'upsertAvailability' || operation === 'upsertFavorite') {
         const incoming = JSON.parse(payload);
         const existingRequest = beers.get(incoming.id);
         existingRequest.onsuccess = () => {
-          const existing = existingRequest.result || {};
-          beers.put({...existing, ...incoming});
+          const existing = existingRequest.result;
+          if (existing) {
+            beers.put({
+              ...existing,
+              ...(operation === 'upsertAvailability'
+                ? {availability: incoming.availability}
+                : {isFavorite: incoming.isFavorite}),
+            });
+          } else {
+            beers.put(incoming);
+          }
         };
         existingRequest.onerror = () => fail(existingRequest.error);
       } else if (operation === 'insertPage') {
@@ -179,6 +207,7 @@ private data class PagingRecord(
 )
 
 private val json = Json { ignoreUnknownKeys = true }
+private val liveStorages = mutableMapOf<String, MutableSet<IndexedDbBeersStorage>>()
 
 class IndexedDbBeersStorage(
   private val databaseName: String = DEFAULT_DATABASE_NAME,
@@ -187,15 +216,24 @@ class IndexedDbBeersStorage(
   private val writeMutex = Mutex()
   private val beersState = MutableStateFlow<List<StoredBeer>>(emptyList())
   private val favoritesState = MutableStateFlow<List<StoredBeer>>(emptyList())
+  private val initialized = CompletableDeferred<Unit>()
   private var closed = false
 
   init {
-    scope.launch { refresh() }
+    liveStorages.getOrPut(databaseName) { mutableSetOf() }.add(this)
+    scope.launch {
+      try {
+        refresh()
+        initialized.complete(Unit)
+      } catch (error: Throwable) {
+        initialized.completeExceptionally(error)
+      }
+    }
   }
 
-  override fun observeBeers(): Flow<List<StoredBeer>> = beersState.asStateFlow()
+  override fun observeBeers(): Flow<List<StoredBeer>> = initializedFlow(beersState)
 
-  override fun observeFavoriteBeers(): Flow<List<StoredBeer>> = favoritesState.asStateFlow()
+  override fun observeFavoriteBeers(): Flow<List<StoredBeer>> = initializedFlow(favoritesState)
 
   override suspend fun insertAll(beers: List<StoredBeer>) {
     mutate("insertAll", json.encodeToString(beers.map(::toRecord)))
@@ -219,11 +257,11 @@ class IndexedDbBeersStorage(
   override suspend fun countPagingStates(): Int = read("countPaging", "0").toInt()
 
   override suspend fun upsertAvailability(beer: StoredBeer) {
-    mutate("upsert", json.encodeToString(toRecord(beer.copy(availability = beer.availability))))
+    mutate("upsertAvailability", json.encodeToString(toRecord(beer)))
   }
 
   override suspend fun upsertFavorite(beer: StoredBeer) {
-    mutate("upsert", json.encodeToString(toRecord(beer.copy(isFavorite = beer.isFavorite))))
+    mutate("upsertFavorite", json.encodeToString(toRecord(beer)))
   }
 
   override suspend fun deleteAll() {
@@ -233,19 +271,30 @@ class IndexedDbBeersStorage(
   override suspend fun count(): Int = read("count", "0").toInt()
 
   fun close() {
+    if (closed) return
     closed = true
+    liveStorages[databaseName]?.let { peers ->
+      peers.remove(this)
+      if (peers.isEmpty()) liveStorages.remove(databaseName)
+    }
+    initialized.completeExceptionally(CancellationException("IndexedDbBeersStorage is closed"))
     scope.coroutineContext.cancel()
   }
 
   private suspend fun mutate(operation: String, payload: String) {
+    initialized.await()
     writeMutex.withLock {
       check(!closed) { "IndexedDbBeersStorage is closed" }
       execute(operation, payload)
       refresh()
+      liveStorages[databaseName]
+        ?.filter { it !== this && !it.closed }
+        ?.forEach { peer -> peer.scope.launch { peer.refresh() } }
     }
   }
 
   private suspend fun read(operation: String, payload: String): String {
+    initialized.await()
     check(!closed) { "IndexedDbBeersStorage is closed" }
     return execute(operation, payload)
   }
@@ -253,9 +302,15 @@ class IndexedDbBeersStorage(
   private suspend fun execute(operation: String, payload: String): String =
     executeIndexedDb(databaseName, DATABASE_VERSION, operation, payload).await().toString()
 
+  private fun initializedFlow(state: MutableStateFlow<List<StoredBeer>>): Flow<List<StoredBeer>> =
+    flow {
+      initialized.await()
+      emitAll(state.asStateFlow())
+    }
+
   private suspend fun refresh() {
     if (closed) return
-    val beers = json.decodeFromString<List<BeerRecord>>(read("readBeers", "")).map(BeerRecord::toStored)
+    val beers = json.decodeFromString<List<BeerRecord>>(execute("readBeers", "")).map(BeerRecord::toStored)
     beersState.value = beers
     favoritesState.value = beers.filter { it.isFavorite }.sortedWith(compareBy<StoredBeer> { it.name }.thenBy { it.id })
   }
