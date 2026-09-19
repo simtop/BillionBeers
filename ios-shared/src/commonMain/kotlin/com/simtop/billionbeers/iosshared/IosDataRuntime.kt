@@ -13,6 +13,7 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.DependencyGraph
 import dev.zacsweers.metro.Provides
+import dev.zacsweers.metro.SingleIn
 import dev.zacsweers.metro.createGraphFactory
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.Dispatchers
@@ -81,10 +82,12 @@ internal interface IosHostModule {
     }
 
   @Provides
+  @SingleIn(AppScope::class)
   fun provideHttpClient(environment: EnvironmentConfig): HttpClient =
     createBridgeHttpClient(environment)
 
   @Provides
+  @SingleIn(AppScope::class)
   fun provideDatabase(): BeersDatabase = createBridgeDatabase()
 }
 

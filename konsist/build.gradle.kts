@@ -24,7 +24,14 @@ dependencies { testImplementation(libs.konsist) }
 val ruleFileTree =
   rootProject.layout.projectDirectory.asFileTree.matching {
     include("**/*.kt", "**/*.kts")
-    exclude("**/build/**", "**/bin/**", "**/.git/**", "**/.gradle/**", "**/gradle-user-home/**")
+    exclude(
+      "**/build/**",
+      "**/bin/**",
+      "**/.git/**",
+      "**/.gradle/**",
+      "**/gradle-user-home/**",
+      "**/.claude/**",
+    )
   }
 val nonKotlinRuleInputs =
   listOf(

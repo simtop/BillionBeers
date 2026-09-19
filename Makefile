@@ -157,6 +157,10 @@ KMP_JVM_TEST_MODULES := :core-common :beerdomain:api :beerdomain:fakes :beer_net
 KMP_METADATA_MODULES := :core-common :beerdomain:api :beerdomain:fakes :beer_network:api :beer_network :beer_network:fixtures :beer_storage:api :beer_database :beer_data
 KMP_ANDROID_HOST_TEST_MODULES := :core-common :beerdomain:api :beerdomain:fakes :beer_network:api :beer_network :beer_storage:api :beer_database :beer_data
 KMP_BROWSER_TEST_MODULES := :beer_storage:browser
+# Kotlin/Wasm's ChromeHeadless launcher also accepts Chromium-compatible browsers. Prefer the
+# installed Brave binary on macOS, while allowing CI and callers to override CHROME_BIN explicitly.
+BRAVE_BROWSER_BIN := /Applications/Brave Browser.app/Contents/MacOS/Brave Browser
+BROWSER_TEST_ENV = $(if $(or $(CHROME_BIN),$(wildcard $(BRAVE_BROWSER_BIN))),CHROME_BIN="$(or $(CHROME_BIN),$(BRAVE_BROWSER_BIN))",)
 KMP_TEST_MODULES := $(KMP_JVM_TEST_MODULES) $(KMP_METADATA_MODULES) \
 	$(KMP_ANDROID_HOST_TEST_MODULES) $(KMP_BROWSER_TEST_MODULES)
 
@@ -167,7 +171,7 @@ kmp_test_tasks = $(foreach module,$(KMP_JVM_TEST_MODULES),$(module):jvmTest) \
 
 test: ## Run unit tests for the specified module (or all).
 ifeq ($(MODULE_TRIMMED),)
-	$(GRADLE_RUNNER) testDebugUnitTest $(addsuffix :test,$(JVM_TEST_MODULES)) $(kmp_test_tasks) --continue
+	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) testDebugUnitTest $(addsuffix :test,$(JVM_TEST_MODULES)) $(kmp_test_tasks) --continue
 	$(GRADLE_RUNNER) -p build-logic :convention:test --continue
 else ifneq ($(filter $(MODULE_TRIMMED),$(KMP_JVM_TEST_MODULES)),)
 	$(GRADLE_RUNNER) $(MODULE_TRIMMED):jvmTest --continue
@@ -176,7 +180,7 @@ else ifneq ($(filter $(MODULE_TRIMMED),$(KMP_METADATA_MODULES)),)
 else ifneq ($(filter $(MODULE_TRIMMED),$(KMP_ANDROID_HOST_TEST_MODULES)),)
 	$(GRADLE_RUNNER) $(MODULE_TRIMMED):testAndroidHostTest --continue
 else ifneq ($(filter $(MODULE_TRIMMED),$(KMP_BROWSER_TEST_MODULES)),)
-	$(GRADLE_RUNNER) $(MODULE_TRIMMED):wasmJsBrowserTest --continue
+	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) $(MODULE_TRIMMED):wasmJsBrowserTest --continue
 else ifneq ($(filter $(MODULE_TRIMMED),$(JVM_TEST_MODULES) :konsist),)
 	$(GRADLE_RUNNER) $(MODULE_TRIMMED):test --continue
 else
@@ -186,6 +190,8 @@ endif
 .PHONY: ci-report-test
 ci-report-test: ## Test CI diagnosis, evidence parsing, and incremental comment lifecycle.
 	@python3 -m unittest discover -s .github/scripts -p 'test_*ci*.py'
+	@python3 .github/scripts/test_detect_change_scope.py
+	@python3 .github/scripts/test_validate_native_test_reports.py
 	@python3 .github/scripts/test_summarize_test_failures.py
 
 test-tier-inventory: ## Write the informational test-tier ownership report.

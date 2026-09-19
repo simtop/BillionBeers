@@ -2,7 +2,7 @@ name: CI PR Diagnosis
 
 on:
   workflow_run:
-    workflows: [Android CI]
+    workflows: [BillionBeers CI]
     types: [in_progress, completed]
 
 permissions:

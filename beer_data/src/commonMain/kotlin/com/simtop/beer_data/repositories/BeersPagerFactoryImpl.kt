@@ -94,8 +94,12 @@ private class AvailabilityOverlayStorage(
 
   override val data: Flow<List<Beer>> =
     combine(delegate.data, repository.observeBeers()) { items, cached ->
-      val availabilityById = cached.associate { it.id to it.availability }
-      items.map { beer -> availabilityById[beer.id]?.let { beer.copy(availability = it) } ?: beer }
+      val cachedById = cached.associateBy { it.id }
+      items.map { beer ->
+        cachedById[beer.id]?.let { stored ->
+          beer.copy(availability = stored.availability, isFavorite = stored.isFavorite)
+        } ?: beer
+      }
     }
 }
 
