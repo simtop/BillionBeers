@@ -11,7 +11,7 @@
 #   GH_TOKEN      token with actions:read (for the previous run's job conclusions)
 #   GITHUB_OUTPUT
 #
-# Outputs: unit / screenshot / instrumented - "true" means that lane runs.
+# Outputs: unit / screenshot / instrumented / native - "true" means that lane runs.
 #
 # Soundness rules - keep these when editing:
 # - This file must live under .github/ (NOT scripts/): scripts/ is in the safe-list, and an edit
@@ -48,18 +48,20 @@ emit() {
   echo "unit=$1" >> "$GITHUB_OUTPUT"
   echo "screenshot=$2" >> "$GITHUB_OUTPUT"
   echo "instrumented=$3" >> "$GITHUB_OUTPUT"
-  echo "Decision: unit=$1 screenshot=$2 instrumented=$3 ($4)"
+  echo "native=$4" >> "$GITHUB_OUTPUT"
+  echo "Decision: unit=$1 screenshot=$2 instrumented=$3 native=$4 ($5)"
   # Also surface it on the run page: "why did that lane not run?" should not require opening a log.
   if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
     { echo "### Test lane selection"
       echo ""
-      echo "$4"
+      echo "$5"
       echo ""
       echo "| lane | runs |"
       echo "|---|---|"
       echo "| Unit Tests | $1 |"
       echo "| Screenshot Tests (Paparazzi) | $2 |"
       echo "| Instrumented Tests | $3 |"
+      echo "| Native Tests (Apple) | $4 |"
     } >> "$GITHUB_STEP_SUMMARY"
   fi
 }
@@ -68,7 +70,7 @@ emit() {
 # THE RULE SET - the only block to edit when changing which lanes a change runs
 # =============================================================================
 # classify_path maps ONE changed file onto the lanes it can affect, by setting
-# a_unit / a_screenshot / a_instrumented. A file that sets none of them is inert:
+# a_unit / a_screenshot / a_instrumented / a_native. A file that sets none of them is inert:
 # no test lane can be affected by it.
 #
 # Both levels of the filter go through this one function - level 1 (is the whole
@@ -95,23 +97,30 @@ classify_path() {
     a_screenshot=true # recorded goldens
   elif [[ "$f" == */src/test/* && "$f" == */screenshot/* ]]; then
     a_screenshot=true # screenshot-test source, excluded from plain test runs
-  elif [[ "$f" == */src/commonMain/* || "$f" == */src/androidMain/* || "$f" == */src/jvmMain/* || "$f" == */src/wasmJsMain/* || "$f" == */src/ios*Main/* ]]; then
-    # Shared KMP production code can affect every consumer lane until target ownership is explicit.
+  elif [[ "$f" == */src/commonMain/* ]]; then
+    # Common production code can affect every consumer lane, including native.
+    a_unit=true; a_screenshot=true; a_instrumented=true; a_native=true
+  elif [[ "$f" == */src/ios*Main/* || "$f" == */src/ios*Test/* ]]; then
+    a_native=true # Apple-only code is validated by the native lane, not Android lanes.
+  elif [[ "$f" == */src/commonTest/* ]]; then
+    a_unit=true; a_native=true # Common tests execute on JVM and the Apple simulator.
+  elif [[ "$f" == */src/androidMain/* || "$f" == */src/jvmMain/* || "$f" == */src/wasmJsMain/* ]]; then
+    # Target production code can affect every existing consumer lane, but not Apple native tests.
     a_unit=true; a_screenshot=true; a_instrumented=true
-  elif [[ "$f" == */src/commonTest/* || "$f" == */src/jvmTest/* || "$f" == */src/androidHostTest/* || "$f" == */src/wasmJsTest/* || "$f" == */src/ios*Test/* ]]; then
-    a_unit=true # KMP test execution is part of the unit lane; host/browser/native are not device tests.
+  elif [[ "$f" == */src/jvmTest/* || "$f" == */src/androidHostTest/* || "$f" == */src/wasmJsTest/* ]]; then
+    a_unit=true # JVM/host/browser tests are not Apple simulator tests.
   elif [[ "$f" == */src/androidTest/* ]]; then
     a_instrumented=true
   elif [[ "$f" == */src/test/* ]]; then
     a_unit=true # plain unit-test source, excluded from Paparazzi runs
   else
-    a_unit=true; a_screenshot=true; a_instrumented=true
+    a_unit=true; a_screenshot=true; a_instrumented=true; a_native=true
   fi
 }
 
-# Classify a newline-separated file list, leaving the three a_* flags set.
+# Classify a newline-separated file list, leaving the four a_* flags set.
 classify_all() {
-  a_unit=false; a_screenshot=false; a_instrumented=false
+  a_unit=false; a_screenshot=false; a_instrumented=false; a_native=false
   while IFS= read -r f; do
     [ -z "$f" ] && continue
     classify_path "$f"
@@ -120,53 +129,57 @@ classify_all() {
 
 if [[ "${1:-}" == "--self-test" ]]; then
   assert_lanes() {
-    local path="$1" expected_unit="$2" expected_screenshot="$3" expected_instrumented="$4"
+    local path="$1" expected_unit="$2" expected_screenshot="$3" expected_instrumented="$4" expected_native="$5"
     classify_all "$path"
-    [[ "$a_unit" == "$expected_unit" && "$a_screenshot" == "$expected_screenshot" && "$a_instrumented" == "$expected_instrumented" ]] || {
-      echo "KMP change-scope classification failed for $path: unit=$a_unit screenshot=$a_screenshot instrumented=$a_instrumented" >&2
+    [[ "$a_unit" == "$expected_unit" && "$a_screenshot" == "$expected_screenshot" && "$a_instrumented" == "$expected_instrumented" && "$a_native" == "$expected_native" ]] || {
+      echo "KMP change-scope classification failed for $path: unit=$a_unit screenshot=$a_screenshot instrumented=$a_instrumented native=$a_native" >&2
       exit 1
     }
   }
-  assert_lanes "feature/src/commonMain/kotlin/Contract.kt" true true true
-  assert_lanes "feature/src/commonTest/kotlin/ContractTest.kt" true false false
-  assert_lanes "feature/src/jvmTest/kotlin/JvmTest.kt" true false false
-  assert_lanes "feature/src/androidHostTest/kotlin/HostTest.kt" true false false
-  assert_lanes "feature/src/wasmJsTest/kotlin/BrowserTest.kt" true false false
-  assert_lanes "feature/src/iosArm64Test/kotlin/NativeTest.kt" true false false
+  assert_lanes "feature/src/commonMain/kotlin/Contract.kt" true true true true
+  assert_lanes "feature/src/commonTest/kotlin/ContractTest.kt" true false false true
+  assert_lanes "feature/src/jvmTest/kotlin/JvmTest.kt" true false false false
+  assert_lanes "feature/src/androidHostTest/kotlin/HostTest.kt" true false false false
+  assert_lanes "feature/src/wasmJsTest/kotlin/BrowserTest.kt" true false false false
+  assert_lanes "feature/src/iosArm64Main/kotlin/Native.kt" false false false true
+  assert_lanes "feature/src/iosArm64Test/kotlin/NativeTest.kt" false false false true
+  assert_lanes "feature/src/androidTest/kotlin/AndroidTest.kt" false false true false
+  assert_lanes "docs/guide.md" false false false false
+  assert_lanes "unknown/new-file.txt" true true true true
   echo "KMP change-scope classifications passed"
   exit 0
 fi
 
 if [ "$EVENT_NAME" != "pull_request" ]; then
-  emit true true true "non-PR event - complete validation"
+  emit true true true true "non-PR event - complete validation"
   exit 0
 fi
 
-CHANGED=$(git diff --name-only "$BASE_SHA...HEAD")
+CHANGED=$(git diff --no-renames --name-only "$BASE_SHA...HEAD")
 echo "PR diff:"; echo "$CHANGED"
 classify_all "$CHANGED"
-if ! $a_unit && ! $a_screenshot && ! $a_instrumented; then
-  emit false false false "docs/skills/scripts-only PR"
+if ! $a_unit && ! $a_screenshot && ! $a_instrumented && ! $a_native; then
+  emit false false false false "docs/skills/scripts-only PR"
   exit 0
 fi
 
 if [ "$EVENT_ACTION" != "synchronize" ]; then
-  emit true true true "first run of a code PR"
+  emit true true true true "first run of a code PR"
   exit 0
 fi
 
 if [ -z "${BEFORE:-}" ] || ! git cat-file -e "$BEFORE" 2>/dev/null; then
-  emit true true true "previous head unreachable (force-push) - failing open"
+  emit true true true true "previous head unreachable (force-push) - failing open"
   exit 0
 fi
 
-PUSHED=$(git diff --name-only "$BEFORE" "$AFTER")
+PUSHED=$(git diff --no-renames --name-only "$BEFORE" "$AFTER")
 echo "Pushed diff ($BEFORE -> $AFTER):"; echo "$PUSHED"
 
 classify_all "$PUSHED"
 
-if $a_unit && $a_screenshot && $a_instrumented; then
-  emit true true true "push touches code paths"
+if $a_unit && $a_screenshot && $a_instrumented && $a_native; then
+  emit true true true true "push touches code paths"
   exit 0
 fi
 
@@ -178,7 +191,7 @@ PREV_RUN=$(gh api "repos/$REPO/actions/workflows/ci.yml/runs?head_sha=$BEFORE&ev
 # *stdout*, so this lands here as JSON rather than as the empty string - an emptiness check alone
 # lets that text through into the next request URL. Anything that is not digits fails open.
 if ! [[ "$PREV_RUN" =~ ^[0-9]+$ ]]; then
-  emit true true true "no usable previous CI run for $BEFORE - failing open"
+  emit true true true true "no usable previous CI run for $BEFORE - failing open"
   exit 0
 fi
 # --paginate, because a single page caps at 100 jobs: a workflow with a sharded matrix can exceed
@@ -189,7 +202,7 @@ JOBS=$(gh api --paginate "repos/$REPO/actions/runs/$PREV_RUN/jobs?per_page=100" 
 # An API failure yields no stdout, which `jq -s` turns into "[]" rather than the empty string - so
 # check both, or a failed fetch would fall through and warn about every job being "renamed".
 if [ -z "$JOBS" ] || [ "$JOBS" = "[]" ]; then
-  emit true true true "could not read jobs of previous run $PREV_RUN - failing open"
+  emit true true true true "could not read jobs of previous run $PREV_RUN - failing open"
   exit 0
 fi
 echo "Previous run $PREV_RUN job conclusions: $JOBS"
@@ -208,7 +221,7 @@ concl() { echo "$JOBS" | jq -r --arg n "$1" 'map(select(.name == $n))[0].conclus
 # (A PR that adds a lane trips this once, because the previous run predates the job - self-clearing.)
 has_job() { echo "$JOBS" | jq -e --arg n "$1" 'any(.[]; .name == $n)' >/dev/null 2>&1; }
 for n in "Detect change scope" "Unit Tests" "Screenshot Tests (Paparazzi)" \
-  "Instrumented Tests (Gradle Managed Device)"; do
+  "Instrumented Tests (Gradle Managed Device)" "Native Tests (Apple)"; do
   has_job "$n" ||
     echo "::warning::Job '$n' not found in previous run $PREV_RUN - verdict adoption is disabled for it. If this job was renamed, update .github/scripts/detect-change-scope.sh to match."
 done
@@ -230,5 +243,6 @@ decide() { # $1 = affected by this push (true/false), $2 = previous job name
 UNIT=$(decide "$a_unit" "Unit Tests")
 SCREENSHOT=$(decide "$a_screenshot" "Screenshot Tests (Paparazzi)")
 INSTRUMENTED=$(decide "$a_instrumented" "Instrumented Tests (Gradle Managed Device)")
-emit "$UNIT" "$SCREENSHOT" "$INSTRUMENTED" \
+NATIVE=$(decide "$a_native" "Native Tests (Apple)")
+emit "$UNIT" "$SCREENSHOT" "$INSTRUMENTED" "$NATIVE" \
   "per-lane: rerunning affected or previously-red lanes, adopting green verdicts from run $PREV_RUN"
