@@ -27,6 +27,9 @@ public data class IosDataConfig(
 /** Narrow lifecycle boundary for the future iOS host. */
 public class IosDataRuntime private constructor(private val graph: IosGraph) {
 
+  // Resolve graph-owned resources once so shutdown closes the exact instances used by consumers.
+  private val httpClient = graph.httpClient
+  private val database = graph.database
   private var closed = false
 
   public val repository: BeersRepository
@@ -38,8 +41,8 @@ public class IosDataRuntime private constructor(private val graph: IosGraph) {
   public fun close() {
     if (!closed) {
       closed = true
-      graph.httpClient.close()
-      graph.database.close()
+      httpClient.close()
+      database.close()
     }
   }
 
