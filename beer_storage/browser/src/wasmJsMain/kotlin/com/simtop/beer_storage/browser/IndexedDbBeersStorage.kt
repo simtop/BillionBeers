@@ -50,6 +50,9 @@ import kotlinx.serialization.json.Json
     let settled = false;
     const close = () => { try { db.close(); } catch (_) {} };
     const finishRead = (value) => { result = JSON.stringify(value); };
+    const finishMutation = (committedBeers = [], committedPaging = null, cleared = false) => {
+      result = JSON.stringify({beers: committedBeers, paging: committedPaging, cleared});
+    };
     const fail = (error) => {
       if (settled) return;
       settled = true;
@@ -89,11 +92,12 @@ import kotlinx.serialization.json.Json
       } else if (operation === 'deleteAll') {
         beers.clear();
         paging.clear();
-        result = 'null';
+        finishMutation([], null, true);
       } else if (operation === 'insertAll') {
         const rows = JSON.parse(payload);
         const ids = [...new Set(rows.map(row => row.id))];
         const existingById = {};
+        const committedRows = [];
         let remaining = ids.length;
         const mergeRows = () => {
           rows.forEach(row => {
@@ -106,7 +110,9 @@ import kotlinx.serialization.json.Json
             };
             beers.put(merged);
             existingById[row.id] = merged;
+            committedRows.push(merged);
           });
+          finishMutation(committedRows);
         };
         if (remaining === 0) {
           mergeRows();
@@ -126,16 +132,16 @@ import kotlinx.serialization.json.Json
         const existingRequest = beers.get(incoming.id);
         existingRequest.onsuccess = () => {
           const existing = existingRequest.result;
-          if (existing) {
-            beers.put({
+          const committed = existing
+            ? {
               ...existing,
               ...(operation === 'upsertAvailability'
                 ? {availability: incoming.availability}
                 : {isFavorite: incoming.isFavorite}),
-            });
-          } else {
-            beers.put(incoming);
-          }
+            }
+            : incoming;
+          beers.put(committed);
+          finishMutation([committed]);
         };
         existingRequest.onerror = () => fail(existingRequest.error);
       } else if (operation === 'insertPage') {
@@ -150,26 +156,30 @@ import kotlinx.serialization.json.Json
           const beerRequests = input.beers.map(row => beers.get(row.id));
           let remaining = beerRequests.length;
           const existingRows = {};
+          const committedPaging = {surface: input.surface, nextKey, totalCount: input.totalCount ?? existingTotal, refreshedAt: Date.now()};
+          const commitPage = () => {
+            const committedRows = input.beers.map(row => {
+              const existing = existingRows[row.id] || {};
+              const committed = {
+                ...existing,
+                ...row,
+                availability: existing.id == null ? row.availability : existing.availability,
+                isFavorite: existing.id == null ? row.isFavorite : existing.isFavorite,
+              };
+              beers.put(committed);
+              return committed;
+            });
+            paging.put(committedPaging);
+            finishMutation(committedRows, committedPaging);
+          };
           if (remaining === 0) {
-            input.beers.forEach(row => beers.put(row));
-            paging.put({surface: input.surface, nextKey, totalCount: input.totalCount ?? existingTotal, refreshedAt: Date.now()});
+            commitPage();
           } else {
             beerRequests.forEach((request, index) => {
               request.onsuccess = () => {
                 existingRows[input.beers[index].id] = request.result || {};
                 remaining -= 1;
-                if (remaining === 0) {
-                  input.beers.forEach(row => {
-                    const existing = existingRows[row.id] || {};
-                    beers.put({
-                      ...existing,
-                      ...row,
-                      availability: existing.id == null ? row.availability : existing.availability,
-                      isFavorite: existing.id == null ? row.isFavorite : existing.isFavorite,
-                    });
-                  });
-                  paging.put({surface: input.surface, nextKey, totalCount: input.totalCount ?? existingTotal, refreshedAt: Date.now()});
-                }
+                if (remaining === 0) commitPage();
               };
               request.onerror = () => fail(request.error);
             });
@@ -305,6 +315,13 @@ private data class PagingRecord(
   val refreshedAt: Long,
 )
 
+@Serializable
+private data class MutationRecord(
+  val beers: List<BeerRecord> = emptyList(),
+  val paging: PagingRecord? = null,
+  val cleared: Boolean = false,
+)
+
 private val json = Json { ignoreUnknownKeys = true }
 private val liveStorages = mutableMapOf<String, MutableSet<IndexedDbBeersStorage>>()
 
@@ -392,8 +409,8 @@ class IndexedDbBeersStorage(
     initialized.await()
     writeMutex.withLock {
       check(!closed) { "IndexedDbBeersStorage is closed" }
-      execute(operation, payload)
-      refresh()
+      val mutation = json.decodeFromString<MutationRecord>(execute(operation, payload))
+      applyMutation(mutation)
       liveStorages[databaseName]
         ?.filter { it !== this && !it.closed }
         ?.forEach { peer -> peer.scope.launch { peer.refresh() } }
@@ -416,13 +433,31 @@ class IndexedDbBeersStorage(
       emitAll(state.asStateFlow())
     }
 
+  private suspend fun applyMutation(mutation: MutationRecord) {
+    refreshMutex.withLock {
+      if (closed) return
+      if (mutation.cleared) {
+        publishSnapshot(emptyList())
+      } else {
+        val beersById = beersState.value.associateBy { it.id }.toMutableMap()
+        mutation.beers.forEach { beer -> beersById[beer.id] = beer.toStored() }
+        publishSnapshot(beersById.values.toList())
+      }
+    }
+  }
+
   private suspend fun refresh() {
     refreshMutex.withLock {
       if (closed) return
       val beers = json.decodeFromString<List<BeerRecord>>(execute("readBeers", "")).map(BeerRecord::toStored)
-      beersState.value = beers
-      favoritesState.value = beers.filter { it.isFavorite }.sortedWith(compareBy<StoredBeer> { it.name }.thenBy { it.id })
+      publishSnapshot(beers)
     }
+  }
+
+  private fun publishSnapshot(beers: List<StoredBeer>) {
+    val sortedBeers = beers.sortedWith(compareBy<StoredBeer> { it.name }.thenBy { it.id })
+    beersState.value = sortedBeers
+    favoritesState.value = sortedBeers.filter { it.isFavorite }
   }
 
   private companion object {
