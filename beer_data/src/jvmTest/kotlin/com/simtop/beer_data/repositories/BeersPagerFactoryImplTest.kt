@@ -234,15 +234,18 @@ class BeersPagerFactoryImplTest {
     }
 
   @Test
-  fun `a page covering the reported total ends pagination immediately`() =
+  fun `a full page at the reported total ends pagination immediately`() =
     runTest(testDispatcher) {
-      beersRemoteSource.setBeersResponse(listOf(apiItem(id = "1")), totalCount = 1)
+      beersRemoteSource.setBeersResponse(
+        (1..25).map { apiItem(id = "$it") },
+        totalCount = 25,
+      )
       val pager = factory.create()
 
       pager.loadFirstPage()
       pager.loadNextPage()
 
-      expectThat(pager.pagingState.value).isEqualTo(PagingState.EndOfPagination(totalCount = 1))
+      expectThat(pager.pagingState.value).isEqualTo(PagingState.EndOfPagination(totalCount = 25))
       expectThat(beersRemoteSource.requestedPages.toList()).isEqualTo(listOf(1))
     }
 
