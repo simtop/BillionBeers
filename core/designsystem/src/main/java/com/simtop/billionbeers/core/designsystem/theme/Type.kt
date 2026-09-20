@@ -1,69 +1,10 @@
 package com.simtop.billionbeers.core.designsystem.theme
 
-import androidx.compose.material3.Typography
-import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
+import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersTypography as SharedBillionBeersTypography
+import com.simtop.billionbeers.shared.designsystem.theme.LocalTypography as SharedLocalTypography
 
-/**
- * Typography tokens for reusable design-system components.
- *
- * Use the semantic styles exposed through [BillionBeersTheme.typography] instead of defining
- * component-local text styles.
- */
-val BillionBeersTypography =
-  Typography(
-    headlineLarge =
-      TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Bold,
-        fontSize = 32.sp,
-        lineHeight = 40.sp,
-        letterSpacing = 0.sp,
-      ),
-    headlineMedium =
-      TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Bold,
-        fontSize = 28.sp,
-        lineHeight = 36.sp,
-        letterSpacing = 0.sp,
-      ),
-    titleLarge =
-      TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 22.sp,
-        lineHeight = 28.sp,
-        letterSpacing = 0.sp,
-      ),
-    bodyLarge =
-      TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
-        lineHeight = 24.sp,
-        letterSpacing = 0.5.sp,
-      ),
-    bodyMedium =
-      TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Normal,
-        fontSize = 14.sp,
-        lineHeight = 20.sp,
-        letterSpacing = 0.25.sp,
-      ),
-    labelMedium =
-      TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Medium,
-        fontSize = 12.sp,
-        lineHeight = 16.sp,
-        letterSpacing = 0.5.sp,
-      ),
-  )
+/** Typography tokens for reusable design-system components. */
+val BillionBeersTypography = SharedBillionBeersTypography
 
 /** Composition-local override for the current typography tokens. */
-val LocalTypography = staticCompositionLocalOf { BillionBeersTypography }
+val LocalTypography = SharedLocalTypography
