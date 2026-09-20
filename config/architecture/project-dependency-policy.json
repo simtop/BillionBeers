@@ -31,7 +31,9 @@
     { "name": "snapshot-testing", "match": "exact", "value": ":snapshot-testing" },
     { "name": "snapshot-processor", "match": "exact", "value": ":snapshot-processor" },
     { "name": "benchmark", "match": "prefix", "value": ":benchmark:" },
-    { "name": "konsist", "match": "exact", "value": ":konsist" }
+    { "name": "konsist", "match": "exact", "value": ":konsist" },
+    { "name": "shared-ui-fixture", "match": "exact", "value": ":t71-fixture" },
+    { "name": "android-screenshot-fixture", "match": "exact", "value": ":t71-fixture-android-screenshot" }
   ],
   "allowedEdges": [
     { "source": "application", "targets": ["domain-api", "regular-feature", "dynamic-feature", "core", "design-system", "navigation", "data", "database", "network", "presentation"], "scopes": ["main"] },
@@ -56,7 +58,8 @@
     { "source": "presentation", "targets": ["domain-api", "catalog-annotations", "core", "design-system", "snapshot-testing"], "scopes": ["main"] },
     { "source": "test-support", "targets": ["core-common"], "scopes": ["main"] },
     { "source": "catalog", "targets": ["regular-feature", "design-system", "presentation", "catalog-annotations", "snapshot-testing"], "scopes": ["main"] },
-    { "source": "benchmark", "targets": ["data", "domain-api", "database", "network", "core-common"], "scopes": ["main"] }
+    { "source": "benchmark", "targets": ["data", "domain-api", "database", "network", "core-common"], "scopes": ["main"] },
+    { "source": "android-screenshot-fixture", "targets": ["shared-ui-fixture", "design-system", "snapshot-testing"], "scopes": ["main"] }
   ],
   "allowedApiEdges": [
     { "source": "core", "target": "core-common", "reason": "core is the Android facade that exposes the pure-JVM core contract" },
