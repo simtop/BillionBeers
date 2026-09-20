@@ -40,6 +40,7 @@ import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.billionbeers.core.designsystem.component.AccessibilityMatrixPreview
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.core.core.CommonUiErrorKey
 import com.simtop.core.core.CommonUiState
 import com.simtop.presentation_utils.R
 import com.simtop.presentation_utils.core.resolvedMessage
@@ -245,7 +246,7 @@ class BrowseHomePreviewParameterProvider :
     sequenceOf(
       Case(CommonUiState.Success(sampleStyles), CommonUiState.Loading, 0),
       Case(CommonUiState.Success(sampleStyles), CommonUiState.Success(sampleBreweries), 1),
-      Case(CommonUiState.Error(messageRes = R.string.error_no_internet), CommonUiState.Loading, 0),
+      Case(CommonUiState.Error(errorKey = CommonUiErrorKey.NoInternet), CommonUiState.Loading, 0),
     )
 }
 

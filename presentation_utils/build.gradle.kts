@@ -11,6 +11,7 @@ dependencies {
   implementation(this.project(":beerdomain:api"))
   implementation(this.project(":core"))
   implementation(this.project(":core:designsystem"))
+  implementation(this.project(":shared:presentation"))
 
   // activity-compose, foundation, material3 and ui-tooling-preview come from
   // billionbeers.android.compose.
