@@ -156,7 +156,7 @@ JVM_TEST_MODULES := :testing-utils :snapshot-processor :desktop-app
 KMP_JVM_TEST_MODULES := :core-common :beerdomain:api :beerdomain:fakes :beer_network:api :beer_network :beer_storage:api :beer_database :beer_data :ios-shared
 KMP_METADATA_MODULES := :core-common :beerdomain:api :beerdomain:fakes :beer_network:api :beer_network :beer_network:fixtures :beer_storage:api :beer_database :beer_data
 KMP_ANDROID_HOST_TEST_MODULES := :core-common :beerdomain:api :beerdomain:fakes :beer_network:api :beer_network :beer_storage:api :beer_database :beer_data
-KMP_BROWSER_TEST_MODULES := :beer_storage:browser
+KMP_BROWSER_TEST_MODULES := :beer_storage:browser :web-app
 # Kotlin/Wasm's ChromeHeadless launcher also accepts Chromium-compatible browsers. Prefer the
 # installed Brave binary on macOS, while allowing CI and callers to override CHROME_BIN explicitly.
 BRAVE_BROWSER_BIN := /Applications/Brave Browser.app/Contents/MacOS/Brave Browser

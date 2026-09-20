@@ -358,6 +358,10 @@ class IndexedDbBeersStorage(
 
   override fun observeFavoriteBeers(): Flow<List<StoredBeer>> = initializedFlow(favoritesState)
 
+  suspend fun awaitReady() {
+    initialized.await()
+  }
+
   override suspend fun insertAll(beers: List<StoredBeer>) {
     mutate("insertAll", json.encodeToString(beers.map(::toRecord)))
   }

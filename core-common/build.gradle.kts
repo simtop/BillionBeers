@@ -1,4 +1,12 @@
+@file:OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)
+
 plugins { id("billionbeers.kmp.library") }
+
+kotlin {
+  wasmJs {
+    browser()
+  }
+}
 
 val catalog = billionBeersCatalog()
 

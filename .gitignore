@@ -20,6 +20,7 @@ keystore.properties
 .idea/kotlinc.xml
 .idea/artifacts/
 .kotlin/
+kotlin-js-store/
 .vscode/
 bin/
 gradle-user-home/

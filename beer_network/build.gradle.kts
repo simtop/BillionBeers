@@ -1,3 +1,5 @@
+@file:OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)
+
 plugins {
   id("billionbeers.kmp.library")
   alias(libs.plugins.kotlin.serialization)
@@ -11,10 +13,19 @@ kotlin {
     namespace = "com.simtop.beer_network"
   }
 
+  wasmJs {
+    browser()
+  }
+
   sourceSets {
     val iosMain by getting {
       dependencies {
         implementation(libs.ktorClientDarwin)
+      }
+    }
+    val wasmJsMain by getting {
+      dependencies {
+        implementation("io.ktor:ktor-client-js:${libs.versions.io.ktor.get()}")
       }
     }
   }
