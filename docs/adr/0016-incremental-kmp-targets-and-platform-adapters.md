@@ -114,6 +114,26 @@ paging, typed HTTP/serialization failures, cancellation, no application retry, a
 termination when `X-Total-Count` is absent. These deterministic fixture results do not establish
 live `brewbuddy.dev` API or image CORS availability; those remain a separate deployment check.
 
+T7.1 proves a first shared Compose fixture without extracting product UI. Compose Multiplatform
+`1.12.0` resolves with Kotlin `2.4.10` and the Kotlin Compose compiler plugin `2.4.10` on the
+repository's AGP `9.2.1` toolchain. The isolated `:t71-fixture` applies a precompiled KMP Compose
+convention and compiles common/JVM, Android, Wasm and the `iosArm64`/`iosSimulatorArm64` targets;
+its simulator framework links through `linkDebugFrameworkIosSimulatorArm64`. The fixture uses
+AndroidX Lifecycle ViewModel `2.11.0` and Metro `1.4.2` metadata in common code, owns a
+`viewModelScope`, and exposes one buffered `Channel` event with explicit disposal that cancels the
+scope and closes the channel. Compose Multiplatform resources load through the generated common
+resource accessor in the shared screen; JVM tests cover state, one-shot events and disposal.
+
+The Android-only `:t71-fixture-android-screenshot` adapter delegates the shared content to the
+existing KSP preview discovery and Paparazzi runner. Its baseline records and verifies successfully,
+while the adapter passes literal preview labels because Paparazzi's layoutlib has no registering
+instrumentation for Compose Multiplatform's Android resource reader. Resource accessors compile for
+JVM/Wasm/iOS; the Wasm browser runner currently does not stage the fixture's `.cvr` resource into
+its development executable, so the browser rendering proof uses explicit labels and does not claim
+Wasm runtime resource loading. The Wasm browser test compiles and is routed through
+`wasmJsBrowserTest`; local execution remains an environment check when Chrome is absent. No product screen, design-system extraction, navigation,
+data dependency, or Android screenshot inventory migration is included.
+
 
 Room 3 plus a browser SQLite worker is an alternative to revisit if an executable spike shows the
 adapter cannot preserve required semantics at reasonable complexity. It is not a prerequisite or

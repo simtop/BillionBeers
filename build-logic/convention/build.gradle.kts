@@ -8,6 +8,7 @@ dependencies {
     implementation(libs.androidToolsBuildGradle)
     implementation(libs.kotlinGradlePlugin)
     implementation(libs.composeCompilerGradlePlugin)
+    implementation(libs.composeMultiplatformGradlePlugin)
     implementation(libs.roomGradlePlugin)
     implementation(libs.metro.gradle.plugin)
     implementation(libs.kspGradlePlugin)
