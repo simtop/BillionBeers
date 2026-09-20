@@ -21,6 +21,7 @@
     { "name": "ios-shared", "match": "exact", "value": ":ios-shared" },
     { "name": "design-system", "match": "exact", "value": ":core:designsystem" },
     { "name": "shared-design-system", "match": "exact", "value": ":shared:designsystem" },
+    { "name": "shared-presentation", "match": "exact", "value": ":shared:presentation" },
     { "name": "core", "match": "exact", "value": ":core" },
     { "name": "navigation", "match": "exact", "value": ":navigation" },
     { "name": "presentation", "match": "exact", "value": ":presentation_utils" },
@@ -56,14 +57,16 @@
     { "source": "core", "targets": ["core-common"], "scopes": ["main"] },
     { "source": "design-system", "targets": ["catalog-annotations", "snapshot-testing", "shared-design-system"], "scopes": ["main"] },
     { "source": "shared-design-system", "targets": [], "scopes": ["main"] },
+    { "source": "shared-presentation", "targets": ["core-common", "shared-design-system"], "scopes": ["main"] },
     { "source": "navigation", "targets": ["domain-api"], "scopes": ["main"] },
-    { "source": "presentation", "targets": ["domain-api", "catalog-annotations", "core", "design-system", "snapshot-testing"], "scopes": ["main"] },
+    { "source": "presentation", "targets": ["domain-api", "catalog-annotations", "core", "design-system", "shared-presentation", "snapshot-testing"], "scopes": ["main"] },
     { "source": "test-support", "targets": ["core-common"], "scopes": ["main"] },
     { "source": "catalog", "targets": ["regular-feature", "design-system", "presentation", "catalog-annotations", "snapshot-testing"], "scopes": ["main"] },
     { "source": "benchmark", "targets": ["data", "domain-api", "database", "network", "core-common"], "scopes": ["main"] },
     { "source": "android-screenshot-fixture", "targets": ["shared-ui-fixture", "design-system", "snapshot-testing"], "scopes": ["main"] }
   ],
   "allowedApiEdges": [
+    { "source": "shared-presentation", "target": "core-common", "reason": "the shared footer API exposes the portable paging UI model" },
     { "source": "design-system", "target": "shared-design-system", "reason": "the Android design-system facade exposes shared token types to existing consumers" },
     { "source": "core", "target": "core-common", "reason": "core is the Android facade that exposes the pure-JVM core contract" },
     { "source": "network-fixture", "target": "network-api", "reason": "the fixture module deliberately re-exports the transport-neutral service contract for tests" }

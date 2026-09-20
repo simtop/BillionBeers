@@ -39,6 +39,7 @@ import com.simtop.billionbeers.core.designsystem.component.AccessibilityMatrixPr
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.component.showToast
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.core.core.CommonUiErrorKey
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.PagedListFooter
 import com.simtop.core.core.PagedListUiModel
@@ -227,7 +228,7 @@ class BrowseBeersPreviewParameterProvider :
         CommonUiState.Success(PagedListUiModel(items = sampleBeers, totalCount = 9)),
       ),
       Case("Stout", CommonUiState.Success(PagedListUiModel(totalCount = 0))),
-      Case("Lager", CommonUiState.Error(messageRes = R.string.error_rate_limited)),
+      Case("Lager", CommonUiState.Error(errorKey = CommonUiErrorKey.RateLimited)),
     )
 }
 
