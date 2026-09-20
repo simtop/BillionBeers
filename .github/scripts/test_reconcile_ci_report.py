@@ -383,7 +383,9 @@ class ReconcileCiReportTest(unittest.TestCase):
     def test_workflow_preserves_trusted_checkout_and_serialized_writer(self):
         root = SCRIPT.parents[2]
         workflow = (root / ".github/workflows/ci-report.yml").read_text()
-        self.assertIn("types: [in_progress, completed]", workflow)
+        self.assertIn("types: [completed]", workflow)
+        self.assertNotIn("types: [in_progress, completed]", workflow)
+        self.assertNotIn("in_progress", workflow.split("types:", 1)[1].split("jobs:", 1)[0])
         self.assertNotIn("workflow_run.conclusion != 'success'", workflow)
         refs = MODULE.re.findall(r"^\s+ref: (.+)$", workflow, MODULE.re.MULTILINE)
         self.assertEqual(["${{ github.event.repository.default_branch }}"] * 2, refs)
