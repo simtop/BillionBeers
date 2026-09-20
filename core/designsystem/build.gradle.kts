@@ -9,5 +9,9 @@ android {
   namespace = "com.simtop.billionbeers.core.designsystem"
 }
 
-// No dependencies block: foundation and material3 are the only two this module needs, and
-// billionbeers.android.compose supplies both.
+dependencies {
+  api(project(":shared:designsystem"))
+}
+
+// Foundation and material3 come from billionbeers.android.compose; the shared module owns the
+// portable tokens and Material3 mapping used by this Android facade.

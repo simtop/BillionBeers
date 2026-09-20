@@ -3,7 +3,7 @@ name: CI PR Diagnosis
 on:
   workflow_run:
     workflows: [BillionBeers CI]
-    types: [in_progress, completed]
+    types: [completed]
 
 permissions:
   actions: read
@@ -37,14 +37,14 @@ jobs:
     needs: resolve
     if: needs.resolve.outputs.pr_number != ''
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 20
     permissions:
       actions: read
       contents: read
       pull-requests: read
       issues: write
-    # Events are wake-ups, not snapshots. Serialize all writers, and have each reconcile the
-    # current run: a delayed old completion must not cancel or overwrite a newer reporter.
+    # Completion events are wake-ups, not snapshots. Serialize all writers, and have each
+    # reconcile the current run: a delayed old completion must not overwrite a newer reporter.
     concurrency:
       group: ci-diagnosis-${{ github.repository_id }}-${{ needs.resolve.outputs.pr_number }}
       cancel-in-progress: false

@@ -279,7 +279,7 @@ def snapshot(api: GitHub, pr: dict, run: dict | None, evidence: Evidence) -> dic
     return data
 
 
-def watch(api: GitHub, pr_number: int, *, budget: float = 3300, interval: float = 30,
+def watch(api: GitHub, pr_number: int, *, budget: float = 900, interval: float = 30,
           clock=time.monotonic, sleep=time.sleep, publisher=PUBLISH.publish) -> None:
     deadline = clock() + budget
     adopted = None

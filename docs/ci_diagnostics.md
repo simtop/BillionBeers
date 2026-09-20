@@ -1,8 +1,8 @@
 # CI diagnostics
 
 `CI PR Diagnosis` maintains one `<!-- billionbeers-ci:diagnosis -->` bot comment per pull request.
-It starts when `BillionBeers CI` enters `in_progress` and reconciles again on `completed`, including
-successful runs. It executes only reporting code from the default branch, never the PR checkout,
+It reconciles when `BillionBeers CI` completes, including successful runs. It executes only reporting
+code from the default branch, never the PR checkout,
 its build scripts, or code from an artifact. Fork PRs do not receive comment-write permissions.
 Changes to this trusted reporter take effect after merging into the default branch.
 
@@ -10,9 +10,9 @@ Changes to this trusted reporter take effect after merging into the default bran
 
 - The first actionable failure creates the comment. As other jobs finish, the **same comment**
   updates to include their failures; it does not post a new message for each lane.
-- A new commit or run attempt replaces obsolete failure details with a pending state. This happens
-  when the active reporter observes the change, or when the new run starts—not necessarily at the
-  instant someone pushes or requests a rerun.
+- A new commit or run attempt replaces obsolete failure details with a pending state when the
+  completion reporter observes the replacement run. This is not necessarily immediate at the instant
+  someone pushes or requests a rerun.
 - A completed partial rerun retains genuinely unresolved jobs that were not rerun, explicitly
   labelled with their earlier attempt. Retried jobs replace their previous executions.
 - Success replaces the failure report with a compact success message. A skipped run is labelled
@@ -20,9 +20,9 @@ Changes to this trusted reporter take effect after merging into the default bran
 - A PR that never needed a failure comment does not receive running or success-only comments.
   Unchanged bodies are not patched, and only this workflow's GitHub Actions bot marker is reused.
 
-Writers are serialized by repository and PR, without cancelling the active reporter. Events are
-wake-ups: a delayed old completion reconciles the **current** PR head and latest original CI run,
-not its event payload. Rerunning an older run on the same commit does not supersede a newer run.
+Writers are serialized by repository and PR, without cancelling an active reconciliation. Completion
+events are wake-ups: a delayed old completion reconciles the **current** PR head and latest original
+CI run, not its event payload. Rerunning an older run on the same commit does not supersede a newer run.
 The current head/run/attempt is checked again immediately before writing and after publication.
 GitHub does not provide an atomic comment-write/head comparison; a head change during a write is
 corrected by subsequent reconciliation rather than a strict zero-staleness guarantee.
@@ -58,12 +58,12 @@ The PR comment recommends verification first, not blindly recording new goldens 
 
 ## Runtime and verification
 
-GitHub Actions has no supported per-job completion trigger for this reporter. It polls approximately
-every 30 seconds, reuses downloaded evidence, and watches for at most 55 minutes per invocation
-(the reporting job has a 60-minute timeout). This occupies one extra hosted runner while watching,
-including sleep time; runner-minute charges, where applicable, follow that elapsed time. If the
-window expires, the comment marks live reporting as paused, and the completion event performs
-final reconciliation. One additional poll allows final job/artifact metadata to settle.
+GitHub Actions provides a workflow-level completion trigger, so the reporter does not start a
+long-lived watcher when CI merely enters `in_progress`. It polls approximately every 30 seconds after
+completion, reuses downloaded evidence, and watches for at most 15 minutes per invocation (the
+reporting job has a 20-minute timeout). If the window expires, the comment marks live reporting as
+paused; a later completion event can perform final reconciliation. One additional poll allows final
+job/artifact metadata to settle.
 
 Jobs, runs, artifacts, and comments are paginated. Partial-rerun reconciliation assumes the current
 CI job display names are unique; a future matrix must keep its expanded names unique too.
