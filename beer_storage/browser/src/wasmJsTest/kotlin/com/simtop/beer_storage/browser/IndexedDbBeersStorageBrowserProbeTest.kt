@@ -112,17 +112,18 @@ class IndexedDbBeersStorageBrowserProbeTest {
 
   @Test
   fun browserStorageWorkloadReportsOperationPhases() = runTest {
-    listOf(1, 32, 128).forEach { size ->
+    CATALOG_SIZES.forEach { size ->
       val databaseName = "billionbeers-probe-${hashCode()}-$size"
       val storage = IndexedDbBeersStorage(databaseName)
       val catalog = (0 until size).map(::probeBeer)
-      storage.insertAll(catalog)
-      installStorageProbe()
-
-      val mutationSamples = mutableListOf<Double>()
-      val consumerSamples = mutableListOf<Double>()
-      var metrics = "{}"
+      var probeInstalled = false
       try {
+        storage.insertAll(catalog)
+        installStorageProbe()
+        probeInstalled = true
+
+        val mutationSamples = mutableListOf<Double>()
+        val consumerSamples = mutableListOf<Double>()
         storage.insertAll(listOf(catalog.first().copy(name = "Probe warmup")))
         resetStorageProbe()
         repeat(SAMPLE_COUNT) { sample ->
@@ -131,25 +132,46 @@ class IndexedDbBeersStorageBrowserProbeTest {
           }
           consumerSamples += measureMillis {
             val rows = storage.observeBeers().first { it.size == size }
-            var checksum = 0
-            repeat(CONSUMER_REPETITIONS) {
-              checksum += rows.sumOf { it.name.length + it.description.length }
-            }
-            check(checksum > 0)
+            checksum(rows)
           }
         }
-      } finally {
-        metrics = finishStorageProbe().toString()
-      }
+        val singleMutationMetrics = finishStorageProbe().toString()
+        probeInstalled = false
 
-      println(
-        "browser-storage-probe rows=$size samples=$SAMPLE_COUNT " +
-          "mutationMedianMs=${median(mutationSamples)} consumerMedianMs=${median(consumerSamples)} " +
-          "counters=$metrics"
-      )
-      storage.deleteAll()
-      storage.close()
+        installStorageProbe()
+        probeInstalled = true
+        val burstTime = measureMillis {
+          repeat(BURST_COUNT) { sample ->
+            storage.insertAll(listOf(catalog.first().copy(name = "Probe burst $sample")))
+          }
+        }
+        val burstConsumerTime = measureMillis {
+          checksum(storage.observeBeers().first { it.size == size })
+        }
+        val burstMetrics = finishStorageProbe().toString()
+        probeInstalled = false
+
+        println(
+          "browser-storage-probe rows=$size samples=$SAMPLE_COUNT " +
+            "mutationMedianMs=${median(mutationSamples)} consumerMedianMs=${median(consumerSamples)} " +
+            "singleCounters=$singleMutationMetrics " +
+            "burstCount=$BURST_COUNT burstTimeMs=$burstTime burstConsumerMs=$burstConsumerTime " +
+            "burstCounters=$burstMetrics"
+        )
+      } finally {
+        if (probeInstalled) finishStorageProbe()
+        storage.deleteAll()
+        storage.close()
+      }
     }
+  }
+
+  private fun checksum(rows: List<StoredBeer>) {
+    var checksum = 0
+    repeat(CONSUMER_REPETITIONS) {
+      checksum += rows.sumOf { it.name.length + it.description.length }
+    }
+    check(checksum > 0)
   }
 
   private fun probeBeer(index: Int): StoredBeer =
@@ -175,7 +197,9 @@ class IndexedDbBeersStorageBrowserProbeTest {
   private fun median(values: List<Double>): Double = values.sorted()[values.size / 2]
 
   private companion object {
+    val CATALOG_SIZES = listOf(1, 32, 128, 1_000)
     const val SAMPLE_COUNT = 5
+    const val BURST_COUNT = 5
     const val CONSUMER_REPETITIONS = 100
   }
 }
