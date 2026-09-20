@@ -70,6 +70,109 @@ class BeersDatabaseJvmTest {
   }
 
   @Test
+  fun insertAllWithNoRowsIsANoOp() = runBlocking {
+    val dao = db.beersDao()
+
+    dao.insertAll(emptyList())
+
+    assertEquals(0, dao.getCount())
+    assertEquals(emptyList<BeerDbModel>(), dao.getAllBeers().first())
+  }
+
+  @Test
+  fun insertAllUpdatesAConflictAtItsReturnedIndex() = runBlocking {
+    val dao = db.beersDao()
+    val existing = beer("1", availability = false, isFavorite = true)
+    val newBeer =
+      beer("2", name = "New Catalog").copy(
+        tagline = "New tagline",
+        description = "New description",
+        imageUrl = "new-image",
+        abv = 6.2,
+        ibu = 41.0,
+        foodPairing = "[\"new food\"]",
+        styleName = "New style",
+        breweryName = "New brewery",
+        srm = 8,
+        releasedYear = 2024,
+        minServingTemperature = 4,
+        maxServingTemperature = 8,
+        fermentationMethod = "lagering",
+        ingredients = "[\"malt\"]",
+        recommendedGlasses = "[\"pint\"]",
+      )
+    val refreshedExisting =
+      existing.copy(
+        name = "Refreshed Catalog",
+        tagline = "Refreshed tagline",
+        description = "Refreshed description",
+        imageUrl = "refreshed-image",
+        abv = 7.1,
+        ibu = 52.0,
+        foodPairing = "[\"refreshed food\"]",
+        availability = true,
+        isFavorite = false,
+        styleName = "Refreshed style",
+        breweryName = "Refreshed brewery",
+        srm = 12,
+        releasedYear = 2025,
+        minServingTemperature = 5,
+        maxServingTemperature = 9,
+        fermentationMethod = "ale",
+        ingredients = "[\"hops\"]",
+        recommendedGlasses = "[\"snifter\"]",
+      )
+
+    dao.insertAll(listOf(existing))
+    dao.insertAll(listOf(newBeer, refreshedExisting))
+
+    assertEquals(
+      listOf(refreshedExisting.copy(availability = false, isFavorite = true), newBeer),
+      dao.getAllBeers().first().sortedBy(BeerDbModel::id),
+    )
+  }
+
+  @Test
+  fun upsertAvailabilityInsertsACompleteRowWhenUncached() = runBlocking {
+    val dao = db.beersDao()
+    val uncached =
+      beer("42", name = "Uncached", availability = false, isFavorite = true).copy(
+        tagline = "Uncached tagline",
+        description = "Uncached description",
+        imageUrl = "uncached-image",
+        abv = 5.7,
+        ibu = 33.0,
+        foodPairing = "[\"uncached food\"]",
+        styleName = "Uncached style",
+        breweryName = "Uncached brewery",
+        srm = 6,
+        releasedYear = 2023,
+        minServingTemperature = 3,
+        maxServingTemperature = 7,
+        fermentationMethod = "fermentation",
+        ingredients = "[\"grain\"]",
+        recommendedGlasses = "[\"tulip\"]",
+      )
+
+    dao.upsertAvailability(uncached)
+
+    assertEquals(uncached, dao.getAllBeers().first().single())
+  }
+
+  @Test
+  fun upsertAvailabilityUpdatesACachedRowWithoutAddingRows() = runBlocking {
+    val dao = db.beersDao()
+    val cached = beer("cached", availability = true, isFavorite = true)
+    val updated = cached.copy(availability = false)
+    dao.insertAll(listOf(cached))
+
+    dao.upsertAvailability(updated)
+
+    assertEquals(1, dao.getCount())
+    assertEquals(updated, dao.getAllBeers().first().single())
+  }
+
+  @Test
   fun insertPageRollsBackRowsWhenBookmarkWriteFails() = runBlocking {
     db.useConnection(false) { connection ->
       connection.usePrepared(
