@@ -160,7 +160,7 @@ KMP_BROWSER_TEST_MODULES := :beer_storage:browser
 # Kotlin/Wasm's ChromeHeadless launcher also accepts Chromium-compatible browsers. Prefer the
 # installed Brave binary on macOS, while allowing CI and callers to override CHROME_BIN explicitly.
 BRAVE_BROWSER_BIN := /Applications/Brave Browser.app/Contents/MacOS/Brave Browser
-BROWSER_TEST_ENV = $(if $(or $(CHROME_BIN),$(wildcard $(BRAVE_BROWSER_BIN))),CHROME_BIN="$(or $(CHROME_BIN),$(BRAVE_BROWSER_BIN))",)
+BROWSER_TEST_ENV = $(if $(CHROME_BIN),CHROME_BIN="$(CHROME_BIN)",$(shell if [ -x "$(BRAVE_BROWSER_BIN)" ]; then printf 'CHROME_BIN="%s"' "$(BRAVE_BROWSER_BIN)"; fi))
 KMP_TEST_MODULES := $(KMP_JVM_TEST_MODULES) $(KMP_METADATA_MODULES) \
 	$(KMP_ANDROID_HOST_TEST_MODULES) $(KMP_BROWSER_TEST_MODULES)
 

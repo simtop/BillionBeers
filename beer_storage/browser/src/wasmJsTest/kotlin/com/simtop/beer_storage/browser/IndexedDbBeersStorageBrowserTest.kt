@@ -3,7 +3,10 @@ package com.simtop.beer_storage.browser
 import com.simtop.beer_storage.api.StoredBeer
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 
@@ -217,5 +220,111 @@ class IndexedDbBeersStorageBrowserTest {
 
     storage.deleteAll()
     storage.close()
+  }
+
+  @Test
+  fun concurrentMutationsSerializeAndRemainDurable() = runTest {
+    val databaseName = "billionbeers-concurrent-${hashCode()}"
+    val existing = StoredBeer(
+      id = "concurrent-existing",
+      name = "Concurrent Existing",
+      tagline = "Seed",
+      description = "Seed row",
+      imageUrl = "https://example.test/concurrent-existing.png",
+      abv = 4.5,
+      ibu = 18.0,
+      foodPairing = listOf("pretzels"),
+      availability = false,
+      isFavorite = true,
+    )
+    val firstNew = existing.copy(
+      id = "concurrent-first",
+      name = "Concurrent First",
+      availability = true,
+      isFavorite = false,
+    )
+    val secondNew = existing.copy(
+      id = "concurrent-second",
+      name = "Concurrent Second",
+      availability = true,
+      isFavorite = false,
+    )
+    val storage = IndexedDbBeersStorage(databaseName)
+    storage.insertAll(listOf(existing))
+
+    listOf(
+      async { storage.insertAll(listOf(firstNew)) },
+      async { storage.insertAll(listOf(secondNew)) },
+      async { storage.upsertAvailability(existing.copy(availability = true)) },
+      async { storage.upsertFavorite(existing.copy(isFavorite = false)) },
+    ).awaitAll()
+
+    val expectedExisting = existing.copy(availability = true, isFavorite = false)
+    assertEquals(
+      listOf(expectedExisting, firstNew, secondNew).sortedBy { it.name },
+      storage.observeBeers().first(),
+    )
+    assertEquals(3, storage.count())
+    storage.close()
+
+    val reopened = IndexedDbBeersStorage(databaseName)
+    assertEquals(
+      listOf(expectedExisting, firstNew, secondNew).sortedBy { it.name },
+      reopened.observeBeers().first(),
+    )
+    assertTrue(reopened.observeFavoriteBeers().first().isEmpty())
+    reopened.deleteAll()
+    reopened.close()
+  }
+
+  @Test
+  fun concurrentPeerMutationsConvergeWithoutDroppingRows() = runTest {
+    val databaseName = "billionbeers-concurrent-peer-${hashCode()}"
+    val firstBeer = StoredBeer(
+      id = "concurrent-peer-first",
+      name = "Concurrent Peer First",
+      tagline = "First",
+      description = "First peer row",
+      imageUrl = "https://example.test/concurrent-peer-first.png",
+      abv = 4.5,
+      ibu = 18.0,
+      foodPairing = listOf("pretzels"),
+    )
+    val secondBeer = firstBeer.copy(
+      id = "concurrent-peer-second",
+      name = "Concurrent Peer Second",
+    )
+    val writer = IndexedDbBeersStorage(databaseName)
+    val peer = IndexedDbBeersStorage(databaseName)
+    peer.observeBeers().first()
+
+    listOf(
+      async { writer.insertAll(listOf(firstBeer)) },
+      async { peer.insertAll(listOf(secondBeer)) },
+    ).awaitAll()
+
+    val expected = listOf(firstBeer, secondBeer).sortedBy { it.name }
+    assertEquals(expected, writer.observeBeers().first { it == expected })
+    assertEquals(expected, peer.observeBeers().first { it == expected })
+
+    writer.close()
+    peer.close()
+  }
+
+  @Test
+  fun closeIsIdempotentAndRejectsLaterOperations() = runTest {
+    val databaseName = "billionbeers-close-contract-${hashCode()}"
+    val storage = IndexedDbBeersStorage(databaseName)
+    storage.observeBeers().first()
+
+    storage.close()
+    storage.close()
+
+    assertFailsWith<IllegalStateException> {
+      storage.insertAll(emptyList())
+    }
+    assertFailsWith<IllegalStateException> {
+      storage.count()
+    }
   }
 }
