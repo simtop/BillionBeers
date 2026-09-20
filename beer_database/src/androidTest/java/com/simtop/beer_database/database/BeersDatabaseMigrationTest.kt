@@ -80,6 +80,7 @@ class BeersDatabaseMigrationTest {
     }
 
     val db = helper.runMigrationsAndValidate(dbName, 4, true, MIGRATION_3_4)
+    assertEquals(4, db.version)
 
     db
       .query(
