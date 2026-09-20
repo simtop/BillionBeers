@@ -52,9 +52,15 @@ class DesktopDataIntegrationTest {
       val first = runtime.repository.getBeerById("1")!!
       val second = runtime.repository.getBeerById("2")!!
       runtime.repository.updateFavorite(first.copy(isFavorite = true))
+      runtime.repository.updateFavorite(second.copy(isFavorite = true))
+      assertEquals(
+        listOf("1", "2"),
+        runtime.repository.observeFavoriteBeers().first().map(Beer::id),
+      )
+      runtime.repository.updateFavorite(second.copy(isFavorite = false))
       runtime.repository.updateAvailability(second.copy(availability = false))
 
-      assertTrue(runtime.repository.observeFavoriteBeers().first().any { it.id == "1" })
+      assertEquals(listOf("1"), runtime.repository.observeFavoriteBeers().first().map(Beer::id))
       assertFalse(runtime.repository.getBeerById("2")!!.availability)
     } finally {
       runtime?.close()
