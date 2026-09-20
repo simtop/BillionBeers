@@ -106,6 +106,15 @@ Chrome for Testing and verifies committed rows and paging state survive close/re
 must continue to treat transaction completion as the write boundary; browser eviction remains an
 explicit limitation rather than a reason to add a fallback store.
 
+T6.4 adds a minimal `:web-app` data harness rather than a Compose Web shell. Its graph owns the
+Ktor Fetch client and IndexedDB storage, awaits asynchronous storage readiness before exposing the
+repository and pager factory, and closes both resources explicitly. A real browser Fetch fixture
+proves two-page catalog paging, local favorite preservation across refresh, independent query
+paging, typed HTTP/serialization failures, cancellation, no application retry, and empty-page
+termination when `X-Total-Count` is absent. These deterministic fixture results do not establish
+live `brewbuddy.dev` API or image CORS availability; those remain a separate deployment check.
+
+
 Room 3 plus a browser SQLite worker is an alternative to revisit if an executable spike shows the
 adapter cannot preserve required semantics at reasonable complexity. It is not a prerequisite or
 an approved global dependency upgrade. A browser storage contract remains useful even if its
