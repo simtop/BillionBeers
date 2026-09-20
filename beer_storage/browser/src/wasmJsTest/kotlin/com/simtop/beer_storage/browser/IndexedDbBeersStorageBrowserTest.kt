@@ -165,6 +165,33 @@ class IndexedDbBeersStorageBrowserTest {
   }
 
   @Test
+  fun pageInsertUpdatesLiveSnapshotAndPagingState() = runTest {
+    val databaseName = "billionbeers-page-live-${hashCode()}"
+    val beer = StoredBeer(
+      id = "page-live-1",
+      name = "Page Live Lager",
+      tagline = "Immediate",
+      description = "Committed delta",
+      imageUrl = "https://example.test/page-live.png",
+      abv = 4.5,
+      ibu = 18.0,
+      foodPairing = listOf("pretzels"),
+      availability = true,
+      isFavorite = true,
+    )
+    val storage = IndexedDbBeersStorage(databaseName)
+
+    storage.insertPage(listOf(beer), surface = "catalog", nextKey = 2, totalCount = 1)
+
+    assertEquals(listOf(beer), storage.observeBeers().first())
+    assertEquals(listOf(beer), storage.observeFavoriteBeers().first())
+    assertEquals(2, storage.getPagingState("catalog")?.nextKey)
+    assertEquals(1, storage.count())
+    storage.deleteAll()
+    storage.close()
+  }
+
+  @Test
   fun fieldUpdatesPreserveTheOtherLocalFlagAndCatalogFields() = runTest {
     val databaseName = "billionbeers-field-${hashCode()}"
     val stored = StoredBeer(
