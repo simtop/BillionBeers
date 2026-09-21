@@ -169,10 +169,15 @@ kmp_test_tasks = $(foreach module,$(KMP_JVM_TEST_MODULES),$(module):jvmTest) \
 	$(foreach module,$(KMP_ANDROID_HOST_TEST_MODULES),$(module):testAndroidHostTest) \
 	$(foreach module,$(KMP_BROWSER_TEST_MODULES),$(module):wasmJsBrowserTest)
 
+# The full graph includes the Compose Desktop Kotlin compiler task, whose classpath snapshot
+# provider is not configuration-cache serializable on every CI host. Keep the unit-test gate
+# deterministic until that upstream Gradle/Kotlin integration is fixed.
+TEST_FLAGS := --no-configuration-cache
+
 test: ## Run unit tests for the specified module (or all).
 ifeq ($(MODULE_TRIMMED),)
-	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) testDebugUnitTest $(addsuffix :test,$(JVM_TEST_MODULES)) $(kmp_test_tasks) --continue
-	$(GRADLE_RUNNER) -p build-logic :convention:test --continue
+	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) $(TEST_FLAGS) testDebugUnitTest $(addsuffix :test,$(JVM_TEST_MODULES)) $(kmp_test_tasks) --continue
+	$(GRADLE_RUNNER) -p build-logic $(TEST_FLAGS) :convention:test --continue
 else ifneq ($(filter $(MODULE_TRIMMED),$(KMP_JVM_TEST_MODULES)),)
 	$(GRADLE_RUNNER) $(MODULE_TRIMMED):jvmTest --continue
 else ifneq ($(filter $(MODULE_TRIMMED),$(KMP_METADATA_MODULES)),)
