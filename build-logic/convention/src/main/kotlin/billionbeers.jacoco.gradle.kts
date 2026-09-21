@@ -146,6 +146,7 @@ if (plugins.hasPlugin("org.jetbrains.kotlin.multiplatform")) {
                         "**/*Module*.*",
                         "**/*Component*.*",
                         "**/*Application*.*",
+                        "**/*Content*.*",
                         "**/*.Companion*.*",
                     )
                 }
