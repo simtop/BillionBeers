@@ -11,6 +11,7 @@ dependencies {
   // billionbeers.android.feature plugin - see :feature:beersearch for the same shape.
   implementation(this.project(":navigation"))
   implementation(this.project(":core:designsystem"))
+  implementation(this.project(":shared:beerslist"))
   implementation(libs.kotlinx.serialization.json)
   testImplementation(this.project(":beerdomain:fakes"))
   testImplementation(libs.striktCore)

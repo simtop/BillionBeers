@@ -1,14 +1,18 @@
-package com.simtop.feature.beerslist
+package com.simtop.billionbeers.shared.beerslist
 
 import app.cash.turbine.test
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.CatalogCacheStatus
+import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
 import com.simtop.beerdomain.fakes.FakeBeersRepository
+import com.simtop.beerdomain.fakes.FakePager
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.PagedListFooter
 import com.simtop.core.core.PagedListUiModel
+import com.simtop.core.core.Pager
 import com.simtop.core.core.PagingEvent
 import com.simtop.core.core.PagingState
 import kotlinx.coroutines.Dispatchers
@@ -293,4 +297,26 @@ class BeersListViewModelTest {
 
       expectThat(fakeBeersPagerFactory.pager.loadFirstPageCallCount).isEqualTo(1)
     }
+
+  @Test
+  fun `each view model owns one isolated catalog pager`() =
+    runTest(testDispatcher) {
+      val factory = IsolatedPagerFactory()
+
+      BeersListViewModel(FakeBeersRepository(), factory)
+      BeersListViewModel(FakeBeersRepository(), factory)
+
+      expectThat(factory.createdPagers.size).isEqualTo(2)
+      expectThat(factory.createdPagers[0] === factory.createdPagers[1]).isFalse()
+    }
+
+  private class IsolatedPagerFactory : BeersPagerFactory {
+    val createdPagers = mutableListOf<FakePager<Beer, FetchBeersError>>()
+
+    override fun create(): Pager<Beer, FetchBeersError> =
+      FakePager<Beer, FetchBeersError>().also { createdPagers += it }
+
+    override fun create(query: BeersQuery): Pager<Beer, FetchBeersError> =
+      FakePager<Beer, FetchBeersError>().also { createdPagers += it }
+  }
 }

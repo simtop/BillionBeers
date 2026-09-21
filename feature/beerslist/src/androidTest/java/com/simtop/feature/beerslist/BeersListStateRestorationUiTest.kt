@@ -21,8 +21,8 @@ import org.junit.Test
  * so "handled" rested entirely on the API being called rather than on it working.
  *
  * The state under test is the scroll position, because it is the only saveable on this screen a
- * user can observe. (`BeersListScreen`'s `dataVisibility` is a `rememberSaveable` that is written
- * and never read - it restores, but no assertion can tell.)
+ * user can observe: the list's `rememberLazyListState()` preserves the visible item across
+ * composition recreation.
  *
  * **What this cannot cover:** `SavedStateHandle`. [StateRestorationTester] recreates the
  * *composition*, not the `ViewModel`, so a handle-backed value is out of its reach by
