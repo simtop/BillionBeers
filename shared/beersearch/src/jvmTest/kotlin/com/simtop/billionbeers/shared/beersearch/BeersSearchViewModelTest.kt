@@ -1,6 +1,5 @@
-package com.simtop.feature.beersearch
+package com.simtop.billionbeers.shared.beersearch
 
-import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.Beer
@@ -39,8 +38,8 @@ class BeersSearchViewModelTest {
 
   @AfterEach fun tearDown() = Dispatchers.resetMain()
 
-  private fun buildViewModel(savedStateHandle: SavedStateHandle = SavedStateHandle()) =
-    BeersSearchViewModel(mainDispatcher.dispatcherProvider, fakeFactory, savedStateHandle)
+  private fun buildViewModel(initialQuery: String = "") =
+    BeersSearchViewModel(mainDispatcher.dispatcherProvider, fakeFactory, initialQuery)
 
   @Test
   fun `rapid typing debounces into a single query`() =
@@ -180,12 +179,10 @@ class BeersSearchViewModelTest {
       }
     }
 
-  // Process death: the query survives in the SavedStateHandle, so a recreated ViewModel re-runs
-  // the search on its own - the user gets their results back, not just the text in the field.
   @Test
-  fun `a query restored from the saved state re-runs the search`() =
+  fun `an initial query re-runs the search`() =
     runTest(mainDispatcher.testDispatcher) {
-      val viewModel = buildViewModel(SavedStateHandle(mapOf("search_query" to "ipa")))
+      val viewModel = buildViewModel(initialQuery = "ipa")
 
       viewModel.viewState.test {
         advanceTimeBy(pastDebounce)

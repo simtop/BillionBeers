@@ -1,14 +1,11 @@
 package com.simtop.feature.beersearch
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
@@ -47,15 +44,14 @@ import com.simtop.billionbeers.core.designsystem.component.AccessibilityMatrixPr
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.component.showToast
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.billionbeers.shared.beersearch.BeersSearchEvent as SharedBeersSearchEvent
+import com.simtop.billionbeers.shared.beersearch.SharedBeersSearchContent
 import com.simtop.core.core.CommonUiState
-import com.simtop.core.core.PagedListFooter
 import com.simtop.core.core.PagedListUiModel
 import com.simtop.presentation_utils.R as PresentationUtilsR
-import com.simtop.presentation_utils.core.InfiniteListHandler
 import com.simtop.presentation_utils.core.resolvedMessage
 import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import com.simtop.presentation_utils.custom_views.ComposeErrorView
-import com.simtop.presentation_utils.custom_views.pagedListFooter
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 
 /**
@@ -81,7 +77,7 @@ fun BeersSearchScreen(
     lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
       viewModel.events.collect { event ->
         when (event) {
-          BeersSearchEvent.ShowLoadMoreError -> showToast(context, loadMoreFailedMessage)
+          SharedBeersSearchEvent.ShowLoadMoreError -> showToast(context, loadMoreFailedMessage)
         }
       }
     }
@@ -142,41 +138,60 @@ fun BeersSearchContent(
     },
   ) { padding ->
     Box(modifier = Modifier.fillMaxSize().consumeWindowInsets(padding).imePadding()) {
-      when (val state = viewState) {
-        CommonUiState.Empty ->
-          CenteredHint(
-            text = stringResource(R.string.search_prompt),
-            modifier = Modifier.fillMaxSize().padding(padding),
-          )
-        CommonUiState.Loading ->
+      val resultCount = (viewState as? CommonUiState.Success)?.data?.items?.size ?: 0
+      SharedBeersSearchContent(
+        viewState = viewState,
+        query = query,
+        beerRow = { beer -> ComposeBeersListItem(beer = beer, onClick = onBeerClick) },
+        loadingContent = {
           Box(
             modifier = Modifier.fillMaxSize().padding(padding),
             contentAlignment = Alignment.Center,
           ) {
             CircularProgressIndicator()
           }
-        is CommonUiState.Error ->
-          ComposeErrorView(
-            message = state.resolvedMessage().orEmpty(),
-            onRetry = onRetrySearch,
+        },
+        emptyContent = {
+          CenteredHint(
+            text = stringResource(R.string.search_prompt),
             modifier = Modifier.fillMaxSize().padding(padding),
           )
-        is CommonUiState.Success ->
-          if (state.data.items.isEmpty()) {
-            CenteredHint(
-              text = stringResource(R.string.search_no_results, query),
-              modifier = Modifier.fillMaxSize().padding(padding),
-            )
-          } else {
-            SearchResults(
-              model = state.data,
-              contentPadding = padding,
-              onBeerClick = onBeerClick,
-              onScrollToBottom = onScrollToBottom,
-              onRetryLoadMore = onRetryLoadMore,
-            )
-          }
-      }
+        },
+        noResultsContent = { term ->
+          CenteredHint(
+            text = stringResource(R.string.search_no_results, term),
+            modifier = Modifier.fillMaxSize().padding(padding),
+          )
+        },
+        errorContent = { error, retry ->
+          ComposeErrorView(
+            message = error.resolvedMessage().orEmpty(),
+            onRetry = retry,
+            modifier = Modifier.fillMaxSize().padding(padding),
+          )
+        },
+        resultCountContent = { count ->
+          Text(
+            text = pluralStringResource(R.plurals.search_result_count, count, count),
+            style = MaterialTheme.typography.labelLarge,
+            modifier =
+              Modifier.fillMaxWidth()
+                .padding(
+                  horizontal = BillionBeersTheme.spacing.medium,
+                  vertical = BillionBeersTheme.spacing.small,
+                ),
+          )
+        },
+        loadMoreFailedText = stringResource(PresentationUtilsR.string.paged_list_load_more_failed),
+        retryText = stringResource(PresentationUtilsR.string.retry),
+        endOfListText =
+          pluralStringResource(R.plurals.search_end_of_list, resultCount, resultCount),
+        onScrollToBottom = onScrollToBottom,
+        onRetryLoadMore = onRetryLoadMore,
+        onRetrySearch = onRetrySearch,
+        contentPadding = padding,
+        modifier = Modifier.fillMaxSize(),
+      )
     }
   }
 }
@@ -202,51 +217,6 @@ private fun SearchField(query: String, onQueryChange: (String) -> Unit, autoFocu
         unfocusedIndicatorColor = Color.Transparent,
       ),
   )
-}
-
-@Composable
-private fun SearchResults(
-  model: PagedListUiModel<Beer>,
-  contentPadding: PaddingValues,
-  onBeerClick: (Beer) -> Unit,
-  onScrollToBottom: () -> Unit,
-  onRetryLoadMore: () -> Unit,
-) {
-  val listState = rememberLazyListState()
-  if (model.footer !is PagedListFooter.Retry) {
-    InfiniteListHandler(listState = listState, onLoadMore = onScrollToBottom)
-  }
-
-  val endOfListText =
-    pluralStringResource(R.plurals.search_end_of_list, model.items.size, model.items.size)
-  LazyColumn(
-    state = listState,
-    modifier = Modifier.fillMaxSize().consumeWindowInsets(contentPadding),
-    contentPadding = contentPadding,
-  ) {
-    model.totalCount?.let { count ->
-      item {
-        Text(
-          text = pluralStringResource(R.plurals.search_result_count, count, count),
-          style = MaterialTheme.typography.labelLarge,
-          modifier =
-            Modifier.fillMaxWidth()
-              .padding(
-                horizontal = BillionBeersTheme.spacing.medium,
-                vertical = BillionBeersTheme.spacing.small,
-              ),
-        )
-      }
-    }
-    items(model.items.size) { index ->
-      ComposeBeersListItem(beer = model.items[index], onClick = onBeerClick)
-    }
-    pagedListFooter(
-      model = model,
-      endOfListText = endOfListText,
-      onRetryLoadMore = onRetryLoadMore,
-    )
-  }
 }
 
 @Composable
