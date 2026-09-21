@@ -20,6 +20,7 @@ import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.BillionBeersApplication
 import com.simtop.billionbeers.core.designsystem.component.showToast
 import com.simtop.billionbeers.di.DynamicDependencies
+import com.simtop.billionbeers.shared.beerdetail.BeerDetailEvent as SharedBeerDetailEvent
 import com.simtop.core.core.CommonUiState
 import com.simtop.feature.beerdetail.presentation.di.FeatureDetailComponent
 import dev.zacsweers.metro.createGraphFactory
@@ -57,8 +58,9 @@ fun BeerDetailScreenImpl(
       lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
         viewModel.events.collect { event ->
           when (event) {
-            is BeerDetailEvent.ShowError -> showToast(context = context, message = event.message)
-            BeerDetailEvent.FavoriteUpdated -> Unit
+            is SharedBeerDetailEvent.ShowError ->
+              showToast(context = context, message = event.message)
+            SharedBeerDetailEvent.FavoriteUpdated -> Unit
           }
         }
       }

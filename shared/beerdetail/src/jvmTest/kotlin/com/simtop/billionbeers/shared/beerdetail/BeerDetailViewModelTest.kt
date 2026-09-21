@@ -1,6 +1,5 @@
-package com.simtop.feature.beerdetail
+package com.simtop.billionbeers.shared.beerdetail
 
-import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
 import com.simtop.beerdomain.domain.errors.UpdateFavoriteError
@@ -11,8 +10,6 @@ import com.simtop.beerdomain.fakes.fakeBeerModel
 import com.simtop.beerdomain.fakes.fakeException
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.Either
-import com.simtop.feature.beerdetail.presentation.BeerDetailEvent
-import com.simtop.feature.beerdetail.presentation.BeerDetailViewModel
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.CompletableDeferred
@@ -53,7 +50,6 @@ internal class BeerDetailViewModelTest {
         BeerDetailViewModel(
           fakeBeersRepository,
           fakeBeerModel,
-          SavedStateHandle(),
         )
 
       // Assert
@@ -66,33 +62,6 @@ internal class BeerDetailViewModelTest {
     }
 
   @Test
-  fun `when recreated we restore the last known beer from saved state`() =
-    runTest(testDispatcher) {
-      val savedStateHandle = SavedStateHandle()
-      val viewModel =
-        BeerDetailViewModel(
-          fakeBeersRepository,
-          fakeBeerModel,
-          savedStateHandle,
-        )
-      val toggledBeer = fakeBeerModel.copy(availability = !fakeBeerModel.availability)
-
-      viewModel.updateAvailability(fakeBeerModel)
-      testDispatcher.scheduler.advanceUntilIdle()
-
-      val restoredState = savedStateHandle.savedStateProvider().saveState()
-      val recreatedViewModel =
-        BeerDetailViewModel(
-          fakeBeersRepository,
-          fakeBeerModel,
-          SavedStateHandle.createHandle(restoredState, null),
-        )
-
-      expectThat((recreatedViewModel.beerDetailViewState.value as CommonUiState.Success).data)
-        .isEqualTo(toggledBeer)
-    }
-
-  @Test
   fun `when usecase fails we rollback and emit error event`() =
     runTest(testDispatcher) {
       // Arrange
@@ -102,7 +71,6 @@ internal class BeerDetailViewModelTest {
         BeerDetailViewModel(
           fakeBeersRepository,
           fakeBeerModel,
-          SavedStateHandle(),
         )
 
       // Act
@@ -124,12 +92,8 @@ internal class BeerDetailViewModelTest {
         }
 
         val event = awaitItem()
-        expectThat(event)
-          .isA<com.simtop.feature.beerdetail.presentation.BeerDetailEvent.ShowError>()
-        expectThat(
-            (event as com.simtop.feature.beerdetail.presentation.BeerDetailEvent.ShowError).message
-          )
-          .isEqualTo(fakeException.message)
+        expectThat(event).isA<BeerDetailEvent.ShowError>()
+        expectThat((event as BeerDetailEvent.ShowError).message).isEqualTo(fakeException.message)
         cancelAndIgnoreRemainingEvents()
       }
     }
@@ -147,7 +111,6 @@ internal class BeerDetailViewModelTest {
         BeerDetailViewModel(
           fakeBeersRepository,
           fakeBeerModel,
-          SavedStateHandle(),
         )
 
       // Act
@@ -179,7 +142,7 @@ internal class BeerDetailViewModelTest {
     runTest(testDispatcher) {
       val repository = FakeBeersRepository()
       val toggledBeer = fakeBeerModel.copy(isFavorite = !fakeBeerModel.isFavorite)
-      val viewModel = BeerDetailViewModel(repository, fakeBeerModel, SavedStateHandle())
+      val viewModel = BeerDetailViewModel(repository, fakeBeerModel)
 
       viewModel.events.test {
         viewModel.beerDetailViewState.test {
@@ -202,7 +165,7 @@ internal class BeerDetailViewModelTest {
       val toggledBeer = fakeBeerModel.copy(isFavorite = !fakeBeerModel.isFavorite)
       coEvery { repository.updateFavorite(toggledBeer) } returns
         Either.Left(UpdateFavoriteError.Unknown(fakeException))
-      val viewModel = BeerDetailViewModel(repository, fakeBeerModel, SavedStateHandle())
+      val viewModel = BeerDetailViewModel(repository, fakeBeerModel)
 
       viewModel.events.test {
         viewModel.beerDetailViewState.test {
@@ -233,7 +196,7 @@ internal class BeerDetailViewModelTest {
           Either.Left(UpdateFavoriteError.Unknown(fakeException))
         }
       coEvery { repository.updateFavorite(secondBeer) } returns Either.Right(Unit)
-      val viewModel = BeerDetailViewModel(repository, fakeBeerModel, SavedStateHandle())
+      val viewModel = BeerDetailViewModel(repository, fakeBeerModel)
 
       viewModel.updateFavorite(fakeBeerModel)
       testDispatcher.scheduler.runCurrent()
@@ -268,7 +231,7 @@ internal class BeerDetailViewModelTest {
           release.await()
           Either.Right(Unit)
         }
-      val viewModel = BeerDetailViewModel(repository, fakeBeerModel, SavedStateHandle())
+      val viewModel = BeerDetailViewModel(repository, fakeBeerModel)
 
       viewModel.updateAvailability(fakeBeerModel)
       viewModel.updateFavorite(fakeBeerModel)
@@ -278,21 +241,6 @@ internal class BeerDetailViewModelTest {
       release.complete(Unit)
       testDispatcher.scheduler.advanceUntilIdle()
     }
-
-  @Test
-  fun `older serialized beer payload receives current default fields`() = runTest {
-    val oldPayload =
-      "{\"id\":\"1\",\"name\":\"Old\",\"tagline\":\"\",\"description\":\"\",\"imageUrl\":\"\",\"abv\":0.0," +
-        "\"ibu\":0.0,\"foodPairing\":[],\"availability\":true}"
-
-    val decoded = kotlinx.serialization.json.Json.decodeFromString<Beer>(oldPayload)
-
-    expectThat(decoded.isFavorite).isEqualTo(false)
-    expectThat(decoded.styleName).isEqualTo("")
-    expectThat(decoded.breweryName).isEqualTo("")
-    expectThat(decoded.srm).isEqualTo(null)
-    expectThat(decoded.ingredients).isEqualTo(emptyList())
-  }
 
   @Test
   fun `overlapping updates are serialized so a failed update cannot roll back a newer update`() =
@@ -314,7 +262,7 @@ internal class BeerDetailViewModelTest {
           secondUpdateStarted.complete(Unit)
           Either.Right(Unit)
         }
-      val viewModel = BeerDetailViewModel(repository, fakeBeerModel, SavedStateHandle())
+      val viewModel = BeerDetailViewModel(repository, fakeBeerModel)
 
       viewModel.updateAvailability(fakeBeerModel)
       testDispatcher.scheduler.runCurrent()
@@ -331,4 +279,19 @@ internal class BeerDetailViewModelTest {
       expectThat((viewModel.beerDetailViewState.value as CommonUiState.Success).data)
         .isEqualTo(secondUpdatedBeer)
     }
+
+  @Test
+  fun `older serialized beer payload receives current default fields`() = runTest {
+    val oldPayload =
+      "{\"id\":\"1\",\"name\":\"Old\",\"tagline\":\"\",\"description\":\"\",\"imageUrl\":\"\",\"abv\":0.0," +
+        "\"ibu\":0.0,\"foodPairing\":[],\"availability\":true}"
+
+    val decoded = kotlinx.serialization.json.Json.decodeFromString<Beer>(oldPayload)
+
+    expectThat(decoded.isFavorite).isEqualTo(false)
+    expectThat(decoded.styleName).isEqualTo("")
+    expectThat(decoded.breweryName).isEqualTo("")
+    expectThat(decoded.srm).isEqualTo(null)
+    expectThat(decoded.ingredients).isEqualTo(emptyList())
+  }
 }
