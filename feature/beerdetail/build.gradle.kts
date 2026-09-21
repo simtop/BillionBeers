@@ -17,6 +17,7 @@ android {
 
 dependencies {
   implementation(this.project(":beerdomain:api"))
+  implementation(this.project(":shared:beerdetail"))
   implementation(this.project(":presentation_utils"))
   implementation(this.project(":core"))
   implementation(this.project(":core:designsystem"))

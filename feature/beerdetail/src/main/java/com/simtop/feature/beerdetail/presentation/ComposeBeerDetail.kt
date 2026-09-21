@@ -1,40 +1,17 @@
 package com.simtop.feature.beerdetail.presentation
 
 import android.provider.Settings
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material3.*
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
@@ -44,9 +21,10 @@ import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.core.designsystem.component.AccessibilityMatrixPreview
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.billionbeers.shared.beerdetail.BeerDetailStrings
+import com.simtop.billionbeers.shared.beerdetail.SharedBeerDetailContent
 import com.simtop.presentation_utils.R
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @Suppress("LongParameterList")
 fun ComposeBeerDetail(
@@ -57,329 +35,73 @@ fun ComposeBeerDetail(
   onToggleFavorite: () -> Unit = {},
   showBackButton: Boolean = true,
 ) {
-  val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-  // Honours the system "Remove animations" accessibility setting (animator duration scale 0)
-  // instead of always animating for a fixed duration. Read via Settings.Global (API 17+) rather
-  // than ValueAnimator.getDurationScale(), which is API 33 and crashes on our minSdk 28.
+  val context = LocalContext.current
   val animationsDisabled =
     Settings.Global.getFloat(
-      LocalContext.current.contentResolver,
+      context.contentResolver,
       Settings.Global.ANIMATOR_DURATION_SCALE,
       1f,
     ) == 0f
-  val animationDurationMs = if (animationsDisabled) 0 else AVAILABILITY_ANIMATION_DURATION_MS
-  val favoriteLabel =
-    stringResource(
-      if (beer.isFavorite) R.string.remove_from_favorites else R.string.add_to_favorites
-    )
 
-  Scaffold(
-    modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-    topBar = {
-      Box(modifier = Modifier.wrapContentSize()) {
-        BeerDetailImage(
-          imageUrl = beer.imageUrl,
-          contentDescription = stringResource(R.string.beer_list_item_image_description, beer.name),
-          modifier = Modifier.matchParentSize(),
-        )
-
-        // Gradient Overlay for text readability
-        Box(
-          modifier =
-            Modifier.matchParentSize()
-              .background(
-                Brush.verticalGradient(
-                  colors = listOf(Color.Transparent, Color.Black.copy(alpha = GRADIENT_ALPHA))
-                )
-              )
-        )
-
-        LargeTopAppBar(
-          title = {
-            Text(
-              text = beer.name,
-              style =
-                MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
-              maxLines = 2,
-              overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-            )
-          },
-          expandedHeight = 350.dp,
-          navigationIcon = {
-            if (showBackButton) {
-              IconButton(onClick = onBackClick) {
-                Icon(
-                  imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                  contentDescription = stringResource(R.string.beer_detail_back),
-                  tint = Color.White,
-                )
-              }
-            }
-          },
-          actions = {
-            IconButton(
-              onClick = onToggleFavorite,
-              modifier =
-                Modifier.testTag("toggle_favorite").semantics {
-                  role = Role.Button
-                  stateDescription = favoriteLabel
-                },
-            ) {
-              Icon(
-                imageVector =
-                  if (beer.isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                contentDescription = favoriteLabel,
-                tint = Color.White,
-              )
-            }
-          },
-          colors =
-            TopAppBarDefaults.largeTopAppBarColors(
-              containerColor = Color.Transparent,
-              scrolledContainerColor = MaterialTheme.colorScheme.primary,
-              titleContentColor = Color.White,
-              navigationIconContentColor = Color.White,
-              actionIconContentColor = Color.White,
-            ),
-          scrollBehavior = scrollBehavior,
-        )
-      }
+  SharedBeerDetailContent(
+    beer = beer,
+    strings =
+      BeerDetailStrings(
+        back = stringResource(R.string.beer_detail_back),
+        imageDescription = { name ->
+          stringResource(R.string.beer_list_item_image_description, name)
+        },
+        addToFavorites = stringResource(R.string.add_to_favorites),
+        removeFromFavorites = stringResource(R.string.remove_from_favorites),
+        available = stringResource(R.string.beer_available),
+        outOfStock = stringResource(R.string.beer_out_of_stock),
+        markAsEmpty = stringResource(R.string.mark_as_empty),
+        refillBarrels = stringResource(R.string.refill_barrels),
+        styleAndBrewery = { style, brewery ->
+          stringResource(R.string.beer_detail_style_and_brewery, style, brewery)
+        },
+        description = stringResource(R.string.beer_detail_description),
+        foodPairing = stringResource(R.string.beer_detail_food_pairing),
+        abv = stringResource(R.string.beer_detail_abv_label),
+        ibu = stringResource(R.string.beer_detail_ibu_label),
+        details = stringResource(R.string.beer_detail_details),
+        srm = stringResource(R.string.beer_detail_srm_label),
+        released = stringResource(R.string.beer_detail_released_year_label),
+        servingTemperature = stringResource(R.string.beer_detail_serving_temperature_label),
+        servingTemperatureValue = { min, max ->
+          stringResource(R.string.beer_detail_serving_temperature_value, min, max)
+        },
+        fermentation = stringResource(R.string.beer_detail_fermentation_method_label),
+        ingredients = stringResource(R.string.beer_detail_ingredients),
+        recommendedGlasses = stringResource(R.string.beer_detail_recommended_glasses),
+      ),
+    onBackClick = onBackClick,
+    onToggleAvailability = onToggleAvailability,
+    onToggleFavorite = onToggleFavorite,
+    backIcon = { contentDescription ->
+      androidx.compose.material3.Icon(
+        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+        contentDescription = contentDescription,
+        tint = Color.White,
+      )
     },
-    floatingActionButton = {
-      val availableLabel = stringResource(R.string.beer_available)
-      val outOfStockLabel = stringResource(R.string.beer_out_of_stock)
-      ExtendedFloatingActionButton(
-        onClick = onToggleAvailability,
-        containerColor =
-          if (beer.availability) {
-            MaterialTheme.colorScheme.primary
-          } else {
-            MaterialTheme.colorScheme.error
-          },
-        contentColor = Color.White,
-        shape = RoundedCornerShape(BillionBeersTheme.spacing.medium),
-        modifier =
-          Modifier.testTag("toggle_availability").semantics {
-            role = Role.Button
-            stateDescription = if (beer.availability) availableLabel else outOfStockLabel
-          },
-      ) {
-        AnimatedContent(
-          targetState = beer.availability,
-          label = "availability_animation",
-          transitionSpec = {
-            fadeIn(animationSpec = tween(animationDurationMs)) togetherWith
-              fadeOut(animationSpec = tween(animationDurationMs))
-          },
-        ) { isAvailable ->
-          if (isAvailable) {
-            Text(text = stringResource(R.string.mark_as_empty), fontWeight = FontWeight.Bold)
-          } else {
-            Text(text = stringResource(R.string.refill_barrels), fontWeight = FontWeight.Bold)
-          }
-        }
-      }
+    favoriteIcon = { isFavorite, contentDescription ->
+      androidx.compose.material3.Icon(
+        imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+        contentDescription = contentDescription,
+        tint = Color.White,
+      )
     },
-  ) { paddingValues ->
-    Column(
-      modifier =
-        Modifier.fillMaxSize()
-          .verticalScroll(rememberScrollState())
-          .padding(paddingValues)
-          .padding(BillionBeersTheme.spacing.medium)
-          .testTag("detail_scroll_view")
-    ) {
-      // Tagline
-      Text(
-        text = beer.tagline,
-        style =
-          MaterialTheme.typography.titleMedium.copy(
-            fontStyle = FontStyle.Italic,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-          ),
-      )
-
-      // Style · Brewery, only when the embedded data has both (older cached rows may have
-      // neither - Room migration backfills empty strings, not a re-fetch).
-      if (beer.styleName.isNotEmpty() && beer.breweryName.isNotEmpty()) {
-        Text(
-          text =
-            stringResource(
-              R.string.beer_detail_style_and_brewery,
-              beer.styleName,
-              beer.breweryName,
-            ),
-          style = MaterialTheme.typography.bodyMedium,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-      }
-
-      Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
-
-      // Stats Row
-      Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-        StatCard(
-          label = stringResource(R.string.beer_detail_abv_label),
-          value = "${beer.abv}%",
-          color = Color(ABV_BG_COLOR),
-          textColor = Color(ABV_TEXT_COLOR),
-        )
-        StatCard(
-          label = stringResource(R.string.beer_detail_ibu_label),
-          value = "${beer.ibu}",
-          color = Color(IBU_BG_COLOR),
-          textColor = Color(IBU_TEXT_COLOR),
-        )
-      }
-
-      Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
-
-      // Description
-      Text(
-        text = stringResource(R.string.beer_detail_description),
-        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-      )
-      Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.small))
-      Text(
-        text = beer.description,
-        style =
-          MaterialTheme.typography.bodyLarge.copy(
-            lineHeight = 24.sp,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = TEXT_ALPHA),
-          ),
-      )
-
-      Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
-
-      // Food Pairing
-      BeerDetailBulletSection(
-        title = stringResource(R.string.beer_detail_food_pairing),
-        items = beer.foodPairing,
-      )
-
-      // Details: released year / serving temperature / fermentation method / SRM, each row shown
-      // only when its field is present - a beer fetched before Phase 4 (or a legacy cache row)
-      // simply renders fewer rows instead of blanks.
-      val detailRows = beer.detailRows()
-      if (detailRows.isNotEmpty()) {
-        Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
-        Text(
-          text = stringResource(R.string.beer_detail_details),
-          style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-        )
-        Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.small))
-        detailRows.forEach { (label, value) ->
-          Row(
-            modifier =
-              Modifier.fillMaxWidth().padding(vertical = BillionBeersTheme.spacing.extraSmall),
-            horizontalArrangement = Arrangement.SpaceBetween,
-          ) {
-            Text(
-              text = label,
-              style = MaterialTheme.typography.bodyLarge,
-              color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(text = value, style = MaterialTheme.typography.bodyLarge)
-          }
-        }
-      }
-
-      Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
-
-      BeerDetailBulletSection(
-        title = stringResource(R.string.beer_detail_ingredients),
-        items = beer.ingredients,
-      )
-
-      Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
-
-      BeerDetailBulletSection(
-        title = stringResource(R.string.beer_detail_recommended_glasses),
-        items = beer.recommendedGlasses,
-      )
-    }
-  }
-}
-
-/** The (label, value) rows for the Details section - only the fields this [Beer] actually has. */
-@Composable
-private fun Beer.detailRows(): List<Pair<String, String>> = buildList {
-  releasedYear?.let { add(stringResource(R.string.beer_detail_released_year_label) to "$it") }
-  val minTemp = minServingTemperature
-  val maxTemp = maxServingTemperature
-  if (minTemp != null && maxTemp != null) {
-    add(
-      stringResource(R.string.beer_detail_serving_temperature_label) to
-        stringResource(R.string.beer_detail_serving_temperature_value, minTemp, maxTemp)
-    )
-  }
-  if (fermentationMethod.isNotEmpty()) {
-    add(stringResource(R.string.beer_detail_fermentation_method_label) to fermentationMethod)
-  }
-  srm?.let { add(stringResource(R.string.beer_detail_srm_label) to "$it") }
-}
-
-/**
- * A titled bullet list, hidden entirely when [items] is empty - the Food Pairing pattern reused for
- * Ingredients and Recommended Glasses.
- */
-@Composable
-private fun BeerDetailBulletSection(title: String, items: List<String>) {
-  if (items.isEmpty()) return
-  Column {
-    Text(
-      text = title,
-      style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-    )
-    Spacer(
-      modifier =
-        Modifier.height(BillionBeersTheme.spacing.medium - BillionBeersTheme.spacing.extraSmall)
-    )
-    items.forEach { item ->
-      Row(modifier = Modifier.padding(vertical = BillionBeersTheme.spacing.extraSmall)) {
-        Text(
-          text = "•",
-          style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-          modifier = Modifier.padding(end = BillionBeersTheme.spacing.small),
-        )
-        Text(text = item, style = MaterialTheme.typography.bodyLarge)
-      }
-    }
-  }
-}
-
-@Composable
-fun StatCard(
-  label: String,
-  value: String,
-  color: Color,
-  textColor: Color,
-  modifier: Modifier = Modifier,
-) {
-  Card(
-    colors = CardDefaults.cardColors(containerColor = color),
-    shape = RoundedCornerShape(BillionBeersTheme.spacing.medium),
-    modifier = modifier.width(100.dp),
-  ) {
-    Column(
-      modifier = Modifier.padding(BillionBeersTheme.spacing.medium),
-      horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-      Text(
-        text = value,
-        style =
-          MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, color = textColor),
-      )
-      Text(
-        text = label,
-        style =
-          MaterialTheme.typography.labelMedium.copy(
-            fontWeight = FontWeight.SemiBold,
-            color = textColor.copy(alpha = 0.7f),
-          ),
-      )
-    }
-  }
+    imageContent = { imageUrl, contentDescription, imageModifier ->
+      BeerDetailImage(imageUrl, contentDescription, imageModifier)
+    },
+    modifier = modifier,
+    favoriteModifier = Modifier.testTag("toggle_favorite"),
+    availabilityModifier = Modifier.testTag("toggle_availability"),
+    contentModifier = Modifier.testTag("detail_scroll_view"),
+    showBackButton = showBackButton,
+    animationsDisabled = animationsDisabled,
+  )
 }
 
 @Composable
@@ -394,7 +116,7 @@ fun BeerDetailImage(imageUrl: String, contentDescription: String?, modifier: Mod
         .build(),
     contentDescription = contentDescription,
     contentScale = ContentScale.Crop,
-    modifier = modifier.fillMaxSize(),
+    modifier = modifier,
   )
 }
 
@@ -429,8 +151,6 @@ internal fun ComposeBeerDetailPreview() {
   }
 }
 
-// A beer fetched before Phase 4 (or a legacy cache row post-migration): the Details/Ingredients/
-// Glasses sections must not render at all, not render with blanks.
 @PreviewLightDark
 @Composable
 internal fun ComposeBeerDetailWithoutEnrichedFieldsPreview() {
@@ -477,11 +197,3 @@ internal fun ComposeBeerDetailAccessibilityMatrixPreview() {
     )
   }
 }
-
-private const val GRADIENT_ALPHA = 0.7f
-private const val TEXT_ALPHA = 0.8f
-private const val ABV_BG_COLOR = 0xFFE0F7FA
-private const val ABV_TEXT_COLOR = 0xFF006064
-private const val IBU_BG_COLOR = 0xFFFBE9E7
-private const val IBU_TEXT_COLOR = 0xFFBF360C
-private const val AVAILABILITY_ANIMATION_DURATION_MS = 300
