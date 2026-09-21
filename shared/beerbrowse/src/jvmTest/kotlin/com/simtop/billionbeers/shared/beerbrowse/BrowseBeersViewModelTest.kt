@@ -1,4 +1,4 @@
-package com.simtop.feature.beerbrowse
+package com.simtop.billionbeers.shared.beerbrowse
 
 import app.cash.turbine.test
 import com.simtop.beerdomain.domain.errors.FetchBeersError
@@ -12,8 +12,6 @@ import com.simtop.core.core.PagedListFooter
 import com.simtop.core.core.PagedListUiModel
 import com.simtop.core.core.PagingEvent
 import com.simtop.core.core.PagingState
-import com.simtop.feature.beerbrowse.presentation.BrowseBeersEvent
-import com.simtop.feature.beerbrowse.presentation.BrowseBeersViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher

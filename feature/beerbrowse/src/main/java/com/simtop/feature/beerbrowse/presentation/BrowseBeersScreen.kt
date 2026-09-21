@@ -1,33 +1,15 @@
 package com.simtop.feature.beerbrowse.presentation
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
@@ -39,16 +21,16 @@ import com.simtop.billionbeers.core.designsystem.component.AccessibilityMatrixPr
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.component.showToast
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.billionbeers.shared.beerbrowse.BrowseBeersEvent as SharedBrowseBeersEvent
+import com.simtop.billionbeers.shared.beerbrowse.SharedBrowseBeersContent
 import com.simtop.core.core.CommonUiErrorKey
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.PagedListFooter
 import com.simtop.core.core.PagedListUiModel
 import com.simtop.presentation_utils.R
-import com.simtop.presentation_utils.core.InfiniteListHandler
 import com.simtop.presentation_utils.core.resolvedMessage
 import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import com.simtop.presentation_utils.custom_views.ComposeErrorView
-import com.simtop.presentation_utils.custom_views.pagedListFooter
 import dev.zacsweers.metrox.viewmodel.assistedMetroViewModel
 
 @Composable
@@ -57,8 +39,6 @@ internal fun BrowseBeersScreen(
   onBack: () -> Unit,
   onBeerClick: (Beer) -> Unit,
 ) {
-  // Keyed by the selection: picking a different style/brewery mints a fresh ViewModel (and with
-  // it a fresh pager) instead of mutating the old one - the query-surface invalidation rule.
   val viewModel =
     assistedMetroViewModel<BrowseBeersViewModel, BrowseBeersViewModel.Factory>(
       key = selection.key
@@ -75,9 +55,8 @@ internal fun BrowseBeersScreen(
     lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
       viewModel.events.collect { event ->
         when (event) {
-          BrowseBeersEvent.ShowLoadMoreError -> showToast(context, loadMoreFailedMessage)
-          // A failed refresh keeps the list; pulling again is the retry.
-          BrowseBeersEvent.ShowRefreshError -> showToast(context, refreshFailedMessage)
+          SharedBrowseBeersEvent.ShowLoadMoreError -> showToast(context, loadMoreFailedMessage)
+          SharedBrowseBeersEvent.ShowRefreshError -> showToast(context, refreshFailedMessage)
         }
       }
     }
@@ -88,14 +67,14 @@ internal fun BrowseBeersScreen(
     viewState = viewState,
     onBack = onBack,
     onBeerClick = onBeerClick,
-    onScrollToBottom = { viewModel.onScrollToBottom() },
-    onRetryLoadMore = { viewModel.onRetryLoadMore() },
-    onRetryFirstPage = { viewModel.onRetryFirstPage() },
+    onScrollToBottom = viewModel::onScrollToBottom,
+    onRetryLoadMore = viewModel::onRetryLoadMore,
+    onRetryFirstPage = viewModel::onRetryFirstPage,
   )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@Suppress("LongParameterList")
 internal fun BrowseBeersContent(
   title: String,
   viewState: CommonUiState<PagedListUiModel<Beer>>,
@@ -103,111 +82,31 @@ internal fun BrowseBeersContent(
   onBeerClick: (Beer) -> Unit,
   onScrollToBottom: () -> Unit,
   onRetryLoadMore: () -> Unit,
-  // Serves both first-page reloads: the full-screen error retry and the pull-to-refresh gesture.
   onRetryFirstPage: () -> Unit,
 ) {
-  Scaffold(
-    topBar = {
-      TopAppBar(
-        navigationIcon = {
-          IconButton(onClick = onBack) {
-            Icon(
-              Icons.AutoMirrored.Filled.ArrowBack,
-              contentDescription = stringResource(R.string.browse_back),
-            )
-          }
-        },
-        title = { Text(title) },
+  SharedBrowseBeersContent(
+    strings = browseStrings,
+    title = title,
+    viewState = viewState,
+    onBack = onBack,
+    backIcon = { contentDescription ->
+      Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = contentDescription)
+    },
+    onBeerClick = onBeerClick,
+    onScrollToBottom = onScrollToBottom,
+    onRetryLoadMore = onRetryLoadMore,
+    onRetryFirstPage = onRetryFirstPage,
+    errorContent = { state, retry ->
+      ComposeErrorView(
+        message = state.resolvedMessage().orEmpty(),
+        onRetry = retry,
+        modifier = Modifier.fillMaxSize(),
       )
-    }
-  ) { padding ->
-    Box(modifier = Modifier.fillMaxSize().consumeWindowInsets(padding)) {
-      when (val state = viewState) {
-        CommonUiState.Empty,
-        CommonUiState.Loading ->
-          Box(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentAlignment = Alignment.Center,
-          ) {
-            CircularProgressIndicator()
-          }
-        is CommonUiState.Error ->
-          ComposeErrorView(
-            message = state.resolvedMessage().orEmpty(),
-            onRetry = onRetryFirstPage,
-            modifier = Modifier.fillMaxSize().padding(padding),
-          )
-        is CommonUiState.Success ->
-          if (state.data.items.isEmpty()) {
-            CenteredHint(stringResource(R.string.browse_no_beers), Modifier.padding(padding))
-          } else {
-            BrowseBeersResults(
-              model = state.data,
-              contentPadding = padding,
-              onBeerClick = onBeerClick,
-              onScrollToBottom = onScrollToBottom,
-              onRefresh = onRetryFirstPage,
-              onRetryLoadMore = onRetryLoadMore,
-            )
-          }
-      }
-    }
-  }
-}
-
-@Composable
-@Suppress("LongParameterList")
-private fun BrowseBeersResults(
-  model: PagedListUiModel<Beer>,
-  contentPadding: PaddingValues,
-  onBeerClick: (Beer) -> Unit,
-  onScrollToBottom: () -> Unit,
-  onRefresh: () -> Unit,
-  onRetryLoadMore: () -> Unit,
-) {
-  // The count header sits inside the box so it travels with the pull, as on the catalog screen.
-  PullToRefreshBox(isRefreshing = model.isRefreshing, onRefresh = onRefresh) {
-    Column {
-      model.totalCount?.let { count ->
-        Text(
-          text = pluralStringResource(R.plurals.browse_beers_count, count, count),
-          style = MaterialTheme.typography.labelLarge,
-          modifier =
-            Modifier.fillMaxWidth()
-              .padding(
-                horizontal = BillionBeersTheme.spacing.medium,
-                vertical = BillionBeersTheme.spacing.small,
-              ),
-        )
-      }
-
-      val listState = rememberLazyListState()
-      if (model.footer !is PagedListFooter.Retry) {
-        InfiniteListHandler(listState = listState, onLoadMore = onScrollToBottom)
-      }
-
-      val endOfListText =
-        pluralStringResource(
-          R.plurals.browse_beers_end_of_list,
-          model.items.size,
-          model.items.size,
-        )
-      LazyColumn(
-        state = listState,
-        modifier = Modifier.fillMaxSize().consumeWindowInsets(contentPadding),
-        contentPadding = contentPadding,
-      ) {
-        items(model.items.size) { index ->
-          ComposeBeersListItem(beer = model.items[index], onClick = onBeerClick)
-        }
-        pagedListFooter(
-          model = model,
-          endOfListText = endOfListText,
-          onRetryLoadMore = onRetryLoadMore,
-        )
-      }
-    }
-  }
+    },
+    beerRow = { beer, onClick ->
+      ComposeBeersListItem(beer = beer, onClick = { onClick() })
+    },
+  )
 }
 
 class BrowseBeersPreviewParameterProvider :

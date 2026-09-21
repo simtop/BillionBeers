@@ -1,27 +1,8 @@
 package com.simtop.feature.beerbrowse.presentation
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.consumeWindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -29,10 +10,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import com.simtop.beerdomain.domain.models.BeerStyle
@@ -40,6 +20,9 @@ import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.billionbeers.core.designsystem.component.AccessibilityMatrixPreview
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.billionbeers.shared.beerbrowse.BrowseCenteredHint
+import com.simtop.billionbeers.shared.beerbrowse.BrowseStrings
+import com.simtop.billionbeers.shared.beerbrowse.SharedBrowseHomeContent
 import com.simtop.core.core.CommonUiErrorKey
 import com.simtop.core.core.CommonUiState
 import com.simtop.presentation_utils.R
@@ -49,6 +32,29 @@ import dev.zacsweers.metrox.viewmodel.metroViewModel
 
 private const val TAB_STYLES = 0
 private const val TAB_BREWERIES = 1
+
+internal val browseStrings
+  @Composable
+  get() =
+    BrowseStrings(
+      back = stringResource(R.string.browse_back),
+      title = stringResource(R.string.browse_title),
+      stylesTab = stringResource(R.string.browse_tab_styles),
+      breweriesTab = stringResource(R.string.browse_tab_breweries),
+      emptyState = stringResource(R.string.empty_state),
+      noBeers = stringResource(R.string.browse_no_beers),
+      retry = stringResource(R.string.retry),
+      loadMoreFailed = stringResource(R.string.paged_list_load_more_failed),
+      breweryFounded = { country, year ->
+        stringResource(R.string.browse_brewery_founded, country, year)
+      },
+      beersCount = { count ->
+        pluralStringResource(R.plurals.browse_beers_count, count, count)
+      },
+      endOfList = { count ->
+        pluralStringResource(R.plurals.browse_beers_end_of_list, count, count)
+      },
+    )
 
 @Composable
 internal fun BrowseHomeScreen(
@@ -61,8 +67,6 @@ internal fun BrowseHomeScreen(
   val breweries by viewModel.breweries.collectAsState()
   var selectedTab by rememberSaveable { mutableIntStateOf(TAB_STYLES) }
 
-  // Runs on selection *and* on process-death restore with the breweries tab selected - the
-  // recreated ViewModel must be told the tab is visible or its list would stay Loading forever.
   LaunchedEffect(selectedTab) {
     if (selectedTab == TAB_BREWERIES) viewModel.onBreweriesTabSelected()
   }
@@ -75,12 +79,11 @@ internal fun BrowseHomeScreen(
     onStyleClick = onStyleClick,
     onBreweryClick = onBreweryClick,
     onBack = onBack,
-    onRetryStyles = { viewModel.retryStyles() },
-    onRetryBreweries = { viewModel.retryBreweries() },
+    onRetryStyles = viewModel::retryStyles,
+    onRetryBreweries = viewModel::retryBreweries,
   )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun BrowseHomeContent(
   styles: CommonUiState<List<BeerStyle>>,
@@ -93,126 +96,30 @@ internal fun BrowseHomeContent(
   onRetryStyles: () -> Unit,
   onRetryBreweries: () -> Unit,
 ) {
-  Scaffold(
-    topBar = {
-      TopAppBar(
-        navigationIcon = {
-          IconButton(onClick = onBack) {
-            Icon(
-              Icons.AutoMirrored.Filled.ArrowBack,
-              contentDescription = stringResource(R.string.browse_back),
-            )
-          }
-        },
-        title = { Text(stringResource(R.string.browse_title)) },
-      )
-    }
-  ) { padding ->
-    Column(
-      modifier =
-        Modifier.fillMaxSize()
-          .consumeWindowInsets(padding)
-          .padding(top = padding.calculateTopPadding())
-    ) {
-      TabRow(selectedTabIndex = selectedTab) {
-        Tab(
-          selected = selectedTab == TAB_STYLES,
-          onClick = { onTabSelected(TAB_STYLES) },
-          text = { Text(stringResource(R.string.browse_tab_styles)) },
-        )
-        Tab(
-          selected = selectedTab == TAB_BREWERIES,
-          onClick = { onTabSelected(TAB_BREWERIES) },
-          text = { Text(stringResource(R.string.browse_tab_breweries)) },
-        )
-      }
-
-      when (selectedTab) {
-        TAB_STYLES ->
-          BrowseListState(state = styles, onRetry = onRetryStyles) { items ->
-            LazyColumn(
-              modifier = Modifier.fillMaxSize(),
-              contentPadding = PaddingValues(bottom = padding.calculateBottomPadding()),
-            ) {
-              items(items.size) { index ->
-                val style = items[index]
-                ListItem(
-                  headlineContent = { Text(style.name) },
-                  modifier = Modifier.clickable { onStyleClick(style) },
-                )
-                HorizontalDivider()
-              }
-            }
-          }
-        TAB_BREWERIES ->
-          BrowseListState(state = breweries, onRetry = onRetryBreweries) { items ->
-            LazyColumn(
-              modifier = Modifier.fillMaxSize(),
-              contentPadding = PaddingValues(bottom = padding.calculateBottomPadding()),
-            ) {
-              items(items.size) { index ->
-                val brewery = items[index]
-                ListItem(
-                  headlineContent = { Text(brewery.name) },
-                  supportingContent = {
-                    breweryCaption(brewery)?.let { caption -> Text(caption) }
-                  },
-                  modifier = Modifier.clickable { onBreweryClick(brewery) },
-                )
-                HorizontalDivider()
-              }
-            }
-          }
-      }
-    }
-  }
-}
-
-/** The one Loading/Error/Empty/Success wrapper both unpaged browse lists share. */
-@Composable
-private fun <T> BrowseListState(
-  state: CommonUiState<List<T>>,
-  onRetry: () -> Unit,
-  content: @Composable (List<T>) -> Unit,
-) {
-  when (state) {
-    CommonUiState.Loading ->
-      Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator()
-      }
-    is CommonUiState.Error ->
-      ComposeErrorView(message = state.resolvedMessage().orEmpty(), onRetry = onRetry)
-    CommonUiState.Empty -> CenteredHint(stringResource(R.string.empty_state))
-    is CommonUiState.Success -> content(state.data)
-  }
-}
-
-/** "KP · Founded 1972", degrading gracefully when either half is missing. */
-@Composable
-private fun breweryCaption(brewery: Brewery): String? {
-  val foundedYear = brewery.foundedYear
-  return when {
-    brewery.countryCode.isNotEmpty() && foundedYear != null ->
-      stringResource(R.string.browse_brewery_founded, brewery.countryCode, foundedYear)
-    brewery.countryCode.isNotEmpty() -> brewery.countryCode
-    else -> null
-  }
+  val strings = browseStrings
+  SharedBrowseHomeContent(
+    strings = strings,
+    styles = styles,
+    breweries = breweries,
+    selectedTab = selectedTab,
+    onTabSelected = onTabSelected,
+    onStyleClick = onStyleClick,
+    onBreweryClick = onBreweryClick,
+    onBack = onBack,
+    backIcon = { contentDescription ->
+      Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = contentDescription)
+    },
+    onRetryStyles = onRetryStyles,
+    onRetryBreweries = onRetryBreweries,
+    errorContent = { state, retry ->
+      ComposeErrorView(message = state.resolvedMessage().orEmpty(), onRetry = retry)
+    },
+  )
 }
 
 @Composable
-internal fun CenteredHint(text: String, modifier: Modifier = Modifier) {
-  Box(
-    modifier = modifier.fillMaxSize().padding(BillionBeersTheme.spacing.large),
-    contentAlignment = Alignment.Center,
-  ) {
-    Text(
-      text = text,
-      style = MaterialTheme.typography.bodyLarge,
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
-      textAlign = TextAlign.Center,
-    )
-  }
-}
+internal fun CenteredHint(text: String, modifier: Modifier = Modifier) =
+  BrowseCenteredHint(text, modifier)
 
 class BrowseHomePreviewParameterProvider :
   PreviewParameterProvider<BrowseHomePreviewParameterProvider.Case> {
