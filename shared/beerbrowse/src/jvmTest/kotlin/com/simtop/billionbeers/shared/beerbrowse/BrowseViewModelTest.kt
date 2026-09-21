@@ -1,4 +1,4 @@
-package com.simtop.feature.beerbrowse
+package com.simtop.billionbeers.shared.beerbrowse
 
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.BeerStyle
@@ -6,7 +6,6 @@ import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.Either
-import com.simtop.feature.beerbrowse.presentation.BrowseViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestDispatcher
