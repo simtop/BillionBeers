@@ -124,8 +124,8 @@ desktop-live: ## Fetch one catalog page from the API (explicit opt-in; pass BASE
 	$(GRADLE_RUNNER) :desktop-app:run --args="--live $(if $(BASE_URL),--base-url $(BASE_URL),)"
 
 ios-compile: ## Compile all shared modules for both supported Apple targets.
-	$(GRADLE_RUNNER) :core-common:compileKotlinIosArm64 :beerdomain:api:compileKotlinIosArm64 :beerdomain:fakes:compileKotlinIosArm64 :beer_network:api:compileKotlinIosArm64 :beer_network:fixtures:compileKotlinIosArm64 :beer_network:compileKotlinIosArm64 :beer_storage:api:compileKotlinIosArm64 :beer_database:compileKotlinIosArm64 :beer_data:compileKotlinIosArm64 :shared:favorites:compileKotlinIosArm64 :ios-shared:compileKotlinIosArm64 # gitleaks:allow
-	$(GRADLE_RUNNER) :core-common:compileKotlinIosSimulatorArm64 :beerdomain:api:compileKotlinIosSimulatorArm64 :beerdomain:fakes:compileKotlinIosSimulatorArm64 :beer_network:api:compileKotlinIosSimulatorArm64 :beer_network:fixtures:compileKotlinIosSimulatorArm64 :beer_network:compileKotlinIosSimulatorArm64 :beer_storage:api:compileKotlinIosSimulatorArm64 :beer_database:compileKotlinIosSimulatorArm64 :beer_data:compileKotlinIosSimulatorArm64 :shared:favorites:compileKotlinIosSimulatorArm64 :ios-shared:compileKotlinIosSimulatorArm64
+	$(GRADLE_RUNNER) :core-common:compileKotlinIosArm64 :beerdomain:api:compileKotlinIosArm64 :beerdomain:fakes:compileKotlinIosArm64 :beer_network:api:compileKotlinIosArm64 :beer_network:fixtures:compileKotlinIosArm64 :beer_network:compileKotlinIosArm64 :beer_storage:api:compileKotlinIosArm64 :beer_database:compileKotlinIosArm64 :beer_data:compileKotlinIosArm64 :shared:favorites:compileKotlinIosArm64 :shared:beerslist:compileKotlinIosArm64 :ios-shared:compileKotlinIosArm64 # gitleaks:allow
+	$(GRADLE_RUNNER) :core-common:compileKotlinIosSimulatorArm64 :beerdomain:api:compileKotlinIosSimulatorArm64 :beerdomain:fakes:compileKotlinIosSimulatorArm64 :beer_network:api:compileKotlinIosSimulatorArm64 :beer_network:fixtures:compileKotlinIosSimulatorArm64 :beer_network:compileKotlinIosSimulatorArm64 :beer_storage:api:compileKotlinIosSimulatorArm64 :beer_database:compileKotlinIosSimulatorArm64 :beer_data:compileKotlinIosSimulatorArm64 :shared:favorites:compileKotlinIosSimulatorArm64 :shared:beerslist:compileKotlinIosSimulatorArm64 :ios-shared:compileKotlinIosSimulatorArm64
 
 ios-framework: ## Link the consuming iOS data framework for simulator and device.
 	$(GRADLE_RUNNER) :ios-shared:linkDebugFrameworkIosSimulatorArm64 :ios-shared:linkDebugFrameworkIosArm64
@@ -153,10 +153,10 @@ JVM_TEST_MODULES := :testing-utils :snapshot-processor :desktop-app
 # KMP modules are intentionally classified by the task they expose. A KMP module must never fall
 # through to `test` or `testDebugUnitTest`, because those tasks either do not exist or omit the target
 # under test.
-KMP_JVM_TEST_MODULES := :core-common :beerdomain:api :beerdomain:fakes :beer_network:api :beer_network :beer_storage:api :beer_database :beer_data :ios-shared :t71-fixture :shared:designsystem :shared:presentation :shared:favorites :navigation-contract
-KMP_METADATA_MODULES := :core-common :beerdomain:api :beerdomain:fakes :beer_network:api :beer_network :beer_network:fixtures :beer_storage:api :beer_database :beer_data :t71-fixture :shared:designsystem :shared:presentation :shared:favorites :navigation-contract
-KMP_ANDROID_HOST_TEST_MODULES := :core-common :beerdomain:api :beerdomain:fakes :beer_network:api :beer_network :beer_storage:api :beer_database :beer_data :t71-fixture :shared:designsystem :shared:presentation :shared:favorites :navigation-contract
-KMP_BROWSER_TEST_MODULES := :beer_storage:browser :web-app :t71-fixture :shared:presentation :shared:favorites :navigation-contract
+KMP_JVM_TEST_MODULES := :core-common :beerdomain:api :beerdomain:fakes :beer_network:api :beer_network :beer_storage:api :beer_database :beer_data :ios-shared :t71-fixture :shared:designsystem :shared:presentation :shared:favorites :shared:beerslist :navigation-contract
+KMP_METADATA_MODULES := :core-common :beerdomain:api :beerdomain:fakes :beer_network:api :beer_network :beer_network:fixtures :beer_storage:api :beer_database :beer_data :t71-fixture :shared:designsystem :shared:presentation :shared:favorites :shared:beerslist :navigation-contract
+KMP_ANDROID_HOST_TEST_MODULES := :core-common :beerdomain:api :beerdomain:fakes :beer_network:api :beer_network :beer_storage:api :beer_database :beer_data :t71-fixture :shared:designsystem :shared:presentation :shared:favorites :shared:beerslist :navigation-contract
+KMP_BROWSER_TEST_MODULES := :beer_storage:browser :web-app :t71-fixture :shared:presentation :shared:favorites :shared:beerslist :navigation-contract
 # Kotlin/Wasm's ChromeHeadless launcher also accepts Chromium-compatible browsers. Prefer the
 # installed Brave binary on macOS, while allowing CI and callers to override CHROME_BIN explicitly.
 BRAVE_BROWSER_BIN := /Applications/Brave Browser.app/Contents/MacOS/Brave Browser

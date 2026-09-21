@@ -1,11 +1,6 @@
 package com.simtop.feature.beerslist
 
 import android.provider.Settings
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -18,7 +13,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
-import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -27,8 +21,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
@@ -42,20 +34,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewParameter
@@ -69,16 +57,16 @@ import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.component.shimmerBrush
 import com.simtop.billionbeers.core.designsystem.component.showToast
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.billionbeers.shared.beerslist.BeersListEvent
+import com.simtop.billionbeers.shared.beerslist.SharedBeersListContent
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.PagedListFooter
 import com.simtop.core.core.PagedListUiModel
 import com.simtop.presentation_utils.R as PresentationUtilsR
-import com.simtop.presentation_utils.core.InfiniteListHandler
 import com.simtop.presentation_utils.core.LocalDebugDrawerToggle
 import com.simtop.presentation_utils.core.resolvedMessage
 import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import com.simtop.presentation_utils.custom_views.ComposeErrorView
-import com.simtop.presentation_utils.custom_views.pagedListFooter
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -178,107 +166,54 @@ fun BeersListContent(
     },
     contentWindowInsets = WindowInsets.statusBars,
   ) { paddingValues ->
-    val dataVisibility = rememberSaveable { mutableStateOf(false) }
-    // Honours the system "Remove animations" accessibility setting (animator duration scale 0)
-    // instead of always animating for a fixed duration. Read via Settings.Global (API 17+) rather
-    // than ValueAnimator.getDurationScale(), which is API 33 and crashes on our minSdk 28.
+    val layoutDirection = LocalLayoutDirection.current
+    val navBarsPadding = WindowInsets.navigationBars.asPaddingValues()
     val animationsDisabled =
       Settings.Global.getFloat(
         LocalContext.current.contentResolver,
         Settings.Global.ANIMATOR_DURATION_SCALE,
         1f,
       ) == 0f
-    val animationDurationMs = if (animationsDisabled) 0 else SCREEN_STATE_ANIMATION_DURATION_MS
+    val contentPadding =
+      PaddingValues(
+        start = navBarsPadding.calculateStartPadding(layoutDirection),
+        top = paddingValues.calculateTopPadding(),
+        end = navBarsPadding.calculateEndPadding(layoutDirection),
+        bottom =
+          paddingValues.calculateBottomPadding() +
+            navBarsPadding.calculateBottomPadding() +
+            BillionBeersTheme.spacing.medium,
+      )
+    val stateContentPadding = PaddingValues(top = paddingValues.calculateTopPadding())
+    val itemCount = (viewState as? CommonUiState.Success)?.data?.items?.size ?: 0
 
-    AnimatedContent(
-      targetState = viewState,
-      label = "ScreenStateAnimation",
-      // Keyed by *which* state, not by its contents. AnimatedContent wraps each content in a
-      // `key(contentKey(state))`, and the default contentKey is the state itself - so every
-      // appended page, being an `equals`-different CommonUiState.Success, replaced the group
-      // holding `rememberLazyListState()` and dropped the user back at the top of the catalog
-      // (and crossfaded the whole list on the way). Measured, not reasoned:
-      // BeersListStateRestorationUiTest.theScrollPositionSurvivesANewPageArriving found only
-      // items 0-6 composed after a page arrived at scroll position 39.
-      contentKey = { state -> state::class },
-      transitionSpec = {
-        fadeIn(animationSpec = tween(animationDurationMs)) togetherWith
-          fadeOut(animationSpec = tween(animationDurationMs))
+    SharedBeersListContent(
+      viewState = viewState,
+      beerRow = { beer -> ComposeBeersListItem(beer = beer, onClick = onBeerClick) },
+      loadingContent = { BeersListSkeleton(modifier = Modifier.padding(stateContentPadding)) },
+      emptyContent = { retry ->
+        ComposeErrorView(onRetry = retry, modifier = Modifier.padding(stateContentPadding))
       },
-    ) { state ->
-      when (state) {
-        CommonUiState.Empty -> {
-          ComposeErrorView(
-            onRetry = onRetry,
-            modifier = Modifier.padding(top = paddingValues.calculateTopPadding()),
-          )
-        }
-
-        is CommonUiState.Error -> {
-          val errorMessage = state.resolvedMessage()
-          ComposeErrorView(
-            message = errorMessage ?: stringResource(PresentationUtilsR.string.empty_state),
-            onRetry = onRetry,
-            modifier = Modifier.padding(top = paddingValues.calculateTopPadding()),
-          )
-          errorMessage?.let { message -> LaunchedEffect(message) { showToast(context, message) } }
-        }
-
-        CommonUiState.Loading -> {
-          BeersListSkeleton(modifier = Modifier.padding(top = paddingValues.calculateTopPadding()))
-        }
-
-        is CommonUiState.Success -> {
-          dataVisibility.value = true
-
-          val beers = state.data.items
-          PullToRefreshBox(
-            isRefreshing = state.data.isRefreshing,
-            onRefresh = onRefresh,
-            modifier = Modifier.fillMaxSize(),
-          ) {
-            val listState = rememberLazyListState()
-
-            // Suspend auto-load while the retry footer is up: the user is parked at the bottom
-            // after a failure, so scrolling away and back would re-trigger a load instead of
-            // waiting for an explicit Retry tap. Tapping Retry clears the footer and re-arms it.
-            if (state.data.footer !is PagedListFooter.Retry) {
-              InfiniteListHandler(listState = listState, onLoadMore = onScrollToBottom)
-            }
-
-            val layoutDirection = LocalLayoutDirection.current
-            val navBarsPadding = WindowInsets.navigationBars.asPaddingValues()
-            val endOfListText =
-              pluralStringResource(R.plurals.beers_end_of_list, beers.size, beers.size)
-
-            LazyColumn(
-              state = listState,
-              modifier = Modifier.testTag("beer_list").consumeWindowInsets(paddingValues),
-              contentPadding =
-                PaddingValues(
-                  start = navBarsPadding.calculateStartPadding(layoutDirection),
-                  top = paddingValues.calculateTopPadding(),
-                  end = navBarsPadding.calculateEndPadding(layoutDirection),
-                  bottom =
-                    paddingValues.calculateBottomPadding() +
-                      navBarsPadding.calculateBottomPadding() +
-                      BillionBeersTheme.spacing.medium,
-                ),
-            ) {
-              items(beers.count()) { index ->
-                ComposeBeersListItem(beer = beers[index], onClick = onBeerClick)
-              }
-
-              pagedListFooter(
-                model = state.data,
-                endOfListText = endOfListText,
-                onRetryLoadMore = onRetryLoadMore,
-              )
-            }
-          }
-        }
-      }
-    }
+      errorContent = { error, retry ->
+        val errorMessage = error.resolvedMessage()
+        ComposeErrorView(
+          message = errorMessage ?: stringResource(PresentationUtilsR.string.empty_state),
+          onRetry = retry,
+          modifier = Modifier.padding(stateContentPadding),
+        )
+        errorMessage?.let { message -> LaunchedEffect(message) { showToast(context, message) } }
+      },
+      loadMoreFailedText = stringResource(PresentationUtilsR.string.paged_list_load_more_failed),
+      retryText = stringResource(PresentationUtilsR.string.retry),
+      endOfListText = pluralStringResource(R.plurals.beers_end_of_list, itemCount, itemCount),
+      onScrollToBottom = onScrollToBottom,
+      onRefresh = onRefresh,
+      onRetry = onRetry,
+      onRetryLoadMore = onRetryLoadMore,
+      listContentPadding = contentPadding,
+      animationsDisabled = animationsDisabled,
+      modifier = Modifier.fillMaxSize(),
+    )
   }
 }
 
@@ -527,7 +462,6 @@ fun BeersListItemSkeleton(modifier: Modifier = Modifier) {
   }
 }
 
-const val SCREEN_STATE_ANIMATION_DURATION_MS = 300
 const val SKELETON_ITEM_COUNT = 10
 const val SHIMMER_TARGET_VALUE = 1300f
 const val TITLE_WIDTH_FRACTION = 0.7f
