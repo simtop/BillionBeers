@@ -59,7 +59,7 @@ fun SharedBeersListContent(
       fadeIn(animationSpec = tween(animationDuration)) togetherWith
         fadeOut(animationSpec = tween(animationDuration))
     },
-    modifier = modifier,
+    modifier = modifier.fillMaxSize(),
   ) { state ->
     when (state) {
       CommonUiState.Loading -> loadingContent()
