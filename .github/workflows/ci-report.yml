@@ -41,7 +41,7 @@ jobs:
     permissions:
       actions: read
       contents: read
-      pull-requests: read
+      pull-requests: write
       issues: write
     # Completion events are wake-ups, not snapshots. Serialize all writers, and have each
     # reconcile the current run: a delayed old completion must not overwrite a newer reporter.
