@@ -94,13 +94,17 @@ fun SharedBeerDetailContent(
   contentModifier: Modifier = Modifier,
   showBackButton: Boolean = true,
   animationsDisabled: Boolean = false,
+  collapsingToolbarEnabled: Boolean = true,
 ) {
-  val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+  val scrollBehavior =
+    if (collapsingToolbarEnabled) TopAppBarDefaults.exitUntilCollapsedScrollBehavior() else null
   val animationDurationMs = if (animationsDisabled) 0 else AVAILABILITY_ANIMATION_DURATION_MS
   val favoriteLabel = if (beer.isFavorite) strings.removeFromFavorites else strings.addToFavorites
 
   Scaffold(
-    modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+    modifier =
+      if (scrollBehavior != null) modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
+      else modifier,
     topBar = {
       BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
         val headerHeight =

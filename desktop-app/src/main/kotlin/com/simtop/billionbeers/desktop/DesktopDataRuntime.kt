@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.serialization.json.Json
 
 /** Configuration owned by a desktop host, not by the shared data layer. */
-const val DEFAULT_API_BASE_URL = "https://api.brewbuddy.dev/"
+const val DEFAULT_API_BASE_URL = "https://brewbuddy.dev/"
 
 data class DesktopDataConfig(
   val databasePath: String,
