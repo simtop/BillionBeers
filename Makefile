@@ -53,8 +53,8 @@ UI_TEST_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,:app:)
 # One local output filter. Gateway sessions can export GRADLE_RUNNER=./gradlew.
 GRADLE_RUNNER ?= $(shell if command -v rtk >/dev/null 2>&1; then echo "rtk gradlew"; else echo "./gradlew"; fi)
 IOS_HOST_DESTINATION ?= platform=iOS Simulator,name=iPhone 17 Pro,OS=26.4
-
-.PHONY: detekt-baseline help setup setup-ai-tools update-android-skills build bundle-release release-smoke install desktop-test desktop-run desktop-live ios-compile ios-framework ios-test ios-host-build ios-host-run clean deep-clean test test-tier-inventory konsist check-data-layer-boundary architecture-policy compose-metrics ui-test ui-test-local ui-test-managed ui-test-managed-newest ui-test-managed-ci ui-test-managed-all emulator-create emulator-recreate emulator-start emulator-stop emulator-status emulator-delete screenshot-record screenshot-verify screenshot-clean lint android-lint format check docs-check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline check-gradle-compatibility-flags verification-metadata verification-metadata-reference verification-metadata-candidate health module-graph metro-graph architecture-report repo-doctor benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark build-budget build-budget-check jacoco-report coverage-check update-docs install-profiler install-diffuse new-feature-module new-dev-app play-listing-check play-listing-capture play-listing-reset store-frames
+NODE_BIN_DIR ?= $(shell node_path="$$(command -v node 2>/dev/null || true)"; if [ -n "$$node_path" ]; then dirname "$$node_path"; else printf '%s' /opt/homebrew/bin; fi)
+.PHONY: detekt-baseline help setup setup-ai-tools update-android-skills build bundle-release release-smoke install desktop-test desktop-run desktop-live web-run web-image-proxy-test ios-compile ios-framework ios-test ios-host-build ios-host-run clean deep-clean test test-tier-inventory konsist check-data-layer-boundary architecture-policy compose-metrics ui-test ui-test-local ui-test-managed ui-test-managed-newest ui-test-managed-ci ui-test-managed-all emulator-create emulator-recreate emulator-start emulator-stop emulator-status emulator-delete screenshot-record screenshot-verify screenshot-clean lint android-lint format check docs-check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline check-gradle-compatibility-flags verification-metadata verification-metadata-reference verification-metadata-candidate health module-graph metro-graph architecture-report repo-doctor benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark build-budget build-budget-check jacoco-report coverage-check update-docs install-profiler install-diffuse new-feature-module new-dev-app play-listing-check play-listing-capture play-listing-reset store-frames
 
 help: ## Show this help message.
 	@echo "\n📊 BillionBeers Makefile Help"
@@ -123,6 +123,24 @@ desktop-run: ## Read the local desktop catalog from the stable default data dire
 
 desktop-live: ## Fetch one catalog page from the API (explicit opt-in; pass BASE_URL=... to override).
 	$(GRADLE_RUNNER) :desktop-app:run --args="--live $(if $(BASE_URL),--base-url $(BASE_URL),)"
+
+web-image-proxy-test: ## Test the local Web image proxy without contacting the upstream CDN.
+	python3 scripts/test_web_image_proxy.py
+
+web-run: ## Start the local Wasm browser host and image proxy for manual Web QA.
+	$(GRADLE_RUNNER) --stop
+	@proxy_log="$$(mktemp -t billion-beers-web-proxy).log"; \
+	cleanup() { if [ -n "$$proxy_pid" ]; then kill "$$proxy_pid" 2>/dev/null || true; wait "$$proxy_pid" 2>/dev/null || true; fi; rm -f "$$proxy_log"; }; \
+	trap cleanup EXIT; trap 'exit 130' INT TERM; \
+	if curl --silent --fail "http://127.0.0.1:8787/healthz" >/dev/null; then echo "Web image proxy port 8787 is already in use"; exit 1; fi; \
+	python3 scripts/web-image-proxy.py >"$$proxy_log" 2>&1 & proxy_pid=$$!; \
+	for attempt in $$(seq 1 50); do \
+		if curl --silent --fail "http://127.0.0.1:8787/healthz" >/dev/null; then break; fi; \
+		if ! kill -0 "$$proxy_pid" 2>/dev/null; then cat "$$proxy_log"; exit 1; fi; \
+		sleep 0.1; \
+	done; \
+	if ! curl --silent --fail "http://127.0.0.1:8787/healthz" >/dev/null; then cat "$$proxy_log"; exit 1; fi; \
+	PATH="$(NODE_BIN_DIR):$$PATH" $(GRADLE_RUNNER) :web-app:wasmJsBrowserDevelopmentRun
 
 ios-compile: ## Compile all shared modules for both supported Apple targets.
 	$(GRADLE_RUNNER) :core-common:compileKotlinIosArm64 :beerdomain:api:compileKotlinIosArm64 :beerdomain:fakes:compileKotlinIosArm64 :beer_network:api:compileKotlinIosArm64 :beer_network:fixtures:compileKotlinIosArm64 :beer_network:compileKotlinIosArm64 :beer_storage:api:compileKotlinIosArm64 :beer_database:compileKotlinIosArm64 :beer_data:compileKotlinIosArm64 :shared:favorites:compileKotlinIosArm64 :shared:beerslist:compileKotlinIosArm64 :shared:beersearch:compileKotlinIosArm64 :shared:beerbrowse:compileKotlinIosArm64 :shared:beerdetail:compileKotlinIosArm64 :shared:app:compileKotlinIosArm64 :ios-shared:compileKotlinIosArm64 # gitleaks:allow

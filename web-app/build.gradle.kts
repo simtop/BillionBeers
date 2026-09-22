@@ -2,9 +2,13 @@
 
 plugins {
   kotlin("multiplatform")
+  id("org.jetbrains.compose")
+  id("org.jetbrains.kotlin.plugin.compose")
   alias(libs.plugins.kotlin.serialization)
   id("dev.zacsweers.metro")
 }
+
+apply(plugin = "billionbeers.spotless")
 
 kotlin {
   wasmJs {
@@ -14,6 +18,10 @@ kotlin {
 
   sourceSets {
     commonMain.dependencies {
+      implementation(compose.runtime)
+      implementation(compose.foundation)
+      implementation(compose.material3)
+      implementation(compose.components.resources)
       implementation(project(":core-common"))
       implementation(project(":beerdomain:api"))
       implementation(project(":beer_network"))
@@ -21,6 +29,10 @@ kotlin {
       implementation(project(":beer_data"))
       implementation(project(":beer_storage:api"))
       implementation(project(":beer_storage:browser"))
+      implementation(project(":shared:app"))
+      implementation(project(":shared:beerbrowse"))
+      implementation(project(":shared:beerdetail"))
+      implementation(project(":navigation-contract"))
       implementation(libs.kotlinx.coroutines.core)
       implementation(libs.ktorClientCore)
       implementation(libs.ktorClientContentNegotiation)
