@@ -1,5 +1,7 @@
 plugins {
   id("billionbeers.kmp.library")
+  id("org.jetbrains.compose")
+  id("org.jetbrains.kotlin.plugin.compose")
   id("dev.zacsweers.metro")
 }
 
@@ -21,11 +23,13 @@ kotlin {
 }
 
 dependencies {
+  commonMainImplementation(project(":shared:app"))
   commonMainImplementation(project(":beer_data"))
   commonMainImplementation(project(":beer_database"))
   commonMainImplementation(project(":beer_network"))
   commonMainImplementation(project(":beerdomain:api"))
   commonMainImplementation(project(":core-common"))
+  commonMainImplementation(compose.ui)
   commonMainImplementation(libs.ktorClientCore)
   commonMainImplementation(libs.ktorClientContentNegotiation)
   commonMainImplementation(libs.ktorSerializationKotlinxJson)
