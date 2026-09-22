@@ -28,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -55,7 +56,9 @@ import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.navigation.contract.PortableRoute
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.emptyFlow
 
 /** Host-owned copy and formatting strings for the portable application shell. */
 data class SharedAppStrings(
@@ -88,6 +91,9 @@ data class SharedAppHost(
   val imageContent: @Composable (String, String?, Modifier) -> Unit,
   val detailAnimationsDisabled: Boolean = false,
   val detailCollapsingToolbarEnabled: Boolean = true,
+  val detailTitleTextStyle: TextStyle? = null,
+  val darkTheme: Boolean = false,
+  val routeRequests: Flow<PortableRoute> = emptyFlow(),
   val onMessage: (String) -> Unit = {},
 )
 
@@ -126,7 +132,19 @@ fun SharedAppShell(
       }
   }
 
-  BillionBeersTheme(darkTheme = false) {
+  LaunchedEffect(host.routeRequests) {
+    host.routeRequests.collectLatest { requestedRoute ->
+      backStack =
+        when (requestedRoute) {
+          PortableRoute.BeersList,
+          PortableRoute.Favorites -> listOf(requestedRoute)
+          else -> backStack.dropLast(1).ifEmpty { listOf(PortableRoute.BeersList) } + requestedRoute
+        }
+      browseSelection = null
+    }
+  }
+
+  BillionBeersTheme(darkTheme = host.darkTheme) {
     Scaffold(
       modifier = modifier,
       topBar = {
@@ -430,6 +448,7 @@ private fun DetailDestination(
         imageContent = host.imageContent,
         animationsDisabled = animationsDisabled,
         collapsingToolbarEnabled = host.detailCollapsingToolbarEnabled,
+        titleTextStyle = host.detailTitleTextStyle,
       )
   }
 }

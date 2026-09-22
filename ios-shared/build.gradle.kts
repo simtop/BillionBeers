@@ -29,6 +29,7 @@ dependencies {
   commonMainImplementation(project(":beer_network"))
   commonMainImplementation(project(":beerdomain:api"))
   commonMainImplementation(project(":core-common"))
+  commonMainImplementation(project(":navigation-contract"))
   commonMainImplementation(compose.ui)
   commonMainImplementation(libs.ktorClientCore)
   commonMainImplementation(libs.ktorClientContentNegotiation)

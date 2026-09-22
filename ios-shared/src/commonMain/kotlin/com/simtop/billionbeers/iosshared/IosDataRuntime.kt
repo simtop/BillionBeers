@@ -16,6 +16,8 @@ import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
 import dev.zacsweers.metro.createGraphFactory
 import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.request.get
 import kotlinx.coroutines.Dispatchers
 
 /** Host configuration for the future iOS UI; this module intentionally contains no UI. */
@@ -38,6 +40,12 @@ public class IosDataRuntime private constructor(private val graph: IosGraph) {
   public val pagerFactory: BeersPagerFactory
     get() = graph.pagerFactory
 
+  internal val coroutineDispatcherProvider: CoroutineDispatcherProvider
+    get() = graph.coroutineDispatcherProvider
+
+  internal suspend fun loadImage(url: String): ByteArray? =
+    runCatching { httpClient.get(url).body<ByteArray>() }.getOrNull()
+
   public fun close() {
     if (!closed) {
       closed = true
@@ -56,6 +64,7 @@ public class IosDataRuntime private constructor(private val graph: IosGraph) {
 internal interface IosGraph {
   val repository: BeersRepository
   val pagerFactory: BeersPagerFactory
+  val coroutineDispatcherProvider: CoroutineDispatcherProvider
   val httpClient: HttpClient
   val database: BeersDatabase
 

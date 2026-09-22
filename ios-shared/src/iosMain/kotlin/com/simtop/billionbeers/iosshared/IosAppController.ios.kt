@@ -1,6 +1,8 @@
 package com.simtop.billionbeers.iosshared
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,128 +18,171 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.toComposeImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.invisibleToUser
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.ComposeUIViewController
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.shared.app.SharedAppHost
 import com.simtop.billionbeers.shared.app.SharedAppShell
-import com.simtop.billionbeers.shared.app.SharedAppStrings
-import com.simtop.billionbeers.shared.beerbrowse.BrowseStrings
-import com.simtop.billionbeers.shared.beerdetail.BeerDetailStrings
+import com.simtop.navigation.contract.PortableRoute
 import com.simtop.core.core.CommonUiState
-import com.simtop.core.core.DefaultCoroutineDispatcherProvider
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.channels.BufferOverflow
+import org.jetbrains.skia.Image
 import platform.UIKit.UIViewController
 
 private const val DEFAULT_IOS_API_BASE_URL = "https://brewbuddy.dev/"
 
 /** Owns one iOS data graph and its Compose controller for the lifetime of a host scene. */
-public class IosAppSession {
+public class IosAppSession(
+  languageCode: String = "en",
+) {
   private val runtime =
     IosDataRuntime.open(
-      IosDataConfig(apiBaseUrl = DEFAULT_IOS_API_BASE_URL),
+      IosDataConfig(apiBaseUrl = DEFAULT_IOS_API_BASE_URL, languageCode = languageCode),
     )
+  private val strings = IosLocalizedStrings.forLanguage(languageCode)
+  private val routeRequests = MutableSharedFlow<PortableRoute>(
+    extraBufferCapacity = 1,
+    onBufferOverflow = BufferOverflow.DROP_OLDEST,
+  )
+  private val scope = CoroutineScope(SupervisorJob() + runtime.coroutineDispatcherProvider.io)
   private var closed = false
 
   public val viewController: UIViewController =
     ComposeUIViewController {
-      IosShell(runtime)
+      IosShell(runtime, strings, routeRequests.asSharedFlow())
     }
+
+  /** Delivers a supported URL without exposing repositories or navigation internals to Swift. */
+  public fun handleDeepLink(url: String) {
+    if (closed) return
+    scope.launch {
+      resolveIosDeepLink(url, runtime.repository)?.let { route ->
+        if (!closed) routeRequests.tryEmit(route)
+      }
+    }
+  }
 
   public fun close() {
     if (!closed) {
       closed = true
+      scope.cancel()
       runtime.close()
     }
   }
 }
 
 @Composable
-private fun IosShell(runtime: IosDataRuntime) {
+private fun IosShell(
+  runtime: IosDataRuntime,
+  strings: com.simtop.billionbeers.shared.app.SharedAppStrings,
+  routeRequests: kotlinx.coroutines.flow.Flow<PortableRoute>,
+) {
+  val darkTheme = isSystemInDarkTheme()
   SharedAppShell(
     repository = runtime.repository,
     pagerFactory = runtime.pagerFactory,
-    coroutineDispatcher = DefaultCoroutineDispatcherProvider(),
-    strings = iosStrings,
-    host = iosHost,
+    coroutineDispatcher = runtime.coroutineDispatcherProvider,
+    strings = strings,
+    host =
+      iosHost(
+        runtime = runtime,
+        darkTheme = darkTheme,
+        routeRequests = routeRequests,
+        retryText = strings.retry,
+        availableText = strings.detailStrings.available,
+        unavailableText = strings.detailStrings.outOfStock,
+        errorText = strings.error,
+        titleTextStyle = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
+      ),
   )
 }
 
-private val iosHost =
+private fun iosHost(
+  runtime: IosDataRuntime,
+  darkTheme: Boolean,
+  routeRequests: kotlinx.coroutines.flow.Flow<PortableRoute>,
+  retryText: String,
+  availableText: String,
+  unavailableText: String,
+  errorText: String,
+  titleTextStyle: androidx.compose.ui.text.TextStyle,
+) =
   SharedAppHost(
-    beerRow = { beer, onClick -> IosBeerRow(beer, onClick) },
-    errorContent = { state, retry -> IosError(state, retry) },
-    backIcon = { contentDescription -> Text("‹") },
-    favoriteIcon = { isFavorite, contentDescription -> Text(if (isFavorite) "♥" else "♡") },
-    imageContent = { _, _, modifier -> IosImagePlaceholder(modifier) },
-    detailAnimationsDisabled = false,
+    beerRow = { beer, onClick ->
+      IosBeerRow(runtime, beer, onClick, availableText, unavailableText)
+    },
+    errorContent = { state, retry -> IosError(state, retry, retryText, errorText) },
+    backIcon = { contentDescription ->
+      Text(
+        text = "‹",
+        modifier = Modifier.semantics { this.contentDescription = contentDescription },
+      )
+    },
+    favoriteIcon = { isFavorite, contentDescription ->
+      Text(
+        text = if (isFavorite) "♥" else "♡",
+        modifier =
+          Modifier.semantics {
+            this.contentDescription = contentDescription
+            role = Role.Button
+            stateDescription = contentDescription
+          },
+      )
+    },
+    imageContent = { imageUrl, description, modifier ->
+      IosImage(runtime, imageUrl, description, modifier)
+    },
+    darkTheme = darkTheme,
+    routeRequests = routeRequests,
+    detailAnimationsDisabled = true,
     detailCollapsingToolbarEnabled = false,
-  )
-
-private val iosStrings =
-  SharedAppStrings(
-    appTitle = "Billion Beers",
-    back = "Back",
-    list = "Catalog",
-    favorites = "Favorites",
-    search = "Search",
-    browse = "Browse",
-    retry = "Retry",
-    error = "Unable to load beers",
-    listLoadMoreFailed = "More beers could not be loaded",
-    listEndOfList = { count -> "End of list · $count beers" },
-    searchHint = "Search beers",
-    searchPrompt = "Type at least two characters to search",
-    searchNoResults = { term -> "No beers found for \"$term\"" },
-    searchResultCount = { count -> "$count results" },
-    searchEndOfList = { count -> "End of results · $count beers" },
-    favoritesEmpty = "No favorite beers yet",
-    browseStrings =
-      BrowseStrings(
-        back = "Back",
-        title = "Browse",
-        stylesTab = "Styles",
-        breweriesTab = "Breweries",
-        emptyState = "Nothing to browse",
-        noBeers = "No beers found",
-        retry = "Retry",
-        loadMoreFailed = "More beers could not be loaded",
-        breweryFounded = { country, year -> "$country · founded $year" },
-        beersCount = { count -> "$count beers" },
-        endOfList = { count -> "End of list · $count beers" },
-      ),
-    detailStrings =
-      BeerDetailStrings(
-        back = "Back",
-        imageDescription = { name -> "$name image" },
-        addToFavorites = "Add to favorites",
-        removeFromFavorites = "Remove from favorites",
-        available = "Available",
-        outOfStock = "Out of stock",
-        markAsEmpty = "Mark as empty",
-        refillBarrels = "Refill barrels",
-        styleAndBrewery = { style, brewery -> "$style · $brewery" },
-        description = "Description",
-        foodPairing = "Food pairing",
-        abv = "ABV",
-        ibu = "IBU",
-        details = "Details",
-        srm = "SRM",
-        released = "Released",
-        servingTemperature = "Serving temperature",
-        servingTemperatureValue = { value, unit -> "$value°$unit" },
-        fermentation = "Fermentation",
-        ingredients = "Ingredients",
-        recommendedGlasses = "Recommended glasses",
-      ),
+    detailTitleTextStyle = titleTextStyle,
   )
 
 @Composable
-private fun IosBeerRow(beer: Beer, onClick: () -> Unit) {
+private fun IosBeerRow(
+  runtime: IosDataRuntime,
+  beer: Beer,
+  onClick: () -> Unit,
+  availableText: String,
+  unavailableText: String,
+) {
+  val availability = if (beer.availability) availableText else unavailableText
   Card(
-    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp).clickable(onClick = onClick),
+    modifier =
+      Modifier.fillMaxWidth()
+        .padding(horizontal = 12.dp, vertical = 4.dp)
+        .clickable(onClick = onClick)
+        .semantics(mergeDescendants = true) {
+          contentDescription = "${beer.name}. $availability"
+          role = Role.Button
+          stateDescription = availability
+        },
     colors =
       CardDefaults.cardColors(
         containerColor =
@@ -149,7 +194,12 @@ private fun IosBeerRow(beer: Beer, onClick: () -> Unit) {
       modifier = Modifier.fillMaxWidth().padding(12.dp),
       horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-      IosImagePlaceholder(Modifier.width(72.dp).height(96.dp))
+      IosImage(
+        runtime,
+        beer.imageUrl,
+        null,
+        Modifier.width(72.dp).height(96.dp),
+      )
       Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(beer.name, style = MaterialTheme.typography.titleMedium)
         if (beer.tagline.isNotBlank()) Text(beer.tagline, style = MaterialTheme.typography.bodyMedium)
@@ -159,7 +209,7 @@ private fun IosBeerRow(beer: Beer, onClick: () -> Unit) {
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
-          if (beer.availability) "Available" else "Out of stock",
+          availability,
           style = MaterialTheme.typography.labelMedium,
           color =
             if (beer.availability) MaterialTheme.colorScheme.primary
@@ -171,18 +221,66 @@ private fun IosBeerRow(beer: Beer, onClick: () -> Unit) {
 }
 
 @Composable
-private fun IosImagePlaceholder(modifier: Modifier) {
-  Box(modifier, contentAlignment = Alignment.Center) {
+private fun IosImage(
+  runtime: IosDataRuntime,
+  url: String,
+  description: String?,
+  modifier: Modifier,
+) {
+  var bitmap by remember(url) { mutableStateOf<ImageBitmap?>(null) }
+  LaunchedEffect(url) {
+    bitmap =
+      if (url.isBlank()) {
+        null
+      } else {
+        runCatching {
+          runtime.loadImage(url)?.let { Image.makeFromEncoded(it).toComposeImageBitmap() }
+        }.getOrNull()
+      }
+  }
+  val loadedBitmap = bitmap
+  if (loadedBitmap == null) {
+    IosImagePlaceholder(description, modifier)
+  } else {
+    Image(
+      bitmap = loadedBitmap,
+      contentDescription = description,
+      contentScale = ContentScale.Crop,
+      modifier = modifier,
+    )
+  }
+}
+
+@Composable
+private fun IosImagePlaceholder(description: String?, modifier: Modifier) {
+  Box(
+    modifier =
+      modifier.semantics {
+        if (description == null) invisibleToUser() else contentDescription = description
+      },
+    contentAlignment = Alignment.Center,
+  ) {
     Text("Beer", style = MaterialTheme.typography.headlineMedium)
   }
 }
 
 @Composable
-private fun IosError(state: CommonUiState.Error, retry: () -> Unit) {
+private fun IosError(
+  state: CommonUiState.Error,
+  retry: () -> Unit,
+  retryText: String,
+  errorText: String,
+) {
   Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-      Text(state.message ?: "Unable to load beers")
-      Button(onClick = retry) { Text("Retry") }
+    Column(
+      horizontalAlignment = Alignment.CenterHorizontally,
+      verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+      Text(
+        state.message ?: errorText,
+        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+      )
+      Button(onClick = retry) { Text(retryText) }
     }
   }
 }

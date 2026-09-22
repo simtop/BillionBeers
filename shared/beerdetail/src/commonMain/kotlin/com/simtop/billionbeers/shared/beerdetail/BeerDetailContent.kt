@@ -41,6 +41,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -95,6 +96,7 @@ fun SharedBeerDetailContent(
   showBackButton: Boolean = true,
   animationsDisabled: Boolean = false,
   collapsingToolbarEnabled: Boolean = true,
+  titleTextStyle: TextStyle? = null,
 ) {
   val scrollBehavior =
     if (collapsingToolbarEnabled) TopAppBarDefaults.exitUntilCollapsedScrollBehavior() else null
@@ -129,7 +131,10 @@ fun SharedBeerDetailContent(
               Text(
                 text = beer.name,
                 style =
-                  MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
+                  titleTextStyle
+                    ?: MaterialTheme.typography.headlineMedium.copy(
+                      fontWeight = FontWeight.ExtraBold
+                    ),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
               )
