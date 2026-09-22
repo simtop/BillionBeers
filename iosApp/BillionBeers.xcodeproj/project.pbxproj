@@ -1,0 +1,220 @@
+// !$*UTF8*$!
+{
+  archiveVersion = 1;
+  objectVersion = 56;
+  objects = {
+
+/* Begin PBXBuildFile section */
+    A10000010000000000000001 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000020000000000000001 /* AppModel.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+    A10000020000000000000001 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+    A10000030000000000000001 /* BillionBeers.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BillionBeers.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+    A10000040000000000000001 /* Frameworks */ = {
+      isa = PBXFrameworksBuildPhase;
+      buildActionMask = 2147483647;
+      files = ();
+      runOnlyForDeploymentPostprocessing = 0;
+    };
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+    A10000050000000000000001 = {
+      isa = PBXGroup;
+      children = (
+        A10000060000000000000001 /* BillionBeers */,
+        A10000070000000000000001 /* Products */,
+      );
+      sourceTree = "<group>";
+    };
+    A10000060000000000000001 /* BillionBeers */ = {
+      isa = PBXGroup;
+      children = (
+        A10000020000000000000001 /* AppModel.swift */,
+      );
+      path = BillionBeers;
+      sourceTree = "<group>";
+    };
+    A10000070000000000000001 /* Products */ = {
+      isa = PBXGroup;
+      children = (
+        A10000030000000000000001 /* BillionBeers.app */,
+      );
+      name = Products;
+      sourceTree = "<group>";
+    };
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+    A10000080000000000000001 /* BillionBeers */ = {
+      isa = PBXNativeTarget;
+      buildConfigurationList = A10000100000000000000001 /* Build configuration list for PBXNativeTarget "BillionBeers" */;
+      buildPhases = (
+        A10000110000000000000001 /* Gradle Framework */,
+        A10000120000000000000001 /* Sources */,
+        A10000040000000000000001 /* Frameworks */,
+        A10000130000000000000001 /* Resources */,
+      );
+      buildRules = ();
+      dependencies = ();
+      name = BillionBeers;
+      productName = BillionBeers;
+      productReference = A10000030000000000000001 /* BillionBeers.app */;
+      productType = "com.apple.product-type.application";
+    };
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+    A10000140000000000000001 /* Project object */ = {
+      isa = PBXProject;
+      attributes = {
+        BuildIndependentTargetsInParallel = 1;
+        LastUpgradeCheck = 1620;
+        TargetAttributes = {
+          A10000080000000000000001 = {
+            CreatedOnToolsVersion = 26.4;
+          };
+        };
+      };
+      buildConfigurationList = A10000150000000000000001 /* Build configuration list for PBXProject "BillionBeers" */;
+      compatibilityVersion = "Xcode 3.2";
+      developmentRegion = en;
+      hasScannedForEncodings = 0;
+      knownRegions = (en, Base,);
+      mainGroup = A10000050000000000000001;
+      productRefGroup = A10000070000000000000001 /* Products */;
+      projectDirPath = "";
+      projectRoot = "";
+      targets = (A10000080000000000000001 /* BillionBeers */);
+    };
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+    A10000130000000000000001 /* Resources */ = {
+      isa = PBXResourcesBuildPhase;
+      buildActionMask = 2147483647;
+      files = ();
+      runOnlyForDeploymentPostprocessing = 0;
+    };
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+    A10000110000000000000001 /* Gradle Framework */ = {
+      isa = PBXShellScriptBuildPhase;
+      buildActionMask = 2147483647;
+      files = ();
+      inputFileListPaths = ();
+      inputPaths = ();
+      name = "Gradle Framework";
+      outputFileListPaths = ();
+      outputPaths = (
+        "$(TARGET_BUILD_DIR)/$(FRAMEWORKS_FOLDER_PATH)/BillionBeersData.framework",
+      );
+      runOnlyForDeploymentPostprocessing = 0;
+      shellPath = /bin/sh;
+      shellScript = "cd \"$SRCROOT/..\"\n./gradlew :ios-shared:embedAndSignAppleFrameworkForXcode\n";
+      showEnvVarsInLog = 0;
+    };
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+    A10000120000000000000001 /* Sources */ = {
+      isa = PBXSourcesBuildPhase;
+      buildActionMask = 2147483647;
+      files = (A10000010000000000000001 /* AppModel.swift in Sources */,);
+      runOnlyForDeploymentPostprocessing = 0;
+    };
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+    A10000200000000000000001 /* Debug */ = {
+      isa = XCBuildConfiguration;
+      buildSettings = {
+        ALWAYS_SEARCH_USER_PATHS = NO;
+        CLANG_ENABLE_MODULES = YES;
+        CODE_SIGNING_ALLOWED = NO;
+        CODE_SIGNING_REQUIRED = NO;
+        CURRENT_PROJECT_VERSION = 1;
+        DEVELOPMENT_TEAM = "";
+        GENERATE_INFOPLIST_FILE = NO;
+        INFOPLIST_FILE = BillionBeers/Info.plist;
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+        INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+        IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+        LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks");
+        PRODUCT_BUNDLE_IDENTIFIER = "com.simtop.billionbeers.ios";
+        PRODUCT_NAME = "$(TARGET_NAME)";
+        SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+        SWIFT_VERSION = 5.0;
+        TARGETED_DEVICE_FAMILY = "1,2";
+        VALID_ARCHS = arm64;
+        FRAMEWORK_SEARCH_PATHS = ("$(inherited)", "$(PROJECT_DIR)/../ios-shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)", "$(TARGET_BUILD_DIR)/$(FRAMEWORKS_FOLDER_PATH)");
+        OTHER_LDFLAGS = ("$(inherited)", "-framework", BillionBeersData);
+      };
+      name = Debug;
+    };
+    A10000200000000000000002 /* Release */ = {
+      isa = XCBuildConfiguration;
+      buildSettings = {
+        ALWAYS_SEARCH_USER_PATHS = NO;
+        CLANG_ENABLE_MODULES = YES;
+        CODE_SIGNING_ALLOWED = NO;
+        CODE_SIGNING_REQUIRED = NO;
+        CURRENT_PROJECT_VERSION = 1;
+        GENERATE_INFOPLIST_FILE = YES;
+        IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+        LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks");
+        PRODUCT_BUNDLE_IDENTIFIER = "com.simtop.billionbeers.ios";
+        PRODUCT_NAME = "$(TARGET_NAME)";
+        SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+        SWIFT_VERSION = 5.0;
+        TARGETED_DEVICE_FAMILY = "1,2";
+        VALID_ARCHS = arm64;
+        FRAMEWORK_SEARCH_PATHS = ("$(inherited)", "$(PROJECT_DIR)/../ios-shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)", "$(TARGET_BUILD_DIR)/$(FRAMEWORKS_FOLDER_PATH)");
+        OTHER_LDFLAGS = ("$(inherited)", "-framework", BillionBeersData);
+      };
+      name = Release;
+    };
+    A10000200000000000000003 /* Debug */ = {
+      isa = XCBuildConfiguration;
+      buildSettings = {
+        ALWAYS_SEARCH_USER_PATHS = NO;
+        CLANG_ENABLE_MODULES = YES;
+        CLANG_WARN_BOOL_CONVERSION = YES;
+        CLANG_WARN_CONSTANT_CONVERSION = YES;
+        CLANG_WARN_INT_CONVERSION = YES;
+        CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+        CLANG_WARN_UNREACHABLE_CODE = YES;
+        SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+      };
+      name = Debug;
+    };
+    A10000200000000000000004 /* Release */ = {
+      isa = XCBuildConfiguration;
+      buildSettings = { SWIFT_OPTIMIZATION_LEVEL = "-O"; };
+      name = Release;
+    };
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+    A10000100000000000000001 /* Build configuration list for PBXNativeTarget "BillionBeers" */ = {
+      isa = XCConfigurationList;
+      buildConfigurations = (A10000200000000000000001 /* Debug */, A10000200000000000000002 /* Release */);
+      defaultConfigurationIsVisible = 0;
+      defaultConfigurationName = Release;
+    };
+    A10000150000000000000001 /* Build configuration list for PBXProject "BillionBeers" */ = {
+      isa = XCConfigurationList;
+      buildConfigurations = (A10000200000000000000003 /* Debug */, A10000200000000000000004 /* Release */);
+      defaultConfigurationIsVisible = 0;
+      defaultConfigurationName = Release;
+    };
+/* End XCConfigurationList section */
+  };
+  rootObject = A10000140000000000000001 /* Project object */;
+}

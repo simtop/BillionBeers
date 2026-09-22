@@ -574,6 +574,7 @@ jobs:
       IOS_RUNTIME: '18.2'
       IOS_DEVICE_NAME: 'BillionBeers iPhone 16'
       IOS_DEVICE_TYPE: 'com.apple.CoreSimulator.SimDeviceType.iPhone-16'
+      IOS_HOST_DESTINATION: 'platform=iOS Simulator,name=BillionBeers iPhone 16,OS=18.2'
       XCODE_PATH: '/Applications/Xcode_16.2.app'
     steps:
       - name: Checkout code
@@ -626,6 +627,10 @@ jobs:
         id: native_framework
         run: bash .github/scripts/run-timed-command.sh make ios-framework
 
+      - name: Build iOS host
+        id: ios_host_build
+        run: bash .github/scripts/run-timed-command.sh make ios-host-build
+
       - name: Run Apple simulator tests
         id: native_tests
         run: bash .github/scripts/run-timed-command.sh make ios-test
@@ -641,6 +646,8 @@ jobs:
           COMPILE_SECONDS: ${{ steps.native_compile.outputs.elapsed_seconds }}
           FRAMEWORK_OUTCOME: ${{ steps.native_framework.outcome }}
           FRAMEWORK_SECONDS: ${{ steps.native_framework.outputs.elapsed_seconds }}
+          HOST_OUTCOME: ${{ steps.ios_host_build.outcome }}
+          HOST_SECONDS: ${{ steps.ios_host_build.outputs.elapsed_seconds }}
           TEST_OUTCOME: ${{ steps.native_tests.outcome }}
           TEST_SECONDS: ${{ steps.native_tests.outputs.elapsed_seconds }}
         run: |
@@ -648,8 +655,20 @@ jobs:
             --title 'Native Apple lane phase timings' \
             --phase "Apple compilation|$COMPILE_OUTCOME|$COMPILE_SECONDS" \
             --phase "Apple framework linking|$FRAMEWORK_OUTCOME|$FRAMEWORK_SECONDS" \
+            --phase "iOS host build|$HOST_OUTCOME|$HOST_SECONDS" \
             --phase "Apple simulator tests|$TEST_OUTCOME|$TEST_SECONDS"
           echo '_Native evidence is compile, framework link, simulator execution, and test reports; no native percentage coverage is claimed._' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Archive iOS host build
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ios-host-build
+          path: |
+            iosApp/build/DerivedData/Build/Products/Debug-iphonesimulator/BillionBeers.app
+            iosApp/build/DerivedData/Logs/
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Archive native test reports
         if: always()
