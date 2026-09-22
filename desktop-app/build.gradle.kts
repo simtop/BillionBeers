@@ -10,6 +10,14 @@ val catalog = billionBeersCatalog()
 compose.desktop {
   application {
     mainClass = "com.simtop.billionbeers.desktop.MainKt"
+    nativeDistributions {
+      targetFormats(org.jetbrains.compose.desktop.application.dsl.TargetFormat.Dmg)
+      packageName = "BillionBeers"
+      packageVersion = "1.0.0"
+      macOS {
+        bundleID = "com.simtop.billionbeers.desktop"
+      }
+    }
   }
 }
 
