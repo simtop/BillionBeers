@@ -64,16 +64,18 @@ with tempfile.TemporaryDirectory() as temporary:
         "screenshot": "true",
         "instrumented": "true",
         "native": "true",
+        "web": "true",
     }
 
     (repository / "README.md").write_text("docs\n")
     docs_head = commit(repository, "docs")
-    jobs = '[{"name":"Detect change scope","conclusion":"success"},{"name":"Unit Tests","conclusion":"success"},{"name":"Screenshot Tests (Paparazzi)","conclusion":"success"},{"name":"Instrumented Tests (Gradle Managed Device)","conclusion":"success"},{"name":"Native Tests (Apple)","conclusion":"success"}]'
+    jobs = '[{"name":"Detect change scope","conclusion":"success"},{"name":"Unit Tests","conclusion":"success"},{"name":"Screenshot Tests (Paparazzi)","conclusion":"success"},{"name":"Instrumented Tests (Gradle Managed Device)","conclusion":"success"},{"name":"Native Tests (Apple)","conclusion":"success"},{"name":"Web Tests (Wasm/static)","conclusion":"success"}]'
     assert run_detector(repository, event="pull_request", action="synchronize", base=base, before=base, after=docs_head, jobs=jobs) == {
         "unit": "false",
         "screenshot": "false",
         "instrumented": "false",
         "native": "false",
+        "web": "false",
     }
 
     (repository / "feature/src/iosSimulatorArm64Test").mkdir(parents=True)
@@ -85,6 +87,7 @@ with tempfile.TemporaryDirectory() as temporary:
         "screenshot": "false",
         "instrumented": "false",
         "native": "true",
+        "web": "false",
     }, native_result
 
     (repository / "feature/src/commonTest").mkdir(parents=True)
@@ -95,6 +98,7 @@ with tempfile.TemporaryDirectory() as temporary:
         "screenshot": "false",
         "instrumented": "false",
         "native": "true",
+        "web": "false",
     }
 
 workflow = (ROOT / ".github/workflows/ci.yml").read_text()
@@ -103,12 +107,16 @@ producer_name = next(line.removeprefix("name: ").strip() for line in workflow.sp
 assert f"workflows: [{producer_name}]" in report_workflow
 for marker in (
     "native: ${{ steps.filter.outputs.native }}",
+    "web: ${{ steps.filter.outputs.web }}",
     "name: Native Tests (Apple)",
+    "name: Web Tests (Wasm/static)",
     "needs: [format-check, changes]",
     "make ios-compile",
     "make ios-framework",
     "make ios-test",
+    "make web-verify",
     "- native-tests",
+    "- web-tests",
 ):
     assert marker in workflow, marker
 
