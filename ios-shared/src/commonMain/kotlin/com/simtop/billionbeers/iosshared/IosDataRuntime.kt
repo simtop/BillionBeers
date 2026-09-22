@@ -38,6 +38,9 @@ public class IosDataRuntime private constructor(private val graph: IosGraph) {
   public val pagerFactory: BeersPagerFactory
     get() = graph.pagerFactory
 
+  internal val coroutineDispatcherProvider: CoroutineDispatcherProvider
+    get() = graph.coroutineDispatcherProvider
+
   public fun close() {
     if (!closed) {
       closed = true
@@ -56,6 +59,7 @@ public class IosDataRuntime private constructor(private val graph: IosGraph) {
 internal interface IosGraph {
   val repository: BeersRepository
   val pagerFactory: BeersPagerFactory
+  val coroutineDispatcherProvider: CoroutineDispatcherProvider
   val httpClient: HttpClient
   val database: BeersDatabase
 

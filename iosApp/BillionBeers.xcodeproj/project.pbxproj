@@ -166,7 +166,8 @@
         CODE_SIGNING_ALLOWED = NO;
         CODE_SIGNING_REQUIRED = NO;
         CURRENT_PROJECT_VERSION = 1;
-        GENERATE_INFOPLIST_FILE = YES;
+        GENERATE_INFOPLIST_FILE = NO;
+        INFOPLIST_FILE = BillionBeers/Info.plist;
         IPHONEOS_DEPLOYMENT_TARGET = 17.0;
         LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks");
         PRODUCT_BUNDLE_IDENTIFIER = "com.simtop.billionbeers.ios";

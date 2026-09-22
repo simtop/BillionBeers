@@ -55,7 +55,9 @@ import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.navigation.contract.PortableRoute
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.emptyFlow
 
 /** Host-owned copy and formatting strings for the portable application shell. */
 data class SharedAppStrings(
@@ -88,6 +90,8 @@ data class SharedAppHost(
   val imageContent: @Composable (String, String?, Modifier) -> Unit,
   val detailAnimationsDisabled: Boolean = false,
   val detailCollapsingToolbarEnabled: Boolean = true,
+  val darkTheme: Boolean = false,
+  val routeRequests: Flow<PortableRoute> = emptyFlow(),
   val onMessage: (String) -> Unit = {},
 )
 
@@ -126,7 +130,19 @@ fun SharedAppShell(
       }
   }
 
-  BillionBeersTheme(darkTheme = false) {
+  LaunchedEffect(host.routeRequests) {
+    host.routeRequests.collectLatest { requestedRoute ->
+      backStack =
+        when (requestedRoute) {
+          PortableRoute.BeersList,
+          PortableRoute.Favorites -> listOf(requestedRoute)
+          else -> backStack.dropLast(1).ifEmpty { listOf(PortableRoute.BeersList) } + requestedRoute
+        }
+      browseSelection = null
+    }
+  }
+
+  BillionBeersTheme(darkTheme = host.darkTheme) {
     Scaffold(
       modifier = modifier,
       topBar = {

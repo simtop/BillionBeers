@@ -48,7 +48,7 @@
     { "source": "application", "targets": ["domain-api", "regular-feature", "dynamic-feature", "core", "design-system", "navigation", "data", "database", "network", "presentation"], "scopes": ["main"] },
     { "source": "desktop-application", "targets": ["domain-api", "data", "database", "network", "core-common", "shared-favorites", "shared-beerbrowse", "shared-beerdetail", "shared-app"], "scopes": ["main"] },
     { "source": "web-application", "targets": ["domain-api", "data", "network", "network-api", "core-common", "storage-api", "storage-browser"], "scopes": ["main"] },
-    { "source": "ios-shared", "targets": ["domain-api", "data", "database", "network", "core-common", "shared-app"], "scopes": ["main"] },
+    { "source": "ios-shared", "targets": ["domain-api", "data", "database", "network", "core-common", "navigation-contract", "shared-app"], "scopes": ["main"] },
     { "source": "dev-application", "targets": ["regular-feature", "domain-api", "domain-fakes", "core", "design-system", "navigation", "presentation"], "scopes": ["main"] },
     { "source": "regular-feature", "targets": ["domain-api", "core", "core-common", "presentation", "design-system", "navigation", "shared-favorites", "shared-beerslist", "shared-beersearch", "shared-beerdetail", "shared-beerbrowse", "snapshot-testing"], "scopes": ["main"] },
     { "source": "dynamic-feature", "targets": ["application", "domain-api", "core", "design-system", "presentation", "navigation", "shared-beerdetail", "shared-beerbrowse", "snapshot-testing"], "scopes": ["main"] },

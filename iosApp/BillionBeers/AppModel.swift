@@ -3,7 +3,12 @@ import SwiftUI
 import UIKit
 
 final class AppModel: ObservableObject {
-  let session = IosAppSession()
+  let session: IosAppSession
+
+  init() {
+    let languageCode = Locale.current.language.languageCode?.identifier ?? "en"
+    session = IosAppSession(languageCode: languageCode)
+  }
 
   deinit {
     session.close()
@@ -28,6 +33,9 @@ struct BillionBeersApp: App {
     WindowGroup {
       KotlinViewController(controller: model.session.viewController)
         .ignoresSafeArea()
+        .onOpenURL { url in
+          model.session.handleDeepLink(url: url.absoluteString)
+        }
     }
   }
 }
