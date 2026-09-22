@@ -1,5 +1,6 @@
 package com.simtop.billionbeers.iosshared
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -17,8 +18,16 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.toComposeImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -27,6 +36,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.ComposeUIViewController
 import com.simtop.beerdomain.domain.models.Beer
@@ -41,6 +51,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.channels.BufferOverflow
+import org.jetbrains.skia.Image
 import platform.UIKit.UIViewController
 
 private const val DEFAULT_IOS_API_BASE_URL = "https://brewbuddy.dev/"
@@ -99,26 +110,32 @@ private fun IosShell(
     strings = strings,
     host =
       iosHost(
+        runtime = runtime,
         darkTheme = darkTheme,
         routeRequests = routeRequests,
         retryText = strings.retry,
         availableText = strings.detailStrings.available,
         unavailableText = strings.detailStrings.outOfStock,
         errorText = strings.error,
+        titleTextStyle = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
       ),
   )
 }
 
 private fun iosHost(
+  runtime: IosDataRuntime,
   darkTheme: Boolean,
   routeRequests: kotlinx.coroutines.flow.Flow<PortableRoute>,
   retryText: String,
   availableText: String,
   unavailableText: String,
   errorText: String,
+  titleTextStyle: androidx.compose.ui.text.TextStyle,
 ) =
   SharedAppHost(
-    beerRow = { beer, onClick -> IosBeerRow(beer, onClick, availableText, unavailableText) },
+    beerRow = { beer, onClick ->
+      IosBeerRow(runtime, beer, onClick, availableText, unavailableText)
+    },
     errorContent = { state, retry -> IosError(state, retry, retryText, errorText) },
     backIcon = { contentDescription ->
       Text(
@@ -137,15 +154,19 @@ private fun iosHost(
           },
       )
     },
-    imageContent = { _, description, modifier -> IosImagePlaceholder(description, modifier) },
+    imageContent = { imageUrl, description, modifier ->
+      IosImage(runtime, imageUrl, description, modifier)
+    },
     darkTheme = darkTheme,
     routeRequests = routeRequests,
-    detailAnimationsDisabled = false,
+    detailAnimationsDisabled = true,
     detailCollapsingToolbarEnabled = false,
+    detailTitleTextStyle = titleTextStyle,
   )
 
 @Composable
 private fun IosBeerRow(
+  runtime: IosDataRuntime,
   beer: Beer,
   onClick: () -> Unit,
   availableText: String,
@@ -173,7 +194,12 @@ private fun IosBeerRow(
       modifier = Modifier.fillMaxWidth().padding(12.dp),
       horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-      IosImagePlaceholder(null, Modifier.width(72.dp).height(96.dp))
+      IosImage(
+        runtime,
+        beer.imageUrl,
+        null,
+        Modifier.width(72.dp).height(96.dp),
+      )
       Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(beer.name, style = MaterialTheme.typography.titleMedium)
         if (beer.tagline.isNotBlank()) Text(beer.tagline, style = MaterialTheme.typography.bodyMedium)
@@ -191,6 +217,37 @@ private fun IosBeerRow(
         )
       }
     }
+  }
+}
+
+@Composable
+private fun IosImage(
+  runtime: IosDataRuntime,
+  url: String,
+  description: String?,
+  modifier: Modifier,
+) {
+  var bitmap by remember(url) { mutableStateOf<ImageBitmap?>(null) }
+  LaunchedEffect(url) {
+    bitmap =
+      if (url.isBlank()) {
+        null
+      } else {
+        runCatching {
+          runtime.loadImage(url)?.let { Image.makeFromEncoded(it).toComposeImageBitmap() }
+        }.getOrNull()
+      }
+  }
+  val loadedBitmap = bitmap
+  if (loadedBitmap == null) {
+    IosImagePlaceholder(description, modifier)
+  } else {
+    Image(
+      bitmap = loadedBitmap,
+      contentDescription = description,
+      contentScale = ContentScale.Crop,
+      modifier = modifier,
+    )
   }
 }
 
