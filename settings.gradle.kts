@@ -10,12 +10,24 @@ plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 dependencyResolutionManagement {
-    // Kotlin/Wasm's Node setup task adds its distribution Ivy repository during task resolution.
-    // Keep settings repositories authoritative while allowing that toolchain repository.
+    // Kotlin/Wasm toolchain tasks add distribution Ivy repositories during task resolution.
+    // Keep settings repositories authoritative while allowing those toolchain repositories.
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
         google()
         mavenCentral()
+        exclusiveContent {
+            forRepository {
+                ivy("https://github.com/WebAssembly/binaryen/releases/download") {
+                    name = "Binaryen distributions"
+                    patternLayout {
+                        artifact("version_[revision]/[module]-version_[revision]-[classifier].[ext]")
+                    }
+                    metadataSources { artifact() }
+                }
+            }
+            filter { includeGroup("com.github.webassembly") }
+        }
         ivy {
             name = "Node.js distributions"
             url = uri("https://nodejs.org/dist")
