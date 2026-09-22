@@ -23,6 +23,18 @@ The command stops stale Gradle daemons, starts a loopback image proxy on
 in the Wasm server process PATH. Open the URL printed by Gradle, usually `http://localhost:8080`.
 The proxy is stopped with the Wasm server when the command exits.
 
+For the CI-equivalent browser and static-output verification, run:
+
+```shell
+make web-verify
+```
+
+This runs the Web browser tests, builds `wasmJsBrowserDistribution`, and verifies the production
+output under `web-app/build/kotlin-webpack/wasmJs/productionExecutable`. The static verifier checks
+that the entrypoint, referenced JavaScript/resources, and Wasm module exist and that references are
+relative and safe for a subpath-aware static host. It does not verify deployment headers, CDN image
+CORS, GitHub Pages behavior, or production proxy operation.
+
 The proxy accepts only HTTPS URLs for the known `dropgate.malvik.dev/brewbuddy/images/` path and
 allows CORS only from local development origins. Its tests do not contact the live CDN:
 
@@ -88,5 +100,5 @@ Not yet claimed in this slice:
 - Safari/Firefox support or a browser/OS support matrix;
 - browser image loading against the current upstream CDN;
 - VoiceOver/screen-reader, RTL, reduced-motion, keyboard/IME and broad responsive QA;
-- optimized static output, subpath hosting, MIME/cache headers or external deployment;
-- a CI Web lane. These are T8.4 or later verification work.
+- deployed-host MIME/cache headers, external deployment, or GitHub Pages runtime behavior;
+- live CDN image loading in production; the local proxy remains manual-QA-only.
