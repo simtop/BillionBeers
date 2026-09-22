@@ -94,6 +94,7 @@ data class SharedAppHost(
   val detailTitleTextStyle: TextStyle? = null,
   val darkTheme: Boolean = false,
   val routeRequests: Flow<PortableRoute> = emptyFlow(),
+  val onRouteChanged: (PortableRoute) -> Unit = {},
   val onMessage: (String) -> Unit = {},
 )
 
@@ -118,7 +119,10 @@ fun SharedAppShell(
   fun pop() {
     when {
       browseSelection != null -> browseSelection = null
-      backStack.size > 1 -> backStack = backStack.dropLast(1)
+      backStack.size > 1 -> {
+        backStack = backStack.dropLast(1)
+        backStack.lastOrNull()?.let(host.onRouteChanged)
+      }
       else -> onClose()
     }
   }
@@ -130,6 +134,7 @@ fun SharedAppShell(
         PortableRoute.Favorites -> listOf(next)
         else -> backStack + next
       }
+    host.onRouteChanged(next)
   }
 
   LaunchedEffect(host.routeRequests) {
