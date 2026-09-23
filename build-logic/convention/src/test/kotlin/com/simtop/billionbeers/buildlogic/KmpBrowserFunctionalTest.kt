@@ -94,6 +94,8 @@ class KmpBrowserFunctionalTest {
             chrome,
             "--headless",
             "--disable-gpu",
+            "--disable-dev-shm-usage",
+            "--user-data-dir=${testProjectDir.resolve("chrome-profile")}",
             "--dump-dom",
             "--virtual-time-budget=30000",
             "--timeout=30000",
@@ -106,9 +108,17 @@ class KmpBrowserFunctionalTest {
         Thread.sleep(500)
       }
       process.destroyForcibly()
+      process.waitFor(5, TimeUnit.SECONDS)
+      val processOutput =
+        runCatching { process.inputStream.bufferedReader().readText() }
+          .getOrElse { "<unavailable: ${it.message}>" }
+      val exitCode = runCatching { process.exitValue() }.getOrNull()
       val report = browserReport.get()
       println("T1.4_BROWSER_REPORT=$report")
-      assertTrue(report != null, "Chrome produced no browser report")
+      assertTrue(
+        report != null,
+        "Chrome produced no browser report (exit=$exitCode, output=$processOutput)",
+      )
       assertTrue(report!!.contains("INDEXED_DB_COMMIT_REOPEN=PASS"), report)
       assertTrue(report.contains("INDEXED_DB_ABORT_ABSENT=PASS"), report)
       assertTrue(report.contains("FETCH_LOCAL=PASS"), report)
@@ -195,7 +205,10 @@ class KmpBrowserFunctionalTest {
         try {
           const controller = new AbortController();
           setTimeout(() => controller.abort(), 5000);
-          const live = await fetch('https://api.brewbuddy.dev/', {signal: controller.signal});
+          const live = await Promise.race([
+            fetch('https://api.brewbuddy.dev/', {signal: controller.signal}),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('network timeout')), 5000)),
+          ]);
           const liveBody = await live.text();
           report.LIVE_API = live.status >= 200 && live.status < 300 && liveBody.length > 0 ? 'PASS' : 'HTTP_FAILURE';
         } catch (error) {
@@ -204,11 +217,11 @@ class KmpBrowserFunctionalTest {
         await new Promise(resolve => setTimeout(resolve, 1000));
         report.IMAGE_RESOURCE = window.imageLoaded === true ? 'PASS' : 'NETWORK_ERROR';
         result.textContent = Object.entries(report).map(([key, value]) => key + '=' + value).join('\\n');
-        fetch('/result?report=' + encodeURIComponent(result.textContent));
+        await fetch('/result?report=' + encodeURIComponent(result.textContent));
       } catch (error) {
         report.UNEXPECTED_ERROR = String(error);
         result.textContent = Object.entries(report).map(([key, value]) => key + '=' + value).join('\\n');
-        fetch('/result?report=' + encodeURIComponent(result.textContent));
+        await fetch('/result?report=' + encodeURIComponent(result.textContent));
       }
     })();
     setInterval(() => {}, 1000);
