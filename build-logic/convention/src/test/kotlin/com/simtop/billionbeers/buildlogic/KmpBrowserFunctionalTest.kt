@@ -107,8 +107,17 @@ class KmpBrowserFunctionalTest {
         if (browserReport.get() != null || !process.isAlive) return@repeat
         Thread.sleep(500)
       }
-      process.destroyForcibly()
-      process.waitFor(5, TimeUnit.SECONDS)
+      // Chrome can exit cleanly after issuing the final fetch while the embedded HTTP server is
+      // still dispatching that request on its executor. Give that request a short grace period
+      // before treating an exited browser as a missing report.
+      repeat(100) {
+        if (browserReport.get() != null) return@repeat
+        Thread.sleep(50)
+      }
+      if (process.isAlive) {
+        process.destroyForcibly()
+        process.waitFor(5, TimeUnit.SECONDS)
+      }
       val processOutput =
         runCatching { process.inputStream.bufferedReader().readText() }
           .getOrElse { "<unavailable: ${it.message}>" }
