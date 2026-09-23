@@ -57,6 +57,7 @@ NODE_BIN_DIR ?= $(shell node_path="$$(command -v node 2>/dev/null || true)"; if 
 WEB_DISTRIBUTION_DIR ?= web-app/build/kotlin-webpack/wasmJs/productionExecutable
 DESKTOP_APP_DIR ?= desktop-app/build/compose/binaries/main/app/BillionBeers.app
 DESKTOP_DMG_DIR ?= desktop-app/build/compose/binaries/main/dmg
+SCREENSHOT_INVENTORY_DIR ?= build/reports/paparazzi/inventory
 .PHONY: detekt-baseline help setup setup-ai-tools update-android-skills build bundle-release release-smoke install desktop-test desktop-run desktop-live desktop-package desktop-package-test desktop-package-smoke desktop-package-verify web-run web-image-proxy-test web-static-test web-verify ios-compile ios-framework ios-test ios-host-build ios-host-run clean deep-clean test test-tier-inventory konsist check-data-layer-boundary architecture-policy compose-metrics ui-test ui-test-local ui-test-managed ui-test-managed-newest ui-test-managed-ci ui-test-managed-all emulator-create emulator-recreate emulator-start emulator-stop emulator-status emulator-delete screenshot-record screenshot-verify screenshot-clean lint android-lint format check docs-check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline check-gradle-compatibility-flags verification-metadata verification-metadata-reference verification-metadata-candidate health module-graph metro-graph architecture-report repo-doctor benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark build-budget build-budget-check jacoco-report coverage-check update-docs install-profiler install-diffuse new-feature-module new-dev-app play-listing-check play-listing-capture play-listing-reset store-frames
 
 help: ## Show this help message.
@@ -321,8 +322,10 @@ ui-test-managed-all: ## Run instrumented tests on both managed devices, every op
 screenshot-record: ## Record golden images for Paparazzi.
 	$(GRADLE_RUNNER) $(MODULE_PREFIX)recordPaparazziDebug
 
-screenshot-verify: ## Verify screenshots against golden images.
-	$(GRADLE_RUNNER) $(MODULE_PREFIX)verifyPaparazziDebug --continue
+screenshot-verify: ## Verify screenshots against golden images and write the executed preview inventory.
+	rm -rf "$(SCREENSHOT_INVENTORY_DIR)"
+	mkdir -p "$(SCREENSHOT_INVENTORY_DIR)"
+	$(GRADLE_RUNNER) $(MODULE_PREFIX)verifyPaparazziDebug -Pbillionbeers.screenshot.inventory="$(abspath $(SCREENSHOT_INVENTORY_DIR))/" --rerun-tasks --continue
 
 screenshot-clean: ## Clean and re-record golden images.
 	$(GRADLE_RUNNER) clean $(MODULE_PREFIX)recordPaparazziDebug

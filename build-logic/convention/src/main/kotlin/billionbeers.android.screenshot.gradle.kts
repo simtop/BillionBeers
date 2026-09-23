@@ -29,6 +29,7 @@ tasks.withType<Test>().configureEach {
     reports.html.required.set(false)
     reports.junitXml.required.set(true)
     inventoryPathProvider.orNull?.let { path ->
+        inputs.property("billionbeers.screenshot.inventory", path)
         systemProperty("billionbeers.screenshot.inventory", path)
     }
 }
@@ -182,7 +183,15 @@ val generatePaparazziTest = tasks.register("generatePaparazziTest") {
 
                         private fun writeInventory(snapshots: List<com.simtop.billionbeers.snapshot_testing.Snapshot>) {
                             val path = System.getProperty("billionbeers.screenshot.inventory") ?: return
-                            val file = File(path)
+                            val inventoryPath = File(path)
+                            val file =
+                                if (inventoryPath.isDirectory || path.endsWith(File.separator)) {
+                                    inventoryPath.resolve(
+                                        MODULE_NAMESPACE.replace('.', '_') + ".tsv",
+                                    )
+                                } else {
+                                    inventoryPath
+                                }
                             file.parentFile?.mkdirs()
                             file.writeText(
                                 snapshots.joinToString(separator = "") { snapshot ->
