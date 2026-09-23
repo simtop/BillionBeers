@@ -236,7 +236,7 @@ TEST_FLAGS := --no-configuration-cache
 test: ## Run unit tests for the specified module (or all).
 ifeq ($(MODULE_TRIMMED),)
 	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) $(TEST_FLAGS) testDebugUnitTest $(addsuffix :test,$(JVM_TEST_MODULES)) $(kmp_test_tasks) --continue
-	$(GRADLE_RUNNER) -p build-logic $(TEST_FLAGS) :convention:test --continue
+	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) -p build-logic $(TEST_FLAGS) :convention:test --continue
 else ifneq ($(filter $(MODULE_TRIMMED),$(KMP_JVM_TEST_MODULES)),)
 	$(GRADLE_RUNNER) $(MODULE_TRIMMED):jvmTest --continue
 else ifneq ($(filter $(MODULE_TRIMMED),$(KMP_METADATA_MODULES)),)
