@@ -2,8 +2,11 @@
 
 ## Status
 
-Accepted as the migration direction. Android is the only implemented product target today;
-compatibility, runtime and distribution support for the other targets are not yet proved.
+Accepted as the migration direction. Android remains the primary released target. Desktop, iOS and
+Web hosts now have local implementation and target-specific evidence, but their release claims are
+partial: Desktop packaging is unsigned/local-only macOS arm64 structural proof, iOS is an unsigned
+simulator-host proof, and Web is a Chromium/browser-test plus static-distribution proof without a
+deployed-host or upstream image-CORS claim.
 
 ## Context
 
