@@ -156,6 +156,7 @@ web-verify: ## Run Web browser tests and verify the production static distributi
 	PATH="$(NODE_BIN_DIR):$$PATH" $(GRADLE_RUNNER) :web-app:wasmJsBrowserDistribution
 	install -m 644 web-app/src/wasmJsMain/resources/index.html "$(WEB_DISTRIBUTION_DIR)/index.html"
 	python3 scripts/verify_web_static.py "$(WEB_DISTRIBUTION_DIR)"
+	WEB_SMOKE_BROWSER="$(WEB_SMOKE_BROWSER)" node scripts/smoke_web_distribution.cjs "$(WEB_DISTRIBUTION_DIR)"
 
 web-run: ## Start the local Wasm browser host and image proxy for manual Web QA.
 	$(GRADLE_RUNNER) --stop

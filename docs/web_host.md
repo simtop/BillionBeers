@@ -29,11 +29,13 @@ For the CI-equivalent browser and static-output verification, run:
 make web-verify
 ```
 
-This runs the Web browser tests, builds `wasmJsBrowserDistribution`, and verifies the production
-output under `web-app/build/kotlin-webpack/wasmJs/productionExecutable`. The static verifier checks
-that the entrypoint, referenced JavaScript/resources, and Wasm module exist and that references are
-relative and safe for a subpath-aware static host. It does not verify deployment headers, CDN image
-CORS, GitHub Pages behavior, or production proxy operation.
+This runs the Web browser tests, builds `wasmJsBrowserDistribution`, copies the current HTML
+bootstrap into the exact production output, verifies that every JavaScript-referenced Wasm asset is
+present, and boots that output in the packaged-production smoke. The smoke serves the bundle under a
+non-root path and checks compact/wide root and canvas bounds plus deterministic fixture content. Set
+`WEB_SMOKE_BROWSER` (or `CHROME_BIN`) when the browser executable is not discoverable on `PATH`.
+The checks do not verify deployment headers, CDN image CORS, GitHub Pages behavior, or production
+proxy operation; those remain separate evidence claims.
 
 The proxy accepts only HTTPS URLs for the known `dropgate.malvik.dev/brewbuddy/images/` path and
 allows CORS only from local development origins. Its tests do not contact the live CDN:

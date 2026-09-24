@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import posixpath
+import re
 import sys
 from html.parser import HTMLParser
 from pathlib import Path
@@ -44,6 +45,22 @@ def _relative_asset_path(reference: str, entrypoint: Path) -> Path:
     return Path(normalized)
 
 
+WASM_REFERENCE_PATTERN = re.compile(r"r\.p\s*\+\s*([\"'])([^\"']+\.wasm)\1")
+
+
+def _referenced_wasm_assets(root: Path, javascript_files: list[Path]) -> set[str]:
+    references: set[str] = set()
+    for javascript_file in javascript_files:
+        source = javascript_file.read_text(encoding="utf-8")
+        references.update(
+            match.group(2)
+            for match in WASM_REFERENCE_PATTERN.finditer(source)
+        )
+    if not references:
+        raise VerificationError("JavaScript contains no recognizable Wasm asset references")
+    return references
+
+
 def verify_distribution(root: Path, entrypoint: str = "index.html") -> list[str]:
     root = root.resolve()
     if not root.is_dir():
@@ -76,9 +93,25 @@ def verify_distribution(root: Path, entrypoint: str = "index.html") -> list[str]
     wasm_files = [path for path in files if path.suffix == ".wasm"]
     if not wasm_files:
         raise VerificationError("distribution contains no Wasm module")
-    if not any(path.suffix == ".js" for path in files):
+    javascript_files = [path for path in files if path.suffix == ".js"]
+    if not javascript_files:
         raise VerificationError("distribution contains no JavaScript entrypoint")
-    return sorted(set(checked + [path.relative_to(root).as_posix() for path in wasm_files]))
+
+    referenced_wasm = _referenced_wasm_assets(root, javascript_files)
+    available_wasm = {path.name for path in wasm_files}
+    missing_wasm = sorted(referenced_wasm - available_wasm)
+    if missing_wasm:
+        raise VerificationError(
+            "JavaScript-referenced Wasm assets are missing: " + ", ".join(missing_wasm)
+        )
+
+    return sorted(
+        set(
+            checked
+            + [path.relative_to(root).as_posix() for path in wasm_files]
+            + [path.relative_to(root).as_posix() for path in javascript_files]
+        )
+    )
 
 
 def main() -> int:
