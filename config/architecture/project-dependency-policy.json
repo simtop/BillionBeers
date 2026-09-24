@@ -41,8 +41,8 @@
     { "name": "snapshot-processor", "match": "exact", "value": ":snapshot-processor" },
     { "name": "benchmark", "match": "prefix", "value": ":benchmark:" },
     { "name": "konsist", "match": "exact", "value": ":konsist" },
-    { "name": "shared-ui-fixture", "match": "exact", "value": ":t71-fixture" },
-    { "name": "android-screenshot-fixture", "match": "exact", "value": ":t71-fixture-android-screenshot" }
+    { "name": "shared-ui-fixture", "match": "exact", "value": ":compose-multiplatform-fixture" },
+    { "name": "android-screenshot-fixture", "match": "exact", "value": ":compose-multiplatform-screenshot-fixture" }
   ],
   "allowedEdges": [
     { "source": "application", "targets": ["domain-api", "regular-feature", "dynamic-feature", "core", "design-system", "navigation", "data", "database", "network", "presentation"], "scopes": ["main"] },
