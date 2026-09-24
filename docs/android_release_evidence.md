@@ -29,7 +29,7 @@ The following repository wrappers completed successfully on the local macOS arm6
 `build/reports/paparazzi/inventory/`. The audit produced eight module TSV files and 275 rows:
 
 - `com_simtop_billionbeers_core_designsystem.tsv`: 42
-- `com_simtop_billionbeers_t71_screenshot.tsv`: 1
+- `com_simtop_billionbeers_composefixture_screenshot.tsv`: 1
 - `com_simtop_feature_beerbrowse.tsv`: 84
 - `com_simtop_feature_beerdetail.tsv`: 40
 - `com_simtop_feature_beersearch.tsv`: 46

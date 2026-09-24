@@ -1,5 +1,0 @@
-<resources>
-    <string name="t71_title">Shared Compose fixture</string>
-    <string name="t71_input_label">Focus input</string>
-    <string name="t71_submit">Submit event</string>
-</resources>

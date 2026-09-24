@@ -119,7 +119,7 @@ live `brewbuddy.dev` API or image CORS availability; those remain a separate dep
 
 T7.1 proves a first shared Compose fixture without extracting product UI. Compose Multiplatform
 `1.12.0` resolves with Kotlin `2.4.10` and the Kotlin Compose compiler plugin `2.4.10` on the
-repository's AGP `9.2.1` toolchain. The isolated `:t71-fixture` applies a precompiled KMP Compose
+repository's AGP `9.2.1` toolchain. The isolated `:compose-multiplatform-fixture` applies a precompiled KMP Compose
 convention and compiles common/JVM, Android, Wasm and the `iosArm64`/`iosSimulatorArm64` targets;
 its simulator framework links through `linkDebugFrameworkIosSimulatorArm64`. The fixture uses
 AndroidX Lifecycle ViewModel `2.11.0` and Metro `1.4.2` metadata in common code, owns a
@@ -127,7 +127,7 @@ AndroidX Lifecycle ViewModel `2.11.0` and Metro `1.4.2` metadata in common code,
 scope and closes the channel. Compose Multiplatform resources load through the generated common
 resource accessor in the shared screen; JVM tests cover state, one-shot events and disposal.
 
-The Android-only `:t71-fixture-android-screenshot` adapter delegates the shared content to the
+The Android-only `:compose-multiplatform-screenshot-fixture` adapter delegates the shared content to the
 existing KSP preview discovery and Paparazzi runner. Its baseline records and verifies successfully,
 while the adapter passes literal preview labels because Paparazzi's layoutlib has no registering
 instrumentation for Compose Multiplatform's Android resource reader. Resource accessors compile for
