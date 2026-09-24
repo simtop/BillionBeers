@@ -47,6 +47,7 @@ fun SharedBeersListContent(
   onRetryLoadMore: () -> Unit,
   listContentPadding: PaddingValues = PaddingValues(),
   animationsDisabled: Boolean = false,
+  listState: LazyListState? = null,
   modifier: Modifier = Modifier,
 ) {
   val animationDuration = if (animationsDisabled) 0 else LIST_STATE_ANIMATION_DURATION_MILLIS
@@ -76,6 +77,7 @@ fun SharedBeersListContent(
           onRefresh = onRefresh,
           onRetryLoadMore = onRetryLoadMore,
           listContentPadding = listContentPadding,
+          listState = listState,
         )
     }
   }
@@ -93,11 +95,12 @@ private fun SharedBeersListSuccessContent(
   onRefresh: () -> Unit,
   onRetryLoadMore: () -> Unit,
   listContentPadding: PaddingValues,
+  listState: LazyListState?,
 ) {
-  val listState = rememberLazyListState()
+  val resolvedListState = listState ?: rememberLazyListState()
 
   if (model.footer !is com.simtop.core.core.PagedListFooter.Retry) {
-    ObserveListEnd(listState = listState, onScrollToBottom = onScrollToBottom)
+    ObserveListEnd(listState = resolvedListState, onScrollToBottom = onScrollToBottom)
   }
 
   PullToRefreshBox(
@@ -106,11 +109,13 @@ private fun SharedBeersListSuccessContent(
     modifier = Modifier.fillMaxSize(),
   ) {
     LazyColumn(
-      state = listState,
+      state = resolvedListState,
       modifier = Modifier.fillMaxSize().testTag("beer_list"),
       contentPadding = listContentPadding,
     ) {
-      items(model.items.size) { index -> beerRow(model.items[index]) }
+      items(model.items.size, key = { index -> model.items[index].id }) { index ->
+        beerRow(model.items[index])
+      }
       sharedPagedListFooter(
         model = model,
         loadMoreFailedText = { loadMoreFailedText },
