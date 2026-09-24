@@ -23,39 +23,28 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
-import com.simtop.billionbeers.shared.beerbrowse.BrowseBeersViewModel
 import com.simtop.billionbeers.shared.beerbrowse.BrowseStrings
 import com.simtop.billionbeers.shared.beerbrowse.SharedBrowseBeersContent
 import com.simtop.billionbeers.shared.beerbrowse.SharedBrowseHomeContent
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailEvent
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailStrings
-import com.simtop.billionbeers.shared.beerdetail.BeerDetailViewModel
 import com.simtop.billionbeers.shared.beerdetail.SharedBeerDetailContent
-import com.simtop.billionbeers.shared.beersearch.BeersSearchViewModel
 import com.simtop.billionbeers.shared.beersearch.SharedBeersSearchContent
-import com.simtop.billionbeers.shared.beerslist.BeersListViewModel
 import com.simtop.billionbeers.shared.beerslist.SharedBeersListContent
 import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersTheme
-import com.simtop.billionbeers.shared.favorites.FavoritesViewModel
 import com.simtop.billionbeers.shared.favorites.SharedFavoritesContent
 import com.simtop.core.core.CommonUiErrorKey
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.navigation.contract.PortableRoute
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.emptyFlow
@@ -110,43 +99,31 @@ fun SharedAppShell(
   initialRoute: PortableRoute = PortableRoute.BeersList,
   onClose: () -> Unit = {},
 ) {
-  var backStack by remember { mutableStateOf(listOf(initialRoute)) }
-  var browseSelection by remember { mutableStateOf<BrowseSelection?>(null) }
-  val route = backStack.lastOrNull() ?: initialRoute
-  val canGoBack =
-    backStack.size > 1 || route is PortableRoute.BeersSearch || route is PortableRoute.BeerBrowse
+  val navigation =
+    remember(repository, pagerFactory, coroutineDispatcher) {
+      SharedAppNavigationState(repository, pagerFactory, coroutineDispatcher, initialRoute)
+    }
+  DisposableEffect(navigation) { onDispose { navigation.disposeAll() } }
+
+  LaunchedEffect(host.routeRequests) {
+    host.routeRequests.collectLatest(navigation::replaceFromRoute)
+  }
+
+  val entry = navigation.current
+  val route = entry.route
+  val canGoBack = navigation.entries.size > 1 || route is PortableRoute.BeersSearch
 
   fun pop() {
-    when {
-      browseSelection != null -> browseSelection = null
-      backStack.size > 1 -> {
-        backStack = backStack.dropLast(1)
-        backStack.lastOrNull()?.let(host.onRouteChanged)
-      }
-      else -> onClose()
+    if (navigation.pop()) {
+      host.onRouteChanged(navigation.current.route)
+    } else {
+      onClose()
     }
   }
 
   fun navigate(next: PortableRoute) {
-    backStack =
-      when (next) {
-        PortableRoute.BeersList,
-        PortableRoute.Favorites -> listOf(next)
-        else -> backStack + next
-      }
-    host.onRouteChanged(next)
-  }
-
-  LaunchedEffect(host.routeRequests) {
-    host.routeRequests.collectLatest { requestedRoute ->
-      backStack =
-        when (requestedRoute) {
-          PortableRoute.BeersList,
-          PortableRoute.Favorites -> listOf(requestedRoute)
-          else -> backStack.dropLast(1).ifEmpty { listOf(PortableRoute.BeersList) } + requestedRoute
-        }
-      browseSelection = null
-    }
+    navigation.navigate(next)
+    host.onRouteChanged(navigation.current.route)
   }
 
   BillionBeersTheme(darkTheme = host.darkTheme) {
@@ -190,50 +167,51 @@ fun SharedAppShell(
       },
     ) { padding ->
       Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-        when (route) {
-          PortableRoute.BeersList ->
+        when (entry) {
+          is ListEntry ->
             ListDestination(
-              repository = repository,
-              pagerFactory = pagerFactory,
+              entry = entry,
               strings = strings,
               host = host,
               onBeerClick = { navigate(PortableRoute.BeerDetail(it)) },
               onSearch = { navigate(PortableRoute.BeersSearch) },
               onBrowse = { navigate(PortableRoute.BeerBrowse) },
             )
-          PortableRoute.Favorites ->
+          is FavoritesEntry ->
             FavoritesDestination(
-              repository = repository,
+              entry = entry,
               strings = strings,
               host = host,
               onBeerClick = { navigate(PortableRoute.BeerDetail(it)) },
             )
-          PortableRoute.BeersSearch ->
+          is SearchEntry ->
             SearchDestination(
-              pagerFactory = pagerFactory,
-              coroutineDispatcher = coroutineDispatcher,
+              entry = entry,
               strings = strings,
               host = host,
               onBeerClick = { navigate(PortableRoute.BeerDetail(it)) },
             )
-          PortableRoute.BeerBrowse ->
-            BrowseDestination(
-              repository = repository,
-              pagerFactory = pagerFactory,
-              coroutineDispatcher = coroutineDispatcher,
+          is BrowseHomeEntry ->
+            BrowseHomeDestination(
+              entry = entry,
               strings = strings,
               host = host,
-              selection = browseSelection,
-              onSelection = { browseSelection = it },
+              onSelection = navigation::selectBrowse,
+              onBack = ::pop,
+            )
+          is BrowseBeersEntry ->
+            BrowseBeersDestination(
+              entry = entry,
+              strings = strings,
+              host = host,
               onBack = ::pop,
               onBeerClick = { navigate(PortableRoute.BeerDetail(it)) },
             )
-          is PortableRoute.BeerDetail ->
+          is DetailEntry ->
             DetailDestination(
-              repository = repository,
+              entry = entry,
               strings = strings,
               host = host,
-              beer = route.beer,
               onBack = ::pop,
               animationsDisabled = host.detailAnimationsDisabled,
             )
@@ -264,16 +242,14 @@ private fun ShellTopBar(
 
 @Composable
 private fun ListDestination(
-  repository: BeersRepository,
-  pagerFactory: BeersPagerFactory,
+  entry: ListEntry,
   strings: SharedAppStrings,
   host: SharedAppHost,
   onBeerClick: (Beer) -> Unit,
   onSearch: () -> Unit,
   onBrowse: () -> Unit,
 ) {
-  val viewModel = rememberViewModel { BeersListViewModel(repository, pagerFactory) }
-  val viewState by viewModel.beerListViewState.collectAsState()
+  val viewState by entry.viewModel.beerListViewState.collectAsState()
   Column(Modifier.fillMaxSize()) {
     Box(Modifier.weight(1f)) {
       SharedBeersListContent(
@@ -288,10 +264,11 @@ private fun ListDestination(
         retryText = strings.retry,
         endOfListText =
           strings.listEndOfList((viewState as? CommonUiState.Success)?.data?.items?.size ?: 0),
-        onScrollToBottom = viewModel::onScrollToBottom,
-        onRefresh = viewModel::refresh,
-        onRetry = viewModel::refresh,
-        onRetryLoadMore = viewModel::onRetryLoadMore,
+        onScrollToBottom = entry.viewModel::onScrollToBottom,
+        onRefresh = entry.viewModel::refresh,
+        onRetry = entry.viewModel::refresh,
+        onRetryLoadMore = entry.viewModel::onRetryLoadMore,
+        listState = entry.listState,
       )
     }
     ShellActions(strings, onSearch, onBrowse)
@@ -300,37 +277,35 @@ private fun ListDestination(
 
 @Composable
 private fun FavoritesDestination(
-  repository: BeersRepository,
+  entry: FavoritesEntry,
   strings: SharedAppStrings,
   host: SharedAppHost,
   onBeerClick: (Beer) -> Unit,
 ) {
-  val viewModel = rememberViewModel { FavoritesViewModel(repository) }
-  val viewState by viewModel.viewState.collectAsState()
+  val viewState by entry.viewModel.viewState.collectAsState()
   SharedFavoritesContent(
     viewState = viewState,
     emptyText = strings.favoritesEmpty,
     errorText = strings.error,
     beerRow = { beer -> host.beerRow(beer) { onBeerClick(beer) } },
+    listState = entry.listState,
   )
 }
 
 @Composable
 private fun SearchDestination(
-  pagerFactory: BeersPagerFactory,
-  coroutineDispatcher: CoroutineDispatcherProvider,
+  entry: SearchEntry,
   strings: SharedAppStrings,
   host: SharedAppHost,
   onBeerClick: (Beer) -> Unit,
 ) {
-  val viewModel = rememberViewModel { BeersSearchViewModel(coroutineDispatcher, pagerFactory) }
-  val query by viewModel.query.collectAsState()
-  val viewState by viewModel.viewState.collectAsState()
+  val query by entry.viewModel.query.collectAsState()
+  val viewState by entry.viewModel.viewState.collectAsState()
   val count = (viewState as? CommonUiState.Success)?.data?.items?.size ?: 0
   Column(Modifier.fillMaxSize()) {
     OutlinedTextField(
       value = query,
-      onValueChange = viewModel::onQueryChange,
+      onValueChange = entry.viewModel::onQueryChange,
       label = { Text(strings.searchHint) },
       singleLine = true,
       modifier = Modifier.fillMaxWidth().padding(12.dp),
@@ -350,90 +325,81 @@ private fun SearchDestination(
         loadMoreFailedText = strings.listLoadMoreFailed,
         retryText = strings.retry,
         endOfListText = strings.searchEndOfList(count),
-        onScrollToBottom = viewModel::onScrollToBottom,
-        onRetryLoadMore = viewModel::onRetryLoadMore,
-        onRetrySearch = viewModel::onRetrySearch,
+        onScrollToBottom = entry.viewModel::onScrollToBottom,
+        onRetryLoadMore = entry.viewModel::onRetryLoadMore,
+        onRetrySearch = entry.viewModel::onRetrySearch,
         contentPadding = PaddingValues(),
+        listState = entry.listState,
       )
     }
   }
 }
 
 @Composable
-private fun BrowseDestination(
-  repository: BeersRepository,
-  pagerFactory: BeersPagerFactory,
-  coroutineDispatcher: CoroutineDispatcherProvider,
+private fun BrowseHomeDestination(
+  entry: BrowseHomeEntry,
   strings: SharedAppStrings,
   host: SharedAppHost,
-  selection: BrowseSelection?,
-  onSelection: (BrowseSelection?) -> Unit,
+  onSelection: (BrowseSelection) -> Unit,
+  onBack: () -> Unit,
+) {
+  val styles by entry.viewModel.styles.collectAsState()
+  val breweries by entry.viewModel.breweries.collectAsState()
+  SharedBrowseHomeContent(
+    strings = strings.browseStrings,
+    styles = styles,
+    breweries = breweries,
+    selectedTab = entry.selectedTab,
+    onTabSelected = {
+      entry.selectedTab = it
+      if (it == 1) entry.viewModel.onBreweriesTabSelected()
+    },
+    onStyleClick = { onSelection(BrowseSelection(styleId = it.id, name = it.name)) },
+    onBreweryClick = { onSelection(BrowseSelection(breweryId = it.id, name = it.name)) },
+    onBack = onBack,
+    backIcon = host.backIcon,
+    onRetryStyles = entry.viewModel::retryStyles,
+    onRetryBreweries = entry.viewModel::retryBreweries,
+    errorContent = host.errorContent,
+  )
+}
+
+@Composable
+private fun BrowseBeersDestination(
+  entry: BrowseBeersEntry,
+  strings: SharedAppStrings,
+  host: SharedAppHost,
   onBack: () -> Unit,
   onBeerClick: (Beer) -> Unit,
 ) {
-  if (selection == null) {
-    var selectedTab by remember { mutableStateOf(0) }
-    val viewModel = rememberViewModel {
-      com.simtop.billionbeers.shared.beerbrowse.BrowseViewModel(repository)
-    }
-    val styles by viewModel.styles.collectAsState()
-    val breweries by viewModel.breweries.collectAsState()
-    SharedBrowseHomeContent(
-      strings = strings.browseStrings,
-      styles = styles,
-      breweries = breweries,
-      selectedTab = selectedTab,
-      onTabSelected = {
-        selectedTab = it
-        if (it == 1) viewModel.onBreweriesTabSelected()
-      },
-      onStyleClick = { onSelection(BrowseSelection(styleId = it.id, name = it.name)) },
-      onBreweryClick = { onSelection(BrowseSelection(breweryId = it.id, name = it.name)) },
-      onBack = onBack,
-      backIcon = host.backIcon,
-      onRetryStyles = viewModel::retryStyles,
-      onRetryBreweries = viewModel::retryBreweries,
-      errorContent = host.errorContent,
-    )
-  } else {
-    val viewModel =
-      rememberViewModel(selection) {
-        BrowseBeersViewModel(
-          coroutineDispatcher,
-          pagerFactory,
-          selection.toQuery(),
-        )
-      }
-    val viewState by viewModel.viewState.collectAsState()
-    SharedBrowseBeersContent(
-      strings = strings.browseStrings,
-      title = selection.name,
-      viewState = viewState,
-      onBack = { onSelection(null) },
-      backIcon = host.backIcon,
-      onBeerClick = onBeerClick,
-      onScrollToBottom = viewModel::onScrollToBottom,
-      onRetryLoadMore = viewModel::onRetryLoadMore,
-      onRetryFirstPage = viewModel::onRetryFirstPage,
-      errorContent = host.errorContent,
-      beerRow = { beer, onClick -> host.beerRow(beer, onClick) },
-    )
-  }
+  val viewState by entry.viewModel.viewState.collectAsState()
+  SharedBrowseBeersContent(
+    strings = strings.browseStrings,
+    title = entry.selection.name,
+    viewState = viewState,
+    onBack = onBack,
+    backIcon = host.backIcon,
+    onBeerClick = onBeerClick,
+    onScrollToBottom = entry.viewModel::onScrollToBottom,
+    onRetryLoadMore = entry.viewModel::onRetryLoadMore,
+    onRetryFirstPage = entry.viewModel::onRetryFirstPage,
+    errorContent = host.errorContent,
+    beerRow = { beer, onClick -> host.beerRow(beer, onClick) },
+    listState = entry.listState,
+  )
 }
 
 @Composable
 private fun DetailDestination(
-  repository: BeersRepository,
+  entry: DetailEntry,
   strings: SharedAppStrings,
   host: SharedAppHost,
-  beer: Beer,
   onBack: () -> Unit,
   animationsDisabled: Boolean,
 ) {
-  val viewModel = rememberViewModel(beer) { BeerDetailViewModel(repository, beer) }
-  val state by viewModel.beerDetailViewState.collectAsState()
-  LaunchedEffect(viewModel) {
-    viewModel.events.collectLatest { event ->
+  val state by entry.viewModel.beerDetailViewState.collectAsState()
+  LaunchedEffect(entry.viewModel) {
+    entry.viewModel.events.collectLatest { event ->
       if (event is BeerDetailEvent.ShowError) host.onMessage(event.message)
     }
   }
@@ -446,8 +412,8 @@ private fun DetailDestination(
         beer = currentState.data,
         strings = strings.detailStrings,
         onBackClick = onBack,
-        onToggleAvailability = { viewModel.updateAvailability(currentState.data) },
-        onToggleFavorite = { viewModel.updateFavorite(currentState.data) },
+        onToggleAvailability = { entry.viewModel.updateAvailability(currentState.data) },
+        onToggleFavorite = { entry.viewModel.updateFavorite(currentState.data) },
         backIcon = host.backIcon,
         favoriteIcon = host.favoriteIcon,
         imageContent = host.imageContent,
@@ -478,26 +444,4 @@ private fun ShellHint(text: String) {
   Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
     Text(text, style = MaterialTheme.typography.bodyLarge)
   }
-}
-
-private data class BrowseSelection(
-  val styleId: String? = null,
-  val breweryId: String? = null,
-  val name: String,
-) {
-  fun toQuery() = BeersQuery(styleId = styleId, breweryId = breweryId)
-}
-
-@Composable
-private fun <T : ViewModel> rememberViewModel(factory: () -> T): T {
-  val viewModel = remember { factory() }
-  DisposableEffect(viewModel) { onDispose { viewModel.viewModelScope.cancel() } }
-  return viewModel
-}
-
-@Composable
-private fun <K, T : ViewModel> rememberViewModel(key: K, factory: () -> T): T {
-  val viewModel = remember(key) { factory() }
-  DisposableEffect(viewModel) { onDispose { viewModel.viewModelScope.cancel() } }
-  return viewModel
 }

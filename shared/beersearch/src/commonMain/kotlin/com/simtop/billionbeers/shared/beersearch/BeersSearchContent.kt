@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -38,6 +39,7 @@ fun SharedBeersSearchContent(
   onRetryLoadMore: () -> Unit,
   onRetrySearch: () -> Unit,
   contentPadding: PaddingValues,
+  listState: LazyListState? = null,
   modifier: Modifier = Modifier,
 ) {
   when (val state = viewState) {
@@ -58,6 +60,7 @@ fun SharedBeersSearchContent(
           onScrollToBottom = onScrollToBottom,
           onRetryLoadMore = onRetryLoadMore,
           contentPadding = contentPadding,
+          listState = listState,
           modifier = modifier,
         )
       }
@@ -75,22 +78,25 @@ private fun SharedBeersSearchResults(
   onScrollToBottom: () -> Unit,
   onRetryLoadMore: () -> Unit,
   contentPadding: PaddingValues,
+  listState: LazyListState?,
   modifier: Modifier,
 ) {
-  val listState = rememberLazyListState()
+  val resolvedListState = listState ?: rememberLazyListState()
   if (model.footer !is PagedListFooter.Retry) {
-    ObserveListEnd(listState = listState, onScrollToBottom = onScrollToBottom)
+    ObserveListEnd(listState = resolvedListState, onScrollToBottom = onScrollToBottom)
   }
 
   LazyColumn(
-    state = listState,
+    state = resolvedListState,
     modifier = modifier.fillMaxSize().consumeWindowInsets(contentPadding).testTag("beer_list"),
     contentPadding = contentPadding,
   ) {
     model.totalCount?.let { count ->
       item { resultCountContent(count) }
     }
-    items(model.items.size) { index -> beerRow(model.items[index]) }
+    items(model.items.size, key = { index -> "${model.items[index].id}:$index" }) { index ->
+      beerRow(model.items[index])
+    }
     sharedPagedListFooter(
       model = model,
       loadMoreFailedText = { loadMoreFailedText },

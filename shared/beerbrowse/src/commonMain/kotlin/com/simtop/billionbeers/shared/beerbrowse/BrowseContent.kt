@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -177,6 +178,7 @@ fun SharedBrowseBeersContent(
   onRetryFirstPage: () -> Unit,
   errorContent: @Composable (CommonUiState.Error, () -> Unit) -> Unit,
   beerRow: @Composable (Beer, () -> Unit) -> Unit,
+  listState: LazyListState? = null,
   modifier: Modifier = Modifier,
 ) {
   Scaffold(
@@ -217,6 +219,7 @@ fun SharedBrowseBeersContent(
               onScrollToBottom = onScrollToBottom,
               onRefresh = onRetryFirstPage,
               onRetryLoadMore = onRetryLoadMore,
+              listState = listState,
             )
           }
       }
@@ -254,10 +257,11 @@ private fun SharedBrowseBeersResults(
   onScrollToBottom: () -> Unit,
   onRefresh: () -> Unit,
   onRetryLoadMore: () -> Unit,
+  listState: LazyListState?,
 ) {
-  val listState = rememberLazyListState()
+  val resolvedListState = listState ?: rememberLazyListState()
   if (model.footer !is PagedListFooter.Retry) {
-    ObserveListEnd(listState = listState, onScrollToBottom = onScrollToBottom)
+    ObserveListEnd(listState = resolvedListState, onScrollToBottom = onScrollToBottom)
   }
 
   PullToRefreshBox(isRefreshing = model.isRefreshing, onRefresh = onRefresh) {
@@ -277,11 +281,11 @@ private fun SharedBrowseBeersResults(
 
       val endOfListText = strings.endOfList(model.items.size)
       LazyColumn(
-        state = listState,
+        state = resolvedListState,
         modifier = Modifier.fillMaxSize().consumeWindowInsets(contentPadding),
         contentPadding = contentPadding,
       ) {
-        items(model.items.size) { index ->
+        items(model.items.size, key = { index -> "${model.items[index].id}:$index" }) { index ->
           val beer = model.items[index]
           beerRow(beer) { onBeerClick(beer) }
         }
