@@ -113,7 +113,7 @@ private fun SharedBeersListSuccessContent(
       modifier = Modifier.fillMaxSize().testTag("beer_list"),
       contentPadding = listContentPadding,
     ) {
-      items(model.items.size, key = { index -> model.items[index].id }) { index ->
+      items(model.items.size, key = { index -> "${model.items[index].id}:$index" }) { index ->
         beerRow(model.items[index])
       }
       sharedPagedListFooter(
