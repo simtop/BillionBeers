@@ -60,7 +60,6 @@ private val desktopHost =
     },
     detailAnimationsDisabled = false,
     detailCollapsingToolbarEnabled = false,
-    onMessage = { message -> println(message) },
   )
 
 private val desktopStrings =

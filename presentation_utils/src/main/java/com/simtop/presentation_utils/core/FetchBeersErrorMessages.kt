@@ -3,6 +3,7 @@ package com.simtop.presentation_utils.core
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.simtop.beerdomain.domain.errors.FetchBeersError
+import com.simtop.billionbeers.shared.presentation.toCommonUiErrorState
 import com.simtop.core.core.CommonUiErrorKey
 import com.simtop.core.core.CommonUiState
 import com.simtop.presentation_utils.R
@@ -10,19 +11,10 @@ import com.simtop.presentation_utils.R
 /**
  * The one user-facing error state per [FetchBeersError], shared by every paged beers screen (the
  * catalog and search used to keep diverging private copies). Known kinds carry a semantic key for
- * host-side localization; only an [FetchBeersError.Unknown] with a cause message falls back to that
- * literal runtime string.
+ * host-side localization; unknown causes are intentionally mapped to generic localized copy rather
+ * than exposing raw exception text.
  */
-fun FetchBeersError.toErrorState(): CommonUiState.Error =
-  when (this) {
-    FetchBeersError.Network -> CommonUiState.Error(errorKey = CommonUiErrorKey.NoInternet)
-    FetchBeersError.NotFound -> CommonUiState.Error(errorKey = CommonUiErrorKey.NoBeersFound)
-    FetchBeersError.Forbidden -> CommonUiState.Error(errorKey = CommonUiErrorKey.AccessDenied)
-    FetchBeersError.RateLimited -> CommonUiState.Error(errorKey = CommonUiErrorKey.RateLimited)
-    is FetchBeersError.Unknown ->
-      cause.message?.let { CommonUiState.Error(message = it) }
-        ?: CommonUiState.Error(errorKey = CommonUiErrorKey.FailedToLoadBeers)
-  }
+fun FetchBeersError.toErrorState(): CommonUiState.Error = toCommonUiErrorState()
 
 /** Resolves an error to displayable text: the literal message, else the localized resource. */
 @Composable
@@ -39,3 +31,4 @@ fun CommonUiState.Error.resolvedMessage(): String? =
         }
       )
     }
+    ?: stringResource(R.string.error_failed_to_load_beers)

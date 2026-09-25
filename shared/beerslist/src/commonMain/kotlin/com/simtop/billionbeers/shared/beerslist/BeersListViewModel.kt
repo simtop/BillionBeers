@@ -7,7 +7,7 @@ import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.CatalogCacheStatus
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
-import com.simtop.core.core.CommonUiErrorKey
+import com.simtop.billionbeers.shared.presentation.toCommonUiErrorState
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.PagedListReducer
 import com.simtop.core.core.PagedListUiModel
@@ -33,7 +33,8 @@ open class BeersListViewModel(
   // stateless data accessor.
   private val pager = beersPagerFactory.create()
 
-  private val reducer = PagedListReducer<Beer, FetchBeersError>(errorState = { it.toErrorState() })
+  private val reducer =
+    PagedListReducer<Beer, FetchBeersError>(errorState = { it.toCommonUiErrorState() })
 
   val beerListViewState: StateFlow<CommonUiState<PagedListUiModel<Beer>>> =
     combine(pager.data, pager.pagingState, reducer::reduce)
@@ -98,14 +99,3 @@ sealed interface BeersListEvent {
 
   data object ShowRefreshError : BeersListEvent
 }
-
-private fun FetchBeersError.toErrorState(): CommonUiState.Error =
-  when (this) {
-    FetchBeersError.Network -> CommonUiState.Error(errorKey = CommonUiErrorKey.NoInternet)
-    FetchBeersError.NotFound -> CommonUiState.Error(errorKey = CommonUiErrorKey.NoBeersFound)
-    FetchBeersError.Forbidden -> CommonUiState.Error(errorKey = CommonUiErrorKey.AccessDenied)
-    FetchBeersError.RateLimited -> CommonUiState.Error(errorKey = CommonUiErrorKey.RateLimited)
-    is FetchBeersError.Unknown ->
-      cause.message?.let { CommonUiState.Error(message = it) }
-        ?: CommonUiState.Error(errorKey = CommonUiErrorKey.FailedToLoadBeers)
-  }

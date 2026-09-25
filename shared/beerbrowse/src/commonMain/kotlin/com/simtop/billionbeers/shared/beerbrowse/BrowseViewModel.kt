@@ -6,7 +6,7 @@ import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.beerdomain.domain.repositories.BeersRepository
-import com.simtop.core.core.CommonUiErrorKey
+import com.simtop.billionbeers.shared.presentation.toCommonUiErrorState
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.Either
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -50,16 +50,7 @@ open class BrowseViewModel(private val beersRepository: BeersRepository) : ViewM
 
   private fun <T> Either<FetchBeersError, List<T>>.toUiState(): CommonUiState<List<T>> =
     either(
-      fnL = { error -> CommonUiState.Error(errorKey = error.toErrorKey()) },
+      fnL = { error -> error.toCommonUiErrorState() },
       fnR = { list -> if (list.isEmpty()) CommonUiState.Empty else CommonUiState.Success(list) },
     )
 }
-
-internal fun FetchBeersError.toErrorKey(): CommonUiErrorKey =
-  when (this) {
-    FetchBeersError.Network -> CommonUiErrorKey.NoInternet
-    FetchBeersError.NotFound -> CommonUiErrorKey.NoBeersFound
-    FetchBeersError.Forbidden -> CommonUiErrorKey.AccessDenied
-    FetchBeersError.RateLimited -> CommonUiErrorKey.RateLimited
-    is FetchBeersError.Unknown -> CommonUiErrorKey.FailedToLoadBeers
-  }

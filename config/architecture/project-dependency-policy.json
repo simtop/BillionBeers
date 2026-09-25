@@ -64,7 +64,7 @@
     { "source": "core", "targets": ["core-common"], "scopes": ["main"] },
     { "source": "design-system", "targets": ["catalog-annotations", "snapshot-testing", "shared-design-system"], "scopes": ["main"] },
     { "source": "shared-design-system", "targets": [], "scopes": ["main"] },
-    { "source": "shared-presentation", "targets": ["core-common", "shared-design-system"], "scopes": ["main"] },
+    { "source": "shared-presentation", "targets": ["domain-api", "core-common", "shared-design-system"], "scopes": ["main"] },
     { "source": "shared-favorites", "targets": ["domain-api", "core-common", "shared-design-system"], "scopes": ["main"] },
     { "source": "shared-beerslist", "targets": ["domain-api", "core-common", "shared-design-system", "shared-presentation"], "scopes": ["main"] },
     { "source": "shared-beersearch", "targets": ["domain-api", "core-common", "shared-design-system", "shared-presentation"], "scopes": ["main"] },

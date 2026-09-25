@@ -6,6 +6,7 @@ import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
+import com.simtop.billionbeers.shared.presentation.toCommonUiErrorState
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.PagedListReducer
@@ -32,7 +33,7 @@ open class BrowseBeersViewModel(
 
   private val reducer =
     PagedListReducer<Beer, FetchBeersError>(
-      errorState = { CommonUiState.Error(errorKey = it.toErrorKey()) },
+      errorState = { it.toCommonUiErrorState() },
       endedEmpty = { CommonUiState.Success(PagedListUiModel()) },
     )
 

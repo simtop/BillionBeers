@@ -100,7 +100,7 @@ open class BeerDetailViewModel(
         if (version == favoriteUpdateVersion && currentBeer().isFavorite == optimisticFavorite) {
           setBeer(currentBeer().copy(isFavorite = originalFavorite))
         }
-        _events.send(BeerDetailEvent.ShowError(result.value.toUiMessage()))
+        _events.send(BeerDetailEvent.ShowError(BeerDetailError.FavoriteUpdate))
       }
       is Either.Right -> _events.send(BeerDetailEvent.FavoriteUpdated)
     }
@@ -120,25 +120,20 @@ open class BeerDetailViewModel(
         ) {
           setBeer(currentBeer().copy(availability = originalAvailability))
         }
-        _events.send(BeerDetailEvent.ShowError(result.value.toUiMessage()))
+        _events.send(BeerDetailEvent.ShowError(BeerDetailError.AvailabilityUpdate))
       }
       is Either.Right -> Unit
     }
   }
+}
 
-  private fun UpdateAvailabilityError.toUiMessage(): String =
-    when (this) {
-      is UpdateAvailabilityError.Unknown -> cause.message ?: "Unable to update availability"
-    }
-
-  private fun UpdateFavoriteError.toUiMessage(): String =
-    when (this) {
-      is UpdateFavoriteError.Unknown -> cause.message ?: "Unable to update favorite"
-    }
+enum class BeerDetailError {
+  FavoriteUpdate,
+  AvailabilityUpdate,
 }
 
 sealed interface BeerDetailEvent {
-  data class ShowError(val message: String) : BeerDetailEvent
+  data class ShowError(val error: BeerDetailError) : BeerDetailEvent
 
   data object FavoriteUpdated : BeerDetailEvent
 }

@@ -12,6 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.createSavedStateHandle
@@ -23,6 +24,7 @@ import com.simtop.billionbeers.di.DynamicDependencies
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailEvent as SharedBeerDetailEvent
 import com.simtop.core.core.CommonUiState
 import com.simtop.feature.beerdetail.presentation.di.FeatureDetailComponent
+import com.simtop.presentation_utils.R
 import dev.zacsweers.metro.createGraphFactory
 import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 import dev.zacsweers.metrox.viewmodel.assistedMetroViewModel
@@ -53,13 +55,29 @@ fun BeerDetailScreenImpl(
       }
     val viewState by viewModel.beerDetailViewState.collectAsState()
     val lifecycleOwner = LocalLifecycleOwner.current
+    val favoriteUpdateFailedMessage = stringResource(R.string.favorite_update_failed)
+    val availabilityUpdateFailedMessage = stringResource(R.string.error_failed_to_load_beers)
 
-    LaunchedEffect(viewModel, lifecycleOwner) {
+    LaunchedEffect(
+      viewModel,
+      lifecycleOwner,
+      favoriteUpdateFailedMessage,
+      availabilityUpdateFailedMessage,
+    ) {
       lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
         viewModel.events.collect { event ->
           when (event) {
             is SharedBeerDetailEvent.ShowError ->
-              showToast(context = context, message = event.message)
+              showToast(
+                context = context,
+                message =
+                  when (event.error) {
+                    com.simtop.billionbeers.shared.beerdetail.BeerDetailError.FavoriteUpdate ->
+                      favoriteUpdateFailedMessage
+                    com.simtop.billionbeers.shared.beerdetail.BeerDetailError.AvailabilityUpdate ->
+                      availabilityUpdateFailedMessage
+                  },
+              )
             SharedBeerDetailEvent.FavoriteUpdated -> Unit
           }
         }
