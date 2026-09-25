@@ -71,6 +71,14 @@ data class SharedAppStrings(
   val detailStrings: BeerDetailStrings,
 )
 
+sealed interface SharedAppNavigationEvent {
+  data class Push(val route: PortableRoute) : SharedAppNavigationEvent
+
+  data class Pop(val route: PortableRoute) : SharedAppNavigationEvent
+
+  data class Replace(val route: PortableRoute) : SharedAppNavigationEvent
+}
+
 /** Platform slots for resources, images, rows, and errors that cannot live in common code. */
 data class SharedAppHost(
   val beerRow: @Composable (Beer, () -> Unit) -> Unit,
@@ -83,7 +91,7 @@ data class SharedAppHost(
   val detailTitleTextStyle: TextStyle? = null,
   val darkTheme: Boolean = false,
   val routeRequests: Flow<PortableRoute> = emptyFlow(),
-  val onRouteChanged: (PortableRoute) -> Unit = {},
+  val onNavigationEvent: (SharedAppNavigationEvent) -> Unit = {},
   val onMessage: (String) -> Unit = {},
 )
 
@@ -115,7 +123,7 @@ fun SharedAppShell(
 
   fun pop() {
     if (navigation.pop()) {
-      host.onRouteChanged(navigation.current.route)
+      host.onNavigationEvent(SharedAppNavigationEvent.Pop(navigation.current.route))
     } else {
       onClose()
     }
@@ -123,14 +131,18 @@ fun SharedAppShell(
 
   fun navigate(next: PortableRoute) {
     navigation.navigate(next)
-    host.onRouteChanged(navigation.current.route)
+    host.onNavigationEvent(SharedAppNavigationEvent.Push(navigation.current.route))
   }
 
   BillionBeersTheme(darkTheme = host.darkTheme) {
     Scaffold(
       modifier = modifier,
       topBar = {
-        if (route !is PortableRoute.BeerBrowse && route !is PortableRoute.BeerDetail) {
+        if (
+          route !is PortableRoute.BeerBrowse &&
+            route !is PortableRoute.BeerBrowseSelection &&
+            route !is PortableRoute.BeerDetail
+        ) {
           ShellTopBar(
             title =
               when (route) {
@@ -138,6 +150,7 @@ fun SharedAppShell(
                 PortableRoute.Favorites -> strings.favorites
                 PortableRoute.BeersSearch -> strings.search
                 PortableRoute.BeerBrowse -> strings.browse
+                is PortableRoute.BeerBrowseSelection -> route.category.name
                 is PortableRoute.BeerDetail -> route.beer.name
               },
             showBack = canGoBack,

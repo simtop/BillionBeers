@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.ComposeViewport
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.shared.app.SharedAppHost
+import com.simtop.billionbeers.shared.app.SharedAppNavigationEvent
 import com.simtop.billionbeers.shared.app.SharedAppShell
 import com.simtop.billionbeers.shared.app.SharedAppStrings
 import com.simtop.billionbeers.shared.beerbrowse.BrowseStrings
@@ -90,23 +91,42 @@ private class WebRouteSession(
   private val routeRequests = MutableSharedFlow<PortableRoute>(extraBufferCapacity = 1)
   private var closed = false
   private var listener: ((Event) -> Unit)? = null
+  private var lastObservedHash: String? = null
 
   fun routes() = routeRequests.asSharedFlow()
 
   suspend fun initialRoute(): PortableRoute =
     resolveWebHash(window.location.hash, runtime.repository)
 
-  fun onRouteChanged(route: PortableRoute) {
+  fun onNavigationEvent(event: SharedAppNavigationEvent) {
     if (closed) return
-    val hash = route.toWebHash()
-    if (window.location.hash == hash) return
-    window.history.pushState(null, "", hash)
+    when (event) {
+      is SharedAppNavigationEvent.Push -> {
+        val hash = event.route.toWebHash()
+        if (window.location.hash != hash) window.history.pushState(null, "", hash)
+      }
+      is SharedAppNavigationEvent.Pop -> window.history.back()
+      is SharedAppNavigationEvent.Replace ->
+        window.history.replaceState(null, "", event.route.toWebHash())
+    }
+  }
+
+  fun goBack() {
+    if (!closed) window.history.back()
+  }
+
+  fun markObservedHash() {
+    lastObservedHash = window.location.hash
   }
 
   fun start() {
     val callback: (Event) -> Unit = {
-      scope.launch {
-        if (!closed) routeRequests.emit(resolveWebHash(window.location.hash, runtime.repository))
+      val hash = window.location.hash
+      if (hash != lastObservedHash) {
+        lastObservedHash = hash
+        scope.launch {
+          if (!closed) routeRequests.emit(resolveWebHash(hash, runtime.repository))
+        }
       }
     }
     listener = callback
@@ -136,6 +156,16 @@ private suspend fun resolveWebHash(
     WebRouteDestination.Favorites -> PortableRoute.Favorites
     WebRouteDestination.Search -> PortableRoute.BeersSearch
     WebRouteDestination.Browse -> PortableRoute.BeerBrowse
+    is WebRouteDestination.BrowseSelection ->
+      PortableRoute.BeerBrowseSelection(
+        category =
+          when (destination.kind) {
+            WebRouteDestination.BrowseSelection.Kind.Style ->
+              com.simtop.navigation.contract.BrowseCategory.Style(destination.id, destination.id)
+            WebRouteDestination.BrowseSelection.Kind.Brewery ->
+              com.simtop.navigation.contract.BrowseCategory.Brewery(destination.id, destination.id)
+          }
+      )
     is WebRouteDestination.BeerDetail ->
       repository.getBeerById(destination.id)?.let(PortableRoute::BeerDetail)
         ?: PortableRoute.BeersList
@@ -143,7 +173,10 @@ private suspend fun resolveWebHash(
 
 private suspend fun WebRouteSession.initialRouteAndStart(): PortableRoute {
   val route = initialRoute()
-  if (window.location.hash.isBlank()) window.history.replaceState(null, "", route.toWebHash())
+  if (window.location.hash != route.toWebHash()) {
+    window.history.replaceState(null, "", route.toWebHash())
+  }
+  markObservedHash()
   start()
   return route
 }
@@ -160,6 +193,7 @@ private fun WebShell(runtime: WebDataRuntime, session: WebRouteSession) {
     strings = webStrings,
     initialRoute = route,
     host = webHost(runtime, session),
+    onClose = session::goBack,
   )
 }
 
@@ -185,7 +219,7 @@ private fun webHost(runtime: WebDataRuntime, session: WebRouteSession) =
       WebImage(runtime, imageUrl, description, modifier)
     },
     routeRequests = session.routes(),
-    onRouteChanged = session::onRouteChanged,
+    onNavigationEvent = session::onNavigationEvent,
     detailCollapsingToolbarEnabled = false,
     detailAnimationsDisabled = true,
   )
