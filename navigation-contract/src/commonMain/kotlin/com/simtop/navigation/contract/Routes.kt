@@ -23,6 +23,24 @@ sealed interface PortableRoute {
   data object BeerBrowse : PortableRoute
 
   @Serializable
+  @SerialName("beer_browse_selection")
+  data class BeerBrowseSelection(val category: BrowseCategory) : PortableRoute
+
+  @Serializable
   @SerialName("beer_detail")
   data class BeerDetail(val beer: Beer) : PortableRoute
+}
+
+@Serializable
+sealed interface BrowseCategory {
+  val id: String
+  val name: String
+
+  @Serializable
+  @SerialName("style")
+  data class Style(override val id: String, override val name: String) : BrowseCategory
+
+  @Serializable
+  @SerialName("brewery")
+  data class Brewery(override val id: String, override val name: String) : BrowseCategory
 }

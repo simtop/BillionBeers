@@ -40,6 +40,7 @@ fun PortableRoute.toNavKey(): NavKey =
     PortableRoute.BeersList -> BeersList
     PortableRoute.Favorites -> Favorites
     PortableRoute.BeersSearch -> BeersSearch
-    PortableRoute.BeerBrowse -> BeerBrowse
+    PortableRoute.BeerBrowse,
+    is PortableRoute.BeerBrowseSelection -> BeerBrowse
     is PortableRoute.BeerDetail -> BeerDetail(beer)
   }

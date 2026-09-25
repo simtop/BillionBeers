@@ -16,6 +16,7 @@ import com.simtop.billionbeers.shared.beersearch.BeersSearchViewModel
 import com.simtop.billionbeers.shared.beerslist.BeersListViewModel
 import com.simtop.billionbeers.shared.favorites.FavoritesViewModel
 import com.simtop.core.core.CoroutineDispatcherProvider
+import com.simtop.navigation.contract.BrowseCategory
 import com.simtop.navigation.contract.PortableRoute
 import kotlinx.coroutines.cancel
 
@@ -25,6 +26,21 @@ internal data class BrowseSelection(
   val name: String,
 ) {
   fun toQuery() = BeersQuery(styleId = styleId, breweryId = breweryId)
+
+  fun toRoute() =
+    PortableRoute.BeerBrowseSelection(
+      category =
+        if (styleId != null) BrowseCategory.Style(styleId, name)
+        else BrowseCategory.Brewery(requireNotNull(breweryId), name)
+    )
+
+  companion object {
+    fun fromCategory(category: BrowseCategory) =
+      when (category) {
+        is BrowseCategory.Style -> BrowseSelection(styleId = category.id, name = category.name)
+        is BrowseCategory.Brewery -> BrowseSelection(breweryId = category.id, name = category.name)
+      }
+  }
 }
 
 internal sealed interface SharedAppEntry {
@@ -119,7 +135,7 @@ internal class BrowseBeersEntry(
   pagerFactory: BeersPagerFactory,
   coroutineDispatcher: CoroutineDispatcherProvider,
 ) : SharedAppEntry {
-  override val route = PortableRoute.BeerBrowse
+  override val route = selection.toRoute()
   val viewModel = BrowseBeersViewModel(coroutineDispatcher, pagerFactory, selection.toQuery())
   val listState = LazyListState()
   private var closed = false
@@ -200,6 +216,12 @@ internal class SharedAppNavigationState(
       switchRoot(route)
       return
     }
+    val existingIndex = entries.indexOfLast { it.route == route }
+    if (existingIndex >= 0) {
+      entries.drop(existingIndex + 1).forEach(SharedAppEntry::close)
+      entriesState.value = entries.take(existingIndex + 1)
+      return
+    }
     entries.drop(1).forEach(SharedAppEntry::close)
     entriesState.value = listOf(entries.first(), createEntry(route))
   }
@@ -227,6 +249,13 @@ internal class SharedAppNavigationState(
       PortableRoute.Favorites -> FavoritesEntry(nextId(), repository)
       PortableRoute.BeersSearch -> SearchEntry(nextId(), pagerFactory, coroutineDispatcher)
       PortableRoute.BeerBrowse -> BrowseHomeEntry(nextId(), repository)
+      is PortableRoute.BeerBrowseSelection ->
+        BrowseBeersEntry(
+          nextId(),
+          BrowseSelection.fromCategory(route.category),
+          pagerFactory,
+          coroutineDispatcher,
+        )
       is PortableRoute.BeerDetail -> DetailEntry(nextId(), route.beer, repository)
     }
 

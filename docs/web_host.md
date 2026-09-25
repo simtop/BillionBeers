@@ -56,13 +56,20 @@ The host uses hash routes so local development does not require server rewrite r
 - `#favorites`
 - `#search`
 - `#browse`
+- `#browse/style/<id>`
+- `#browse/brewery/<id>`
 - `#beer/<id>`
 
-Only the route kind and beer ID are public. A beer detail route is resolved through the
-local IndexedDB-backed repository. A missing cached ID falls back to the catalog and does
-not trigger a remote detail request. User navigation reports route changes to the host,
-which writes browser history; hash changes are validated before they enter the shared
-shell.
+Only the route kind and stable ID are public; whole beer records are never serialized into
+URLs. A beer detail route is resolved through the local IndexedDB-backed repository. A missing
+cached ID, malformed hash, or unsupported route is canonicalized to `#catalog` with
+`replaceState`, without a remote detail request. Browse category hashes retain the category kind
+and ID, using the ID as a deterministic cold-link title until browse metadata is available.
+
+The shared shell emits explicit `Push`, `Pop`, and `Replace` events. User pushes use
+`history.pushState`, app Back requests browser traversal with `history.back()`, and browser
+`popstate`/`hashchange` events enter the shell without writing another history entry. Duplicate
+browser notifications are suppressed so browser history remains the single traversal authority.
 
 ## Lifecycle and images
 

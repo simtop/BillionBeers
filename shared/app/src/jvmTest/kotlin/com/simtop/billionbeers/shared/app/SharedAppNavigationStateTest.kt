@@ -4,6 +4,7 @@ import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
 import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.core.core.DefaultCoroutineDispatcherProvider
+import com.simtop.navigation.contract.BrowseCategory
 import com.simtop.navigation.contract.PortableRoute
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -68,6 +69,23 @@ class SharedAppNavigationStateTest {
     assertFalse(home.isClosed)
     assertTrue(navigation.pop())
     assertTrue(home.isClosed)
+  }
+
+  @Test
+  fun externalCategoryRouteRestoresRetainedCategoryEntry() {
+    val navigation = navigation()
+    navigation.navigate(PortableRoute.BeerBrowse)
+    navigation.selectBrowse(BrowseSelection(styleId = "style", name = "Lager"))
+    val category = navigation.current
+    navigation.navigate(PortableRoute.BeerDetail(beer))
+
+    navigation.replaceFromRoute(
+      PortableRoute.BeerBrowseSelection(BrowseCategory.Style("style", "Lager"))
+    )
+
+    assertSame(category, navigation.current)
+    assertTrue(navigation.entries.none { it is DetailEntry })
+    assertFalse(category.isClosed)
   }
 
   @Test
