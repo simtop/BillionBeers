@@ -158,7 +158,8 @@ import kotlinx.serialization.json.Json
           const existingRows = {};
           const committedPaging = {surface: input.surface, nextKey, totalCount: input.totalCount ?? existingTotal, refreshedAt: Date.now()};
           const commitPage = () => {
-            const committedRows = input.beers.map(row => {
+            const committedRows = [];
+            input.beers.forEach(row => {
               const existing = existingRows[row.id] || {};
               const committed = {
                 ...existing,
@@ -167,7 +168,8 @@ import kotlinx.serialization.json.Json
                 isFavorite: existing.id == null ? row.isFavorite : existing.isFavorite,
               };
               beers.put(committed);
-              return committed;
+              existingRows[row.id] = committed;
+              committedRows.push(committed);
             });
             paging.put(committedPaging);
             finishMutation(committedRows, committedPaging);

@@ -137,6 +137,101 @@ class IndexedDbBeersStorageBrowserTest {
   }
 
   @Test
+  fun insertPageDeduplicatesRowsPreservesFlagsAndRetainsPagingState() = runTest {
+    val databaseName = "billionbeers-page-duplicate-${hashCode()}"
+    val existing = StoredBeer(
+      id = "page-existing",
+      name = "Existing Before",
+      tagline = "Before",
+      description = "Before description",
+      imageUrl = "https://example.test/before.png",
+      abv = 4.0,
+      ibu = 10.0,
+      foodPairing = listOf("before food"),
+      availability = false,
+      isFavorite = true,
+    )
+    val existingFirst = existing.copy(
+      name = "Existing First",
+      tagline = "First",
+      description = "First description",
+      imageUrl = "https://example.test/first.png",
+      foodPairing = listOf("first food"),
+      availability = true,
+      isFavorite = false,
+    )
+    val existingLast = existing.copy(
+      name = "Existing Last",
+      tagline = "Last",
+      description = "Last description",
+      imageUrl = "https://example.test/last.png",
+      foodPairing = listOf("last food"),
+      availability = true,
+      isFavorite = false,
+    )
+    val newFirst = existing.copy(
+      id = "page-new",
+      name = "New First",
+      tagline = "New first",
+      description = "New first description",
+      imageUrl = "https://example.test/new-first.png",
+      availability = true,
+      isFavorite = false,
+    )
+    val newLast = newFirst.copy(
+      name = "New Last",
+      tagline = "New last",
+      description = "New last description",
+      imageUrl = "https://example.test/new-last.png",
+      foodPairing = listOf("new last food"),
+      availability = false,
+      isFavorite = true,
+    )
+    val storage = IndexedDbBeersStorage(databaseName)
+    storage.insertAll(listOf(existing))
+
+    storage.insertPage(
+      listOf(existingFirst, existingLast, newFirst, newLast),
+      surface = "catalog",
+      nextKey = 5,
+      totalCount = 10,
+    )
+
+    assertEquals(
+      existingLast.copy(availability = existing.availability, isFavorite = existing.isFavorite),
+      storage.observeBeers().first().single { it.id == existing.id },
+    )
+    assertEquals(
+      newLast.copy(availability = newFirst.availability, isFavorite = newFirst.isFavorite),
+      storage.observeBeers().first().single { it.id == newFirst.id },
+    )
+    assertEquals(2, storage.count())
+    assertEquals(5, storage.getPagingState("catalog")?.nextKey)
+    assertEquals(10, storage.getPagingState("catalog")?.totalCount)
+
+    storage.insertPage(
+      listOf(existingLast, newLast),
+      surface = "catalog",
+      nextKey = 3,
+      totalCount = null,
+    )
+    assertEquals(5, storage.getPagingState("catalog")?.nextKey)
+    assertEquals(10, storage.getPagingState("catalog")?.totalCount)
+
+    storage.close()
+    val reopened = IndexedDbBeersStorage(databaseName)
+    assertEquals(2, reopened.count())
+    assertEquals(
+      listOf(existingLast.copy(availability = existing.availability, isFavorite = existing.isFavorite)),
+      reopened.observeFavoriteBeers().first(),
+    )
+    assertEquals(5, reopened.getPagingState("catalog")?.nextKey)
+    assertEquals(10, reopened.getPagingState("catalog")?.totalCount)
+    reopened.deleteAll()
+    reopened.close()
+  }
+
+  @Test
   fun insertAllPreservesFlagsForExistingRowsAndAddsNewRows() = runTest {
     val databaseName = "billionbeers-mixed-${hashCode()}"
     val existing = StoredBeer(

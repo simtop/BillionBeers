@@ -204,6 +204,7 @@ class BeersPagerFactoryImplTest {
       expectThat(pager.pagingState.value)
         .isEqualTo(PagingState.Error(FetchBeersError.Network, isFirstPage = true))
       expectThat(repository.countDBEntries()).isEqualTo(0)
+      expectThat(repository.pagingNextKey("catalog:en")).isEqualTo(null)
     }
 
   @Test
@@ -292,6 +293,21 @@ class BeersPagerFactoryImplTest {
       repository.updateAvailability(beer.copy(availability = false))
 
       expectThat(pager.data.first().single().availability).isEqualTo(false)
+    }
+
+  @Test
+  fun `a query pager reflects a favorite edit without losing catalog fields`() =
+    runTest(testDispatcher) {
+      beersRemoteSource.setBeersResponse(listOf(apiItem(id = "1")), totalCount = 1)
+      val pager = factory.create(BeersQuery(search = "ipa"))
+      pager.loadFirstPage()
+      val beer = pager.data.first().single()
+
+      repository.updateFavorite(beer.copy(isFavorite = true))
+
+      expectThat(pager.data.first().single())
+        .isEqualTo(beer.copy(isFavorite = true))
+      expectThat(repository.countDBEntries()).isEqualTo(1)
     }
 
   @Test
