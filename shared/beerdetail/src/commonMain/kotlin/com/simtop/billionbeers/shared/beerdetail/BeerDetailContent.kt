@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -69,7 +68,7 @@ data class BeerDetailStrings(
   val srm: String,
   val released: String,
   val servingTemperature: String,
-  val servingTemperatureValue: @Composable (Int, Int) -> String,
+  val servingTemperatureValue: @Composable (minTemperature: Int, maxTemperature: Int) -> String,
   val fermentation: String,
   val ingredients: String,
   val recommendedGlasses: String,
@@ -178,7 +177,9 @@ fun SharedBeerDetailContent(
         containerColor =
           if (beer.availability) MaterialTheme.colorScheme.primary
           else MaterialTheme.colorScheme.error,
-        contentColor = Color.White,
+        contentColor =
+          if (beer.availability) MaterialTheme.colorScheme.onPrimary
+          else MaterialTheme.colorScheme.onError,
         shape = RoundedCornerShape(BillionBeersTheme.spacing.medium),
         modifier =
           availabilityModifier.semantics {
@@ -206,8 +207,8 @@ fun SharedBeerDetailContent(
       modifier =
         contentModifier
           .fillMaxSize()
-          .verticalScroll(rememberScrollState())
           .padding(paddingValues)
+          .verticalScroll(rememberScrollState())
           .padding(BillionBeersTheme.spacing.medium)
           .semantics {}
     ) {
@@ -230,18 +231,23 @@ fun SharedBeerDetailContent(
 
       Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
 
-      Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(BillionBeersTheme.spacing.medium),
+      ) {
         StatCard(
           label = strings.abv,
           value = "${beer.abv}%",
           color = Color(ABV_BG_COLOR),
           textColor = Color(ABV_TEXT_COLOR),
+          modifier = Modifier.weight(1f),
         )
         StatCard(
           label = strings.ibu,
           value = "${beer.ibu}",
           color = Color(IBU_BG_COLOR),
           textColor = Color(IBU_TEXT_COLOR),
+          modifier = Modifier.weight(1f),
         )
       }
 
@@ -302,6 +308,7 @@ fun SharedBeerDetailContent(
       BulletSection(strings.ingredients, beer.ingredients)
       Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
       BulletSection(strings.recommendedGlasses, beer.recommendedGlasses)
+      Spacer(modifier = Modifier.height(96.dp))
     }
   }
 }
@@ -342,7 +349,7 @@ private fun StatCard(
   Card(
     colors = CardDefaults.cardColors(containerColor = color),
     shape = RoundedCornerShape(BillionBeersTheme.spacing.medium),
-    modifier = modifier.width(100.dp),
+    modifier = modifier.fillMaxWidth(),
   ) {
     Column(
       modifier = Modifier.padding(BillionBeersTheme.spacing.medium),
@@ -352,6 +359,9 @@ private fun StatCard(
         text = value,
         style =
           MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, color = textColor),
+        maxLines = 1,
+        softWrap = false,
+        overflow = TextOverflow.Clip,
       )
       Text(
         text = label,

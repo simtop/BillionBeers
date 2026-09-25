@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import com.simtop.billionbeers.shared.app.SharedAppStrings
 import com.simtop.billionbeers.shared.beerbrowse.BrowseStrings
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailStrings
+import com.simtop.billionbeers.shared.beerdetail.formatServingTemperatureRange
 
 internal object IosLocalizedStrings {
   fun forLanguage(languageCode: String): SharedAppStrings =
@@ -61,7 +62,9 @@ internal object IosLocalizedStrings {
         srm = "SRM",
         released = "Released",
         servingTemperature = "Serving temperature",
-        servingTemperatureValue = { value, unit -> "$value°$unit" },
+        servingTemperatureValue = { minTemperature, maxTemperature ->
+          formatServingTemperatureRange(minTemperature, maxTemperature)
+        },
         fermentation = "Fermentation",
         ingredients = "Ingredients",
         recommendedGlasses = "Recommended glasses",
@@ -117,7 +120,9 @@ internal object IosLocalizedStrings {
         srm = "SRM",
         released = "Sortie",
         servingTemperature = "Température de service",
-        servingTemperatureValue = { value, unit -> "$value°$unit" },
+        servingTemperatureValue = { minTemperature, maxTemperature ->
+          formatServingTemperatureRange(minTemperature, maxTemperature)
+        },
         fermentation = "Fermentation",
         ingredients = "Ingrédients",
         recommendedGlasses = "Verres recommandés",
