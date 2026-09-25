@@ -26,6 +26,7 @@ import com.simtop.billionbeers.shared.app.SharedAppShell
 import com.simtop.billionbeers.shared.app.SharedAppStrings
 import com.simtop.billionbeers.shared.beerbrowse.BrowseStrings
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailStrings
+import com.simtop.billionbeers.shared.beerdetail.formatServingTemperatureRange
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.DefaultCoroutineDispatcherProvider
 
@@ -60,7 +61,6 @@ private val desktopHost =
     },
     detailAnimationsDisabled = false,
     detailCollapsingToolbarEnabled = false,
-    onMessage = { message -> println(message) },
   )
 
 private val desktopStrings =
@@ -114,7 +114,9 @@ private val desktopStrings =
         srm = "SRM",
         released = "Released",
         servingTemperature = "Serving temperature",
-        servingTemperatureValue = { value, unit -> "$value°$unit" },
+        servingTemperatureValue = { minTemperature, maxTemperature ->
+          formatServingTemperatureRange(minTemperature, maxTemperature)
+        },
         fermentation = "Fermentation",
         ingredients = "Ingredients",
         recommendedGlasses = "Recommended glasses",

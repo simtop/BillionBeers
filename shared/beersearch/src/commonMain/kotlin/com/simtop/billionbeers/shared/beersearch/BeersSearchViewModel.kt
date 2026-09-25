@@ -6,7 +6,7 @@ import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
-import com.simtop.core.core.CommonUiErrorKey
+import com.simtop.billionbeers.shared.presentation.toCommonUiErrorState
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.PagedListReducer
@@ -72,7 +72,7 @@ open class BeersSearchViewModel(
         currentPager = pager
         val reducer =
           PagedListReducer<Beer, FetchBeersError>(
-            errorState = { it.toSearchErrorState() },
+            errorState = { it.toCommonUiErrorState() },
             endedEmpty = { CommonUiState.Success(PagedListUiModel()) },
           )
 
@@ -114,14 +114,3 @@ open class BeersSearchViewModel(
 sealed interface BeersSearchEvent {
   data object ShowLoadMoreError : BeersSearchEvent
 }
-
-private fun FetchBeersError.toSearchErrorState(): CommonUiState.Error =
-  when (this) {
-    FetchBeersError.Network -> CommonUiState.Error(errorKey = CommonUiErrorKey.NoInternet)
-    FetchBeersError.NotFound -> CommonUiState.Error(errorKey = CommonUiErrorKey.NoBeersFound)
-    FetchBeersError.Forbidden -> CommonUiState.Error(errorKey = CommonUiErrorKey.AccessDenied)
-    FetchBeersError.RateLimited -> CommonUiState.Error(errorKey = CommonUiErrorKey.RateLimited)
-    is FetchBeersError.Unknown ->
-      cause.message?.let { CommonUiState.Error(message = it) }
-        ?: CommonUiState.Error(errorKey = CommonUiErrorKey.FailedToLoadBeers)
-  }

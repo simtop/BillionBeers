@@ -16,6 +16,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -23,9 +24,14 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import com.simtop.beerdomain.domain.models.Beer
@@ -34,6 +40,7 @@ import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.billionbeers.shared.beerbrowse.BrowseStrings
 import com.simtop.billionbeers.shared.beerbrowse.SharedBrowseBeersContent
 import com.simtop.billionbeers.shared.beerbrowse.SharedBrowseHomeContent
+import com.simtop.billionbeers.shared.beerdetail.BeerDetailError
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailEvent
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailStrings
 import com.simtop.billionbeers.shared.beerdetail.SharedBeerDetailContent
@@ -45,6 +52,7 @@ import com.simtop.core.core.CommonUiErrorKey
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.navigation.contract.PortableRoute
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.emptyFlow
@@ -92,7 +100,11 @@ data class SharedAppHost(
   val darkTheme: Boolean = false,
   val routeRequests: Flow<PortableRoute> = emptyFlow(),
   val onNavigationEvent: (SharedAppNavigationEvent) -> Unit = {},
-  val onMessage: (String) -> Unit = {},
+  val messageContent: @Composable (String) -> Unit = { message ->
+    Surface(modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) {
+      Text(text = message, modifier = Modifier.padding(16.dp))
+    }
+  },
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -120,6 +132,13 @@ fun SharedAppShell(
   val entry = navigation.current
   val route = entry.route
   val canGoBack = navigation.entries.size > 1 || route is PortableRoute.BeersSearch
+  var message by remember(entry) { mutableStateOf<String?>(null) }
+  LaunchedEffect(message) {
+    if (message != null) {
+      delay(4_000L)
+      message = null
+    }
+  }
 
   fun pop() {
     if (navigation.pop()) {
@@ -227,7 +246,13 @@ fun SharedAppShell(
               host = host,
               onBack = ::pop,
               animationsDisabled = host.detailAnimationsDisabled,
+              onMessage = { message = it },
             )
+        }
+        message?.let { currentMessage ->
+          Box(Modifier.align(Alignment.BottomCenter).padding(16.dp)) {
+            host.messageContent(currentMessage)
+          }
         }
       }
     }
@@ -409,11 +434,19 @@ private fun DetailDestination(
   host: SharedAppHost,
   onBack: () -> Unit,
   animationsDisabled: Boolean,
+  onMessage: (String) -> Unit,
 ) {
   val state by entry.viewModel.beerDetailViewState.collectAsState()
   LaunchedEffect(entry.viewModel) {
     entry.viewModel.events.collectLatest { event ->
-      if (event is BeerDetailEvent.ShowError) host.onMessage(event.message)
+      if (event is BeerDetailEvent.ShowError) {
+        onMessage(
+          when (event.error) {
+            BeerDetailError.FavoriteUpdate,
+            BeerDetailError.AvailabilityUpdate -> strings.error
+          }
+        )
+      }
     }
   }
   when (val currentState = state) {

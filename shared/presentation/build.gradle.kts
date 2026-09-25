@@ -12,6 +12,7 @@ kotlin {
   sourceSets {
     commonMain.dependencies {
       api(project(":core-common"))
+      implementation(project(":beerdomain:api"))
       implementation(project(":shared:designsystem"))
     }
     commonTest.dependencies {

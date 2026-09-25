@@ -93,7 +93,8 @@ internal class BeerDetailViewModelTest {
 
         val event = awaitItem()
         expectThat(event).isA<BeerDetailEvent.ShowError>()
-        expectThat((event as BeerDetailEvent.ShowError).message).isEqualTo(fakeException.message)
+        expectThat((event as BeerDetailEvent.ShowError).error)
+          .isEqualTo(BeerDetailError.AvailabilityUpdate)
         cancelAndIgnoreRemainingEvents()
       }
     }
@@ -176,7 +177,7 @@ internal class BeerDetailViewModelTest {
           cancelAndIgnoreRemainingEvents()
         }
 
-        expectThat(awaitItem()).isEqualTo(BeerDetailEvent.ShowError(fakeException.message!!))
+        expectThat(awaitItem()).isEqualTo(BeerDetailEvent.ShowError(BeerDetailError.FavoriteUpdate))
         cancelAndIgnoreRemainingEvents()
       }
     }
