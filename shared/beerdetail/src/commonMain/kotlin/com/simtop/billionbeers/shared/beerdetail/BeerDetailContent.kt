@@ -231,24 +231,47 @@ fun SharedBeerDetailContent(
 
       Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
 
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(BillionBeersTheme.spacing.medium),
-      ) {
-        StatCard(
-          label = strings.abv,
-          value = "${beer.abv}%",
-          color = Color(ABV_BG_COLOR),
-          textColor = Color(ABV_TEXT_COLOR),
-          modifier = Modifier.weight(1f),
-        )
-        StatCard(
-          label = strings.ibu,
-          value = "${beer.ibu}",
-          color = Color(IBU_BG_COLOR),
-          textColor = Color(IBU_TEXT_COLOR),
-          modifier = Modifier.weight(1f),
-        )
+      BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        val stackMetricCards =
+          maxWidth < 500.dp && LocalDensity.current.fontScale >= LARGE_FONT_METRIC_CARD_SCALE
+        if (stackMetricCards) {
+          Column(verticalArrangement = Arrangement.spacedBy(BillionBeersTheme.spacing.medium)) {
+            StatCard(
+              label = strings.abv,
+              value = "${formatBeerMetric(beer.abv)}%",
+              color = Color(ABV_BG_COLOR),
+              textColor = Color(ABV_TEXT_COLOR),
+              modifier = Modifier.fillMaxWidth(),
+            )
+            StatCard(
+              label = strings.ibu,
+              value = formatBeerMetric(beer.ibu),
+              color = Color(IBU_BG_COLOR),
+              textColor = Color(IBU_TEXT_COLOR),
+              modifier = Modifier.fillMaxWidth(),
+            )
+          }
+        } else {
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(BillionBeersTheme.spacing.medium),
+          ) {
+            StatCard(
+              label = strings.abv,
+              value = "${formatBeerMetric(beer.abv)}%",
+              color = Color(ABV_BG_COLOR),
+              textColor = Color(ABV_TEXT_COLOR),
+              modifier = Modifier.weight(1f),
+            )
+            StatCard(
+              label = strings.ibu,
+              value = formatBeerMetric(beer.ibu),
+              color = Color(IBU_BG_COLOR),
+              textColor = Color(IBU_TEXT_COLOR),
+              modifier = Modifier.weight(1f),
+            )
+          }
+        }
       }
 
       Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
@@ -382,3 +405,4 @@ private const val ABV_TEXT_COLOR = 0xFF006064
 private const val IBU_BG_COLOR = 0xFFFBE9E7
 private const val IBU_TEXT_COLOR = 0xFFBF360C
 private const val AVAILABILITY_ANIMATION_DURATION_MS = 300
+private const val LARGE_FONT_METRIC_CARD_SCALE = 2f
