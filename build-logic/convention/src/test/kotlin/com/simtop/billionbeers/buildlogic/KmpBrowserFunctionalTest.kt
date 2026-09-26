@@ -4,8 +4,9 @@ import com.sun.net.httpserver.HttpServer
 import java.net.InetSocketAddress
 import java.net.URLDecoder
 import java.nio.file.Path
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.io.path.copyTo
 import kotlin.io.path.createDirectories
@@ -43,13 +44,17 @@ class KmpBrowserFunctionalTest {
   @Test
   fun `Chrome proves IndexedDB and Fetch behavior over HTTP`() {
     val browserReport = AtomicReference<String?>()
+    val reportReceived = CountDownLatch(1)
     val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
     server.createContext("/result") { exchange ->
       browserReport.set(
         URLDecoder.decode(exchange.requestURI.query?.removePrefix("report=") ?: "", "UTF-8")
       )
-      exchange.sendResponseHeaders(204, -1)
-      exchange.close()
+      val body = "<!doctype html><html><body>Report received</body></html>".toByteArray()
+      exchange.responseHeaders.add("Content-Type", "text/html")
+      exchange.sendResponseHeaders(200, body.size.toLong())
+      exchange.responseBody.use { it.write(body) }
+      reportReceived.countDown()
     }
     server.createContext("/") { exchange ->
       val path = exchange.requestURI.path
@@ -74,15 +79,11 @@ class KmpBrowserFunctionalTest {
       } else if (path == "/pixel") {
         exchange.responseHeaders.add("Content-Type", "image/svg+xml")
       }
-      val bytes = body
-      exchange.sendResponseHeaders(200, bytes.size.toLong())
-      exchange.responseBody.use {
-        it.write(bytes)
-        it.flush()
-        if (path == "/") Thread.sleep(10_000)
-      }
+      exchange.sendResponseHeaders(200, body.size.toLong())
+      exchange.responseBody.use { it.write(body) }
     }
-    server.executor = Executors.newCachedThreadPool()
+    val executor = Executors.newCachedThreadPool()
+    server.executor = executor
     server.start()
 
     try {
@@ -92,31 +93,27 @@ class KmpBrowserFunctionalTest {
       val process =
         ProcessBuilder(
             chrome,
-            "--headless",
+            "--headless=new",
             "--disable-gpu",
             "--disable-dev-shm-usage",
+            "--remote-debugging-port=0",
             "--user-data-dir=${testProjectDir.resolve("chrome-profile")}",
-            "--dump-dom",
-            "--virtual-time-budget=30000",
-            "--timeout=30000",
             "http://127.0.0.1:${server.address.port}/",
           )
           .redirectErrorStream(true)
           .start()
-      repeat(60) {
-        if (browserReport.get() != null || !process.isAlive) return@repeat
-        Thread.sleep(500)
-      }
-      // Chrome can exit cleanly after issuing the final fetch while the embedded HTTP server is
-      // still dispatching that request on its executor. Give that request a short grace period
-      // before treating an exited browser as a missing report.
-      repeat(100) {
-        if (browserReport.get() != null) return@repeat
-        Thread.sleep(50)
+      val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30)
+      while (
+        browserReport.get() == null && process.isAlive && System.nanoTime() < deadline
+      ) {
+        reportReceived.await(100, TimeUnit.MILLISECONDS)
       }
       if (process.isAlive) {
-        process.destroyForcibly()
-        process.waitFor(5, TimeUnit.SECONDS)
+        process.destroy()
+        if (!process.waitFor(5, TimeUnit.SECONDS)) {
+          process.destroyForcibly()
+          process.waitFor(5, TimeUnit.SECONDS)
+        }
       }
       val processOutput =
         runCatching { process.inputStream.bufferedReader().readText() }
@@ -133,16 +130,13 @@ class KmpBrowserFunctionalTest {
       assertTrue(report.contains("FETCH_LOCAL=PASS"), report)
       assertTrue(report.contains("FETCH_HEADER=PASS"), report)
       assertTrue(report.contains("FETCH_REDIRECT=PASS"), report)
-      assertTrue(report.contains("IMAGE_RESOURCE=PASS") || report.contains("IMAGE_RESOURCE=NETWORK_ERROR"), report)
       assertTrue(
-        report.contains("LIVE_API=PASS") ||
-          report.contains("LIVE_API=CORS_BLOCKED") ||
-          report.contains("LIVE_API=NETWORK_ERROR") ||
-          report.contains("LIVE_API=HTTP_FAILURE"),
+        report.contains("IMAGE_RESOURCE=PASS") || report.contains("IMAGE_RESOURCE=NETWORK_ERROR"),
         report,
       )
     } finally {
       server.stop(0)
+      executor.shutdownNow()
     }
   }
 
@@ -151,12 +145,18 @@ class KmpBrowserFunctionalTest {
     <!doctype html>
     <html><body><pre id="result">RUNNING</pre>
     <script>
-    const image = new Image();
-    image.onload = () => window.imageLoaded = true;
-    image.onerror = () => window.imageLoaded = false;
-    image.src = '/pixel';
+    const imageResult = new Promise(resolve => {
+      const image = new Image();
+      image.onload = () => resolve('PASS');
+      image.onerror = () => resolve('NETWORK_ERROR');
+      image.src = '/pixel';
+    });
     const result = document.getElementById('result');
     const report = {};
+    const publishReport = () => {
+      result.textContent = Object.entries(report).map(([key, value]) => key + '=' + value).join('\\n');
+      window.location.replace('/result?report=' + encodeURIComponent(result.textContent));
+    };
     const dbName = 'kmp-feasibility-' + crypto.randomUUID();
     const openDb = (version) => new Promise((resolve, reject) => {
       const request = indexedDB.open(dbName, version);
@@ -169,6 +169,7 @@ class KmpBrowserFunctionalTest {
       tx.onabort = () => reject(new Error('aborted'));
       tx.onerror = () => reject(tx.error || new Error('transaction failed'));
     });
+    setInterval(() => {}, 1000);
     (async () => {
       try {
         let db = await openDb(1);
@@ -211,29 +212,13 @@ class KmpBrowserFunctionalTest {
         report.FETCH_HEADER = local.headers.get('X-Total-Count') === '1' ? 'PASS' : 'HEADER_NOT_EXPOSED';
         const redirected = await fetch('/redirect');
         report.FETCH_REDIRECT = redirected.url.endsWith('/api') && redirected.status === 200 ? 'PASS' : 'HTTP_FAILURE';
-        try {
-          const controller = new AbortController();
-          setTimeout(() => controller.abort(), 5000);
-          const live = await Promise.race([
-            fetch('https://api.brewbuddy.dev/', {signal: controller.signal}),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('network timeout')), 5000)),
-          ]);
-          const liveBody = await live.text();
-          report.LIVE_API = live.status >= 200 && live.status < 300 && liveBody.length > 0 ? 'PASS' : 'HTTP_FAILURE';
-        } catch (error) {
-          report.LIVE_API = String(error).includes('CORS') ? 'CORS_BLOCKED' : 'NETWORK_ERROR';
-        }
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        report.IMAGE_RESOURCE = window.imageLoaded === true ? 'PASS' : 'NETWORK_ERROR';
-        result.textContent = Object.entries(report).map(([key, value]) => key + '=' + value).join('\\n');
-        await fetch('/result?report=' + encodeURIComponent(result.textContent));
+        report.IMAGE_RESOURCE = await imageResult;
+        publishReport();
       } catch (error) {
         report.UNEXPECTED_ERROR = String(error);
-        result.textContent = Object.entries(report).map(([key, value]) => key + '=' + value).join('\\n');
-        await fetch('/result?report=' + encodeURIComponent(result.textContent));
+        publishReport();
       }
     })();
-    setInterval(() => {}, 1000);
     </script></body></html>
     """.trimIndent()
 
