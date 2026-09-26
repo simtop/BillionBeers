@@ -20,3 +20,7 @@ kotlin {
     }
   }
 }
+
+dependencies {
+  commonTestImplementation(libs.coroutinesTest)
+}

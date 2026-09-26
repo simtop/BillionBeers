@@ -7,20 +7,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.billionbeers.shared.presentation.InfiniteListHandler
 import com.simtop.billionbeers.shared.presentation.sharedPagedListFooter
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.PagedListFooter
 import com.simtop.core.core.PagedListUiModel
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filterNotNull
-
-private const val LIST_END_BUFFER = 1
 
 @Composable
 fun SharedBeersSearchContent(
@@ -83,7 +77,7 @@ private fun SharedBeersSearchResults(
 ) {
   val resolvedListState = listState ?: rememberLazyListState()
   if (model.footer !is PagedListFooter.Retry) {
-    ObserveListEnd(listState = resolvedListState, onScrollToBottom = onScrollToBottom)
+    InfiniteListHandler(listState = resolvedListState, onLoadMore = onScrollToBottom)
   }
 
   LazyColumn(
@@ -104,25 +98,5 @@ private fun SharedBeersSearchResults(
       endOfListText = endOfListText,
       onRetryLoadMore = onRetryLoadMore,
     )
-  }
-}
-
-@Composable
-private fun ObserveListEnd(
-  listState: androidx.compose.foundation.lazy.LazyListState,
-  onScrollToBottom: () -> Unit,
-) {
-  val callback = rememberUpdatedState(onScrollToBottom)
-  LaunchedEffect(listState) {
-    snapshotFlow {
-        val layout = listState.layoutInfo
-        val lastVisiblePlusOne = (layout.visibleItemsInfo.lastOrNull()?.index ?: 0) + 1
-        layout.totalItemsCount.takeIf {
-          it > 0 && lastVisiblePlusOne > it - LIST_END_BUFFER
-        }
-      }
-      .distinctUntilChanged()
-      .filterNotNull()
-      .collect { callback.value() }
   }
 }
