@@ -24,6 +24,7 @@ import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.shared.app.SharedAppHost
 import com.simtop.billionbeers.shared.app.SharedAppShell
 import com.simtop.billionbeers.shared.app.SharedAppStrings
+import com.simtop.billionbeers.shared.app.formatCount
 import com.simtop.billionbeers.shared.beerbrowse.BrowseStrings
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailStrings
 import com.simtop.billionbeers.shared.beerdetail.formatServingTemperatureRange
@@ -74,12 +75,12 @@ private val desktopStrings =
     retry = "Retry",
     error = "Unable to load beers",
     listLoadMoreFailed = "More beers could not be loaded",
-    listEndOfList = { count -> "End of list · $count beers" },
+    listEndOfList = { count -> "End of list · ${formatCount(count, "beer", "beers")}" },
     searchHint = "Search beers",
     searchPrompt = "Type at least two characters to search",
     searchNoResults = { term -> "No beers found for \"$term\"" },
-    searchResultCount = { count -> "$count results" },
-    searchEndOfList = { count -> "End of results · $count beers" },
+    searchResultCount = { count -> formatCount(count, "result", "results") },
+    searchEndOfList = { count -> "End of results · ${formatCount(count, "beer", "beers")}" },
     favoritesEmpty = "No favorite beers yet",
     browseStrings =
       BrowseStrings(
@@ -92,8 +93,8 @@ private val desktopStrings =
         retry = "Retry",
         loadMoreFailed = "More beers could not be loaded",
         breweryFounded = { country, year -> "$country · founded $year" },
-        beersCount = { count -> "$count beers" },
-        endOfList = { count -> "End of list · $count beers" },
+        beersCount = { count -> formatCount(count, "beer", "beers") },
+        endOfList = { count -> "End of list · ${formatCount(count, "beer", "beers")}" },
       ),
     detailStrings =
       BeerDetailStrings(

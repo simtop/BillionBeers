@@ -2,6 +2,7 @@ package com.simtop.billionbeers.iosshared
 
 import androidx.compose.runtime.Composable
 import com.simtop.billionbeers.shared.app.SharedAppStrings
+import com.simtop.billionbeers.shared.app.formatCount
 import com.simtop.billionbeers.shared.beerbrowse.BrowseStrings
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailStrings
 import com.simtop.billionbeers.shared.beerdetail.formatServingTemperatureRange
@@ -24,12 +25,14 @@ internal object IosLocalizedStrings {
       retry = "Retry",
       error = "Unable to load beers",
       listLoadMoreFailed = "More beers could not be loaded",
-      listEndOfList = { count -> "End of list · $count beers" },
+      listEndOfList = { count -> "End of list · ${formatCount(count, "beer", "beers")}" },
       searchHint = "Search beers",
       searchPrompt = "Type at least two characters to search",
       searchNoResults = { term -> "No beers found for \"$term\"" },
-      searchResultCount = { count -> "$count results" },
-      searchEndOfList = { count -> "End of results · $count beers" },
+      searchResultCount = { count -> formatCount(count, "result", "results") },
+      searchEndOfList = { count ->
+        "End of results · ${formatCount(count, "beer", "beers")}"
+      },
       favoritesEmpty = "No favorite beers yet",
       browseStrings = BrowseStrings(
         back = "Back",
@@ -41,8 +44,8 @@ internal object IosLocalizedStrings {
         retry = "Retry",
         loadMoreFailed = "More beers could not be loaded",
         breweryFounded = { country, year -> "$country · founded $year" },
-        beersCount = { count -> "$count beers" },
-        endOfList = { count -> "End of list · $count beers" },
+        beersCount = { count -> formatCount(count, "beer", "beers") },
+        endOfList = { count -> "End of list · ${formatCount(count, "beer", "beers")}" },
       ),
       detailStrings = detailStrings(
         back = "Back",
@@ -82,12 +85,14 @@ internal object IosLocalizedStrings {
       retry = "Réessayer",
       error = "Impossible de charger les bières",
       listLoadMoreFailed = "Impossible de charger plus de bières",
-      listEndOfList = { count -> "Fin de la liste · $count bières" },
+      listEndOfList = { count -> "Fin de la liste · ${formatCount(count, "bière", "bières")}" },
       searchHint = "Rechercher des bières",
       searchPrompt = "Saisissez au moins deux caractères",
       searchNoResults = { term -> "Aucune bière pour « $term »" },
-      searchResultCount = { count -> "$count résultats" },
-      searchEndOfList = { count -> "Fin des résultats · $count bières" },
+      searchResultCount = { count -> formatCount(count, "résultat", "résultats") },
+      searchEndOfList = { count ->
+        "Fin des résultats · ${formatCount(count, "bière", "bières")}"
+      },
       favoritesEmpty = "Aucune bière favorite",
       browseStrings = BrowseStrings(
         back = "Retour",
@@ -99,8 +104,8 @@ internal object IosLocalizedStrings {
         retry = "Réessayer",
         loadMoreFailed = "Impossible de charger plus de bières",
         breweryFounded = { country, year -> "$country · fondée en $year" },
-        beersCount = { count -> "$count bières" },
-        endOfList = { count -> "Fin de la liste · $count bières" },
+        beersCount = { count -> formatCount(count, "bière", "bières") },
+        endOfList = { count -> "Fin de la liste · ${formatCount(count, "bière", "bières")}" },
       ),
       detailStrings = detailStrings(
         back = "Retour",
