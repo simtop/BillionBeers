@@ -174,6 +174,18 @@ function waitForExit(child, timeoutMs) {
   });
 }
 
+function signalChrome(chrome, signal) {
+  if (process.platform === 'win32') {
+    chrome.kill(signal);
+    return;
+  }
+  try {
+    process.kill(-chrome.pid, signal);
+  } catch (error) {
+    if (error.code !== 'ESRCH') throw error;
+  }
+}
+
 async function closeServer(server) {
   if (!server.listening) return;
   await new Promise(resolve => server.close(resolve));
@@ -189,7 +201,7 @@ async function main() {
   const chrome = spawn(browser, [
     '--headless=new', '--hide-scrollbars', '--use-angle=swiftshader',
     '--remote-debugging-port=0', `--user-data-dir=${profile}`, '--window-size=390,844', 'about:blank',
-  ], { stdio: ['ignore', 'pipe', 'pipe'] });
+  ], { stdio: ['ignore', 'pipe', 'pipe'], detached: process.platform !== 'win32' });
   let output = '';
   let socket;
   let devtools;
@@ -334,18 +346,14 @@ async function main() {
       await devtools.send('Browser.close').catch(() => {});
     }
     socket?.close();
-    if (chrome.exitCode === null && chrome.signalCode === null) {
-      chrome.kill('SIGTERM');
-      if (await waitForExit(chrome, 5000)) {
-        // Chrome has exited and released its profile files.
-      } else if (chrome.exitCode === null && chrome.signalCode === null) {
-        chrome.kill('SIGKILL');
-        await waitForExit(chrome, 1000);
-      }
+    signalChrome(chrome, 'SIGTERM');
+    if (!(await waitForExit(chrome, 5000))) {
+      signalChrome(chrome, 'SIGKILL');
+      await waitForExit(chrome, 1000);
     }
     await closeServer(server);
     try {
-      fs.rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+      fs.rmSync(profile, { recursive: true, force: true, maxRetries: 20, retryDelay: 250 });
     } catch (cleanupError) {
       const message = `Web production smoke cleanup failed: ${cleanupError.message}`;
       if (smokeError) {
