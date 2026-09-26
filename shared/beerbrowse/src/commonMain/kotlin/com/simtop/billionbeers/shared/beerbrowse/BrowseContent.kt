@@ -280,7 +280,7 @@ private fun SharedBrowseBeersResults(
         modifier = Modifier.fillMaxSize().consumeWindowInsets(contentPadding),
         contentPadding = contentPadding,
       ) {
-        items(model.items.size, key = { index -> "${model.items[index].id}:$index" }) { index ->
+        items(model.items.size, key = { index -> model.items[index].id }) { index ->
           val beer = model.items[index]
           beerRow(beer) { onBeerClick(beer) }
         }

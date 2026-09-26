@@ -116,8 +116,20 @@ class BrowseBeersPreviewParameterProvider :
 
   private val sampleBeers =
     listOf(
-      Beer.empty.copy(name = "Punk IPA", tagline = "Post Modern Classic.", abv = 5.6, ibu = 41.5),
-      Beer.empty.copy(name = "Hazy Jane", tagline = "New England IPA.", abv = 5.0, ibu = 25.0),
+      Beer.empty.copy(
+        id = "beerbrowse-punk-ipa",
+        name = "Punk IPA",
+        tagline = "Post Modern Classic.",
+        abv = 5.6,
+        ibu = 41.5,
+      ),
+      Beer.empty.copy(
+        id = "beerbrowse-hazy-jane",
+        name = "Hazy Jane",
+        tagline = "New England IPA.",
+        abv = 5.0,
+        ibu = 25.0,
+      ),
     )
 
   override val values =
@@ -163,10 +175,15 @@ internal fun BrowseBeersAccessibilityMatrixPreview() {
             items =
               listOf(
                 Beer.empty.copy(
+                  id = "beerbrowse-accessibility-long-name",
                   name = "A Very Long Beer Name That Must Wrap Correctly",
                   tagline = "A long tagline exercises the browse result layout.",
                 ),
-                Beer.empty.copy(name = "Second Beer", tagline = "Another beer"),
+                Beer.empty.copy(
+                  id = "beerbrowse-accessibility-second",
+                  name = "Second Beer",
+                  tagline = "Another beer",
+                ),
               ),
             totalCount = 2,
             footer = PagedListFooter.EndReached,

@@ -3,7 +3,6 @@ package com.simtop.billionbeers.shared.presentation
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.flow.Flow
@@ -20,14 +19,14 @@ internal fun Flow<ListPosition>.loadMoreSignals(buffer: Int): Flow<Unit> =
       val lastVisiblePlusOne = position.lastVisibleIndex + 1
       position.totalItems.takeIf { it > 0 && lastVisiblePlusOne > it - buffer }
     }
-    .distinctUntilChanged()
     .filterNotNull()
+    .distinctUntilChanged()
     .map {}
 
 /** Calls [onLoadMore] when [listState] reaches its end, once per distinct list length. */
 @Composable
 fun InfiniteListHandler(listState: LazyListState, buffer: Int = 1, onLoadMore: () -> Unit) {
-  val currentOnLoadMore by rememberUpdatedState(onLoadMore)
+  val currentOnLoadMore = rememberUpdatedState(onLoadMore)
   LaunchedEffect(listState, buffer) {
     snapshotFlow {
         val layoutInfo = listState.layoutInfo
@@ -37,6 +36,6 @@ fun InfiniteListHandler(listState: LazyListState, buffer: Int = 1, onLoadMore: (
         )
       }
       .loadMoreSignals(buffer)
-      .collect { currentOnLoadMore() }
+      .collect { currentOnLoadMore.value() }
   }
 }

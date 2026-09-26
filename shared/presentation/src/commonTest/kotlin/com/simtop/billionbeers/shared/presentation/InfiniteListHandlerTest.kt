@@ -33,6 +33,18 @@ class InfiniteListHandlerTest {
   }
 
   @Test
+  fun bottomAwayBottomDoesNotRefireForSameCount() = runTest {
+    assertEquals(
+      1,
+      signalsFor(
+        ListPosition(totalItems = 25, lastVisibleIndex = 24),
+        ListPosition(totalItems = 25, lastVisibleIndex = 5),
+        ListPosition(totalItems = 25, lastVisibleIndex = 24),
+      ),
+    )
+  }
+
+  @Test
   fun listGrowthRearmsTheNextSignal() = runTest {
     assertEquals(
       2,

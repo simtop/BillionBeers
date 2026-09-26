@@ -241,8 +241,20 @@ class BeersSearchPreviewParameterProvider :
 
   private val sampleBeers =
     listOf(
-      Beer.empty.copy(name = "Punk IPA", tagline = "Post Modern Classic.", abv = 5.6, ibu = 41.5),
-      Beer.empty.copy(name = "Hazy Jane", tagline = "New England IPA.", abv = 5.0, ibu = 25.0),
+      Beer.empty.copy(
+        id = "beersearch-punk-ipa",
+        name = "Punk IPA",
+        tagline = "Post Modern Classic.",
+        abv = 5.6,
+        ibu = 41.5,
+      ),
+      Beer.empty.copy(
+        id = "beersearch-hazy-jane",
+        name = "Hazy Jane",
+        tagline = "New England IPA.",
+        abv = 5.0,
+        ibu = 25.0,
+      ),
     )
 
   override val values =
@@ -294,11 +306,16 @@ internal fun BeersSearchAccessibilityMatrixPreview() {
             items =
               listOf(
                 Beer.empty.copy(
+                  id = "beersearch-accessibility-long-name",
                   name = "A Very Long Search Result Name That Must Wrap",
                   tagline =
                     "A long tagline exercises the search result layout at large font sizes.",
                 ),
-                Beer.empty.copy(name = "Second Result", tagline = "Another result"),
+                Beer.empty.copy(
+                  id = "beersearch-accessibility-second",
+                  name = "Second Result",
+                  tagline = "Another result",
+                ),
               ),
             totalCount = 2,
           )

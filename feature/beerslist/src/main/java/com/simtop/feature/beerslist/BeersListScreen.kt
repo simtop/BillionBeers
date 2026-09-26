@@ -234,6 +234,7 @@ class BeersListPreviewParameterProvider :
               items =
                 listOf(
                   Beer.empty.copy(
+                    id = "beerslist-buzz",
                     name = "Buzz",
                     tagline = "A Real Bitter Experience.",
                     abv = 4.5,
@@ -241,6 +242,7 @@ class BeersListPreviewParameterProvider :
                     availability = true,
                   ),
                   Beer.empty.copy(
+                    id = "beerslist-trashy-blonde",
                     name = "Trashy Blonde",
                     tagline = "You Know You Shouldn't",
                     abv = 4.1,
@@ -346,11 +348,13 @@ internal fun BeersListAccessibilityMatrixPreview() {
             items =
               listOf(
                 Beer.empty.copy(
+                  id = "beerslist-accessibility-long-name",
                   name = "A Very Long Beer Name That Must Wrap Correctly",
                   tagline = "A detailed bitter experience with a deliberately long description.",
                   availability = true,
                 ),
                 Beer.empty.copy(
+                  id = "beerslist-accessibility-seasonal",
                   name = "Another Seasonal Beer",
                   tagline = "A second item keeps list spacing and actions visible.",
                   availability = false,
