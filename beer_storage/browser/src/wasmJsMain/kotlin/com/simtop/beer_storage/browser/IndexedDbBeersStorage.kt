@@ -29,23 +29,34 @@ import kotlinx.serialization.json.Json
 @JsFun("""
 (name, version, operation, payload) => new Promise((resolve, reject) => {
   const request = indexedDB.open(name, version);
+  let openSettled = false;
+  const failOpen = (error) => {
+    if (openSettled) return;
+    openSettled = true;
+    reject(error || new Error('IndexedDB open failed'));
+  };
   request.onupgradeneeded = () => {
     const db = request.result;
     if (!db.objectStoreNames.contains('beers')) db.createObjectStore('beers', {keyPath: 'id'});
     if (!db.objectStoreNames.contains('paging_state')) db.createObjectStore('paging_state', {keyPath: 'surface'});
   };
-  request.onblocked = () => reject(new Error('IndexedDB open blocked'));
-  request.onerror = () => reject(request.error || new Error('IndexedDB open failed'));
+  request.onblocked = () => failOpen(new Error('IndexedDB open blocked'));
+  request.onerror = () => failOpen(request.error || new Error('IndexedDB open failed'));
   request.onsuccess = () => {
+    if (openSettled) {
+      try { request.result.close(); } catch (_) {}
+      return;
+    }
+    openSettled = true;
     const db = request.result;
     db.onversionchange = () => db.close();
     const readOnly = ['readBeers', 'readFavorites', 'readPaging', 'countPaging', 'count'].includes(operation);
     const stores = operation === 'readPaging' || operation === 'countPaging' ? ['paging_state'] :
       operation === 'count' || operation === 'readBeers' || operation === 'readFavorites' ? ['beers'] :
       operation === 'deleteAll' ? ['beers', 'paging_state'] : ['beers', 'paging_state'];
-    const tx = db.transaction(stores, readOnly ? 'readonly' : 'readwrite');
-    const beers = stores.includes('beers') ? tx.objectStore('beers') : null;
-    const paging = stores.includes('paging_state') ? tx.objectStore('paging_state') : null;
+    let tx = null;
+    let beers = null;
+    let paging = null;
     let result = 'null';
     let settled = false;
     const close = () => { try { db.close(); } catch (_) {} };
@@ -56,19 +67,22 @@ import kotlinx.serialization.json.Json
     const fail = (error) => {
       if (settled) return;
       settled = true;
-      try { tx.abort(); } catch (_) {}
+      try { if (tx) tx.abort(); } catch (_) {}
       close();
       reject(error || new Error('IndexedDB operation failed'));
     };
-    tx.onerror = () => fail(tx.error || new Error('IndexedDB transaction failed'));
-    tx.onabort = () => fail(tx.error || new Error('IndexedDB transaction aborted'));
-    tx.oncomplete = () => {
-      if (settled) return;
-      settled = true;
-      close();
-      resolve(result);
-    };
     try {
+      tx = db.transaction(stores, readOnly ? 'readonly' : 'readwrite');
+      beers = stores.includes('beers') ? tx.objectStore('beers') : null;
+      paging = stores.includes('paging_state') ? tx.objectStore('paging_state') : null;
+      tx.onerror = () => fail(tx.error || new Error('IndexedDB transaction failed'));
+      tx.onabort = () => fail(tx.error || new Error('IndexedDB transaction aborted'));
+      tx.oncomplete = () => {
+        if (settled) return;
+        settled = true;
+        close();
+        resolve(result);
+      };
       if (operation === 'readBeers' || operation === 'readFavorites') {
         const request = beers.getAll();
         request.onsuccess = () => {
@@ -158,7 +172,8 @@ import kotlinx.serialization.json.Json
           const existingRows = {};
           const committedPaging = {surface: input.surface, nextKey, totalCount: input.totalCount ?? existingTotal, refreshedAt: Date.now()};
           const commitPage = () => {
-            const committedRows = input.beers.map(row => {
+            const committedRows = [];
+            input.beers.forEach(row => {
               const existing = existingRows[row.id] || {};
               const committed = {
                 ...existing,
@@ -167,7 +182,8 @@ import kotlinx.serialization.json.Json
                 isFavorite: existing.id == null ? row.isFavorite : existing.isFavorite,
               };
               beers.put(committed);
-              return committed;
+              existingRows[row.id] = committed;
+              committedRows.push(committed);
             });
             paging.put(committedPaging);
             finishMutation(committedRows, committedPaging);
@@ -199,7 +215,7 @@ private external fun executeIndexedDb(
 ): Promise<JsString>
 
 @JsFun("""
-(name, callback) => {
+(name, source, callback) => {
   const listeners = globalThis.__billionBeersStorageListeners || (globalThis.__billionBeersStorageListeners = new Map());
   const id = (globalThis.__billionBeersStorageListenerId || 0) + 1;
   globalThis.__billionBeersStorageListenerId = id;
@@ -209,11 +225,13 @@ private external fun executeIndexedDb(
   let onStorage = null;
   let onVisibility = null;
   let onPageShow = null;
-  const notify = () => callback();
+  const notify = (eventSource) => {
+    if (eventSource !== source) callback();
+  };
   if (typeof BroadcastChannel !== 'undefined') {
     try {
       channel = new BroadcastChannel(channelName);
-      onMessage = () => notify();
+      onMessage = event => notify(event.data && event.data.source);
       channel.addEventListener('message', onMessage);
     } catch (_) {
       channel = null;
@@ -221,45 +239,60 @@ private external fun executeIndexedDb(
   }
   if (!channel && typeof window !== 'undefined') {
     onStorage = event => {
-      if (event.key === channelName) notify();
+      if (event.key !== channelName) return;
+      let eventSource = null;
+      try { eventSource = JSON.parse(event.newValue || '{}').source; } catch (_) {}
+      notify(eventSource);
     };
     window.addEventListener('storage', onStorage);
   }
   if (typeof document !== 'undefined') {
     onVisibility = () => {
-      if (document.visibilityState === 'visible') notify();
+      if (document.visibilityState === 'visible') callback();
     };
     document.addEventListener('visibilitychange', onVisibility);
   }
   if (typeof window !== 'undefined') {
-    onPageShow = () => notify();
+    onPageShow = () => callback();
     window.addEventListener('pageshow', onPageShow);
   }
   listeners.set(id, {channel, onMessage, onStorage, onVisibility, onPageShow, channelName});
   return id;
 }
 """)
-private external fun registerInvalidationListener(databaseName: String, callback: () -> Unit): Int
+private external fun registerInvalidationListener(databaseName: String, source: String, callback: () -> Unit): Int
 
 @JsFun("""
-(name) => {
+(name, source) => {
   const channelName = 'billionbeers-storage:' + name;
+  const message = {source};
   let published = false;
   if (typeof BroadcastChannel !== 'undefined') {
     try {
       const channel = new BroadcastChannel(channelName);
-      channel.postMessage('committed');
+      channel.postMessage(message);
       channel.close();
       published = true;
     } catch (_) {}
   }
   if (!published && typeof localStorage !== 'undefined') {
-    localStorage.setItem(channelName, String(Date.now()));
+    localStorage.setItem(channelName, JSON.stringify(message));
     localStorage.removeItem(channelName);
   }
 }
 """)
-private external fun publishInvalidation(databaseName: String)
+private external fun publishInvalidation(databaseName: String, source: String)
+
+@JsFun("""
+() => {
+  try {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  } catch (_) {}
+  const random = Math.random().toString(36).slice(2);
+  return 'storage-' + Date.now() + '-' + random;
+}
+""")
+private external fun createInvalidationSource(): JsString
 
 @JsFun("""
 (id) => {
@@ -335,7 +368,8 @@ class IndexedDbBeersStorage(
   private val favoritesState = MutableStateFlow<List<StoredBeer>>(emptyList())
   private val initialized = CompletableDeferred<Unit>()
   private var closed = false
-  private val listenerId = registerInvalidationListener(databaseName) {
+  private val invalidationSource = createInvalidationSource().toString()
+  private val listenerId = registerInvalidationListener(databaseName, invalidationSource) {
     scope.launch {
       initialized.await()
       refresh()
@@ -418,7 +452,7 @@ class IndexedDbBeersStorage(
       liveStorages[databaseName]
         ?.filter { it !== this && !it.closed }
         ?.forEach { peer -> peer.scope.launch { peer.refresh() } }
-      publishInvalidation(databaseName)
+      publishInvalidation(databaseName, invalidationSource)
     }
   }
 

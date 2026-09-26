@@ -32,6 +32,17 @@ class BeersStorageContractTest {
   }
 
   @Test
+  fun `paging duplicate rows keep first local flags and last catalog fields`() = runTest {
+    val storage = InMemoryBeersStorage()
+    val first = storedBeer("1", "First").copy(availability = false, isFavorite = true)
+    val last = first.copy(name = "Last", availability = true, isFavorite = false)
+
+    storage.insertPage(listOf(first, last), "catalog:en", nextKey = 2, totalCount = 2)
+
+    assertEquals(last.copy(availability = first.availability, isFavorite = first.isFavorite), storage.observeBeers().first().single())
+  }
+
+  @Test
   fun `paging bookmark merges next key monotonically and retains total count`() = runTest {
     val storage = InMemoryBeersStorage()
 
