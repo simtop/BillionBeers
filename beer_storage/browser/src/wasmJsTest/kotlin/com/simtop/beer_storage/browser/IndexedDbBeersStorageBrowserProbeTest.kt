@@ -14,8 +14,11 @@ import kotlin.test.Test
 () => {
   const global = globalThis;
   const store = global.IDBObjectStore.prototype;
+  const database = global.IDBDatabase.prototype;
   const originals = {
     open: global.indexedDB.open,
+    transaction: database.transaction,
+    close: database.close,
     getAll: store.getAll,
     get: store.get,
     put: store.put,
@@ -27,6 +30,9 @@ import kotlin.test.Test
   const probe = {};
   const reset = () => {
     probe.opens = 0;
+    probe.transactions = 0;
+    probe.closes = 0;
+    probe.failTransactionSetup = false;
     probe.getAll = 0;
     probe.get = 0;
     probe.put = 0;
@@ -39,6 +45,8 @@ import kotlin.test.Test
   };
   const restore = () => {
     global.indexedDB.open = originals.open;
+    database.transaction = originals.transaction;
+    database.close = originals.close;
     store.getAll = originals.getAll;
     store.get = originals.get;
     store.put = originals.put;
@@ -51,6 +59,15 @@ import kotlin.test.Test
   global.indexedDB.open = function (...args) {
     probe.opens += 1;
     return originals.open.apply(this, args);
+  };
+  database.transaction = function (...args) {
+    probe.transactions += 1;
+    if (probe.failTransactionSetup) throw new Error('probed transaction setup failure');
+    return originals.transaction.apply(this, args);
+  };
+  database.close = function (...args) {
+    probe.closes += 1;
+    return originals.close.apply(this, args);
   };
   store.getAll = function (...args) {
     probe.getAll += 1;
@@ -87,7 +104,7 @@ import kotlin.test.Test
   reset();
 }
 """)
-private external fun installStorageProbe()
+internal external fun installStorageProbe()
 
 @JsFun("""
 () => {
@@ -100,13 +117,92 @@ private external fun resetStorageProbe()
 @JsFun("""
 () => {
   const state = globalThis.__billionBeersStorageProbe;
+  if (state) state.probe.failTransactionSetup = true;
+}
+""")
+internal external fun failNextStorageTransactionSetup()
+
+@JsFun("""
+() => {
+  const state = globalThis.__billionBeersStorageProbe;
+  return state ? state.probe.closes : 0;
+}
+""")
+internal external fun storageProbeCloseCount(): Int
+
+@JsFun("""
+() => {
+  const state = globalThis.__billionBeersStorageProbe;
+  return state ? state.probe.getAll : 0;
+}
+""")
+internal external fun storageProbeGetAllCount(): Int
+
+@JsFun("""
+() => {
+  const global = globalThis;
+  const original = global.indexedDB.open;
+  const state = {closeCount: 0, request: null, original};
+  state.request = {
+    result: null,
+    error: new Error('probed blocked open'),
+    onupgradeneeded: null,
+    onblocked: null,
+    onerror: null,
+    onsuccess: null,
+  };
+  global.indexedDB.open = () => state.request;
+  global.__billionBeersBlockedOpenProbe = state;
+}
+""")
+internal external fun installBlockedOpenProbe()
+
+@JsFun("""
+() => {
+  const state = globalThis.__billionBeersBlockedOpenProbe;
+  if (state && state.request.onblocked) state.request.onblocked();
+}
+""")
+internal external fun triggerBlockedOpenProbe()
+
+@JsFun("""
+() => {
+  const state = globalThis.__billionBeersBlockedOpenProbe;
+  if (!state) return;
+  state.request.result = {close: () => { state.closeCount += 1; }};
+  if (state.request.onsuccess) state.request.onsuccess();
+}
+""")
+internal external fun triggerLateBlockedOpenSuccess()
+
+@JsFun("""
+() => {
+  const state = globalThis.__billionBeersBlockedOpenProbe;
+  return state ? state.closeCount : 0;
+}
+""")
+internal external fun blockedOpenProbeCloseCount(): Int
+
+@JsFun("""
+() => {
+  const state = globalThis.__billionBeersBlockedOpenProbe;
+  if (!state) return;
+  globalThis.indexedDB.open = state.original;
+  delete globalThis.__billionBeersBlockedOpenProbe;
+}
+""")
+internal external fun finishBlockedOpenProbe()
+
+@JsFun("""
+() => {
+  const state = globalThis.__billionBeersStorageProbe;
   if (!state) return '{}';
   const result = state.originals.stringify.call(JSON, state.probe);
   state.restore();
   return result;
 }
 """)
-private external fun finishStorageProbe(): JsString
+internal external fun finishStorageProbe(): JsString
 
 class IndexedDbBeersStorageBrowserProbeTest {
 

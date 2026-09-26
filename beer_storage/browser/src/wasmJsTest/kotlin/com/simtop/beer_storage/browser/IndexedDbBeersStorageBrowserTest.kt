@@ -9,6 +9,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.yield
 
 class IndexedDbBeersStorageBrowserTest {
   @Test
@@ -404,6 +405,42 @@ class IndexedDbBeersStorageBrowserTest {
 
     writer.close()
     peer.close()
+  }
+
+  @Test
+  fun blockedOpenCannotSettleAfterLateSuccess() = runTest {
+    val databaseName = "billionbeers-blocked-open-${hashCode()}"
+    installBlockedOpenProbe()
+    val storage = IndexedDbBeersStorage(databaseName)
+    try {
+      val ready = async { assertFailsWith<Throwable> { storage.awaitReady() } }
+      yield()
+      triggerBlockedOpenProbe()
+      yield()
+      triggerLateBlockedOpenSuccess()
+      ready.await()
+      assertEquals(1, blockedOpenProbeCloseCount())
+    } finally {
+      storage.close()
+      finishBlockedOpenProbe()
+    }
+  }
+
+  @Test
+  fun synchronousTransactionSetupFailureClosesDatabase() = runTest {
+    val databaseName = "billionbeers-transaction-failure-${hashCode()}"
+    installStorageProbe()
+    val storage = runCatching {
+      failNextStorageTransactionSetup()
+      IndexedDbBeersStorage(databaseName)
+    }.getOrThrow()
+    try {
+      assertFailsWith<Throwable> { storage.awaitReady() }
+      assertTrue(storageProbeCloseCount() >= 1)
+    } finally {
+      storage.close()
+      finishStorageProbe()
+    }
   }
 
   @Test
