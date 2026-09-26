@@ -314,6 +314,20 @@ async function main() {
     await devtools.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: 30, y: 110, button: 'left', clickCount: 1 });
     const route = await waitFor(devtools, `location.hash === '#beer/web-smoke-1' ? location.hash : ''`);
     if (route !== '#beer/web-smoke-1') throw new Error(`Beer interaction failed: ${route}`);
+    await waitFor(devtools, `(() => {
+      const findNodes = root => {
+        const nodes = [...(root.querySelectorAll?.('*') || [])];
+        const result = [];
+        for (const node of nodes) {
+          if (node.id === 'cmp_a11y_root') result.push(node);
+          if (node.shadowRoot) result.push(...findNodes(node.shadowRoot));
+        }
+        return result;
+      };
+      return findNodes(document).some(node => (node.textContent || '').includes('Production smoke fixture.'))
+        ? 'detail'
+        : '';
+    })()`);
 
     await devtools.send('Emulation.setDeviceMetricsOverride', { width: 1000, height: 850, deviceScaleFactor: 1, mobile: false });
     await new Promise(resolve => setTimeout(resolve, 300));
@@ -329,11 +343,35 @@ async function main() {
         }
         return null;
       };
+      const findNodes = root => {
+        const nodes = [...(root.querySelectorAll?.('*') || [])];
+        const result = [];
+        for (const node of nodes) {
+          if (node.id === 'cmp_a11y_root') result.push(node);
+          if (node.shadowRoot) result.push(...findNodes(node.shadowRoot));
+        }
+        return result;
+      };
       const root = document.querySelector('#root')?.getBoundingClientRect();
       const canvas = findCanvas(document)?.getBoundingClientRect();
-      return { viewport: [innerWidth, innerHeight], root: [root?.width, root?.height], canvas: [canvas?.width, canvas?.height] };
+      const a11yText = findNodes(document).map(node => node.textContent || '').join(' ');
+      return {
+        viewport: [innerWidth, innerHeight],
+        root: [root?.width, root?.height],
+        canvas: [canvas?.width, canvas?.height],
+        hasCatalog: a11yText.includes('Web Smoke Lager'),
+        hasDetail: a11yText.includes('Production smoke fixture.'),
+        text: a11yText.slice(0, 1000),
+      };
     })()`);
-    if (wide.root[0] < 800 || wide.root[1] < 600 || wide.canvas[0] < 800 || wide.canvas[1] < 600) {
+    if (
+      wide.root[0] < 800 ||
+      wide.root[1] < 600 ||
+      wide.canvas[0] < 800 ||
+      wide.canvas[1] < 600 ||
+      !wide.hasCatalog ||
+      !wide.hasDetail
+    ) {
       throw new Error(`Wide Web smoke failed: ${JSON.stringify(wide)}`);
     }
     const wideRoute = await evaluate(devtools, 'location.hash');
