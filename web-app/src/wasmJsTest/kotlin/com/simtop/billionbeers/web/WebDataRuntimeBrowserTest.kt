@@ -171,6 +171,15 @@ class WebDataRuntimeBrowserTest {
   }
 
   @Test
+  fun runtimeCloseIsIdempotent() = runTest {
+    withBrowserFetchFixture {
+      val runtime = WebDataRuntime.open(WebDataConfig(apiBaseUrl = "https://fixture.example/"))
+      runtime.close()
+      runtime.close()
+    }
+  }
+
+  @Test
   fun committedRepositoryRowsSurviveRuntimeCloseAndReopen() = runTest {
     val first = WebDataRuntime.open(WebDataConfig(apiBaseUrl = "https://fixture.example/"))
     val beer =
