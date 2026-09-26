@@ -47,8 +47,7 @@ fun SharedFavoritesContent(
         state = resolvedListState,
         modifier = modifier.fillMaxSize().testTag("favorites_list"),
       ) {
-        items(viewState.data.size, key = { index -> "${viewState.data[index].id}:$index" }) { index
-          ->
+        items(viewState.data.size, key = { index -> viewState.data[index].id }) { index ->
           Box(Modifier.padding(vertical = 4.dp)) { beerRow(viewState.data[index]) }
         }
       }
