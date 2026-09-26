@@ -336,8 +336,10 @@ async function main() {
     if (wide.root[0] < 800 || wide.root[1] < 600 || wide.canvas[0] < 800 || wide.canvas[1] < 600) {
       throw new Error(`Wide Web smoke failed: ${JSON.stringify(wide)}`);
     }
+    const wideRoute = await evaluate(devtools, 'location.hash');
+    if (wideRoute !== route) throw new Error(`Wide resize changed route: ${wideRoute}`);
     if (errors.length) throw new Error(`Unexpected browser errors: ${errors.join('; ')}`);
-    console.log(JSON.stringify({ distribution, url: `http://127.0.0.1:${port}${prefix}`, browser: browserVersion.product, compact, route, wide, errors }, null, 2));
+    console.log(JSON.stringify({ distribution, url: `http://127.0.0.1:${port}${prefix}`, browser: browserVersion.product, compact, route, wide, wideRoute, errors }, null, 2));
   } catch (error) {
     smokeError = error;
     throw error;

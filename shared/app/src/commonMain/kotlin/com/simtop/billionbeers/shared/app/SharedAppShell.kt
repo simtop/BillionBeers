@@ -1,12 +1,17 @@
 package com.simtop.billionbeers.shared.app
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -198,56 +203,71 @@ fun SharedAppShell(
         }
       },
     ) { padding ->
-      Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-        when (entry) {
-          is ListEntry ->
-            ListDestination(
-              entry = entry,
-              strings = strings,
-              host = host,
-              onBeerClick = { navigate(PortableRoute.BeerDetail(it)) },
-              onSearch = { navigate(PortableRoute.BeersSearch) },
-              onBrowse = { navigate(PortableRoute.BeerBrowse) },
-            )
-          is FavoritesEntry ->
-            FavoritesDestination(
-              entry = entry,
-              strings = strings,
-              host = host,
-              onBeerClick = { navigate(PortableRoute.BeerDetail(it)) },
-            )
-          is SearchEntry ->
-            SearchDestination(
-              entry = entry,
-              strings = strings,
-              host = host,
-              onBeerClick = { navigate(PortableRoute.BeerDetail(it)) },
-            )
-          is BrowseHomeEntry ->
-            BrowseHomeDestination(
-              entry = entry,
-              strings = strings,
-              host = host,
-              onSelection = navigation::selectBrowse,
-              onBack = ::pop,
-            )
-          is BrowseBeersEntry ->
-            BrowseBeersDestination(
-              entry = entry,
-              strings = strings,
-              host = host,
-              onBack = ::pop,
-              onBeerClick = { navigate(PortableRoute.BeerDetail(it)) },
-            )
-          is DetailEntry ->
-            DetailDestination(
-              entry = entry,
-              strings = strings,
-              host = host,
-              onBack = ::pop,
-              animationsDisabled = host.detailAnimationsDisabled,
-              onMessage = { message = it },
-            )
+      BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(padding)) {
+        if (shouldShowExpandedCatalogDetail(maxWidth, navigation.entries)) {
+          ExpandedCatalogDetail(
+            catalog = navigation.entries.first() as ListEntry,
+            detail = entry as DetailEntry,
+            strings = strings,
+            host = host,
+            onBeerClick = { navigate(PortableRoute.BeerDetail(it)) },
+            onSearch = { navigate(PortableRoute.BeersSearch) },
+            onBrowse = { navigate(PortableRoute.BeerBrowse) },
+            onBack = ::pop,
+            animationsDisabled = host.detailAnimationsDisabled,
+            onMessage = { message = it },
+          )
+        } else {
+          when (entry) {
+            is ListEntry ->
+              ListDestination(
+                entry = entry,
+                strings = strings,
+                host = host,
+                onBeerClick = { navigate(PortableRoute.BeerDetail(it)) },
+                onSearch = { navigate(PortableRoute.BeersSearch) },
+                onBrowse = { navigate(PortableRoute.BeerBrowse) },
+              )
+            is FavoritesEntry ->
+              FavoritesDestination(
+                entry = entry,
+                strings = strings,
+                host = host,
+                onBeerClick = { navigate(PortableRoute.BeerDetail(it)) },
+              )
+            is SearchEntry ->
+              SearchDestination(
+                entry = entry,
+                strings = strings,
+                host = host,
+                onBeerClick = { navigate(PortableRoute.BeerDetail(it)) },
+              )
+            is BrowseHomeEntry ->
+              BrowseHomeDestination(
+                entry = entry,
+                strings = strings,
+                host = host,
+                onSelection = navigation::selectBrowse,
+                onBack = ::pop,
+              )
+            is BrowseBeersEntry ->
+              BrowseBeersDestination(
+                entry = entry,
+                strings = strings,
+                host = host,
+                onBack = ::pop,
+                onBeerClick = { navigate(PortableRoute.BeerDetail(it)) },
+              )
+            is DetailEntry ->
+              DetailDestination(
+                entry = entry,
+                strings = strings,
+                host = host,
+                onBack = ::pop,
+                animationsDisabled = host.detailAnimationsDisabled,
+                onMessage = { message = it },
+              )
+          }
         }
         message?.let { currentMessage ->
           Box(Modifier.align(Alignment.BottomCenter).padding(16.dp)) {
@@ -276,6 +296,50 @@ private fun ShellTopBar(
     },
     title = { Text(title) },
   )
+}
+
+@Composable
+private fun ExpandedCatalogDetail(
+  catalog: ListEntry,
+  detail: DetailEntry,
+  strings: SharedAppStrings,
+  host: SharedAppHost,
+  onBeerClick: (Beer) -> Unit,
+  onSearch: () -> Unit,
+  onBrowse: () -> Unit,
+  onBack: () -> Unit,
+  animationsDisabled: Boolean,
+  onMessage: (String) -> Unit,
+) {
+  Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    Row(modifier = Modifier.fillMaxWidth().fillMaxHeight().widthIn(max = 1440.dp)) {
+      Box(modifier = Modifier.weight(0.42f).fillMaxHeight()) {
+        ListDestination(
+          entry = catalog,
+          strings = strings,
+          host = host,
+          onBeerClick = onBeerClick,
+          onSearch = onSearch,
+          onBrowse = onBrowse,
+        )
+      }
+      Box(
+        modifier =
+          Modifier.fillMaxHeight().width(1.dp).background(MaterialTheme.colorScheme.outlineVariant)
+      )
+      Box(modifier = Modifier.weight(0.58f).fillMaxHeight()) {
+        DetailDestination(
+          entry = detail,
+          strings = strings,
+          host = host,
+          onBack = onBack,
+          showBackButton = false,
+          animationsDisabled = animationsDisabled,
+          onMessage = onMessage,
+        )
+      }
+    }
+  }
 }
 
 @Composable
@@ -433,6 +497,7 @@ private fun DetailDestination(
   strings: SharedAppStrings,
   host: SharedAppHost,
   onBack: () -> Unit,
+  showBackButton: Boolean = true,
   animationsDisabled: Boolean,
   onMessage: (String) -> Unit,
 ) {
@@ -466,6 +531,7 @@ private fun DetailDestination(
         animationsDisabled = animationsDisabled,
         collapsingToolbarEnabled = host.detailCollapsingToolbarEnabled,
         titleTextStyle = host.detailTitleTextStyle,
+        showBackButton = showBackButton,
       )
   }
 }
