@@ -37,7 +37,7 @@ class IosRouteRequestBufferTest {
     collector.join()
     buffer.close()
 
-    assertEquals(expected, collected)
+    assertTrue(expected == collected)
   }
 
   @Test
