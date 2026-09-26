@@ -26,6 +26,8 @@ class BeerDetailUiTest {
       tagline = "Post Modern Classic.",
       description = "A crisp and bitter IPA.",
       availability = true,
+      minServingTemperature = 4,
+      maxServingTemperature = 4,
       foodPairing = listOf("Spicy chicken tikka masala"),
       ingredients = listOf("Pale malt"),
       recommendedGlasses = listOf("Pint glass"),
@@ -51,6 +53,7 @@ class BeerDetailUiTest {
     val robot = BaseTestRobot(composeTestRule)
     robot.assertTextIsDisplayed(beer.name)
     robot.assertTextIsDisplayed(beer.description)
+    robot.assertTextIsDisplayed("4°C")
     robot.assertNodeWithTagHasStateDescription(
       "toggle_availability",
       string(R.string.beer_available),

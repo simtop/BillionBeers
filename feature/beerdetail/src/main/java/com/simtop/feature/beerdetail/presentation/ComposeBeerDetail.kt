@@ -23,6 +23,7 @@ import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailStrings
 import com.simtop.billionbeers.shared.beerdetail.SharedBeerDetailContent
+import com.simtop.billionbeers.shared.beerdetail.formatServingTemperatureRange
 import com.simtop.presentation_utils.R
 
 @Composable
@@ -68,9 +69,7 @@ fun ComposeBeerDetail(
         srm = stringResource(R.string.beer_detail_srm_label),
         released = stringResource(R.string.beer_detail_released_year_label),
         servingTemperature = stringResource(R.string.beer_detail_serving_temperature_label),
-        servingTemperatureValue = { min, max ->
-          stringResource(R.string.beer_detail_serving_temperature_value, min, max)
-        },
+        servingTemperatureValue = { min, max -> formatServingTemperatureRange(min, max) },
         fermentation = stringResource(R.string.beer_detail_fermentation_method_label),
         ingredients = stringResource(R.string.beer_detail_ingredients),
         recommendedGlasses = stringResource(R.string.beer_detail_recommended_glasses),

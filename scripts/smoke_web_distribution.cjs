@@ -155,6 +155,42 @@ async function evaluate(devtools, expression) {
   return result.result.value;
 }
 
+function waitForExit(child, timeoutMs) {
+  if (child.exitCode !== null || child.signalCode !== null) return Promise.resolve(true);
+  return new Promise(resolve => {
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      resolve(true);
+    };
+    const timeout = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      resolve(false);
+    }, timeoutMs);
+    child.once('exit', finish);
+  });
+}
+
+function signalChrome(chrome, signal) {
+  if (process.platform === 'win32') {
+    chrome.kill(signal);
+    return;
+  }
+  try {
+    process.kill(-chrome.pid, signal);
+  } catch (error) {
+    if (error.code !== 'ESRCH') throw error;
+  }
+}
+
+async function closeServer(server) {
+  if (!server.listening) return;
+  await new Promise(resolve => server.close(resolve));
+}
+
 async function main() {
   if (!fs.existsSync(path.join(distribution, 'index.html'))) {
     throw new Error(`Distribution entrypoint missing: ${distribution}`);
@@ -165,8 +201,11 @@ async function main() {
   const chrome = spawn(browser, [
     '--headless=new', '--hide-scrollbars', '--use-angle=swiftshader',
     '--remote-debugging-port=0', `--user-data-dir=${profile}`, '--window-size=390,844', 'about:blank',
-  ], { stdio: ['ignore', 'pipe', 'pipe'] });
+  ], { stdio: ['ignore', 'pipe', 'pipe'], detached: process.platform !== 'win32' });
   let output = '';
+  let socket;
+  let devtools;
+  let smokeError;
   const collect = chunk => { output += chunk.toString(); };
   chrome.stdout.on('data', collect);
   chrome.stderr.on('data', collect);
@@ -184,12 +223,12 @@ async function main() {
       poll();
     });
     const socketUrl = await waitForSocket(debugging);
-    const socket = new WebSocket(socketUrl);
+    socket = new WebSocket(socketUrl);
     await new Promise((resolve, reject) => {
       socket.onopen = resolve;
       socket.onerror = reject;
     });
-    const devtools = new DevTools(socket);
+    devtools = new DevTools(socket);
     const browserVersion = await devtools.send('Browser.getVersion');
     const errors = [];
     const requests = [];
@@ -299,14 +338,30 @@ async function main() {
     }
     if (errors.length) throw new Error(`Unexpected browser errors: ${errors.join('; ')}`);
     console.log(JSON.stringify({ distribution, url: `http://127.0.0.1:${port}${prefix}`, browser: browserVersion.product, compact, route, wide, errors }, null, 2));
-    socket.close();
+  } catch (error) {
+    smokeError = error;
+    throw error;
   } finally {
-    if (chrome.exitCode === null) {
-      chrome.kill('SIGTERM');
-      await new Promise(resolve => chrome.once('exit', resolve));
+    if (devtools) {
+      await devtools.send('Browser.close').catch(() => {});
     }
-    server.close();
-    fs.rmSync(profile, { recursive: true, force: true });
+    socket?.close();
+    signalChrome(chrome, 'SIGTERM');
+    if (!(await waitForExit(chrome, 5000))) {
+      signalChrome(chrome, 'SIGKILL');
+      await waitForExit(chrome, 1000);
+    }
+    await closeServer(server);
+    try {
+      fs.rmSync(profile, { recursive: true, force: true, maxRetries: 20, retryDelay: 250 });
+    } catch (cleanupError) {
+      const message = `Web production smoke cleanup failed: ${cleanupError.message}`;
+      if (smokeError) {
+        console.error(message);
+      } else {
+        throw cleanupError;
+      }
+    }
   }
 }
 
