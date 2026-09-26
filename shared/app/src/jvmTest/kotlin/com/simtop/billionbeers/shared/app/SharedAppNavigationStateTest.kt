@@ -48,6 +48,30 @@ class SharedAppNavigationStateTest {
   }
 
   @Test
+  fun catalogEntryAndListStateSurviveDetailSelections() {
+    val navigation = navigation()
+    val catalog = navigation.current as ListEntry
+    val listState = catalog.listState
+
+    navigation.navigate(PortableRoute.BeerDetail(beer))
+    val firstDetail = navigation.current
+    navigation.navigate(PortableRoute.BeerDetail(beer.copy(id = "beer-2")))
+    val secondDetail = navigation.current
+
+    assertSame(catalog, navigation.entries.first())
+    assertSame(listState, catalog.listState)
+    assertSame(secondDetail, navigation.current)
+    assertTrue(navigation.entries.drop(1).all { it is DetailEntry })
+
+    assertTrue(navigation.pop())
+    assertSame(firstDetail, navigation.current)
+    assertSame(catalog, navigation.entries.first())
+    assertTrue(navigation.pop())
+    assertSame(catalog, navigation.current)
+    assertFalse(catalog.isClosed)
+  }
+
+  @Test
   fun browseBackPopsCategoryBeforeHome() {
     val navigation = navigation()
     navigation.navigate(PortableRoute.BeerBrowse)
