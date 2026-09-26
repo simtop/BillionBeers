@@ -23,6 +23,8 @@ kotlin {
 }
 
 dependencies {
+  commonTestImplementation(libs.coroutinesTest)
+
   commonMainImplementation(project(":shared:app"))
   commonMainImplementation(project(":beer_data"))
   commonMainImplementation(project(":beer_database"))

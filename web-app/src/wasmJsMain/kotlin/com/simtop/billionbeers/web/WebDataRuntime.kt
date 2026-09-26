@@ -71,8 +71,14 @@ class WebDataRuntime private constructor(private val graph: WebGraph) {
   companion object {
     suspend fun open(config: WebDataConfig = WebDataConfig()): WebDataRuntime {
       val graph = createGraphFactory<WebGraph.Factory>().create(config)
-      graph.browserStorage.awaitReady()
-      return WebDataRuntime(graph)
+      return try {
+        graph.browserStorage.awaitReady()
+        WebDataRuntime(graph)
+      } catch (error: Throwable) {
+        graph.browserStorage.close()
+        graph.httpClient.close()
+        throw error
+      }
     }
   }
 }

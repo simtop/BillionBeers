@@ -47,10 +47,7 @@ import com.simtop.core.core.CommonUiState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.channels.BufferOverflow
 import org.jetbrains.skia.Image
 import platform.UIKit.UIViewController
 
@@ -65,16 +62,13 @@ public class IosAppSession(
       IosDataConfig(apiBaseUrl = DEFAULT_IOS_API_BASE_URL, languageCode = languageCode),
     )
   private val strings = IosLocalizedStrings.forLanguage(languageCode)
-  private val routeRequests = MutableSharedFlow<PortableRoute>(
-    extraBufferCapacity = 1,
-    onBufferOverflow = BufferOverflow.DROP_OLDEST,
-  )
+  private val routeRequests = IosRouteRequestBuffer()
   private val scope = CoroutineScope(SupervisorJob() + runtime.coroutineDispatcherProvider.io)
   private var closed = false
 
   public val viewController: UIViewController =
     ComposeUIViewController {
-      IosShell(runtime, strings, routeRequests.asSharedFlow())
+      IosShell(runtime, strings, routeRequests.routes)
     }
 
   /** Delivers a supported URL without exposing repositories or navigation internals to Swift. */
@@ -82,7 +76,7 @@ public class IosAppSession(
     if (closed) return
     scope.launch {
       resolveIosDeepLink(url, runtime.repository)?.let { route ->
-        if (!closed) routeRequests.tryEmit(route)
+        if (!closed) routeRequests.trySend(route)
       }
     }
   }
@@ -91,6 +85,7 @@ public class IosAppSession(
     if (!closed) {
       closed = true
       scope.cancel()
+      routeRequests.close()
       runtime.close()
     }
   }

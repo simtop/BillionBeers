@@ -24,6 +24,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,13 +61,71 @@ import org.jetbrains.skia.Image as SkiaImage
 import org.w3c.dom.events.Event
 
 fun main() {
-  val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-  scope.launch {
-    val runtime = WebDataRuntime.open(webDataConfigForHost())
-    val session = WebRouteSession(runtime, scope)
-    ComposeViewport("root") {
-      WebShell(runtime, session)
-      DisposableEffect(Unit) { onDispose { session.close() } }
+  ComposeViewport("root") { WebStartupHost() }
+}
+
+private sealed interface WebStartupState {
+  data object Loading : WebStartupState
+
+  data class Failed(val message: String) : WebStartupState
+
+  data class Ready(val runtime: WebDataRuntime, val session: WebRouteSession) : WebStartupState
+}
+
+@Composable
+private fun WebStartupHost() {
+  var attempt by remember { mutableStateOf(0) }
+  var state by remember { mutableStateOf<WebStartupState>(WebStartupState.Loading) }
+  val currentState by rememberUpdatedState(state)
+
+  DisposableEffect(Unit) {
+    onDispose { (currentState as? WebStartupState.Ready)?.session?.close() }
+  }
+  LaunchedEffect(attempt) {
+    state = WebStartupState.Loading
+    when (
+      val result =
+        WebStartupCoordinator(
+            openRuntime = { WebDataRuntime.open(webDataConfigForHost()) },
+            createSession = { runtime ->
+              val sessionScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+              WebRouteSession(runtime, sessionScope)
+            },
+            closeRuntime = WebDataRuntime::close,
+          )
+          .start()
+    ) {
+      is WebStartupResult.Failed -> state = WebStartupState.Failed(result.message)
+      is WebStartupResult.Ready -> state = WebStartupState.Ready(result.runtime, result.session)
+    }
+  }
+
+  when (val current = state) {
+    WebStartupState.Loading -> WebStartupLoading()
+    is WebStartupState.Failed -> WebStartupFailure(current.message) { attempt += 1 }
+    is WebStartupState.Ready -> {
+      WebShell(current.runtime, current.session)
+      DisposableEffect(current.session) { onDispose { current.session.close() } }
+    }
+  }
+}
+
+@Composable
+private fun WebStartupLoading() {
+  Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+    Text("Starting Billion Beers")
+  }
+}
+
+@Composable
+private fun WebStartupFailure(message: String, retry: () -> Unit) {
+  Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+    Column(
+      horizontalAlignment = Alignment.CenterHorizontally,
+      verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+      Text(message)
+      Button(onClick = retry) { Text("Retry") }
     }
   }
 }
