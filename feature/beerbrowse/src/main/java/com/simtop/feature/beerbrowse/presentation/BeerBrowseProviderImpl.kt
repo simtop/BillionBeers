@@ -3,6 +3,7 @@ package com.simtop.feature.beerbrowse.presentation
 import androidx.annotation.Keep
 import androidx.compose.runtime.Composable
 import androidx.navigation3.runtime.NavKey
+import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.navigation.BeerBrowse
 import com.simtop.navigation.DynamicFeatureContentProvider
 
@@ -14,8 +15,13 @@ class BeerBrowseProviderImpl : DynamicFeatureContentProvider<BeerBrowse> {
     key: BeerBrowse,
     onBack: () -> Unit,
     onNavigate: (NavKey) -> Unit,
+    onSaveQuery: ((String, BeersQuery) -> Unit)?,
     showBackButton: Boolean,
   ) {
-    BeerBrowseScreenImpl(onBack = onBack, onNavigate = onNavigate)
+    BeerBrowseScreenImpl(
+      onBack = onBack,
+      onNavigate = onNavigate,
+      onSaveQuery = onSaveQuery,
+    )
   }
 }

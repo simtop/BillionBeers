@@ -59,4 +59,7 @@
     <string name="favorites_empty">Aún no hay cervezas favoritas</string>
     <string name="favorite_update_failed">No se pudo actualizar el favorito</string>
     <string name="home_tab">Inicio</string>
+    <string name="saved_filters_title">Filtros guardados</string>
+    <string name="filter_name_hint">Nombre del filtro</string>
+    <string name="save_filter">Guardar filtro</string>
 </resources>

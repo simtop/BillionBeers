@@ -24,6 +24,8 @@ import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.feature.beersearch.BeersSearchScreen
 import com.simtop.feature.beerslist.BeersListScreen
 import com.simtop.feature.favorites.FavoritesScreen
+import com.simtop.feature.savedfilters.SavedFilterResultsScreen
+import com.simtop.feature.savedfilters.SavedFiltersScreen
 import com.simtop.navigation.BeerBrowse
 import com.simtop.navigation.BeerDetail
 import com.simtop.navigation.BeersList
@@ -31,6 +33,8 @@ import com.simtop.navigation.BeersSearch
 import com.simtop.navigation.DeepLinkDestination
 import com.simtop.navigation.DynamicFeatureContent
 import com.simtop.navigation.Favorites
+import com.simtop.navigation.SavedFilterPresets
+import com.simtop.navigation.SavedFilterResults
 import com.simtop.navigation.toDeepLinkDestination
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 
@@ -46,7 +50,7 @@ fun AppNavigation(
   val listDetailStrategy = rememberListDetailSceneStrategy<NavKey>()
   val isListDetailStack =
     backStack.size > 1 &&
-      backStack.firstOrNull() in setOf(BeersList, Favorites) &&
+      backStack.firstOrNull() in setOf(BeersList, Favorites, SavedFilterPresets) &&
       backStack.drop(1).all { it is BeerDetail }
   val isExpandedWindow =
     currentWindowAdaptiveInfoV2()
@@ -77,7 +81,8 @@ fun AppNavigation(
   }
 
   val selectedTab = backStack.firstOrNull()
-  val showBottomBar = selectedTab == BeersList || selectedTab == Favorites
+  val showBottomBar =
+    selectedTab == BeersList || selectedTab == Favorites || selectedTab == SavedFilterPresets
 
   Scaffold(
     modifier = modifier,
@@ -116,6 +121,9 @@ fun AppNavigation(
               onBeerClick = ::navigateToBeerDetail,
               onSearchClick = { navigate(BeersSearch) },
               onBrowseClick = { navigate(BeerBrowse) },
+              onSaveQuery = { name ->
+                viewModel.savePreset(name, com.simtop.beerdomain.domain.models.BeersQuery())
+              },
             )
           }
 
@@ -123,10 +131,28 @@ fun AppNavigation(
             FavoritesScreen(onBeerClick = ::navigateToBeerDetail)
           }
 
+          entry<SavedFilterPresets> {
+            SavedFiltersScreen(onApply = { navigate(it) })
+          }
+
+          entry<SavedFilterResults> { key ->
+            SavedFilterResultsScreen(
+              route = key,
+              onBack = { backStack.removeLastOrNull() },
+              onBeerClick = ::navigateToBeerDetail,
+            )
+          }
+
           entry<BeersSearch> {
             BeersSearchScreen(
               onBeerClick = ::navigateToBeerDetail,
               onBack = { backStack.removeLastOrNull() },
+              onSaveQuery = { name, query ->
+                viewModel.savePreset(
+                  name,
+                  com.simtop.beerdomain.domain.models.BeersQuery(search = query),
+                )
+              },
             )
           }
 
@@ -151,6 +177,7 @@ fun AppNavigation(
                   navigate(destination)
                 }
               },
+              onSaveQuery = viewModel::savePreset,
             )
           }
         },

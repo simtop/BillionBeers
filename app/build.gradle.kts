@@ -120,6 +120,7 @@ dependencies {
   implementation(this.project(":feature:beerslist"))
   implementation(this.project(":feature:favorites"))
   implementation(this.project(":feature:beersearch"))
+  implementation(this.project(":feature:savedfilters"))
   androidTestImplementation(this.project(":feature:beerdetail"))
   androidTestImplementation(this.project(":feature:beerbrowse"))
   implementation(this.project(":core"))
