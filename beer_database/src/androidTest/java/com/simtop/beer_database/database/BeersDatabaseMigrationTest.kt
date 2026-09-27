@@ -104,8 +104,46 @@ class BeersDatabaseMigrationTest {
   }
 
   @Test
-  fun migrate1To4_preservesRowsLocalDataAndPagingStateAcrossFullChain() {
-    val dbName = "migration-test-1-4"
+  fun migrate4To5_preservesCatalogAndAddsFilterPresets() {
+    val dbName = "migration-test-4-5"
+
+    helper.createDatabase(dbName, 4).apply {
+      execSQL(
+        "INSERT INTO beers " +
+          "(id, name, tagline, description, image_url, abv, ibu, food_pairing, availability, " +
+          "style_name, brewery_name, srm, released_year, min_serving_temperature, " +
+          "max_serving_temperature, fermentation_method, ingredients, recommended_glasses, is_favorite) " +
+          "VALUES ('1', 'Beer 1', '', '', '', 0.0, 0.0, '[]', 0, '', '', NULL, NULL, NULL, NULL, '', '[]', '[]', 1)"
+      )
+      execSQL(
+        "INSERT INTO paging_state (surface, next_key, total_count, refreshed_at) " +
+          "VALUES ('catalog:en', 3, 206, 1234)"
+      )
+      close()
+    }
+
+    val db = helper.runMigrationsAndValidate(dbName, 5, true, MIGRATION_4_5)
+    assertEquals(5, db.version)
+    db.query("SELECT availability, is_favorite FROM beers WHERE id = '1'").use { cursor ->
+      assertTrue(cursor.moveToFirst())
+      assertEquals(0, cursor.getInt(0))
+      assertEquals(1, cursor.getInt(1))
+    }
+    db.execSQL(
+      "INSERT INTO filter_presets (id, name, search, style_id, brewery_id, updated_at) " +
+        "VALUES ('preset', 'Saved', 'ipa', NULL, NULL, 10)"
+    )
+    db.query("SELECT name, search FROM filter_presets WHERE id = 'preset'").use { cursor ->
+      assertTrue(cursor.moveToFirst())
+      assertEquals("Saved", cursor.getString(0))
+      assertEquals("ipa", cursor.getString(1))
+    }
+    db.close()
+  }
+
+  @Test
+  fun migrate1To5_preservesRowsLocalDataAndPagingStateAcrossFullChain() {
+    val dbName = "migration-test-1-5"
 
     helper.createDatabase(dbName, 1).apply {
       execSQL(
@@ -119,11 +157,12 @@ class BeersDatabaseMigrationTest {
     val db =
       helper.runMigrationsAndValidate(
         dbName,
-        4,
+        5,
         true,
         MIGRATION_1_2,
         MIGRATION_2_3,
         MIGRATION_3_4,
+        MIGRATION_4_5,
       )
 
     db
@@ -144,6 +183,15 @@ class BeersDatabaseMigrationTest {
       assertTrue(cursor.moveToFirst())
       assertEquals(2, cursor.getInt(0))
       assertEquals(206, cursor.getInt(1))
+    }
+    db.execSQL(
+      "INSERT INTO filter_presets (id, name, search, style_id, brewery_id, updated_at) " +
+        "VALUES ('preset', 'Saved', 'ipa', NULL, NULL, 10)"
+    )
+    db.query("SELECT name, search FROM filter_presets WHERE id = 'preset'").use { cursor ->
+      assertTrue(cursor.moveToFirst())
+      assertEquals("Saved", cursor.getString(0))
+      assertEquals("ipa", cursor.getString(1))
     }
     db.close()
   }

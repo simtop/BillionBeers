@@ -4,6 +4,7 @@ import androidx.room.Room
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import com.simtop.beer_database.models.BeerDbModel
+import com.simtop.beer_database.models.SavedFilterPresetDbModel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -67,6 +68,37 @@ class BeersDatabaseJvmTest {
     assertFalse(stored.availability)
     assertTrue(stored.isFavorite)
     assertEquals(listOf("Refreshed"), dao.getFavoriteBeers().first().map(BeerDbModel::name))
+  }
+
+  @Test
+  fun filterPresetsAreBoundedOrderedRenamableAndDeletable() = runBlocking {
+    val dao = db.beersDao()
+    repeat(10) { index ->
+      dao.saveFilterPreset(
+        SavedFilterPresetDbModel(
+          id = "preset-$index",
+          name = "Preset $index",
+          search = "beer $index",
+          styleId = null,
+          breweryId = null,
+          updatedAt = index.toLong(),
+        )
+      )
+    }
+
+    try {
+      dao.saveFilterPreset(
+        SavedFilterPresetDbModel("overflow", "Overflow", null, null, null, 11L)
+      )
+      fail("the eleventh preset should be rejected")
+    } catch (_: IllegalArgumentException) {
+      // Expected bounded-storage failure.
+    }
+    dao.renameFilterPreset("preset-0", "Renamed", 12L)
+    dao.deleteFilterPreset("preset-1")
+
+    assertEquals("Renamed", dao.getFilterPresets().first().first().name)
+    assertEquals(9, dao.getFilterPresetCount())
   }
 
   @Test
@@ -193,7 +225,7 @@ class BeersDatabaseJvmTest {
   }
 
   @Test
-  fun historicalVersionOneFileMigratesThroughVersionFour() = runBlocking {
+  fun historicalVersionOneFileMigratesThroughVersionFive() = runBlocking {
     val file = File(databaseDirectory, "version-one.db").absolutePath
     createVersionOneDatabase(file)
     db.close()
@@ -252,7 +284,7 @@ class BeersDatabaseJvmTest {
   private fun newFileDatabase(file: String): BeersDatabase =
     Room.databaseBuilder(file) { BeersDatabaseConstructor.initialize() }
       .setDriver(BundledSQLiteDriver())
-      .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+      .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
       .build()
 
   private fun beer(

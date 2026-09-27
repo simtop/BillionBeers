@@ -11,6 +11,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable object BeersSearch : NavKey
 
+@Serializable object SavedFilterPresets : NavKey
+
 // `get()` rather than a stored property: an initialised `override val` would have a backing field,
 // which kotlinx.serialization would then try to serialise into the saved back stack.
 @Serializable
@@ -30,6 +32,7 @@ fun NavKey.toPortableRoute(): PortableRoute? =
     BeersList -> PortableRoute.BeersList
     Favorites -> PortableRoute.Favorites
     BeersSearch -> PortableRoute.BeersSearch
+    SavedFilterPresets -> PortableRoute.SavedFilterPresets
     BeerBrowse -> PortableRoute.BeerBrowse
     is BeerDetail -> PortableRoute.BeerDetail(beer)
     else -> null
@@ -40,6 +43,7 @@ fun PortableRoute.toNavKey(): NavKey =
     PortableRoute.BeersList -> BeersList
     PortableRoute.Favorites -> Favorites
     PortableRoute.BeersSearch -> BeersSearch
+    PortableRoute.SavedFilterPresets -> SavedFilterPresets
     PortableRoute.BeerBrowse,
     is PortableRoute.BeerBrowseSelection -> BeerBrowse
     is PortableRoute.BeerDetail -> BeerDetail(beer)

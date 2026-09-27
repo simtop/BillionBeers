@@ -7,6 +7,7 @@ import com.simtop.beer_database.database.BeersDatabaseConstructor
 import com.simtop.beer_database.database.MIGRATION_1_2
 import com.simtop.beer_database.database.MIGRATION_2_3
 import com.simtop.beer_database.database.MIGRATION_3_4
+import com.simtop.beer_database.database.MIGRATION_4_5
 import com.simtop.core.core.EnvironmentConfig
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
@@ -36,5 +37,5 @@ internal actual fun createBridgeDatabase(): BeersDatabase =
     "${System.getProperty("java.io.tmpdir")}billionbeers-ios-shared-jvm.db"
   ) { BeersDatabaseConstructor.initialize() }
     .setDriver(BundledSQLiteDriver())
-    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
     .build()

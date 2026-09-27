@@ -1,6 +1,7 @@
 package com.simtop.beer_storage.browser
 
 import com.simtop.beer_storage.api.StoredBeer
+import com.simtop.beer_storage.api.StoredFilterPreset
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -42,6 +43,28 @@ class IndexedDbBeersStorageBrowserTest {
     assertEquals(1, reopened.getPagingState("catalog")?.totalCount)
     assertTrue(reopened.count() == 1)
     reopened.deleteAll()
+    reopened.close()
+  }
+
+  @Test
+  fun filterPresetsSurviveReopenAndPeerInvalidation() = runTest {
+    val databaseName = "billionbeers-presets-${hashCode()}"
+    val writer = IndexedDbBeersStorage(databaseName)
+    val peer = IndexedDbBeersStorage(databaseName)
+    val preset = StoredFilterPreset("preset-1", "IPAs", "ipa", "style-1", null, 1L)
+
+    writer.saveFilterPreset(preset)
+    assertEquals(listOf(preset), peer.observeSavedFilterPresets().first { it == listOf(preset) })
+    writer.renameFilterPreset(preset.id, "Updated IPAs", 2L)
+    val renamed = preset.copy(name = "Updated IPAs", updatedAt = 2L)
+    assertEquals(listOf(renamed), peer.observeSavedFilterPresets().first { it == listOf(renamed) })
+
+    writer.close()
+    peer.close()
+    val reopened = IndexedDbBeersStorage(databaseName)
+    assertEquals(listOf(renamed), reopened.observeSavedFilterPresets().first())
+    reopened.deleteFilterPreset(preset.id)
+    assertTrue(reopened.observeSavedFilterPresets().first().isEmpty())
     reopened.close()
   }
 

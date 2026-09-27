@@ -5,6 +5,7 @@ import androidx.sqlite.SQLiteConnection
 
 private const val DATABASE_VERSION_3 = 3
 private const val DATABASE_VERSION_4 = 4
+private const val DATABASE_VERSION_5 = 5
 
 private fun SQLiteConnection.execute(sql: String) {
   prepare(sql).use { it.step() }
@@ -57,5 +58,22 @@ val MIGRATION_3_4 =
   object : Migration(DATABASE_VERSION_3, DATABASE_VERSION_4) {
     override fun migrate(connection: SQLiteConnection) {
       connection.execute("ALTER TABLE `beers` ADD COLUMN `is_favorite` INTEGER NOT NULL DEFAULT 0")
+    }
+  }
+
+/** v4 → v5: local named query presets, independent of the catalog cache. */
+val MIGRATION_4_5 =
+  object : Migration(DATABASE_VERSION_4, DATABASE_VERSION_5) {
+    override fun migrate(connection: SQLiteConnection) {
+      connection.execute(
+        "CREATE TABLE IF NOT EXISTS `filter_presets` (" +
+          "`id` TEXT NOT NULL, " +
+          "`name` TEXT NOT NULL, " +
+          "`search` TEXT, " +
+          "`style_id` TEXT, " +
+          "`brewery_id` TEXT, " +
+          "`updated_at` INTEGER NOT NULL, " +
+          "PRIMARY KEY(`id`))"
+      )
     }
   }
