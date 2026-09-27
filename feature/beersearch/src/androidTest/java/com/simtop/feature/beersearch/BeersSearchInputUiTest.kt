@@ -47,6 +47,7 @@ class BeersSearchInputUiTest {
           onScrollToBottom = {},
           onRetryLoadMore = {},
           onRetrySearch = {},
+          onSaveQuery = { _, _ -> },
           autoFocus = autoFocus,
         )
       }
