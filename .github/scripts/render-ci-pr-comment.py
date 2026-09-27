@@ -37,7 +37,7 @@ STEP_RULES = {
     "Signal Failure": ("make screenshot-verify", ("screenshot-test-results", "screenshot-failures"), "paparazzi"),
     "Run instrumented tests on the managed devices": ("make ui-test-managed-ci", ("instrumented-test-reports", "managed-device-gradle-profiles"), "managed-device"),
     "Run minified release confidence smoke tests": ("make release-smoke", ("instrumented-test-reports", "release-confidence-artifacts", "managed-device-gradle-profiles"), "managed-device"),
-    "Run Web browser and static distribution verification": ("make web-verify", ("web-static-distribution",), None),
+    "Run Web browser and static distribution verification": ("make web-verify", ("web-static-distribution", "web-smoke-evidence"), None),
     "Compile Apple targets": ("make ios-compile", ("native-test-reports",), None),
     "Link Apple frameworks": ("make ios-framework", ("native-test-reports",), None),
     "Run Apple simulator tests": ("make ios-test", ("native-test-reports",), None),

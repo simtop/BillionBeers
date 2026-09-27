@@ -30,6 +30,74 @@ if (!browser) {
   process.exit(2);
 }
 
+const smokeEvidenceDir = process.env.WEB_SMOKE_ARTIFACT_DIR ? path.resolve(process.env.WEB_SMOKE_ARTIFACT_DIR) : null;
+const ANSI_PATTERN = /\x1b(?:\[[0-?]*[ -/]*[@-~]|\][^\x07]*(?:\x07|\x1b\\))/g;
+const RUNNER_PATH_PATTERN = /(?:\/Users|\/home|\/opt|\/private|\/tmp)\/[^\s,)]+/g;
+
+function sanitizeDiagnostic(value) {
+  return String(value)
+    .replace(ANSI_PATTERN, '')
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, ' ')
+    .replace(RUNNER_PATH_PATTERN, '<runner-path>')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 1000);
+}
+
+function originOnly(url) {
+  try {
+    return new URL(url).origin;
+  } catch (_) {
+    return '<invalid-url>';
+  }
+}
+
+async function writeFailureEvidence({ devtools, browserVersion, errors, requests, smokeError }) {
+  if (!smokeEvidenceDir) return;
+  try {
+    await fs.promises.mkdir(smokeEvidenceDir, { recursive: true });
+    let page = null;
+    if (devtools) {
+      try {
+        const result = await devtools.send('Runtime.evaluate', {
+          expression: `({
+            path: location.pathname,
+            hash: location.hash,
+            viewport: [innerWidth, innerHeight],
+          })`,
+          returnByValue: true,
+        });
+        page = result.result?.value || null;
+      } catch (error) {
+        errors.push(`page state: ${sanitizeDiagnostic(error.message)}`);
+      }
+    }
+    const diagnostic = {
+      schema: 1,
+      browser: sanitizeDiagnostic(browserVersion?.product || browser),
+      error: sanitizeDiagnostic(smokeError?.message || 'Web smoke failed'),
+      errors: errors.slice(0, 20).map(sanitizeDiagnostic),
+      page,
+      request_origins: [...new Set(requests.map(originOnly))].sort().slice(0, 20),
+    };
+    await fs.promises.writeFile(
+      path.join(smokeEvidenceDir, 'web-smoke-failure.json'),
+      `${JSON.stringify(diagnostic, null, 2)}\n`,
+      'utf8',
+    );
+    if (devtools) {
+      try {
+        const screenshot = await devtools.send('Page.captureScreenshot', { format: 'png' });
+        await fs.promises.writeFile(path.join(smokeEvidenceDir, 'web-smoke-failure.png'), Buffer.from(screenshot.data, 'base64'));
+      } catch (error) {
+        console.error(`Web smoke screenshot capture failed: ${sanitizeDiagnostic(error.message)}`);
+      }
+    }
+  } catch (error) {
+    console.error(`Web smoke evidence write failed: ${sanitizeDiagnostic(error.message)}`);
+  }
+}
+
 const beer = {
   id: 'web-smoke-1',
   name: 'Web Smoke Lager',
@@ -205,7 +273,10 @@ async function main() {
   let output = '';
   let socket;
   let devtools;
+  let browserVersion;
   let smokeError;
+  const errors = [];
+  const requests = [];
   const collect = chunk => { output += chunk.toString(); };
   chrome.stdout.on('data', collect);
   chrome.stderr.on('data', collect);
@@ -229,9 +300,7 @@ async function main() {
       socket.onerror = reject;
     });
     devtools = new DevTools(socket);
-    const browserVersion = await devtools.send('Browser.getVersion');
-    const errors = [];
-    const requests = [];
+    browserVersion = await devtools.send('Browser.getVersion');
     devtools.on('Runtime.exceptionThrown', event => {
       const details = event.exceptionDetails || {};
       errors.push(details.exception?.description || details.text || 'runtime exception');
@@ -382,6 +451,9 @@ async function main() {
     smokeError = error;
     throw error;
   } finally {
+    if (smokeError) {
+      await writeFailureEvidence({ devtools, browserVersion, errors, requests, smokeError });
+    }
     if (devtools) {
       await devtools.send('Browser.close').catch(() => {});
     }

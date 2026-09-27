@@ -56,6 +56,30 @@ gh workflow run record_screenshots.yml --ref <branch> -f modules='<affected modu
 
 The PR comment recommends verification first, not blindly recording new goldens to fix any failure.
 
+## Timing, provenance and failure evidence
+
+Lane timing summaries are two different kinds of evidence:
+
+- GitHub job start/end timestamps measure the parallel critical path and approximate runner work
+  when summed across jobs. They include setup, teardown and artifact upload.
+- The JSON records produced by `render-phase-timings.py` measure named commands inside a lane and
+  carry the repository, run, attempt, job and commit identity from the GitHub environment. They
+  exclude setup and uploads unless those are explicitly wrapped as phases.
+
+The Web and Screenshot lanes publish these records alongside their existing reports. Unit, Web,
+Screenshot, Instrumented and Native jobs have explicit ceilings with room above the observed
+successful durations. A timeout or cancellation remains a failed/incomplete CI result; it is never
+converted into a test assertion diagnosis.
+
+The Web smoke accepts `WEB_SMOKE_ARTIFACT_DIR` only in CI. On a failed page check it writes one
+bounded PNG and a JSON summary with sanitized error text and origin-only request metadata. Failure
+evidence is supplemental: a write or screenshot error cannot replace the original smoke failure,
+and an absent artifact does not imply that the distribution passed.
+
+Run-level measurements must compare repeated successful and failed runs before changing lane
+ownership. The current evidence shows overlap between Unit's Wasm browser work and the Web lane,
+but does not justify splitting or removing a lane; a phase record is not target-coverage proof.
+
 ## Runtime and verification
 
 GitHub Actions provides a workflow-level completion trigger, so the reporter does not start a

@@ -158,6 +158,12 @@ class TestFailureSummaryTest(unittest.TestCase):
             self.assertIn("SearchScreen.kt:42", report)
             self.assertIn("Assertion failed", report)
 
+    def test_failure_details_strip_terminal_controls_and_runner_paths(self) -> None:
+        detail = MODULE.clean_detail("\x1b[31m/home/runner/work/BillionBeers/core/src/Test.kt:42\x1b[0m\x07")
+        self.assertEqual("<runner-path>", detail)
+        self.assertNotIn("\\x1b", detail)
+        self.assertNotIn("/home/runner", detail)
+
     def test_unit_mode_has_its_own_heading_and_no_device_guidance(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
