@@ -46,6 +46,11 @@ STEP_RULES = {
     "Link Apple frameworks": ("make ios-framework", ("native-test-reports",), None),
     "Run Apple simulator tests": ("make ios-test", ("native-test-reports",), None),
     "Verify native test reports": ("make ios-test", ("native-test-reports",), None),
+    "Create and verify iOS simulator evidence": (
+        "make ios-simulator-evidence",
+        ("ios-simulator-confidence", "ios-host-build", "native-test-reports"),
+        None,
+    ),
     "Run Spotless Check": ("make format", (), None),
     "Run Detekt": ("make lint", (), None),
     "Run Android Lint": ("make android-lint", ("android-lint-reports",), None),

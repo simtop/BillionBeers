@@ -76,3 +76,36 @@ make ios-host-run
 
 A simulator host build proves Xcode linkage and packaging; it is not a physical-device signing,
 VoiceOver, or distribution proof.
+
+## iOS simulator evidence packet
+
+After the existing compile, framework, host-build, simulator-test, and native-report validation gates
+pass, create the bounded simulator evidence packet with:
+
+```shell
+make ios-compile
+make ios-framework
+make ios-host-build
+make ios-test
+make ios-simulator-evidence
+```
+
+The packet is written to `iosApp/build/ios-simulator-confidence/`. It contains `manifest.json`, the
+exact unsigned `Debug-iphonesimulator/BillionBeers.app`, its embedded simulator
+`BillionBeersData.framework`, and the four required non-vacuous `iosSimulatorArm64Test` JUnit report
+trees. The manifest records the actual simulator destination, configuration, SDK, arm64 architecture,
+source revision, clean/dirty state, CI provenance when available, per-file sizes and SHA-256 hashes,
+and a deterministic tree digest. Logs remain failure diagnostics and are not success evidence.
+
+Verify a copied packet independently with:
+
+```shell
+python3 scripts/verify_ios_simulator_artifacts.py \
+  --verify-packet iosApp/build/ios-simulator-confidence
+```
+
+Verification rejects missing, extra, changed, unsafe, or symlinked files; invalid bundle metadata or
+embedded framework content; malformed, empty, failing, or skipped native reports; and source/CI SHA
+mismatches. Discard a mismatched packet and rerun the same sequence from a clean checkout of the
+intended revision. The packet strengthens exact simulator evidence but does not reconcile the separate
+physical-device/signing prerequisite.
