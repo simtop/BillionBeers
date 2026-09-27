@@ -25,7 +25,12 @@ class MainActivity : ComponentActivity() {
     setContent {
       CompositionLocalProvider(LocalMetroViewModelFactory provides appGraph.metroViewModelFactory) {
         BillionBeersTheme {
-          BeersListScreen(onBeerClick = {}, onSearchClick = {}, onBrowseClick = {})
+          BeersListScreen(
+            onBeerClick = {},
+            onSearchClick = {},
+            onBrowseClick = {},
+            onSaveQuery = {},
+          )
         }
       }
     }

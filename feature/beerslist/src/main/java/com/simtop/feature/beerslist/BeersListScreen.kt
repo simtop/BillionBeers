@@ -25,12 +25,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -38,6 +40,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,6 +79,7 @@ fun BeersListScreen(
   onBeerClick: (Beer) -> Unit,
   onSearchClick: () -> Unit,
   onBrowseClick: () -> Unit,
+  onSaveQuery: (String) -> Unit,
   viewModel: BeersListViewModel = metroViewModel(),
 ) {
   val rawState by viewModel.beerListViewState.collectAsState()
@@ -101,6 +106,7 @@ fun BeersListScreen(
     onBeerClick = onBeerClick,
     onSearchClick = onSearchClick,
     onBrowseClick = onBrowseClick,
+    onSaveQuery = onSaveQuery,
     onScrollToBottom = { viewModel.onScrollToBottom() },
     onRefresh = { viewModel.refresh() },
     onRetry = { viewModel.refresh() },
@@ -118,6 +124,7 @@ fun BeersListContent(
   onBeerClick: (Beer) -> Unit,
   onSearchClick: () -> Unit,
   onBrowseClick: () -> Unit,
+  onSaveQuery: (String) -> Unit,
   onScrollToBottom: () -> Unit,
   onRefresh: () -> Unit,
   onRetry: () -> Unit,
@@ -126,6 +133,7 @@ fun BeersListContent(
 ) {
   val context = LocalContext.current
   val toggleDebugDrawer = LocalDebugDrawerToggle.current
+  var presetName by remember { mutableStateOf("") }
   Scaffold(
     modifier = modifier,
     topBar = {
@@ -187,33 +195,60 @@ fun BeersListContent(
     val stateContentPadding = PaddingValues(top = paddingValues.calculateTopPadding())
     val itemCount = (viewState as? CommonUiState.Success)?.data?.items?.size ?: 0
 
-    SharedBeersListContent(
-      viewState = viewState,
-      beerRow = { beer -> ComposeBeersListItem(beer = beer, onClick = onBeerClick) },
-      loadingContent = { BeersListSkeleton(modifier = Modifier.padding(stateContentPadding)) },
-      emptyContent = { retry ->
-        ComposeErrorView(onRetry = retry, modifier = Modifier.padding(stateContentPadding))
-      },
-      errorContent = { error, retry ->
-        val errorMessage = error.resolvedMessage()
-        ComposeErrorView(
-          message = errorMessage ?: stringResource(PresentationUtilsR.string.empty_state),
-          onRetry = retry,
-          modifier = Modifier.padding(stateContentPadding),
+    Column(Modifier.fillMaxSize()) {
+      SharedBeersListContent(
+        viewState = viewState,
+        beerRow = { beer -> ComposeBeersListItem(beer = beer, onClick = onBeerClick) },
+        loadingContent = { BeersListSkeleton(modifier = Modifier.padding(stateContentPadding)) },
+        emptyContent = { retry ->
+          ComposeErrorView(onRetry = retry, modifier = Modifier.padding(stateContentPadding))
+        },
+        errorContent = { error, retry ->
+          val errorMessage = error.resolvedMessage()
+          ComposeErrorView(
+            message = errorMessage ?: stringResource(PresentationUtilsR.string.empty_state),
+            onRetry = retry,
+            modifier = Modifier.padding(stateContentPadding),
+          )
+          errorMessage?.let { message -> LaunchedEffect(message) { showToast(context, message) } }
+        },
+        loadMoreFailedText = stringResource(PresentationUtilsR.string.paged_list_load_more_failed),
+        retryText = stringResource(PresentationUtilsR.string.retry),
+        endOfListText = pluralStringResource(R.plurals.beers_end_of_list, itemCount, itemCount),
+        onScrollToBottom = onScrollToBottom,
+        onRefresh = onRefresh,
+        onRetry = onRetry,
+        onRetryLoadMore = onRetryLoadMore,
+        listContentPadding = contentPadding,
+        animationsDisabled = animationsDisabled,
+        modifier = Modifier.weight(1f),
+      )
+      Row(Modifier.fillMaxWidth().padding(horizontal = BillionBeersTheme.spacing.medium)) {
+        OutlinedTextField(
+          value = presetName,
+          onValueChange = { value ->
+            if (
+              value.length <= com.simtop.beerdomain.domain.models.SavedFilterPreset.MAX_NAME_LENGTH
+            ) {
+              presetName = value
+            }
+          },
+          label = { Text(stringResource(PresentationUtilsR.string.filter_name_hint)) },
+          modifier = Modifier.weight(1f),
+          singleLine = true,
         )
-        errorMessage?.let { message -> LaunchedEffect(message) { showToast(context, message) } }
-      },
-      loadMoreFailedText = stringResource(PresentationUtilsR.string.paged_list_load_more_failed),
-      retryText = stringResource(PresentationUtilsR.string.retry),
-      endOfListText = pluralStringResource(R.plurals.beers_end_of_list, itemCount, itemCount),
-      onScrollToBottom = onScrollToBottom,
-      onRefresh = onRefresh,
-      onRetry = onRetry,
-      onRetryLoadMore = onRetryLoadMore,
-      listContentPadding = contentPadding,
-      animationsDisabled = animationsDisabled,
-      modifier = Modifier.fillMaxSize(),
-    )
+        Button(
+          onClick = {
+            onSaveQuery(presetName)
+            presetName = ""
+          },
+          enabled = presetName.isNotBlank(),
+          modifier = Modifier.padding(start = BillionBeersTheme.spacing.small),
+        ) {
+          Text(stringResource(PresentationUtilsR.string.save_filter))
+        }
+      }
+    }
   }
 }
 
@@ -328,6 +363,7 @@ internal fun BeersListScreenPreview(
       onBeerClick = {},
       onSearchClick = {},
       onBrowseClick = {},
+      onSaveQuery = {},
       onScrollToBottom = {},
       onRefresh = {},
       onRetry = {},
@@ -367,6 +403,7 @@ internal fun BeersListAccessibilityMatrixPreview() {
       onBeerClick = {},
       onSearchClick = {},
       onBrowseClick = {},
+      onSaveQuery = {},
       onScrollToBottom = {},
       onRefresh = {},
       onRetry = {},

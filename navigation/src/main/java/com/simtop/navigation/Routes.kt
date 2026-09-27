@@ -13,6 +13,17 @@ import kotlinx.serialization.Serializable
 
 @Serializable object SavedFilterPresets : NavKey
 
+@Serializable
+data class SavedFilterResults(
+  val id: String,
+  val name: String,
+  val search: String? = null,
+  val styleId: String? = null,
+  val breweryId: String? = null,
+) : NavKey {
+  fun toQuery() = com.simtop.beerdomain.domain.models.BeersQuery(search, styleId, breweryId)
+}
+
 // `get()` rather than a stored property: an initialised `override val` would have a backing field,
 // which kotlinx.serialization would then try to serialise into the saved back stack.
 @Serializable

@@ -59,4 +59,7 @@
     <string name="favorites_empty">Aucune bière favorite pour le moment</string>
     <string name="favorite_update_failed">Impossible de mettre à jour le favori</string>
     <string name="home_tab">Accueil</string>
+    <string name="saved_filters_title">Filtres enregistrés</string>
+    <string name="filter_name_hint">Nom du filtre</string>
+    <string name="save_filter">Enregistrer le filtre</string>
 </resources>

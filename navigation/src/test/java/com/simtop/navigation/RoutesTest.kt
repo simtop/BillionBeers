@@ -28,6 +28,16 @@ class RoutesTest {
   }
 
   @Test
+  fun `saved filter result preserves its exact query`() {
+    val route = SavedFilterResults("preset-1", "IPA", "ipa", "style-1", "brewery-1")
+
+    expectThat(route.toQuery().search).isEqualTo("ipa")
+    expectThat(route.toQuery().styleId).isEqualTo("style-1")
+    expectThat(route.toQuery().breweryId).isEqualTo("brewery-1")
+    expectThat(route.toPortableRoute()).isNull()
+  }
+
+  @Test
   fun `unknown android keys do not enter the portable route contract`() {
     expectThat(UnknownKey.toPortableRoute()).isNull()
   }

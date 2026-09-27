@@ -1,13 +1,23 @@
 package com.simtop.feature.beerbrowse.presentation
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -17,6 +27,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.billionbeers.core.designsystem.component.AccessibilityMatrixPreview
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.component.showToast
@@ -38,6 +49,7 @@ internal fun BrowseBeersScreen(
   selection: BrowseSelection,
   onBack: () -> Unit,
   onBeerClick: (Beer) -> Unit,
+  onSaveQuery: (String) -> Unit,
 ) {
   val viewModel =
     assistedMetroViewModel<BrowseBeersViewModel, BrowseBeersViewModel.Factory>(
@@ -67,6 +79,7 @@ internal fun BrowseBeersScreen(
     viewState = viewState,
     onBack = onBack,
     onBeerClick = onBeerClick,
+    onSaveQuery = onSaveQuery,
     onScrollToBottom = viewModel::onScrollToBottom,
     onRetryLoadMore = viewModel::onRetryLoadMore,
     onRetryFirstPage = viewModel::onRetryFirstPage,
@@ -80,33 +93,59 @@ internal fun BrowseBeersContent(
   viewState: CommonUiState<PagedListUiModel<Beer>>,
   onBack: () -> Unit,
   onBeerClick: (Beer) -> Unit,
+  onSaveQuery: (String) -> Unit,
   onScrollToBottom: () -> Unit,
   onRetryLoadMore: () -> Unit,
   onRetryFirstPage: () -> Unit,
 ) {
-  SharedBrowseBeersContent(
-    strings = browseStrings,
-    title = title,
-    viewState = viewState,
-    onBack = onBack,
-    backIcon = { contentDescription ->
-      Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = contentDescription)
-    },
-    onBeerClick = onBeerClick,
-    onScrollToBottom = onScrollToBottom,
-    onRetryLoadMore = onRetryLoadMore,
-    onRetryFirstPage = onRetryFirstPage,
-    errorContent = { state, retry ->
-      ComposeErrorView(
-        message = state.resolvedMessage().orEmpty(),
-        onRetry = retry,
-        modifier = Modifier.fillMaxSize(),
+  var presetName by remember { mutableStateOf("") }
+  Column(Modifier.fillMaxSize()) {
+    SharedBrowseBeersContent(
+      modifier = Modifier.weight(1f),
+      strings = browseStrings,
+      title = title,
+      viewState = viewState,
+      onBack = onBack,
+      backIcon = { contentDescription ->
+        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = contentDescription)
+      },
+      onBeerClick = onBeerClick,
+      onScrollToBottom = onScrollToBottom,
+      onRetryLoadMore = onRetryLoadMore,
+      onRetryFirstPage = onRetryFirstPage,
+      errorContent = { state, retry ->
+        ComposeErrorView(
+          message = state.resolvedMessage().orEmpty(),
+          onRetry = retry,
+          modifier = Modifier.fillMaxSize(),
+        )
+      },
+      beerRow = { beer, onClick ->
+        ComposeBeersListItem(beer = beer, onClick = { onClick() })
+      },
+    )
+    Row(Modifier.fillMaxWidth().padding(horizontal = BillionBeersTheme.spacing.medium)) {
+      OutlinedTextField(
+        value = presetName,
+        onValueChange = { value ->
+          if (value.length <= SavedFilterPreset.MAX_NAME_LENGTH) presetName = value
+        },
+        label = { Text(stringResource(R.string.filter_name_hint)) },
+        modifier = Modifier.weight(1f),
+        singleLine = true,
       )
-    },
-    beerRow = { beer, onClick ->
-      ComposeBeersListItem(beer = beer, onClick = { onClick() })
-    },
-  )
+      Button(
+        onClick = {
+          onSaveQuery(presetName)
+          presetName = ""
+        },
+        enabled = presetName.isNotBlank(),
+        modifier = Modifier.padding(start = BillionBeersTheme.spacing.small),
+      ) {
+        Text(stringResource(R.string.save_filter))
+      }
+    }
+  }
 }
 
 class BrowseBeersPreviewParameterProvider :
@@ -155,6 +194,7 @@ internal fun BrowseBeersScreenPreview(
       viewState = case.state,
       onBack = {},
       onBeerClick = {},
+      onSaveQuery = {},
       onScrollToBottom = {},
       onRetryLoadMore = {},
       onRetryFirstPage = {},
@@ -191,6 +231,7 @@ internal fun BrowseBeersAccessibilityMatrixPreview() {
         ),
       onBack = {},
       onBeerClick = {},
+      onSaveQuery = {},
       onScrollToBottom = {},
       onRetryLoadMore = {},
       onRetryFirstPage = {},

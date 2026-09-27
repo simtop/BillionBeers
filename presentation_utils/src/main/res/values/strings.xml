@@ -57,4 +57,7 @@
     <string name="favorites_empty">No favorite beers yet</string>
     <string name="favorite_update_failed">Couldn\'t update favorite</string>
     <string name="home_tab">Home</string>
+    <string name="saved_filters_title">Saved filters</string>
+    <string name="filter_name_hint">Filter name</string>
+    <string name="save_filter">Save filter</string>
 </resources>

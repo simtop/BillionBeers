@@ -1,6 +1,8 @@
 package com.simtop.feature.beersearch
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -9,11 +11,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -23,7 +27,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -40,6 +46,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.billionbeers.core.designsystem.component.AccessibilityMatrixPreview
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.component.showToast
@@ -64,6 +71,7 @@ const val SEARCH_FIELD_TAG = "search_field"
 fun BeersSearchScreen(
   onBeerClick: (Beer) -> Unit,
   onBack: () -> Unit,
+  onSaveQuery: (String, String) -> Unit,
   viewModel: BeersSearchViewModel = metroViewModel(),
 ) {
   val viewState by viewModel.viewState.collectAsState()
@@ -89,6 +97,7 @@ fun BeersSearchScreen(
     onQueryChange = viewModel::onQueryChange,
     onBeerClick = onBeerClick,
     onBack = onBack,
+    onSaveQuery = onSaveQuery,
     onScrollToBottom = { viewModel.onScrollToBottom() },
     onRetryLoadMore = { viewModel.onRetryLoadMore() },
     onRetrySearch = { viewModel.onRetrySearch() },
@@ -106,12 +115,14 @@ fun BeersSearchContent(
   onQueryChange: (String) -> Unit,
   onBeerClick: (Beer) -> Unit,
   onBack: () -> Unit,
+  onSaveQuery: (String, String) -> Unit,
   onScrollToBottom: () -> Unit,
   onRetryLoadMore: () -> Unit,
   onRetrySearch: () -> Unit,
   modifier: Modifier = Modifier,
   autoFocus: Boolean = true,
 ) {
+  var presetName by remember { mutableStateOf("") }
   Scaffold(
     modifier = modifier,
     topBar = {
@@ -137,7 +148,7 @@ fun BeersSearchContent(
       )
     },
   ) { padding ->
-    Box(modifier = Modifier.fillMaxSize().consumeWindowInsets(padding).imePadding()) {
+    Column(modifier = Modifier.fillMaxSize().consumeWindowInsets(padding).imePadding()) {
       val resultCount = (viewState as? CommonUiState.Success)?.data?.items?.size ?: 0
       SharedBeersSearchContent(
         viewState = viewState,
@@ -190,8 +201,29 @@ fun BeersSearchContent(
         onRetryLoadMore = onRetryLoadMore,
         onRetrySearch = onRetrySearch,
         contentPadding = padding,
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.weight(1f),
       )
+      Row(Modifier.fillMaxWidth().padding(horizontal = BillionBeersTheme.spacing.medium)) {
+        OutlinedTextField(
+          value = presetName,
+          onValueChange = { value ->
+            if (value.length <= SavedFilterPreset.MAX_NAME_LENGTH) presetName = value
+          },
+          label = { Text(stringResource(PresentationUtilsR.string.filter_name_hint)) },
+          modifier = Modifier.weight(1f),
+          singleLine = true,
+        )
+        Button(
+          onClick = {
+            onSaveQuery(presetName, query)
+            presetName = ""
+          },
+          enabled = presetName.isNotBlank() && query.isNotBlank(),
+          modifier = Modifier.padding(start = BillionBeersTheme.spacing.small),
+        ) {
+          Text(stringResource(PresentationUtilsR.string.save_filter))
+        }
+      }
     }
   }
 }
@@ -286,6 +318,7 @@ internal fun BeersSearchScreenPreview(
       onQueryChange = {},
       onBeerClick = {},
       onBack = {},
+      onSaveQuery = { _, _ -> },
       onScrollToBottom = {},
       onRetryLoadMore = {},
       onRetrySearch = {},
@@ -324,6 +357,7 @@ internal fun BeersSearchAccessibilityMatrixPreview() {
       onQueryChange = {},
       onBeerClick = {},
       onBack = {},
+      onSaveQuery = { _, _ -> },
       onScrollToBottom = {},
       onRetryLoadMore = {},
       onRetrySearch = {},

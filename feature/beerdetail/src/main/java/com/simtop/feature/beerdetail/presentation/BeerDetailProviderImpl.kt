@@ -3,6 +3,7 @@ package com.simtop.feature.beerdetail.presentation
 import androidx.annotation.Keep
 import androidx.compose.runtime.Composable
 import androidx.navigation3.runtime.NavKey
+import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.navigation.BeerDetail
 import com.simtop.navigation.DynamicFeatureContentProvider
 
@@ -15,6 +16,7 @@ class BeerDetailProviderImpl : DynamicFeatureContentProvider<BeerDetail> {
     key: BeerDetail,
     onBack: () -> Unit,
     onNavigate: (NavKey) -> Unit,
+    onSaveQuery: ((String, BeersQuery) -> Unit)?,
     showBackButton: Boolean,
   ) {
     BeerDetailScreenImpl(

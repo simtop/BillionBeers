@@ -1,6 +1,7 @@
 package com.simtop.billionbeers.presentation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Icon
@@ -16,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
 import com.simtop.navigation.BeersList
 import com.simtop.navigation.Favorites
+import com.simtop.navigation.SavedFilterPresets
 import com.simtop.presentation_utils.R
 
 @Composable
@@ -57,6 +59,19 @@ fun AppBottomNavigation(
         )
       },
       label = { Text(stringResource(R.string.favorites_title)) },
+      colors = itemColors,
+    )
+    NavigationBarItem(
+      modifier = Modifier.testTag("saved_filters_tab"),
+      selected = selectedTab == SavedFilterPresets,
+      onClick = { onTabSelect(SavedFilterPresets) },
+      icon = {
+        Icon(
+          Icons.AutoMirrored.Filled.List,
+          contentDescription = stringResource(R.string.saved_filters_title),
+        )
+      },
+      label = { Text(stringResource(R.string.saved_filters_title)) },
       colors = itemColors,
     )
   }
