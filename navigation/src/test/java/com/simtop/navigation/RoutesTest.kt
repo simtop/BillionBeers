@@ -16,12 +16,14 @@ class RoutesTest {
     expectThat(BeersList.toPortableRoute()).isEqualTo(PortableRoute.BeersList)
     expectThat(Favorites.toPortableRoute()).isEqualTo(PortableRoute.Favorites)
     expectThat(BeersSearch.toPortableRoute()).isEqualTo(PortableRoute.BeersSearch)
+    expectThat(SavedFilterPresets.toPortableRoute()).isEqualTo(PortableRoute.SavedFilterPresets)
     expectThat(BeerBrowse.toPortableRoute()).isEqualTo(PortableRoute.BeerBrowse)
     expectThat(BeerDetail(beer).toPortableRoute()).isEqualTo(PortableRoute.BeerDetail(beer))
   }
 
   @Test
-  fun `portable detail route maps back to an android key`() {
+  fun `portable routes map back to android keys`() {
+    expectThat(PortableRoute.SavedFilterPresets.toNavKey()).isEqualTo(SavedFilterPresets)
     expectThat(PortableRoute.BeerDetail(beer).toNavKey()).isEqualTo(BeerDetail(beer))
   }
 

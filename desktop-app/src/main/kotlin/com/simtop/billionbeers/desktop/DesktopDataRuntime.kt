@@ -7,6 +7,7 @@ import com.simtop.beer_database.database.BeersDatabaseConstructor
 import com.simtop.beer_database.database.MIGRATION_1_2
 import com.simtop.beer_database.database.MIGRATION_2_3
 import com.simtop.beer_database.database.MIGRATION_3_4
+import com.simtop.beer_database.database.MIGRATION_4_5
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.CoroutineDispatcherProvider
@@ -121,6 +122,6 @@ interface DesktopHostModule {
   fun provideDatabase(config: DesktopDataConfig): BeersDatabase =
     Room.databaseBuilder(config.databasePath) { BeersDatabaseConstructor.initialize() }
       .setDriver(BundledSQLiteDriver())
-      .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+      .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
       .build()
 }

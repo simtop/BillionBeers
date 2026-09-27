@@ -69,12 +69,31 @@ class BeersStorageContractTest {
 
   private class InMemoryBeersStorage : BeersStorage {
     private val beers = MutableStateFlow<List<StoredBeer>>(emptyList())
+    private val presets = MutableStateFlow<List<StoredFilterPreset>>(emptyList())
     private val states = mutableMapOf<String, StoredPagingState>()
 
     override fun observeBeers(): Flow<List<StoredBeer>> = beers
 
     override fun observeFavoriteBeers(): Flow<List<StoredBeer>> =
       beers.map { rows -> rows.filter { it.isFavorite }.sortedWith(compareBy({ it.name }, { it.id })) }
+
+    override fun observeSavedFilterPresets(): Flow<List<StoredFilterPreset>> = presets
+
+    override suspend fun saveFilterPreset(preset: StoredFilterPreset) {
+      val rows = presets.value.toMutableList()
+      val index = rows.indexOfFirst { it.id == preset.id }
+      if (index < 0) require(rows.size < MAX_STORED_FILTER_PRESETS)
+      if (index < 0) rows += preset else rows[index] = preset
+      presets.value = rows.sortedWith(compareByDescending<StoredFilterPreset> { it.updatedAt }.thenBy { it.name }.thenBy { it.id })
+    }
+
+    override suspend fun renameFilterPreset(id: String, name: String, updatedAt: Long) {
+      presets.value = presets.value.map { if (it.id == id) it.copy(name = name, updatedAt = updatedAt) else it }
+    }
+
+    override suspend fun deleteFilterPreset(id: String) {
+      presets.value = presets.value.filterNot { it.id == id }
+    }
 
     override suspend fun insertAll(beers: List<StoredBeer>) {
       val rows = this.beers.value.toMutableList()

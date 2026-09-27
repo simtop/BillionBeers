@@ -31,6 +31,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,6 +41,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.beerdomain.domain.models.BeersQuery
+import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.billionbeers.shared.beerbrowse.BrowseStrings
@@ -56,11 +59,13 @@ import com.simtop.billionbeers.shared.favorites.SharedFavoritesContent
 import com.simtop.core.core.CommonUiErrorKey
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.CoroutineDispatcherProvider
+import com.simtop.core.core.SystemEpochTimeProvider
 import com.simtop.navigation.contract.PortableRoute
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.launch
 
 /** Host-owned copy and formatting strings for the portable application shell. */
 data class SharedAppStrings(
@@ -70,6 +75,12 @@ data class SharedAppStrings(
   val favorites: String,
   val search: String,
   val browse: String,
+  val savedFilters: String,
+  val savedFiltersEmpty: String,
+  val saveFilter: String,
+  val filterNameHint: String,
+  val renameFilter: String,
+  val deleteFilter: String,
   val retry: String,
   val error: String,
   val listLoadMoreFailed: String,
@@ -129,6 +140,7 @@ fun SharedAppShell(
       SharedAppNavigationState(repository, pagerFactory, coroutineDispatcher, initialRoute)
     }
   DisposableEffect(navigation) { onDispose { navigation.disposeAll() } }
+  val coroutineScope = rememberCoroutineScope()
 
   LaunchedEffect(host.routeRequests) {
     host.routeRequests.collectLatest(navigation::replaceFromRoute)
@@ -158,6 +170,29 @@ fun SharedAppShell(
     host.onNavigationEvent(SharedAppNavigationEvent.Push(navigation.current.route))
   }
 
+  fun savePreset(name: String, query: BeersQuery) {
+    val normalizedName = name.trim()
+    if (normalizedName.isEmpty() || normalizedName.length > SavedFilterPreset.MAX_NAME_LENGTH) {
+      return
+    }
+    val updatedAt = SystemEpochTimeProvider().epochMillis()
+    coroutineScope.launch {
+      repository.saveFilterPreset(
+        SavedFilterPreset(
+          id = "preset-${normalizedName.hashCode()}-${query.hashCode()}",
+          name = normalizedName,
+          query = query,
+          updatedAt = updatedAt,
+        )
+      )
+    }
+  }
+
+  fun applyPreset(preset: SavedFilterPreset) {
+    navigation.selectSavedFilter(preset)
+    host.onNavigationEvent(SharedAppNavigationEvent.Push(navigation.current.route))
+  }
+
   BillionBeersTheme(darkTheme = host.darkTheme) {
     Scaffold(
       modifier = modifier,
@@ -173,6 +208,8 @@ fun SharedAppShell(
                 PortableRoute.BeersList -> strings.list
                 PortableRoute.Favorites -> strings.favorites
                 PortableRoute.BeersSearch -> strings.search
+                PortableRoute.SavedFilterPresets ->
+                  (entry as? SavedFilterResultsEntry)?.preset?.name ?: strings.savedFilters
                 PortableRoute.BeerBrowse -> strings.browse
                 is PortableRoute.BeerBrowseSelection -> route.category.name
                 is PortableRoute.BeerDetail -> route.beer.name
@@ -185,7 +222,11 @@ fun SharedAppShell(
         }
       },
       bottomBar = {
-        if (route == PortableRoute.BeersList || route == PortableRoute.Favorites) {
+        if (
+          route == PortableRoute.BeersList ||
+            route == PortableRoute.Favorites ||
+            route == PortableRoute.SavedFilterPresets
+        ) {
           NavigationBar {
             NavigationBarItem(
               selected = route == PortableRoute.BeersList,
@@ -198,6 +239,12 @@ fun SharedAppShell(
               onClick = { navigate(PortableRoute.Favorites) },
               icon = {},
               label = { Text(strings.favorites) },
+            )
+            NavigationBarItem(
+              selected = route == PortableRoute.SavedFilterPresets,
+              onClick = { navigate(PortableRoute.SavedFilterPresets) },
+              icon = {},
+              label = { Text(strings.savedFilters) },
             )
           }
         }
@@ -227,6 +274,7 @@ fun SharedAppShell(
                 onBeerClick = { navigate(PortableRoute.BeerDetail(it)) },
                 onSearch = { navigate(PortableRoute.BeersSearch) },
                 onBrowse = { navigate(PortableRoute.BeerBrowse) },
+                onSaveQuery = { name -> savePreset(name, BeersQuery()) },
               )
             is FavoritesEntry ->
               FavoritesDestination(
@@ -235,12 +283,37 @@ fun SharedAppShell(
                 host = host,
                 onBeerClick = { navigate(PortableRoute.BeerDetail(it)) },
               )
+            is SavedFiltersEntry ->
+              SavedFiltersDestination(
+                entry = entry,
+                strings = strings,
+                onApply = ::applyPreset,
+                onRename = { preset, name ->
+                  val normalizedName = name.trim()
+                  if (
+                    normalizedName.isNotEmpty() &&
+                      normalizedName.length <= SavedFilterPreset.MAX_NAME_LENGTH
+                  ) {
+                    coroutineScope.launch {
+                      repository.renameFilterPreset(
+                        preset.id,
+                        normalizedName,
+                        SystemEpochTimeProvider().epochMillis(),
+                      )
+                    }
+                  }
+                },
+                onDelete = { preset ->
+                  coroutineScope.launch { repository.deleteFilterPreset(preset.id) }
+                },
+              )
             is SearchEntry ->
               SearchDestination(
                 entry = entry,
                 strings = strings,
                 host = host,
                 onBeerClick = { navigate(PortableRoute.BeerDetail(it)) },
+                onSaveQuery = { name -> savePreset(name, BeersQuery(entry.viewModel.query.value)) },
               )
             is BrowseHomeEntry ->
               BrowseHomeDestination(
@@ -252,6 +325,15 @@ fun SharedAppShell(
               )
             is BrowseBeersEntry ->
               BrowseBeersDestination(
+                entry = entry,
+                strings = strings,
+                host = host,
+                onBack = ::pop,
+                onBeerClick = { navigate(PortableRoute.BeerDetail(it)) },
+                onSaveQuery = { name -> savePreset(name, entry.selection.toQuery()) },
+              )
+            is SavedFilterResultsEntry ->
+              SavedFilterResultsDestination(
                 entry = entry,
                 strings = strings,
                 host = host,
@@ -350,6 +432,7 @@ private fun ListDestination(
   onBeerClick: (Beer) -> Unit,
   onSearch: () -> Unit,
   onBrowse: () -> Unit,
+  onSaveQuery: (String) -> Unit = {},
 ) {
   val viewState by entry.viewModel.beerListViewState.collectAsState()
   Column(Modifier.fillMaxSize()) {
@@ -373,7 +456,7 @@ private fun ListDestination(
         listState = entry.listState,
       )
     }
-    ShellActions(strings, onSearch, onBrowse)
+    ShellActions(strings, onSearch, onBrowse, onSaveQuery)
   }
 }
 
@@ -400,10 +483,12 @@ private fun SearchDestination(
   strings: SharedAppStrings,
   host: SharedAppHost,
   onBeerClick: (Beer) -> Unit,
+  onSaveQuery: (String) -> Unit,
 ) {
   val query by entry.viewModel.query.collectAsState()
   val viewState by entry.viewModel.viewState.collectAsState()
   val count = (viewState as? CommonUiState.Success)?.data?.items?.size ?: 0
+  var presetName by remember { mutableStateOf("") }
   Column(Modifier.fillMaxSize()) {
     OutlinedTextField(
       value = query,
@@ -412,6 +497,27 @@ private fun SearchDestination(
       singleLine = true,
       modifier = Modifier.fillMaxWidth().padding(12.dp),
     )
+    Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
+      OutlinedTextField(
+        value = presetName,
+        onValueChange = { value ->
+          if (value.length <= SavedFilterPreset.MAX_NAME_LENGTH) presetName = value
+        },
+        label = { Text(strings.filterNameHint) },
+        modifier = Modifier.weight(1f),
+        singleLine = true,
+      )
+      Button(
+        onClick = {
+          onSaveQuery(presetName)
+          presetName = ""
+        },
+        enabled = presetName.isNotBlank() && query.isNotBlank(),
+        modifier = Modifier.padding(start = 8.dp),
+      ) {
+        Text(strings.saveFilter)
+      }
+    }
     Box(Modifier.weight(1f)) {
       SharedBeersSearchContent(
         viewState = viewState,
@@ -473,22 +579,49 @@ private fun BrowseBeersDestination(
   host: SharedAppHost,
   onBack: () -> Unit,
   onBeerClick: (Beer) -> Unit,
+  onSaveQuery: (String) -> Unit,
 ) {
   val viewState by entry.viewModel.viewState.collectAsState()
-  SharedBrowseBeersContent(
-    strings = strings.browseStrings,
-    title = entry.selection.name,
-    viewState = viewState,
-    onBack = onBack,
-    backIcon = host.backIcon,
-    onBeerClick = onBeerClick,
-    onScrollToBottom = entry.viewModel::onScrollToBottom,
-    onRetryLoadMore = entry.viewModel::onRetryLoadMore,
-    onRetryFirstPage = entry.viewModel::onRetryFirstPage,
-    errorContent = host.errorContent,
-    beerRow = { beer, onClick -> host.beerRow(beer, onClick) },
-    listState = entry.listState,
-  )
+  var presetName by remember { mutableStateOf("") }
+  Column(Modifier.fillMaxSize()) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
+      OutlinedTextField(
+        value = presetName,
+        onValueChange = { value ->
+          if (value.length <= SavedFilterPreset.MAX_NAME_LENGTH) presetName = value
+        },
+        label = { Text(strings.filterNameHint) },
+        modifier = Modifier.weight(1f),
+        singleLine = true,
+      )
+      Button(
+        onClick = {
+          onSaveQuery(presetName)
+          presetName = ""
+        },
+        enabled = presetName.isNotBlank(),
+        modifier = Modifier.padding(start = 8.dp),
+      ) {
+        Text(strings.saveFilter)
+      }
+    }
+    Box(Modifier.weight(1f)) {
+      SharedBrowseBeersContent(
+        strings = strings.browseStrings,
+        title = entry.selection.name,
+        viewState = viewState,
+        onBack = onBack,
+        backIcon = host.backIcon,
+        onBeerClick = onBeerClick,
+        onScrollToBottom = entry.viewModel::onScrollToBottom,
+        onRetryLoadMore = entry.viewModel::onRetryLoadMore,
+        onRetryFirstPage = entry.viewModel::onRetryFirstPage,
+        errorContent = host.errorContent,
+        beerRow = { beer, onClick -> host.beerRow(beer, onClick) },
+        listState = entry.listState,
+      )
+    }
+  }
 }
 
 @Composable
@@ -537,11 +670,40 @@ private fun DetailDestination(
 }
 
 @Composable
-private fun ShellActions(strings: SharedAppStrings, onSearch: () -> Unit, onBrowse: () -> Unit) {
-  Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
-    Button(onClick = onSearch, modifier = Modifier.weight(1f)) { Text(strings.search) }
-    Button(onClick = onBrowse, modifier = Modifier.weight(1f).padding(start = 8.dp)) {
-      Text(strings.browse)
+private fun ShellActions(
+  strings: SharedAppStrings,
+  onSearch: () -> Unit,
+  onBrowse: () -> Unit,
+  onSaveQuery: (String) -> Unit,
+) {
+  var name by remember { mutableStateOf("") }
+  Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
+    Row(Modifier.fillMaxWidth()) {
+      Button(onClick = onSearch, modifier = Modifier.weight(1f)) { Text(strings.search) }
+      Button(onClick = onBrowse, modifier = Modifier.weight(1f).padding(start = 8.dp)) {
+        Text(strings.browse)
+      }
+    }
+    Row(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+      OutlinedTextField(
+        value = name,
+        onValueChange = { value ->
+          if (value.length <= SavedFilterPreset.MAX_NAME_LENGTH) name = value
+        },
+        label = { Text(strings.filterNameHint) },
+        modifier = Modifier.weight(1f),
+        singleLine = true,
+      )
+      Button(
+        onClick = {
+          onSaveQuery(name)
+          name = ""
+        },
+        enabled = name.isNotBlank(),
+        modifier = Modifier.padding(start = 8.dp),
+      ) {
+        Text(strings.saveFilter)
+      }
     }
   }
 }

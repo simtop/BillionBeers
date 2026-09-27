@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewModelScope
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
+import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.billionbeers.shared.beerbrowse.BrowseBeersViewModel
@@ -97,6 +98,42 @@ internal class SearchEntry(
 ) : SharedAppEntry {
   override val route = PortableRoute.BeersSearch
   val viewModel = BeersSearchViewModel(coroutineDispatcher, pagerFactory)
+  val listState = LazyListState()
+  private var closed = false
+  override val isClosed: Boolean
+    get() = closed
+
+  override fun close() {
+    if (!closed) {
+      closed = true
+      viewModel.viewModelScope.cancel()
+    }
+  }
+}
+
+internal class SavedFiltersEntry(
+  override val id: Long,
+  private val repository: BeersRepository,
+) : SharedAppEntry {
+  override val route = PortableRoute.SavedFilterPresets
+  val presets = repository.observeSavedFilterPresets()
+  private var closed = false
+  override val isClosed: Boolean
+    get() = closed
+
+  override fun close() {
+    closed = true
+  }
+}
+
+internal class SavedFilterResultsEntry(
+  override val id: Long,
+  val preset: SavedFilterPreset,
+  pagerFactory: BeersPagerFactory,
+  coroutineDispatcher: CoroutineDispatcherProvider,
+) : SharedAppEntry {
+  override val route = PortableRoute.SavedFilterPresets
+  val viewModel = BrowseBeersViewModel(coroutineDispatcher, pagerFactory, preset.query)
   val listState = LazyListState()
   private var closed = false
   override val isClosed: Boolean
@@ -203,6 +240,10 @@ internal class SharedAppNavigationState(
     append(BrowseBeersEntry(nextId(), selection, pagerFactory, coroutineDispatcher))
   }
 
+  fun selectSavedFilter(preset: SavedFilterPreset) {
+    append(SavedFilterResultsEntry(nextId(), preset, pagerFactory, coroutineDispatcher))
+  }
+
   fun pop(): Boolean {
     if (entries.size == 1) return false
     val removed = entries.last()
@@ -248,6 +289,7 @@ internal class SharedAppNavigationState(
       PortableRoute.BeersList -> ListEntry(nextId(), repository, pagerFactory)
       PortableRoute.Favorites -> FavoritesEntry(nextId(), repository)
       PortableRoute.BeersSearch -> SearchEntry(nextId(), pagerFactory, coroutineDispatcher)
+      PortableRoute.SavedFilterPresets -> SavedFiltersEntry(nextId(), repository)
       PortableRoute.BeerBrowse -> BrowseHomeEntry(nextId(), repository)
       is PortableRoute.BeerBrowseSelection ->
         BrowseBeersEntry(
@@ -262,5 +304,7 @@ internal class SharedAppNavigationState(
   private fun nextId(): Long = ++nextId
 
   private fun PortableRoute.isRoot(): Boolean =
-    this == PortableRoute.BeersList || this == PortableRoute.Favorites
+    this == PortableRoute.BeersList ||
+      this == PortableRoute.Favorites ||
+      this == PortableRoute.SavedFilterPresets
 }

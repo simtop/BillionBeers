@@ -4,6 +4,7 @@ package com.simtop.beer_storage.browser
 
 import com.simtop.beer_storage.api.BeersStorage
 import com.simtop.beer_storage.api.StoredBeer
+import com.simtop.beer_storage.api.StoredFilterPreset
 import com.simtop.beer_storage.api.StoredPagingState
 import kotlin.JsFun
 import kotlin.js.JsString
@@ -39,6 +40,7 @@ import kotlinx.serialization.json.Json
     const db = request.result;
     if (!db.objectStoreNames.contains('beers')) db.createObjectStore('beers', {keyPath: 'id'});
     if (!db.objectStoreNames.contains('paging_state')) db.createObjectStore('paging_state', {keyPath: 'surface'});
+    if (!db.objectStoreNames.contains('filter_presets')) db.createObjectStore('filter_presets', {keyPath: 'id'});
   };
   request.onblocked = () => failOpen(new Error('IndexedDB open blocked'));
   request.onerror = () => failOpen(request.error || new Error('IndexedDB open failed'));
@@ -50,13 +52,15 @@ import kotlinx.serialization.json.Json
     openSettled = true;
     const db = request.result;
     db.onversionchange = () => db.close();
-    const readOnly = ['readBeers', 'readFavorites', 'readPaging', 'countPaging', 'count'].includes(operation);
+    const readOnly = ['readBeers', 'readFavorites', 'readPaging', 'readPresets', 'countPaging', 'count'].includes(operation);
     const stores = operation === 'readPaging' || operation === 'countPaging' ? ['paging_state'] :
+      operation === 'readPresets' || operation === 'savePreset' || operation === 'renamePreset' || operation === 'deletePreset' ? ['filter_presets'] :
       operation === 'count' || operation === 'readBeers' || operation === 'readFavorites' ? ['beers'] :
       operation === 'deleteAll' ? ['beers', 'paging_state'] : ['beers', 'paging_state'];
     let tx = null;
     let beers = null;
     let paging = null;
+    let presets = null;
     let result = 'null';
     let settled = false;
     const close = () => { try { db.close(); } catch (_) {} };
@@ -75,6 +79,7 @@ import kotlinx.serialization.json.Json
       tx = db.transaction(stores, readOnly ? 'readonly' : 'readwrite');
       beers = stores.includes('beers') ? tx.objectStore('beers') : null;
       paging = stores.includes('paging_state') ? tx.objectStore('paging_state') : null;
+      presets = stores.includes('filter_presets') ? tx.objectStore('filter_presets') : null;
       tx.onerror = () => fail(tx.error || new Error('IndexedDB transaction failed'));
       tx.onabort = () => fail(tx.error || new Error('IndexedDB transaction aborted'));
       tx.oncomplete = () => {
@@ -95,6 +100,49 @@ import kotlinx.serialization.json.Json
         const request = paging.get(payload);
         request.onsuccess = () => finishRead(request.result || null);
         request.onerror = () => fail(request.error);
+      } else if (operation === 'readPresets') {
+        const request = presets.getAll();
+        request.onsuccess = () => {
+          request.result.sort((a, b) => (b.updatedAt - a.updatedAt) || a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+          finishRead(request.result);
+        };
+        request.onerror = () => fail(request.error);
+      } else if (operation === 'savePreset') {
+        const input = JSON.parse(payload);
+        const existingRequest = presets.get(input.id);
+        existingRequest.onsuccess = () => {
+          if (!existingRequest.result) {
+            const countRequest = presets.count();
+            countRequest.onsuccess = () => {
+              if (countRequest.result >= 10) {
+                fail(new Error('At most 10 filter presets may be saved'));
+                return;
+              }
+              presets.put(input);
+              finishMutation();
+            };
+            countRequest.onerror = () => fail(countRequest.error);
+          } else {
+            presets.put(input);
+            finishMutation();
+          }
+        };
+        existingRequest.onerror = () => fail(existingRequest.error);
+      } else if (operation === 'renamePreset') {
+        const input = JSON.parse(payload);
+        const request = presets.get(input.id);
+        request.onsuccess = () => {
+          if (!request.result) {
+            finishMutation();
+            return;
+          }
+          presets.put({...request.result, name: input.name, updatedAt: input.updatedAt});
+          finishMutation();
+        };
+        request.onerror = () => fail(request.error);
+      } else if (operation === 'deletePreset') {
+        presets.delete(payload);
+        finishMutation();
       } else if (operation === 'countPaging') {
         const request = paging.count();
         request.onsuccess = () => finishRead(request.result);
@@ -341,6 +389,16 @@ private data class BeerRecord(
 )
 
 @Serializable
+private data class PresetRecord(
+  val id: String,
+  val name: String,
+  val search: String?,
+  val styleId: String?,
+  val breweryId: String?,
+  val updatedAt: Long,
+)
+
+@Serializable
 private data class PagingRecord(
   val surface: String,
   val nextKey: Int?,
@@ -366,6 +424,7 @@ class IndexedDbBeersStorage(
   private val refreshMutex = Mutex()
   private val beersState = MutableStateFlow<List<StoredBeer>>(emptyList())
   private val favoritesState = MutableStateFlow<List<StoredBeer>>(emptyList())
+  private val presetsState = MutableStateFlow<List<StoredFilterPreset>>(emptyList())
   private val initialized = CompletableDeferred<Unit>()
   private var closed = false
   private val invalidationSource = createInvalidationSource().toString()
@@ -391,6 +450,8 @@ class IndexedDbBeersStorage(
   override fun observeBeers(): Flow<List<StoredBeer>> = initializedFlow(beersState)
 
   override fun observeFavoriteBeers(): Flow<List<StoredBeer>> = initializedFlow(favoritesState)
+
+  override fun observeSavedFilterPresets(): Flow<List<StoredFilterPreset>> = initializedFlow(presetsState)
 
   suspend fun awaitReady() {
     initialized.await()
@@ -425,6 +486,30 @@ class IndexedDbBeersStorage(
     mutate("upsertFavorite", json.encodeToString(toRecord(beer)))
   }
 
+  override suspend fun saveFilterPreset(preset: StoredFilterPreset) {
+    validatePreset(preset)
+    mutate("savePreset", json.encodeToString(preset.toRecord()), refreshAfter = true)
+  }
+
+  override suspend fun renameFilterPreset(id: String, name: String, updatedAt: Long) {
+    require(id.isNotBlank()) { "Saved filter preset id must not be blank" }
+    require(name.isNotBlank()) { "Saved filter preset name must not be blank" }
+    require(name.length <= MAX_PRESET_NAME_LENGTH) {
+      "Saved filter preset name must be at most $MAX_PRESET_NAME_LENGTH characters"
+    }
+    require(updatedAt >= 0L) { "Saved filter preset timestamp must not be negative" }
+    mutate(
+      "renamePreset",
+      json.encodeToString(RenamePresetPayload(id, name, updatedAt)),
+      refreshAfter = true,
+    )
+  }
+
+  override suspend fun deleteFilterPreset(id: String) {
+    require(id.isNotBlank()) { "Saved filter preset id must not be blank" }
+    mutate("deletePreset", id, refreshAfter = true)
+  }
+
   override suspend fun deleteAll() {
     mutate("deleteAll", "null")
   }
@@ -443,12 +528,12 @@ class IndexedDbBeersStorage(
     scope.coroutineContext.cancel()
   }
 
-  private suspend fun mutate(operation: String, payload: String) {
+  private suspend fun mutate(operation: String, payload: String, refreshAfter: Boolean = false) {
     initialized.await()
     writeMutex.withLock {
       check(!closed) { "IndexedDbBeersStorage is closed" }
       val mutation = json.decodeFromString<MutationRecord>(execute(operation, payload))
-      applyMutation(mutation)
+      if (refreshAfter) refresh() else applyMutation(mutation)
       liveStorages[databaseName]
         ?.filter { it !== this && !it.closed }
         ?.forEach { peer -> peer.scope.launch { peer.refresh() } }
@@ -465,7 +550,7 @@ class IndexedDbBeersStorage(
   private suspend fun execute(operation: String, payload: String): String =
     executeIndexedDb(databaseName, DATABASE_VERSION, operation, payload).await().toString()
 
-  private fun initializedFlow(state: MutableStateFlow<List<StoredBeer>>): Flow<List<StoredBeer>> =
+  private fun <T> initializedFlow(state: MutableStateFlow<List<T>>): Flow<List<T>> =
     flow {
       initialized.await()
       emitAll(state.asStateFlow())
@@ -488,21 +573,33 @@ class IndexedDbBeersStorage(
     refreshMutex.withLock {
       if (closed) return
       val beers = json.decodeFromString<List<BeerRecord>>(execute("readBeers", "")).map(BeerRecord::toStored)
-      publishSnapshot(beers)
+      val presets = json.decodeFromString<List<PresetRecord>>(execute("readPresets", "")).map(PresetRecord::toStored)
+      publishSnapshot(beers, presets)
     }
   }
 
-  private fun publishSnapshot(beers: List<StoredBeer>) {
+  private fun publishSnapshot(
+    beers: List<StoredBeer>,
+    presets: List<StoredFilterPreset> = presetsState.value,
+  ) {
     val sortedBeers = beers.sortedWith(compareBy<StoredBeer> { it.name }.thenBy { it.id })
     beersState.value = sortedBeers
     favoritesState.value = sortedBeers.filter { it.isFavorite }
+    presetsState.value = presets.sortedWith(compareByDescending<StoredFilterPreset> { it.updatedAt }.thenBy { it.name }.thenBy { it.id })
   }
 
   private companion object {
     const val DEFAULT_DATABASE_NAME = "billionbeers"
-    const val DATABASE_VERSION = 1
+    const val DATABASE_VERSION = 2
   }
 }
+
+@Serializable
+private data class RenamePresetPayload(
+  val id: String,
+  val name: String,
+  val updatedAt: Long,
+)
 
 @Serializable
 private data class InsertPagePayload(
@@ -511,6 +608,23 @@ private data class InsertPagePayload(
   val nextKey: Int?,
   val totalCount: Int?,
 )
+
+private const val MAX_PRESET_NAME_LENGTH = 64
+
+private fun validatePreset(preset: StoredFilterPreset) {
+  require(preset.id.isNotBlank()) { "Saved filter preset id must not be blank" }
+  require(preset.name.isNotBlank()) { "Saved filter preset name must not be blank" }
+  require(preset.name.length <= MAX_PRESET_NAME_LENGTH) {
+    "Saved filter preset name must be at most $MAX_PRESET_NAME_LENGTH characters"
+  }
+  require(preset.updatedAt >= 0L) { "Saved filter preset timestamp must not be negative" }
+}
+
+private fun StoredFilterPreset.toRecord() =
+  PresetRecord(id, name, search, styleId, breweryId, updatedAt)
+
+private fun PresetRecord.toStored() =
+  StoredFilterPreset(id, name, search, styleId, breweryId, updatedAt)
 
 private fun toRecord(beer: StoredBeer) = BeerRecord(
   id = beer.id,

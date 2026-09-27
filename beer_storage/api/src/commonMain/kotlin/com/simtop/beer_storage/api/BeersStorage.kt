@@ -2,6 +2,8 @@ package com.simtop.beer_storage.api
 
 import kotlinx.coroutines.flow.Flow
 
+const val MAX_STORED_FILTER_PRESETS = 10
+
 /**
  * Portable persistence contract for the beer catalog. Implementations must emit only committed
  * state, preserve local-only flags during catalog refreshes, and write a page with its bookmark as
@@ -9,6 +11,14 @@ import kotlinx.coroutines.flow.Flow
  */
 interface BeersStorage {
   fun observeBeers(): Flow<List<StoredBeer>>
+
+  fun observeSavedFilterPresets(): Flow<List<StoredFilterPreset>>
+
+  suspend fun saveFilterPreset(preset: StoredFilterPreset)
+
+  suspend fun renameFilterPreset(id: String, name: String, updatedAt: Long)
+
+  suspend fun deleteFilterPreset(id: String)
 
   fun observeFavoriteBeers(): Flow<List<StoredBeer>>
 
@@ -54,6 +64,15 @@ data class StoredBeer(
   val fermentationMethod: String = "",
   val ingredients: List<String> = emptyList(),
   val recommendedGlasses: List<String> = emptyList(),
+)
+
+data class StoredFilterPreset(
+  val id: String,
+  val name: String,
+  val search: String?,
+  val styleId: String?,
+  val breweryId: String?,
+  val updatedAt: Long,
 )
 
 data class StoredPagingState(

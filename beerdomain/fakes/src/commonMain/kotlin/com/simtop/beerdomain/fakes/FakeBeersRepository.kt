@@ -9,6 +9,7 @@ import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.beerdomain.domain.models.CatalogCacheStatus
+import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.CachePolicy
 import com.simtop.core.core.Either
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.map
 class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersRepository {
 
   private val beersFlow = MutableStateFlow<List<Beer>>(initialBeers)
+  private val presetsFlow = MutableStateFlow<List<SavedFilterPreset>>(emptyList())
 
   // Helper to inspect state
   fun getBeers(): List<Beer> = beersFlow.value
@@ -41,6 +43,24 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersReposit
 
   override suspend fun countDBEntries(): Int {
     return beersFlow.value.size
+  }
+
+  override fun observeSavedFilterPresets(): Flow<List<SavedFilterPreset>> = presetsFlow
+
+  override suspend fun saveFilterPreset(preset: SavedFilterPreset) {
+    val current = presetsFlow.value.toMutableList()
+    val index = current.indexOfFirst { it.id == preset.id }
+    if (index < 0) require(current.size < SavedFilterPreset.MAX_COUNT)
+    if (index < 0) current += preset else current[index] = preset
+    presetsFlow.value = current.sortedWith(compareByDescending<SavedFilterPreset> { it.updatedAt }.thenBy { it.name }.thenBy { it.id })
+  }
+
+  override suspend fun renameFilterPreset(id: String, name: String, updatedAt: Long) {
+    presetsFlow.value = presetsFlow.value.map { if (it.id == id) it.copy(name = name, updatedAt = updatedAt) else it }
+  }
+
+  override suspend fun deleteFilterPreset(id: String) {
+    presetsFlow.value = presetsFlow.value.filterNot { it.id == id }
   }
 
   override fun observeBeers(): Flow<List<Beer>> {

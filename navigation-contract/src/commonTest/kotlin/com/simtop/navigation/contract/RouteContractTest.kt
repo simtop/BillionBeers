@@ -37,6 +37,7 @@ class RouteContractTest {
         PortableRoute.BeersList,
         PortableRoute.Favorites,
         PortableRoute.BeersSearch,
+        PortableRoute.SavedFilterPresets,
         PortableRoute.BeerBrowse,
         PortableRoute.BeerDetail(beer),
       )

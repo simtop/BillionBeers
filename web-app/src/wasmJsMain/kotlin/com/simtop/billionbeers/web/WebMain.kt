@@ -216,6 +216,7 @@ private suspend fun resolveWebHash(
     null -> PortableRoute.BeersList
     WebRouteDestination.Favorites -> PortableRoute.Favorites
     WebRouteDestination.Search -> PortableRoute.BeersSearch
+    WebRouteDestination.SavedFilters -> PortableRoute.SavedFilterPresets
     WebRouteDestination.Browse -> PortableRoute.BeerBrowse
     is WebRouteDestination.BrowseSelection ->
       PortableRoute.BeerBrowseSelection(
@@ -392,6 +393,12 @@ private val webStrings =
     favorites = "Favorites",
     search = "Search",
     browse = "Browse",
+    savedFilters = "Saved filters",
+    savedFiltersEmpty = "No saved filters yet",
+    saveFilter = "Save",
+    filterNameHint = "Filter name",
+    renameFilter = "Rename",
+    deleteFilter = "Delete",
     retry = "Retry",
     error = "Unable to load beers",
     listLoadMoreFailed = "More beers could not be loaded",

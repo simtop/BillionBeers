@@ -9,6 +9,7 @@ import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.beerdomain.domain.models.CatalogCacheStatus
+import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.core.core.CachePolicy
 import com.simtop.core.core.Either
 import kotlinx.coroutines.flow.Flow
@@ -20,6 +21,14 @@ import kotlinx.coroutines.flow.Flow
  */
 interface BeersRepository {
   suspend fun countDBEntries(): Int
+
+  fun observeSavedFilterPresets(): Flow<List<SavedFilterPreset>>
+
+  suspend fun saveFilterPreset(preset: SavedFilterPreset)
+
+  suspend fun renameFilterPreset(id: String, name: String, updatedAt: Long)
+
+  suspend fun deleteFilterPreset(id: String)
 
   fun observeBeers(): Flow<List<Beer>>
 

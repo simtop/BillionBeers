@@ -2,7 +2,9 @@ package com.simtop.beer_data.fakes
 
 import com.simtop.beer_storage.api.BeersStorage
 import com.simtop.beer_storage.api.StoredBeer
+import com.simtop.beer_storage.api.StoredFilterPreset
 import com.simtop.beer_storage.api.StoredPagingState
+import com.simtop.beer_storage.api.MAX_STORED_FILTER_PRESETS
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
@@ -10,6 +12,7 @@ import kotlinx.coroutines.flow.map
 class FakeBeersLocalSource : BeersStorage {
 
   private val beersFlow = MutableStateFlow<List<StoredBeer>>(emptyList())
+  private val presetsFlow = MutableStateFlow<List<StoredFilterPreset>>(emptyList())
   private val pagingState = mutableMapOf<String, StoredPagingState>()
 
   // Helper to inspect state
@@ -19,6 +22,29 @@ class FakeBeersLocalSource : BeersStorage {
 
   override fun observeFavoriteBeers(): Flow<List<StoredBeer>> = beersFlow.map { beers ->
     beers.filter { it.isFavorite }.sortedWith(compareBy({ it.name }, { it.id }))
+  }
+
+  override fun observeSavedFilterPresets(): Flow<List<StoredFilterPreset>> = presetsFlow
+
+  override suspend fun saveFilterPreset(preset: StoredFilterPreset) {
+    require(preset.id.isNotBlank() && preset.name.isNotBlank())
+    require(preset.name.length <= 64)
+    val current = presetsFlow.value.toMutableList()
+    val index = current.indexOfFirst { it.id == preset.id }
+    if (index < 0) require(current.size < MAX_STORED_FILTER_PRESETS)
+    if (index < 0) current += preset else current[index] = preset
+    presetsFlow.value = current.sortedWith(compareByDescending<StoredFilterPreset> { it.updatedAt }.thenBy { it.name }.thenBy { it.id })
+  }
+
+  override suspend fun renameFilterPreset(id: String, name: String, updatedAt: Long) {
+    require(name.isNotBlank() && name.length <= 64)
+    presetsFlow.value = presetsFlow.value.map { preset ->
+      if (preset.id == id) preset.copy(name = name, updatedAt = updatedAt) else preset
+    }.sortedWith(compareByDescending<StoredFilterPreset> { it.updatedAt }.thenBy { it.name }.thenBy { it.id })
+  }
+
+  override suspend fun deleteFilterPreset(id: String) {
+    presetsFlow.value = presetsFlow.value.filterNot { it.id == id }
   }
 
   // Mirrors the real DAO's upsert: existing rows keep their local-only availability.

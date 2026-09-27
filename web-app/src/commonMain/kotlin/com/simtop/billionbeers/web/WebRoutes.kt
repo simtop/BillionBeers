@@ -9,6 +9,8 @@ internal sealed interface WebRouteDestination {
 
   data object Search : WebRouteDestination
 
+  data object SavedFilters : WebRouteDestination
+
   data object Browse : WebRouteDestination
 
   data class BrowseSelection(val kind: Kind, val id: String) : WebRouteDestination {
@@ -26,6 +28,7 @@ internal fun parseWebHash(hash: String): WebRouteDestination? =
     hash.isBlank() || hash == "#catalog" -> WebRouteDestination.Catalog
     hash == "#favorites" -> WebRouteDestination.Favorites
     hash == "#search" -> WebRouteDestination.Search
+    hash == "#saved-filters" -> WebRouteDestination.SavedFilters
     hash == "#browse" -> WebRouteDestination.Browse
     hash.startsWith("#browse/style/") &&
       hash.removePrefix("#browse/style/").isNotBlank() &&
@@ -53,6 +56,7 @@ internal fun PortableRoute.toWebHash(): String =
     PortableRoute.BeersList -> "#catalog"
     PortableRoute.Favorites -> "#favorites"
     PortableRoute.BeersSearch -> "#search"
+    PortableRoute.SavedFilterPresets -> "#saved-filters"
     PortableRoute.BeerBrowse -> "#browse"
     is PortableRoute.BeerBrowseSelection ->
       when (val category = category) {

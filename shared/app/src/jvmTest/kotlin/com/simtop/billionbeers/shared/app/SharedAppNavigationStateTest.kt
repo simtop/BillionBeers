@@ -1,6 +1,8 @@
 package com.simtop.billionbeers.shared.app
 
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.beerdomain.domain.models.BeersQuery
+import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
 import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.core.core.DefaultCoroutineDispatcherProvider
@@ -110,6 +112,38 @@ class SharedAppNavigationStateTest {
     assertSame(category, navigation.current)
     assertTrue(navigation.entries.none { it is DetailEntry })
     assertFalse(category.isClosed)
+  }
+
+  @Test
+  fun selectingSavedFilterCreatesPagerForItsExactQuery() {
+    val repository = FakeBeersRepository()
+    val pagerFactory = FakeBeersPagerFactory(repository)
+    val navigation =
+      SharedAppNavigationState(
+        repository = repository,
+        pagerFactory = pagerFactory,
+        coroutineDispatcher = DefaultCoroutineDispatcherProvider(),
+        initialRoute = PortableRoute.BeersList,
+      )
+    val preset =
+      SavedFilterPreset(
+        id = "preset-1",
+        name = "IPA by brewery",
+        query = BeersQuery(search = "ipa", breweryId = "brewery-1"),
+        updatedAt = 1L,
+      )
+
+    navigation.navigate(PortableRoute.SavedFilterPresets)
+    val savedFilters = navigation.current as SavedFiltersEntry
+    navigation.selectSavedFilter(preset)
+    val results = navigation.current as SavedFilterResultsEntry
+
+    assertSame(savedFilters, navigation.entries.first())
+    assertEquals(preset, results.preset)
+    assertEquals(listOf(preset.query), pagerFactory.createdQueries)
+    assertTrue(navigation.pop())
+    assertTrue(results.isClosed)
+    assertSame(savedFilters, navigation.current)
   }
 
   @Test

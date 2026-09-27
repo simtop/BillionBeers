@@ -8,6 +8,8 @@ import androidx.room.Transaction
 import androidx.room.Upsert
 import com.simtop.beer_database.models.BeerDbModel
 import com.simtop.beer_database.models.PagingStateDbModel
+import com.simtop.beer_database.models.SavedFilterPresetDbModel
+import com.simtop.beer_storage.api.MAX_STORED_FILTER_PRESETS
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -17,6 +19,33 @@ abstract class BeersDao {
 
   @Query("SELECT * FROM beers WHERE is_favorite = 1 ORDER BY name, id")
   abstract fun getFavoriteBeers(): Flow<List<BeerDbModel>>
+
+  @Query("SELECT * FROM filter_presets ORDER BY updated_at DESC, name, id")
+  abstract fun getFilterPresets(): Flow<List<SavedFilterPresetDbModel>>
+
+  @Query("SELECT COUNT(id) FROM filter_presets")
+  abstract suspend fun getFilterPresetCount(): Int
+
+  @Query("SELECT id FROM filter_presets WHERE id = :id")
+  abstract suspend fun findFilterPresetId(id: String): String?
+
+  @Upsert abstract suspend fun upsertFilterPreset(preset: SavedFilterPresetDbModel)
+
+  @Transaction
+  open suspend fun saveFilterPreset(preset: SavedFilterPresetDbModel) {
+    if (findFilterPresetId(preset.id) == null) {
+      require(getFilterPresetCount() < MAX_STORED_FILTER_PRESETS) {
+        "At most $MAX_STORED_FILTER_PRESETS filter presets may be saved"
+      }
+    }
+    upsertFilterPreset(preset)
+  }
+
+  @Query("UPDATE filter_presets SET name = :name, updated_at = :updatedAt WHERE id = :id")
+  abstract suspend fun renameFilterPreset(id: String, name: String, updatedAt: Long): Int
+
+  @Query("DELETE FROM filter_presets WHERE id = :id")
+  abstract suspend fun deleteFilterPreset(id: String): Int
 
   @Insert(onConflict = OnConflictStrategy.IGNORE)
   abstract suspend fun insertIgnoringConflicts(beers: List<BeerDbModel>): List<Long>

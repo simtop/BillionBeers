@@ -12,6 +12,7 @@ import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.beerdomain.domain.models.CatalogCacheStatus
+import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.CachePolicy
 import com.simtop.core.core.Either
@@ -126,6 +127,36 @@ class BeersRepositoryImpl(
       else -> CatalogCacheStatus.Fresh
     }
   }
+
+  override fun observeSavedFilterPresets(): Flow<List<SavedFilterPreset>> =
+    beersStorage.observeSavedFilterPresets().map { presets ->
+      presets.map { preset ->
+        SavedFilterPreset(
+          id = preset.id,
+          name = preset.name,
+          query = BeersQuery(preset.search, preset.styleId, preset.breweryId),
+          updatedAt = preset.updatedAt,
+        )
+      }
+    }
+
+  override suspend fun saveFilterPreset(preset: SavedFilterPreset) {
+    beersStorage.saveFilterPreset(
+      com.simtop.beer_storage.api.StoredFilterPreset(
+        id = preset.id,
+        name = preset.name,
+        search = preset.query.search,
+        styleId = preset.query.styleId,
+        breweryId = preset.query.breweryId,
+        updatedAt = preset.updatedAt,
+      )
+    )
+  }
+
+  override suspend fun renameFilterPreset(id: String, name: String, updatedAt: Long) =
+    beersStorage.renameFilterPreset(id, name, updatedAt)
+
+  override suspend fun deleteFilterPreset(id: String) = beersStorage.deleteFilterPreset(id)
 
   override fun observeBeers(): Flow<List<Beer>> =
     beersStorage.observeBeers().map { list ->

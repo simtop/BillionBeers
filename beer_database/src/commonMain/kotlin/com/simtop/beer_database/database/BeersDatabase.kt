@@ -6,10 +6,11 @@ import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
 import com.simtop.beer_database.models.BeerDbModel
 import com.simtop.beer_database.models.PagingStateDbModel
+import com.simtop.beer_database.models.SavedFilterPresetDbModel
 
 @Database(
-  entities = [BeerDbModel::class, PagingStateDbModel::class],
-  version = 4,
+  entities = [BeerDbModel::class, PagingStateDbModel::class, SavedFilterPresetDbModel::class],
+  version = 5,
   exportSchema = true,
 )
 @ConstructedBy(BeersDatabaseConstructor::class)

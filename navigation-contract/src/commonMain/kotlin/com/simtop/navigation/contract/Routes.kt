@@ -19,6 +19,10 @@ sealed interface PortableRoute {
   data object BeersSearch : PortableRoute
 
   @Serializable
+  @SerialName("saved_filter_presets")
+  data object SavedFilterPresets : PortableRoute
+
+  @Serializable
   @SerialName("beer_browse")
   data object BeerBrowse : PortableRoute
 

@@ -6,6 +6,7 @@ import com.simtop.beer_database.database.BeersDatabase
 import com.simtop.beer_database.database.MIGRATION_1_2
 import com.simtop.beer_database.database.MIGRATION_2_3
 import com.simtop.beer_database.database.MIGRATION_3_4
+import com.simtop.beer_database.database.MIGRATION_4_5
 import com.simtop.core.core.EnvironmentConfig
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.darwin.Darwin
@@ -47,6 +48,6 @@ internal actual fun createBridgeDatabase(): BeersDatabase {
   )
   return Room.databaseBuilder<BeersDatabase>("$directory/$DATABASE_NAME")
     .setDriver(BundledSQLiteDriver())
-    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
     .build()
 }
