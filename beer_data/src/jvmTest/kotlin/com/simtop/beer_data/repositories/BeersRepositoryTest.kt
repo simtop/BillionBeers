@@ -17,6 +17,7 @@ import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.beerdomain.domain.models.CatalogCacheStatus
+import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.core.core.Either
 import com.simtop.core.core.EpochTimeProvider
 import com.simtop.core.core.LanguageProvider
@@ -52,6 +53,32 @@ class BeersRepositoryTest {
         EpochTimeProvider { now },
       )
   }
+
+  @Test
+  fun `saved filter presets map through storage and support mutations`() =
+    runTest(testDispatcher) {
+      val preset =
+        SavedFilterPreset(
+          id = "preset-1",
+          name = "IPA",
+          query = BeersQuery(search = "ipa", styleId = "style-1"),
+          updatedAt = 1L,
+        )
+
+      beersRepository.observeSavedFilterPresets().test {
+        expectThat(awaitItem()).isEqualTo(emptyList())
+
+        beersRepository.saveFilterPreset(preset)
+        expectThat(awaitItem()).isEqualTo(listOf(preset))
+
+        beersRepository.renameFilterPreset(preset.id, "Updated IPA", 2L)
+        expectThat(awaitItem()).isEqualTo(listOf(preset.copy(name = "Updated IPA", updatedAt = 2L)))
+
+        beersRepository.deleteFilterPreset(preset.id)
+        expectThat(awaitItem()).isEqualTo(emptyList())
+        cancelAndIgnoreRemainingEvents()
+      }
+    }
 
   @Test
   fun `getBeersPageFromApi maps beers with the embedded image url and carries the total count`() =

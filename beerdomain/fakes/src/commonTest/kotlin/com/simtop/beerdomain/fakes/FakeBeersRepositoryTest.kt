@@ -6,10 +6,12 @@ import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeerPage
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.CatalogCacheStatus
+import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.core.core.Either
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 
 class FakeBeersRepositoryTest {
@@ -20,6 +22,22 @@ class FakeBeersRepositoryTest {
     assertEquals(fakeBeerModel, fakeBeerListModel.single())
     assertEquals("Error getting list of beers", fakeErrorName)
     assertEquals(fakeErrorName, fakeException.message)
+  }
+
+  @Test
+  fun `saved filter preset validation rejects invalid values`() {
+    assertFailsWith<IllegalArgumentException> {
+      SavedFilterPreset("", "Valid", BeersQuery(), 0L)
+    }
+    assertFailsWith<IllegalArgumentException> {
+      SavedFilterPreset("id", "", BeersQuery(), 0L)
+    }
+    assertFailsWith<IllegalArgumentException> {
+      SavedFilterPreset("id", "x".repeat(SavedFilterPreset.MAX_NAME_LENGTH + 1), BeersQuery(), 0L)
+    }
+    assertFailsWith<IllegalArgumentException> {
+      SavedFilterPreset("id", "Valid", BeersQuery(), -1L)
+    }
   }
 
   @Test
