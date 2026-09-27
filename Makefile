@@ -53,13 +53,14 @@ UI_TEST_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,:app:)
 # One local output filter. Gateway sessions can export GRADLE_RUNNER=./gradlew.
 GRADLE_RUNNER ?= $(shell if command -v rtk >/dev/null 2>&1; then echo "rtk gradlew"; else echo "./gradlew"; fi)
 IOS_HOST_DESTINATION ?= platform=iOS Simulator,name=iPhone 17 Pro,OS=26.4
+IOS_SIMULATOR_CONFIDENCE_DIR ?= iosApp/build/ios-simulator-confidence
 NODE_BIN_DIR ?= $(shell node_path="$$(command -v node 2>/dev/null || true)"; if [ -n "$$node_path" ]; then dirname "$$node_path"; else printf '%s' /opt/homebrew/bin; fi)
 WEB_DISTRIBUTION_DIR ?= web-app/build/kotlin-webpack/wasmJs/productionExecutable
 WEB_RELEASE_CONFIDENCE_DIR ?= web-app/build/web-release-confidence
 DESKTOP_APP_DIR ?= desktop-app/build/compose/binaries/main/app/BillionBeers.app
 DESKTOP_DMG_DIR ?= desktop-app/build/compose/binaries/main/dmg
 SCREENSHOT_INVENTORY_DIR ?= build/reports/paparazzi/inventory
-.PHONY: detekt-baseline help setup setup-ai-tools update-android-skills build bundle-release release-smoke install desktop-test desktop-run desktop-live desktop-package desktop-package-test desktop-package-smoke desktop-package-verify web-run web-image-proxy-test web-static-test web-verify ios-compile ios-framework ios-test ios-host-build ios-host-run clean deep-clean test test-tier-inventory konsist check-data-layer-boundary architecture-policy compose-metrics ui-test ui-test-local ui-test-managed ui-test-managed-newest ui-test-managed-ci ui-test-managed-all emulator-create emulator-recreate emulator-start emulator-stop emulator-status emulator-delete screenshot-record screenshot-verify screenshot-clean lint android-lint format check docs-check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline check-gradle-compatibility-flags verification-metadata verification-metadata-reference verification-metadata-candidate health module-graph metro-graph architecture-report repo-doctor benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark build-budget build-budget-check jacoco-report coverage-check update-docs install-profiler install-diffuse new-feature-module new-dev-app play-listing-check play-listing-capture play-listing-reset store-frames
+.PHONY: detekt-baseline help setup setup-ai-tools update-android-skills build bundle-release release-smoke install desktop-test desktop-run desktop-live desktop-package desktop-package-test desktop-package-smoke desktop-package-verify ios-simulator-evidence web-run web-image-proxy-test web-static-test web-verify ios-compile ios-framework ios-test ios-host-build ios-host-run clean deep-clean test test-tier-inventory konsist check-data-layer-boundary architecture-policy compose-metrics ui-test ui-test-local ui-test-managed ui-test-managed-newest ui-test-managed-ci ui-test-managed-all emulator-create emulator-recreate emulator-start emulator-stop emulator-status emulator-delete screenshot-record screenshot-verify screenshot-clean lint android-lint format check docs-check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline check-gradle-compatibility-flags verification-metadata verification-metadata-reference verification-metadata-candidate health module-graph metro-graph architecture-report repo-doctor benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark build-budget build-budget-check jacoco-report coverage-check update-docs install-profiler install-diffuse new-feature-module new-dev-app play-listing-check play-listing-capture play-listing-reset store-frames
 
 help: ## Show this help message.
 	@echo "\n📊 BillionBeers Makefile Help"
@@ -199,6 +200,15 @@ ios-host-run: ios-host-build ## Install and launch the iOS host on a booted or a
 	xcrun simctl install "$$device" iosApp/build/DerivedData/Build/Products/Debug-iphonesimulator/BillionBeers.app; \
 	xcrun simctl launch "$$device" com.simtop.billionbeers.ios
 
+ios-simulator-evidence: ## Create and independently verify unsigned iOS simulator evidence from existing outputs.
+	rm -rf "$(IOS_SIMULATOR_CONFIDENCE_DIR)"
+	python3 .github/scripts/validate-native-test-reports.py .
+	python3 scripts/verify_ios_simulator_artifacts.py \
+		iosApp/build/DerivedData/Build/Products/Debug-iphonesimulator/BillionBeers.app \
+		. "$(IOS_SIMULATOR_CONFIDENCE_DIR)" \
+		--destination "$(IOS_HOST_DESTINATION)"
+	python3 scripts/verify_ios_simulator_artifacts.py --verify-packet "$(IOS_SIMULATOR_CONFIDENCE_DIR)"
+
 clean: ## Clean all build outputs.
 	$(GRADLE_RUNNER) clean
 
@@ -263,6 +273,7 @@ ci-report-test: ## Test CI diagnosis, evidence parsing, and incremental comment 
 	@python3 -m unittest discover -s .github/scripts -p 'test_*ci*.py'
 	@python3 .github/scripts/test_detect_change_scope.py
 	@python3 .github/scripts/test_validate_native_test_reports.py
+	@python3 scripts/test_verify_ios_simulator_artifacts.py
 	@python3 .github/scripts/test_summarize_test_failures.py
 
 test-tier-inventory: ## Write the informational test-tier ownership report.

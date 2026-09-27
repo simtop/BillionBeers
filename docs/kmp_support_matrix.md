@@ -9,7 +9,7 @@ host rendering, packaging, and release distribution are separate claims; one doe
 |---|---|---|
 | Android | The T9.1 audit executed `make test`, formatting, lint, architecture/static, Paparazzi, managed-device, minified `releaseSmoke` and dependency-guard gates. The Paparazzi run produced an eight-module, 275-row executed inventory. | Android remains the primary released target. The evidence is managed-emulator and local minified-release proof; physical-device breadth, manual accessibility, signing, Play distribution, upgrade/rollback and other release operations remain unclaimed. See [Android release evidence](android_release_evidence.md). |
 | Desktop | Compose Desktop macOS arm64 DMG and `.app` bundle build successfully. The verifier checks `Info.plist`, bundle identity, executable/resources, DMG presence and Mach-O arm64 identity. | Unsigned, local-only macOS arm64 structural proof. GUI launch, live API behavior, upgrades, Intel/universal, Linux, Windows, signing, notarization and public distribution are not claimed. See [Desktop host](desktop_host.md). |
-| iOS | Shared framework and unsigned Xcode simulator host build on the documented macOS/Xcode arm64 simulator setup; host lifecycle and URL-routing behavior are covered by the host implementation/tests. | Simulator-host and framework evidence only. Physical-device signing, VoiceOver/manual accessibility, distribution, network image loading and App Store delivery are not claimed. See [iOS host](ios_host.md). |
+| iOS | Shared framework, unsigned Xcode simulator host build, simulator lifecycle/URL-routing tests, and an exact simulator evidence packet containing the tested app and required native JUnit reports pass through the documented iOS sequence. | Simulator-host and framework evidence only. The packet identifies unsigned arm64 simulator bytes; physical-device signing, VoiceOver/manual accessibility, distribution, network image loading, upgrades and App Store delivery are not claimed. See [iOS host](ios_host.md). |
 | Web | Wasm browser tests, IndexedDB/runtime behavior, hash-route tests, production static-distribution verification, and a success-only exact-output release-confidence packet pass through `make web-verify`. | Chromium-compatible browser and local static-output evidence only. The packet identifies the tested files with hashes and a deterministic tree digest; it does not claim Safari/Firefox, deployed-host headers/cache behavior, upstream CDN image loading, GitHub Pages proxy behavior, signing, upgrade/rollback, or broad Web release readiness. See [Web host](web_host.md) and [ADR 0017](adr/0017-web-image-delivery.md). |
 
 ## Shared behavior and verification boundaries
@@ -30,8 +30,8 @@ The following are separate evidence categories:
 
 ## Bounded follow-up queue
 
-1. Reconcile the iOS simulator evidence with any separately authorized physical-device/signing proof;
-   otherwise keep the release claim partial.
+1. Reconcile the exact iOS simulator packet with any separately authorized physical-device/signing
+   proof; otherwise keep the iOS release claim partial even when simulator evidence is green.
 2. Reconcile the Android evidence record when the managed-device matrix, manual accessibility review
    or release/distribution evidence materially changes; otherwise keep the bounded claim above.
 3. Decide the production Web image-delivery owner and mechanism before claiming deployed image support;

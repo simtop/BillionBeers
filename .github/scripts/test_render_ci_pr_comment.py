@@ -90,6 +90,21 @@ class RenderCiPrCommentTest(unittest.TestCase):
         self.assertIn("web-static-distribution", body)
         self.assertNotIn("web-release-confidence", body)
 
+    def test_ios_simulator_packet_failure_links_only_available_evidence(self):
+        failed = job(
+            name="Native Tests (Apple)",
+            step="Create and verify iOS simulator evidence",
+            artifacts=[
+                {"name": "ios-host-build", "id": 10},
+                {"name": "native-test-reports", "id": 11},
+            ],
+        )
+        body = render([failed, job("CI Gate")])
+        self.assertIn("make ios-simulator-evidence", body)
+        self.assertIn("ios-host-build", body)
+        self.assertIn("native-test-reports", body)
+        self.assertNotIn("ios-simulator-confidence", body)
+
     def test_standalone_gate_failure_is_not_hidden(self):
         body = render([job("CI Gate", "Set up job")])
         self.assertIn("### CI Gate", body)
