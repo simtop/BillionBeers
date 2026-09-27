@@ -20,6 +20,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+private const val PRESETS_STOP_TIMEOUT_MILLIS = 5_000L
+
 @ContributesIntoMap(AppScope::class, binding = binding<ViewModel>())
 @ViewModelKey(SavedFiltersViewModel::class)
 @Inject
@@ -27,7 +29,11 @@ class SavedFiltersViewModel(private val repository: BeersRepository) : ViewModel
   val presets: StateFlow<List<SavedFilterPreset>> =
     repository
       .observeSavedFilterPresets()
-      .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000L), emptyList())
+      .stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(PRESETS_STOP_TIMEOUT_MILLIS),
+        emptyList(),
+      )
 
   fun rename(preset: SavedFilterPreset, name: String) {
     val normalizedName = name.trim()

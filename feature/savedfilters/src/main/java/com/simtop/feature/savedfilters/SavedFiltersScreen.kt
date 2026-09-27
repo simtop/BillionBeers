@@ -147,13 +147,13 @@ fun SavedFilterResultsScreen(
   onBack: () -> Unit,
   onBeerClick: (Beer) -> Unit,
   modifier: Modifier = Modifier,
-) {
-  val viewModel =
+  viewModel: SavedFilterResultsViewModel =
     assistedMetroViewModel<SavedFilterResultsViewModel, SavedFilterResultsViewModel.Factory>(
       key = route.id
     ) {
       create(route.toQuery())
-    }
+    },
+) {
   val viewState by viewModel.viewState.collectAsState()
   SavedFilterResultsContent(
     title = route.name,
@@ -168,6 +168,7 @@ fun SavedFilterResultsScreen(
 }
 
 @Composable
+@Suppress("LongParameterList")
 private fun SavedFilterResultsContent(
   title: String,
   viewState: CommonUiState<PagedListUiModel<Beer>>,
