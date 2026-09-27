@@ -63,6 +63,17 @@ class RenderCiPrCommentTest(unittest.TestCase):
             self.assertIn("not evidence of a test assertion failure", body)
             self.assertNotIn("No failed testcase", body)
 
+    def test_web_failure_has_reproduction_command_and_distribution_evidence(self):
+        failed = job(
+            name="Web Tests (Wasm/static)",
+            step="Run Web browser and static distribution verification",
+            artifacts=[{"name": "web-static-distribution", "id": 7}],
+        )
+        body = render([failed, job("CI Gate")])
+        self.assertIn("make web-verify", body)
+        self.assertIn("web-static-distribution", body)
+        self.assertNotIn("No failed testcase", body)
+
     def test_standalone_gate_failure_is_not_hidden(self):
         body = render([job("CI Gate", "Set up job")])
         self.assertIn("### CI Gate", body)

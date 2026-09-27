@@ -93,8 +93,10 @@ classify_path() {
   local f="$1"
   if [ "$f" = "scripts/coverage-check.sh" ]; then
     a_unit=true # the unit lane executes it (make coverage-check)
-  elif [ "$f" = "scripts/verify_web_static.py" ] || [ "$f" = "scripts/test_verify_web_static.py" ] || [ "$f" = "scripts/smoke_web_distribution.cjs" ]; then
-    a_web=true # the Web lane executes the static verifier, smoke and their tests
+  elif [ "$f" = "scripts/verify_web_static.py" ] || [ "$f" = "scripts/test_verify_web_static.py" ] || [ "$f" = "scripts/test_web_image_proxy.py" ] || [ "$f" = "scripts/smoke_web_distribution.cjs" ]; then
+    a_web=true # the Web lane executes the static verifier, image-proxy tests, smoke and their tests
+  elif [ "$f" = "scripts/test-tier-inventory.sh" ] || [ "$f" = "scripts/test-tier-inventory-test.py" ]; then
+    a_unit=true # the unit lane executes the inventory and its fixture test
   elif [[ "$f" =~ $INERT_RE ]] || [[ "$f" == *.md ]] || [ "$f" = "LICENSE" ]; then
     : # inert - docs, skills, local notes, every other script
   elif [[ "$f" == */src/test/snapshots/* ]]; then
@@ -152,7 +154,12 @@ if [[ "${1:-}" == "--self-test" ]]; then
   assert_lanes "feature/src/iosArm64Test/kotlin/NativeTest.kt" false false false true false
   assert_lanes "feature/src/androidTest/kotlin/AndroidTest.kt" false false true false false
   assert_lanes "scripts/verify_web_static.py" false false false false true
+  assert_lanes "scripts/test_web_image_proxy.py" false false false false true
   assert_lanes "scripts/smoke_web_distribution.cjs" false false false false true
+  assert_lanes "scripts/test-tier-inventory.sh" true false false false false
+  assert_lanes "scripts/test-tier-inventory-test.py" true false false false false
+  assert_lanes "compose-multiplatform-fixture/build.gradle.kts" true true true true true
+  assert_lanes "compose-multiplatform-fixture/karma.config.d/compose-resources.js" true true true true true
   assert_lanes "docs/guide.md" false false false false false
   assert_lanes "unknown/new-file.txt" true true true true true
   echo "KMP change-scope classifications passed"

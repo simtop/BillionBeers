@@ -7,8 +7,8 @@ never given an ADR); PRs #117, #119, #120, #121.
 
 ## Context
 
-The four heavy CI lanes — unit, Paparazzi screenshot, Gradle Managed Device instrumented, and
-Apple native — include the expensive platform validations. PR #110 already skipped the Android
+The five CI test lanes — unit, Paparazzi screenshot, Gradle Managed Device instrumented, Apple
+native, and Web — include the expensive platform validations. PR #110 already skipped the Android
 lanes when a PR's whole diff was docs/skills/scripts. What it could not do is anything finer: a PR that touches code
 *anywhere* ran the full suite on *every* push, including the push that only re-records a golden
 image or only edits an ADR.
@@ -37,11 +37,13 @@ it — "is this whole PR inert?" and "what did this push touch?" — so there is
 when the rules change, and no second copy to drift. Its final `else` runs everything, so an
 unrecognised path is never silently skipped.
 
-The current map: common production sources → all four lanes; common tests → unit and native;
+The current map: common production sources → all five lanes; common tests → unit and native;
 Apple production/test sources → native; goldens and `screenshot/` test sources → screenshot;
-`src/androidTest/` → instrumented; other `src/test/` → unit; `scripts/coverage-check.sh` → unit
-(the unit lane executes it); docs, skills, local notes and other scripts → inert; everything else →
-all four.
+`src/androidTest/` → instrumented; other `src/test/` → unit; Wasm production/test sources →
+unit, screenshot, instrumented and Web; `scripts/coverage-check.sh`,
+`scripts/test-tier-inventory.sh` and `scripts/test-tier-inventory-test.py` → unit;
+Web verifier, image-proxy and smoke scripts → Web; docs, skills, local notes and other scripts →
+inert; everything else → all five.
 
 The unit/screenshot split is only sound because the build already partitions them the same way:
 `billionbeers.android.screenshot.gradle.kts` excludes `com.simtop.billionbeers.screenshot.*` from
@@ -87,13 +89,13 @@ costly mistake; an extra run is minutes.
 
 The required workflow subscribes to GitHub's `merge_group: checks_requested` event. A merge-group
 SHA represents the latest base plus the queued entries, not the already-tested pull-request head, so
-it goes through the existing non-PR fail-open branch and runs all four heavy lanes. It never adopts
+it goes through the existing non-PR fail-open branch and runs all five test lanes. It never adopts
 a PR-head verdict. The same stable `CI Gate` is then reported for branch protection.
 
 ## Consequences
 
-Validated live rather than by argument. A docs-only push skipped all four lanes with the gate
-green; a push touching only a plain unit test ran unit alone, adopting from a run where all four
+Validated live rather than by argument. A docs-only push skipped all five lanes with the gate
+green; a push touching only a plain unit test ran unit alone, adopting from a run where all five
 had genuinely executed; and the safety property was tested directly by making the unit lane red and
 then pushing docs — **the red lane re-ran and failed again, and the gate stayed red.**
 
