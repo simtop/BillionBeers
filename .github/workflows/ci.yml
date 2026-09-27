@@ -436,6 +436,15 @@ jobs:
             --json build/ci-phase-timings/web.json
           echo '_Includes the Web browser/static verification command; job setup and artifact upload are excluded._' >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Archive Web release confidence
+        if: steps.web_verify.outcome == 'success'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: web-release-confidence
+          path: web-app/build/web-release-confidence/
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Archive verified Web distribution
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

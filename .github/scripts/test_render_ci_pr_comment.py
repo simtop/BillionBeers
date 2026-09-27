@@ -70,13 +70,25 @@ class RenderCiPrCommentTest(unittest.TestCase):
             artifacts=[
                 {"name": "web-static-distribution", "id": 7},
                 {"name": "web-smoke-evidence", "id": 8},
+                {"name": "web-release-confidence", "id": 9},
             ],
         )
         body = render([failed, job("CI Gate")])
         self.assertIn("make web-verify", body)
         self.assertIn("web-static-distribution", body)
         self.assertIn("web-smoke-evidence", body)
+        self.assertIn("web-release-confidence", body)
         self.assertNotIn("No failed testcase", body)
+
+    def test_web_failure_does_not_invent_release_confidence_artifact(self):
+        failed = job(
+            name="Web Tests (Wasm/static)",
+            step="Run Web browser and static distribution verification",
+            artifacts=[{"name": "web-static-distribution", "id": 7}],
+        )
+        body = render([failed, job("CI Gate")])
+        self.assertIn("web-static-distribution", body)
+        self.assertNotIn("web-release-confidence", body)
 
     def test_standalone_gate_failure_is_not_hidden(self):
         body = render([job("CI Gate", "Set up job")])
