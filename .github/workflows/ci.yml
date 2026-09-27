@@ -85,8 +85,8 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Or trigger it manually from the Actions tab (pick this branch in the \"Run workflow\" dropdown)." >> $GITHUB_STEP_SUMMARY
 
-  # Change-scope detector with per-lane verdict adoption. The heavy test lanes (unit / screenshot
-  # / instrumented) key their `if:` off one output each. Two levels:
+  # Change-scope detector with per-lane verdict adoption. The test lanes (unit / screenshot /
+  # instrumented / native / web) key their `if:` off one output each. Two levels:
   #
   # Level 1 (whole PR): if every file in the PR diff is in the docs/skills/scripts safe-list, all
   # heavy lanes skip - a change that can't affect code can't break a test lane.

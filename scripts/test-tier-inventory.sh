@@ -71,11 +71,11 @@ def module_dirs():
 rows = []
 for module_dir, build_file in module_dirs():
     text = build_file.read_text(encoding="utf-8", errors="ignore")
-    unit = (module_dir / "src/test").is_dir() and files_below(module_dir / "src/test")
+    unit = (module_dir / "src/test").is_dir() and source_files_below(module_dir / "src/test")
     screenshot = "billionbeers.android.screenshot" in text
     instrumented = (
         (module_dir / "src/androidTest").is_dir()
-        and files_below(module_dir / "src/androidTest")
+        and source_files_below(module_dir / "src/androidTest")
     )
     standalone = "com.android.test" in text and source_files_below(module_dir / "src/main")
     kmp_common = source_files_below(module_dir / "src/commonTest")
