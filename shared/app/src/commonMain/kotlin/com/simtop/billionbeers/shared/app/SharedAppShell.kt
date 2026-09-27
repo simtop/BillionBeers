@@ -197,11 +197,7 @@ fun SharedAppShell(
     Scaffold(
       modifier = modifier,
       topBar = {
-        if (
-          route !is PortableRoute.BeerBrowse &&
-            route !is PortableRoute.BeerBrowseSelection &&
-            route !is PortableRoute.BeerDetail
-        ) {
+        if (shouldShowShellTopBar(entry)) {
           ShellTopBar(
             title =
               when (route) {
@@ -359,6 +355,13 @@ fun SharedAppShell(
       }
     }
   }
+}
+
+internal fun shouldShowShellTopBar(entry: SharedAppEntry): Boolean {
+  if (entry is SavedFilterResultsEntry) return false
+  return entry.route !is PortableRoute.BeerBrowse &&
+    entry.route !is PortableRoute.BeerBrowseSelection &&
+    entry.route !is PortableRoute.BeerDetail
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
