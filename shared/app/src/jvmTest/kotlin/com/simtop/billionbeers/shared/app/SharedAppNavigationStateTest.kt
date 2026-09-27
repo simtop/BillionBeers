@@ -147,6 +147,25 @@ class SharedAppNavigationStateTest {
   }
 
   @Test
+  fun savedFilterResultsUseTheirOwnBrowseToolbar() {
+    val navigation = navigation()
+    navigation.navigate(PortableRoute.SavedFilterPresets)
+    val savedFilters = navigation.current
+    val preset =
+      SavedFilterPreset(
+        id = "preset-1",
+        name = "IPA",
+        query = BeersQuery(search = "ipa"),
+        updatedAt = 1L,
+      )
+
+    navigation.selectSavedFilter(preset)
+
+    assertTrue(shouldShowShellTopBar(savedFilters))
+    assertFalse(shouldShowShellTopBar(navigation.current))
+  }
+
+  @Test
   fun switchingRootsRetainsOnlyBoundedRootOwners() {
     val navigation = navigation()
     val list = navigation.current
