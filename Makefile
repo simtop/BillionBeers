@@ -55,6 +55,7 @@ GRADLE_RUNNER ?= $(shell if command -v rtk >/dev/null 2>&1; then echo "rtk gradl
 IOS_HOST_DESTINATION ?= platform=iOS Simulator,name=iPhone 17 Pro,OS=26.4
 NODE_BIN_DIR ?= $(shell node_path="$$(command -v node 2>/dev/null || true)"; if [ -n "$$node_path" ]; then dirname "$$node_path"; else printf '%s' /opt/homebrew/bin; fi)
 WEB_DISTRIBUTION_DIR ?= web-app/build/kotlin-webpack/wasmJs/productionExecutable
+WEB_RELEASE_CONFIDENCE_DIR ?= web-app/build/web-release-confidence
 DESKTOP_APP_DIR ?= desktop-app/build/compose/binaries/main/app/BillionBeers.app
 DESKTOP_DMG_DIR ?= desktop-app/build/compose/binaries/main/dmg
 SCREENSHOT_INVENTORY_DIR ?= build/reports/paparazzi/inventory
@@ -148,15 +149,19 @@ web-image-proxy-test: ## Test the local Web image proxy without contacting the u
 
 web-static-test: ## Test the generated Web static-distribution verifier.
 	python3 scripts/test_verify_web_static.py
+	python3 scripts/test_verify_web_release_artifacts.py
 
 web-verify: ## Run Web browser tests and verify the production static distribution.
+	rm -rf "$(WEB_RELEASE_CONFIDENCE_DIR)"
 	python3 scripts/test_verify_web_static.py
+	python3 scripts/test_verify_web_release_artifacts.py
 	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) :web-app:wasmJsBrowserTest --continue
 	rm -f "$(WEB_DISTRIBUTION_DIR)/index.html"
 	PATH="$(NODE_BIN_DIR):$$PATH" $(GRADLE_RUNNER) :web-app:wasmJsBrowserDistribution
 	install -m 644 web-app/src/wasmJsMain/resources/index.html "$(WEB_DISTRIBUTION_DIR)/index.html"
 	python3 scripts/verify_web_static.py "$(WEB_DISTRIBUTION_DIR)"
 	WEB_SMOKE_BROWSER="$(WEB_SMOKE_BROWSER)" node scripts/smoke_web_distribution.cjs "$(WEB_DISTRIBUTION_DIR)"
+	python3 scripts/verify_web_release_artifacts.py "$(WEB_DISTRIBUTION_DIR)" "$(WEB_RELEASE_CONFIDENCE_DIR)" --browser-smoke-passed
 
 web-run: ## Start the local Wasm browser host and image proxy for manual Web QA.
 	$(GRADLE_RUNNER) --stop

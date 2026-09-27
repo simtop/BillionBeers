@@ -48,6 +48,34 @@ The Makefile selects the configured Chromium-compatible browser (`CHROME_BIN`, o
 on the development machine). This verifies the Wasm browser task; it is not a claim of
 support for every browser or operating system.
 
+## Web release-confidence packet
+
+A successful `make web-verify` also creates
+`web-app/build/web-release-confidence/`. The packet contains `manifest.json` and a
+self-contained `distribution/` copy of the exact output that passed static verification and the
+packaged Chromium smoke. The manifest records stable relative paths, byte sizes, per-file
+SHA-256 hashes, a deterministic tree SHA-256, the source revision, clean/dirty working-tree state,
+and GitHub Actions repository/run/attempt/job/SHA provenance when running in CI.
+
+Verify a downloaded packet independently with:
+
+```shell
+python3 scripts/verify_web_release_artifacts.py \
+  --verify-packet web-app/build/web-release-confidence
+```
+
+Verification rejects missing, extra, changed, unsafe, or symlinked files, invalid static asset
+references, and tree-digest mismatches. Compare `source_revision` and `GITHUB_SHA` with the
+intended commit before using the packet; discard a mismatched packet and rerun `make web-verify`
+from a clean checkout of that revision. The packet is success evidence only: the raw distribution
+and `web-smoke-evidence` remain the appropriate failure diagnostics when the verification fails.
+
+This packet proves only the bounded Web claims listed above. It does not prove deployed-host
+MIME/cache/CSP headers, GitHub Pages behavior, upstream CDN image CORS or proxy behavior,
+Safari/Firefox support, signing or store delivery, physical-device behavior, upgrade/rollback
+behavior, or release readiness for Android, Desktop, or iOS. There is deliberately no aggregate
+all-target release-ready verdict.
+
 ## Routes and history
 
 The host uses hash routes so local development does not require server rewrite rules:
