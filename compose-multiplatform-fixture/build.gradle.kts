@@ -19,6 +19,14 @@ kotlin {
 
   wasmJs {
     binaries.executable()
+    browser {
+      testTask {
+        useKarma {
+          useChromeHeadless()
+          useConfigDirectory(project.file("karma.config.d"))
+        }
+      }
+    }
   }
 
   sourceSets {
@@ -36,4 +44,9 @@ kotlin {
       }
     }
   }
+}
+
+tasks.named<org.gradle.api.tasks.Copy>("wasmJsTestProcessResources") {
+  dependsOn("wasmJsProcessResources")
+  from(layout.buildDirectory.dir("processedResources/wasmJs/main"))
 }
