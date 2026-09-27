@@ -286,6 +286,7 @@ jobs:
     needs: [format-check, changes]
     if: needs.changes.outputs.unit == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -359,7 +360,8 @@ jobs:
             --phase "Konsist|$KONSIST_OUTCOME|$KONSIST_SECONDS" \
             --phase "Data-layer classpath|$CLASSPATH_OUTCOME|$CLASSPATH_SECONDS" \
             --phase "Architecture policy|$ARCHITECTURE_OUTCOME|$ARCHITECTURE_SECONDS" \
-            --phase "Coverage floor|$COVERAGE_OUTCOME|$COVERAGE_SECONDS"
+            --phase "Coverage floor|$COVERAGE_OUTCOME|$COVERAGE_SECONDS" \
+            --json build/ci-phase-timings/unit.json
           echo '_Excludes checkout, JDK/Gradle setup, report upload, and skipped phases._' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Summarize unit test failures
@@ -378,6 +380,7 @@ jobs:
           path: |
             **/build/test-results/
             **/build/reports/tests/
+            **/build/ci-phase-timings/
             build/reports/test-tier-inventory.md
           if-no-files-found: warn
           retention-days: 7
@@ -396,6 +399,7 @@ jobs:
     needs: [format-check, changes]
     if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -415,14 +419,40 @@ jobs:
         run: chmod +x gradlew
 
       - name: Run Web browser and static distribution verification
-        run: make web-verify
+        id: web_verify
+        env:
+          WEB_SMOKE_ARTIFACT_DIR: web-app/build/web-smoke-evidence
+        run: bash .github/scripts/run-timed-command.sh make web-verify
+
+      - name: Summarize Web lane timings
+        if: always()
+        env:
+          WEB_OUTCOME: ${{ steps.web_verify.outcome }}
+          WEB_SECONDS: ${{ steps.web_verify.outputs.elapsed_seconds }}
+        run: |
+          python3 .github/scripts/render-phase-timings.py \
+            --title 'Web lane phase timings' \
+            --phase "Browser and static distribution verification|$WEB_OUTCOME|$WEB_SECONDS" \
+            --json build/ci-phase-timings/web.json
+          echo '_Includes the Web browser/static verification command; job setup and artifact upload are excluded._' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Archive verified Web distribution
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: web-static-distribution
-          path: web-app/build/kotlin-webpack/wasmJs/productionExecutable/
+          path: |
+            web-app/build/kotlin-webpack/wasmJs/productionExecutable/
+            build/ci-phase-timings/web.json
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Archive Web smoke failure evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: web-smoke-evidence
+          path: web-app/build/web-smoke-evidence/
           if-no-files-found: warn
           retention-days: 7
 
@@ -431,6 +461,7 @@ jobs:
     needs: [format-check, changes]
     if: needs.changes.outputs.screenshot == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -453,7 +484,7 @@ jobs:
 
       - name: Verify Screenshot Tests
         id: verify-paparazzi
-        run: make screenshot-verify
+        run: bash .github/scripts/run-timed-command.sh make screenshot-verify
 
       - name: Summarize screenshot failures
         if: always() && steps.verify-paparazzi.outcome == 'failure'
@@ -462,6 +493,18 @@ jobs:
         run: >-
           python3 .github/scripts/summarize-test-failures.py paparazzi
           --branch "$BRANCH_NAME" --detail
+
+      - name: Summarize screenshot lane timings
+        if: always()
+        env:
+          SCREENSHOT_OUTCOME: ${{ steps.verify-paparazzi.outcome }}
+          SCREENSHOT_SECONDS: ${{ steps.verify-paparazzi.outputs.elapsed_seconds }}
+        run: |
+          python3 .github/scripts/render-phase-timings.py \
+            --title 'Screenshot lane phase timings' \
+            --phase "Paparazzi verification|$SCREENSHOT_OUTCOME|$SCREENSHOT_SECONDS" \
+            --json build/ci-phase-timings/screenshot.json
+          echo '_Excludes checkout, JDK/Gradle setup, report upload, and skipped phases._' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload Screenshot Failures
         if: always() && steps.verify-paparazzi.outcome == 'failure'
@@ -478,7 +521,9 @@ jobs:
           name: screenshot-test-results
           # Paparazzi's HTML reporter is disabled for Gradle 9 compatibility; JUnit XML is the
           # machine-readable evidence. The old reports/paparazzi path was empty on green runs.
-          path: '**/build/test-results/'
+          path: |
+            **/build/test-results/
+            **/build/ci-phase-timings/
           if-no-files-found: error
           retention-days: 7
 
@@ -492,6 +537,7 @@ jobs:
     needs: [format-check, changes]
     if: needs.changes.outputs.instrumented == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -567,7 +613,8 @@ jobs:
           python3 .github/scripts/render-phase-timings.py \
             --title 'Instrumented lane phase timings' \
             --phase "Debug managed-device tests|$MANAGED_DEVICE_OUTCOME|$MANAGED_DEVICE_SECONDS" \
-            --phase "Minified release smoke|$RELEASE_SMOKE_OUTCOME|$RELEASE_SMOKE_SECONDS"
+            --phase "Minified release smoke|$RELEASE_SMOKE_OUTCOME|$RELEASE_SMOKE_SECONDS" \
+            --json build/ci-phase-timings/instrumented.json
           echo '_Task-level Gradle profiles are attached as a separate artifact._' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Summarize instrumented test failures
@@ -587,6 +634,7 @@ jobs:
           path: |
             **/build/reports/androidTests/managedDevice/
             **/build/outputs/androidTest-results/managedDevice/
+            **/build/ci-phase-timings/
           if-no-files-found: warn
           retention-days: 7
 
@@ -606,6 +654,7 @@ jobs:
     needs: [format-check, changes]
     if: needs.changes.outputs.native == 'true'
     runs-on: macos-14
+    timeout-minutes: 45
     env:
       IOS_RUNTIME: '18.2'
       IOS_DEVICE_NAME: 'BillionBeers iPhone 16'
@@ -692,7 +741,8 @@ jobs:
             --phase "Apple compilation|$COMPILE_OUTCOME|$COMPILE_SECONDS" \
             --phase "Apple framework linking|$FRAMEWORK_OUTCOME|$FRAMEWORK_SECONDS" \
             --phase "iOS host build|$HOST_OUTCOME|$HOST_SECONDS" \
-            --phase "Apple simulator tests|$TEST_OUTCOME|$TEST_SECONDS"
+            --phase "Apple simulator tests|$TEST_OUTCOME|$TEST_SECONDS" \
+            --json build/ci-phase-timings/native.json
           echo '_Native evidence is compile, framework link, simulator execution, and test reports; no native percentage coverage is claimed._' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Archive iOS host build
@@ -714,6 +764,7 @@ jobs:
           path: |
             **/build/test-results/iosSimulatorArm64Test/
             **/build/reports/tests/iosSimulatorArm64Test/
+            **/build/ci-phase-timings/
           if-no-files-found: warn
           retention-days: 7
 

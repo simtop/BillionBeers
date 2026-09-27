@@ -15,6 +15,9 @@ from pathlib import Path
 
 PAPARAZZI_PACKAGE = "com.simtop.billionbeers.screenshot"
 MAX_DETAIL_LENGTH = 360
+ANSI_RE = re.compile(r"\x1b(?:\[[0-?]*[ -/]*[@-~]|\][^\x07]*(?:\x07|\x1b\\))")
+CONTROL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+RUNNER_PATH_RE = re.compile(r"(?<![A-Za-z0-9_])/(?:Users|home|opt|private|tmp)/[^\s,)]+")
 LOCATION_RE = re.compile(r"(?:^|[\s(])((?:[A-Za-z0-9_./:-]+\.(?:kt|java|xml)):\d+(?::\d+)?)")
 
 
@@ -34,6 +37,9 @@ def local_name(tag: str) -> str:
 
 
 def clean_detail(value: str) -> str:
+    value = ANSI_RE.sub("", value)
+    value = CONTROL_RE.sub(" ", value)
+    value = RUNNER_PATH_RE.sub("<runner-path>", value)
     value = " ".join(value.replace("\r", " ").replace("\n", " ").split())
     return value[:MAX_DETAIL_LENGTH] + ("…" if len(value) > MAX_DETAIL_LENGTH else "")
 
@@ -44,7 +50,8 @@ def testcase_detail(testcase: ET.Element) -> tuple[str, str]:
             text = " ".join(part.strip() for part in child.itertext() if part.strip())
             detail = clean_detail(text)
             location_match = LOCATION_RE.search(text)
-            return detail, location_match.group(1) if location_match else ""
+            location = clean_detail(location_match.group(1)) if location_match else ""
+            return detail, location
     return "", ""
 
 
