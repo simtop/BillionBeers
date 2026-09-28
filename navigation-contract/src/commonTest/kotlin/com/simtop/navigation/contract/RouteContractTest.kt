@@ -39,6 +39,8 @@ class RouteContractTest {
         PortableRoute.BeersSearch,
         PortableRoute.SavedFilterPresets,
         PortableRoute.BeerBrowse,
+        PortableRoute.BeerBrowseSelection(BrowseCategory.Style("ipa", "IPA")),
+        PortableRoute.BeerBrowseSelection(BrowseCategory.Brewery("brewery-1", "Brewery")),
         PortableRoute.BeerDetail(beer),
       )
 
