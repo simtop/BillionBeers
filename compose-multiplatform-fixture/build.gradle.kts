@@ -31,6 +31,7 @@ kotlin {
 
   sourceSets {
     commonMain.dependencies {
+      implementation(libs.billionBeersLibrary("androidx-navigation3-runtime"))
       implementation(libs.billionBeersLibrary("lifecycle-viewmodel"))
       implementation(libs.billionBeersLibrary("metrox-viewmodel"))
     }
