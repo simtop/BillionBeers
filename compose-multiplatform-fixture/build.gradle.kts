@@ -38,6 +38,7 @@ kotlin {
     commonTest.dependencies {
       implementation(kotlin("test"))
       implementation(libs.billionBeersLibrary("coroutinesTest"))
+      implementation(libs.billionBeersLibrary("kotlinx-serialization-json"))
       implementation(project(":navigation-contract"))
     }
     val wasmJsTest by getting {
