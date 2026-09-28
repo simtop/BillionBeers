@@ -1,9 +1,16 @@
 package com.simtop.billionbeers.composefixture
 
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
+import com.simtop.navigation.contract.BrowseCategory
+import com.simtop.navigation.contract.PortableRoute
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlinx.serialization.Serializable
+
+@Serializable private data class PortableRouteKey(val route: PortableRoute) : NavKey
 
 class Navigation3RuntimeProbeTest {
 
@@ -32,6 +39,24 @@ class Navigation3RuntimeProbeTest {
     assertEquals(3, backStack.size)
     assertTrue(backStack[1] != backStack[2])
     assertEquals(Navigation3ProbeKey.Detail("second"), backStack.last())
+  }
+
+  @Test
+  fun `portable route contract can back Navigation 3 entries`() {
+    val root = PortableRouteKey(PortableRoute.BeersList)
+    val selection =
+      PortableRouteKey(PortableRoute.BeerBrowseSelection(BrowseCategory.Style("ipa", "IPA")))
+    val backStack = NavBackStack(root)
+
+    backStack += selection
+
+    assertEquals(root, backStack.first())
+    assertEquals(selection, backStack.last())
+    assertEquals(PortableRoute.BeersList, backStack.first().route)
+    assertEquals(
+      PortableRoute.BeerBrowseSelection(BrowseCategory.Style("ipa", "IPA")),
+      backStack.last().route,
+    )
   }
 
   @Test
