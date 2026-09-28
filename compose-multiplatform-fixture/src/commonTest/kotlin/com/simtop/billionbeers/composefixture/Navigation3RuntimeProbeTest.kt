@@ -4,13 +4,26 @@ import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import com.simtop.navigation.contract.BrowseCategory
 import com.simtop.navigation.contract.PortableRoute
+import com.simtop.navigation.contract.decodeRoute
+import com.simtop.navigation.contract.encodeRoute
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
-@Serializable private data class PortableRouteKey(val route: PortableRoute) : NavKey
+private data class PortableRouteKey(val route: PortableRoute) : NavKey
+
+private val routeStateJson = Json { ignoreUnknownKeys = true }
+
+private fun encodeRouteState(entries: List<PortableRouteKey>): String =
+  routeStateJson.encodeToString(entries.map { encodeRoute(it.route) })
+
+private fun decodeRouteState(payload: String): List<PortableRouteKey> =
+  routeStateJson.decodeFromString<List<String>>(payload).map { payload ->
+    PortableRouteKey(decodeRoute(payload))
+  }
 
 class Navigation3RuntimeProbeTest {
 
@@ -57,6 +70,25 @@ class Navigation3RuntimeProbeTest {
       PortableRoute.BeerBrowseSelection(BrowseCategory.Style("ipa", "IPA")),
       backStack.last().route,
     )
+  }
+
+  @Test
+  fun `portable route stack state restores through serialization`() {
+    val entries =
+      listOf(
+        PortableRouteKey(PortableRoute.BeersList),
+        PortableRouteKey(
+          PortableRoute.BeerBrowseSelection(BrowseCategory.Brewery("brewery-1", "Brewery"))
+        ),
+      )
+
+    val restoredEntries = decodeRouteState(encodeRouteState(entries))
+    val restoredBackStack = NavBackStack(restoredEntries.first())
+    restoredEntries.drop(1).forEach { restoredBackStack += it }
+
+    assertEquals(entries.size, restoredBackStack.size)
+    assertEquals(entries.first(), restoredBackStack.first())
+    assertEquals(entries.last(), restoredBackStack.last())
   }
 
   @Test
