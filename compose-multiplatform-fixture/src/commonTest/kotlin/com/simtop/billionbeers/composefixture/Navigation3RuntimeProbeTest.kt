@@ -92,6 +92,37 @@ class Navigation3RuntimeProbeTest {
   }
 
   @Test
+  fun `separate tab back stacks retain their active entries`() {
+    val fixture = Navigation3TabBackStackFixture()
+    val selection = PortableRoute.BeerBrowseSelection(BrowseCategory.Style("ipa", "IPA"))
+
+    fixture.push(selection)
+    fixture.selectTab(Navigation3Tab.Favorites)
+    fixture.push(PortableRoute.BeersSearch)
+
+    assertEquals(listOf(PortableRoute.Favorites, PortableRoute.BeersSearch), fixture.current)
+    fixture.selectTab(Navigation3Tab.Catalog)
+    assertEquals(listOf(PortableRoute.BeersList, selection), fixture.current)
+    assertEquals(
+      mapOf(
+        Navigation3Tab.Catalog to listOf(PortableRoute.BeersList, selection),
+        Navigation3Tab.Favorites to listOf(PortableRoute.Favorites, PortableRoute.BeersSearch),
+      ),
+      fixture.snapshot(),
+    )
+  }
+
+  @Test
+  fun `tab back stacks retain roots when popped`() {
+    val fixture = Navigation3TabBackStackFixture()
+    fixture.push(PortableRoute.BeersSearch)
+
+    assertTrue(fixture.pop())
+    assertFalse(fixture.pop())
+    assertEquals(listOf(PortableRoute.BeersList), fixture.current)
+  }
+
+  @Test
   fun `root remains available after popping the active entry`() {
     val backStack = navigation3ProbeBackStack()
     backStack += Navigation3ProbeKey.Detail("42")
