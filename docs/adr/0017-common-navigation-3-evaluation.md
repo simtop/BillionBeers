@@ -2,9 +2,9 @@
 
 ## Status
 
-Proposed evaluation plan. This document authorizes a bounded compatibility spike, not a product
-navigation migration. Until the spike is accepted and this ADR is amended, Android keeps its
-platform-owned Navigation 3 host and dynamic-feature delivery described by ADR 0016.
+Evaluation complete. This document records a bounded compatibility spike, not a product
+navigation migration. Android keeps its platform-owned Navigation 3 host and dynamic-feature
+delivery described by ADR 0016.
 
 ## Context
 
@@ -29,6 +29,29 @@ state restoration, while Android still needs to reach the result screen through 
 Run a small, isolated Navigation 3 proof before proposing any migration. The spike must reuse the
 repository's existing target conventions and must not replace the released Android host, move
 production destinations, change persistence, or add a backend.
+
+### Evaluation outcome
+
+The spike proves that Navigation 3 runtime primitives can be used from common source across the
+repository's JVM/Desktop, Android host-test, Wasm/browser, and iOS simulator framework targets.
+Portable route contracts, serialized route state, root retention, browser history behavior, and
+independent tab back stacks were exercised in isolated fixtures.
+
+The result is a **shared foundation, platform-owned hosts** decision:
+
+- Share portable route identity, serialization, and back-stack semantics where behavior is common.
+- Keep Android's `NavDisplay`, adaptive list/detail scene strategy, and Play dynamic-feature gate in
+the Android host.
+- Keep the shared app shell and explicit host adapters for Web, iOS, and Desktop, including browser
+history, scene lifecycle, window lifecycle, and platform back behavior.
+- Do not add `SavedFilterResults` to `PortableRoute` until its cross-target URL, lifecycle, and
+state-restoration semantics are defined.
+- Do not introduce a second production persistence format or migrate production destinations as part
+of this evaluation.
+
+The evidence does not support replacing every host with one identical Jetpack Navigation UI layer.
+It supports using Navigation 3 as a common runtime-compatible foundation behind target-specific
+adapters.
 
 ### Spike stages
 
