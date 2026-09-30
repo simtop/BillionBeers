@@ -3,11 +3,13 @@ package com.simtop.billionbeers.shared.beersearch
 import app.cash.turbine.test
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
 import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.billionbeers.testing_utils.MainDispatcherExtension
 import com.simtop.core.core.CommonUiState
+import com.simtop.core.core.Either
 import com.simtop.core.core.PagedListUiModel
 import com.simtop.core.core.PagingState
 import kotlinx.coroutines.Dispatchers
@@ -38,8 +40,14 @@ class BeersSearchViewModelTest {
 
   @AfterEach fun tearDown() = Dispatchers.resetMain()
 
-  private fun buildViewModel(initialQuery: String = "") =
-    BeersSearchViewModel(mainDispatcher.dispatcherProvider, fakeFactory, initialQuery)
+  private fun buildViewModel(initialQuery: String = "", initialStyleId: String? = null) =
+    BeersSearchViewModel(
+      coroutineDispatcher = mainDispatcher.dispatcherProvider,
+      beersPagerFactory = fakeFactory,
+      beersRepository = fakeRepository,
+      initialQuery = initialQuery,
+      initialStyleId = initialStyleId,
+    )
 
   @Test
   fun `rapid typing debounces into a single query`() =
@@ -213,5 +221,83 @@ class BeersSearchViewModelTest {
         expectThat(pager.loadNextPageCallCount).isEqualTo(1)
         cancelAndIgnoreRemainingEvents()
       }
+    }
+
+  @Test
+  fun `selected style creates a style-only query`() =
+    runTest(mainDispatcher.testDispatcher) {
+      val viewModel = buildViewModel()
+
+      viewModel.viewState.test {
+        expectThat(awaitItem()).isEqualTo(CommonUiState.Empty)
+
+        viewModel.onStyleSelected("style-1")
+        runCurrent()
+
+        expectThat(fakeFactory.createdQueries.toList())
+          .isEqualTo(listOf(BeersQuery(styleId = "style-1")))
+        cancelAndIgnoreRemainingEvents()
+      }
+    }
+
+  @Test
+  fun `search and selected style create a combined query`() =
+    runTest(mainDispatcher.testDispatcher) {
+      val viewModel = buildViewModel()
+
+      viewModel.viewState.test {
+        expectThat(awaitItem()).isEqualTo(CommonUiState.Empty)
+
+        viewModel.onStyleSelected("style-1")
+        viewModel.onQueryChange("ipa")
+        advanceTimeBy(pastDebounce)
+        runCurrent()
+
+        expectThat(fakeFactory.createdQueries.toList())
+          .isEqualTo(
+            listOf(
+              BeersQuery(styleId = "style-1"),
+              BeersQuery(search = "ipa", styleId = "style-1"),
+            )
+          )
+        cancelAndIgnoreRemainingEvents()
+      }
+    }
+
+  @Test
+  fun `clearing text preserves selected style and clearing style returns to empty`() =
+    runTest(mainDispatcher.testDispatcher) {
+      val viewModel = buildViewModel()
+
+      viewModel.viewState.test {
+        expectThat(awaitItem()).isEqualTo(CommonUiState.Empty)
+
+        viewModel.onStyleSelected("style-1")
+        viewModel.onQueryChange("ipa")
+        advanceTimeBy(pastDebounce)
+        runCurrent()
+        viewModel.onQueryChange("")
+        advanceTimeBy(pastDebounce)
+        runCurrent()
+
+        expectThat(fakeFactory.createdQueries.last()).isEqualTo(BeersQuery(styleId = "style-1"))
+
+        viewModel.onClearStyle()
+        advanceTimeBy(pastDebounce)
+        runCurrent()
+        expectThat(viewModel.viewState.value).isEqualTo(CommonUiState.Empty)
+        cancelAndIgnoreRemainingEvents()
+      }
+    }
+
+  @Test
+  fun `style loading can be retried`() =
+    runTest(mainDispatcher.testDispatcher) {
+      fakeRepository.beerStyles = Either.Right(listOf(BeerStyle("style-1", "IPA")))
+      val viewModel = buildViewModel()
+      runCurrent()
+
+      expectThat(viewModel.styles.value)
+        .isEqualTo(CommonUiState.Success(listOf(BeerStyle("style-1", "IPA"))))
     }
 }

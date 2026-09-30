@@ -28,6 +28,18 @@ class SearchScreenRobot(composeTestRule: ComposeTestRule) : BaseTestRobot(compos
     assertNodeWithContentDescriptionIsDisplayed(string(R.string.search_clear))
   }
 
+  fun openStyleFilter() {
+    clickOnNodeWithTag("style_filter")
+  }
+
+  fun selectStyle(name: String) {
+    clickOnNodeWithText(name)
+  }
+
+  fun assertStyleFilterIsDisplayed() {
+    assertNodeWithTagIsDisplayed("style_filter")
+  }
+
   fun assertClearActionIsAbsent() {
     assertNodeWithContentDescriptionDoesNotExist(string(R.string.search_clear))
   }

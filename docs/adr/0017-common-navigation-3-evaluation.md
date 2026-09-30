@@ -153,3 +153,4 @@ or disable existing Android architecture gates.
 - [Dependency verification](0007-gradle-dependency-verification.md)
 - [CI lane selection](0008-per-lane-ci-test-selection.md)
 - [Feature-owned Android UI test tier](0009-feature-module-ui-test-tier.md)
+- [Navigation 3 experiment backlog](../navigation3-experiment-backlog.md)

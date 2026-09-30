@@ -60,4 +60,7 @@
     <string name="saved_filters_title">Saved filters</string>
     <string name="filter_name_hint">Filter name</string>
     <string name="save_filter">Save filter</string>
+    <string name="all_styles">All styles</string>
+    <string name="clear_style">Clear style</string>
+    <string name="clear_filters">Clear filters</string>
 </resources>
