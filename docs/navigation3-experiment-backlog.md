@@ -15,8 +15,11 @@ The evaluation established a **shared foundation, platform-owned hosts** boundar
 - Production destinations are not migrated merely because the Navigation 3 runtime resolves from
   common source.
 
-The completed proofs are recorded in ADR 0017 and include common runtime resolution, portable route
-state restoration, Web hash history behavior, root retention, and independent tab back stacks.
+The completed proofs are recorded in ADR 0017 and the
+[Navigation 3 evidence matrix](navigation3-evidence-matrix.md). They include common runtime
+resolution, portable route state restoration, Web hash history behavior, root retention, and
+independent tab back stacks. The matrix also distinguishes production host behavior that remains
+unproven from fixture-level evidence.
 
 ## Experiment rules
 
@@ -38,6 +41,10 @@ is not a passing result.
 
 ### N3-1 — Browser cold deep links and missing-cache behavior
 
+**Evidence status:** The route parser and bounded hash reload/history semantics are proven in the
+matrix. Missing-cache behavior on a real cold browser journey remains deferred until that host
+acceptance journey is exercised.
+
 **Question:** Can a portable route enter the Web application directly, reload safely, and produce an
 explicit result when the route refers to data that is not in the local cache?
 
@@ -52,6 +59,9 @@ intentional localized outcome, and no whole domain record is placed in the URL.
 history and application state can diverge without a host-specific repair.
 
 ### N3-2 — iOS scene recreation and native Back integration
+
+**Evidence status:** Route buffering, parsing, ordering, and idempotent close are proven; scene
+recreation, background/foreground, native Back, and cancellation remain unproven and deferred.
 
 **Question:** Does a portable route/back-stack adapter preserve state through the supported iOS scene
 lifecycle and cooperate with native back gestures/buttons?
@@ -68,6 +78,9 @@ lifecycle-specific state that the common layer cannot model without leaking iOS 
 
 ### N3-3 — Desktop window lifecycle and keyboard Back
 
+**Evidence status:** Desktop data/runtime integration is proven, but window close/reopen, focus
+restoration, keyboard Back, and multi-window lifecycle remain unproven and deferred.
+
 **Question:** Can a Desktop adapter retain and dispose route entries correctly across window close,
 reopen, and keyboard Back without making the common layer own window state?
 
@@ -82,6 +95,9 @@ intended state, and keyboard/focus behavior remains host-owned and accessible.
 without introducing a global lifecycle registry or a second persistence format.
 
 ### N3-4 — Android dynamic-feature failure and restoration proof
+
+**Evidence status:** Installer state transitions and successful host journeys are proven, but
+end-to-end Play cancellation/failure and Activity-recreation behavior remain unproven and deferred.
 
 **Question:** Does a Navigation 3 route adapter preserve Android's on-demand delivery boundary when
 installation is cancelled or fails during navigation and when the activity is recreated?

@@ -53,6 +53,11 @@ The evidence does not support replacing every host with one identical Jetpack Na
 It supports using Navigation 3 as a common runtime-compatible foundation behind target-specific
 adapters.
 
+The detailed claim-by-claim record is maintained in the
+[Navigation 3 evidence matrix](../navigation3-evidence-matrix.md). It distinguishes common fixture
+proofs from production host behavior and records unproven device, browser, framework-link, and
+manual accessibility journeys rather than treating them as successful by default.
+
 ### Spike stages
 
 1. **Inventory and route mapping**
