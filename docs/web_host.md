@@ -109,7 +109,11 @@ The Web host loads image bytes through the runtime's Ktor Fetch client and decod
 Skia. During `make web-run`, localhost configures the loopback proxy above for image requests;
 other hosts request the CDN directly. Blank URLs, failed requests, decode failures, and blocked
 image CORS requests fall back to a deterministic placeholder. There is no separate JavaScript
-image implementation or failed-image retry UX yet.
+image implementation or failed-image retry UX yet. The current Compose/Wasm + Skia path is retained;
+a browser-native image probe worked for representative CDN URLs, but synchronized DOM overlays were
+rejected after they drifted during scrolling and adaptive layouts and crossed canvas layering in detail.
+This is an image-rendering decision, not a claim that a complete DOM catalog/detail shell comparison
+has been performed. See [ADR 0017](adr/0017-web-image-delivery.md) for the boundary and reconsideration criteria.
 
 ## Evidence boundary
 

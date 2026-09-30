@@ -53,3 +53,30 @@ host becomes a release target. Evaluate at least:
 Any production option must include browser-origin verification, redirect/host validation, failure
 behavior, static asset MIME/base-path/cache checks where applicable, and an explicit owner for the
 service or asset mirror. A development proxy alone is not sufficient evidence.
+
+## Web rendering boundary
+
+The current Web implementation retains Compose/Wasm + Skia as the supported rendering path. A
+standalone browser `<img>` could display representative cross-origin CDN images, but body-level DOM
+image overlays synchronized from Compose coordinates were not dependable in the catalog or detail:
+scrolling left list images fixed, adaptive density and coordinate differences mispositioned overlays,
+and the detail hero could cross canvas/z-order boundaries. The overlay experiment was removed rather
+than promoted to production.
+
+This was an image-rendering investigation, not a complete DOM/native comparison of a catalog or
+detail slice. The project therefore does not maintain a second UI stack without a concrete unmet
+requirement. Reconsider an alternative only if one of these conditions is demonstrated:
+
+- the current Compose host cannot meet a specific accessibility, input, restoration, performance, or
+  lifecycle requirement;
+- a new Web requirement needs semantic DOM behavior, browser-native interaction, or another capability
+  unavailable through the current Compose/Wasm surface;
+- upstream CORS or image-delivery ownership changes the rendering boundary; or
+- a specific catalog row or detail component fails an agreed acceptance journey in the Compose UI.
+
+If reconsideration is justified, compare one bounded catalog row or detail hero while retaining the
+shared repository, view models, and routes. Explicitly bridge state, lifecycle, cancellation,
+loading/error/failure, and disposal. Exercise the same interaction, accessibility,
+restoration/resize, and failure journeys in the claimed browsers, then record build and package
+impact, bridge complexity, maintenance footprint, and an adopt/retain/defer decision. `make web-verify`
+is required for the packaged Web claim; successful compilation or a screenshot alone is insufficient.
