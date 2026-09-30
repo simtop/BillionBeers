@@ -62,4 +62,7 @@
     <string name="saved_filters_title">Filtres enregistrés</string>
     <string name="filter_name_hint">Nom du filtre</string>
     <string name="save_filter">Enregistrer le filtre</string>
+    <string name="all_styles">Tous les styles</string>
+    <string name="clear_style">Effacer le style</string>
+    <string name="clear_filters">Effacer les filtres</string>
 </resources>

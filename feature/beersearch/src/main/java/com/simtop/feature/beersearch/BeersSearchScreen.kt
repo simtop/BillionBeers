@@ -2,7 +2,10 @@ package com.simtop.feature.beersearch
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,6 +23,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
@@ -36,6 +40,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -46,12 +51,15 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.beerdomain.domain.models.BeerStyle
+import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.billionbeers.core.designsystem.component.AccessibilityMatrixPreview
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.component.showToast
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.billionbeers.shared.beersearch.BeersSearchEvent as SharedBeersSearchEvent
+import com.simtop.billionbeers.shared.beersearch.BeersSearchStyleFilter
 import com.simtop.billionbeers.shared.beersearch.SharedBeersSearchContent
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.PagedListUiModel
@@ -71,12 +79,15 @@ const val SEARCH_FIELD_TAG = "search_field"
 fun BeersSearchScreen(
   onBeerClick: (Beer) -> Unit,
   onBack: () -> Unit,
-  onSaveQuery: (String, String) -> Unit,
+  onSaveQuery: (String, BeersQuery) -> Unit,
   viewModel: BeersSearchViewModel = metroViewModel(),
 ) {
   val viewState by viewModel.viewState.collectAsState()
-  // VM-owned (SavedStateHandle-backed) so process death restores the search, not just the text.
+  // VM-owned (SavedStateHandle-backed) so process death restores the search and style selection.
   val query by viewModel.query.collectAsState()
+  val styles by viewModel.styles.collectAsState()
+  val selectedStyle by viewModel.selectedStyle.collectAsState()
+  val activeQuery by viewModel.activeQuery.collectAsState()
   val context = LocalContext.current
   val lifecycleOwner = LocalLifecycleOwner.current
   val loadMoreFailedMessage = stringResource(PresentationUtilsR.string.paged_list_load_more_failed)
@@ -95,6 +106,12 @@ fun BeersSearchScreen(
     viewState = viewState,
     query = query,
     onQueryChange = viewModel::onQueryChange,
+    styles = styles,
+    selectedStyle = selectedStyle,
+    activeQuery = activeQuery,
+    onStyleChange = viewModel::onStyleSelected,
+    onRetryStyles = viewModel::retryStyles,
+    onResetFilters = viewModel::onResetFilters,
     onBeerClick = onBeerClick,
     onBack = onBack,
     onSaveQuery = onSaveQuery,
@@ -113,9 +130,15 @@ fun BeersSearchContent(
   viewState: CommonUiState<PagedListUiModel<Beer>>,
   query: String,
   onQueryChange: (String) -> Unit,
+  styles: CommonUiState<List<BeerStyle>> = CommonUiState.Empty,
+  selectedStyle: BeerStyle? = null,
+  activeQuery: BeersQuery = BeersQuery(),
+  onStyleChange: (String?) -> Unit = {},
+  onRetryStyles: () -> Unit = {},
+  onResetFilters: () -> Unit = {},
   onBeerClick: (Beer) -> Unit,
   onBack: () -> Unit,
-  onSaveQuery: (String, String) -> Unit,
+  onSaveQuery: (String, BeersQuery) -> Unit,
   onScrollToBottom: () -> Unit,
   onRetryLoadMore: () -> Unit,
   onRetrySearch: () -> Unit,
@@ -148,7 +171,40 @@ fun BeersSearchContent(
       )
     },
   ) { padding ->
-    Column(modifier = Modifier.fillMaxSize().consumeWindowInsets(padding).imePadding()) {
+    val layoutDirection = LocalLayoutDirection.current
+    val contentPadding =
+      PaddingValues(
+        start = padding.calculateStartPadding(layoutDirection),
+        end = padding.calculateEndPadding(layoutDirection),
+        bottom = padding.calculateBottomPadding(),
+      )
+    Column(
+      modifier =
+        Modifier.fillMaxSize()
+          .consumeWindowInsets(padding)
+          .padding(top = padding.calculateTopPadding())
+          .imePadding()
+    ) {
+      Row(
+        Modifier.fillMaxWidth().padding(horizontal = BillionBeersTheme.spacing.medium),
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        BeersSearchStyleFilter(
+          styles = styles,
+          selectedStyle = selectedStyle,
+          styleLabel = stringResource(PresentationUtilsR.string.browse_tab_styles),
+          allStylesLabel = stringResource(PresentationUtilsR.string.all_styles),
+          clearStyleLabel = stringResource(PresentationUtilsR.string.clear_style),
+          retryLabel = stringResource(PresentationUtilsR.string.retry),
+          onStyleChange = onStyleChange,
+          onRetryStyles = onRetryStyles,
+        )
+        if (activeQuery.search != null || activeQuery.styleId != null) {
+          TextButton(onClick = onResetFilters) {
+            Text(stringResource(PresentationUtilsR.string.clear_filters))
+          }
+        }
+      }
       val resultCount = (viewState as? CommonUiState.Success)?.data?.items?.size ?: 0
       SharedBeersSearchContent(
         viewState = viewState,
@@ -156,7 +212,7 @@ fun BeersSearchContent(
         beerRow = { beer -> ComposeBeersListItem(beer = beer, onClick = onBeerClick) },
         loadingContent = {
           Box(
-            modifier = Modifier.fillMaxSize().padding(padding),
+            modifier = Modifier.fillMaxSize().padding(contentPadding),
             contentAlignment = Alignment.Center,
           ) {
             CircularProgressIndicator()
@@ -165,20 +221,20 @@ fun BeersSearchContent(
         emptyContent = {
           CenteredHint(
             text = stringResource(R.string.search_prompt),
-            modifier = Modifier.fillMaxSize().padding(padding),
+            modifier = Modifier.fillMaxSize().padding(contentPadding),
           )
         },
         noResultsContent = { term ->
           CenteredHint(
             text = stringResource(R.string.search_no_results, term),
-            modifier = Modifier.fillMaxSize().padding(padding),
+            modifier = Modifier.fillMaxSize().padding(contentPadding),
           )
         },
         errorContent = { error, retry ->
           ComposeErrorView(
             message = error.resolvedMessage().orEmpty(),
             onRetry = retry,
-            modifier = Modifier.fillMaxSize().padding(padding),
+            modifier = Modifier.fillMaxSize().padding(contentPadding),
           )
         },
         resultCountContent = { count ->
@@ -200,7 +256,7 @@ fun BeersSearchContent(
         onScrollToBottom = onScrollToBottom,
         onRetryLoadMore = onRetryLoadMore,
         onRetrySearch = onRetrySearch,
-        contentPadding = padding,
+        contentPadding = contentPadding,
         modifier = Modifier.weight(1f),
       )
       Row(Modifier.fillMaxWidth().padding(horizontal = BillionBeersTheme.spacing.medium)) {
@@ -215,10 +271,11 @@ fun BeersSearchContent(
         )
         Button(
           onClick = {
-            onSaveQuery(presetName, query)
+            onSaveQuery(presetName, activeQuery)
             presetName = ""
           },
-          enabled = presetName.isNotBlank() && query.isNotBlank(),
+          enabled =
+            presetName.isNotBlank() && (activeQuery.search != null || activeQuery.styleId != null),
           modifier = Modifier.padding(start = BillionBeersTheme.spacing.small),
         ) {
           Text(stringResource(PresentationUtilsR.string.save_filter))

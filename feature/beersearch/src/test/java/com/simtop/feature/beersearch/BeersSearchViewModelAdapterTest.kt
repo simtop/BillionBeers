@@ -20,11 +20,13 @@ class BeersSearchViewModelAdapterTest {
   @Test
   fun `restored query is exposed and query changes are saved`() =
     runTest(mainDispatcher.testDispatcher) {
+      val repository = FakeBeersRepository()
       val savedStateHandle = SavedStateHandle(mapOf("search_query" to "ipa"))
       val viewModel =
         BeersSearchViewModel(
           coroutineDispatcher = mainDispatcher.dispatcherProvider,
-          beersPagerFactory = FakeBeersPagerFactory(FakeBeersRepository()),
+          beersPagerFactory = FakeBeersPagerFactory(repository),
+          beersRepository = repository,
           savedStateHandle = savedStateHandle,
         )
 
@@ -34,5 +36,26 @@ class BeersSearchViewModelAdapterTest {
       runCurrent()
 
       expectThat(savedStateHandle.get<String>("search_query")).isEqualTo("stout")
+    }
+
+  @Test
+  fun `restored style is exposed and style changes are saved`() =
+    runTest(mainDispatcher.testDispatcher) {
+      val repository = FakeBeersRepository()
+      val savedStateHandle = SavedStateHandle(mapOf("search_style_id" to "style-1"))
+      val viewModel =
+        BeersSearchViewModel(
+          coroutineDispatcher = mainDispatcher.dispatcherProvider,
+          beersPagerFactory = FakeBeersPagerFactory(repository),
+          beersRepository = repository,
+          savedStateHandle = savedStateHandle,
+        )
+
+      expectThat(viewModel.styleId.value).isEqualTo("style-1")
+
+      viewModel.onStyleSelected("style-2")
+      runCurrent()
+
+      expectThat(savedStateHandle.get<String>("search_style_id")).isEqualTo("style-2")
     }
 }

@@ -93,11 +93,12 @@ internal class FavoritesEntry(
 
 internal class SearchEntry(
   override val id: Long,
+  repository: BeersRepository,
   pagerFactory: BeersPagerFactory,
   coroutineDispatcher: CoroutineDispatcherProvider,
 ) : SharedAppEntry {
   override val route = PortableRoute.BeersSearch
-  val viewModel = BeersSearchViewModel(coroutineDispatcher, pagerFactory)
+  val viewModel = BeersSearchViewModel(coroutineDispatcher, pagerFactory, repository)
   val listState = LazyListState()
   private var closed = false
   override val isClosed: Boolean
@@ -288,7 +289,8 @@ internal class SharedAppNavigationState(
     when (route) {
       PortableRoute.BeersList -> ListEntry(nextId(), repository, pagerFactory)
       PortableRoute.Favorites -> FavoritesEntry(nextId(), repository)
-      PortableRoute.BeersSearch -> SearchEntry(nextId(), pagerFactory, coroutineDispatcher)
+      PortableRoute.BeersSearch ->
+        SearchEntry(nextId(), repository, pagerFactory, coroutineDispatcher)
       PortableRoute.SavedFilterPresets -> SavedFiltersEntry(nextId(), repository)
       PortableRoute.BeerBrowse -> BrowseHomeEntry(nextId(), repository)
       is PortableRoute.BeerBrowseSelection ->

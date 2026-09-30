@@ -5,6 +5,7 @@ import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
+import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.billionbeers.shared.beersearch.BeersSearchEvent as SharedBeersSearchEvent
 import com.simtop.billionbeers.shared.beersearch.BeersSearchViewModel as SharedBeersSearchViewModel
 import com.simtop.core.core.CoroutineDispatcherProvider
@@ -22,12 +23,15 @@ import kotlinx.coroutines.flow.onEach
 class BeersSearchViewModel(
   coroutineDispatcher: CoroutineDispatcherProvider,
   beersPagerFactory: BeersPagerFactory,
+  beersRepository: BeersRepository,
   @Assisted private val savedStateHandle: SavedStateHandle,
 ) :
   SharedBeersSearchViewModel(
     coroutineDispatcher = coroutineDispatcher,
     beersPagerFactory = beersPagerFactory,
+    beersRepository = beersRepository,
     initialQuery = savedStateHandle.get<String>(KEY_QUERY).orEmpty(),
+    initialStyleId = savedStateHandle.get<String>(KEY_STYLE_ID),
   ) {
 
   @AssistedFactory
@@ -42,10 +46,12 @@ class BeersSearchViewModel(
 
   init {
     query.onEach { savedStateHandle[KEY_QUERY] = it }.launchIn(viewModelScope)
+    styleId.onEach { savedStateHandle[KEY_STYLE_ID] = it }.launchIn(viewModelScope)
   }
 
   private companion object {
     const val KEY_QUERY = "search_query"
+    const val KEY_STYLE_ID = "search_style_id"
   }
 }
 

@@ -147,12 +147,7 @@ fun AppNavigation(
             BeersSearchScreen(
               onBeerClick = ::navigateToBeerDetail,
               onBack = { backStack.removeLastOrNull() },
-              onSaveQuery = { name, query ->
-                viewModel.savePreset(
-                  name,
-                  com.simtop.beerdomain.domain.models.BeersQuery(search = query),
-                )
-              },
+              onSaveQuery = viewModel::savePreset,
             )
           }
 

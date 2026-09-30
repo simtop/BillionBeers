@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.createComposeRule
+import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.core.core.CommonUiState
 import org.junit.Assert.assertEquals
@@ -31,7 +32,12 @@ class BeersSearchInputUiTest {
    * Mirrors the screen's real contract: the query is hoisted, so the field is only ever as correct
    * as the round-trip.
    */
-  private fun setContent(autoFocus: Boolean = true, onQueryChange: (String) -> Unit = {}) {
+  private fun setContent(
+    autoFocus: Boolean = true,
+    styles: CommonUiState<List<BeerStyle>> = CommonUiState.Empty,
+    onQueryChange: (String) -> Unit = {},
+    onStyleChange: (String?) -> Unit = {},
+  ) {
     composeTestRule.setContent {
       var query by remember { mutableStateOf("") }
       BillionBeersTheme {
@@ -42,6 +48,8 @@ class BeersSearchInputUiTest {
             query = it
             onQueryChange(it)
           },
+          styles = styles,
+          onStyleChange = onStyleChange,
           onBeerClick = {},
           onBack = {},
           onScrollToBottom = {},
@@ -77,6 +85,23 @@ class BeersSearchInputUiTest {
       assertClearActionIsPresent()
       assertEveryClickableIsLabelled()
     }
+  }
+
+  @Test
+  fun selectingAStyleReachesTheStyleCallback() {
+    val selectedStyles = mutableListOf<String?>()
+    setContent(
+      styles = CommonUiState.Success(listOf(BeerStyle(id = "ipa", name = "IPA"))),
+      onStyleChange = { selectedStyles += it },
+    )
+
+    searchScreen(composeTestRule) {
+      assertStyleFilterIsDisplayed()
+      openStyleFilter()
+      selectStyle("IPA")
+    }
+
+    assertEquals(listOf("ipa"), selectedStyles)
   }
 
   @Test

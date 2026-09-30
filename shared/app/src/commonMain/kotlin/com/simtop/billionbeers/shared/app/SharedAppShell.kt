@@ -23,6 +23,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -52,6 +53,7 @@ import com.simtop.billionbeers.shared.beerdetail.BeerDetailError
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailEvent
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailStrings
 import com.simtop.billionbeers.shared.beerdetail.SharedBeerDetailContent
+import com.simtop.billionbeers.shared.beersearch.BeersSearchStyleFilter
 import com.simtop.billionbeers.shared.beersearch.SharedBeersSearchContent
 import com.simtop.billionbeers.shared.beerslist.SharedBeersListContent
 import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersTheme
@@ -86,6 +88,10 @@ data class SharedAppStrings(
   val listLoadMoreFailed: String,
   val listEndOfList: (Int) -> String,
   val searchHint: String,
+  val styleFilter: String,
+  val allStyles: String,
+  val clearStyle: String,
+  val clearFilters: String,
   val searchPrompt: String,
   val searchNoResults: (String) -> String,
   val searchResultCount: (Int) -> String,
@@ -309,7 +315,7 @@ fun SharedAppShell(
                 strings = strings,
                 host = host,
                 onBeerClick = { navigate(PortableRoute.BeerDetail(it)) },
-                onSaveQuery = { name -> savePreset(name, BeersQuery(entry.viewModel.query.value)) },
+                onSaveQuery = { name -> savePreset(name, entry.viewModel.activeQuery.value) },
               )
             is BrowseHomeEntry ->
               BrowseHomeDestination(
@@ -489,6 +495,9 @@ private fun SearchDestination(
   onSaveQuery: (String) -> Unit,
 ) {
   val query by entry.viewModel.query.collectAsState()
+  val styles by entry.viewModel.styles.collectAsState()
+  val selectedStyle by entry.viewModel.selectedStyle.collectAsState()
+  val activeQuery by entry.viewModel.activeQuery.collectAsState()
   val viewState by entry.viewModel.viewState.collectAsState()
   val count = (viewState as? CommonUiState.Success)?.data?.items?.size ?: 0
   var presetName by remember { mutableStateOf("") }
@@ -500,6 +509,24 @@ private fun SearchDestination(
       singleLine = true,
       modifier = Modifier.fillMaxWidth().padding(12.dp),
     )
+    Row(
+      Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      BeersSearchStyleFilter(
+        styles = styles,
+        selectedStyle = selectedStyle,
+        styleLabel = strings.styleFilter,
+        allStylesLabel = strings.allStyles,
+        clearStyleLabel = strings.clearStyle,
+        retryLabel = strings.retry,
+        onStyleChange = entry.viewModel::onStyleSelected,
+        onRetryStyles = entry.viewModel::retryStyles,
+      )
+      if (activeQuery.search != null || activeQuery.styleId != null) {
+        TextButton(onClick = entry.viewModel::onResetFilters) { Text(strings.clearFilters) }
+      }
+    }
     Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
       OutlinedTextField(
         value = presetName,
@@ -515,7 +542,8 @@ private fun SearchDestination(
           onSaveQuery(presetName)
           presetName = ""
         },
-        enabled = presetName.isNotBlank() && query.isNotBlank(),
+        enabled =
+          presetName.isNotBlank() && (activeQuery.search != null || activeQuery.styleId != null),
         modifier = Modifier.padding(start = 8.dp),
       ) {
         Text(strings.saveFilter)
