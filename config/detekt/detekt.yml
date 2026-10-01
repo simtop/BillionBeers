@@ -78,7 +78,6 @@ Compose:
     active: true
   CompositionLocalAllowlist:
     active: true
-    allowedCompositionLocals: LocalSpacing,LocalColors,LocalTypography,LocalDebugDrawerToggle,LocalSplitInstallManager
   CompositionLocalNaming:
     active: true
   ConditionHoist:
@@ -149,8 +148,6 @@ Compose:
     active: true
   ViewModelInjection:
     active: true
-    # Default factory names are Hilt-shaped (hiltViewModel); this project is on Metro DI.
-    viewModelFactories: metroViewModel,assistedMetroViewModel
 
 style:
   WildcardImport:
