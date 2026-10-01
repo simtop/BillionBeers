@@ -55,6 +55,7 @@ class ConventionPluginFunctionalTest {
   @Test
   fun `spotless convention exposes a check task and rejects unformatted Kotlin`() {
     writeSettings()
+    writeFile("gradle/libs.versions.toml", "[versions]\nktfmt = \"0.63\"\n")
     writeBuildFile(
       """
       plugins {
@@ -69,7 +70,7 @@ class ConventionPluginFunctionalTest {
         .withArguments("spotlessCheck", "--stacktrace")
         .buildAndFail()
 
-    assertTrue(result.output.contains("spotlessKotlinCheck"))
+    assertTrue(result.task(":spotlessKotlinCheck")?.outcome == TaskOutcome.FAILED, result.output)
   }
 
   @Test

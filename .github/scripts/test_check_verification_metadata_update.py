@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import importlib.util
+import contextlib
+import io
 import tempfile
 import unittest
 from pathlib import Path
@@ -32,6 +34,13 @@ def component(version: str, artifact: str, checksum: str) -> str:
 
 
 class VerificationMetadataUpdateTest(unittest.TestCase):
+    def setUp(self):
+        # Expected rejection tests must not emit real workflow error annotations.
+        capture = contextlib.ExitStack()
+        capture.enter_context(contextlib.redirect_stdout(io.StringIO()))
+        capture.enter_context(contextlib.redirect_stderr(io.StringIO()))
+        self.addCleanup(capture.close)
+
     def verify(self, before: str, after: str) -> int:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

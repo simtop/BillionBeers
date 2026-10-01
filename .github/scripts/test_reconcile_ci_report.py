@@ -137,6 +137,43 @@ def watch(states, initial=None, budget=20):
 
 
 class ReconcileCiReportTest(unittest.TestCase):
+    def test_green_dependabot_behind_creates_actionable_diagnosis(self):
+        source = pr()
+        source["user"] = {"login": "dependabot[bot]"}
+        source["mergeable_state"] = "behind"
+        _, publisher = watch([{"pr": source, "run": run(status="completed", conclusion="success")}])
+        self.assertEqual(1, publisher.creations)
+        self.assertIn("Branch is behind master", publisher.body)
+
+    def test_preparation_uses_latest_current_source_and_latest_attempt(self):
+        source = pr()
+        source["user"] = {"login": "dependabot[bot]"}
+        source["head"]["repo"]["full_name"] = "owner/repo"
+        latest = run(number=4, attempt=2, status="completed", conclusion="success")
+        latest["path"] = ".github/workflows/regen-verification-metadata.yml"
+        latest["head_repository"]["full_name"] = "owner/repo"
+        old = dict(latest, id=3, run_number=3, run_attempt=5)
+        stale = dict(latest, id=5, run_number=5, head_sha="stale")
+        foreign = dict(latest, id=6, run_number=6, head_repository={"full_name": "fork/repo"})
+        api = Mock(repository="owner/repo")
+        api.pages.return_value = [old, latest, stale, foreign]
+        api.get.return_value = latest
+        self.assertEqual(latest, MODULE.preparation_current(api, source))
+        api.get.assert_called_once_with("actions/runs/4")
+
+    def test_preparation_snapshot_classifies_actual_error_and_filters_artifacts(self):
+        failed = run(status="completed", conclusion="failure")
+        api = Mock()
+        api.pages.side_effect = [
+            [job(step="Review dependency coordinate changes")],
+            [{"id": 1, "name": "dependency-preparation-1-1", "expired": False},
+             {"id": 2, "name": "dependency-preparation-1-2", "expired": False}],
+        ]
+        api.download.return_value = b"##[error]This bump adds or removes dependency coordinates, not just versions."
+        result = MODULE.preparation_snapshot(api, failed)
+        self.assertEqual("coordinate_change", result["category"])
+        self.assertEqual([1], [item["id"] for item in result["artifacts"]])
+
     def setUp(self):
         # Simulated outages must not create real GitHub warning annotations in the test job.
         warnings = patch.object(MODULE, "warning")
@@ -388,8 +425,8 @@ class ReconcileCiReportTest(unittest.TestCase):
         self.assertNotIn("in_progress", workflow.split("types:", 1)[1].split("jobs:", 1)[0])
         self.assertNotIn("workflow_run.conclusion != 'success'", workflow)
         refs = MODULE.re.findall(r"^\s+ref: (.+)$", workflow, MODULE.re.MULTILINE)
-        self.assertEqual(["${{ github.event.repository.default_branch }}"] * 2, refs)
-        self.assertEqual(2, workflow.count("persist-credentials: false"))
+        self.assertEqual(["${{ github.event.repository.default_branch }}"] * 3, refs)
+        self.assertEqual(3, workflow.count("persist-credentials: false"))
         self.assertIn("group: ci-diagnosis-${{ github.repository_id }}-${{ needs.resolve.outputs.pr_number }}", workflow)
         self.assertIn("cancel-in-progress: false", workflow)
         self.assertNotIn("issues: write", workflow.split("  comment:")[0])

@@ -24,6 +24,25 @@ def render(jobs=(), **kwargs):
 
 
 class RenderCiPrCommentTest(unittest.TestCase):
+    def test_preparation_failure_is_visible_even_when_ci_passed(self):
+        body = render(conclusion="success", preparation={"id": 12, "run_attempt": 1,
+                      "conclusion": "failure", "category": "coordinate_change", "html_url": "https://github.test/prep"})
+        self.assertIn("Dependency preparation needs attention", body)
+        self.assertIn("exact head SHA and graph digest", body)
+        self.assertNotIn("Previous failure details have been cleared", body)
+
+    def test_gradle_verification_is_not_diagnosed_as_a_format_fix(self):
+        failed = job(name="Code Style Formatting Check", step="Run Spotless Check", diagnostics={
+            "Run Spotless Check": {"error": "Dependency verification failed for configuration"}})
+        body = render([failed])
+        self.assertIn("before formatting could run", body)
+        self.assertNotIn("**Reproduce:** `make format`", body)
+
+    def test_green_but_behind_explains_strict_protection(self):
+        body = render(conclusion="success", mergeable_state="behind")
+        self.assertIn("Branch is behind master", body)
+        self.assertIn("fresh CI", body)
+
     def test_coverage_only_failure_has_no_unrelated_evidence_or_test_diagnoses(self):
         failed = job(step="Coverage floor check", diagnostics={
             "Coverage floor check": {"error": "Line coverage 48.5% is below the floor 52.5%."},

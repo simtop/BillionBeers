@@ -38,7 +38,16 @@ that are easy to get wrong.
    run also executes `make update-docs` and includes the generated README version table in the same
    commit, so a catalog bump does not need a second formatting-fix commit.
 4. **The workflow re-baselines dependency-guard first, and only for version-only drift.** See
-   below — this is what makes (3) actually complete on a real bump.
+   below — this is what makes (3) actually complete on a real bump. Coordinate changes require
+   an exact graph approval before continuing.
+5. **Preparation applies formatting before checking it.** The formatter version is explicit in
+   the catalog, so a Spotless plugin bump does not implicitly change formatting rules. An intentional
+   formatter bump is applied inside the same guarded write-mode sequence, after the original ledger
+   snapshot. Only the recorded tracked formatter output and the three derived files can be staged.
+   Full graph success and unchanged existing checksums/policy are still required before pushing.
+6. **CI Gate requires preparation success on the current bot head.** Gradle-related Dependabot
+   inputs require the corresponding successful preparation; Actions-only updates do not. The
+   preparation checkout is immutable and a final remote-head comparison rejects a stale push.
 
 ## The two load-bearing choices in the workflow
 
@@ -89,13 +98,24 @@ since patch/minor Dependabot PRs auto-merge unread. The workflow therefore compa
   already under review as the bump itself → re-baseline and continue;
 - **a coordinate added or removed** is a new or dropped transitive dependency — the runtime-binary-
   incompatibility signal the guard exists for → fail red, auto-merge never resolves, a human
-  reviews the delta and re-baselines by hand.
+  reviews the delta and explicitly approves its head SHA and graph digest through manual dispatch.
+  The local fallback is `make dependency-guard-baseline-unverified` after review, then commit and
+  push; ordinary baseline generation cannot resolve artifacts absent from the ledger.
 
-  That hand re-baseline needs the escape hatch, not the Makefile target: on an un-regenerated
-  branch the bump's artifacts aren't in the ledger, so `make dependency-guard-baseline` fails on
-  verification like everything else. Use
-  `./gradlew --dependency-verification off :app:dependencyGuardBaseline`, commit, push — the
-  coordinate sets then match and the workflow finishes the ledger itself.
+### Exact graph approval and mechanical output
+
+A coordinate rejection uploads `graph-review.json` with the full before/after versioned baselines,
+added/removed coordinates, source head SHA and a digest covering all of them. A write-mode manual
+dispatch can accept it with `approved_head_sha` and `approved_graph_digest`; both must match the
+newly computed graph. This is a deliberate review action, not a general semver exemption. The
+checksum validator and full task graph still run. The old manual baseline command remains a fallback;
+[the monthly update guide](../dependabot-updates.md) documents the normal artifact/dispatch flow.
+
+Formatter changes are applied before the reference writer checks them. The explicit catalog ktfmt
+version initially matches Spotless's existing bundled version, preserving current formatting. Its
+catalog alias lets a future formatter upgrade be reviewed as an explicit tooling update. Staging
+rejects unrelated tracked changes and never adds untracked files. The formatter runs after the
+original ledger snapshot, so hashes resolved during formatting remain subject to the same validator.
 
 ### Complete task coverage is explicit
 
@@ -136,7 +156,10 @@ those two executions with explicit assembly of the six opted-in debug test APKs,
 than calling a broad root `assembleDebugAndroidTest`, which would pull unsupported benchmark or
 container variants into the graph.
 
-Manual dispatch accepts `reference` and `candidate` modes. Both regenerate on a clean Linux runner,
+Manual dispatch accepts `reference` and `candidate` modes. A non-pushing comparison workflow now
+runs both through the same reusable writer on separate cold Linux runners, with Gradle caches
+disabled, and requires comparator equality. The production alias remains the reference.
+Both modes regenerate on a clean Linux runner,
 run the pre-write safety check, upload the ledger and dependency-guard baseline, and never commit or
 push. After downloading artifacts from runs on the same SHA, compare them with:
 
@@ -165,13 +188,20 @@ to the final generated XML. New components and artifacts are allowed; any checks
 an artifact already in the snapshot is rejected before commit. The same check rejects changes to
 the `<configuration>` block, so regeneration cannot silently weaken trusted-artifact policy.
 
-### Failure classification is diagnostic, not recovery
+### Failure classification and bounded operational recovery
 
 The workflow summary separates coordinate-set rejection, a still-unlisted artifact, changed bytes
 for a recorded artifact, verification-policy drift, build/test/policy failure, and an operational
-termination such as exit 143. It never retries automatically. In particular, a checksum mismatch
-remains an alarm: classification only makes the next human action clear and never writes over the
-evidence.
+termination such as exit 143. A trusted default-branch completion collector may retry exactly once
+when a current-head
+Dependabot pull-request run failed specifically during regeneration with both an actual runner
+shutdown error and exit 143. It rejects earlier build/policy errors, coordinate/checksum rejection,
+manual dispatches, cancellations, newer runs and second attempts. It reads logs as data and never
+checks out PR code. In particular, a checksum mismatch remains an alarm: classification never
+writes over the evidence. The existing CI diagnosis includes preparation
+status and graph artifacts; it explains verification failures before Spotless and green-but-behind
+branches. Strict base protection remains enabled. The collector can diagnose a runner shutdown even
+when teardown prevented the job summary or resource artifact from uploading.
 
 ## Operational notes
 
