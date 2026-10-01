@@ -166,6 +166,20 @@ silently pass, while the unit lane already finishes well before the managed-devi
 the current CI critical path. Keep the single unit job and its timing summary. Revisit only if unit
 execution becomes the critical path or its topology changes materially.
 
+## Hosted unit compiler memory
+
+The unit lane runs all KMP browser tests alongside Android/JVM tests. With the locally measured
+2 GiB Kotlin daemon heap, hosted run `36839525307` failed linking
+`:shared:presentation:compileTestDevelopmentExecutableKotlinWasmJs` with
+`OutOfMemoryError: GC overhead limit exceeded`; no failing test assertion was established.
+The separate Web lane passed but does not compile every module's browser tests.
+
+The unit job therefore overrides only its compiler heap to 4 GiB and limits Gradle to two workers.
+It keeps the complete test inventory and local defaults. Runner capacity is logged before testing,
+and archived compiler GC logs record the actual heap and collection behavior. This is a targeted
+OOM mitigation, not a measured optimal heap or a CI speedup claim. Reassess from hosted evidence
+if compilation still fails or machine memory becomes the constraint.
+
 ## Rejected: walking back more than one run
 
 When the previous run was cancelled or is still in flight, its lanes are untrusted and re-run. The

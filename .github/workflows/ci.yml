@@ -294,6 +294,13 @@ jobs:
     if: needs.changes.outputs.unit == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      # The full suite links Compose Wasm tests as well as Android/JVM tests. The
+      # local 2 GiB compiler budget GC-thrashed and failed that link on hosted CI.
+      # Bound concurrent Gradle work while giving the separate compiler JVM headroom.
+      GRADLE_RUNNER: >-
+        ./gradlew --max-workers=2
+        "-Pkotlin.daemon.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=768m -XX:+HeapDumpOnOutOfMemoryError -Xlog:gc,gc+init:file=/tmp/unit-kotlin-gc-%p.log:time,uptime,level,tags"
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -311,6 +318,11 @@ jobs:
 
       - name: Make gradlew executable
         run: chmod +x gradlew
+
+      - name: Record unit runner memory capacity
+        run: |
+          free -m
+          nproc
 
       - name: Run Unit Tests
         id: unit_phase
@@ -389,6 +401,15 @@ jobs:
             **/build/reports/tests/
             **/build/ci-phase-timings/
             build/reports/test-tier-inventory.md
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Archive compiler memory evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: unit-compiler-memory
+          path: /tmp/unit-kotlin-gc-*.log
           if-no-files-found: warn
           retention-days: 7
 
