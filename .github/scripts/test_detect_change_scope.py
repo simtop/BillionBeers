@@ -104,7 +104,9 @@ with tempfile.TemporaryDirectory() as temporary:
 workflow = (ROOT / ".github/workflows/ci.yml").read_text()
 report_workflow = (ROOT / ".github/workflows/ci-report.yml").read_text()
 producer_name = next(line.removeprefix("name: ").strip() for line in workflow.splitlines() if line.startswith("name:"))
-assert f"workflows: [{producer_name}]" in report_workflow
+subscription = next(line.strip() for line in report_workflow.splitlines() if line.strip().startswith("workflows:"))
+assert producer_name in subscription
+assert "Regenerate Verification Metadata" in subscription
 for marker in (
     "native: ${{ steps.filter.outputs.native }}",
     "web: ${{ steps.filter.outputs.web }}",

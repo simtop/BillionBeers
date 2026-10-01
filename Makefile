@@ -275,6 +275,8 @@ ci-report-test: ## Test CI diagnosis, evidence parsing, and incremental comment 
 	@python3 .github/scripts/test_validate_native_test_reports.py
 	@python3 scripts/test_verify_ios_simulator_artifacts.py
 	@python3 .github/scripts/test_summarize_test_failures.py
+	@python3 .github/scripts/test_dependabot_preparation.py
+	@python3 .github/scripts/test_check_verification_metadata_update.py
 
 test-tier-inventory: ## Write the informational test-tier ownership report.
 	@bash .github/scripts/detect-change-scope.sh --self-test
@@ -454,6 +456,9 @@ VERIFICATION_METADATA_CANDIDATE_DEBUG_DEVICE_TASKS := \
 VERIFICATION_METADATA_CANDIDATE_SMOKE_DEVICE_TASKS := \
 	:app:assembleReleaseSmoke \
 	:app:assembleReleaseSmokeAndroidTest
+
+verification-metadata-format: ## Apply formatting inside the guarded metadata-writing preparation sequence.
+	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) spotlessApply
 
 verification-metadata: verification-metadata-reference ## Regenerate verification metadata with the proven reference graph (ADR 0007).
 

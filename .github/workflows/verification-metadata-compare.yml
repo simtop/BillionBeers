@@ -1,0 +1,44 @@
+name: Compare Verification Metadata Writers
+
+# No pushes or deploy key. Both writers resolve the same immutable source on
+# separate cold Linux runners; comparison cannot change the production alias.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  write:
+    name: Cold Linux ${{ matrix.mode }} writer
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [reference, candidate]
+    uses: ./.github/workflows/regen-verification-metadata.yml
+    with:
+      mode: ${{ matrix.mode }}
+
+  compare:
+    name: Require equivalent ledger coverage
+    needs: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout comparator
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Download reference
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: verification-metadata-reference-${{ github.sha }}
+          path: reference
+      - name: Download candidate
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: verification-metadata-candidate-${{ github.sha }}
+          path: candidate
+      - name: Compare policies, artifacts and accepted checksums
+        run: >-
+          python3 .github/scripts/check-verification-metadata-update.py --require-equivalent
+          reference/gradle/verification-metadata.xml candidate/gradle/verification-metadata.xml

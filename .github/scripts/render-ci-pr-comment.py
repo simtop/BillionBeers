@@ -60,6 +60,16 @@ STEP_RULES = {
     "Verify the README version table matches the catalog": ("make update-docs", (), None),
 }
 EMPTY_RULE = (None, (), None)
+PREPARATION_ACTIONS = {
+    "operational_termination": "Runner shutdown interrupted preparation. One current-head retry is allowed; a second interruption needs investigation.",
+    "coordinate_change": "Review the added/removed coordinates in the preparation artifact. Accept only its exact head SHA and graph digest through the manual write-mode dispatch.",
+    "formatting": "Preparation could not apply/check the formatter output; inspect the preparation log before dispatching Format Fix.",
+    "resolution_conflict": "Diagnose production/test classpaths with dependencyInsight and fix the demonstrated version constraints.",
+    "checksum_mismatch": "ALARM: verify the recorded artifact independently. Do not accept or regenerate over changed bytes.",
+    "verification_policy_change": "Review verification-policy changes by hand; preparation must not weaken the ledger policy.",
+    "verification_failure": "Inspect the dependency-verification report; distinguish an unlisted artifact from a changed checksum before recovery.",
+    "evidence_unavailable": "Preparation failed, but its log is unavailable. Open the preparation run; no failure cause is inferred.",
+}
 
 
 def failed_steps(job: dict) -> list[dict]:
@@ -107,9 +117,13 @@ def text(value: str) -> str:
 
 def render(data: dict, run_url: str, repository: str, run_id: str) -> str:
     jobs = actionable_jobs(data)
+    preparation = data.get("preparation") or {}
+    preparation_bad = preparation.get("conclusion") in BAD
     status = data.get("status", "completed")
     conclusion = data.get("conclusion")
-    if conclusion == "success":
+    if preparation_bad:
+        title = "❌ Dependency preparation needs attention"
+    elif conclusion == "success":
         title = "✅ CI passed"
     elif conclusion == "skipped":
         title = "⏭️ CI skipped"
@@ -117,13 +131,33 @@ def render(data: dict, run_url: str, repository: str, run_id: str) -> str:
         title = "❌ CI needs attention"
     else:
         title = "⏳ CI running" if run_id else "⏳ Awaiting CI"
-    generation = {"sha": data.get("head_sha", ""), "run_id": run_id, "attempt": data.get("run_attempt", 1)}
+    generation = {"sha": data.get("head_sha", ""), "run_id": run_id, "attempt": data.get("run_attempt", 1),
+                  "preparation_id": preparation.get("id"), "preparation_attempt": preparation.get("run_attempt")}
     lines = [MARKER, f"<!-- billionbeers-ci:state {json.dumps(generation, sort_keys=True)} -->", f"## {title}", ""]
     # Keep the fallback link above bounded detail, so truncation never removes the way to full logs.
     lines += [f"[Open the CI run]({run_url})" if run_id else f"[Open PR checks]({run_url})", ""]
     if data.get("head_sha"):
         lines += [f"Commit {SUMMARY.inline_code(data['head_sha'][:7])} · attempt {data.get('run_attempt', 1)}", ""]
-    if conclusion in {"success", "skipped"}:
+    if preparation:
+        lines += ["### Dependency preparation", "", f"[Open preparation run]({preparation['html_url']})", ""]
+        if preparation_bad:
+            category = preparation.get("category", "unknown")
+            lines += [f"**Result:** {text(category)}", "",
+                      PREPARATION_ACTIONS.get(category, "Inspect the first preparation failure. No generated files were pushed."), ""]
+            if preparation.get("error"):
+                lines += [SUMMARY.inline_code(preparation["error"]), ""]
+            for artifact in preparation.get("artifacts", []):
+                lines += [f"[Download preparation evidence](https://github.com/{repository}/actions/runs/{preparation['id']}/artifacts/{artifact['id']})", ""]
+            lines += ["CI verification errors can follow from the unprepared ledger; skipped lanes are not additional test defects.", ""]
+        elif preparation.get("status") != "completed":
+            lines += ["Preparation is still running. Its result has not been established.", ""]
+        else:
+            lines += ["Preparation completed; strict CI still determines merge eligibility.", ""]
+    if data.get("mergeable_state") == "behind":
+        lines += ["**Branch is behind master.** Strict protection requires an update and fresh CI even if the previous run is green. Rebase the Dependabot branch; preparation will regenerate its derived files.", ""]
+    if conclusion == "success" and preparation_bad:
+        lines += ["CI passed, but dependency preparation remains unresolved.", ""]
+    elif conclusion in {"success", "skipped"}:
         lines += ["Previous failure details have been cleared." if conclusion == "success" else "This run was skipped, not passed. Previous failure details have been cleared.", ""]
     elif not jobs:
         if status == "completed":
@@ -144,7 +178,10 @@ def render(data: dict, run_url: str, repository: str, run_id: str) -> str:
             name = step.get("name", "Unknown step")
             lines += [f"**Failed step:** {text(name)}", ""]
             command, _, mode = STEP_RULES.get(name, EMPTY_RULE)
-            if command:
+            verification_error = "Dependency verification failed" in job.get("diagnostics", {}).get(name, {}).get("error", "")
+            if name == "Run Spotless Check" and verification_error:
+                lines += ["Gradle failed verification before formatting could run. Inspect dependency preparation; Format Fix hits the same blocker.", ""]
+            elif command:
                 lines += [f"**Reproduce:** {SUMMARY.inline_code(command)}", ""]
             details = job.get("diagnostics", {}).get(name, {})
             if details.get("error"):

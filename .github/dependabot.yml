@@ -4,7 +4,6 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
-      day: "sunday"
     open-pull-requests-limit: 10
     commit-message:
       prefix: "chore(deps)"
@@ -32,11 +31,13 @@ updates:
           - "androidx.*"
         exclude-patterns:
           - "androidx.compose*"
+          - "androidx.activity:activity-compose*"
         update-types:
           - "minor"
           - "patch"
       compose:
         patterns:
+          - "org.jetbrains.compose*"
           - "androidx.compose*"
           - "androidx.activity:activity-compose*"
         update-types:
@@ -46,6 +47,13 @@ updates:
         patterns:
           - "com.squareup.okhttp3*"
           - "com.squareup.retrofit2*"
+          - "io.ktor*"
+        update-types:
+          - "minor"
+          - "patch"
+      image-loading:
+        patterns:
+          - "io.coil-kt*"
         update-types:
           - "minor"
           - "patch"
@@ -69,6 +77,7 @@ updates:
       build-tooling:
         patterns:
           - "com.diffplug.spotless*"
+          - "com.facebook:ktfmt"
           - "io.gitlab.arturbosch.detekt*"
           - "com.squareup:kotlinpoet*"
           - "com.android.tools.build*"
@@ -80,7 +89,6 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
-      day: "sunday"
     commit-message:
       prefix: "chore(ci)"
     groups:

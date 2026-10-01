@@ -16,6 +16,11 @@ name: Regenerate Verification Metadata
 #   artifacts (e.g. aapt2 linux jars) that a macOS-run `make verification-metadata` misses.
 
 on:
+  workflow_call:
+    inputs:
+      mode:
+        required: true
+        type: string
   pull_request:
     branches: [main, master]
     paths:
@@ -37,19 +42,27 @@ on:
           - write
           - reference
           - candidate
+      approved_head_sha:
+        description: Full head SHA of the reviewed coordinate change (write mode only)
+        required: false
+        type: string
+      approved_graph_digest:
+        description: Exact graph digest from the dependency-preparation artifact
+        required: false
+        type: string
 
 # The deploy key gives push access; the token needs nothing beyond checkout.
 permissions:
   contents: read
 
 concurrency:
-  group: regen-verification-metadata-${{ github.head_ref || github.ref_name }}
+  group: regen-verification-metadata-${{ github.head_ref || github.ref_name }}-${{ inputs.mode || 'write' }}
   cancel-in-progress: false
 
 jobs:
   regen:
     name: Regenerate verification-metadata.xml
-    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.user.login == 'dependabot[bot]'
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.user.login == 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -57,9 +70,9 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           # pull_request checks out an ephemeral merge commit by default - we need the real
-          # branch so the regenerated ledger can be committed and pushed back to it.
-          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
-          ssh-key: ${{ secrets.VERIFICATION_METADATA_DEPLOY_KEY }}
+          # immutable head; a final freshness check guards pushing to the source branch.
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          ssh-key: ${{ (github.event_name == 'pull_request' || inputs.mode == 'write') && secrets.VERIFICATION_METADATA_DEPLOY_KEY || '' }}
           # The regen graph runs verifyPaparazziDebug alongside testDebugUnitTest, which puts the
           # generated screenshot tests in verify mode - without LFS the golden PNGs are pointer
           # files and Paparazzi NPEs on them.
@@ -68,8 +81,9 @@ jobs:
       - name: Select writer mode
         id: mode
         env:
-          REQUESTED_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'write' }}
+          REQUESTED_MODE: ${{ inputs.mode || 'write' }}
         run: |
+          case "$REQUESTED_MODE" in write|reference|candidate) ;; *) exit 1 ;; esac
           echo "value=$REQUESTED_MODE" >> "$GITHUB_OUTPUT"
           if [ "$REQUESTED_MODE" = "candidate" ]; then
             echo "graph=candidate" >> "$GITHUB_OUTPUT"
@@ -79,7 +93,14 @@ jobs:
 
       - name: Skip if HEAD is already a regen commit
         id: guard
+        env:
+          PREPARATION_BRANCH: ${{ github.head_ref || github.ref_name }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
+          if [ "${{ steps.mode.outputs.value }}" = "write" ] && [ "$PREPARATION_BRANCH" = "$DEFAULT_BRANCH" ]; then
+            echo "::error::Write mode must target a feature/Dependabot branch, never the default branch."
+            exit 1
+          fi
           if [ "${{ steps.mode.outputs.value }}" = "write" ] \
               && [ "$(git log -1 --pretty=%s)" = "chore: regenerate dependency verification metadata" ]; then
             echo "HEAD is this workflow's own commit - nothing new to resolve."
@@ -108,6 +129,8 @@ jobs:
         uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6
         with:
           gradle-version: wrapper
+          # Experiments must compare actual cold resolution, not a restored ledger cache.
+          cache-disabled: ${{ steps.mode.outputs.value != 'write' }}
 
       - name: Make gradlew executable
         if: steps.guard.outputs.skip != 'true'
@@ -133,34 +156,26 @@ jobs:
             "-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8" \
             :app:dependencyGuardBaseline
 
-      # dependency-guard exists to make any change to the shipped dependency graph a *reviewed*
-      # decision, and patch/minor Dependabot PRs auto-merge unread - so re-baselining
-      # unconditionally would silently disable the control for exactly the PRs it guards.
-      # Version-only drift (same coordinates, new versions) is what a bump legitimately does and
-      # is already under review as the bump itself. A coordinate appearing or disappearing is a
-      # new or dropped transitive dependency - the signal the guard is actually for - so that
-      # stops here, red, and the auto-merge never resolves.
-      - name: Fail if the bump added or removed a coordinate
+      - name: Review dependency coordinate changes
         id: coordinate_check
         if: steps.guard.outputs.skip != 'true'
+        env:
+          APPROVED_HEAD: ${{ inputs.approved_head_sha }}
+          APPROVED_DIGEST: ${{ inputs.approved_graph_digest }}
         run: |
-          coords() { sed 's/:[^:]*$//' "$1" | sort -u; }
-          if ! delta=$(diff <(coords "$RUNNER_TEMP/guard-before.txt") \
-                            <(coords app/dependencies/releaseRuntimeClasspath.txt)); then
-            echo "classification=coordinate_change" >> "$GITHUB_OUTPUT"
-            echo "::error::This bump adds or removes dependency coordinates, not just versions."
-            echo "$delta"
-            echo
-            echo "Review that transitive-graph change by hand. To accept it, re-baseline on the"
-            echo "branch and push - note that plain 'make dependency-guard-baseline' will NOT work"
-            echo "here, because the bump's artifacts aren't in the ledger yet and verification"
-            echo "blocks every Gradle invocation until they are:"
-            echo "  make dependency-guard-baseline-unverified"
-            echo "Once the coordinate sets match again, this workflow re-runs and finishes the job."
-            exit 1
-          fi
-          echo "classification=version_only" >> "$GITHUB_OUTPUT"
-          echo "Release classpath drift is version-only - safe to re-baseline automatically."
+          python3 .github/scripts/dependabot-preparation.py \
+            --before "$RUNNER_TEMP/guard-before.txt" \
+            --after app/dependencies/releaseRuntimeClasspath.txt \
+            --head-sha "$(git rev-parse HEAD)" \
+            --output "$RUNNER_TEMP/dependency-preparation" \
+            --approved-head "$APPROVED_HEAD" --approved-digest "$APPROVED_DIGEST"
+
+      - name: Apply mechanical formatting
+        id: format
+        if: steps.guard.outputs.skip != 'true'
+        run: |
+          make verification-metadata-format
+          git diff --name-only -z -- '*.kt' '*.gradle.kts' > "$RUNNER_TEMP/formatting-files"
 
       # Strict on purpose (no continue-on-error): if the task graph fails, the bump needs a
       # human anyway, and committing a partially-resolved ledger would only mask that. Capture the
@@ -170,7 +185,7 @@ jobs:
         if: steps.guard.outputs.skip != 'true'
         run: |
           set +e
-          make "verification-metadata-${{ steps.mode.outputs.graph }}" 2>&1 \
+          bash .github/scripts/run-dependabot-preparation.sh "${{ steps.mode.outputs.graph }}" 2>&1 \
             | tee "$RUNNER_TEMP/verification-metadata.log"
           status=${PIPESTATUS[0]}
           set -e
@@ -220,6 +235,20 @@ jobs:
         if: steps.guard.outputs.skip != 'true' && steps.mode.outputs.value == 'write'
         run: make update-docs
 
+      - name: Upload preparation evidence
+        if: always() && steps.guard.outputs.skip != 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: dependency-preparation-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/dependency-preparation/
+            ${{ runner.temp }}/verification-metadata.log
+            ${{ runner.temp }}/dependency-preparation-resources.log
+            ${{ runner.temp }}/guard-before.txt
+            app/dependencies/releaseRuntimeClasspath.txt
+            gradle/verification-metadata.xml
+          retention-days: 14
+
       - name: Upload experiment ledger
         id: upload_experiment
         if: steps.guard.outputs.skip != 'true' && steps.mode.outputs.value != 'write'
@@ -233,17 +262,25 @@ jobs:
 
       - name: Commit and push if generated files changed
         id: commit
+        env:
+          PREPARATION_BRANCH: ${{ github.head_ref || github.ref_name }}
         if: steps.guard.outputs.skip != 'true' && steps.mode.outputs.value == 'write'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add gradle/verification-metadata.xml app/dependencies/releaseRuntimeClasspath.txt README.md
+          python3 .github/scripts/stage-dependabot-preparation.py "$RUNNER_TEMP/formatting-files"
+          # Reject a stale run instead of pushing a result onto a rebased/newer branch.
+          git fetch origin "$PREPARATION_BRANCH"
+          if [ "$(git rev-parse FETCH_HEAD)" != "$(git rev-parse HEAD)" ]; then
+            echo "::error::PR head changed during preparation; no generated files were pushed."
+            exit 1
+          fi
           if git diff --cached --quiet; then
             echo "result=no_diff" >> "$GITHUB_OUTPUT"
             echo "Generated files are already current - nothing to commit."
           else
             git commit -m "chore: regenerate dependency verification metadata"
-            git push
+            git push origin "HEAD:refs/heads/$PREPARATION_BRANCH"
             echo "result=pushed" >> "$GITHUB_OUTPUT"
           fi
 
@@ -255,6 +292,7 @@ jobs:
           GUARD_BASELINE_OUTCOME: ${{ steps.guard_baseline.outcome }}
           COORDINATE_OUTCOME: ${{ steps.coordinate_check.outcome }}
           COORDINATE_CLASSIFICATION: ${{ steps.coordinate_check.outputs.classification }}
+          FORMAT_OUTCOME: ${{ steps.format.outcome }}
           REGENERATE_OUTCOME: ${{ steps.regenerate.outcome }}
           REGENERATE_CLASSIFICATION: ${{ steps.regenerate.outputs.classification }}
           VERIFY_UPDATE_OUTCOME: ${{ steps.verify_update.outcome }}
@@ -274,7 +312,9 @@ jobs:
             result="dependency-guard re-baseline failed"
           elif [ "$COORDINATE_CLASSIFICATION" = "coordinate_change" ]; then
             result="rejected: dependency coordinates were added or removed"
-            action="Review the transitive graph and re-baseline manually if the change is intended."
+            action="Download dependency-preparation, review its exact graph and dispatch write mode with its head SHA and digest."
+          elif [ "$FORMAT_OUTCOME" = "failure" ]; then
+            result="mechanical formatting failed"
           elif [ "$REGENERATE_OUTCOME" = "failure" ]; then
             case "$REGENERATE_CLASSIFICATION" in
               unlisted_artifact)
@@ -287,7 +327,7 @@ jobs:
                 ;;
               operational_termination)
                 result="cancelled or terminated while resolving the reference graph"
-                action="Check the run conclusion and runner logs before deciding whether one retry is justified."
+                action="The trusted completion collector may retry once if this is a verified current-head runner shutdown."
                 ;;
               *)
                 result="failed: build, test, or policy task rejected the generated graph"

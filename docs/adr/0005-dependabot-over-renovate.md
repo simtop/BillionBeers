@@ -41,6 +41,11 @@ Renovate's real advantages are given up deliberately:
 
 ## Consequences
 
+- Keep one monthly update batch for both ecosystems. Gradle grouping includes Ktor, Coil and
+  JetBrains Compose Multiplatform; Activity Compose is excluded from the earlier AndroidX group
+  so its first match is Compose. Retain the ten-PR cap: a smaller cap combined with monthly checks
+  could leave categories waiting for a later batch. Runtime graph changes and actual compatibility
+  failures still require review; grouping is not a compatibility claim.
 - Auto-merge for patch/minor updates (`.github/workflows/dependabot-auto-merge.yml`) required two
   repo-level changes beyond just Dependabot config: branch protection on `master` requiring CI
   status checks, and enabling the repo's `allow_auto_merge` setting. Both are now in place. Major

@@ -46,7 +46,7 @@ jobs:
 
       - name: Run Spotless Check
         id: spotless-check
-        run: ./gradlew spotlessCheck
+        run: ./gradlew spotlessCheck 2>&1 | tee "$RUNNER_TEMP/spotless-check.log"
 
       # Lives here because this lane always runs and already has Gradle set up. Guards the one
       # verification gap CI is otherwise blind to: artifacts only Android Studio's sync resolves.
@@ -73,8 +73,14 @@ jobs:
 
       - name: Format Fix Hint
         if: always() && steps.spotless-check.outcome == 'failure'
+        env:
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
         run: |
-          BRANCH_NAME="${{ github.head_ref || github.ref_name }}"
+          if grep -Fq "Dependency verification failed" "$RUNNER_TEMP/spotless-check.log"; then
+            echo "### Dependency verification blocked formatting" >> "$GITHUB_STEP_SUMMARY"
+            echo "Gradle failed before Spotless ran. Inspect dependency preparation; Format Fix hits the same blocker." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           echo "### 🎨 Formatting Check Failed" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Run the **Format Fix** workflow against this branch to auto-apply Spotless and push a fix commit:" >> $GITHUB_STEP_SUMMARY
@@ -196,8 +202,9 @@ jobs:
       # presents re-baselining only as the reviewed exception.
       - name: Detekt Hint
         if: always() && steps.detekt-check.outcome == 'failure'
+        env:
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
         run: |
-          BRANCH_NAME="${{ github.head_ref || github.ref_name }}"
           echo "### 🔍 Detekt Found New Issues" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "The backlog that existed when this gate was adopted is already baselined, so a failure here means **new** findings. Fix them." >> $GITHUB_STEP_SUMMARY
@@ -816,7 +823,12 @@ jobs:
   # place. `if: always()` so the gate runs even when an upstream job fails.
   ci-gate:
     name: CI Gate
+    timeout-minutes: 185
     if: always()
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
     needs:
       - format-check
       - changes
@@ -837,3 +849,19 @@ jobs:
           echo "One or more CI jobs failed or were cancelled:"
           echo '${{ toJSON(needs) }}'
           exit 1
+
+      - name: Require successful Dependabot preparation on this head
+        if: github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Verify dependency preparation result
+        if: github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: >-
+          python3 .github/scripts/dependabot-preparation.py --require-prepared-head "$PR_NUMBER"
+          --expected-head "$EXPECTED_HEAD" --wait-seconds 10800

@@ -31,6 +31,7 @@ API_ERRORS = (OSError, ValueError, KeyError, zipfile.BadZipFile)
 MAX_ARCHIVE = 32 * 1024 * 1024
 MAX_XML = 2 * 1024 * 1024
 MAX_LOG = 16 * 1024 * 1024
+PREPARATION = RENDER.load_script("dependabot-preparation")
 
 
 def warning(message: str) -> None:
@@ -50,6 +51,14 @@ class GitHub:
 
     def get(self, path: str):
         return PUBLISH.api_request(self.token, f"{self.base}/{path}")
+
+    def post(self, path: str) -> None:
+        request = urllib.request.Request(f"{self.base}/{path}", data=b"{}", method="POST", headers={
+            "Authorization": f"Bearer {self.token}", "Accept": "application/vnd.github+json",
+            "Content-Type": "application/json", "X-GitHub-Api-Version": "2022-11-28",
+        })
+        with urllib.request.urlopen(request, timeout=20):
+            pass  # The rerun endpoint returns 201/202 with no JSON body.
 
     def pages(self, path: str, key: str | None = None) -> list:
         result = []
@@ -98,7 +107,7 @@ def same_source(pr: dict, run: dict, repository: str) -> bool:
 
 
 def resolve_pr(api: GitHub, run: dict) -> int | None:
-    if run.get("event") != "pull_request" or run.get("path") != ".github/workflows/ci.yml":
+    if run.get("event") != "pull_request" or run.get("path") not in {".github/workflows/ci.yml", f".github/workflows/{PREPARATION.WORKFLOW}"}:
         return None
     candidates = run.get("pull_requests", [])
     if not candidates:
@@ -138,6 +147,52 @@ def current(api: GitHub, pr_number: int) -> tuple[dict, dict | None]:
     # A rerun of an older original run must not supersede a newer run on the same SHA.
     latest = max(matches, key=lambda run: run["run_number"])
     return pr, api.get(f"actions/runs/{latest['id']}")
+
+
+def preparation_current(api: GitHub, pr: dict) -> dict | None:
+    if pr.get("state") != "open" or pr.get("user", {}).get("login") != "dependabot[bot]":
+        return None
+    query = urllib.parse.urlencode({"event": "pull_request", "head_sha": pr["head"]["sha"]})
+    runs = api.pages(f"actions/workflows/{PREPARATION.WORKFLOW}/runs?{query}", "workflow_runs")
+    matches = [run for run in runs if PREPARATION.eligible_pr(pr, run, api.repository)]
+    if not matches:
+        return None
+    latest = max(matches, key=lambda run: run["run_number"])
+    return api.get(f"actions/runs/{latest['id']}")
+
+
+def preparation_snapshot(api: GitHub, run: dict | None) -> dict | None:
+    if run is None:
+        return None
+    data = dict(run)
+    jobs = api.pages(f"actions/runs/{run['id']}/attempts/{run['run_attempt']}/jobs", "jobs")
+    bad = [job for job in jobs if job.get("conclusion") in RENDER.BAD]
+    data["category"] = "pending" if run["status"] != "completed" else run.get("conclusion", "unknown")
+    data["error"] = ""
+    for job in bad:
+        steps = RENDER.failed_steps(job)
+        if not steps:
+            continue
+        step = steps[0]
+        data["failed_step"] = step["name"]
+        try:
+            log = api.download(f"actions/jobs/{job['id']}/logs", MAX_LOG).decode("utf-8", errors="replace")
+            data["category"] = PREPARATION.classify(log, step["name"])
+            data["error"] = RENDER.error_excerpt(step_log(log, step))
+        except API_ERRORS:
+            data["category"] = "evidence_unavailable"
+        break
+    try:
+        data["artifacts"] = [item for item in api.pages(f"actions/runs/{run['id']}/artifacts", "artifacts")
+                             if not item.get("expired") and item.get("name") == f"dependency-preparation-{run['id']}-{run['run_attempt']}"]
+    except API_ERRORS:
+        data["artifacts"] = []
+    return data
+
+
+def combined_generation(pr: dict, run: dict | None, preparation: dict | None) -> tuple:
+    return (*generation(pr, run), preparation["id"] if preparation else None,
+            preparation["run_attempt"] if preparation else None)
 
 
 def generation(pr: dict, run: dict | None) -> tuple:
@@ -289,13 +344,13 @@ def watch(api: GitHub, pr_number: int, *, budget: float = 900, interval: float =
     completed_observations = 0
     last_body = None
 
-    def publish(data, pr, run, *, create, reset=False):
+    def publish(data, pr, run, preparation=None, *, create, reset=False):
         nonlocal last_body
-        expected = generation(pr, run)
+        expected = combined_generation(pr, run, preparation)
 
         def is_current():
             live_pr, live_run = current(api, pr_number)
-            return live_pr.get("state") == "open" and generation(live_pr, live_run) == expected
+            return live_pr.get("state") == "open" and combined_generation(live_pr, live_run, preparation_current(api, live_pr)) == expected
 
         url = run["html_url"] if run else f"{pr['html_url']}/checks"
         run_id = str(run["id"]) if run else ""
@@ -314,7 +369,8 @@ def watch(api: GitHub, pr_number: int, *, budget: float = 900, interval: float =
             pr, run = current(api, pr_number)
             if pr.get("state") != "open":
                 return
-            identity = generation(pr, run)
+            preparation = preparation_current(api, pr)
+            identity = combined_generation(pr, run, preparation)
             if identity != adopted:
                 completed_observations = 0
                 last_data, last_pr = None, None
@@ -322,17 +378,22 @@ def watch(api: GitHub, pr_number: int, *, budget: float = 900, interval: float =
                 # Clear obsolete failures before downloading evidence for the replacement attempt.
                 if not run or run["status"] != "completed":
                     pending = {"status": "in_progress", "head_sha": pr["head"]["sha"], "run_attempt": run["run_attempt"] if run else 1}
-                    if not publish(pending, pr, run, create=False, reset=True):
+                    if not publish(pending, pr, run, preparation, create=False, reset=True):
                         sleep(min(interval, max(0, deadline - clock())))
                         continue
                 adopted = identity
             data = snapshot(api, pr, run, evidence)
-            create = bool(RENDER.actionable_jobs(data) or data.get("conclusion") in RENDER.BAD)
-            if not publish(data, pr, run, create=create):
+            data["preparation"] = preparation_snapshot(api, preparation)
+            data["mergeable_state"] = pr.get("mergeable_state")
+            create = bool(RENDER.actionable_jobs(data) or data.get("conclusion") in RENDER.BAD
+                          or preparation and preparation.get("conclusion") in RENDER.BAD
+                          or pr.get("user", {}).get("login") == "dependabot[bot]"
+                          and pr.get("mergeable_state") == "behind")
+            if not publish(data, pr, run, preparation, create=create):
                 sleep(min(interval, max(0, deadline - clock())))
                 continue
             last_data, last_pr = data, pr
-            if run and run["status"] == "completed":
+            if run and run["status"] == "completed" and (not preparation or preparation["status"] == "completed"):
                 # Allow one extra poll for final jobs/uploads becoming visible after completion.
                 completed_observations += 1
                 if completed_observations >= 2:
@@ -345,9 +406,10 @@ def watch(api: GitHub, pr_number: int, *, budget: float = 900, interval: float =
     if last_data is not None:
         try:
             pr, run = current(api, pr_number)
-            if pr.get("state") == "open" and generation(pr, run) == adopted:
+            preparation = preparation_current(api, pr)
+            if pr.get("state") == "open" and combined_generation(pr, run, preparation) == adopted:
                 last_data["incomplete"] = True
-                publish(last_data, last_pr, run, create=False)
+                publish(last_data, last_pr, run, preparation, create=False)
         except API_ERRORS:
             warning("Live reporting deadline reached; final reconciliation deferred to completion event")
 

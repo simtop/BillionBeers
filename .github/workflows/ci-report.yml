@@ -2,7 +2,7 @@ name: CI PR Diagnosis
 
 on:
   workflow_run:
-    workflows: [BillionBeers CI]
+    workflows: [BillionBeers CI, Regenerate Verification Metadata]
     types: [completed]
 
 permissions:
@@ -31,6 +31,34 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           RUN_ID: ${{ github.event.workflow_run.id }}
         run: python3 .github/scripts/reconcile-ci-report.py --resolve-run "$RUN_ID"
+
+  recovery:
+    name: Recover one interrupted Dependabot preparation
+    needs: resolve
+    if: >-
+      needs.resolve.outputs.pr_number != '' &&
+      github.event.workflow_run.name == 'Regenerate Verification Metadata' &&
+      github.event.workflow_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+      actions: write
+    concurrency:
+      group: dependency-preparation-recovery-${{ github.event.workflow_run.id }}
+      cancel-in-progress: false
+    steps:
+      - name: Checkout trusted recovery script
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - name: Retry only a verified current-head runner shutdown
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: python3 .github/scripts/dependabot-preparation.py --recover-run "$RUN_ID"
 
   comment:
     name: Reconcile CI diagnosis

@@ -4,14 +4,16 @@ plugins {
     id("com.diffplug.spotless")
 }
 
+val libs = billionBeersCatalog()
+
 configure<SpotlessExtension> {
     kotlin {
         target("**/*.kt")
         targetExclude("**/build/**/*.kt", "**/bin/**/*.kt")
-        ktfmt().googleStyle()
+        ktfmt(libs.billionBeersVersion("ktfmt")).googleStyle()
     }
     kotlinGradle {
         target("*.gradle.kts")
-        ktfmt().googleStyle()
+        ktfmt(libs.billionBeersVersion("ktfmt")).googleStyle()
     }
 }
