@@ -123,25 +123,25 @@ open class BeersSearchViewModel(
 
   private fun searchFlow(query: BeersQuery): Flow<CommonUiState<PagedListUiModel<Beer>>> =
     channelFlow {
-        val pager = beersPagerFactory.create(query)
-        currentPager = pager
-        val reducer =
-          PagedListReducer<Beer, FetchBeersError>(
-            errorState = { it.toCommonUiErrorState() },
-            endedEmpty = { CommonUiState.Success(PagedListUiModel()) },
-          )
+      val pager = beersPagerFactory.create(query)
+      currentPager = pager
+      val reducer =
+        PagedListReducer<Beer, FetchBeersError>(
+          errorState = { it.toCommonUiErrorState() },
+          endedEmpty = { CommonUiState.Success(PagedListUiModel()) },
+        )
 
-        launch { pager.loadFirstPage() }
-        launch {
-          pager.events.collect { event ->
-            when (event) {
-              is PagingEvent.LoadMoreFailed -> _events.trySend(BeersSearchEvent.ShowLoadMoreError)
-            }
+      launch { pager.loadFirstPage() }
+      launch {
+        pager.events.collect { event ->
+          when (event) {
+            is PagingEvent.LoadMoreFailed -> _events.trySend(BeersSearchEvent.ShowLoadMoreError)
           }
         }
-        combine(pager.data, pager.pagingState, reducer::reduce).collect { send(it) }
       }
-      .flowOn(coroutineDispatcher.default)
+      combine(pager.data, pager.pagingState, reducer::reduce).collect { send(it) }
+    }
+    .flowOn(coroutineDispatcher.default)
 
   fun onScrollToBottom() {
     viewModelScope.launch { currentPager?.loadNextPage() }

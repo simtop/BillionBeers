@@ -52,13 +52,13 @@ kotlinx-coroutines = "1.11.0"
 kotlinx-serialization-json = "1.11.0"
 
 # Tools
-spotless = "8.10.1"
+spotless = "8.10.3"
 # Explicit formatter version: a Spotless upgrade must not silently change formatting rules.
-ktfmt = "0.63"
+ktfmt = "0.64"
 detekt = "1.23.8"
 compose-rules = "0.4.23"
 dependency-guard = "0.5.0"
-kotlinpoet = "2.3.0"
+kotlinpoet = "2.4.0"
 cytoscape = "3.34.1"
 
 [libraries]

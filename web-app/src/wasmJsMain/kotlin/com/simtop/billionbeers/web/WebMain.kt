@@ -342,8 +342,8 @@ private fun WebImage(
         null
       } else {
         runCatching {
-            runtime.loadImage(url)?.let { SkiaImage.makeFromEncoded(it).toComposeImageBitmap() }
-          }
+          runtime.loadImage(url)?.let { SkiaImage.makeFromEncoded(it).toComposeImageBitmap() }
+        }
           .getOrNull()
       }
   }
