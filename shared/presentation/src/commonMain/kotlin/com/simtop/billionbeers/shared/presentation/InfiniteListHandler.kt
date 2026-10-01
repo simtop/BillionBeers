@@ -14,14 +14,13 @@ import kotlinx.coroutines.flow.map
 internal data class ListPosition(val totalItems: Int, val lastVisibleIndex: Int)
 
 /** Emits one load-more signal for each distinct list length reached near the end. */
-internal fun Flow<ListPosition>.loadMoreSignals(buffer: Int): Flow<Unit> =
-  map { position ->
-      val lastVisiblePlusOne = position.lastVisibleIndex + 1
-      position.totalItems.takeIf { it > 0 && lastVisiblePlusOne > it - buffer }
-    }
-    .filterNotNull()
-    .distinctUntilChanged()
-    .map {}
+internal fun Flow<ListPosition>.loadMoreSignals(buffer: Int): Flow<Unit> = map { position ->
+  val lastVisiblePlusOne = position.lastVisibleIndex + 1
+  position.totalItems.takeIf { it > 0 && lastVisiblePlusOne > it - buffer }
+}
+  .filterNotNull()
+  .distinctUntilChanged()
+  .map {}
 
 /** Calls [onLoadMore] when [listState] reaches its end, once per distinct list length. */
 @Composable

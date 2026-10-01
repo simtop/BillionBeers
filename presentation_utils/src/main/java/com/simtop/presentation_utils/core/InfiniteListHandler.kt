@@ -26,16 +26,15 @@ internal data class ListPosition(val totalItems: Int, val lastVisibleIndex: Int)
  * an unkeyed `remember`, so the flag was stale and effectively dead; this needs no such flag - the
  * pager's own mutex collapses any overlap.
  */
-internal fun Flow<ListPosition>.loadMoreSignals(buffer: Int): Flow<Unit> =
-  map { position ->
-      val lastVisiblePlusOne = position.lastVisibleIndex + 1
-      // `it > 0` guards the pre-layout snapshot: layoutInfo reports 0 items before the first
-      // measure pass, which would otherwise count as "near bottom" and fire a load on entry.
-      position.totalItems.takeIf { it > 0 && lastVisiblePlusOne > it - buffer }
-    }
-    .distinctUntilChanged()
-    .filterNotNull()
-    .map {}
+internal fun Flow<ListPosition>.loadMoreSignals(buffer: Int): Flow<Unit> = map { position ->
+  val lastVisiblePlusOne = position.lastVisibleIndex + 1
+  // `it > 0` guards the pre-layout snapshot: layoutInfo reports 0 items before the first
+  // measure pass, which would otherwise count as "near bottom" and fire a load on entry.
+  position.totalItems.takeIf { it > 0 && lastVisiblePlusOne > it - buffer }
+}
+  .distinctUntilChanged()
+  .filterNotNull()
+  .map {}
 
 /**
  * Calls [onLoadMore] when the user scrolls near the end of [listState] (within [buffer] items),

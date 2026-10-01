@@ -50,15 +50,14 @@ class WebDataRuntime private constructor(private val graph: WebGraph) {
   val storage: BeersStorage
     get() = graph.browserStorage
 
-  internal suspend fun loadImage(url: String): ByteArray? =
-    runCatching {
-        val requestUrl =
-          graph.config.imageProxyBaseUrl?.let { proxyBaseUrl ->
-            URLSearchParams().apply { append("url", url) }.let { "$proxyBaseUrl?${it.toString()}" }
-          } ?: url
-        graph.httpClient.get(requestUrl).body<ByteArray>()
-      }
-      .getOrNull()
+  internal suspend fun loadImage(url: String): ByteArray? = runCatching {
+    val requestUrl =
+      graph.config.imageProxyBaseUrl?.let { proxyBaseUrl ->
+        URLSearchParams().apply { append("url", url) }.let { "$proxyBaseUrl?${it.toString()}" }
+      } ?: url
+    graph.httpClient.get(requestUrl).body<ByteArray>()
+  }
+    .getOrNull()
 
   fun close() {
     if (!closed) {
