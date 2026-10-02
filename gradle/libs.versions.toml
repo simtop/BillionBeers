@@ -1,7 +1,7 @@
 [versions]
 # Core
-org-jetbrains-kotlin = "2.4.10"
-com-google-devtools-ksp = "2.3.11"
+org-jetbrains-kotlin = "2.4.20"
+com-google-devtools-ksp = "2.3.12"
 dev-zacsweers-metro = "1.4.5"
 android-gradle-plugin = "9.2.1"
 compileSdk = "37"
