@@ -1,4 +1,5 @@
 name: Regenerate Verification Metadata
+run-name: Dependency preparation | mode=${{ inputs.mode || 'write' }} | ref=${{ github.head_ref || github.ref_name }}
 
 # Preparation follows the immutable PR-head and ordinary pull_request model. Platform jobs
 # never receive a write key. A single final job validates their independent ledgers, unions them,
@@ -74,6 +75,10 @@ jobs:
             timeout: 60
     runs-on: ${{ matrix.runner }}
     timeout-minutes: ${{ matrix.timeout }}
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: read
     env:
       GRADLE_RUNNER: ${{ matrix.gradle_runner || './gradlew' }}
       IOS_RUNTIME: '18.2'
@@ -115,24 +120,29 @@ jobs:
           cp app/dependencies/releaseRuntimeClasspath.txt "$RUNNER_TEMP/guard-before.txt"
           cp gradle/verification-metadata.xml "$RUNNER_TEMP/verification-metadata-before.xml"
 
-      - name: Skip if HEAD is already a regeneration commit
-        id: guard
+      - name: Reuse only a validated prior write result
+        id: reuse
         if: steps.mode.outputs.value == 'write'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+          SOURCE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          PR_NUMBER: ${{ github.event_name == 'pull_request' && github.event.pull_request.number || 0 }}
         run: |
-          if [ "$(git log -1 --pretty=%s)" = "chore: regenerate dependency verification metadata" ]; then
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "HEAD is already the prepared ledger commit."
-          fi
+          python3 .github/scripts/write-preparation-result.py find-reuse \
+            --branch "$BRANCH" --source-sha "$SOURCE_SHA" --pr-number "$PR_NUMBER" \
+            --current-run-id "$GITHUB_RUN_ID" --wait-seconds 120
 
       - name: Select pinned Xcode
-        if: matrix.lane == 'apple' && steps.guard.outputs.skip != 'true'
+        if: matrix.lane == 'apple' && steps.reuse.outputs.reuse != 'true'
         run: |
           test -d "$XCODE_PATH" || { echo "::error::Required Xcode is unavailable: $XCODE_PATH"; exit 1; }
           sudo xcode-select --switch "$XCODE_PATH"
           xcodebuild -version
 
       - name: Enable KVM
-        if: matrix.lane == 'managed' && steps.guard.outputs.skip != 'true'
+        if: matrix.lane == 'managed' && steps.reuse.outputs.reuse != 'true'
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
             | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -140,25 +150,25 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       - name: Set up JDK 23
-        if: steps.guard.outputs.skip != 'true'
+        if: steps.reuse.outputs.reuse != 'true'
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5
         with:
           java-version: '23'
           distribution: 'temurin'
 
       - name: Setup Gradle cold
-        if: steps.guard.outputs.skip != 'true'
+        if: steps.reuse.outputs.reuse != 'true'
         uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6
         with:
           gradle-version: wrapper
           cache-disabled: true
 
       - name: Make gradlew executable
-        if: steps.guard.outputs.skip != 'true'
+        if: steps.reuse.outputs.reuse != 'true'
         run: chmod +x gradlew
 
       - name: Create and boot pinned Apple simulator
-        if: matrix.lane == 'apple' && steps.guard.outputs.skip != 'true'
+        if: matrix.lane == 'apple' && steps.reuse.outputs.reuse != 'true'
         run: |
           RUNTIME_ID="$(xcrun simctl list runtimes | awk -v runtime="iOS $IOS_RUNTIME (" 'index($0, runtime) && $0 !~ /unavailable/ {print $NF; exit}')"
           test -n "$RUNTIME_ID" || { echo "::error::Required simulator runtime is unavailable: iOS $IOS_RUNTIME"; exit 1; }
@@ -169,7 +179,7 @@ jobs:
 
       - name: Re-baseline dependency guard
         id: guard_baseline
-        if: steps.guard.outputs.skip != 'true'
+        if: steps.reuse.outputs.reuse != 'true'
         run: |
           ./gradlew --write-verification-metadata sha256 --no-configuration-cache \
             "-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8" \
@@ -177,7 +187,7 @@ jobs:
 
       - name: Review dependency coordinate changes
         id: coordinate_check
-        if: steps.guard.outputs.skip != 'true'
+        if: steps.reuse.outputs.reuse != 'true'
         env:
           APPROVED_HEAD: ${{ inputs.approved_head_sha }}
           APPROVED_DIGEST: ${{ inputs.approved_graph_digest }}
@@ -191,7 +201,7 @@ jobs:
 
       - name: Apply mechanical formatting
         id: format
-        if: steps.guard.outputs.skip != 'true'
+        if: steps.reuse.outputs.reuse != 'true'
         run: |
           make verification-metadata-format
           git diff --name-only -z -- '*.kt' '*.gradle.kts' > "$RUNNER_TEMP/formatting-files"
@@ -200,7 +210,7 @@ jobs:
 
       - name: Resolve and record platform lane
         id: regenerate
-        if: steps.guard.outputs.skip != 'true'
+        if: steps.reuse.outputs.reuse != 'true'
         env:
           LANE: ${{ matrix.lane }}
           MODE: ${{ steps.mode.outputs.graph }}
@@ -230,7 +240,7 @@ jobs:
 
       - name: Reject changed recorded hashes and verification policy
         id: verify_update
-        if: always() && steps.guard.outputs.skip != 'true' && steps.regenerate.outcome == 'success'
+        if: always() && steps.reuse.outputs.reuse != 'true' && steps.regenerate.outcome == 'success'
         run: |
           python3 .github/scripts/check-verification-metadata-update.py \
             "$RUNNER_TEMP/verification-metadata-before.xml" gradle/verification-metadata.xml
@@ -266,7 +276,7 @@ jobs:
         if: success()
         env:
           LANE: ${{ matrix.lane }}
-          SKIPPED: ${{ steps.guard.outputs.skip }}
+          SKIPPED: ${{ steps.reuse.outputs.reuse }}
         run: |
           case "$LANE" in
             linux) coverage='Linux/JVM/Android-host: full KMP JVM, metadata and Android-host inventories, plain JVM tests, Android assembly, Paparazzi, architecture checks and coverage.' ;;
@@ -274,7 +284,7 @@ jobs:
             managed) coverage='Managed devices: debug GMD tests and separate release-smoke tests/assemblies.' ;;
             apple) coverage='Apple: device and simulator native compiles, simulator/device framework links, iOS host build and iOS simulator tests.' ;;
           esac
-          if [ "$SKIPPED" = true ]; then coverage="Loop guard: $coverage (HEAD is already the prepared regeneration commit)."; fi
+          if [ "$SKIPPED" = true ]; then coverage="Validated reuse: $coverage (prior write result is attached below)."; fi
           echo "### Dependency preparation lane: $LANE" >> "$GITHUB_STEP_SUMMARY"
           echo >> "$GITHUB_STEP_SUMMARY"
           echo "$coverage" >> "$GITHUB_STEP_SUMMARY"
@@ -284,8 +294,9 @@ jobs:
         env:
           LANE: ${{ matrix.lane }}
           MODE: ${{ steps.mode.outputs.value }}
+          GRAPH_MODE: ${{ steps.mode.outputs.graph }}
           LANE_CONCLUSION: ${{ job.status }}
-          LANE_SKIP: ${{ steps.guard.outputs.skip == 'true' }}
+          LANE_SKIP: ${{ steps.reuse.outputs.reuse == 'true' }}
           HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           SOURCE_REF: ${{ github.head_ref || github.ref_name }}
         run: |
@@ -307,11 +318,14 @@ jobs:
               "lane": os.environ["LANE"], "head_sha": os.environ["HEAD_SHA"],
               "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
               "source_ref": os.environ["SOURCE_REF"], "mode": os.environ["MODE"],
+              "graph_mode": os.environ["GRAPH_MODE"],
               "conclusion": os.environ["LANE_CONCLUSION"],
               "skipped": os.environ["LANE_SKIP"] == "true",
               "prepared_sha256": hashlib.sha256((folder / "prepared.patch").read_bytes()).hexdigest(),
               "formatting_files_sha256": hashlib.sha256((folder / "formatting-files").read_bytes()).hexdigest(),
           }
+          review = folder / "graph-review.json"
+          manifest["graph_digest"] = json.loads(review.read_text())["digest"] if review.is_file() else ""
           (folder / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
           PY
 
@@ -354,6 +368,10 @@ jobs:
     needs: lanes
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: read
     steps:
       - name: Checkout immutable source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -371,28 +389,47 @@ jobs:
             exit 1
           }
 
+      - name: Recheck for a validated reusable preparation
+        id: reuse
+        if: (inputs.mode || 'write') == 'write'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+          SOURCE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          PR_NUMBER: ${{ github.event_name == 'pull_request' && github.event.pull_request.number || 0 }}
+        run: |
+          python3 .github/scripts/write-preparation-result.py find-reuse \
+            --branch "$BRANCH" --source-sha "$SOURCE_SHA" --pr-number "$PR_NUMBER" \
+            --current-run-id "$GITHUB_RUN_ID" --wait-seconds 120
+
       - name: Download Linux ledger and prepared patch
+        if: steps.reuse.outputs.reuse != 'true'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: dependency-preparation-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.mode == 'candidate' && 'candidate' || 'reference' }}-linux
           path: .platform-evidence/linux
       - name: Download Web ledger and prepared patch
+        if: steps.reuse.outputs.reuse != 'true'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: dependency-preparation-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.mode == 'candidate' && 'candidate' || 'reference' }}-web
           path: .platform-evidence/web
       - name: Download managed-device ledger and prepared patch
+        if: steps.reuse.outputs.reuse != 'true'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: dependency-preparation-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.mode == 'candidate' && 'candidate' || 'reference' }}-managed
           path: .platform-evidence/managed
       - name: Download Apple ledger and prepared patch
+        if: steps.reuse.outputs.reuse != 'true'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: dependency-preparation-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.mode == 'candidate' && 'candidate' || 'reference' }}-apple
           path: .platform-evidence/apple
 
       - name: Validate lane identities and merge metadata safely
+        if: steps.reuse.outputs.reuse != 'true'
         env:
           PREPARATION_HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           SOURCE_REF: ${{ github.head_ref || github.ref_name }}
@@ -415,7 +452,7 @@ jobs:
           cp .platform-evidence/linux/formatting-files "$RUNNER_TEMP/formatting-files"
 
       - name: Update generated documentation
-        if: (inputs.mode || 'write') == 'write'
+        if: (inputs.mode || 'write') == 'write' && steps.reuse.outputs.reuse != 'true'
         run: make update-docs
 
       - name: Upload comparison ledger
@@ -429,7 +466,8 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Commit and push only the complete safe union
+      - name: Stage and commit complete generated output
+        id: commit_output
         if: success() && (inputs.mode || 'write') == 'write'
         env:
           PREPARATION_BRANCH: ${{ github.head_ref || github.ref_name }}
@@ -442,17 +480,85 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          python3 .github/scripts/stage-dependabot-preparation.py "$RUNNER_TEMP/formatting-files"
           git fetch origin "$PREPARATION_BRANCH"
           if [ "$(git rev-parse FETCH_HEAD)" != "$PREPARATION_HEAD" ]; then
             echo "::error::PR head changed during preparation; no generated files were pushed."
             exit 1
           fi
-          if git diff --cached --quiet; then
-            echo "Generated files are already current; nothing to commit."
+          if [ "${{ steps.reuse.outputs.reuse }}" = true ]; then
+            output_sha="$PREPARATION_HEAD"
           else
-            git commit -m "chore: regenerate dependency verification metadata"
-            git push origin "HEAD:refs/heads/$PREPARATION_BRANCH"
+            python3 .github/scripts/stage-dependabot-preparation.py "$RUNNER_TEMP/formatting-files"
+            if git diff --cached --quiet; then
+              echo "Generated files are already current; nothing to commit."
+              output_sha="$PREPARATION_HEAD"
+            else
+              git commit -m "chore: regenerate dependency verification metadata"
+              output_sha="$(git rev-parse HEAD)"
+            fi
+          fi
+          echo "output_sha=$output_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Write authoritative preparation identity
+        id: result
+        if: success() && (inputs.mode || 'write') == 'write'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+          SOURCE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          PR_NUMBER: ${{ github.event_name == 'pull_request' && github.event.pull_request.number || 0 }}
+          ORIGIN_RUN_ID: ${{ steps.reuse.outputs.origin_run_id }}
+          ORIGIN_ATTEMPT: ${{ steps.reuse.outputs.origin_attempt }}
+        run: |
+          python3 .github/scripts/write-preparation-result.py write-result \
+            --branch "$BRANCH" --source-sha "$SOURCE_SHA" \
+            --output-sha "${{ steps.commit_output.outputs.output_sha }}" --pr-number "$PR_NUMBER" \
+            --current-run-id "$GITHUB_RUN_ID" --evidence .platform-evidence \
+            --origin-run-id "${ORIGIN_RUN_ID:-0}" --origin-attempt "${ORIGIN_ATTEMPT:-0}" \
+            --output "$RUNNER_TEMP/authoritative-preparation.json"
+
+      - name: Upload authoritative result before push
+        if: success() && (inputs.mode || 'write') == 'write' && steps.result.outcome == 'success' && steps.result.outputs.pr_number != '' && steps.result.outputs.pr_number != '0'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: authoritative-preparation-result-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/authoritative-preparation.json
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Verify exact PR source before publishing
+        if: success() && (inputs.mode || 'write') == 'write' && steps.result.outputs.pr_number != '0'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.result.outputs.pr_number }}
+          PREPARATION_BRANCH: ${{ github.head_ref || github.ref_name }}
+          PREPARATION_HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          git fetch origin "$PREPARATION_BRANCH"
+          test "$(git rev-parse FETCH_HEAD)" = "$PREPARATION_HEAD"
+          python3 .github/scripts/write-preparation-result.py verify-pr-head \
+            --pr-number "$PR_NUMBER" --branch "$PREPARATION_BRANCH" --expected-sha "$PREPARATION_HEAD"
+
+      - name: Push generated output
+        if: success() && (inputs.mode || 'write') == 'write'
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+          SOURCE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          OUTPUT_SHA: ${{ steps.commit_output.outputs.output_sha }}
+          PR_NUMBER: ${{ steps.result.outputs.pr_number }}
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          if [ "$OUTPUT_SHA" != "$SOURCE_SHA" ]; then
+            git push origin "HEAD:refs/heads/$BRANCH"
+          fi
+          if [ "$PR_NUMBER" != 0 ]; then
+            git fetch origin "$BRANCH"
+            test "$(git rev-parse FETCH_HEAD)" = "$OUTPUT_SHA"
+            python3 .github/scripts/write-preparation-result.py verify-pr-head \
+              --pr-number "$PR_NUMBER" --branch "$BRANCH" --expected-sha "$OUTPUT_SHA"
           fi
 
       - name: Summarize failed preparation
@@ -461,7 +567,7 @@ jobs:
           {
             echo '### Dependency verification metadata'
             echo
-            echo '**Result:** at least one cold platform lane, identity check, or safe-union check failed.'
+            echo '**Result:** at least one cold platform lane, identity check, safe-union, publication, or race check failed.'
             echo
-            echo 'No generated files were pushed. Open the lane evidence artifacts and inspect the first failure.'
+            echo 'No successful authoritative result was finalized; inspect the live branch head and lane/result evidence before retrying.'
           } >> "$GITHUB_STEP_SUMMARY"

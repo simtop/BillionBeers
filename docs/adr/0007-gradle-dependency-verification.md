@@ -194,12 +194,25 @@ experiment; it is separate from reference graph approval.
 
 ### Loop termination and serialization
 
-The bot's own push re-triggers the workflow. A guard step exits each platform lane before Gradle
-work when HEAD is already a regen commit; the successful lanes then contribute unchanged ledgers,
-and the final writer finds no diff. A repository-wide concurrency group serializes preparations
-with `cancel-in-progress: false`. GitHub keeps at most one pending run, however, so a newer request
-may replace an older pending one. This is not a durable FIFO queue; dispatch any superseded ref
-again after the active preparation completes.
+The bot's own push re-triggers the workflow. Each write run records immutable write intent in its
+run title and uploads a bounded result artifact containing the PR/repository identity, source and
+output SHAs, graph digest, and four successful lane identities before pushing. If generated files
+change, output must be the source's direct child. If no commit is needed, source and output are the
+same SHA. The next run skips the cold lanes only after it validates a prior full result for its
+exact source head; reuse references that original full result directly. Commit text alone never
+authorizes skipping Gradle work.
+
+CI Gate accepts the newest validated write result for the live open same-repository Dependabot PR.
+Non-writing reference/candidate experiments are excluded. A newer pending, failed, or unverifiable
+write cannot inherit an older green result. The Gate logs the exact preparation run, attempt, and
+head it consumed. A trusted collector reruns only CI Gate if a later write makes that generation
+stale, or if Gate's only failure is the missing-preparation check; other CI failures stay intact.
+Legacy runs without the intent title or result artifact require a fresh write-mode dispatch.
+
+A repository-wide concurrency group serializes preparations with `cancel-in-progress: false`.
+GitHub keeps at most one pending run, however, so a newer request may replace an older pending one.
+This is not a durable FIFO queue; dispatch any superseded ref again after the active preparation
+completes.
 
 ### Write mode must not bless changed bytes
 

@@ -32,9 +32,24 @@ requires successful preparation on the current Dependabot head when the PR chang
 It waits for pending preparation and its single eligible shutdown retry on the exact head tested
 by CI, with a 350-minute wait inside GitHub's six-hour job maximum. The four platform lanes have
 individual 35–90 minute limits and the merge job has a 15-minute limit. Queue time and a full retry
-can exceed the CI Gate's observer bound; if the gate times out before preparation succeeds, rerun
-CI after preparation finishes. Other failures stop the gate. Ordinary strict CI remains required
-after the preparation commit.
+can exceed the CI Gate's observer bound. Other failures stop the gate. Ordinary strict CI remains
+required after the preparation commit.
+
+Write runs identify their intent in the immutable Actions run title and publish a small result
+artifact before pushing. The result binds the open same-repository Dependabot PR, source and output
+SHA, run and attempt, graph digest, and all four successful lane identities. CI Gate accepts only
+the newest validated write result for the live PR head; reference/candidate experiments do not
+count. A later queued, failed, or evidence-missing write blocks a previously green Gate. The trusted
+completion collector reruns only CI Gate when its recorded preparation generation is outdated, or
+when its only failure is the exact missing-preparation check. Other failed CI jobs are left untouched.
+A successful write that pushes a generated commit gets normal fresh CI on that new head.
+
+Legacy write runs without the immutable write title or authoritative result artifact cannot establish
+freshness. Dispatch **Regenerate Verification Metadata** again in `write` mode on the current PR
+branch; if CI Gate had already terminated, the collector refreshes only that Gate after validating
+the new write intent. Dispatch again as well when repository concurrency superseded a pending run.
+Hosted preparation still uses cold Linux, Web, managed-device, and Apple runners; queue time can
+exceed the Gate's wait bound, and hosted lane execution remains the evidence for platform closure.
 
 A trusted default-branch completion collector can retry a preparation run once, only when both
 the actual runner-shutdown error and exit 143 are present, the failed step is a platform resolver, no

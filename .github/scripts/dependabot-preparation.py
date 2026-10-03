@@ -22,6 +22,8 @@ LANE_JOB_NAMES = {
     for lane in ("linux", "web", "managed", "apple")
 }
 LEGACY_LANE_JOB_NAME = "Regenerate verification-metadata.xml"
+CI_GATE_NAME = "CI Gate"
+PREPARATION_GATE_FAILURE = "Dependency preparation has not succeeded on this PR head."
 
 
 def output_lines(log: str) -> list[str]:
@@ -119,6 +121,12 @@ def eligible_pr(pr: dict, run: dict, repository: str) -> bool:
             and pr.get("head", {}).get("ref") == run.get("head_branch"))
 
 
+def paths_require_preparation(paths: list[str]) -> bool:
+    return any(path in {"gradle/libs.versions.toml", "gradle.properties", "settings.gradle.kts", "build.gradle.kts"}
+               or path.startswith(("gradle/wrapper/", "build-logic/"))
+               or path.endswith("/build.gradle.kts") for path in paths)
+
+
 def recover(api, run_id: int, reconcile) -> bool:
     run = api.get(f"actions/runs/{run_id}")
     if (run.get("path") != f".github/workflows/{WORKFLOW}" or run.get("event") != "pull_request"
@@ -157,26 +165,131 @@ def recover(api, run_id: int, reconcile) -> bool:
     return True
 
 
+def refresh_failed_ci_gate(api, preparation_run_id: int, reconcile) -> bool:
+    """Rerun only CI Gate when the selected write authority differs from its verdict."""
+    source = api.get(f"actions/runs/{preparation_run_id}")
+    if (source.get("path") != f".github/workflows/{WORKFLOW}"
+            or source.get("event") not in {"pull_request", "workflow_dispatch"}
+            or reconcile.preparation_mode(source) != "write"
+            or (source.get("head_repository") or {}).get("full_name") != api.repository):
+        return False
+    owner = api.repository.split("/", 1)[0]
+    query = reconcile.urllib.parse.urlencode({"state": "open", "head": f"{owner}:{source['head_branch']}"})
+    candidates = api.pages(f"pulls?{query}")
+    matches = [pr for pr in candidates if (
+        pr.get("state") == "open" and pr.get("user", {}).get("login") == "dependabot[bot]"
+        and pr.get("head", {}).get("ref") == source.get("head_branch")
+        and (pr.get("head", {}).get("repo") or {}).get("full_name") == api.repository
+        and pr.get("base", {}).get("repo", {}).get("full_name") == api.repository)]
+    if len(matches) != 1:
+        return False
+    number = matches[0]["number"]
+
+    def current_preparation():
+        pr = api.get(f"pulls/{number}")
+        preparation = reconcile.preparation_current(api, pr)
+        result = (preparation or {}).get("result") or {}
+        if (pr.get("state") != "open" or not preparation or not preparation.get("id")):
+            return None
+        if preparation.get("authoritative_valid") and result.get("output_sha") != pr.get("head", {}).get("sha"):
+            return None
+        identity = (preparation["id"], preparation.get("run_attempt", 1),
+                    result.get("output_sha", pr.get("head", {}).get("sha")))
+        return pr, preparation, identity
+
+    selected = current_preparation()
+    if not selected:
+        return False
+    pr, preparation, selected_identity = selected
+    live_pr, ci = reconcile.current(api, number)
+    if (live_pr.get("head", {}).get("sha") != pr["head"]["sha"] or not ci
+            or ci.get("status") != "completed" or ci.get("conclusion") not in {"success", "failure"}
+            or ci.get("head_sha") != pr["head"]["sha"]):
+        return False
+
+    def gate_state(run, *, read_log):
+        jobs = api.pages(f"actions/runs/{run['id']}/attempts/{run['run_attempt']}/jobs", "jobs")
+        if run.get("run_attempt", 1) > 1:
+            history = api.pages(f"actions/runs/{run['id']}/jobs?filter=all", "jobs")
+            jobs = reconcile.effective_jobs(jobs, history, run["run_attempt"])
+        if {job.get("name") for job in jobs} != reconcile.CI_REQUIRED_JOBS:
+            return None
+        failures = [job for job in jobs if job.get("conclusion") not in {"success", "skipped"}]
+        gates = [job for job in jobs if job.get("name") == CI_GATE_NAME]
+        if (len(gates) != 1 or len(failures) > 1
+                or any(job.get("name") != CI_GATE_NAME and job.get("conclusion") not in {"success", "skipped"}
+                       for job in jobs)):
+            return None
+        gate = gates[0]
+        if gate.get("conclusion") not in {"success", "failure"}:
+            return None
+        if gate.get("conclusion") == "failure":
+            failed_steps = reconcile.RENDER.failed_steps(gate)
+            if len(failed_steps) != 1 or failed_steps[0].get("name") != "Verify dependency preparation result":
+                return None
+        marker = None
+        gate_log = ""
+        if read_log:
+            gate_log = api.download(f"actions/jobs/{gate['id']}/logs", reconcile.MAX_LOG).decode("utf-8", errors="replace")
+            lines = output_lines(gate_log)
+            marker = next((line for line in lines if re.fullmatch(
+                r"DEPENDENCY_PREPARATION_RESULT run_id=\d+ attempt=\d+ head=[0-9a-f]{40}", line)), None)
+            if gate.get("conclusion") == "failure" and PREPARATION_GATE_FAILURE not in "\n".join(lines):
+                return None
+        return gate, marker
+
+    initial_gate = gate_state(ci, read_log=True)
+    if not initial_gate:
+        return False
+    gate, consumed = initial_gate
+    marker_match = re.fullmatch(r"DEPENDENCY_PREPARATION_RESULT run_id=(\d+) attempt=(\d+) head=([0-9a-f]{40})", consumed or "")
+    same_generation = bool(preparation.get("authoritative_valid") and marker_match
+                           and (int(marker_match.group(1)), int(marker_match.group(2))) == selected_identity[:2]
+                           and marker_match.group(3) == pr["head"]["sha"])
+    if ci.get("conclusion") == "success" and same_generation:
+        return False
+    # Only the Gate is retried; preserving every other successful job keeps real CI evidence intact.
+    latest = ci
+    final_gate = gate_state(latest, read_log=False)
+    if not final_gate or final_gate[0].get("id") != gate.get("id"):
+        return False
+    selected = current_preparation()
+    if not selected or selected[2] != selected_identity:
+        return False
+    live_pr, latest = reconcile.current(api, number)
+    if (live_pr.get("head", {}).get("sha") != pr["head"]["sha"] or not latest
+            or (latest.get("id"), latest.get("run_attempt")) != (ci.get("id"), ci.get("run_attempt"))
+            or latest.get("status") != "completed" or latest.get("conclusion") != ci.get("conclusion")):
+        return False
+    api.post(f"actions/jobs/{gate['id']}/rerun")
+    print(f"Requested CI Gate refresh for PR #{number}, head {pr['head']['sha']}")
+    return True
+
+
 def require_prepared_head(api, number: int, reconcile, wait_seconds: int = 0, expected_head: str = "") -> bool:
     pr = api.get(f"pulls/{number}")
     expected_head = expected_head or pr["head"]["sha"]
     if pr.get("user", {}).get("login") != "dependabot[bot]":
         return True
     paths = [item["filename"] for item in api.pages(f"pulls/{number}/files")]
-    required = any(path in {"gradle/libs.versions.toml", "gradle.properties", "settings.gradle.kts", "build.gradle.kts"}
-                   or path.startswith(("gradle/wrapper/", "build-logic/")) or path.endswith("/build.gradle.kts")
-                   for path in paths)
+    required = paths_require_preparation(paths)
     if not required:
         return True  # Actions-only updates never resolve Gradle artifacts.
     deadline = time.monotonic() + wait_seconds
     classified_attempt = None
     retry_pending = False
+    first_observation = True
+    evidence_deadlines = {}
     while True:
+        if not first_observation and wait_seconds > 0 and time.monotonic() >= deadline:
+            break
+        first_observation = False
         pr = api.get(f"pulls/{number}")
         if pr.get("state") != "open" or pr["head"]["sha"] != expected_head:
             print("::error::PR head changed or closed while awaiting dependency preparation.")
             return False
         run = reconcile.preparation_current(api, pr)
+        evidence_deadline = None
         if run is not None and run.get("status") == "completed":
             identity = (run.get("id"), run.get("run_attempt"))
             if identity != classified_attempt:
@@ -184,22 +297,51 @@ def require_prepared_head(api, number: int, reconcile, wait_seconds: int = 0, ex
                                  and run.get("conclusion") == "failure"
                                  and reconcile.preparation_snapshot(api, run).get("category") == "operational_termination")
                 classified_attempt = identity
+            if run.get("authoritative_valid"):
+                retry_pending = False
+            elif (wait_seconds > 0 and run.get("conclusion") == "failure"
+                  and run.get("run_conclusion") == "success"
+                  and run.get("category") == "evidence_unavailable"):
+                evidence_deadline = evidence_deadlines.setdefault(
+                    identity, min(deadline, time.monotonic() + 60))
+                retry_pending = time.monotonic() < evidence_deadline
             if not retry_pending:
                 break
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             break
         print("Waiting for dependency preparation on this immutable head…", flush=True)
-        time.sleep(min(30, remaining))
-    if run is None or run.get("status") != "completed" or run.get("conclusion") != "success":
+        sleep_for = min(30, remaining)
+        if evidence_deadline is not None:
+            evidence_remaining = evidence_deadline - time.monotonic()
+            if evidence_remaining <= 0:
+                break
+            sleep_for = min(sleep_for, evidence_remaining)
+        time.sleep(sleep_for)
+    result = (run or {}).get("result") or {}
+    if (run is None or run.get("status") != "completed" or run.get("conclusion") != "success"
+            or not run.get("authoritative_valid") or result.get("output_sha") != expected_head):
         print("::error::Dependency preparation has not succeeded on this PR head. Open its preparation run.")
         return False
+    # The Gate can only pass if the exact selection and PR head still agree after evidence
+    # downloads and any waiting for a runner-shutdown retry.
+    live_run = reconcile.preparation_current(api, pr)
+    live_result = (live_run or {}).get("result") or {}
+    live_pr = api.get(f"pulls/{number}")
+    if (live_pr.get("state") != "open" or live_pr.get("head", {}).get("sha") != expected_head
+            or not live_run or not live_run.get("authoritative_valid")
+            or live_result.get("output_sha") != expected_head
+            or (live_run.get("id"), live_run.get("run_attempt")) != (run.get("id"), run.get("run_attempt"))):
+        print("::error::PR head or authoritative preparation changed before CI Gate success.")
+        return False
+    print(f"DEPENDENCY_PREPARATION_RESULT run_id={live_run['id']} attempt={live_run['run_attempt']} head={expected_head}")
     return True
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--recover-run", type=int)
+    parser.add_argument("--refresh-ci-gate", type=int)
     parser.add_argument("--require-prepared-head", type=int)
     parser.add_argument("--expected-head", default="")
     parser.add_argument("--wait-seconds", type=int, default=0)
@@ -210,13 +352,16 @@ def main() -> int:
     parser.add_argument("--approved-head", default="")
     parser.add_argument("--approved-digest", default="")
     args = parser.parse_args()
-    if args.recover_run or args.require_prepared_head:
+    if args.recover_run or args.refresh_ci_gate or args.require_prepared_head:
         spec = importlib.util.spec_from_file_location("reconcile", Path(__file__).with_name("reconcile-ci-report.py"))
         reconcile = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(reconcile)
         api = reconcile.GitHub(os.environ["GITHUB_TOKEN"], os.environ["GITHUB_REPOSITORY"])
         if args.recover_run:
             recover(api, args.recover_run, reconcile)
+            return 0
+        if args.refresh_ci_gate:
+            refresh_failed_ci_gate(api, args.refresh_ci_gate, reconcile)
             return 0
         return 0 if require_prepared_head(api, args.require_prepared_head, reconcile,
                                          args.wait_seconds, args.expected_head) else 1

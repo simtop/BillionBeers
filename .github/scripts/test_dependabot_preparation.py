@@ -179,7 +179,8 @@ class DependabotPreparationTest(unittest.TestCase):
         for result in (None, {"status": "in_progress", "conclusion": None}, {"status": "completed", "conclusion": "failure"}):
             reconcile.preparation_current.return_value = result
             self.assertFalse(MODULE.require_prepared_head(api, 7, reconcile))
-        reconcile.preparation_current.return_value = {"status": "completed", "conclusion": "success"}
+        reconcile.preparation_current.return_value = {"id": 10, "run_attempt": 1, "status": "completed",
+            "conclusion": "success", "authoritative_valid": True, "result": {"output_sha": SHA}}
         self.assertTrue(MODULE.require_prepared_head(api, 7, reconcile))
         api.pages.return_value = [{"filename": ".github/workflows/ci.yml"}]
         reconcile.preparation_current.return_value = None
@@ -191,7 +192,10 @@ class DependabotPreparationTest(unittest.TestCase):
         api.pages.return_value = [{"filename": "gradle/libs.versions.toml"}]
         reconcile.preparation_current.side_effect = [
             {"status": "in_progress", "conclusion": None},
-            {"status": "completed", "conclusion": "success"},
+            {"id": 12, "run_attempt": 1, "status": "completed", "conclusion": "success",
+             "authoritative_valid": True, "result": {"output_sha": SHA}},
+            {"id": 12, "run_attempt": 1, "status": "completed", "conclusion": "success",
+             "authoritative_valid": True, "result": {"output_sha": SHA}},
         ]
         with patch.object(MODULE.time, "sleep") as sleep:
             self.assertTrue(MODULE.require_prepared_head(api, 7, reconcile, 60, SHA))
@@ -199,17 +203,87 @@ class DependabotPreparationTest(unittest.TestCase):
         pr["head"]["sha"] = "b" * 40
         self.assertFalse(MODULE.require_prepared_head(api, 7, reconcile, 60, SHA))
 
+    def test_gate_rechecks_pr_head_after_final_authoritative_selection(self):
+        api, reconcile, _, pr, _ = self.fixture()
+        api.pages.side_effect = None
+        api.pages.return_value = [{"filename": "gradle/libs.versions.toml"}]
+        current = {"id": 22, "run_attempt": 1, "status": "completed", "conclusion": "success",
+                   "authoritative_valid": True, "result": {"output_sha": SHA}}
+        count = 0
+        def select(_api, _pr):
+            nonlocal count
+            count += 1
+            if count == 2:
+                pr["head"]["sha"] = "b" * 40
+            return dict(current)
+        reconcile.preparation_current.side_effect = select
+        self.assertFalse(MODULE.require_prepared_head(api, 7, reconcile, 0, SHA))
+
+    def test_gate_waits_briefly_for_successful_run_result_artifact(self):
+        api, reconcile, _, _, _ = self.fixture()
+        api.pages.side_effect = None
+        api.pages.return_value = [{"filename": "gradle/libs.versions.toml"}]
+        missing = {"id": 44, "run_attempt": 1, "status": "completed", "conclusion": "failure",
+                   "run_conclusion": "success", "category": "evidence_unavailable", "authoritative_valid": False}
+        valid = {"id": 44, "run_attempt": 1, "status": "completed", "conclusion": "success",
+                 "authoritative_valid": True, "result": {"output_sha": SHA}}
+        reconcile.preparation_current.side_effect = [missing, valid, valid]
+        now = [0.0]
+        with patch.object(MODULE.time, "monotonic", side_effect=lambda: now[0]), \
+             patch.object(MODULE.time, "sleep", side_effect=lambda _delay: now.__setitem__(0, now[0] + 1)):
+            self.assertTrue(MODULE.require_prepared_head(api, 7, reconcile, 3, SHA))
+        self.assertEqual(3, reconcile.preparation_current.call_count)
+
+    def test_gate_never_accepts_permanently_missing_or_invalid_result_after_grace(self):
+        api, reconcile, _, _, _ = self.fixture()
+        api.pages.side_effect = None
+        api.pages.return_value = [{"filename": "gradle/libs.versions.toml"}]
+        invalid = {"id": 44, "run_attempt": 1, "status": "completed", "conclusion": "failure",
+                   "run_conclusion": "success", "category": "evidence_unavailable", "authoritative_valid": False}
+        reconcile.preparation_current.return_value = invalid
+        now = [0.0]
+        with patch.object(MODULE.time, "monotonic", side_effect=lambda: now[0]), \
+             patch.object(MODULE.time, "sleep", side_effect=lambda _delay: now.__setitem__(0, now[0] + 1)):
+            self.assertFalse(MODULE.require_prepared_head(api, 7, reconcile, 2, SHA))
+        self.assertEqual(2, reconcile.preparation_current.call_count)
+
+    def test_gate_caps_missing_evidence_grace_at_60_seconds_with_long_wait_budget(self):
+        api, reconcile, _, _, _ = self.fixture()
+        api.pages.side_effect = None
+        api.pages.return_value = [{"filename": "gradle/libs.versions.toml"}]
+        missing = {"id": 44, "run_attempt": 1, "status": "completed", "conclusion": "failure",
+                   "run_conclusion": "success", "category": "evidence_unavailable", "authoritative_valid": False}
+        now = [0.0]
+        with patch.object(MODULE.time, "monotonic", side_effect=lambda: now[0]), \
+             patch.object(MODULE.time, "sleep", side_effect=lambda delay: now.__setitem__(0, now[0] + delay)):
+            reconcile.preparation_current.return_value = missing
+            self.assertFalse(MODULE.require_prepared_head(api, 7, reconcile, 21000, SHA))
+            self.assertEqual(60, now[0])
+            self.assertEqual(3, reconcile.preparation_current.call_count)
+
+            reconcile.preparation_current.reset_mock()
+            valid = {"id": 44, "run_attempt": 1, "status": "completed", "conclusion": "success",
+                     "authoritative_valid": True, "result": {"output_sha": SHA}}
+            reconcile.preparation_current.side_effect = [missing, valid, valid]
+            now[0] = 0.0
+            self.assertTrue(MODULE.require_prepared_head(api, 7, reconcile, 21000, SHA))
+            self.assertEqual(30, now[0])
+            self.assertEqual(3, reconcile.preparation_current.call_count)
+
     def test_gate_waits_for_single_operational_retry_but_not_build_failure(self):
         api, reconcile, run, _, _ = self.fixture()
         api.pages.side_effect = None
         api.pages.return_value = [{"filename": "gradle/libs.versions.toml"}]
         reconcile.preparation_snapshot.return_value = {"category": "operational_termination"}
-        reconcile.preparation_current.side_effect = [run, dict(run, run_attempt=2, conclusion="success")]
+        good = dict(run, run_attempt=2, conclusion="success", authoritative_valid=True,
+                    result={"output_sha": SHA})
+        reconcile.preparation_current.side_effect = [run, good, good]
         with patch.object(MODULE.time, "sleep") as sleep:
             self.assertTrue(MODULE.require_prepared_head(api, 7, reconcile, 60, SHA))
             sleep.assert_called_once()
         reconcile.preparation_current.side_effect = None
-        reconcile.preparation_current.return_value = dict(run, run_attempt=2)
+        reconcile.preparation_current.return_value = dict(run, run_attempt=2, authoritative_valid=True,
+                                                          result={"output_sha": SHA})
         self.assertFalse(MODULE.require_prepared_head(api, 7, reconcile, 60, SHA))
         reconcile.preparation_current.return_value = run
         reconcile.preparation_snapshot.return_value = {"category": "build_test_or_policy_failure"}
@@ -217,12 +291,113 @@ class DependabotPreparationTest(unittest.TestCase):
             self.assertFalse(MODULE.require_prepared_head(api, 7, reconcile, 60, SHA))
             sleep.assert_not_called()
 
+    def gate_refresh_fixture(self):
+        api = Mock(repository="owner/repo")
+        source = {"id": 44, "path": f".github/workflows/{MODULE.WORKFLOW}", "event": "workflow_dispatch",
+                  "status": "completed", "conclusion": "success", "head_sha": SHA,
+                  "head_branch": "dependabot/gradle/example", "head_repository": {"full_name": "owner/repo"},
+                  "display_title": "Dependency preparation | mode=write | ref=dependabot/gradle/example"}
+        pr = {"number": 7, "state": "open", "user": {"login": "dependabot[bot]"},
+              "head": {"sha": SHA, "ref": source["head_branch"], "repo": {"full_name": "owner/repo"}},
+              "base": {"repo": {"full_name": "owner/repo"}}}
+        ci = {"id": 99, "run_attempt": 1, "status": "completed", "conclusion": "failure", "head_sha": SHA}
+        api.get.side_effect = lambda path: copy.deepcopy(source if path == "actions/runs/44" else pr)
+        gate_jobs = [{"id": index + 10, "name": name, "conclusion": "success", "steps": []}
+                     for index, name in enumerate(sorted(load("reconcile-ci-report").CI_REQUIRED_JOBS - {"CI Gate"}))]
+        gate_jobs.append({"id": 5, "name": "CI Gate", "conclusion": "failure",
+                          "steps": [{"name": "Verify dependency preparation result", "conclusion": "failure"}]})
+        api.pages.side_effect = lambda path, key=None: ([copy.deepcopy(pr)] if path.startswith("pulls?") else
+            copy.deepcopy(gate_jobs) if path.endswith("/jobs") else [])
+        api.download.return_value = f"::error::{MODULE.PREPARATION_GATE_FAILURE}".encode()
+        reconcile = Mock(MAX_LOG=1000)
+        reconcile.CI_REQUIRED_JOBS = load("reconcile-ci-report").CI_REQUIRED_JOBS
+        reconcile.RENDER.failed_steps.side_effect = lambda job: [step for step in job.get("steps", []) if step.get("conclusion") == "failure"]
+        reconcile.preparation_mode.return_value = "write"
+        reconcile.preparation_current.return_value = {"id": 44, "run_attempt": 1, "authoritative_valid": True,
+            "result": {"output_sha": SHA}}
+        reconcile.current.return_value = (copy.deepcopy(pr), copy.deepcopy(ci))
+        return api, reconcile, pr, ci
+
+    def test_gate_refresh_reruns_only_solo_preparation_failure(self):
+        api, reconcile, _, _ = self.gate_refresh_fixture()
+        self.assertTrue(MODULE.refresh_failed_ci_gate(api, 44, reconcile))
+        api.post.assert_called_once_with("actions/jobs/5/rerun")
+
+    def test_gate_refresh_preserves_other_failures_and_stale_head(self):
+        api, reconcile, _, _ = self.gate_refresh_fixture()
+        api.pages.side_effect = lambda path, key=None: ([{"id": 5, "name": "CI Gate", "conclusion": "failure"},
+            {"id": 6, "name": "Unit Tests", "conclusion": "failure"}] if path.endswith("/jobs") else [])
+        self.assertFalse(MODULE.refresh_failed_ci_gate(api, 44, reconcile))
+        api.post.assert_not_called()
+
+    def test_gate_refresh_invalidates_green_verdict_for_new_write_and_ignores_same_generation(self):
+        api, reconcile, _, ci = self.gate_refresh_fixture()
+        ci["conclusion"] = "success"
+        names = sorted(load("reconcile-ci-report").CI_REQUIRED_JOBS - {"CI Gate"})
+        green = [{"id": index + 10, "name": name, "conclusion": "success", "steps": []} for index, name in enumerate(names)]
+        green.append({"id": 5, "name": "CI Gate", "conclusion": "success", "steps": []})
+        api.pages.side_effect = lambda path, key=None: ([copy.deepcopy(_)] if path.startswith("pulls?") else
+            copy.deepcopy(green) if path.endswith("/jobs") else [])
+        reconcile.current.return_value = (copy.deepcopy(_), copy.deepcopy(ci))
+        api.download.return_value = f"DEPENDENCY_PREPARATION_RESULT run_id=40 attempt=1 head={SHA}".encode()
+        self.assertTrue(MODULE.refresh_failed_ci_gate(api, 44, reconcile))
+        api.post.assert_called_once_with("actions/jobs/5/rerun")
+        api, reconcile, _, ci = self.gate_refresh_fixture()
+        ci["conclusion"] = "success"
+        api.pages.side_effect = lambda path, key=None: ([copy.deepcopy(_)] if path.startswith("pulls?") else
+            copy.deepcopy(green) if path.endswith("/jobs") else [])
+        reconcile.current.return_value = (copy.deepcopy(_), copy.deepcopy(ci))
+        api.download.return_value = f"DEPENDENCY_PREPARATION_RESULT run_id=44 attempt=1 head={SHA}".encode()
+        self.assertFalse(MODULE.refresh_failed_ci_gate(api, 44, reconcile))
+        api.post.assert_not_called()
+
+    def test_gate_refresh_invalidates_same_marker_when_selected_evidence_is_no_longer_valid(self):
+        api, reconcile, pr, ci = self.gate_refresh_fixture()
+        ci["conclusion"] = "success"
+        reconcile.current.return_value = (copy.deepcopy(pr), copy.deepcopy(ci))
+        reconcile.preparation_current.return_value = {"id": 44, "run_attempt": 1,
+            "authoritative_valid": False, "category": "evidence_unavailable"}
+        names = sorted(load("reconcile-ci-report").CI_REQUIRED_JOBS - {"CI Gate"})
+        green = [{"id": index + 10, "name": name, "conclusion": "success", "steps": []} for index, name in enumerate(names)]
+        green.append({"id": 5, "name": "CI Gate", "conclusion": "success", "steps": []})
+        api.pages.side_effect = lambda path, key=None: ([copy.deepcopy(pr)] if path.startswith("pulls?") else
+            copy.deepcopy(green) if path.endswith("/jobs") else [])
+        api.download.return_value = f"DEPENDENCY_PREPARATION_RESULT run_id=44 attempt=1 head={SHA}".encode()
+        self.assertTrue(MODULE.refresh_failed_ci_gate(api, 44, reconcile))
+        api.post.assert_called_once_with("actions/jobs/5/rerun")
+
+    def test_gate_refresh_ignores_experiments(self):
+        api, reconcile, _, _ = self.gate_refresh_fixture()
+        reconcile.preparation_mode.return_value = "candidate"
+        self.assertFalse(MODULE.refresh_failed_ci_gate(api, 44, reconcile))
+        api.post.assert_not_called()
+
+    def test_gate_refresh_rechecks_head_after_gate_log_download(self):
+        api, reconcile, pr, _ = self.gate_refresh_fixture()
+        def change_head(_path, _limit):
+            pr["head"]["sha"] = "b" * 40
+            return f"::error::{MODULE.PREPARATION_GATE_FAILURE}".encode()
+        api.download.side_effect = change_head
+        self.assertFalse(MODULE.refresh_failed_ci_gate(api, 44, reconcile))
+        api.post.assert_not_called()
+
+    def test_gate_job_inventory_matches_ci_gate_needs(self):
+        reconcile = load("reconcile-ci-report")
+        root = Path(__file__).resolve().parents[2]
+        workflow = (root / ".github/workflows/ci.yml").read_text()
+        names = set(reconcile.re.findall(r"^\s+name: (.+)$", workflow, reconcile.re.MULTILINE))
+        self.assertTrue(reconcile.CI_REQUIRED_JOBS <= names)
+        api, reconcile, pr, _ = self.gate_refresh_fixture()
+        pr["head"]["sha"] = "b" * 40
+        self.assertFalse(MODULE.refresh_failed_ci_gate(api, 44, reconcile))
+        api.post.assert_not_called()
+
     def test_workflow_stages_formatting_before_writer_and_retains_safety_checks(self):
         root = Path(__file__).resolve().parents[2]
         flow = (root / ".github/workflows/regen-verification-metadata.yml").read_text()
         self.assertLess(flow.index("verification-metadata-before.xml"), flow.index("make verification-metadata-format"))
         self.assertLess(flow.index("make verification-metadata-format"), flow.index("- name: Resolve and record platform lane"))
-        self.assertLess(flow.index("Reject changed recorded hashes"), flow.index("Commit and push"))
+        self.assertLess(flow.index("Reject changed recorded hashes"), flow.index("Stage and commit complete generated output"))
         self.assertIn('"$(git rev-parse FETCH_HEAD)" != "$PREPARATION_HEAD"', flow)
         self.assertIn("inputs.approved_graph_digest", flow)
         self.assertIn("cache-disabled:", flow)
@@ -243,12 +418,16 @@ class DependabotPreparationTest(unittest.TestCase):
         self.assertIn("cmp .platform-evidence/linux/prepared.patch", flow)
         self.assertIn("stage-dependabot-preparation.py", flow)
         self.assertNotIn("git add --", flow)
+        caller = (root / ".github/workflows/verification-metadata-compare.yml").read_text()
+        self.assertIn("  actions: read", caller)
+        self.assertIn("  pull-requests: read", caller)
+        self.assertNotIn("contents: write", caller)
         self.assertIn("if [ -s .platform-evidence/linux/prepared.patch ]; then", flow)
         self.assertNotIn("VERIFICATION_METADATA_DEPLOY_KEY: ${{ secrets.", flow)
         writer_mode = "(inputs.mode || 'write') == 'write'"
         self.assertIn(f"ssh-key: ${{{{ {writer_mode} && secrets.VERIFICATION_METADATA_DEPLOY_KEY || '' }}}}", flow)
         self.assertIn(f"persist-credentials: ${{{{ {writer_mode} }}}}", flow)
-        self.assertIn(f"if: {writer_mode}\n        run: make update-docs", flow)
+        self.assertIn(f"if: {writer_mode} && steps.reuse.outputs.reuse != 'true'\n        run: make update-docs", flow)
         self.assertIn(f"if: success() && {writer_mode}", flow)
         self.assertNotIn("github.event_name == 'pull_request') && secrets.VERIFICATION_METADATA_DEPLOY_KEY", flow)
         self.assertNotIn("pull_request_target", flow.split("on:", 1)[1])
