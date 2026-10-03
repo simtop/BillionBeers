@@ -122,7 +122,7 @@ jobs:
 
       - name: Reuse only a validated prior write result
         id: reuse
-        if: steps.mode.outputs.value == 'write'
+        if: steps.mode.outputs.value == 'write' && !inputs.approved_head_sha && !inputs.approved_graph_digest
         env:
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}

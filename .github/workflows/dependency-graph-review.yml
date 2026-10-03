@@ -1,0 +1,111 @@
+name: Dependency Graph Review
+run-name: Dependency graph review | pr=${{ github.event.pull_request.number }} | sha=${{ github.event.pull_request.head.sha }}
+
+on:
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'gradle/libs.versions.toml'
+      - 'gradle/wrapper/**'
+      - 'gradle.properties'
+      - 'settings.gradle.kts'
+      - 'build.gradle.kts'
+      - '**/build.gradle.kts'
+      - 'build-logic/**'
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: dependency-verification-preparation-${{ github.repository_id }}
+  cancel-in-progress: false
+
+jobs:
+  review:
+    name: Read-only dependency graph review
+    if: github.event.pull_request.user.login == 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout immutable pull request head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Set up JDK 23
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5
+        with:
+          java-version: '23'
+          distribution: temurin
+
+      - name: Setup Gradle cold
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6
+        with:
+          gradle-version: wrapper
+          cache-disabled: true
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Snapshot the PR-head baseline and resolve its runtime graph
+        run: |
+          cp app/dependencies/releaseRuntimeClasspath.txt "$RUNNER_TEMP/guard-before.txt"
+          ./gradlew --write-verification-metadata sha256 --no-configuration-cache \
+            "-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8" \
+            :app:dependencyGuardBaseline
+
+      - name: Create exact-head graph review
+        id: review
+        run: |
+          python3 .github/scripts/dependabot-preparation.py \
+            --before "$RUNNER_TEMP/guard-before.txt" \
+            --after app/dependencies/releaseRuntimeClasspath.txt \
+            --head-sha "$HEAD_SHA" --output "$RUNNER_TEMP/graph-review" --review-only
+          python3 - "$RUNNER_TEMP/graph-review/manifest.json" <<'PY'
+          import json, os, sys
+          from pathlib import Path
+          review = json.loads((Path(sys.argv[1]).parent / "graph-review.json").read_text())
+          manifest = {
+              "schema": 1,
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "repository_id": int(os.environ["REPOSITORY_ID"]),
+              "pr_number": int(os.environ["PR_NUMBER"]),
+              "branch": os.environ["BRANCH"],
+              "source_sha": os.environ["HEAD_SHA"],
+              "run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "workflow": ".github/workflows/dependency-graph-review.yml",
+              "graph_digest": review["digest"],
+          }
+          Path(sys.argv[1]).write_text(json.dumps(manifest, sort_keys=True, indent=2) + "\n")
+          review_path = Path(sys.argv[1]).parent / "graph-review.md"
+          review_path.write_text(review_path.read_text() + "\n"
+              + "To approve this graph, use **Approve Dependency Graph** on the default branch with "
+              + f"`source_run_id={int(os.environ['GITHUB_RUN_ID'])}` and "
+              + f"`source_run_attempt={int(os.environ['GITHUB_RUN_ATTEMPT'])}`, review the coordinates, "
+              + "and set `approve_graph=true`.\n")
+          PY
+          cat "$RUNNER_TEMP/graph-review/graph-review.md" >> "$GITHUB_STEP_SUMMARY"
+        env:
+          REPOSITORY_ID: ${{ github.repository_id }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+
+      - name: Upload immutable graph review evidence
+        if: steps.review.outcome == 'success'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: dependency-graph-review-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/graph-review/graph-review.json
+            ${{ runner.temp }}/graph-review/graph-review.md
+            ${{ runner.temp }}/graph-review/manifest.json
+          if-no-files-found: error
+          retention-days: 14

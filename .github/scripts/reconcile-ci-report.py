@@ -74,6 +74,17 @@ class GitHub:
         with urllib.request.urlopen(request, timeout=20):
             pass  # The rerun endpoint returns 201/202 with no JSON body.
 
+    def post_json(self, path: str, body: dict) -> dict:
+        request = urllib.request.Request(f"{self.base}/{path}", data=json.dumps(body).encode(), method="POST", headers={
+            "Authorization": f"Bearer {self.token}", "Accept": "application/vnd.github+json",
+            "Content-Type": "application/json", "X-GitHub-Api-Version": "2022-11-28",
+        })
+        with urllib.request.urlopen(request, timeout=20) as response:
+            content = response.read(1024 * 1024 + 1)
+        if len(content) > 1024 * 1024:
+            raise ValueError("GitHub API response exceeds 1 MiB")
+        return json.loads(content.decode("utf-8"))
+
     def pages(self, path: str, key: str | None = None, *, max_items: int | None = None) -> list:
         result = []
         page = 1

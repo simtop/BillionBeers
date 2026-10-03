@@ -104,12 +104,29 @@ since patch/minor Dependabot PRs auto-merge unread. The workflow therefore compa
 
 ### Exact graph approval and mechanical output
 
-A coordinate rejection uploads `graph-review.json` with the full before/after versioned baselines,
-added/removed coordinates, source head SHA and a digest covering all of them. A write-mode manual
-dispatch can accept it with `approved_head_sha` and `approved_graph_digest`; both must match the
-newly computed graph. This is a deliberate review action, not a general semver exemption. The
-checksum validator and full task graph still run. The old manual baseline command remains a fallback;
-[the monthly update guide](../dependabot-updates.md) documents the normal artifact/dispatch flow.
+A dedicated read-only `Dependency Graph Review` workflow runs one Linux dependency-guard baseline
+for an in-repository Dependabot PR. It publishes `graph-review.json` with the full before/after
+versioned baselines, added/removed coordinates, source head SHA and a digest covering all of them,
+plus a readable summary. It has no write credential, permits coordinate changes as review evidence,
+and is distinct from the reference/candidate assembly experiment. It does not replace the later
+four-lane write preparation.
+
+`Approve Dependency Graph` is dispatched on the trusted default branch with the review run ID and
+attempt. Its approval input defaults to false. With explicit approval, trusted code validates the
+review workflow, attempt, artifact, repository, open PR, branch, head and digest; then it verifies
+that the dispatching actor currently has admin or maintain permission. A bounded scan
+for a consumed receipt prevents replay of the same review attempt. The receipt is uploaded before
+the exact write workflow is dispatched. The handoff does not check out or execute PR code; it grants
+only the Actions permission needed to dispatch and observe the existing writer. Approved writes
+always run fresh platform lanes, recompute the approved head and digest, and run the full checksum/task
+gates; they cannot reuse a prior preparation result. The writer uses its existing isolated deploy-key
+publication job. Manual write dispatch with
+`approved_head_sha` and `approved_graph_digest` remains available. The handoff follows the returned
+writer run ID, validates its authoritative output head, and waits a bounded period for required CI on
+that exact output SHA. It uses GitHub's documented
+[`return_run_details` workflow dispatch response](https://docs.github.com/en/rest/actions/workflows?apiVersion=2022-11-28#create-a-workflow-dispatch-event)
+to retain the exact writer run ID. It reports both run links and never merges. [The monthly update guide](../dependabot-updates.md)
+documents the normal review and approval flow.
 
 Formatter changes are applied before the reference writer checks them. The explicit catalog ktfmt
 version initially matches Spotless's existing bundled version, preserving current formatting. Its

@@ -67,26 +67,33 @@ superseded ref again after the current preparation completes.
 Version-only runtime graph changes are automatically re-baselined. Added or removed coordinates
 stop preparation for review, even on minor updates.
 
-1. Open the failed preparation run and download its `dependency-preparation-<run>-<attempt>`
-   artifact. Read `graph-review.json`: it contains the complete old and proposed versioned
-   baselines, added/removed coordinates, immutable head SHA and graph digest.
-2. Review why the new dependencies are needed and whether removals are intended. An approval
-   accepts that graph; it does not override artifact checksum or build/test failures.
-3. Dispatch **Regenerate Verification Metadata** on that Dependabot branch, in `write` mode,
-   setting `approved_head_sha` and `approved_graph_digest` to the reviewed values. For example:
+1. Open the successful **Dependency Graph Review** run for the current PR head. Its summary shows
+   added and removed coordinates. The run artifact contains the complete old and proposed
+   versioned baselines, exact source SHA, graph digest and review attempt. Review why each new
+   dependency is needed and whether removals are intended.
+2. Dispatch **Approve Dependency Graph** from the default branch, using the source run ID and the
+   exact attempt you inspected. Leave `approve_graph` false to inspect the evidence without
+   dispatching a writer. To approve, set it to true; the triggering actor must currently have
+   repository admin or maintain permission. For example:
 
    ```bash
-   gh workflow run regen-verification-metadata.yml --ref '<dependabot-branch>' \
-     -f mode=write -f approved_head_sha='<full-reviewed-head-sha>' \
-     -f approved_graph_digest='<reviewed-graph-digest>'
+   gh workflow run approve-dependency-graph.yml --ref master \
+     -f source_run_id='<review-run-id>' -f source_run_attempt='<review-attempt>' \
+     -f approve_graph=true
    ```
 
-4. The workflow recomputes the proposed graph. If its SHA or full graph differs, approval is
-   rejected. If it matches, the same guarded preparation runs and pushes its derived files only
-   on success. CI reruns on that new head. Write mode refuses the default branch.
+3. The handoff validates the source workflow, attempt, artifact, repository, open PR, branch, head
+   and digest, then records a one-time receipt before dispatch. The existing writer recomputes the
+   reviewed head and digest before running its four platform lanes. Any changed head or graph
+   rejects the approval. The handoff follows that exact writer run and waits for required CI on its
+   validated output SHA; it reports both run links and never merges.
+4. If the source review run is rerun, use its new attempt explicitly and review its graph again.
+   An approval receipt consumes one source run attempt, so it cannot be dispatched twice. The
+   writer's manual SHA/digest inputs remain available for deliberate fallback use.
 
 The local fallback remains `make dependency-guard-baseline-unverified` after deliberate review;
-the SHA/digest dispatch normally removes the need to edit and push a baseline manually.
+the exact run handoff normally removes the need to copy SHA/digest values or edit and push a
+baseline manually.
 
 ## Green but behind master
 
