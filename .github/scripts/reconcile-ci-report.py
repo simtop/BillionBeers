@@ -183,8 +183,12 @@ def preparation_snapshot(api: GitHub, run: dict | None) -> dict | None:
             data["category"] = "evidence_unavailable"
         break
     try:
+        preparation_name = f"dependency-preparation-{run['id']}-{run['run_attempt']}"
+        resources_name = f"dependency-preparation-resources-{run['id']}-{run['run_attempt']}"
         data["artifacts"] = [item for item in api.pages(f"actions/runs/{run['id']}/artifacts", "artifacts")
-                             if not item.get("expired") and item.get("name") == f"dependency-preparation-{run['id']}-{run['run_attempt']}"]
+                             if not item.get("expired") and (item.get("name") == preparation_name
+                             or item.get("name", "").startswith(preparation_name + "-")
+                             or item.get("name", "").startswith(resources_name + "-"))]
     except API_ERRORS:
         data["artifacts"] = []
     return data

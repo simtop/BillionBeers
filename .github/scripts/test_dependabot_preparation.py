@@ -7,6 +7,9 @@ import copy
 import importlib.util
 import contextlib
 import io
+import os
+import re
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -118,6 +121,24 @@ class DependabotPreparationTest(unittest.TestCase):
         failed["steps"][0]["name"] = "Review dependency coordinate changes"
         self.assertFalse(MODULE.recover(api, 12, reconcile))
 
+    def test_platform_lane_shutdown_remains_eligible_for_the_single_retry(self):
+        api, reconcile, _, _, failed = self.fixture()
+        failed["steps"][0]["name"] = "Resolve and record platform lane"
+        self.assertTrue(MODULE.recover(api, 12, reconcile))
+        api.post.assert_called_once_with("actions/runs/12/rerun")
+
+    def test_recovery_accepts_each_known_matrix_name_and_the_legacy_name_only(self):
+        names = sorted(MODULE.LANE_JOB_NAMES | {MODULE.LEGACY_LANE_JOB_NAME})
+        for name in names:
+            api, reconcile, _, _, failed = self.fixture()
+            failed["name"] = name
+            with self.subTest(name=name):
+                self.assertTrue(MODULE.recover(api, 12, reconcile))
+        api, reconcile, _, _, failed = self.fixture()
+        failed["name"] = "Regenerate verification-metadata.xml (unknown)"
+        self.assertFalse(MODULE.recover(api, 12, reconcile))
+        api.post.assert_not_called()
+
     def test_approval_binds_head_baseline_versions_and_exact_delta(self):
         review = MODULE.graph_review("a:lib:1\n", "a:lib:2\nb:lib:1\n", SHA)
         self.assertEqual("coordinate_change", MODULE.check_graph(review, "", ""))
@@ -200,17 +221,161 @@ class DependabotPreparationTest(unittest.TestCase):
         root = Path(__file__).resolve().parents[2]
         flow = (root / ".github/workflows/regen-verification-metadata.yml").read_text()
         self.assertLess(flow.index("verification-metadata-before.xml"), flow.index("make verification-metadata-format"))
-        self.assertLess(flow.index("make verification-metadata-format"), flow.index("- name: Regenerate verification metadata"))
-        self.assertLess(flow.index("Reject changed checksums"), flow.index("Commit and push"))
-        self.assertIn('"$(git rev-parse FETCH_HEAD)" != "$(git rev-parse HEAD)"', flow)
+        self.assertLess(flow.index("make verification-metadata-format"), flow.index("- name: Resolve and record platform lane"))
+        self.assertLess(flow.index("Reject changed recorded hashes"), flow.index("Commit and push"))
+        self.assertIn('"$(git rev-parse FETCH_HEAD)" != "$PREPARATION_HEAD"', flow)
         self.assertIn("inputs.approved_graph_digest", flow)
         self.assertIn("cache-disabled:", flow)
-        self.assertNotIn("git add -A", flow)
+        self.assertIn("max-parallel: 1", flow)
+        self.assertIn("name: Regenerate verification-metadata.xml (${{ matrix.lane }})", flow)
+        self.assertIn("GRADLE_RUNNER: ${{ matrix.gradle_runner || './gradlew' }}", flow)
+        self.assertEqual(2, flow.count("./gradlew --max-workers=2"))
+        self.assertEqual(2, flow.count("-Xmx4g -XX:MaxMetaspaceSize=768m"))
+        self.assertIn("/tmp/unit-kotlin-gc-*.log", flow)
+        self.assertIn("dependency-preparation-resources-", flow)
+        self.assertIn("for report in graph-review.json graph-review.md; do", flow)
+        self.assertIn('"$RUNNER_TEMP/dependency-preparation/$report" "$destination/$report"', flow)
+        self.assertEqual(1, flow.count("secrets.VERIFICATION_METADATA_DEPLOY_KEY"))
+        for lane in ("linux", "web", "managed", "apple"):
+            self.assertIn(f"lane: {lane}", flow)
+        self.assertIn("needs: lanes", flow)
+        self.assertIn("PREPARATION_HEAD", flow)
+        self.assertIn("cmp .platform-evidence/linux/prepared.patch", flow)
+        self.assertIn("stage-dependabot-preparation.py", flow)
+        self.assertNotIn("git add --", flow)
+        self.assertIn("if [ -s .platform-evidence/linux/prepared.patch ]; then", flow)
+        self.assertNotIn("VERIFICATION_METADATA_DEPLOY_KEY: ${{ secrets.", flow)
+        writer_mode = "(inputs.mode || 'write') == 'write'"
+        self.assertIn(f"ssh-key: ${{{{ {writer_mode} && secrets.VERIFICATION_METADATA_DEPLOY_KEY || '' }}}}", flow)
+        self.assertIn(f"persist-credentials: ${{{{ {writer_mode} }}}}", flow)
+        self.assertIn(f"if: {writer_mode}\n        run: make update-docs", flow)
+        self.assertIn(f"if: success() && {writer_mode}", flow)
+        self.assertNotIn("github.event_name == 'pull_request') && secrets.VERIFICATION_METADATA_DEPLOY_KEY", flow)
         self.assertNotIn("pull_request_target", flow.split("on:", 1)[1])
+        ci = (root / ".github/workflows/ci.yml").read_text()
+        timeout = int(re.search(r"ci-gate:\n    name: CI Gate\n    timeout-minutes: (\d+)", ci).group(1))
+        wait = int(re.search(r"--wait-seconds (\d+)", ci).group(1))
+        self.assertLess(wait, timeout * 60)
+        self.assertLessEqual(timeout, 360)
+        self.assertEqual(360, timeout)
+        self.assertIn("-${{ steps.mode.outputs.graph }}-${{ matrix.lane }}", flow)
+        self.assertIn("${{ inputs.mode == 'candidate' && 'candidate' || 'reference' }}-linux", flow)
+        self.assertIn("steps.mode.outputs.value == 'write'", flow)
         comparison = (root / ".github/workflows/verification-metadata-compare.yml").read_text()
-        self.assertIn("mode: [reference, candidate]", comparison)
+        self.assertIn("needs: reference", comparison)
+        self.assertIn("mode: candidate", comparison)
         self.assertIn("--require-equivalent", comparison)
         self.assertNotIn("secrets: inherit", comparison)
+        makefile = (root / "Makefile").read_text()
+        self.assertIn("verification-metadata-lane", makefile)
+        self.assertIn("$(kmp_test_tasks)", makefile)
+        self.assertIn("$(KMP_BROWSER_TEST_MODULES)", makefile)
+        self.assertIn(":web-app:wasmJsBrowserDistribution", makefile)
+        self.assertIn("ios-test", makefile)
+        self.assertIn("ciGroupDebugAndroidTest", makefile)
+
+    def test_empty_prepared_patch_is_a_behavioral_no_op(self):
+        root = Path(__file__).resolve().parents[2]
+        flow = (root / ".github/workflows/regen-verification-metadata.yml").read_text()
+        block = re.search(
+            r"(?m)^          if \[ -s \.platform-evidence/linux/prepared\.patch \]; then\n"
+            r"(?P<body>.*?)^          fi$",
+            flow,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(block)
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            patch = folder / "prepared.patch"
+            marker = folder / "git-called"
+            fake_git = folder / "git"
+            fake_git.write_text(f"#!/bin/sh\nprintf called > '{marker}'\n")
+            fake_git.chmod(0o755)
+            command = ("if [ -s \"$PATCH_FILE\" ]; then\n"
+                       + block.group("body").replace(
+                           ".platform-evidence/linux/prepared.patch", "$PATCH_FILE"
+                       ) + "\nfi")
+            environment = {**os.environ, "PATH": f"{folder}:{os.environ['PATH']}", "PATCH_FILE": str(patch)}
+            patch.write_bytes(b"")
+            subprocess.run(["bash", "-c", command], env=environment, check=True)
+            self.assertFalse(marker.exists())
+            patch.write_text("diff --git a/a b/a\n")
+            subprocess.run(["bash", "-c", command], env=environment, check=True)
+            self.assertTrue(marker.exists())
+
+    def test_actual_lane_dry_runs_cover_full_test_inventory_and_platform_tasks(self):
+        root = Path(__file__).resolve().parents[2]
+
+        def make_output(*arguments: str, recursive_environment: bool = False) -> str:
+            environment = {
+                key: value for key, value in os.environ.items()
+                if key not in {"MAKEFLAGS", "MFLAGS", "MAKELEVEL", "MAKEOVERRIDES"}
+            }
+            if recursive_environment:
+                environment.update(MAKEFLAGS="w", MAKELEVEL="1")
+            return subprocess.run(
+                ["make", "--no-print-directory", *arguments],
+                cwd=root, env=environment, check=True, capture_output=True, text=True,
+            ).stdout
+
+        def make_dry_run(target: str, *, recursive_environment: bool = False) -> str:
+            return make_output(
+                "-n", "verification-metadata-lane", f"LANE={target}",
+                "MODE=reference", "GRADLE_RUNNER=./gradlew",
+                recursive_environment=recursive_environment,
+            )
+
+        def gradle_commands(output: str) -> list[str]:
+            commands = []
+            current = []
+            for line in output.splitlines():
+                if not current:
+                    if "./gradlew" not in line:
+                        continue
+                    current.append(line.rstrip().removesuffix("\\").rstrip())
+                else:
+                    current.append(line.rstrip().removesuffix("\\").rstrip())
+                if not line.rstrip().endswith("\\"):
+                    commands.append(" ".join(current))
+                    current = []
+            if current:
+                commands.append(" ".join(current))
+            return commands
+
+        test_commands = gradle_commands(make_output("-n", "test", "GRADLE_RUNNER=./gradlew"))
+        self.assertTrue(test_commands, "make -n test did not print a Gradle command")
+        test_plan = test_commands[0]
+        test_tasks = set(re.findall(
+            r"(?<![\w-])(:[\w:-]+:(?:jvmTest|allMetadataJar|testAndroidHostTest|test|wasmJsBrowserTest)|testDebugUnitTest)",
+            test_plan,
+        ))
+        browser_tasks = {task for task in test_tasks if task.endswith(":wasmJsBrowserTest")}
+        linux_tasks = make_dry_run("linux")
+        web_tasks = make_dry_run("web")
+        for task in test_tasks - browser_tasks:
+            self.assertIn(task, linux_tasks, f"Linux metadata lane omits {task}")
+        for task in browser_tasks:
+            self.assertIn(task, web_tasks, f"Web metadata lane omits {task}")
+        for task in ("assembleDebug", "verifyPaparazziDebug"):
+            self.assertIn(task, linux_tasks)
+        self.assertIn(":web-app:wasmJsBrowserDistribution", web_tasks)
+
+        managed_output = make_dry_run("managed", recursive_environment=True)
+        self.assertNotIn("Entering directory", managed_output)
+        managed_commands = gradle_commands(managed_output)
+        self.assertTrue(managed_commands, "managed lane dry run did not print a Gradle command")
+        debug = next(command for command in managed_commands if "ciGroupDebugAndroidTest" in command)
+        self.assertNotIn("releaseSmoke", debug)
+        managed_plan = "\n".join(managed_commands)
+        self.assertIn("-PappTestBuildType=releaseSmoke", managed_plan)
+        self.assertIn("-Pandroid.testInstrumentationRunnerArguments.class=com.simtop.billionbeers.ReleaseConfidenceSmokeTest",
+                      managed_plan)
+
+        apple = make_dry_run("apple")
+        for task in (":ios-shared:compileKotlinIosArm64", ":ios-shared:compileKotlinIosSimulatorArm64",
+                     ":ios-shared:linkDebugFrameworkIosSimulatorArm64", ":ios-shared:linkDebugFrameworkIosArm64",
+                     ":ios-shared:iosSimulatorArm64Test"):
+            self.assertIn(task, apple)
 
 
 if __name__ == "__main__":

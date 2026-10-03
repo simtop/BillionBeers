@@ -844,7 +844,7 @@ jobs:
   # place. `if: always()` so the gate runs even when an upstream job fails.
   ci-gate:
     name: CI Gate
-    timeout-minutes: 185
+    timeout-minutes: 360
     if: always()
     permissions:
       contents: read
@@ -885,4 +885,4 @@ jobs:
           EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
         run: >-
           python3 .github/scripts/dependabot-preparation.py --require-prepared-head "$PR_NUMBER"
-          --expected-head "$EXPECTED_HEAD" --wait-seconds 10800
+          --expected-head "$EXPECTED_HEAD" --wait-seconds 21000

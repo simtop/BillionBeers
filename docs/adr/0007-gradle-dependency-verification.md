@@ -117,13 +117,31 @@ catalog alias lets a future formatter upgrade be reviewed as an explicit tooling
 rejects unrelated tracked changes and never adds untracked files. The formatter runs after the
 original ledger snapshot, so hashes resolved during formatting remain subject to the same validator.
 
-### Complete task coverage is explicit
+### Complete task coverage is explicit across cold platform lanes
 
-The reference writer names CI tasks even when another task currently resolves the same artifacts.
-That includes `:snapshot-processor:test`, `checkDataLayerClasspathBoundary`,
-`verifyArchitectureGraph`, and `:app-release-smoke:atdApi35ReleaseSmokeAndroidTest`. The redundancy
-is deliberate: if task internals diverge later, the ledger still follows the CI contract instead of
-silently relying on incidental overlap.
+The hosted writer runs four cold lanes serially: Linux/JVM/Android-host, Web, managed devices, and
+Apple. Each lane starts from the same immutable source head and original ledger, disables Gradle
+caches, and uploads its own ledger, resource log, prepared-input digest, lane name, run identity,
+and conclusion. Linux follows the CI test inventories in the Makefile, including all KMP JVM,
+metadata and Android-host tasks, plain JVM tests, Android assembly, Paparazzi, architecture checks,
+and coverage. Web runs every `KMP_BROWSER_TEST_MODULES` browser task and the production Wasm
+distribution task, which resolves the Binaryen distribution and Compose resources used by the
+browser build. The managed lane executes the debug GMD suite and release-smoke tests separately,
+matching CI's variant and test filters. Apple compiles device and simulator targets, links both
+frameworks, builds the iOS simulator host, and runs `ios-test`, including
+`:ios-shared:iosSimulatorArm64Test`.
+
+`--dry-run`, task listing, and Gradle's `dependencies` report do not prove artifact closure. The
+writer executes the consuming tasks above so Kotlin/Native, Binaryen, Compose resource ZIPs,
+GMD/UTP tooling, and platform-specific artifacts are actually resolved. If CI adds or moves a
+consuming task, update the lane target and its regression contract in the same change.
+
+The merger requires exactly one successful evidence record per lane, bound to the source ref,
+head SHA, workflow run and attempt. It compares the actual re-baseline/format patch across lanes,
+checks every lane independently against the original hashes and verification policy, and then
+unions the ledgers. Platform-only artifacts are expected; shared artifacts must agree on accepted
+checksums. Components and artifacts are sorted in Gradle's XML format. A missing, stale, failed, or
+conflicting lane prevents the final writer from staging anything.
 
 The convention-plugin tests are the one apparent omission. CI runs them through
 `./gradlew -p build-logic :convention:test`, which is a separate Gradle build with no
@@ -149,19 +167,21 @@ that the root ledger exists, would not provide that protection.
 
 ### Resolution-only writer is an experiment, not an assumption
 
-`verification-metadata-reference` retains actual GMD and release-smoke execution and remains the
-production writer behind `make verification-metadata`. `verification-metadata-candidate` replaces
-those two executions with explicit assembly of the six opted-in debug test APKs, the minified
-`releaseSmoke` app, and its standalone test APK. It intentionally names each supported module rather
-than calling a broad root `assembleDebugAndroidTest`, which would pull unsupported benchmark or
-container variants into the graph.
+`verification-metadata-reference` remains the Makefile reference graph. The hosted production
+writer uses the four platform lanes above; its managed reference lane runs actual GMD and
+release-smoke execution. `verification-metadata-candidate` replaces those managed executions with
+explicit assembly of the six opted-in debug test APKs, the minified `releaseSmoke` app, and its
+standalone test APK. It intentionally names each supported module rather than calling a broad root
+`assembleDebugAndroidTest`, which would pull unsupported benchmark or container variants into the
+graph. Candidate mode changes only managed-device execution; it does not imply approval of a new
+dependency graph.
 
-Manual dispatch accepts `reference` and `candidate` modes. A non-pushing comparison workflow now
-runs both through the same reusable writer on separate cold Linux runners, with Gradle caches
-disabled, and requires comparator equality. The production alias remains the reference.
-Both modes regenerate on a clean Linux runner,
-run the pre-write safety check, upload the ledger and dependency-guard baseline, and never commit or
-push. After downloading artifacts from runs on the same SHA, compare them with:
+Manual dispatch accepts `reference` and `candidate` modes. A non-pushing comparison workflow runs
+both through the same reusable writer on separate cold platform lanes, with Gradle caches disabled,
+and requires comparator equality. The comparison calls are sequential under the repository-wide
+preparation lock. Both modes run the pre-write safety checks, upload the merged ledger and runtime
+baseline, and never commit or push. After downloading artifacts from the same SHA, compare them
+with:
 
 ```bash
 python3 .github/scripts/check-verification-metadata-update.py --require-equivalent \
@@ -169,15 +189,17 @@ python3 .github/scripts/check-verification-metadata-update.py --require-equivale
 ```
 
 The comparison canonicalizes the verification policy and compares every component, artifact, and
-accepted checksum, including Gradle's nested `<also-trust>` alternatives. The default writer must
-not switch until cold-Linux runs are equivalent or every missing candidate artifact is understood
-and resolved by a narrowly scoped task. Assembly alone is only the first candidate; GMD/UTP tooling
-may be resolved lazily during device tasks.
+accepted checksum, including Gradle's nested `<also-trust>` alternatives. Assembly remains an
+experiment; it is separate from reference graph approval.
 
-### Loop termination
+### Loop termination and serialization
 
-The bot's own push re-triggers the workflow. A guard step exits early when HEAD is already the
-regen commit; even without it, the second run would produce no diff and commit nothing.
+The bot's own push re-triggers the workflow. A guard step exits each platform lane before Gradle
+work when HEAD is already a regen commit; the successful lanes then contribute unchanged ledgers,
+and the final writer finds no diff. A repository-wide concurrency group serializes preparations
+with `cancel-in-progress: false`. GitHub keeps at most one pending run, however, so a newer request
+may replace an older pending one. This is not a durable FIFO queue; dispatch any superseded ref
+again after the active preparation completes.
 
 ### Write mode must not bless changed bytes
 
@@ -193,8 +215,8 @@ the `<configuration>` block, so regeneration cannot silently weaken trusted-arti
 The workflow summary separates coordinate-set rejection, a still-unlisted artifact, changed bytes
 for a recorded artifact, verification-policy drift, build/test/policy failure, and an operational
 termination such as exit 143. A trusted default-branch completion collector may retry exactly once
-when a current-head
-Dependabot pull-request run failed specifically during regeneration with both an actual runner
+when a current-head Dependabot pull-request run failed specifically in a platform lane's resolver
+step with both an actual runner
 shutdown error and exit 143. It rejects earlier build/policy errors, coordinate/checksum rejection,
 manual dispatches, cancellations, newer runs and second attempts. It reads logs as data and never
 checks out PR code. In particular, a checksum mismatch remains an alarm: classification never
@@ -214,10 +236,9 @@ when teardown prevented the job summary or resource artifact from uploading.
 - **Reading a verification failure:** "artifact is not listed" means the ledger is behind —
   regenerate. A checksum **mismatch** on an artifact already in the ledger is the alarm this
   control exists for — do not regenerate over it; verify the artifact independently first.
-- **Platform-specific artifacts:** a ledger generated on macOS lacks Linux-only artifacts (e.g.
-  `aapt2 …:linux`). The `workflow_dispatch` trigger exists exactly for this — run the workflow
-  against a branch and it appends what Linux resolves. Symmetrically, after a bump lands, the
-  first local macOS build may need a local `make verification-metadata` for the osx twins.
+- **Platform-specific artifacts:** independent lane ledgers are unioned after every lane succeeds.
+  A local `make verification-metadata` still covers only the current host; dispatch the workflow
+  against a branch to resolve the hosted Linux, Web, managed-device, and Apple closures together.
 - **IDE-only artifacts are trusted by rule, not by hash.** Android Studio's Gradle sync resolves
   `-sources.jar` / `-javadoc.jar` variants that no build ever asks for. They were therefore absent
   from the ledger, and sync failed with ~137 "checksums are missing" entries while every CLI build

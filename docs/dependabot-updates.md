@@ -8,25 +8,44 @@ batch is not restricted to three groups. Actions updates do not need Gradle prep
 
 The preparation workflow checks out an immutable PR head, snapshots the verification ledger,
 resolves the proposed runtime baseline, checks its coordinate delta, and applies the explicitly
-versioned ktfmt formatter. It then executes the reference metadata graph and rejects changed
-checksums or verification policy before pushing one commit containing the tracked formatting,
-ledger, permitted baseline and README changes. A head change during the run rejects the push.
+versioned ktfmt formatter. Four cold lanes then run serially: Linux/JVM/Android-host, Web Wasm,
+managed-device debug and release smoke, and Apple native/framework/iOS simulator closure. Each lane
+uploads its own ledger, resource log, and immutable head/run/source identity. The final job verifies
+all lane evidence and prepared-input digests, checks every lane against the original checksums and
+policy, and unions platform-only artifacts. Shared artifacts must have matching accepted
+checksums. Only then can the final job push one commit containing tracked formatting, the union
+ledger, the permitted baseline, and README changes. Platform jobs have read access only. A head
+change during the final write rejects it.
+
+Before merging each Gradle update:
+
+1. Rebase the PR onto the current `master` and review the exact dependency graph and any approved
+   coordinate delta.
+2. Verify all four preparation lanes and confirm preparation succeeded for the exact current PR
+   head.
+3. Wait for fresh green required CI on that same head, then merge the PR.
+4. Rebase/update the next Dependabot PR before repeating this checklist.
 
 The existing CI diagnosis includes preparation results and links to its evidence. A Gradle
 verification failure before Spotless starts is not diagnosed as a formatting defect. CI Gate also
 requires successful preparation on the current Dependabot head when the PR changes Gradle inputs.
 It waits for pending preparation and its single eligible shutdown retry on the exact head tested
-by CI, with a 180-minute bound covering two 90-minute attempts. This avoids a manual CI rerun when
-successful preparation makes no commit but finishes after ordinary CI. Other failures stop the gate.
-Ordinary strict CI remains required after the preparation commit.
+by CI, with a 350-minute wait inside GitHub's six-hour job maximum. The four platform lanes have
+individual 35–90 minute limits and the merge job has a 15-minute limit. Queue time and a full retry
+can exceed the CI Gate's observer bound; if the gate times out before preparation succeeds, rerun
+CI after preparation finishes. Other failures stop the gate. Ordinary strict CI remains required
+after the preparation commit.
 
 A trusted default-branch completion collector can retry a preparation run once, only when both
-the actual runner-shutdown error and exit 143 are present, the failed step is regeneration, no
+the actual runner-shutdown error and exit 143 are present, the failed step is a platform resolver, no
 build/policy rejection is present, the open same-repository PR is still authored by Dependabot,
 and neither a newer run nor a changed head supersedes it. It never executes PR code or accepts a
 dependency graph. Manual dispatches, cancellations and second attempts are not automatically retried.
-Preparation records elapsed time and samples memory, disk and process usage every 30 seconds;
-runner shutdown can still prevent the evidence upload, so the completed job log is authoritative.
+Preparation records elapsed time and samples memory, disk and process usage every 30 seconds using
+Linux/macOS-compatible probes; runner shutdown can still prevent the evidence upload, so the
+completed job log is authoritative. A repository-wide concurrency group serializes preparations,
+but GitHub keeps only one pending run and a newer request may supersede it. Dispatch a
+superseded ref again after the current preparation completes.
 
 ## Accepting an intentional coordinate change
 
@@ -70,22 +89,21 @@ reduce independent rebase cycles without coupling every update into one all-or-n
 ## Comparing smaller metadata writers
 
 Dispatch **Compare Verification Metadata Writers** on a chosen immutable branch revision. It runs
-the reference and candidate on separate cold Linux runners, downloads their ledgers, and compares
-verification policy, every artifact and all accepted checksums. It has no deploy key and never pushes.
-The comparison must pass before changing the production writer alias.
+the reference and candidate sequentially through the same cold Linux, Web, managed-device, and
+Apple lanes, downloads their merged ledgers, and compares verification policy, every artifact, and
+all accepted checksums. Candidate mode changes only managed-device execution to explicit APK/app
+assembly; it does not approve a new dependency graph. The comparison workflow has no deploy key and
+never pushes.
 
 For a workflow not yet available on the default branch, dispatch the existing regeneration workflow
 twice on the same branch revision, once with `mode=reference` and once with `mode=candidate`, then
-download its two ledger artifacts and run:
+download its two merged ledger artifacts and run:
 
 ```bash
 python3 .github/scripts/check-verification-metadata-update.py --require-equivalent \
   reference/gradle/verification-metadata.xml candidate/gradle/verification-metadata.xml
 ```
 
-Linux equivalence is necessary but not sufficient for platform coverage. The hosted writer does not
-execute Darwin-only native tasks. Before promotion, verify prepared dependency heads in the required
-Apple and Web CI lanes and explicitly resolve any missing platform artifacts. Measure elapsed time
-and runner work; a single green comparison proves coverage for its SHA, not a performance gain or
-coverage of every future dependency. The production writer stays the reference until that evidence
-exists. [ADR 0007](adr/0007-gradle-dependency-verification.md) owns this requirement.
+A green comparison proves equivalence for that immutable SHA, not a performance gain or coverage of
+every future dependency. [ADR 0007](adr/0007-gradle-dependency-verification.md) owns the task
+coverage and union rules.

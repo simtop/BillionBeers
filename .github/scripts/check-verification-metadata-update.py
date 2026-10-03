@@ -63,6 +63,17 @@ def artifact_checksums(root: ET.Element) -> dict[tuple[str, str, str, str], froz
     return {key: frozenset(values) for key, values in checksums.items()}
 
 
+def artifact_checksums_for_element(artifact: ET.Element) -> frozenset[str]:
+    values = set()
+    for checksum in artifact:
+        if local_name(checksum.tag) != "sha256" or "value" not in checksum.attrib:
+            continue
+        values.add(checksum.attrib["value"])
+        values.update(alternative.attrib["value"] for alternative in checksum
+                      if local_name(alternative.tag) == "also-trust" and "value" in alternative.attrib)
+    return frozenset(values)
+
+
 def load(path: Path) -> ET.Element:
     try:
         return ET.parse(path).getroot()

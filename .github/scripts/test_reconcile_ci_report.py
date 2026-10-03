@@ -167,12 +167,14 @@ class ReconcileCiReportTest(unittest.TestCase):
         api.pages.side_effect = [
             [job(step="Review dependency coordinate changes")],
             [{"id": 1, "name": "dependency-preparation-1-1", "expired": False},
-             {"id": 2, "name": "dependency-preparation-1-2", "expired": False}],
+             {"id": 2, "name": "dependency-preparation-1-2", "expired": False},
+             {"id": 3, "name": "dependency-preparation-1-1-apple", "expired": False},
+             {"id": 4, "name": "dependency-preparation-resources-1-1-web", "expired": False}],
         ]
         api.download.return_value = b"##[error]This bump adds or removes dependency coordinates, not just versions."
         result = MODULE.preparation_snapshot(api, failed)
         self.assertEqual("coordinate_change", result["category"])
-        self.assertEqual([1], [item["id"] for item in result["artifacts"]])
+        self.assertEqual([1, 3, 4], [item["id"] for item in result["artifacts"]])
 
     def setUp(self):
         # Simulated outages must not create real GitHub warning annotations in the test job.
