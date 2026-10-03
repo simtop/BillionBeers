@@ -1,6 +1,7 @@
 package com.simtop.beerdomain.domain.repositories
 
 import com.simtop.beerdomain.domain.errors.FetchBeersError
+import com.simtop.beerdomain.domain.errors.SaveFilterPresetError
 import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
 import com.simtop.beerdomain.domain.errors.UpdateFavoriteError
 import com.simtop.beerdomain.domain.models.Beer
@@ -24,7 +25,7 @@ interface BeersRepository {
 
   fun observeSavedFilterPresets(): Flow<List<SavedFilterPreset>>
 
-  suspend fun saveFilterPreset(preset: SavedFilterPreset)
+  suspend fun saveFilterPreset(preset: SavedFilterPreset): Either<SaveFilterPresetError, Unit>
 
   suspend fun renameFilterPreset(id: String, name: String, updatedAt: Long)
 

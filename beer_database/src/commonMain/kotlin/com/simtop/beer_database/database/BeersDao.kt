@@ -9,6 +9,7 @@ import androidx.room.Upsert
 import com.simtop.beer_database.models.BeerDbModel
 import com.simtop.beer_database.models.PagingStateDbModel
 import com.simtop.beer_database.models.SavedFilterPresetDbModel
+import com.simtop.beer_storage.api.FilterPresetCapacityReachedException
 import com.simtop.beer_storage.api.MAX_STORED_FILTER_PRESETS
 import kotlinx.coroutines.flow.Flow
 
@@ -34,8 +35,8 @@ abstract class BeersDao {
   @Transaction
   open suspend fun saveFilterPreset(preset: SavedFilterPresetDbModel) {
     if (findFilterPresetId(preset.id) == null) {
-      require(getFilterPresetCount() < MAX_STORED_FILTER_PRESETS) {
-        "At most $MAX_STORED_FILTER_PRESETS filter presets may be saved"
+      if (getFilterPresetCount() >= MAX_STORED_FILTER_PRESETS) {
+        throw FilterPresetCapacityReachedException()
       }
     }
     upsertFilterPreset(preset)

@@ -17,6 +17,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -43,13 +44,14 @@ import com.simtop.presentation_utils.core.resolvedMessage
 import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import com.simtop.presentation_utils.custom_views.ComposeErrorView
 import dev.zacsweers.metrox.viewmodel.assistedMetroViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 internal fun BrowseBeersScreen(
   selection: BrowseSelection,
   onBack: () -> Unit,
   onBeerClick: (Beer) -> Unit,
-  onSaveQuery: (String) -> Unit,
+  onSaveQuery: suspend (String) -> Boolean,
 ) {
   val viewModel =
     assistedMetroViewModel<BrowseBeersViewModel, BrowseBeersViewModel.Factory>(
@@ -93,12 +95,13 @@ internal fun BrowseBeersContent(
   viewState: CommonUiState<PagedListUiModel<Beer>>,
   onBack: () -> Unit,
   onBeerClick: (Beer) -> Unit,
-  onSaveQuery: (String) -> Unit,
+  onSaveQuery: suspend (String) -> Boolean,
   onScrollToBottom: () -> Unit,
   onRetryLoadMore: () -> Unit,
   onRetryFirstPage: () -> Unit,
 ) {
   var presetName by remember { mutableStateOf("") }
+  val saveScope = rememberCoroutineScope()
   Column(Modifier.fillMaxSize()) {
     SharedBrowseBeersContent(
       modifier = Modifier.weight(1f),
@@ -136,8 +139,9 @@ internal fun BrowseBeersContent(
       )
       Button(
         onClick = {
-          onSaveQuery(presetName)
-          presetName = ""
+          saveScope.launch {
+            if (onSaveQuery(presetName)) presetName = ""
+          }
         },
         enabled = presetName.isNotBlank(),
         modifier = Modifier.padding(start = BillionBeersTheme.spacing.small),
@@ -194,7 +198,7 @@ internal fun BrowseBeersScreenPreview(
       viewState = case.state,
       onBack = {},
       onBeerClick = {},
-      onSaveQuery = {},
+      onSaveQuery = { false },
       onScrollToBottom = {},
       onRetryLoadMore = {},
       onRetryFirstPage = {},
@@ -231,7 +235,7 @@ internal fun BrowseBeersAccessibilityMatrixPreview() {
         ),
       onBack = {},
       onBeerClick = {},
-      onSaveQuery = {},
+      onSaveQuery = { false },
       onScrollToBottom = {},
       onRetryLoadMore = {},
       onRetryFirstPage = {},

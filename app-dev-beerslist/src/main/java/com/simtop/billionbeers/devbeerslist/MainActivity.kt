@@ -29,7 +29,7 @@ class MainActivity : ComponentActivity() {
             onBeerClick = {},
             onSearchClick = {},
             onBrowseClick = {},
-            onSaveQuery = {},
+            onSaveQuery = { false },
           )
         }
       }

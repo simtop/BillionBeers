@@ -33,6 +33,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -68,6 +69,7 @@ import com.simtop.presentation_utils.core.resolvedMessage
 import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import com.simtop.presentation_utils.custom_views.ComposeErrorView
 import dev.zacsweers.metrox.viewmodel.metroViewModel
+import kotlinx.coroutines.launch
 
 /**
  * The search input, addressed by tag rather than by its placeholder so an instrumented test does
@@ -79,7 +81,7 @@ const val SEARCH_FIELD_TAG = "search_field"
 fun BeersSearchScreen(
   onBeerClick: (Beer) -> Unit,
   onBack: () -> Unit,
-  onSaveQuery: (String, BeersQuery) -> Unit,
+  onSaveQuery: suspend (String, BeersQuery) -> Boolean,
   viewModel: BeersSearchViewModel = metroViewModel(),
 ) {
   val viewState by viewModel.viewState.collectAsState()
@@ -138,7 +140,7 @@ fun BeersSearchContent(
   onResetFilters: () -> Unit = {},
   onBeerClick: (Beer) -> Unit,
   onBack: () -> Unit,
-  onSaveQuery: (String, BeersQuery) -> Unit,
+  onSaveQuery: suspend (String, BeersQuery) -> Boolean,
   onScrollToBottom: () -> Unit,
   onRetryLoadMore: () -> Unit,
   onRetrySearch: () -> Unit,
@@ -146,6 +148,7 @@ fun BeersSearchContent(
   autoFocus: Boolean = true,
 ) {
   var presetName by remember { mutableStateOf("") }
+  val saveScope = rememberCoroutineScope()
   Scaffold(
     modifier = modifier,
     topBar = {
@@ -271,8 +274,9 @@ fun BeersSearchContent(
         )
         Button(
           onClick = {
-            onSaveQuery(presetName, activeQuery)
-            presetName = ""
+            saveScope.launch {
+              if (onSaveQuery(presetName, activeQuery)) presetName = ""
+            }
           },
           enabled =
             presetName.isNotBlank() && (activeQuery.search != null || activeQuery.styleId != null),
@@ -375,7 +379,7 @@ internal fun BeersSearchScreenPreview(
       onQueryChange = {},
       onBeerClick = {},
       onBack = {},
-      onSaveQuery = { _, _ -> },
+      onSaveQuery = { _, _ -> false },
       onScrollToBottom = {},
       onRetryLoadMore = {},
       onRetrySearch = {},
@@ -414,7 +418,7 @@ internal fun BeersSearchAccessibilityMatrixPreview() {
       onQueryChange = {},
       onBeerClick = {},
       onBack = {},
-      onSaveQuery = { _, _ -> },
+      onSaveQuery = { _, _ -> false },
       onScrollToBottom = {},
       onRetryLoadMore = {},
       onRetrySearch = {},

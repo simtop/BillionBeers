@@ -1,0 +1,4 @@
+<resources>
+    <string name="filter_preset_limit_reached">Vous pouvez enregistrer jusqu'à 10 filtres. Supprimez-en un avant d'en ajouter un autre.</string>
+    <string name="filter_preset_save_failed">Impossible d'enregistrer le filtre.</string>
+</resources>

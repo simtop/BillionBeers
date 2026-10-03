@@ -94,7 +94,7 @@ class BeerBrowseUiTest {
           onScrollToBottom = {},
           onRetryLoadMore = { retryCount++ },
           onRetryFirstPage = {},
-          onSaveQuery = {},
+          onSaveQuery = { false },
         )
       }
     }

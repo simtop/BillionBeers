@@ -3,7 +3,9 @@ package com.simtop.beer_data.repositories
 import com.simtop.beer_data.mappers.BeersMapper
 import com.simtop.beer_network.remotesources.BeersRemoteSource
 import com.simtop.beer_storage.api.BeersStorage
+import com.simtop.beer_storage.api.FilterPresetCapacityReachedException
 import com.simtop.beerdomain.domain.errors.FetchBeersError
+import com.simtop.beerdomain.domain.errors.SaveFilterPresetError
 import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
 import com.simtop.beerdomain.domain.errors.UpdateFavoriteError
 import com.simtop.beerdomain.domain.models.Beer
@@ -140,18 +142,27 @@ class BeersRepositoryImpl(
       }
     }
 
-  override suspend fun saveFilterPreset(preset: SavedFilterPreset) {
-    beersStorage.saveFilterPreset(
-      com.simtop.beer_storage.api.StoredFilterPreset(
-        id = preset.id,
-        name = preset.name,
-        search = preset.query.search,
-        styleId = preset.query.styleId,
-        breweryId = preset.query.breweryId,
-        updatedAt = preset.updatedAt,
+  @Suppress("TooGenericExceptionCaught")
+  override suspend fun saveFilterPreset(preset: SavedFilterPreset): Either<SaveFilterPresetError, Unit> =
+    try {
+      beersStorage.saveFilterPreset(
+        com.simtop.beer_storage.api.StoredFilterPreset(
+          id = preset.id,
+          name = preset.name,
+          search = preset.query.search,
+          styleId = preset.query.styleId,
+          breweryId = preset.query.breweryId,
+          updatedAt = preset.updatedAt,
+        )
       )
-    )
-  }
+      Either.Right(Unit)
+    } catch (e: CancellationException) {
+      throw e
+    } catch (_: FilterPresetCapacityReachedException) {
+      Either.Left(SaveFilterPresetError.CapacityReached)
+    } catch (e: Exception) {
+      Either.Left(SaveFilterPresetError.Unknown(e))
+    }
 
   override suspend fun renameFilterPreset(id: String, name: String, updatedAt: Long) =
     beersStorage.renameFilterPreset(id, name, updatedAt)

@@ -1,4 +1,6 @@
 <resources>
     <string name="app_name">BillionBeers</string>
     <string name="title_dynamicfeature">beerdetail</string>
+    <string name="filter_preset_limit_reached">You can save up to 10 filters. Delete one before saving another.</string>
+    <string name="filter_preset_save_failed">The filter could not be saved.</string>
 </resources>

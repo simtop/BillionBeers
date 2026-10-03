@@ -3,6 +3,7 @@
 package com.simtop.beer_storage.browser
 
 import com.simtop.beer_storage.api.BeersStorage
+import com.simtop.beer_storage.api.FilterPresetCapacityReachedException
 import com.simtop.beer_storage.api.StoredBeer
 import com.simtop.beer_storage.api.StoredFilterPreset
 import com.simtop.beer_storage.api.StoredPagingState
@@ -65,8 +66,8 @@ import kotlinx.serialization.json.Json
     let settled = false;
     const close = () => { try { db.close(); } catch (_) {} };
     const finishRead = (value) => { result = JSON.stringify(value); };
-    const finishMutation = (committedBeers = [], committedPaging = null, cleared = false) => {
-      result = JSON.stringify({beers: committedBeers, paging: committedPaging, cleared});
+    const finishMutation = (committedBeers = [], committedPaging = null, cleared = false, presetCapacityReached = false) => {
+      result = JSON.stringify({beers: committedBeers, paging: committedPaging, cleared, presetCapacityReached});
     };
     const fail = (error) => {
       if (settled) return;
@@ -115,7 +116,7 @@ import kotlinx.serialization.json.Json
             const countRequest = presets.count();
             countRequest.onsuccess = () => {
               if (countRequest.result >= 10) {
-                fail(new Error('At most 10 filter presets may be saved'));
+                finishMutation([], null, false, true);
                 return;
               }
               presets.put(input);
@@ -411,6 +412,7 @@ private data class MutationRecord(
   val beers: List<BeerRecord> = emptyList(),
   val paging: PagingRecord? = null,
   val cleared: Boolean = false,
+  val presetCapacityReached: Boolean = false,
 )
 
 private val json = Json { ignoreUnknownKeys = true }
@@ -533,6 +535,7 @@ class IndexedDbBeersStorage(
     writeMutex.withLock {
       check(!closed) { "IndexedDbBeersStorage is closed" }
       val mutation = json.decodeFromString<MutationRecord>(execute(operation, payload))
+      if (mutation.presetCapacityReached) throw FilterPresetCapacityReachedException()
       if (refreshAfter) refresh() else applyMutation(mutation)
       liveStorages[databaseName]
         ?.filter { it !== this && !it.closed }

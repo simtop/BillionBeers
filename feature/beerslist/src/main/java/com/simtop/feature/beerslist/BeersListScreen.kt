@@ -42,6 +42,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -72,6 +73,7 @@ import com.simtop.presentation_utils.core.resolvedMessage
 import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import com.simtop.presentation_utils.custom_views.ComposeErrorView
 import dev.zacsweers.metrox.viewmodel.metroViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,7 +81,7 @@ fun BeersListScreen(
   onBeerClick: (Beer) -> Unit,
   onSearchClick: () -> Unit,
   onBrowseClick: () -> Unit,
-  onSaveQuery: (String) -> Unit,
+  onSaveQuery: suspend (String) -> Boolean,
   viewModel: BeersListViewModel = metroViewModel(),
 ) {
   val rawState by viewModel.beerListViewState.collectAsState()
@@ -124,7 +126,7 @@ fun BeersListContent(
   onBeerClick: (Beer) -> Unit,
   onSearchClick: () -> Unit,
   onBrowseClick: () -> Unit,
-  onSaveQuery: (String) -> Unit,
+  onSaveQuery: suspend (String) -> Boolean,
   onScrollToBottom: () -> Unit,
   onRefresh: () -> Unit,
   onRetry: () -> Unit,
@@ -134,6 +136,7 @@ fun BeersListContent(
   val context = LocalContext.current
   val toggleDebugDrawer = LocalDebugDrawerToggle.current
   var presetName by remember { mutableStateOf("") }
+  val saveScope = rememberCoroutineScope()
   Scaffold(
     modifier = modifier,
     topBar = {
@@ -239,8 +242,9 @@ fun BeersListContent(
         )
         Button(
           onClick = {
-            onSaveQuery(presetName)
-            presetName = ""
+            saveScope.launch {
+              if (onSaveQuery(presetName)) presetName = ""
+            }
           },
           enabled = presetName.isNotBlank(),
           modifier = Modifier.padding(start = BillionBeersTheme.spacing.small),
@@ -363,7 +367,7 @@ internal fun BeersListScreenPreview(
       onBeerClick = {},
       onSearchClick = {},
       onBrowseClick = {},
-      onSaveQuery = {},
+      onSaveQuery = { false },
       onScrollToBottom = {},
       onRefresh = {},
       onRetry = {},
@@ -403,7 +407,7 @@ internal fun BeersListAccessibilityMatrixPreview() {
       onBeerClick = {},
       onSearchClick = {},
       onBrowseClick = {},
-      onSaveQuery = {},
+      onSaveQuery = { false },
       onScrollToBottom = {},
       onRefresh = {},
       onRetry = {},

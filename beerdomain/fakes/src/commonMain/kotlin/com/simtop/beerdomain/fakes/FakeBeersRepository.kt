@@ -1,6 +1,7 @@
 package com.simtop.beerdomain.fakes
 
 import com.simtop.beerdomain.domain.errors.FetchBeersError
+import com.simtop.beerdomain.domain.errors.SaveFilterPresetError
 import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
 import com.simtop.beerdomain.domain.errors.UpdateFavoriteError
 import com.simtop.beerdomain.domain.models.Beer
@@ -47,12 +48,15 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersReposit
 
   override fun observeSavedFilterPresets(): Flow<List<SavedFilterPreset>> = presetsFlow
 
-  override suspend fun saveFilterPreset(preset: SavedFilterPreset) {
+  override suspend fun saveFilterPreset(preset: SavedFilterPreset): Either<SaveFilterPresetError, Unit> {
     val current = presetsFlow.value.toMutableList()
     val index = current.indexOfFirst { it.id == preset.id }
-    if (index < 0) require(current.size < SavedFilterPreset.MAX_COUNT)
+    if (index < 0 && current.size >= SavedFilterPreset.MAX_COUNT) {
+      return Either.Left(SaveFilterPresetError.CapacityReached)
+    }
     if (index < 0) current += preset else current[index] = preset
     presetsFlow.value = current.sortedWith(compareByDescending<SavedFilterPreset> { it.updatedAt }.thenBy { it.name }.thenBy { it.id })
+    return Either.Right(Unit)
   }
 
   override suspend fun renameFilterPreset(id: String, name: String, updatedAt: Long) {

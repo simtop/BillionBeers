@@ -63,7 +63,7 @@ class BeersListStateRestorationUiTest {
         onBeerClick = {},
         onSearchClick = {},
         onBrowseClick = {},
-        onSaveQuery = {},
+        onSaveQuery = { false },
         onScrollToBottom = {},
         onRefresh = {},
         onRetry = {},

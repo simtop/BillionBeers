@@ -22,7 +22,7 @@ fun interface DynamicFeatureContentProvider<T : NavKey> {
     key: T,
     onBack: () -> Unit,
     onNavigate: (NavKey) -> Unit,
-    onSaveQuery: ((String, BeersQuery) -> Unit)?,
+    onSaveQuery: (suspend (String, BeersQuery) -> Boolean)?,
     showBackButton: Boolean,
   )
 }
@@ -41,7 +41,7 @@ fun <T : DynamicFeatureKey> DynamicFeatureContent(
   key: T,
   onBack: () -> Unit,
   onNavigate: (NavKey) -> Unit = {},
-  onSaveQuery: ((String, BeersQuery) -> Unit)? = null,
+  onSaveQuery: (suspend (String, BeersQuery) -> Boolean)? = null,
   showBackButton: Boolean = true,
 ) {
   val className = key.feature.providerClass
