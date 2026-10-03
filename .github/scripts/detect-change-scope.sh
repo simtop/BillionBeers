@@ -93,6 +93,10 @@ classify_path() {
   local f="$1"
   if [ "$f" = "scripts/coverage-check.sh" ]; then
     a_unit=true # the unit lane executes it (make coverage-check)
+  elif [ "$f" = "scripts/verify-release-smoke-artifacts.sh" ]; then
+    a_instrumented=true # the instrumented lane executes it (make release-smoke)
+  elif [ "$f" = "scripts/verify_web_release_artifacts.py" ] || [ "$f" = "scripts/test_verify_web_release_artifacts.py" ]; then
+    a_web=true # the Web lane executes the release verifier and its tests
   elif [ "$f" = "scripts/verify_web_static.py" ] || [ "$f" = "scripts/test_verify_web_static.py" ] || [ "$f" = "scripts/test_web_image_proxy.py" ] || [ "$f" = "scripts/smoke_web_distribution.cjs" ]; then
     a_web=true # the Web lane executes the static verifier, image-proxy tests, smoke and their tests
   elif [ "$f" = "scripts/verify_ios_simulator_artifacts.py" ] || [ "$f" = "scripts/test_verify_ios_simulator_artifacts.py" ]; then
