@@ -24,6 +24,7 @@ kotlin {
 
 dependencies {
   commonTestImplementation(libs.coroutinesTest)
+  commonTestImplementation(project(":beerdomain:fakes"))
 
   commonMainImplementation(project(":shared:app"))
   commonMainImplementation(project(":beer_data"))
