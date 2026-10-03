@@ -306,17 +306,45 @@ class DependabotPreparationTest(unittest.TestCase):
     def test_actual_lane_dry_runs_cover_full_test_inventory_and_platform_tasks(self):
         root = Path(__file__).resolve().parents[2]
 
-        def make_dry_run(target: str) -> str:
+        def make_output(*arguments: str, recursive_environment: bool = False) -> str:
+            environment = {
+                key: value for key, value in os.environ.items()
+                if key not in {"MAKEFLAGS", "MFLAGS", "MAKELEVEL", "MAKEOVERRIDES"}
+            }
+            if recursive_environment:
+                environment.update(MAKEFLAGS="w", MAKELEVEL="1")
             return subprocess.run(
-                ["make", "-n", "verification-metadata-lane", f"LANE={target}",
-                 "MODE=reference", "GRADLE_RUNNER=./gradlew"],
-                cwd=root, check=True, capture_output=True, text=True,
+                ["make", "--no-print-directory", *arguments],
+                cwd=root, env=environment, check=True, capture_output=True, text=True,
             ).stdout
 
-        test_plan = subprocess.run(
-            ["make", "-n", "test", "GRADLE_RUNNER=./gradlew"],
-            cwd=root, check=True, capture_output=True, text=True,
-        ).stdout.splitlines()[0]
+        def make_dry_run(target: str, *, recursive_environment: bool = False) -> str:
+            return make_output(
+                "-n", "verification-metadata-lane", f"LANE={target}",
+                "MODE=reference", "GRADLE_RUNNER=./gradlew",
+                recursive_environment=recursive_environment,
+            )
+
+        def gradle_commands(output: str) -> list[str]:
+            commands = []
+            current = []
+            for line in output.splitlines():
+                if not current:
+                    if "./gradlew" not in line:
+                        continue
+                    current.append(line.rstrip().removesuffix("\\").rstrip())
+                else:
+                    current.append(line.rstrip().removesuffix("\\").rstrip())
+                if not line.rstrip().endswith("\\"):
+                    commands.append(" ".join(current))
+                    current = []
+            if current:
+                commands.append(" ".join(current))
+            return commands
+
+        test_commands = gradle_commands(make_output("-n", "test", "GRADLE_RUNNER=./gradlew"))
+        self.assertTrue(test_commands, "make -n test did not print a Gradle command")
+        test_plan = test_commands[0]
         test_tasks = set(re.findall(
             r"(?<![\w-])(:[\w:-]+:(?:jvmTest|allMetadataJar|testAndroidHostTest|test|wasmJsBrowserTest)|testDebugUnitTest)",
             test_plan,
@@ -332,10 +360,13 @@ class DependabotPreparationTest(unittest.TestCase):
             self.assertIn(task, linux_tasks)
         self.assertIn(":web-app:wasmJsBrowserDistribution", web_tasks)
 
-        managed = make_dry_run("managed").splitlines()
-        self.assertIn("ciGroupDebugAndroidTest", managed[0])
-        self.assertNotIn("releaseSmoke", managed[0])
-        managed_plan = "\n".join(managed)
+        managed_output = make_dry_run("managed", recursive_environment=True)
+        self.assertNotIn("Entering directory", managed_output)
+        managed_commands = gradle_commands(managed_output)
+        self.assertTrue(managed_commands, "managed lane dry run did not print a Gradle command")
+        debug = next(command for command in managed_commands if "ciGroupDebugAndroidTest" in command)
+        self.assertNotIn("releaseSmoke", debug)
+        managed_plan = "\n".join(managed_commands)
         self.assertIn("-PappTestBuildType=releaseSmoke", managed_plan)
         self.assertIn("-Pandroid.testInstrumentationRunnerArguments.class=com.simtop.billionbeers.ReleaseConfidenceSmokeTest",
                       managed_plan)
