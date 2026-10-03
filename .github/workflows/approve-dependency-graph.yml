@@ -1,0 +1,101 @@
+name: Approve Dependency Graph
+run-name: Dependency graph approval | source_run=${{ inputs.source_run_id }} | source_attempt=${{ inputs.source_run_attempt }} | approved=${{ inputs.approve_graph }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: Run ID shown on the read-only Dependency Graph Review
+        required: true
+        type: string
+      source_run_attempt:
+        description: Exact review attempt you inspected; reruns require a new explicit choice
+        required: true
+        default: '1'
+        type: string
+      approve_graph:
+        description: Approve this exact graph and dispatch its write preparation
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  actions: write
+  contents: read
+  pull-requests: read
+
+# Prevent concurrent receipts/dispatches for one source run. This never shares the heavy writer lock.
+concurrency:
+  group: dependency-graph-approval-${{ inputs.source_run_id }}
+  cancel-in-progress: false
+
+jobs:
+  handoff:
+    name: Validate maintainer approval and follow exact write
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    permissions:
+      actions: write
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout trusted default-branch helpers
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Validate and present the exact source review
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+          SOURCE_RUN_ATTEMPT: ${{ inputs.source_run_attempt }}
+        run: |
+          python3 .github/scripts/dependency-graph-handoff.py inspect \
+            --source-run-id "$SOURCE_RUN_ID" \
+            --source-run-attempt "$SOURCE_RUN_ATTEMPT" \
+            --output "$RUNNER_TEMP/graph-review.json"
+
+      - name: Prepare a one-time maintainer approval receipt
+        if: inputs.approve_graph
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+          SOURCE_RUN_ATTEMPT: ${{ inputs.source_run_attempt }}
+        run: |
+          python3 .github/scripts/dependency-graph-handoff.py prepare-approval \
+            --source-run-id "$SOURCE_RUN_ID" \
+            --source-run-attempt "$SOURCE_RUN_ATTEMPT" \
+            --current-run-id "$GITHUB_RUN_ID" \
+            --receipt "$RUNNER_TEMP/approval-receipt.json"
+
+      - name: Consume this exact review attempt before dispatch
+        if: inputs.approve_graph
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: graph-approval-receipt-${{ inputs.source_run_id }}-${{ inputs.source_run_attempt }}
+          path: ${{ runner.temp }}/approval-receipt.json
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Dispatch approved writer and follow its output-head CI
+        if: inputs.approve_graph
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+          SOURCE_RUN_ATTEMPT: ${{ inputs.source_run_attempt }}
+        run: |
+          python3 .github/scripts/dependency-graph-handoff.py dispatch-and-follow \
+            --source-run-id "$SOURCE_RUN_ID" \
+            --source-run-attempt "$SOURCE_RUN_ATTEMPT" \
+            --current-run-id "$GITHUB_RUN_ID"
+
+      - name: Approval was not requested
+        if: ${{ !inputs.approve_graph }}
+        run: |
+          echo "Graph review evidence was validated and displayed above. No write preparation was dispatched." >> "$GITHUB_STEP_SUMMARY"
+          echo "To approve, dispatch a new run of this workflow with the same source run ID and attempt, after reviewing the added and removed coordinates, and set approve_graph to true." >> "$GITHUB_STEP_SUMMARY"

@@ -7,9 +7,11 @@ import copy
 import importlib.util
 import contextlib
 import io
+import json
 import os
 import re
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -165,6 +167,30 @@ class DependabotPreparationTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             MODULE.write_review(a, Path(directory), "branch")
             self.assertIn('"a:l:2"', (Path(directory) / "graph-review.json").read_text())
+
+    def test_review_only_publishes_coordinate_delta_without_treating_review_as_approval(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            before, after = root / "before.txt", root / "after.txt"
+            out, github_output = root / "review", root / "output"
+            before.write_text("g:a:1\n")
+            after.write_text("g:a:2\ng:b:1\n")
+            with patch.object(sys, "argv", [
+                str(Path(__file__).with_name("dependabot-preparation.py")),
+                "--before", str(before), "--after", str(after), "--head-sha", SHA,
+                "--output", str(out), "--review-only",
+            ]), patch.dict(MODULE.os.environ, {"GITHUB_OUTPUT": str(github_output)}):
+                self.assertEqual(0, MODULE.main())
+            review = json.loads((out / "graph-review.json").read_text())
+            self.assertEqual(["g:b"], review["added"])
+            self.assertIn("classification=coordinate_change", github_output.read_text())
+
+    def test_review_summary_escapes_untrusted_coordinate_markdown(self):
+        review = MODULE.graph_review("", "group:artifact`[link](https://example.invalid):1\n", SHA)
+        with tempfile.TemporaryDirectory() as directory:
+            MODULE.write_review(review, Path(directory), "branch")
+            summary = (Path(directory) / "graph-review.md").read_text()
+            self.assertIn("&#96;[link](https://example.invalid)", summary)
 
     def test_stage_rejects_unrelated_tracked_changes(self):
         self.assertEqual(["module/Foo.kt", "README.md"], STAGE.allowed_files(b"module/Foo.kt\0", b"module/Foo.kt\0README.md\0"))

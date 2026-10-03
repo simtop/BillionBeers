@@ -98,16 +98,19 @@ def check_graph(review: dict, approved_head: str, approved_digest: str) -> str:
 def write_review(review: dict, directory: Path, branch: str) -> None:
     directory.mkdir(parents=True, exist_ok=True)
     (directory / "graph-review.json").write_text(json.dumps(review, indent=2) + "\n")
+    escape_code = lambda value: (value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                               .replace("`", "&#96;").replace("\r", "").replace("\n", "&#10;"))
     lines = ["### Dependency graph review", "", f"Head: `{review['head_sha']}`",
              f"Graph digest: `{review['digest']}`", "", "Added coordinates:", ""]
-    lines += [f"- `{item}`" for item in review["added"]] or ["None."]
+    lines += [f"- `{escape_code(item)}`" for item in review["added"]] or ["None."]
     lines += ["", "Removed coordinates:", ""]
-    lines += [f"- `{item}`" for item in review["removed"]] or ["None."]
-    # The workflow UI takes branch/head/digest as inputs. Avoid constructing shell
-    # commands from branch names; they are not trusted executable text.
-    lines += ["", "Download the dependency-preparation artifact and review graph-review.json.",
-              "To accept this exact graph, dispatch Regenerate Verification Metadata in write mode",
-              "on this branch with approved_head_sha and approved_graph_digest set to the values above.",
+    lines += [f"- `{escape_code(item)}`" for item in review["removed"]] or ["None."]
+    # Describe workflow inputs without constructing shell commands from branch names.
+    lines += ["", "Review graph-review.json from Dependency Graph Review on this exact PR head.",
+              "Dispatch Approve Dependency Graph on the default branch with that review's source run ID",
+              "and exact attempt; set approve_graph=true after reviewing the graph.",
+              "Manual fallback: dispatch Regenerate Verification Metadata in write mode on this branch",
+              "with approved_head_sha and approved_graph_digest set to the values above.",
               "Approval expires when either the PR head or proposed graph changes.", ""]
     (directory / "graph-review.md").write_text("\n".join(lines))
 
@@ -351,6 +354,8 @@ def main() -> int:
     parser.add_argument("--output", type=Path)
     parser.add_argument("--approved-head", default="")
     parser.add_argument("--approved-digest", default="")
+    parser.add_argument("--review-only", action="store_true",
+                        help="publish a review artifact without rejecting coordinate changes")
     args = parser.parse_args()
     if args.recover_run or args.refresh_ci_gate or args.require_prepared_head:
         spec = importlib.util.spec_from_file_location("reconcile", Path(__file__).with_name("reconcile-ci-report.py"))
@@ -378,7 +383,7 @@ def main() -> int:
         with open(os.environ["GITHUB_OUTPUT"], "a") as output:
             output.write(f"classification={classification}\n")
     print((args.output / "graph-review.md").read_text())
-    if classification == "coordinate_change":
+    if classification == "coordinate_change" and not args.review_only:
         print("::error::This bump adds or removes dependency coordinates, not just versions.")
         return 1
     return 0
