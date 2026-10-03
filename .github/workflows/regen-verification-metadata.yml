@@ -51,7 +51,7 @@ jobs:
     name: Regenerate verification-metadata.xml (${{ matrix.lane }})
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository)
     strategy:
-      fail-fast: false
+      fail-fast: true
       max-parallel: 1
       matrix:
         include:
@@ -218,25 +218,8 @@ jobs:
           PREPARATION_HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           PREPARATION_SOURCE_REF: ${{ github.head_ref || github.ref_name }}
         run: |
-          set +e
-          bash .github/scripts/run-dependabot-preparation.sh "$LANE" "$MODE" 2>&1 \
-            | tee "$RUNNER_TEMP/verification-metadata-$LANE.log"
-          status=${PIPESTATUS[0]}
-          set -e
-          classification=success
-          if [ "$status" -ne 0 ]; then
-            if grep -Fq "is not verified because it is not listed in the verification metadata" "$RUNNER_TEMP/verification-metadata-$LANE.log"; then
-              classification=unlisted_artifact
-            elif grep -Eiq "checksum.*(failed|mismatch|expected)|expected.*checksum|has been compromised" "$RUNNER_TEMP/verification-metadata-$LANE.log"; then
-              classification=checksum_mismatch
-            elif [ "$status" -eq 143 ] || [ "$status" -eq 130 ] || grep -Eq "(^|[[:space:]])Terminated$" "$RUNNER_TEMP/verification-metadata-$LANE.log"; then
-              classification=operational_termination
-            else
-              classification=build_test_or_policy_failure
-            fi
-          fi
-          echo "classification=$classification" >> "$GITHUB_OUTPUT"
-          exit "$status"
+          exec bash .github/scripts/run-dependabot-preparation-step.sh \
+            "$LANE" "$MODE" "$RUNNER_TEMP/verification-metadata-$LANE.log"
 
       - name: Reject changed recorded hashes and verification policy
         id: verify_update

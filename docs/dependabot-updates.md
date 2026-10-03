@@ -62,6 +62,16 @@ completed job log is authoritative. A repository-wide concurrency group serializ
 but GitHub keeps only one pending run and a newer request may supersede it. Dispatch a
 superseded ref again after the current preparation completes.
 
+The platform matrix stops queued lanes after a lane fails. Failed runs can therefore have less
+all-platform diagnostic coverage because companions that had not started are cancelled. Recovery
+uses the completed run's job logs and matrix state; there is no live shutdown observer or promise
+that other runners will be cancelled immediately. The one retry remains limited to a single
+verified shutdown, with only unstarted cancelled companions accepted as fail-fast fallout.
+The lane supervisor records TERM/INT, forwards it to its isolated process group, and uses bounded
+grace periods before force-killing remaining lane or probe processes. A verified shutdown on a
+later attempt or one with ambiguous matrix failures requires manual investigation; force-kill can
+still prevent evidence artifacts from uploading, so the completed job log remains authoritative.
+
 ## Accepting an intentional coordinate change
 
 Version-only runtime graph changes are automatically re-baselined. Added or removed coordinates

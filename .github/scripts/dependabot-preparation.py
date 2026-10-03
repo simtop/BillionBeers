@@ -124,6 +124,28 @@ def eligible_pr(pr: dict, run: dict, repository: str) -> bool:
             and pr.get("head", {}).get("ref") == run.get("head_branch"))
 
 
+def unstarted_cancelled_companion(job: dict) -> bool:
+    """Accept fail-fast matrix rows only when they never started executing."""
+    if (job.get("name") not in LANE_JOB_NAMES or job.get("conclusion") != "cancelled"
+            or "started_at" not in job or job.get("started_at") or not isinstance(job.get("steps"), list)):
+        return False
+    return all("started_at" in step and not step.get("started_at")
+               and step.get("conclusion") in {None, "skipped"} for step in job["steps"])
+
+
+def single_retryable_lane_failure(jobs: list[dict]) -> dict | None:
+    """Return the sole failed lane only when every companion is success/skip or unstarted cancellation."""
+    failed_lanes = [job for job in jobs if job.get("conclusion") == "failure"]
+    cancelled = [job for job in jobs if job.get("conclusion") == "cancelled"]
+    unexpected = [job for job in jobs if job.get("conclusion") not in
+                  {"success", "skipped", "failure", "cancelled"}]
+    if (len(failed_lanes) != 1 or unexpected
+            or failed_lanes[0].get("name") not in LANE_JOB_NAMES | {LEGACY_LANE_JOB_NAME}
+            or any(not unstarted_cancelled_companion(job) for job in cancelled)):
+        return None
+    return failed_lanes[0]
+
+
 def paths_require_preparation(paths: list[str]) -> bool:
     return any(path in {"gradle/libs.versions.toml", "gradle.properties", "settings.gradle.kts", "build.gradle.kts"}
                or path.startswith(("gradle/wrapper/", "build-logic/"))
@@ -143,15 +165,15 @@ def recover(api, run_id: int, reconcile) -> bool:
     if not eligible_pr(pr, run, api.repository):
         return False
     jobs = api.pages(f"actions/runs/{run_id}/attempts/1/jobs", "jobs")
-    failures = [job for job in jobs if job.get("conclusion") not in {"success", "skipped"}]
-    if len(failures) != 1 or failures[0].get("name") not in LANE_JOB_NAMES | {LEGACY_LANE_JOB_NAME}:
+    lane_failure = single_retryable_lane_failure(jobs)
+    if not lane_failure:
         return False
-    failed_steps = reconcile.RENDER.failed_steps(failures[0])
+    failed_steps = reconcile.RENDER.failed_steps(lane_failure)
     if len(failed_steps) != 1 or failed_steps[0]["name"] not in {
         "Regenerate verification metadata", "Resolve and record platform lane"
     }:
         return False
-    log = api.download(f"actions/jobs/{failures[0]['id']}/logs", reconcile.MAX_LOG).decode("utf-8", errors="replace")
+    log = api.download(f"actions/jobs/{lane_failure['id']}/logs", reconcile.MAX_LOG).decode("utf-8", errors="replace")
     if classify(log, failed_steps[0]["name"]) != "operational_termination":
         return False
     # Reconcile again after evidence downloads. A newer run (including dispatch),
@@ -324,6 +346,11 @@ def require_prepared_head(api, number: int, reconcile, wait_seconds: int = 0, ex
     result = (run or {}).get("result") or {}
     if (run is None or run.get("status") != "completed" or run.get("conclusion") != "success"
             or not run.get("authoritative_valid") or result.get("output_sha") != expected_head):
+        if run and run.get("status") == "completed" and run.get("conclusion") == "failure":
+            diagnosis = reconcile.preparation_snapshot(api, run)
+            if (diagnosis or {}).get("category") == "manual_investigation_required":
+                print(f"::error::{PREPARATION_GATE_FAILURE} A verified runner shutdown did not meet the automatic recovery conditions; manual investigation is required.")
+                return False
         print("::error::Dependency preparation has not succeeded on this PR head. Open its preparation run.")
         return False
     # The Gate can only pass if the exact selection and PR head still agree after evidence

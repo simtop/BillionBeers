@@ -183,6 +183,45 @@ class ReconcileCiReportTest(unittest.TestCase):
         self.assertEqual("coordinate_change", result["category"])
         self.assertEqual([1, 3, 4], [item["id"] for item in result["artifacts"]])
 
+    def test_second_verified_shutdown_requires_manual_investigation(self):
+        failed = run(attempt=2, status="completed", conclusion="failure")
+        lane = job(name="Regenerate verification-metadata.xml (linux)",
+                   step="Resolve and record platform lane")
+        companion = {"id": 11, "name": "Regenerate verification-metadata.xml (web)",
+                     "conclusion": "cancelled", "started_at": None,
+                     "steps": [{"name": "Resolve and record platform lane", "conclusion": "skipped",
+                                "started_at": None}]}
+        api = Mock()
+        api.pages.side_effect = lambda path, key=None: ([lane, companion] if "/attempts/" in path else [])
+        api.download.return_value = b"##[error]The runner has received a shutdown signal.\n##[error]Process completed with exit code 143.\n"
+        result = MODULE.preparation_snapshot(api, failed)
+        self.assertEqual("manual_investigation_required", result["category"])
+        self.assertEqual("operational_termination", result["cause_category"])
+
+    def test_build_failure_is_not_overwritten_by_manual_shutdown_category(self):
+        failed = run(attempt=2, status="completed", conclusion="failure")
+        lane = job(name="Regenerate verification-metadata.xml (linux)",
+                   step="Resolve and record platform lane")
+        api = Mock()
+        api.pages.side_effect = lambda path, key=None: ([lane] if "/attempts/" in path else [])
+        api.download.return_value = b"> Task :resolve FAILED\n##[error]The runner has received a shutdown signal.\n##[error]Process completed with exit code 143.\n"
+        result = MODULE.preparation_snapshot(api, failed)
+        self.assertEqual("build_test_or_policy_failure", result["category"])
+
+    def test_verified_shutdown_with_started_cancelled_companion_requires_manual_review(self):
+        failed = run(attempt=1, status="completed", conclusion="failure")
+        lane = job(name="Regenerate verification-metadata.xml (linux)",
+                   step="Resolve and record platform lane")
+        companion = job(name="Regenerate verification-metadata.xml (web)",
+                        step="Resolve and record platform lane", identifier=11, conclusion="cancelled")
+        api = Mock()
+        api.pages.side_effect = lambda path, key=None: ([lane, companion] if "/attempts/" in path else [])
+        api.download.return_value = b"##[error]The runner has received a shutdown signal.\n##[error]Process completed with exit code 143.\n"
+        result = MODULE.preparation_snapshot(api, failed)
+        self.assertEqual("manual_investigation_required", result["category"])
+        self.assertEqual("operational_termination", result["cause_category"])
+        self.assertEqual("ineligible_matrix_failure_set", result["manual_investigation_reason"])
+
     def setUp(self):
         # Simulated outages must not create real GitHub warning annotations in the test job.
         warnings = patch.object(MODULE, "warning")

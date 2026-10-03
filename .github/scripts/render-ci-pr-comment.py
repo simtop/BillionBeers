@@ -62,7 +62,8 @@ STEP_RULES = {
 EMPTY_RULE = (None, (), None)
 PREPARATION_ACTIONS = {
     "missing_authoritative_result": "No current validated write result is available. Dispatch write mode for this exact Dependabot head and wait for its result before relying on CI.",
-    "operational_termination": "Runner shutdown interrupted preparation. One current-head retry is allowed; a second interruption needs investigation.",
+    "operational_termination": "A verified runner shutdown interrupted preparation. The trusted collector only retries an eligible first-attempt in-repository Dependabot pull request after its strict current-head checks; manual writes and bare exit codes are not retry evidence.",
+    "manual_investigation_required": "A verified runner shutdown interrupted preparation, but strict automatic recovery conditions were not met. Review the completed attempt logs and resource evidence manually before proceeding; automatic recovery is limited to one eligible first attempt.",
     "coordinate_change": "Review the added/removed coordinates in the preparation artifact. Accept only its exact head SHA and graph digest through the manual write-mode dispatch.",
     "formatting": "Preparation could not apply/check the formatter output; inspect the preparation log before dispatching Format Fix.",
     "resolution_conflict": "Diagnose production/test classpaths with dependencyInsight and fix the demonstrated version constraints.",
@@ -121,9 +122,14 @@ def render(data: dict, run_url: str, repository: str, run_id: str) -> str:
     preparation = data.get("preparation") or {}
     preparation_bad = preparation.get("conclusion") in BAD
     preparation_pending = bool(preparation) and (preparation.get("status") != "completed" or preparation.get("category") == "pending")
+    preparation_category = preparation.get("category")
     status = data.get("status", "completed")
     conclusion = data.get("conclusion")
-    if preparation_bad:
+    if preparation_category == "manual_investigation_required":
+        title = "⚠️ Preparation shutdown needs manual investigation"
+    elif preparation_category == "operational_termination":
+        title = "⚠️ Runner shutdown interrupted preparation"
+    elif preparation_bad:
         title = "❌ Dependency preparation needs attention"
     elif conclusion == "success" and preparation_pending:
         title = "⏳ CI passed; dependency preparation pending"
