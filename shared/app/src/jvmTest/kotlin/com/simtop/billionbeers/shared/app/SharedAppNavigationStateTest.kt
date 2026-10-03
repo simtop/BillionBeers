@@ -5,6 +5,7 @@ import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
 import com.simtop.beerdomain.fakes.FakeBeersRepository
+import com.simtop.billionbeers.testing_utils.MainDispatcherExtension
 import com.simtop.core.core.DefaultCoroutineDispatcherProvider
 import com.simtop.navigation.contract.BrowseCategory
 import com.simtop.navigation.contract.PortableRoute
@@ -14,10 +15,22 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
+import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.extension.RegisterExtension
 
 class SharedAppNavigationStateTest {
 
+  @JvmField @RegisterExtension val mainDispatcher = MainDispatcherExtension()
+
   private val beer = Beer.empty.copy(id = "beer-1", name = "Test Lager")
+
+  private val categoryRoutesAndQueries =
+    listOf(
+      PortableRoute.BeerBrowseSelection(BrowseCategory.Style("style-1", "Lager")) to
+        BeersQuery(styleId = "style-1"),
+      PortableRoute.BeerBrowseSelection(BrowseCategory.Brewery("brewery-1", "Brewery")) to
+        BeersQuery(breweryId = "brewery-1"),
+    )
 
   @Test
   fun coveredSearchEntryRetainsIdentityAndPoppedDetailsClose() {
@@ -113,6 +126,70 @@ class SharedAppNavigationStateTest {
     assertTrue(navigation.entries.none { it is DetailEntry })
     assertFalse(category.isClosed)
   }
+
+  @Test
+  fun categoryRoutesCreateBrowseEntriesWithTheirExactQueries() =
+    runTest(mainDispatcher.testDispatcher) {
+      categoryRoutesAndQueries.forEach { (route, expectedQuery) ->
+        val repository = FakeBeersRepository()
+        val pagerFactory = FakeBeersPagerFactory(repository)
+        val navigation =
+          SharedAppNavigationState(
+            repository = repository,
+            pagerFactory = pagerFactory,
+            coroutineDispatcher = mainDispatcher.dispatcherProvider,
+            initialRoute = route,
+          )
+
+        try {
+          val entry = navigation.current as BrowseBeersEntry
+
+          assertEquals(route.category.name, entry.selection.name)
+          assertEquals(expectedQuery, entry.selection.toQuery())
+          assertEquals(route, entry.route)
+          assertEquals(listOf(expectedQuery), pagerFactory.createdQueries)
+        } finally {
+          navigation.disposeAll()
+        }
+      }
+    }
+
+  @Test
+  fun replacingFromAbsentCategoryRouteClosesDetailsAndKeepsListRoot() =
+    runTest(mainDispatcher.testDispatcher) {
+      categoryRoutesAndQueries.forEach { (route, expectedQuery) ->
+        val repository = FakeBeersRepository()
+        val pagerFactory = FakeBeersPagerFactory(repository)
+        val navigation =
+          SharedAppNavigationState(
+            repository = repository,
+            pagerFactory = pagerFactory,
+            coroutineDispatcher = mainDispatcher.dispatcherProvider,
+            initialRoute = PortableRoute.BeersList,
+          )
+
+        try {
+          val root = navigation.current
+          navigation.navigate(PortableRoute.BeerDetail(beer))
+          val detail = navigation.current
+
+          navigation.replaceFromRoute(route)
+          val category = navigation.current as BrowseBeersEntry
+
+          assertSame(root, navigation.entries.first())
+          assertEquals(listOf(root, category), navigation.entries)
+          assertTrue(detail.isClosed)
+          assertEquals(route, category.route)
+          assertEquals(expectedQuery, category.selection.toQuery())
+          assertEquals(listOf(expectedQuery), pagerFactory.createdQueries)
+          assertTrue(navigation.pop())
+          assertTrue(category.isClosed)
+          assertSame(root, navigation.current)
+        } finally {
+          navigation.disposeAll()
+        }
+      }
+    }
 
   @Test
   fun selectingSavedFilterCreatesPagerForItsExactQuery() {
