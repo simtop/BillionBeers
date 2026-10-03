@@ -28,7 +28,7 @@ data class PagedListUiModel<T>(
  * don't carry it.
  *
  * Shared semantics:
- * - No items yet: Loading while anything is pending, [CommonUiState.Error] on a first-page failure,
+ * - No items yet: Loading while anything is pending, [CommonUiState.Error] on a failure,
  *   [endedEmpty] when pagination ends with nothing (screens disagree here - a catalog is *empty*, a
  *   search has *no results* - hence the parameter).
  * - Items on screen stay on screen: a first-page load is a refresh in progress
@@ -54,27 +54,33 @@ class PagedListReducer<T, E : Any>(
       is PagingState.EndOfPagination -> state.totalCount?.let { lastTotalCount = it }
       else -> Unit
     }
+
+    if (items.isEmpty()) {
+      return when (state) {
+        is PagingState.Error -> errorState(state.error)
+        is PagingState.EndOfPagination -> endedEmpty()
+        // A DB-backed data flow may emit rows just after Success, so keep Loading until then.
+        PagingState.Idle,
+        PagingState.Loading,
+        PagingState.LoadingNextPage,
+        is PagingState.Success -> CommonUiState.Loading
+      }
+    }
+
     return when (state) {
-      PagingState.Idle -> if (items.isEmpty()) CommonUiState.Loading else success(items)
-      PagingState.Loading ->
-        // With items already on screen, a first-page load is a refresh in progress.
-        if (items.isEmpty()) CommonUiState.Loading else success(items, isRefreshing = true)
-      PagingState.LoadingNextPage ->
-        if (items.isEmpty()) CommonUiState.Loading else success(items, isLoadingNextPage = true)
-      is PagingState.Success ->
-        // Success with no items yet: a DB-backed data flow may emit just after the state does, so
-        // hold Loading until the rows arrive.
-        if (items.isEmpty()) CommonUiState.Loading else success(items)
-      is PagingState.EndOfPagination ->
-        if (items.isEmpty()) endedEmpty() else success(items, footer = PagedListFooter.EndReached)
+      PagingState.Idle,
+      is PagingState.Success -> success(items)
+      // With items already on screen, a first-page load is a refresh in progress.
+      PagingState.Loading -> success(items, isRefreshing = true)
+      PagingState.LoadingNextPage -> success(items, isLoadingNextPage = true)
+      is PagingState.EndOfPagination -> success(items, footer = PagedListFooter.EndReached)
       is PagingState.Error ->
-        when {
-          items.isEmpty() -> errorState(state.error)
+        success(
+          items,
           // A failed refresh keeps the list with no footer: the load-more retry row would carry
           // the wrong copy and target the wrong load - repeating the refresh is the retry.
-          state.isFirstPage -> success(items)
-          else -> success(items, footer = PagedListFooter.Retry)
-        }
+          footer = if (state.isFirstPage) PagedListFooter.Hidden else PagedListFooter.Retry,
+        )
     }
   }
 

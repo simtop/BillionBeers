@@ -16,11 +16,12 @@ class PagedListReducerTest {
   private val items = listOf("a", "b")
 
   @Test
-  fun `nothing loaded yet is Loading for Idle Loading and Success states`() {
+  fun `empty pending and data arrival states stay Loading`() {
     val reducer = reducer()
 
     assertEquals(CommonUiState.Loading, reducer.reduce(emptyList(), PagingState.Idle))
     assertEquals(CommonUiState.Loading, reducer.reduce(emptyList(), PagingState.Loading))
+    assertEquals(CommonUiState.Loading, reducer.reduce(emptyList(), PagingState.LoadingNextPage))
     // Success with no items yet: a DB-backed data flow may emit just after the state does.
     assertEquals(CommonUiState.Loading, reducer.reduce(emptyList(), PagingState.Success()))
   }
@@ -92,6 +93,51 @@ class PagedListReducerTest {
   }
 
   @Test
+  fun `a total received before rows arrive is retained for success and end states`() {
+    listOf(0, 14).forEach { totalCount ->
+      listOf(
+          PagingState.Success(totalCount = totalCount) to CommonUiState.Loading,
+          PagingState.EndOfPagination(totalCount = totalCount) to CommonUiState.Empty,
+        )
+        .forEach { (state, expectedEmptyState) ->
+          val reducer = reducer()
+
+          assertEquals(expectedEmptyState, reducer.reduce(emptyList(), state))
+          assertEquals(
+            CommonUiState.Success(PagedListUiModel(items, totalCount = totalCount)),
+            reducer.reduce(items, PagingState.Idle),
+          )
+        }
+    }
+  }
+
+  @Test
+  fun `null totals retain the latest count while a reported zero replaces it`() {
+    val reducer = reducer()
+
+    assertEquals(
+      CommonUiState.Success(PagedListUiModel(items, totalCount = 14)),
+      reducer.reduce(items, PagingState.Success(totalCount = 14)),
+    )
+    assertEquals(
+      CommonUiState.Success(PagedListUiModel(items, totalCount = 14)),
+      reducer.reduce(items, PagingState.Success(totalCount = null)),
+    )
+    assertEquals(
+      CommonUiState.Success(
+        PagedListUiModel(items, footer = PagedListFooter.EndReached, totalCount = 14)
+      ),
+      reducer.reduce(items, PagingState.EndOfPagination(totalCount = null)),
+    )
+    assertEquals(
+      CommonUiState.Success(
+        PagedListUiModel(items, footer = PagedListFooter.EndReached, totalCount = 0)
+      ),
+      reducer.reduce(items, PagingState.EndOfPagination(totalCount = 0)),
+    )
+  }
+
+  @Test
   fun `end of pagination with nothing is Empty by default`() {
     val state = reducer().reduce(emptyList(), PagingState.EndOfPagination())
 
@@ -108,10 +154,12 @@ class PagedListReducerTest {
   }
 
   @Test
-  fun `a failure with nothing on screen is the full-screen error`() {
-    val state = reducer().reduce(emptyList(), PagingState.Error("boom", isFirstPage = true))
+  fun `a failure with nothing on screen is the full-screen error for either page`() {
+    listOf(true, false).forEach { isFirstPage ->
+      val state = reducer().reduce(emptyList(), PagingState.Error("boom", isFirstPage))
 
-    assertEquals(CommonUiState.Error("error: boom"), state)
+      assertEquals(CommonUiState.Error("error: boom"), state)
+    }
   }
 
   @Test
