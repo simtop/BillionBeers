@@ -107,14 +107,14 @@ update-android-skills: ## Sync official Android skills (github.com/android/skill
 
 # Basic Commands
 build: ## Assemble the debug APK.
-	$(GRADLE_RUNNER) $(MODULE)assembleDebug
+	$(GRADLE_RUNNER) $(MODULE_PREFIX)assembleDebug
 
 install: ## Install debug build. App install includes on-demand beerdetail via bundletool local-testing; pass MODULE=:foo for a plain installDebug.
 ifeq ($(MODULE_TRIMMED),)
 	$(GRADLE_RUNNER) :app:bundleDebug
 	@bash scripts/install-local-testing.sh
 else
-	$(GRADLE_RUNNER) $(MODULE)installDebug
+	$(GRADLE_RUNNER) $(MODULE_PREFIX)installDebug
 endif
 
 bundle-release: ## Assemble the signed release App Bundle (.aab) for Play Store upload, incl. the beerdetail dynamic feature. Needs keystore.properties or STORE_FILE/STORE_PASSWORD/ALIAS/PASSWORD env vars.
