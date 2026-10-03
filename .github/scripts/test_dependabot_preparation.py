@@ -141,6 +141,38 @@ class DependabotPreparationTest(unittest.TestCase):
         self.assertFalse(MODULE.recover(api, 12, reconcile))
         api.post.assert_not_called()
 
+    def test_fail_fast_retry_accepts_only_unstarted_cancelled_matrix_companions(self):
+        failed = {"name": "Regenerate verification-metadata.xml (linux)", "conclusion": "failure"}
+        cancelled = {"name": "Regenerate verification-metadata.xml (web)", "conclusion": "cancelled",
+                     "started_at": None,
+                     "steps": [{"name": "Resolve and record platform lane", "conclusion": "skipped",
+                                "started_at": None}]}
+        self.assertIsNotNone(MODULE.single_retryable_lane_failure([failed, cancelled]))
+
+        executed = copy.deepcopy(cancelled)
+        executed["steps"][0].update(started_at="2026-10-01T00:00:00Z", conclusion="cancelled")
+        unknown = dict(cancelled, name="Regenerate verification-metadata.xml (mystery)")
+        multiple_failures = [failed, dict(failed, name="Regenerate verification-metadata.xml (apple)")]
+        missing_started_at = {key: value for key, value in cancelled.items() if key != "started_at"}
+        missing_steps = {key: value for key, value in cancelled.items() if key != "steps"}
+        for jobs in ([failed, executed], [failed, unknown], multiple_failures,
+                     [failed, missing_started_at], [failed, missing_steps]):
+            with self.subTest(jobs=jobs):
+                self.assertIsNone(MODULE.single_retryable_lane_failure(jobs))
+
+    def test_recovery_reruns_once_with_only_an_unstarted_cancelled_companion(self):
+        api, reconcile, _, _, failed = self.fixture()
+        failed.update(name="Regenerate verification-metadata.xml (linux)",
+                      steps=[{"name": "Resolve and record platform lane", "conclusion": "failure"}])
+        companion = {"id": 100, "name": "Regenerate verification-metadata.xml (web)",
+                     "conclusion": "cancelled", "started_at": None,
+                     "steps": [{"name": "Resolve and record platform lane", "conclusion": "skipped",
+                                "started_at": None}]}
+        api.pages.side_effect = lambda path, key=None: ([failed, companion] if "/attempts/" in path
+                                                       else [{"run_number": 12}])
+        self.assertTrue(MODULE.recover(api, 12, reconcile))
+        api.post.assert_called_once_with("actions/runs/12/rerun")
+
     def test_approval_binds_head_baseline_versions_and_exact_delta(self):
         review = MODULE.graph_review("a:lib:1\n", "a:lib:2\nb:lib:1\n", SHA)
         self.assertEqual("coordinate_change", MODULE.check_graph(review, "", ""))
@@ -316,6 +348,42 @@ class DependabotPreparationTest(unittest.TestCase):
         with patch.object(MODULE.time, "sleep") as sleep:
             self.assertFalse(MODULE.require_prepared_head(api, 7, reconcile, 60, SHA))
             sleep.assert_not_called()
+
+    def test_gate_prints_explicit_manual_investigation_message_for_repeat_shutdown(self):
+        api, reconcile, _, _, _ = self.fixture()
+        api.pages.side_effect = None
+        api.pages.return_value = [{"filename": "gradle/libs.versions.toml"}]
+        reconcile.preparation_current.return_value = {
+            "id": 12, "run_attempt": 2, "status": "completed", "conclusion": "failure"
+        }
+        reconcile.preparation_snapshot.return_value = {"category": "manual_investigation_required"}
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            self.assertFalse(MODULE.require_prepared_head(api, 7, reconcile, 0, SHA))
+        self.assertIn(MODULE.PREPARATION_GATE_FAILURE, output.getvalue())
+        self.assertIn("did not meet the automatic recovery conditions", output.getvalue())
+        self.assertIn("manual investigation is required", output.getvalue())
+
+    def test_manual_investigation_gate_failure_can_refresh_after_new_valid_preparation(self):
+        api, reconcile, _, _, _ = self.fixture()
+        api.pages.side_effect = None
+        api.pages.return_value = [{"filename": "gradle/libs.versions.toml"}]
+        reconcile.preparation_current.return_value = {
+            "id": 12, "run_attempt": 2, "status": "completed", "conclusion": "failure"
+        }
+        reconcile.preparation_snapshot.return_value = {"category": "manual_investigation_required"}
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            self.assertFalse(MODULE.require_prepared_head(api, 7, reconcile, 0, SHA))
+        self.assertIn(MODULE.PREPARATION_GATE_FAILURE, output.getvalue())
+
+        api, reconcile, _, _ = self.gate_refresh_fixture()
+        reconcile.preparation_current.return_value = {
+            "id": 45, "run_attempt": 1, "authoritative_valid": True,
+            "result": {"output_sha": SHA},
+        }
+        self.assertTrue(MODULE.refresh_failed_ci_gate(api, 44, reconcile))
+        api.post.assert_called_once_with("actions/jobs/5/rerun")
 
     def gate_refresh_fixture(self):
         api = Mock(repository="owner/repo")

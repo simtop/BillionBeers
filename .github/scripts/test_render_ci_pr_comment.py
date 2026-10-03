@@ -31,6 +31,15 @@ class RenderCiPrCommentTest(unittest.TestCase):
         self.assertIn("exact head SHA and graph digest", body)
         self.assertNotIn("Previous failure details have been cleared", body)
 
+    def test_repeat_verified_shutdown_has_distinct_manual_investigation_copy(self):
+        body = render(conclusion="failure", preparation={"id": 12, "run_attempt": 2,
+                      "status": "completed", "conclusion": "failure",
+                      "category": "manual_investigation_required",
+                      "html_url": "https://github.test/prep"})
+        self.assertIn("Preparation shutdown needs manual investigation", body)
+        self.assertIn("strict automatic recovery conditions were not met", body)
+        self.assertIn("automatic recovery is limited to one eligible first attempt", body)
+
     def test_gradle_verification_is_not_diagnosed_as_a_format_fix(self):
         failed = job(name="Code Style Formatting Check", step="Run Spotless Check", diagnostics={
             "Run Spotless Check": {"error": "Dependency verification failed for configuration"}})

@@ -255,6 +255,16 @@ status and graph artifacts; it explains verification failures before Spotless an
 branches. Strict base protection remains enabled. The collector can diagnose a runner shutdown even
 when teardown prevented the job summary or resource artifact from uploading.
 
+The platform matrix uses fail-fast so a lane failure stops queued companions and preserves runner
+capacity. Failed runs therefore provide less all-platform diagnostic coverage: lanes that have not
+started may be cancelled. Recovery is based on the completed run's job logs and matrix state; there
+is no live shutdown observer or promise that the collector can cancel other runners immediately.
+Only unstarted cancelled companions are compatible with the strict single-lane retry rule.
+The lane supervisor records TERM/INT, forwards the signal to its isolated process group, and applies
+bounded grace periods before force-killing remaining lane or probe processes. A verified shutdown
+on a later attempt or with ambiguous matrix failures requires manual investigation; force-kill can
+prevent evidence artifacts from uploading, so completed job logs remain authoritative.
+
 ## Operational notes
 
 - **Warm caches under-record.** A ledger generated locally misses metadata files (POMs, BOMs,

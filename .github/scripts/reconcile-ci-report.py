@@ -511,6 +511,15 @@ def preparation_snapshot(api: GitHub, run: dict | None) -> dict | None:
         try:
             log = api.download(f"actions/jobs/{job['id']}/logs", MAX_LOG).decode("utf-8", errors="replace")
             data["category"] = PREPARATION.classify(log, step["name"])
+            if data["category"] == "operational_termination":
+                if not PREPARATION.single_retryable_lane_failure(jobs):
+                    data["cause_category"] = data["category"]
+                    data["category"] = "manual_investigation_required"
+                    data["manual_investigation_reason"] = "ineligible_matrix_failure_set"
+                elif run.get("run_attempt", 1) > 1:
+                    data["cause_category"] = data["category"]
+                    data["category"] = "manual_investigation_required"
+                    data["manual_investigation_reason"] = "later_attempt"
             data["error"] = RENDER.error_excerpt(step_log(log, step))
         except API_ERRORS:
             data["category"] = "evidence_unavailable"
