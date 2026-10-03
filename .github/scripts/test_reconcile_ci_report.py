@@ -152,14 +152,21 @@ class ReconcileCiReportTest(unittest.TestCase):
         latest = run(number=4, attempt=2, status="completed", conclusion="success")
         latest["path"] = ".github/workflows/regen-verification-metadata.yml"
         latest["head_repository"]["full_name"] = "owner/repo"
+        latest["display_title"] = "Dependency preparation | mode=write | ref=feature/test"
+        latest["status"] = "in_progress"
+        latest["conclusion"] = None
         old = dict(latest, id=3, run_number=3, run_attempt=5)
         stale = dict(latest, id=5, run_number=5, head_sha="stale")
         foreign = dict(latest, id=6, run_number=6, head_repository={"full_name": "fork/repo"})
         api = Mock(repository="owner/repo")
         api.pages.return_value = [old, latest, stale, foreign]
-        api.get.return_value = latest
-        self.assertEqual(latest, MODULE.preparation_current(api, source))
-        api.get.assert_called_once_with("actions/runs/4")
+        api.get.side_effect = lambda path: dict(latest if path.endswith("/4") else stale)
+        api.pages.side_effect = lambda path, key=None, **kwargs: ([{"filename": "gradle/libs.versions.toml"}]
+            if path == "pulls/7/files" else [old, latest, stale, foreign])
+        selected = MODULE.preparation_current(api, source)
+        self.assertEqual(latest["id"], selected["id"])
+        self.assertEqual("pending", selected["category"])
+        self.assertIn(stale["id"], [item["id"] for item in selected["stale_runs"]])
 
     def test_preparation_snapshot_classifies_actual_error_and_filters_artifacts(self):
         failed = run(status="completed", conclusion="failure")
@@ -422,13 +429,12 @@ class ReconcileCiReportTest(unittest.TestCase):
     def test_workflow_preserves_trusted_checkout_and_serialized_writer(self):
         root = SCRIPT.parents[2]
         workflow = (root / ".github/workflows/ci-report.yml").read_text()
-        self.assertIn("types: [completed]", workflow)
-        self.assertNotIn("types: [in_progress, completed]", workflow)
-        self.assertNotIn("in_progress", workflow.split("types:", 1)[1].split("jobs:", 1)[0])
+        self.assertIn("types: [requested, in_progress, completed]", workflow)
+        self.assertIn("in_progress", workflow.split("types:", 1)[1].split("permissions:", 1)[0])
         self.assertNotIn("workflow_run.conclusion != 'success'", workflow)
         refs = MODULE.re.findall(r"^\s+ref: (.+)$", workflow, MODULE.re.MULTILINE)
-        self.assertEqual(["${{ github.event.repository.default_branch }}"] * 3, refs)
-        self.assertEqual(3, workflow.count("persist-credentials: false"))
+        self.assertEqual(["${{ github.event.repository.default_branch }}"] * 4, refs)
+        self.assertEqual(4, workflow.count("persist-credentials: false"))
         self.assertIn("group: ci-diagnosis-${{ github.repository_id }}-${{ needs.resolve.outputs.pr_number }}", workflow)
         self.assertIn("cancel-in-progress: false", workflow)
         self.assertNotIn("issues: write", workflow.split("  comment:")[0])

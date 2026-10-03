@@ -3,7 +3,7 @@ name: CI PR Diagnosis
 on:
   workflow_run:
     workflows: [BillionBeers CI, Regenerate Verification Metadata]
-    types: [completed]
+    types: [requested, in_progress, completed]
 
 permissions:
   actions: read
@@ -11,9 +11,35 @@ permissions:
   pull-requests: read
 
 jobs:
+  refresh-gate:
+    name: Refresh a CI Gate blocked by preparation
+    if: github.event.workflow_run.name == 'Regenerate Verification Metadata'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+      contents: read
+      pull-requests: read
+    concurrency:
+      group: dependency-gate-refresh-${{ github.event.workflow_run.head_sha }}
+      cancel-in-progress: false
+    steps:
+      - name: Checkout trusted refresh script
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - name: Retry only a preparation-blocked CI Gate
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PREPARATION_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: python3 .github/scripts/dependabot-preparation.py --refresh-ci-gate "$PREPARATION_RUN_ID"
+
   resolve:
     name: Resolve CI pull request
-    if: github.event.workflow_run.event == 'pull_request'
+    if: >-
+      github.event.workflow_run.event == 'pull_request' ||
+      github.event.workflow_run.name == 'Regenerate Verification Metadata'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:

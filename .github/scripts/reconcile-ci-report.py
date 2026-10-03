@@ -10,6 +10,7 @@ import argparse
 import copy
 import importlib.util
 import io
+import json
 import os
 import re
 import stat
@@ -31,7 +32,20 @@ API_ERRORS = (OSError, ValueError, KeyError, zipfile.BadZipFile)
 MAX_ARCHIVE = 32 * 1024 * 1024
 MAX_XML = 2 * 1024 * 1024
 MAX_LOG = 16 * 1024 * 1024
+MAX_PREPARATION_RESULT_ARCHIVE = 64 * 1024
+MAX_PREPARATION_RESULT_JSON = 32 * 1024
 PREPARATION = RENDER.load_script("dependabot-preparation")
+PREPARATION_LANES = {"linux", "web", "managed", "apple"}
+PREPARATION_RESULT_PREFIX = "authoritative-preparation-result-"
+PREPARATION_RUN_NAME = re.compile(
+    r"Dependency preparation \| mode=(write|reference|candidate) \| ref=(.+)"
+)
+CI_REQUIRED_JOBS = {
+    "Code Style Formatting Check", "Detect change scope", "Secret Scan (gitleaks)",
+    "Static Analysis (Detekt)", "Android Lint", "Dependency Guard", "Unit Tests",
+    "Web Tests (Wasm/static)", "Screenshot Tests (Paparazzi)",
+    "Instrumented Tests (Gradle Managed Device)", "Native Tests (Apple)", "CI Gate",
+}
 
 
 def warning(message: str) -> None:
@@ -60,15 +74,18 @@ class GitHub:
         with urllib.request.urlopen(request, timeout=20):
             pass  # The rerun endpoint returns 201/202 with no JSON body.
 
-    def pages(self, path: str, key: str | None = None) -> list:
+    def pages(self, path: str, key: str | None = None, *, max_items: int | None = None) -> list:
         result = []
         page = 1
         separator = "&" if "?" in path else "?"
         while True:
-            response = self.get(f"{path}{separator}per_page=100&page={page}")
+            page_size = min(100, max_items - len(result)) if max_items is not None else 100
+            if page_size <= 0:
+                return result
+            response = self.get(f"{path}{separator}per_page={page_size}&page={page}")
             items = response[key] if key else response
             result.extend(items)
-            if len(items) < 100:
+            if len(items) < page_size or (max_items is not None and len(result) >= max_items):
                 return result
             page += 1
 
@@ -107,7 +124,11 @@ def same_source(pr: dict, run: dict, repository: str) -> bool:
 
 
 def resolve_pr(api: GitHub, run: dict) -> int | None:
-    if run.get("event") != "pull_request" or run.get("path") not in {".github/workflows/ci.yml", f".github/workflows/{PREPARATION.WORKFLOW}"}:
+    is_ci = run.get("event") == "pull_request" and run.get("path") == ".github/workflows/ci.yml"
+    is_preparation = (run.get("path") == f".github/workflows/{PREPARATION.WORKFLOW}"
+                      and run.get("event") in {"pull_request", "workflow_dispatch"}
+                      and preparation_mode(run) == "write")
+    if not (is_ci or is_preparation):
         return None
     candidates = run.get("pull_requests", [])
     if not candidates:
@@ -123,8 +144,21 @@ def resolve_pr(api: GitHub, run: dict) -> int | None:
     matches = set()
     for candidate in candidates:
         pr = api.get(f"pulls/{candidate['number']}")
-        if same_source(pr, run, api.repository):
+        eligible_bot_dispatch = (run.get("event") != "workflow_dispatch"
+            or pr.get("user", {}).get("login") == "dependabot[bot]"
+            and (pr.get("head", {}).get("repo") or {}).get("full_name") == api.repository
+            and (pr.get("base", {}).get("repo") or {}).get("full_name") == api.repository)
+        if eligible_bot_dispatch and same_source(pr, run, api.repository):
             matches.add(pr["number"])
+    if run.get("event") == "workflow_dispatch" and not candidates:
+        owner = api.repository.split("/", 1)[0]
+        query = urllib.parse.urlencode({"state": "open", "head": f"{owner}:{run.get('head_branch', '')}"})
+        candidates = api.pages(f"pulls?{query}")
+        for pr in candidates:
+            if (pr.get("user", {}).get("login") == "dependabot[bot]"
+                    and pr.get("head", {}).get("sha") == run.get("head_sha")
+                    and same_source(pr, run, api.repository)):
+                matches.add(pr["number"])
     if len(matches) != 1:
         warning("CI comment skipped: no unambiguous open PR association")
         return None
@@ -149,26 +183,314 @@ def current(api: GitHub, pr_number: int) -> tuple[dict, dict | None]:
     return pr, api.get(f"actions/runs/{latest['id']}")
 
 
-def preparation_current(api: GitHub, pr: dict) -> dict | None:
-    if pr.get("state") != "open" or pr.get("user", {}).get("login") != "dependabot[bot]":
+def preparation_mode(run: dict) -> str | None:
+    match = PREPARATION_RUN_NAME.fullmatch(run.get("display_title", ""))
+    return match.group(1) if match and match.group(2) == run.get("head_branch") else None
+
+
+def result_archive(api: GitHub, run: dict, pr: dict, *, allow_reuse: bool = True) -> tuple[dict, dict]:
+    """Download one bounded result artifact and validate every identity before using it."""
+    artifact_name = f"{PREPARATION_RESULT_PREFIX}{run['id']}-{run['run_attempt']}"
+    artifacts = [artifact for artifact in api.pages(f"actions/runs/{run['id']}/artifacts", "artifacts")
+                 if artifact.get("name") == artifact_name]
+    if len(artifacts) != 1:
+        raise ValueError("authoritative preparation result is missing or duplicated")
+    artifact = artifacts[0]
+    size = artifact.get("size_in_bytes")
+    if artifact.get("expired") or type(size) is not int or not 0 <= size <= MAX_PREPARATION_RESULT_ARCHIVE:
+        raise ValueError("authoritative preparation result is expired or exceeds its size limit")
+    content = api.download(f"actions/artifacts/{artifact['id']}/zip", MAX_PREPARATION_RESULT_ARCHIVE)
+    with zipfile.ZipFile(io.BytesIO(content)) as archive:
+        entries = archive.infolist()
+        if len(entries) != 1 or entries[0].filename != "authoritative-preparation.json":
+            raise ValueError("authoritative result archive must contain exactly one expected JSON file")
+        entry = entries[0]
+        if (entry.is_dir() or entry.file_size > MAX_PREPARATION_RESULT_JSON
+                or stat.S_ISLNK(entry.external_attr >> 16)):
+            raise ValueError("authoritative result archive contains an unsafe member")
+        raw = archive.read(entry)
+    if len(raw) != entry.file_size:
+        raise ValueError("authoritative result archive member length is inconsistent")
+    result = json.loads(raw.decode("utf-8"))
+    validate_preparation_result(api, result, run, pr, allow_reuse=allow_reuse)
+    return result, artifact
+
+
+def valid_sha(value: object) -> bool:
+    return isinstance(value, str) and re.fullmatch(r"[0-9a-f]{40}", value) is not None
+
+
+def validate_preparation_result(api: GitHub, result: dict, run: dict, pr: dict, *, allow_reuse: bool = True) -> None:
+    if not isinstance(result, dict) or type(result.get("schema")) is not int or result.get("schema") != 1:
+        raise ValueError("authoritative preparation result has an unsupported schema")
+    expected = {
+        "repository": api.repository,
+        "repository_id": pr.get("base", {}).get("repo", {}).get("id"),
+        "pr_number": pr.get("number"),
+        "branch": pr.get("head", {}).get("ref"),
+        "source_sha": run.get("head_sha"),
+        "mode": "write",
+        "run_id": run.get("id"),
+        "run_attempt": run.get("run_attempt"),
+    }
+    if any(result.get(key) != value for key, value in expected.items()):
+        raise ValueError("authoritative preparation result has a wrong repository, PR, branch, or run identity")
+    if not valid_sha(result.get("source_sha")) or not valid_sha(result.get("output_sha")):
+        raise ValueError("authoritative preparation result has a malformed source/output SHA")
+    if (result.get("graph_mode") != "reference"
+            or not isinstance(result.get("graph_digest"), str)
+            or not re.fullmatch(r"[0-9a-f]{64}", result["graph_digest"])):
+        raise ValueError("authoritative preparation result has a malformed graph identity")
+    kind = result.get("kind")
+    if kind == "full":
+        lanes = result.get("lanes")
+        if not isinstance(lanes, dict) or set(lanes) != PREPARATION_LANES:
+            raise ValueError("authoritative preparation result does not contain all four platform lanes")
+        for lane, identity in lanes.items():
+            if not isinstance(identity, dict) or any(identity.get(key) != value for key, value in {
+                "lane": lane, "run_id": run.get("id"), "run_attempt": run.get("run_attempt"),
+                "head_sha": result["source_sha"], "mode": "write", "graph_mode": "reference",
+                "graph_digest": result["graph_digest"], "conclusion": "success",
+            }.items()) or not isinstance(identity.get("manifest_sha256"), str) or not re.fullmatch(
+                r"[0-9a-f]{64}", identity["manifest_sha256"]):
+                raise ValueError(f"invalid authoritative identity for platform lane {lane}")
+    elif kind == "reuse":
+        if not allow_reuse:
+            raise ValueError("reuse references must point directly to a full preparation result")
+        if (result.get("output_sha") != result.get("source_sha")
+                or not isinstance(result.get("origin_run_id"), int)
+                or not isinstance(result.get("origin_run_attempt"), int)):
+            raise ValueError("reused preparation identity is malformed")
+        origin = api.get(f"actions/runs/{result['origin_run_id']}")
+        if (origin.get("run_number", 0) >= run.get("run_number", 0)
+                or origin.get("status") != "completed" or origin.get("conclusion") != "success"
+                or origin.get("run_attempt") != result["origin_run_attempt"]
+                or origin.get("head_branch") != result.get("branch")
+                or (origin.get("head_repository") or {}).get("full_name") != api.repository
+                or origin.get("path") != f".github/workflows/{PREPARATION.WORKFLOW}"
+                or preparation_mode(origin) != "write"):
+            raise ValueError("reuse does not reference a completed earlier write run on this branch")
+        origin_result, _ = result_archive(api, origin, pr, allow_reuse=False)
+        if (origin_result.get("kind") != "full"
+                or origin_result.get("output_sha") != result.get("source_sha")
+                or origin_result.get("graph_digest") != result.get("graph_digest")):
+            raise ValueError("reuse origin does not validate the current source head")
+        result["origin_result"] = origin_result
+        result["origin_run"] = origin
+    else:
+        raise ValueError("authoritative preparation result has an unknown kind")
+    if result["output_sha"] != result["source_sha"]:
+        commit = api.get(f"commits/{result['output_sha']}")
+        parents = commit.get("parents", [])
+        if len(parents) != 1 or parents[0].get("sha") != result["source_sha"]:
+            raise ValueError("preparation output is not a direct child of its source SHA")
+
+
+def preparation_current(api: GitHub, pr: dict, *, exclude_run_id: int | None = None) -> dict | None:
+    repository = api.repository
+    if (pr.get("state") != "open" or pr.get("user", {}).get("login") != "dependabot[bot]"
+            or pr.get("base", {}).get("repo", {}).get("full_name") != repository
+            or (pr.get("head", {}).get("repo") or {}).get("full_name") != repository):
         return None
-    query = urllib.parse.urlencode({"event": "pull_request", "head_sha": pr["head"]["sha"]})
-    runs = api.pages(f"actions/workflows/{PREPARATION.WORKFLOW}/runs?{query}", "workflow_runs")
-    matches = [run for run in runs if PREPARATION.eligible_pr(pr, run, api.repository)]
-    if not matches:
+    branch, head_sha = pr.get("head", {}).get("ref"), pr.get("head", {}).get("sha")
+    try:
+        changed_paths = [item["filename"] for item in api.pages(f"pulls/{pr['number']}/files")]
+    except API_ERRORS as error:
+        return {"status": "completed", "conclusion": "failure", "category": "evidence_unavailable",
+                "authoritative_error": f"Cannot determine whether preparation is required: {type(error).__name__}",
+                "head_sha": head_sha, "html_url": pr.get("html_url", ""), "stale_runs": [],
+                "authoritative_valid": False}
+    if not PREPARATION.paths_require_preparation(changed_paths):
         return None
-    latest = max(matches, key=lambda run: run["run_number"])
-    return api.get(f"actions/runs/{latest['id']}")
+    query = urllib.parse.urlencode({"branch": branch})
+    # A bounded recent window is enough to identify the authoritative attempt. Older runs
+    # cannot outrank a newer matching result, and scanning them makes every gate poll download
+    # an unbounded number of immutable artifacts.
+    runs = api.pages(f"actions/workflows/{PREPARATION.WORKFLOW}/runs?{query}", "workflow_runs", max_items=100)
+    intents = []
+    stale = []
+    for listed in sorted(runs, key=lambda item: (item.get("run_number", 0), item.get("run_attempt", 0)), reverse=True):
+        if (listed.get("path") != f".github/workflows/{PREPARATION.WORKFLOW}"
+                or listed.get("event") not in {"pull_request", "workflow_dispatch"}
+                or listed.get("head_branch") != branch
+                or (listed.get("head_repository") or {}).get("full_name") != api.repository):
+            continue
+        if listed.get("id") == exclude_run_id:
+            continue
+        listed_mode = preparation_mode(listed)
+        if listed_mode in {"reference", "candidate"}:
+            continue
+        if listed_mode != "write":
+            if listed.get("head_sha") == head_sha:
+                intents.append({"run": listed, "result": None, "artifact": None, "state": "unresolved"})
+                break
+            continue
+        try:
+            run = api.get(f"actions/runs/{listed['id']}")
+        except API_ERRORS:
+            if listed.get("head_sha") == head_sha:
+                intents.append({"run": listed, "result": None, "artifact": None, "state": "unresolved"})
+                break
+            stale.append({**listed, "stale_reason": "run details unavailable"})
+            continue
+        if (run.get("event") not in {"pull_request", "workflow_dispatch"}
+                or run.get("path") != f".github/workflows/{PREPARATION.WORKFLOW}"
+                or run.get("head_branch") != branch
+                or (run.get("head_repository") or {}).get("full_name") != repository
+                or preparation_mode(run) not in {"write", None}):
+            if run.get("head_sha") == head_sha:
+                intents.append({"run": run, "result": None, "artifact": None, "state": "unresolved"})
+                break
+            continue
+        if run.get("head_sha") == head_sha:
+            if run.get("event") == "pull_request":
+                numbers = {item.get("number") for item in run.get("pull_requests", [])}
+                if not numbers:
+                    try:
+                        numbers = {item.get("number") for item in api.pages(
+                            f"commits/{head_sha}/pulls"
+                        )}
+                    except API_ERRORS:
+                        intents.append({"run": run, "result": None, "artifact": None, "state": "unresolved"})
+                        break
+                if numbers and pr.get("number") not in numbers:
+                    continue
+            elif run.get("event") == "workflow_dispatch":
+                owner = api.repository.split("/", 1)[0]
+                head_query = urllib.parse.urlencode({"state": "open", "head": f"{owner}:{branch}"})
+                try:
+                    branch_prs = api.pages(f"pulls?{head_query}")
+                except API_ERRORS:
+                    intents.append({"run": run, "result": None, "artifact": None, "state": "unresolved"})
+                    break
+                matches = [item for item in branch_prs if item.get("head", {}).get("ref") == branch
+                           and item.get("user", {}).get("login") == "dependabot[bot]"
+                           and (item.get("head", {}).get("repo") or {}).get("full_name") == api.repository
+                           and item.get("base", {}).get("repo", {}).get("full_name") == api.repository]
+                if (len(matches) != 1 or matches[0].get("number") != pr.get("number")
+                        or matches[0].get("head", {}).get("sha") != head_sha):
+                    continue
+            intents.append({"run": run, "result": None, "artifact": None, "state": "intent"})
+            # The newest current-source intent decides immediately. If it is unresolved, fail
+            # closed; if it has a result, it must be validated before considering history.
+            break
+        if run.get("status") != "completed":
+            if run.get("head_sha") == head_sha:
+                intents.append({"run": run, "result": None, "artifact": None, "state": "unresolved"})
+                break
+            try:
+                result, artifact = result_archive(api, run, pr)
+            except API_ERRORS + (UnicodeDecodeError, json.JSONDecodeError, zipfile.BadZipFile):
+                stale.append({**run, "stale_reason": "pending run has no validated result for the current PR head"})
+                continue
+            if result.get("output_sha") == head_sha:
+                intents.append({"run": run, "result": result, "artifact": artifact, "state": "unresolved"})
+                break
+            stale.append({**run, "stale_reason": "source head differs from the current PR head"})
+            continue
+        if run.get("conclusion") != "success":
+            # The writer deliberately uploads its identity before pushing. If the push or
+            # post-push race check then fails, that identity still names the exact intended
+            # output head and must block CI when that head is live.
+            try:
+                result, artifact = result_archive(api, run, pr)
+            except API_ERRORS + (UnicodeDecodeError, json.JSONDecodeError) as error:
+                stale.append({**run, "stale_reason": f"unresolved attempt: result unavailable or invalid ({type(error).__name__})"})
+                continue
+            if result.get("output_sha") == head_sha:
+                intents.append({"run": run, "result": result, "artifact": artifact, "state": "unresolved"})
+                break
+            stale.append({**run, "stale_reason": "source head differs from the current PR head"})
+            continue
+        if len(stale) >= 5 and not intents:
+            continue
+        try:
+            result, artifact = result_archive(api, run, pr)
+        except API_ERRORS + (UnicodeDecodeError, json.JSONDecodeError, zipfile.BadZipFile) as error:
+            stale.append({**run, "stale_reason": f"result unavailable or invalid: {type(error).__name__}"})
+            continue
+        if result.get("output_sha") == head_sha:
+            intents.append({"run": run, "result": result, "artifact": artifact, "state": "success"})
+            break
+        else:
+            stale.append({**run, "stale_reason": "preparation output differs from the current PR head"})
+    intents.sort(key=lambda item: (item["run"].get("run_number", 0), item["run"].get("run_attempt", 0)))
+    stale.sort(key=lambda item: (item.get("run_number", 0), item.get("run_attempt", 0)), reverse=True)
+    if not intents:
+        return {
+            "status": "completed", "conclusion": "failure", "category": "missing_authoritative_result",
+            "head_sha": head_sha, "html_url": pr.get("html_url", ""), "stale_runs": stale[:5],
+            "authoritative_valid": False,
+        }
+    selected = intents[-1]
+    run = selected["run"]
+    data = dict(run)
+    if "status" not in data:
+        data.update({"status": "completed", "conclusion": "failure"})
+    selected_key = (run.get("run_number", 0), run.get("run_attempt", 0))
+    stale_ids = {item.get("id") for item in stale}
+    for older in runs:
+        older_key = (older.get("run_number", 0), older.get("run_attempt", 0))
+        if (older_key < selected_key and older.get("id") not in stale_ids
+                and older.get("path") == f".github/workflows/{PREPARATION.WORKFLOW}"
+                and preparation_mode(older) == "write"):
+            stale.append({**older, "stale_reason": "superseded by a newer write attempt"})
+            stale_ids.add(older.get("id"))
+            if len(stale_ids) >= 5:
+                break
+    data["stale_runs"] = [item for item in stale[:5]]
+    if selected["state"] == "success":
+        data.update({"authoritative_valid": True, "result": selected["result"],
+                     "result_artifact": selected["artifact"], "category": "success"})
+        return data
+    if selected["state"] == "unresolved":
+        original_conclusion = run.get("conclusion")
+        still_running = run.get("status") != "completed"
+        data.update({"authoritative_valid": False, "result": selected.get("result"),
+                     "result_artifact": selected.get("artifact"),
+                     "category": "pending" if still_running else
+                         "unresolved_write_attempt" if selected.get("result") else "evidence_unavailable",
+                     "run_conclusion": original_conclusion,
+                     "conclusion": None if still_running else "failure",
+                     "authoritative_error": "A write intent targets the current PR head, but its identity or workflow completion could not be established."})
+        return data
+    data["authoritative_valid"] = False
+    if run.get("status") != "completed":
+        data["category"] = "pending"
+        return data
+    if run.get("conclusion") != "success":
+        data["category"] = run.get("conclusion", "unknown")
+        return data
+    try:
+        result, artifact = result_archive(api, run, pr)
+        if result.get("output_sha") != head_sha:
+            raise ValueError("authoritative output does not match the current PR head")
+        data.update({"authoritative_valid": True, "result": result,
+                     "result_artifact": artifact, "category": "success"})
+    except API_ERRORS + (UnicodeDecodeError, json.JSONDecodeError, zipfile.BadZipFile) as error:
+        data["category"] = "evidence_unavailable"
+        data["authoritative_error"] = str(error)
+        data["run_conclusion"] = data.get("conclusion")
+        data["conclusion"] = "failure"
+    return data
 
 
 def preparation_snapshot(api: GitHub, run: dict | None) -> dict | None:
     if run is None:
         return None
     data = dict(run)
+    if not run.get("id"):
+        data.setdefault("artifacts", [])
+        return data
     jobs = api.pages(f"actions/runs/{run['id']}/attempts/{run['run_attempt']}/jobs", "jobs")
     bad = [job for job in jobs if job.get("conclusion") in RENDER.BAD]
-    data["category"] = "pending" if run["status"] != "completed" else run.get("conclusion", "unknown")
-    data["error"] = ""
+    if run.get("authoritative_valid"):
+        data["category"] = "success"
+    elif run.get("authoritative_error"):
+        data["category"] = "evidence_unavailable"
+    else:
+        data.setdefault("category", "pending" if run["status"] != "completed" else run.get("conclusion", "unknown"))
+    data["error"] = run.get("authoritative_error", "")
     for job in bad:
         steps = RENDER.failed_steps(job)
         if not steps:
@@ -189,14 +511,16 @@ def preparation_snapshot(api: GitHub, run: dict | None) -> dict | None:
                              if not item.get("expired") and (item.get("name") == preparation_name
                              or item.get("name", "").startswith(preparation_name + "-")
                              or item.get("name", "").startswith(resources_name + "-"))]
+        if run.get("result_artifact") and not run["result_artifact"].get("expired"):
+            data["artifacts"].append(run["result_artifact"])
     except API_ERRORS:
         data["artifacts"] = []
     return data
 
 
 def combined_generation(pr: dict, run: dict | None, preparation: dict | None) -> tuple:
-    return (*generation(pr, run), preparation["id"] if preparation else None,
-            preparation["run_attempt"] if preparation else None)
+    return (*generation(pr, run), preparation.get("id") if preparation else None,
+            preparation.get("run_attempt") if preparation else None)
 
 
 def generation(pr: dict, run: dict | None) -> tuple:

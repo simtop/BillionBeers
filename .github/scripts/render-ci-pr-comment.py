@@ -61,6 +61,7 @@ STEP_RULES = {
 }
 EMPTY_RULE = (None, (), None)
 PREPARATION_ACTIONS = {
+    "missing_authoritative_result": "No current validated write result is available. Dispatch write mode for this exact Dependabot head and wait for its result before relying on CI.",
     "operational_termination": "Runner shutdown interrupted preparation. One current-head retry is allowed; a second interruption needs investigation.",
     "coordinate_change": "Review the added/removed coordinates in the preparation artifact. Accept only its exact head SHA and graph digest through the manual write-mode dispatch.",
     "formatting": "Preparation could not apply/check the formatter output; inspect the preparation log before dispatching Format Fix.",
@@ -68,7 +69,7 @@ PREPARATION_ACTIONS = {
     "checksum_mismatch": "ALARM: verify the recorded artifact independently. Do not accept or regenerate over changed bytes.",
     "verification_policy_change": "Review verification-policy changes by hand; preparation must not weaken the ledger policy.",
     "verification_failure": "Inspect the dependency-verification report; distinguish an unlisted artifact from a changed checksum before recovery.",
-    "evidence_unavailable": "Preparation failed, but its log is unavailable. Open the preparation run; no failure cause is inferred.",
+    "evidence_unavailable": "The authoritative result artifact or run evidence is missing, expired, malformed, or temporarily unavailable. Redispatch write mode if it does not appear after a short wait; this evidence never establishes success by itself.",
 }
 
 
@@ -119,10 +120,13 @@ def render(data: dict, run_url: str, repository: str, run_id: str) -> str:
     jobs = actionable_jobs(data)
     preparation = data.get("preparation") or {}
     preparation_bad = preparation.get("conclusion") in BAD
+    preparation_pending = bool(preparation) and (preparation.get("status") != "completed" or preparation.get("category") == "pending")
     status = data.get("status", "completed")
     conclusion = data.get("conclusion")
     if preparation_bad:
         title = "❌ Dependency preparation needs attention"
+    elif conclusion == "success" and preparation_pending:
+        title = "⏳ CI passed; dependency preparation pending"
     elif conclusion == "success":
         title = "✅ CI passed"
     elif conclusion == "skipped":
@@ -139,7 +143,15 @@ def render(data: dict, run_url: str, repository: str, run_id: str) -> str:
     if data.get("head_sha"):
         lines += [f"Commit {SUMMARY.inline_code(data['head_sha'][:7])} · attempt {data.get('run_attempt', 1)}", ""]
     if preparation:
-        lines += ["### Dependency preparation", "", f"[Open preparation run]({preparation['html_url']})", ""]
+        lines += ["### Dependency preparation", ""]
+        if preparation.get("id"):
+            lines += [f"[Open preparation run]({preparation['html_url']})", ""]
+        else:
+            lines += ["No authoritative write run is associated with this exact head.", ""]
+        result = preparation.get("result") or {}
+        if preparation.get("authoritative_valid") and result:
+            lines += [f"Validated write · source `{result['source_sha'][:7]}` → output `"
+                      f"{result['output_sha'][:7]}` · graph `{result['graph_digest'][:12]}`", ""]
         if preparation_bad:
             category = preparation.get("category", "unknown")
             lines += [f"**Result:** {text(category)}", "",
@@ -153,6 +165,13 @@ def render(data: dict, run_url: str, repository: str, run_id: str) -> str:
             lines += ["Preparation is still running. Its result has not been established.", ""]
         else:
             lines += ["Preparation completed; strict CI still determines merge eligibility.", ""]
+        stale_runs = preparation.get("stale_runs", [])
+        if stale_runs:
+            lines += ["**Stale or superseded preparation runs:**", ""]
+            lines += [f"- [{item.get('run_number', item.get('id', 'run'))} · "
+                      f"{text(item.get('stale_reason', 'stale'))}]({item.get('html_url', '')})"
+                      for item in stale_runs[:5]]
+            lines += [""]
     if data.get("mergeable_state") == "behind":
         lines += ["**Branch is behind master.** Strict protection requires an update and fresh CI even if the previous run is green. Rebase the Dependabot branch; preparation will regenerate its derived files.", ""]
     if conclusion == "success" and preparation_bad:

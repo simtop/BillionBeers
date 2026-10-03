@@ -276,6 +276,7 @@ ci-report-test: ## Test CI diagnosis, evidence parsing, and incremental comment 
 	@python3 scripts/test_verify_ios_simulator_artifacts.py
 	@python3 .github/scripts/test_summarize_test_failures.py
 	@python3 .github/scripts/test_dependabot_preparation.py
+	@python3 .github/scripts/test_write_preparation_result.py
 	@python3 .github/scripts/test_check_verification_metadata_update.py
 	@python3 .github/scripts/test_merge_verification_metadata_platforms.py
 
