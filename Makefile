@@ -570,11 +570,22 @@ benchmark-macro: ## Run macrobenchmarks on a connected device.
 	$(GRADLE_RUNNER) :benchmark:macrobenchmark:connectedCheck
 
 benchmark-check: ## Run macrobenchmarks and fail if results exceed the configured performance budget.
-	$(GRADLE_RUNNER) :benchmark:macrobenchmark:connectedCheck
-	@chmod +x scripts/check-benchmark-budget.sh
-	@JSON_FILE=$$(find benchmark/macrobenchmark/build/outputs/connected_android_test_additional_output -iname "*-benchmarkData.json" | head -1); \
-	if [ -z "$$JSON_FILE" ]; then echo "error: no benchmarkData.json found" >&2; exit 1; fi; \
-	./scripts/check-benchmark-budget.sh "$$JSON_FILE"
+	@set -e; \
+	chmod +x scripts/check-benchmark-budget.sh; \
+	marker=$$(mktemp "$${TMPDIR:-/tmp}/benchmark-check.XXXXXX"); \
+	trap 'rm -f "$$marker"' EXIT; \
+	touch "$$marker"; \
+	$(GRADLE_RUNNER) :benchmark:macrobenchmark:connectedCheck; \
+	output_dir=benchmark/macrobenchmark/build/outputs/connected_android_test_additional_output; \
+	if [ ! -d "$$output_dir" ]; then echo "error: benchmark output directory not found: $$output_dir" >&2; exit 1; fi; \
+	candidates=$$(find "$$output_dir" -type f -iname "*-benchmarkData.json" -newer "$$marker" -print); \
+	count=$$(printf '%s\n' "$$candidates" | awk 'NF { count++ } END { print count+0 }'); \
+	if [ "$$count" -ne 1 ]; then \
+		echo "error: expected exactly one fresh benchmarkData.json after this run; found $$count." >&2; \
+		if [ -n "$$candidates" ]; then printf 'Candidates:\n%s\n' "$$candidates" >&2; fi; \
+		exit 1; \
+	fi; \
+	./scripts/check-benchmark-budget.sh "$$candidates"
 
 generate-baseline: ## Generate Baseline Profiles for the app (needs a booted device/emulator).
 	$(GRADLE_RUNNER) :app:generateBaselineProfile
