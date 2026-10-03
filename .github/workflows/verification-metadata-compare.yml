@@ -1,7 +1,7 @@
 name: Compare Verification Metadata Writers
 
 # No pushes or deploy key. Both writers resolve the same immutable source on
-# separate cold Linux runners; comparison cannot change the production alias.
+# separate cold platform runners; comparison cannot change the production alias.
 on:
   workflow_dispatch:
 
@@ -9,19 +9,22 @@ permissions:
   contents: read
 
 jobs:
-  write:
-    name: Cold Linux ${{ matrix.mode }} writer
-    strategy:
-      fail-fast: false
-      matrix:
-        mode: [reference, candidate]
+  reference:
+    name: Cold reference writer
     uses: ./.github/workflows/regen-verification-metadata.yml
     with:
-      mode: ${{ matrix.mode }}
+      mode: reference
+
+  candidate:
+    name: Cold candidate writer
+    needs: reference
+    uses: ./.github/workflows/regen-verification-metadata.yml
+    with:
+      mode: candidate
 
   compare:
     name: Require equivalent ledger coverage
-    needs: write
+    needs: [reference, candidate]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout comparator

@@ -1,20 +1,8 @@
 name: Regenerate Verification Metadata
 
-# Keeps gradle/verification-metadata.xml current on Dependabot branches so dependency
-# verification (ADR 0007) doesn't break the auto-merge flow (ADR 0005). Design notes:
-#
-# - `pull_request`, NOT `pull_request_target`: we never push with GITHUB_TOKEN, so we don't
-#   need the base-branch privilege escalation that pull_request_target grants. The push uses a
-#   write deploy key instead - stored as a Dependabot secret (Dependabot-triggered runs only
-#   see the Dependabot secret store) AND as an Actions secret (for workflow_dispatch runs).
-# - A deploy-key push (unlike a GITHUB_TOKEN push) triggers workflows, so ci.yml re-runs on
-#   the new head SHA and the auto-merge `--auto` gate resolves instead of hanging forever.
-# - Loop termination: the push re-triggers this workflow, but the guard step sees the ledger
-#   commit at HEAD and exits before the expensive regen; even without it, a second regen
-#   produces no diff and commits nothing.
-# - workflow_dispatch exists to regenerate on Linux, which resolves platform-specific
-#   artifacts (e.g. aapt2 linux jars) that a macOS-run `make verification-metadata` misses.
-
+# Preparation follows the immutable PR-head and ordinary pull_request model. Platform jobs
+# never receive a write key. A single final job validates their independent ledgers, unions them,
+# and is the only job allowed to push the guarded generated files.
 on:
   workflow_call:
     inputs:
@@ -34,14 +22,11 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: Write the reference ledger, or upload a non-pushing experiment ledger
+        description: Write the guarded union, or upload a non-pushing reference/candidate experiment
         required: true
         default: write
         type: choice
-        options:
-          - write
-          - reference
-          - candidate
+        options: [write, reference, candidate]
       approved_head_sha:
         description: Full head SHA of the reviewed coordinate change (write mode only)
         required: false
@@ -51,32 +36,59 @@ on:
         required: false
         type: string
 
-# The deploy key gives push access; the token needs nothing beyond checkout.
 permissions:
   contents: read
 
+# GitHub concurrency keeps one running and at most one pending. A newer queued request can
+# supersede an older pending request; users who need every ref prepared must dispatch again.
 concurrency:
-  group: regen-verification-metadata-${{ github.head_ref || github.ref_name }}-${{ inputs.mode || 'write' }}
+  group: dependency-verification-preparation-${{ github.repository_id }}
   cancel-in-progress: false
 
 jobs:
-  regen:
-    name: Regenerate verification-metadata.xml
-    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.user.login == 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository)
-    runs-on: ubuntu-latest
-    timeout-minutes: 90
+  lanes:
+    name: Regenerate verification-metadata.xml (${{ matrix.lane }})
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository)
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - lane: linux
+            runner: ubuntu-latest
+            timeout: 60
+            gradle_runner: >-
+              ./gradlew --max-workers=2
+              "-Pkotlin.daemon.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=768m -XX:+HeapDumpOnOutOfMemoryError -Xlog:gc,gc+init:file=/tmp/unit-kotlin-gc-%p.log:time,uptime,level,tags"
+          - lane: web
+            runner: ubuntu-latest
+            timeout: 35
+            gradle_runner: >-
+              ./gradlew --max-workers=2
+              "-Pkotlin.daemon.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=768m -XX:+HeapDumpOnOutOfMemoryError -Xlog:gc,gc+init:file=/tmp/unit-kotlin-gc-%p.log:time,uptime,level,tags"
+          - lane: managed
+            runner: ubuntu-latest
+            timeout: 90
+          - lane: apple
+            runner: macos-14
+            timeout: 60
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: ${{ matrix.timeout }}
+    env:
+      GRADLE_RUNNER: ${{ matrix.gradle_runner || './gradlew' }}
+      IOS_RUNTIME: '18.2'
+      IOS_DEVICE_NAME: 'BillionBeers iPhone 16'
+      IOS_DEVICE_TYPE: 'com.apple.CoreSimulator.SimDeviceType.iPhone-16'
+      IOS_HOST_DESTINATION: 'platform=iOS Simulator,name=BillionBeers iPhone 16,OS=18.2'
+      XCODE_PATH: '/Applications/Xcode_16.2.app'
     steps:
-      - name: Checkout branch head
+      - name: Checkout immutable branch head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          # pull_request checks out an ephemeral merge commit by default - we need the real
-          # immutable head; a final freshness check guards pushing to the source branch.
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
-          ssh-key: ${{ (github.event_name == 'pull_request' || inputs.mode == 'write') && secrets.VERIFICATION_METADATA_DEPLOY_KEY || '' }}
-          # The regen graph runs verifyPaparazziDebug alongside testDebugUnitTest, which puts the
-          # generated screenshot tests in verify mode - without LFS the golden PNGs are pointer
-          # files and Paparazzi NPEs on them.
-          lfs: true
+          # Only Linux runs verifyPaparazziDebug, which needs the real golden PNGs.
+          lfs: ${{ matrix.lane == 'linux' }}
+          persist-credentials: false
 
       - name: Select writer mode
         id: mode
@@ -85,32 +97,42 @@ jobs:
         run: |
           case "$REQUESTED_MODE" in write|reference|candidate) ;; *) exit 1 ;; esac
           echo "value=$REQUESTED_MODE" >> "$GITHUB_OUTPUT"
-          if [ "$REQUESTED_MODE" = "candidate" ]; then
-            echo "graph=candidate" >> "$GITHUB_OUTPUT"
-          else
-            echo "graph=reference" >> "$GITHUB_OUTPUT"
-          fi
+          if [ "$REQUESTED_MODE" = candidate ]; then echo 'graph=candidate' >> "$GITHUB_OUTPUT"; else echo 'graph=reference' >> "$GITHUB_OUTPUT"; fi
 
-      - name: Skip if HEAD is already a regen commit
-        id: guard
+      - name: Prevent writes to the default branch
+        if: steps.mode.outputs.value == 'write'
         env:
           PREPARATION_BRANCH: ${{ github.head_ref || github.ref_name }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
-          if [ "${{ steps.mode.outputs.value }}" = "write" ] && [ "$PREPARATION_BRANCH" = "$DEFAULT_BRANCH" ]; then
+          if [ "$PREPARATION_BRANCH" = "$DEFAULT_BRANCH" ]; then
             echo "::error::Write mode must target a feature/Dependabot branch, never the default branch."
             exit 1
           fi
-          if [ "${{ steps.mode.outputs.value }}" = "write" ] \
-              && [ "$(git log -1 --pretty=%s)" = "chore: regenerate dependency verification metadata" ]; then
-            echo "HEAD is this workflow's own commit - nothing new to resolve."
+
+      - name: Snapshot inputs and original verification policy
+        run: |
+          cp app/dependencies/releaseRuntimeClasspath.txt "$RUNNER_TEMP/guard-before.txt"
+          cp gradle/verification-metadata.xml "$RUNNER_TEMP/verification-metadata-before.xml"
+
+      - name: Skip if HEAD is already a regeneration commit
+        id: guard
+        if: steps.mode.outputs.value == 'write'
+        run: |
+          if [ "$(git log -1 --pretty=%s)" = "chore: regenerate dependency verification metadata" ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "HEAD is already the prepared ledger commit."
           fi
 
+      - name: Select pinned Xcode
+        if: matrix.lane == 'apple' && steps.guard.outputs.skip != 'true'
+        run: |
+          test -d "$XCODE_PATH" || { echo "::error::Required Xcode is unavailable: $XCODE_PATH"; exit 1; }
+          sudo xcode-select --switch "$XCODE_PATH"
+          xcodebuild -version
+
       - name: Enable KVM
-        if: steps.guard.outputs.skip != 'true'
-        # Same as ci.yml: the regen task graph includes the Gradle Managed Device lane, whose
-        # UTP/emulator tooling is itself Gradle-resolved and must land in the ledger.
+        if: matrix.lane == 'managed' && steps.guard.outputs.skip != 'true'
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
             | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -124,34 +146,31 @@ jobs:
           java-version: '23'
           distribution: 'temurin'
 
-      - name: Setup Gradle
+      - name: Setup Gradle cold
         if: steps.guard.outputs.skip != 'true'
         uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6
         with:
           gradle-version: wrapper
-          # Experiments must compare actual cold resolution, not a restored ledger cache.
-          cache-disabled: ${{ steps.mode.outputs.value != 'write' }}
+          cache-disabled: true
 
       - name: Make gradlew executable
         if: steps.guard.outputs.skip != 'true'
         run: chmod +x gradlew
 
-      # A version bump almost always shifts :app's release runtime classpath, so
-      # dependency-guard's committed baseline goes stale on the very commit that makes the ledger
-      # stale. `make verification-metadata` runs :app:dependencyGuard, which *fails* on any
-      # baseline drift - so without re-baselining first the regen step dies, the push step is
-      # skipped, and neither file is ever updated. That deadlocked #123, #124 and #127: the one
-      # workflow built to unblock Dependabot could not run to completion on any of them.
-      #
-      # --write-verification-metadata is what makes this step possible at all: in write mode
-      # Gradle records checksums instead of enforcing them, so the bump's not-yet-listed
-      # artifacts don't block the very resolution needed to list them.
+      - name: Create and boot pinned Apple simulator
+        if: matrix.lane == 'apple' && steps.guard.outputs.skip != 'true'
+        run: |
+          RUNTIME_ID="$(xcrun simctl list runtimes | awk -v runtime="iOS $IOS_RUNTIME (" 'index($0, runtime) && $0 !~ /unavailable/ {print $NF; exit}')"
+          test -n "$RUNTIME_ID" || { echo "::error::Required simulator runtime is unavailable: iOS $IOS_RUNTIME"; exit 1; }
+          DEVICE_UDID="$(xcrun simctl create "$IOS_DEVICE_NAME" "$IOS_DEVICE_TYPE" "$RUNTIME_ID")"
+          test -n "$DEVICE_UDID"
+          xcrun simctl boot "$DEVICE_UDID"
+          xcrun simctl bootstatus "$DEVICE_UDID" -b
+
       - name: Re-baseline dependency guard
         id: guard_baseline
         if: steps.guard.outputs.skip != 'true'
         run: |
-          cp app/dependencies/releaseRuntimeClasspath.txt "$RUNNER_TEMP/guard-before.txt"
-          cp gradle/verification-metadata.xml "$RUNNER_TEMP/verification-metadata-before.xml"
           ./gradlew --write-verification-metadata sha256 --no-configuration-cache \
             "-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8" \
             :app:dependencyGuardBaseline
@@ -176,30 +195,31 @@ jobs:
         run: |
           make verification-metadata-format
           git diff --name-only -z -- '*.kt' '*.gradle.kts' > "$RUNNER_TEMP/formatting-files"
+          python3 .github/scripts/snapshot-dependabot-preparation.py \
+            "$RUNNER_TEMP/formatting-files" "$RUNNER_TEMP/prepared.patch"
 
-      # Strict on purpose (no continue-on-error): if the task graph fails, the bump needs a
-      # human anyway, and committing a partially-resolved ledger would only mask that. Capture the
-      # log only to classify the failure in the job summary; the original exit status still fails.
-      - name: Regenerate verification metadata
+      - name: Resolve and record platform lane
         id: regenerate
         if: steps.guard.outputs.skip != 'true'
+        env:
+          LANE: ${{ matrix.lane }}
+          MODE: ${{ steps.mode.outputs.graph }}
+          PREPARATION_MODE: ${{ steps.mode.outputs.value }}
+          PREPARATION_HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          PREPARATION_SOURCE_REF: ${{ github.head_ref || github.ref_name }}
         run: |
           set +e
-          bash .github/scripts/run-dependabot-preparation.sh "${{ steps.mode.outputs.graph }}" 2>&1 \
-            | tee "$RUNNER_TEMP/verification-metadata.log"
+          bash .github/scripts/run-dependabot-preparation.sh "$LANE" "$MODE" 2>&1 \
+            | tee "$RUNNER_TEMP/verification-metadata-$LANE.log"
           status=${PIPESTATUS[0]}
           set -e
-
           classification=success
           if [ "$status" -ne 0 ]; then
-            if grep -Fq "is not verified because it is not listed in the verification metadata" \
-                "$RUNNER_TEMP/verification-metadata.log"; then
+            if grep -Fq "is not verified because it is not listed in the verification metadata" "$RUNNER_TEMP/verification-metadata-$LANE.log"; then
               classification=unlisted_artifact
-            elif grep -Eiq "checksum.*(failed|mismatch|expected)|expected.*checksum|has been compromised" \
-                "$RUNNER_TEMP/verification-metadata.log"; then
+            elif grep -Eiq "checksum.*(failed|mismatch|expected)|expected.*checksum|has been compromised" "$RUNNER_TEMP/verification-metadata-$LANE.log"; then
               classification=checksum_mismatch
-            elif [ "$status" -eq 143 ] || [ "$status" -eq 130 ] \
-                || grep -Eq "(^|[[:space:]])Terminated$" "$RUNNER_TEMP/verification-metadata.log"; then
+            elif [ "$status" -eq 143 ] || [ "$status" -eq 130 ] || grep -Eq "(^|[[:space:]])Terminated$" "$RUNNER_TEMP/verification-metadata-$LANE.log"; then
               classification=operational_termination
             else
               classification=build_test_or_policy_failure
@@ -208,166 +228,240 @@ jobs:
           echo "classification=$classification" >> "$GITHUB_OUTPUT"
           exit "$status"
 
-      # Write mode records new coordinates, but it can also append a second checksum when bytes for
-      # an already-recorded artifact change. Reject that before the generated ledger can be pushed.
-      - name: Reject changed checksums and verification policy
+      - name: Reject changed recorded hashes and verification policy
         id: verify_update
-        if: steps.guard.outputs.skip != 'true'
+        if: always() && steps.guard.outputs.skip != 'true' && steps.regenerate.outcome == 'success'
         run: |
-          set +e
           python3 .github/scripts/check-verification-metadata-update.py \
-            "$RUNNER_TEMP/verification-metadata-before.xml" \
-            gradle/verification-metadata.xml
-          status=$?
-          set -e
+            "$RUNNER_TEMP/verification-metadata-before.xml" gradle/verification-metadata.xml
 
-          case "$status" in
-            0) classification=safe ;;
-            10) classification=checksum_mismatch ;;
-            11) classification=verification_policy_change ;;
-            *) classification=metadata_validation_failure ;;
+      - name: Summarize lane failure
+        if: always() && job.status != 'success'
+        env:
+          LANE: ${{ matrix.lane }}
+          BASELINE: ${{ steps.guard_baseline.outcome }}
+          COORDINATES: ${{ steps.coordinate_check.outputs.classification }}
+          FORMAT: ${{ steps.format.outcome }}
+          RESOLVE: ${{ steps.regenerate.outcome }}
+          RESOLVE_CLASSIFICATION: ${{ steps.regenerate.outputs.classification }}
+          VERIFY: ${{ steps.verify_update.outcome }}
+        run: |
+          result="${LANE} lane failed; no ledger was written."
+          if [ "$BASELINE" = failure ]; then
+            result="${LANE} lane dependency-guard re-baseline failed."
+          elif [ "$COORDINATES" = coordinate_change ]; then
+            result="${LANE} lane rejected added or removed dependency coordinates; review graph-review.json."
+          elif [ "$FORMAT" = failure ]; then
+            result="${LANE} lane could not apply the mechanical formatter."
+          elif [ "$RESOLVE" = failure ]; then
+            result="${LANE} lane resolver failed: ${RESOLVE_CLASSIFICATION}."
+          elif [ "$VERIFY" = failure ]; then
+            result="${LANE} lane changed a recorded checksum or verification policy."
+          fi
+          echo "### Dependency verification preparation" >> "$GITHUB_STEP_SUMMARY"
+          echo >> "$GITHUB_STEP_SUMMARY"
+          echo "$result" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Report lane coverage
+        if: success()
+        env:
+          LANE: ${{ matrix.lane }}
+          SKIPPED: ${{ steps.guard.outputs.skip }}
+        run: |
+          case "$LANE" in
+            linux) coverage='Linux/JVM/Android-host: full KMP JVM, metadata and Android-host inventories, plain JVM tests, Android assembly, Paparazzi, architecture checks and coverage.' ;;
+            web) coverage='Web: all KMP Wasm browser tests and the production Wasm distribution; these consuming tasks resolve Binaryen and Compose resources.' ;;
+            managed) coverage='Managed devices: debug GMD tests and separate release-smoke tests/assemblies.' ;;
+            apple) coverage='Apple: device and simulator native compiles, simulator/device framework links, iOS host build and iOS simulator tests.' ;;
           esac
-          echo "classification=$classification" >> "$GITHUB_OUTPUT"
-          exit "$status"
+          if [ "$SKIPPED" = true ]; then coverage="Loop guard: $coverage (HEAD is already the prepared regeneration commit)."; fi
+          echo "### Dependency preparation lane: $LANE" >> "$GITHUB_STEP_SUMMARY"
+          echo >> "$GITHUB_STEP_SUMMARY"
+          echo "$coverage" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Update generated documentation
-        id: update_docs
-        if: steps.guard.outputs.skip != 'true' && steps.mode.outputs.value == 'write'
-        run: make update-docs
+      - name: Upload immutable lane evidence
+        if: always()
+        env:
+          LANE: ${{ matrix.lane }}
+          MODE: ${{ steps.mode.outputs.value }}
+          LANE_CONCLUSION: ${{ job.status }}
+          LANE_SKIP: ${{ steps.guard.outputs.skip == 'true' }}
+          HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          SOURCE_REF: ${{ github.head_ref || github.ref_name }}
+        run: |
+          destination="$RUNNER_TEMP/lane-evidence/$LANE"
+          mkdir -p "$destination"
+          if [ -f gradle/verification-metadata.xml ]; then cp gradle/verification-metadata.xml "$destination/verification-metadata.xml"; else cp "$RUNNER_TEMP/verification-metadata-before.xml" "$destination/verification-metadata.xml"; fi
+          if [ -f "$RUNNER_TEMP/prepared.patch" ]; then cp "$RUNNER_TEMP/prepared.patch" "$destination/prepared.patch"; else : > "$destination/prepared.patch"; fi
+          if [ -f "$RUNNER_TEMP/formatting-files" ]; then cp "$RUNNER_TEMP/formatting-files" "$destination/formatting-files"; else : > "$destination/formatting-files"; fi
+          for report in graph-review.json graph-review.md; do
+            if [ -f "$RUNNER_TEMP/dependency-preparation/$report" ]; then
+              cp "$RUNNER_TEMP/dependency-preparation/$report" "$destination/$report"
+            fi
+          done
+          python3 - "$destination/manifest.json" <<'PY'
+          import hashlib, json, os, sys
+          from pathlib import Path
+          folder = Path(sys.argv[1]).parent
+          manifest = {
+              "lane": os.environ["LANE"], "head_sha": os.environ["HEAD_SHA"],
+              "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "source_ref": os.environ["SOURCE_REF"], "mode": os.environ["MODE"],
+              "conclusion": os.environ["LANE_CONCLUSION"],
+              "skipped": os.environ["LANE_SKIP"] == "true",
+              "prepared_sha256": hashlib.sha256((folder / "prepared.patch").read_bytes()).hexdigest(),
+              "formatting_files_sha256": hashlib.sha256((folder / "formatting-files").read_bytes()).hexdigest(),
+          }
+          (folder / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+          PY
 
-      - name: Upload preparation evidence
-        if: always() && steps.guard.outputs.skip != 'true'
+      - name: Archive lane ledger and resource evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: dependency-preparation-${{ github.run_id }}-${{ github.run_attempt }}-${{ steps.mode.outputs.graph }}-${{ matrix.lane }}
+          path: ${{ runner.temp }}/lane-evidence/${{ matrix.lane }}/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Archive resource and resolver logs
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: dependency-preparation-resources-${{ github.run_id }}-${{ github.run_attempt }}-${{ steps.mode.outputs.graph }}-${{ matrix.lane }}
+          path: |
+            ${{ runner.temp }}/verification-metadata-${{ matrix.lane }}.log
+            ${{ runner.temp }}/dependency-preparation-resources.log
+            /tmp/unit-kotlin-gc-*.log
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Archive diagnostic preparation evidence
+        if: always() && matrix.lane == 'linux' && steps.mode.outputs.value == 'write'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: dependency-preparation-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             ${{ runner.temp }}/dependency-preparation/
-            ${{ runner.temp }}/verification-metadata.log
+            ${{ runner.temp }}/verification-metadata-linux.log
             ${{ runner.temp }}/dependency-preparation-resources.log
             ${{ runner.temp }}/guard-before.txt
-            app/dependencies/releaseRuntimeClasspath.txt
-            gradle/verification-metadata.xml
+          if-no-files-found: warn
           retention-days: 14
 
-      - name: Upload experiment ledger
-        id: upload_experiment
-        if: steps.guard.outputs.skip != 'true' && steps.mode.outputs.value != 'write'
+  merge-and-write:
+    name: Validate platform union and write generated files
+    needs: lanes
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout immutable source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          ssh-key: ${{ (inputs.mode || 'write') == 'write' && secrets.VERIFICATION_METADATA_DEPLOY_KEY || '' }}
+          persist-credentials: ${{ (inputs.mode || 'write') == 'write' }}
+
+      - name: Require every platform lane to succeed
+        env:
+          LANES_RESULT: ${{ needs.lanes.result }}
+        run: |
+          test "$LANES_RESULT" = success || {
+            echo "::error::Every cold platform preparation lane must succeed before union or write."
+            exit 1
+          }
+
+      - name: Download Linux ledger and prepared patch
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: dependency-preparation-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.mode == 'candidate' && 'candidate' || 'reference' }}-linux
+          path: .platform-evidence/linux
+      - name: Download Web ledger and prepared patch
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: dependency-preparation-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.mode == 'candidate' && 'candidate' || 'reference' }}-web
+          path: .platform-evidence/web
+      - name: Download managed-device ledger and prepared patch
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: dependency-preparation-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.mode == 'candidate' && 'candidate' || 'reference' }}-managed
+          path: .platform-evidence/managed
+      - name: Download Apple ledger and prepared patch
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: dependency-preparation-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.mode == 'candidate' && 'candidate' || 'reference' }}-apple
+          path: .platform-evidence/apple
+
+      - name: Validate lane identities and merge metadata safely
+        env:
+          PREPARATION_HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          SOURCE_REF: ${{ github.head_ref || github.ref_name }}
+          EXPECTED_RUN_MODE: ${{ inputs.mode || 'write' }}
+        run: |
+          git show "$PREPARATION_HEAD:gradle/verification-metadata.xml" > "$RUNNER_TEMP/verification-metadata-before.xml"
+          python3 .github/scripts/merge-verification-metadata-platforms.py \
+            --evidence .platform-evidence \
+            --before "$RUNNER_TEMP/verification-metadata-before.xml" \
+            --head-sha "$PREPARATION_HEAD" --run-id "$GITHUB_RUN_ID" \
+            --attempt "$GITHUB_RUN_ATTEMPT" --source-ref "$SOURCE_REF" \
+            --mode "$EXPECTED_RUN_MODE" \
+            --output gradle/verification-metadata.xml
+          cmp .platform-evidence/linux/prepared.patch .platform-evidence/web/prepared.patch
+          cmp .platform-evidence/linux/prepared.patch .platform-evidence/managed/prepared.patch
+          cmp .platform-evidence/linux/prepared.patch .platform-evidence/apple/prepared.patch
+          if [ -s .platform-evidence/linux/prepared.patch ]; then
+            git apply .platform-evidence/linux/prepared.patch
+          fi
+          cp .platform-evidence/linux/formatting-files "$RUNNER_TEMP/formatting-files"
+
+      - name: Update generated documentation
+        if: (inputs.mode || 'write') == 'write'
+        run: make update-docs
+
+      - name: Upload comparison ledger
+        if: success() && inputs.mode != 'write' && inputs.mode != ''
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: verification-metadata-${{ steps.mode.outputs.value }}-${{ github.sha }}
+          name: verification-metadata-${{ inputs.mode }}-${{ github.sha }}
           path: |
             gradle/verification-metadata.xml
             app/dependencies/releaseRuntimeClasspath.txt
+          if-no-files-found: error
           retention-days: 14
 
-      - name: Commit and push if generated files changed
-        id: commit
+      - name: Commit and push only the complete safe union
+        if: success() && (inputs.mode || 'write') == 'write'
         env:
           PREPARATION_BRANCH: ${{ github.head_ref || github.ref_name }}
-        if: steps.guard.outputs.skip != 'true' && steps.mode.outputs.value == 'write'
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          PREPARATION_HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
         run: |
+          if [ "$PREPARATION_BRANCH" = "$DEFAULT_BRANCH" ]; then
+            echo "::error::Refusing to write the default branch."
+            exit 1
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           python3 .github/scripts/stage-dependabot-preparation.py "$RUNNER_TEMP/formatting-files"
-          # Reject a stale run instead of pushing a result onto a rebased/newer branch.
           git fetch origin "$PREPARATION_BRANCH"
-          if [ "$(git rev-parse FETCH_HEAD)" != "$(git rev-parse HEAD)" ]; then
+          if [ "$(git rev-parse FETCH_HEAD)" != "$PREPARATION_HEAD" ]; then
             echo "::error::PR head changed during preparation; no generated files were pushed."
             exit 1
           fi
           if git diff --cached --quiet; then
-            echo "result=no_diff" >> "$GITHUB_OUTPUT"
-            echo "Generated files are already current - nothing to commit."
+            echo "Generated files are already current; nothing to commit."
           else
             git commit -m "chore: regenerate dependency verification metadata"
             git push origin "HEAD:refs/heads/$PREPARATION_BRANCH"
-            echo "result=pushed" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Summarize result
-        if: always()
-        env:
-          MODE: ${{ steps.mode.outputs.value }}
-          SKIPPED: ${{ steps.guard.outputs.skip }}
-          GUARD_BASELINE_OUTCOME: ${{ steps.guard_baseline.outcome }}
-          COORDINATE_OUTCOME: ${{ steps.coordinate_check.outcome }}
-          COORDINATE_CLASSIFICATION: ${{ steps.coordinate_check.outputs.classification }}
-          FORMAT_OUTCOME: ${{ steps.format.outcome }}
-          REGENERATE_OUTCOME: ${{ steps.regenerate.outcome }}
-          REGENERATE_CLASSIFICATION: ${{ steps.regenerate.outputs.classification }}
-          VERIFY_UPDATE_OUTCOME: ${{ steps.verify_update.outcome }}
-          VERIFY_UPDATE_CLASSIFICATION: ${{ steps.verify_update.outputs.classification }}
-          UPDATE_DOCS_OUTCOME: ${{ steps.update_docs.outcome }}
-          UPLOAD_OUTCOME: ${{ steps.upload_experiment.outcome }}
-          COMMIT_OUTCOME: ${{ steps.commit.outcome }}
-          COMMIT_RESULT: ${{ steps.commit.outputs.result }}
+      - name: Summarize failed preparation
+        if: failure()
         run: |
-          result="unknown failure"
-          action="Inspect the first failed step; no generated files were pushed."
-
-          if [ "$SKIPPED" = "true" ]; then
-            result="skipped: HEAD is already the workflow's regeneration commit"
-            action="No action needed."
-          elif [ "$GUARD_BASELINE_OUTCOME" = "failure" ]; then
-            result="dependency-guard re-baseline failed"
-          elif [ "$COORDINATE_CLASSIFICATION" = "coordinate_change" ]; then
-            result="rejected: dependency coordinates were added or removed"
-            action="Download dependency-preparation, review its exact graph and dispatch write mode with its head SHA and digest."
-          elif [ "$FORMAT_OUTCOME" = "failure" ]; then
-            result="mechanical formatting failed"
-          elif [ "$REGENERATE_OUTCOME" = "failure" ]; then
-            case "$REGENERATE_CLASSIFICATION" in
-              unlisted_artifact)
-                result="failed: an artifact is still absent from the generated ledger"
-                action="Extend the reference task graph; do not retry blindly."
-                ;;
-              checksum_mismatch)
-                result="ALARM: a recorded artifact checksum does not match"
-                action="Verify the artifact independently. Do not regenerate over the mismatch."
-                ;;
-              operational_termination)
-                result="cancelled or terminated while resolving the reference graph"
-                action="The trusted completion collector may retry once if this is a verified current-head runner shutdown."
-                ;;
-              *)
-                result="failed: build, test, or policy task rejected the generated graph"
-                ;;
-            esac
-          elif [ "$VERIFY_UPDATE_OUTCOME" = "failure" ]; then
-            case "$VERIFY_UPDATE_CLASSIFICATION" in
-              checksum_mismatch)
-                result="ALARM: regeneration found changed bytes for a recorded artifact"
-                action="Verify the artifact independently. Do not commit the generated checksum."
-                ;;
-              verification_policy_change)
-                result="rejected: regeneration changed dependency-verification policy"
-                action="Review changes to trusted-artifact rules by hand."
-                ;;
-              *)
-                result="failed: generated verification metadata could not be validated"
-                ;;
-            esac
-          elif [ "$MODE" != "write" ] && [ "$UPLOAD_OUTCOME" = "failure" ]; then
-            result="the $MODE experiment completed but its ledger artifact upload failed"
-          elif [ "$MODE" != "write" ]; then
-            result="uploaded the non-pushing $MODE experiment ledger"
-            action="Run the other mode on this SHA, then compare the downloaded XML files with --require-equivalent."
-          elif [ "$UPDATE_DOCS_OUTCOME" = "failure" ]; then
-            result="README version generation failed"
-          elif [ "$COMMIT_OUTCOME" = "failure" ]; then
-            result="generated files were ready but the commit or push failed"
-          elif [ "$COMMIT_RESULT" = "pushed" ]; then
-            result="pushed regenerated ledger, dependency baseline, and README"
-            action="CI will rerun on the new PR head."
-          elif [ "$COMMIT_RESULT" = "no_diff" ]; then
-            result="completed: generated files already match the branch"
-            action="No action needed."
-          fi
-
           {
-            echo "### Dependency verification metadata"
+            echo '### Dependency verification metadata'
             echo
-            echo "**Result:** $result"
+            echo '**Result:** at least one cold platform lane, identity check, or safe-union check failed.'
             echo
-            echo "**Next step:** $action"
+            echo 'No generated files were pushed. Open the lane evidence artifacts and inspect the first failure.'
           } >> "$GITHUB_STEP_SUMMARY"

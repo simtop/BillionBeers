@@ -17,6 +17,11 @@ import time
 from pathlib import Path
 
 WORKFLOW = "regen-verification-metadata.yml"
+LANE_JOB_NAMES = {
+    f"Regenerate verification-metadata.xml ({lane})"
+    for lane in ("linux", "web", "managed", "apple")
+}
+LEGACY_LANE_JOB_NAME = "Regenerate verification-metadata.xml"
 
 
 def output_lines(log: str) -> list[str]:
@@ -58,7 +63,7 @@ def classify(log: str, step: str = "") -> str:
         return "build_test_or_policy_failure"
     shutdown = any(line.startswith("##[error]The runner has received a shutdown signal") for line in lines)
     terminated = any(re.fullmatch(r"##\[error\]Process completed with exit code 143\.", line) for line in lines)
-    if shutdown and terminated and step == "Regenerate verification metadata":
+    if shutdown and terminated and step in {"Regenerate verification metadata", "Resolve and record platform lane"}:
         return "operational_termination"
     return "build_test_or_policy_failure"
 
@@ -128,10 +133,12 @@ def recover(api, run_id: int, reconcile) -> bool:
         return False
     jobs = api.pages(f"actions/runs/{run_id}/attempts/1/jobs", "jobs")
     failures = [job for job in jobs if job.get("conclusion") not in {"success", "skipped"}]
-    if len(failures) != 1 or failures[0].get("name") != "Regenerate verification-metadata.xml":
+    if len(failures) != 1 or failures[0].get("name") not in LANE_JOB_NAMES | {LEGACY_LANE_JOB_NAME}:
         return False
     failed_steps = reconcile.RENDER.failed_steps(failures[0])
-    if len(failed_steps) != 1 or failed_steps[0]["name"] != "Regenerate verification metadata":
+    if len(failed_steps) != 1 or failed_steps[0]["name"] not in {
+        "Regenerate verification metadata", "Resolve and record platform lane"
+    }:
         return False
     log = api.download(f"actions/jobs/{failures[0]['id']}/logs", reconcile.MAX_LOG).decode("utf-8", errors="replace")
     if classify(log, failed_steps[0]["name"]) != "operational_termination":

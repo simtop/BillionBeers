@@ -277,6 +277,7 @@ ci-report-test: ## Test CI diagnosis, evidence parsing, and incremental comment 
 	@python3 .github/scripts/test_summarize_test_failures.py
 	@python3 .github/scripts/test_dependabot_preparation.py
 	@python3 .github/scripts/test_check_verification_metadata_update.py
+	@python3 .github/scripts/test_merge_verification_metadata_platforms.py
 
 test-tier-inventory: ## Write the informational test-tier ownership report.
 	@bash .github/scripts/detect-change-scope.sh --self-test
@@ -442,7 +443,9 @@ VERIFICATION_METADATA_NATIVE_TASKS := \
 	$(call VERIFICATION_METADATA_NATIVE_TASK_THREE,beer_storage,api,compileKotlinIosSimulatorArm64) $(call VERIFICATION_METADATA_NATIVE_TASK_TWO,beer_database,compileKotlinIosSimulatorArm64) \
 	$(call VERIFICATION_METADATA_NATIVE_TASK_TWO,beer_data,compileKotlinIosSimulatorArm64) $(call VERIFICATION_METADATA_NATIVE_TASK_TWO,ios-shared,compileKotlinIosSimulatorArm64) \
 	$(call VERIFICATION_METADATA_NATIVE_TASK_TWO,ios-shared,linkDebugFrameworkIosSimulatorArm64) $(call VERIFICATION_METADATA_NATIVE_TASK_TWO,ios-shared,linkDebugFrameworkIosArm64) \
-	$(call VERIFICATION_METADATA_NATIVE_TASK_TWO,core-common,iosSimulatorArm64Test) $(call VERIFICATION_METADATA_NATIVE_TASK_TWO,beer_network,iosSimulatorArm64Test) $(call VERIFICATION_METADATA_NATIVE_TASK_TWO,beer_database,iosSimulatorArm64Test)
+	$(call VERIFICATION_METADATA_NATIVE_TASK_TWO,core-common,iosSimulatorArm64Test) $(call VERIFICATION_METADATA_NATIVE_TASK_TWO,beer_network,iosSimulatorArm64Test) $(call VERIFICATION_METADATA_NATIVE_TASK_TWO,beer_database,iosSimulatorArm64Test) $(call VERIFICATION_METADATA_NATIVE_TASK_TWO,ios-shared,iosSimulatorArm64Test) \
+	$(foreach module,favorites beerslist beersearch beerbrowse beerdetail app,$(call VERIFICATION_METADATA_NATIVE_TASK_TWO,shared:$(module),compileKotlinIosArm64)) \
+	$(foreach module,favorites beerslist beersearch beerbrowse beerdetail app,$(call VERIFICATION_METADATA_NATIVE_TASK_TWO,shared:$(module),compileKotlinIosSimulatorArm64))
 else
 VERIFICATION_METADATA_NATIVE_TASKS :=
 endif
@@ -478,6 +481,38 @@ verification-metadata-candidate: ## Experiment: replace managed-device execution
 		$(VERIFICATION_METADATA_PASS_TWO) $(VERIFICATION_METADATA_CANDIDATE_DEBUG_DEVICE_TASKS)
 	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) -PappTestBuildType=releaseSmoke \
 		$(VERIFICATION_METADATA_CANDIDATE_SMOKE_DEVICE_TASKS)
+
+.PHONY: verification-metadata-lane
+VERIFICATION_METADATA_LINUX_PASS_TWO := \
+	assembleDebug testDebugUnitTest :konsist:test checkDataLayerClasspathBoundary \
+	verifyArchitectureGraph verifyPaparazziDebug jacocoRootReport :desktop-app:test
+
+verification-metadata-lane: ## Resolve one cold platform lane for guarded metadata preparation (LANE=linux|web|managed|apple).
+ifeq ($(LANE),linux)
+	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) $(VERIFICATION_METADATA_PASS_ONE)
+	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) $(VERIFICATION_METADATA_LINUX_PASS_TWO) \
+		$(filter-out $(foreach module,$(KMP_BROWSER_TEST_MODULES),$(module):wasmJsBrowserTest),$(kmp_test_tasks)) \
+		$(addsuffix :test,$(JVM_TEST_MODULES))
+else ifeq ($(LANE),web)
+	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) \
+		$(foreach module,$(KMP_BROWSER_TEST_MODULES),$(module):wasmJsBrowserTest)
+	PATH="$(NODE_BIN_DIR):$$PATH" $(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) :web-app:wasmJsBrowserDistribution
+else ifeq ($(LANE),managed)
+ifeq ($(MODE),candidate)
+	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) $(VERIFICATION_METADATA_CANDIDATE_DEBUG_DEVICE_TASKS)
+	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) -PappTestBuildType=releaseSmoke $(VERIFICATION_METADATA_CANDIDATE_SMOKE_DEVICE_TASKS)
+else
+	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) ciGroupDebugAndroidTest
+	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) :app-release-smoke:atdApi35ReleaseSmokeAndroidTest
+	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) -PappTestBuildType=releaseSmoke \
+		-Pandroid.testInstrumentationRunnerArguments.class=com.simtop.billionbeers.ReleaseConfidenceSmokeTest \
+		:app:atdApi35ReleaseSmokeAndroidTest :feature:beerdetail:assembleReleaseSmoke :feature:beerbrowse:assembleReleaseSmoke
+endif
+else ifeq ($(LANE),apple)
+	$(MAKE) GRADLE_RUNNER='$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS)' ios-compile ios-framework ios-host-build ios-test
+else
+	@echo "Unknown metadata preparation lane: $(LANE)" >&2; exit 2
+endif
 
 health: ## Generate current Markdown and JSON health reports under build/reports/health.
 	@bash scripts/health-report.sh --run --json build/reports/health/health.json build/reports/health/report.md
