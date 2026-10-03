@@ -14,6 +14,9 @@ on:
     - cron: '0 6 1 * *'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   gate:
     name: Check for merges since the last run

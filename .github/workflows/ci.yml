@@ -8,6 +8,10 @@ on:
   merge_group:
     types: [checks_requested]
 
+# Jobs declare additional read permissions where needed.
+permissions:
+  contents: read
+
 # Cancel superseded runs on the same ref. Scoped to PRs only: a new push to a PR makes the
 # in-flight run obsolete, so killing it saves a full emulator boot + 29-module test pass. Master
 # runs are left alone (cancel-in-progress false) so every merged commit is still validated end to
