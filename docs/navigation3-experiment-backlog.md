@@ -143,6 +143,24 @@ package, and test evidence on every claimed host.
 **Reject/defer when:** The adapter exists only for symmetry, increases ownership ambiguity, or has no
 measurable user or maintenance benefit over the current host.
 
+### N3-6 — Web saved-result history identity
+
+**Question:** Can preset list → applied results → detail return through both Back affordances without
+skipping the results, despite the existing shared portable route alias?
+
+**Decision:** Keep `#saved-filters` as a list URL and distinguish internal applied results with an
+opaque session token in browser history. Resolve tokens to in-memory applied query snapshots; restore
+silently through the shared shell. Reload and unrecognized tokens return to the durable preset list.
+Do not add a query-bearing portable route or another storage format for this correction.
+
+**Evidence:** The packaged baseline returned from detail to the list instead of results. The
+`verifySavedFilterHistory` journey covers saving/applying, detail, in-app Back, browser Back/Forward,
+reload fallback, old-token traversal and reapplication. Shared navigation and Web token tests cover
+exact snapshots, entry disposal, idempotent/silent restoration and session isolation.
+
+**Retained boundary:** Local Chromium only. Durable/shareable result URLs, deployed origins, broader
+browser/input/accessibility coverage and other host lifecycle policies require separate proofs.
+
 ## Explicitly out of scope
 
 The following are not Navigation 3 experiments in this repository unless their premises change:

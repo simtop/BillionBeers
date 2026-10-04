@@ -173,7 +173,7 @@ class SharedAppNavigationStateTest {
         listOf<SharedAppNavigationEvent>(
           SharedAppNavigationEvent.Push(PortableRoute.Favorites),
           SharedAppNavigationEvent.Push(PortableRoute.SavedFilterPresets),
-          SharedAppNavigationEvent.Push(PortableRoute.SavedFilterPresets),
+          SharedAppNavigationEvent.Push(PortableRoute.SavedFilterPresets, savedFilter = preset),
         ),
         events,
       )
@@ -302,6 +302,49 @@ class SharedAppNavigationStateTest {
     assertTrue(navigation.pop())
     assertTrue(results.isClosed)
     assertSame(savedFilters, navigation.current)
+  }
+
+  @Test
+  fun hostSavedResultRestorationRetainsOwnersOrRecreatesExactQueryWithoutEvents() {
+    val events = mutableListOf<SharedAppNavigationEvent>()
+    val navigation = navigation(events::add)
+    val preset = SavedFilterPreset("history-preset", "IPA", BeersQuery(search = "ipa"), 1L)
+    try {
+      navigation.navigate(PortableRoute.SavedFilterPresets)
+      val root = navigation.current
+      navigation.selectSavedFilter(preset)
+      val results = navigation.current
+      navigation.navigate(PortableRoute.BeerDetail(beer))
+      val detail = navigation.current
+      events.clear()
+
+      navigation.replaceFromSavedFilter(preset)
+      assertSame(results, navigation.current)
+      assertTrue(detail.isClosed)
+      assertSame(root, navigation.entries.first())
+      assertTrue(events.isEmpty())
+
+      navigation.replaceFromRoute(PortableRoute.SavedFilterPresets)
+      assertTrue(results.isClosed)
+      assertSame(root, navigation.current)
+      navigation.replaceFromSavedFilter(preset)
+      val restored = navigation.current as SavedFilterResultsEntry
+      assertEquals(preset, restored.preset)
+      assertFalse(restored.isClosed)
+      assertSame(root, navigation.entries.first())
+      assertEquals(2, navigation.entries.size)
+      navigation.replaceFromSavedFilter(preset)
+      assertSame(restored, navigation.current)
+      assertTrue(events.isEmpty())
+
+      val changed = preset.copy(query = BeersQuery(styleId = "lager"), updatedAt = 2L)
+      navigation.replaceFromSavedFilter(changed)
+      assertTrue(restored.isClosed)
+      assertEquals(changed, (navigation.current as SavedFilterResultsEntry).preset)
+      assertTrue(events.isEmpty())
+    } finally {
+      navigation.disposeAll()
+    }
   }
 
   @Test

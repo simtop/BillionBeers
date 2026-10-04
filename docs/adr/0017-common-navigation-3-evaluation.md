@@ -49,6 +49,19 @@ state-restoration semantics are defined.
 - Do not introduce a second production persistence format or migrate production destinations as part
 of this evaluation.
 
+### Web saved-result follow-up
+
+The Web host distinguishes the preset list and applied results with session-only browser history
+metadata while keeping their existing `#saved-filters` URL. An opaque token resolves to an in-memory
+applied query snapshot; Back/Forward restores that snapshot without a host-event echo. Reload or an
+unrecognized token falls back to the durable preset list. No query/preset is serialized into public
+URLs or a new persistence format. Shared shell restoration accepts the applied preset as an internal
+host command; existing portable-route host inputs remain supported.
+
+This defines a bounded Web behavior, not cross-target durable-result semantics. Android's result
+route and the deferral of a new `PortableRoute.SavedFilterResults` remain as above. A shareable or
+reloadable result route requires a separate decision and acceptance proof.
+
 The evidence does not support replacing every host with one identical Jetpack Navigation UI layer.
 It supports using Navigation 3 as a common runtime-compatible foundation behind target-specific
 adapters.
