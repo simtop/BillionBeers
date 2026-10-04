@@ -2,17 +2,38 @@ package com.simtop.billionbeers.fakes
 
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
+import com.google.android.play.core.splitinstall.SplitInstallException
 import com.google.android.play.core.splitinstall.SplitInstallManager
 import com.google.android.play.core.splitinstall.SplitInstallSessionState
 import com.google.android.play.core.splitinstall.SplitInstallStateUpdatedListener
+import com.google.android.play.core.splitinstall.model.SplitInstallErrorCode
 import com.simtop.navigation.DynamicFeature
 
 class FakeSplitInstallManager : SplitInstallManager {
   private val installed = DynamicFeature.entries.mapTo(mutableSetOf()) { it.moduleName }
+  private var installFailure: SplitInstallException? = null
+  var requestedModules: List<String> = emptyList()
+    private set
+
+  fun reset() {
+    installed.clear()
+    installed.addAll(DynamicFeature.entries.map { it.moduleName })
+    installFailure = null
+    requestedModules = emptyList()
+  }
+
+  fun failInstallOf(moduleName: String) {
+    installed.remove(moduleName)
+    installFailure = SplitInstallException(SplitInstallErrorCode.NETWORK_ERROR)
+  }
 
   override fun startInstall(
     request: com.google.android.play.core.splitinstall.SplitInstallRequest
   ): Task<Int> {
+    requestedModules = request.moduleNames
+    installFailure?.let {
+      return Tasks.forException(it)
+    }
     return Tasks.forResult(0)
   }
 
