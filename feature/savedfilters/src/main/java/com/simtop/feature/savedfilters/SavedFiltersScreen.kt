@@ -1,10 +1,11 @@
 package com.simtop.feature.savedfilters
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -18,7 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
@@ -83,9 +84,14 @@ fun SavedFiltersContent(
     modifier = modifier,
     topBar = { TopAppBar(title = { Text(stringResource(R.string.savedfilters_title)) }) },
   ) { paddingValues ->
-    Column(Modifier.fillMaxSize().padding(paddingValues).padding(12.dp)) {
-      if (presets.isEmpty()) Text(stringResource(R.string.savedfilters_empty))
-      presets.forEach { preset -> SavedFilterRow(preset, onApply, onRename, onDelete) }
+    LazyColumn(Modifier.fillMaxSize().padding(paddingValues).padding(12.dp)) {
+      if (presets.isEmpty()) {
+        item { Text(stringResource(R.string.savedfilters_empty)) }
+      } else {
+        items(presets, key = SavedFilterPreset::id) { preset ->
+          SavedFilterRow(preset, onApply, onRename, onDelete)
+        }
+      }
     }
   }
 }
@@ -97,8 +103,8 @@ private fun SavedFilterRow(
   onRename: (SavedFilterPreset, String) -> Unit,
   onDelete: (SavedFilterPreset) -> Unit,
 ) {
-  var editing by remember(preset.id) { mutableStateOf(false) }
-  var name by remember(preset.id, preset.name) { mutableStateOf(preset.name) }
+  var editing by rememberSaveable(preset.id) { mutableStateOf(false) }
+  var name by rememberSaveable(preset.id, preset.name) { mutableStateOf(preset.name) }
   if (editing) {
     Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
       OutlinedTextField(
