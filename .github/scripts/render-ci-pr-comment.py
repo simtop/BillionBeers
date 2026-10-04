@@ -92,11 +92,16 @@ def actionable_jobs(data: dict) -> list[dict]:
 
 def error_excerpt(log: str) -> str:
     """Prefer actionable error lines over boilerplate 'process exited' annotations."""
-    lines = [re.sub(r"^\d{4}-\d\d-\d\dT\S+\s*", "", line).strip() for line in log.splitlines()]
+    lines = [re.sub(r"^\d{4}-\d\d-\d\dT\S+\s*", "", re.sub(r"\x1b\[[0-9;]*m", "", line)).strip()
+             for line in log.splitlines()]
     for line in lines:
         match = re.search(r"Line coverage [\d.]+% is below the floor [\d.]+%\.", line)
         if match:
             return match.group(0)
+    # Detekt emits source findings before Gradle's generic task failure/deprecation summary.
+    for line in lines:
+        if re.search(r"\.kts?:\d+:\d+: .+ \[[A-Za-z][A-Za-z0-9]*\]$", line):
+            return line[:700]
     for index, line in enumerate(lines):
         if line == "* What went wrong:":
             detail = []

@@ -182,6 +182,47 @@ class RenderCiPrCommentTest(unittest.TestCase):
         self.assertIn("Unresolved reference", excerpt)
         self.assertNotIn("--stacktrace", excerpt)
 
+    def test_detekt_finding_is_shown_instead_of_gradle_boilerplate(self):
+        finding = (
+            "/home/runner/work/BillionBeers/BillionBeers/app/src/main/java/"
+            "com/simtop/billionbeers/presentation/AppNavigation.kt:51:5: "
+            "The function AppNavigation appears to be too complex based on Cyclomatic Complexity "
+            "(complexity: 18). Defined complexity threshold for methods is set to '15' "
+            "[CyclomaticComplexMethod]"
+        )
+        log = (
+            f"2026-10-04T10:02:49.000Z \x1b[31m{finding}\x1b[0m\n"
+            "2026-10-04T10:02:49.010Z complexity - 20min debt\n"
+            "2026-10-04T10:02:49.020Z * What went wrong:\n"
+            "2026-10-04T10:02:49.030Z Execution failed for task ':app:detekt'.\n"
+            "2026-10-04T10:02:49.040Z > Analysis failed with 1 weighted issues.\n"
+            "2026-10-04T10:02:49.050Z Deprecated Gradle features were used in this build, "
+            "making it incompatible with Gradle 10.\n"
+            "2026-10-04T10:02:49.060Z * Try:\n"
+            "2026-10-04T10:02:49.070Z ##[error]Process completed with exit code 1."
+        )
+        excerpt = MODULE.error_excerpt(log)
+        self.assertEqual(finding, excerpt)
+        body = render([job(name="Static Analysis (Detekt)", step="Run Detekt",
+                           diagnostics={"Run Detekt": {"error": excerpt}})])
+        self.assertIn(finding, body)
+        self.assertIn("make lint", body)
+        self.assertNotIn("Execution failed for task", body)
+        self.assertNotIn("Deprecated Gradle", body)
+        self.assertNotIn("\x1b", body)
+
+    def test_detekt_excerpt_uses_first_finding_and_is_bounded(self):
+        first = "build.gradle.kts:12:3: " + "detail " * 150 + "[SomeRule]"
+        second = "Other.kt:2:1: Another finding [SomeRule]"
+        self.assertEqual(first[:700], MODULE.error_excerpt(first + "\n" + second))
+
+    def test_detekt_without_source_finding_keeps_gradle_fallback(self):
+        excerpt = MODULE.error_excerpt(
+            "* What went wrong:\nExecution failed for task ':app:detekt'.\n"
+            "> Analysis failed with 1 weighted issues.\n* Try:\n--stacktrace")
+        self.assertIn("Analysis failed with 1 weighted issues.", excerpt)
+        self.assertNotIn("--stacktrace", excerpt)
+
     def test_pending_and_incomplete_are_not_success(self):
         for extra in ({}, {"incomplete": True}):
             body = render(status="in_progress", **extra)

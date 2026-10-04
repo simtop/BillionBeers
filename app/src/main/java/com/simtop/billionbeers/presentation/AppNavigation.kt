@@ -96,18 +96,12 @@ fun AppNavigation(
   val presetSaveFailedMessage = stringResource(R.string.filter_preset_save_failed)
 
   suspend fun savePreset(name: String, query: BeersQuery): Boolean =
-    when (val result = viewModel.savePreset(name, query)) {
-      is Either.Right -> true
-      is Either.Left -> {
-        val message =
-          when (result.value) {
-            SaveFilterPresetError.CapacityReached -> presetLimitMessage
-            is SaveFilterPresetError.Unknown -> presetSaveFailedMessage
-          }
-        snackbarHostState.showSnackbar(message)
-        false
-      }
-    }
+    handleSavePresetResult(
+      result = viewModel.savePreset(name, query),
+      snackbarHostState = snackbarHostState,
+      presetLimitMessage = presetLimitMessage,
+      presetSaveFailedMessage = presetSaveFailedMessage,
+    )
 
   Scaffold(
     modifier = modifier,
@@ -205,3 +199,22 @@ fun AppNavigation(
     )
   }
 }
+
+private suspend fun handleSavePresetResult(
+  result: Either<SaveFilterPresetError, Unit>,
+  snackbarHostState: SnackbarHostState,
+  presetLimitMessage: String,
+  presetSaveFailedMessage: String,
+): Boolean =
+  when (result) {
+    is Either.Right -> true
+    is Either.Left -> {
+      val message =
+        when (result.value) {
+          SaveFilterPresetError.CapacityReached -> presetLimitMessage
+          is SaveFilterPresetError.Unknown -> presetSaveFailedMessage
+        }
+      snackbarHostState.showSnackbar(message)
+      false
+    }
+  }
