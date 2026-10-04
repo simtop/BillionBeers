@@ -60,7 +60,17 @@ WEB_RELEASE_CONFIDENCE_DIR ?= web-app/build/web-release-confidence
 DESKTOP_APP_DIR ?= desktop-app/build/compose/binaries/main/app/BillionBeers.app
 DESKTOP_DMG_DIR ?= desktop-app/build/compose/binaries/main/dmg
 SCREENSHOT_INVENTORY_DIR ?= build/reports/paparazzi/inventory
-.PHONY: detekt-baseline help setup setup-ai-tools update-android-skills build bundle-release release-smoke install desktop-test desktop-run desktop-live desktop-package desktop-package-test desktop-package-smoke desktop-package-verify ios-simulator-evidence web-run web-image-proxy-test web-static-test web-verify ios-compile ios-framework ios-test ios-host-build ios-host-run clean deep-clean test test-tier-inventory konsist check-data-layer-boundary architecture-policy compose-metrics ui-test ui-test-local ui-test-managed ui-test-managed-newest ui-test-managed-ci ui-test-managed-all emulator-create emulator-recreate emulator-start emulator-stop emulator-status emulator-delete screenshot-record screenshot-verify screenshot-clean lint android-lint format check docs-check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline check-gradle-compatibility-flags verification-metadata verification-metadata-reference verification-metadata-candidate health module-graph metro-graph architecture-report repo-doctor benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark build-budget build-budget-check jacoco-report coverage-check update-docs install-profiler install-diffuse new-feature-module new-dev-app play-listing-check play-listing-capture play-listing-reset store-frames
+.PHONY: detekt-baseline help setup setup-ai-tools update-android-skills build bundle-release release-smoke install desktop-test desktop-run desktop-live desktop-package desktop-package-test desktop-package-smoke desktop-package-verify ios-simulator-evidence web-run web-image-proxy-test web-static-test web-verify ios-compile ios-framework ios-test ios-host-build ios-host-run ios-simulator-open ios-simulator-list ios-simulator-stop clean deep-clean test test-tier-inventory konsist check-data-layer-boundary architecture-policy compose-metrics ui-test ui-test-local ui-test-managed ui-test-managed-newest ui-test-managed-ci ui-test-managed-all emulator-create emulator-recreate emulator-start emulator-stop emulator-status emulator-delete screenshot-record screenshot-verify screenshot-clean lint android-lint format check docs-check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline check-gradle-compatibility-flags verification-metadata verification-metadata-reference verification-metadata-candidate health module-graph metro-graph architecture-report repo-doctor benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark build-budget build-budget-check jacoco-report coverage-check update-docs install-profiler install-diffuse new-feature-module new-dev-app play-listing-check play-listing-capture play-listing-reset store-frames
+
+define IOS_SIMULATOR_RESOLVE
+	if [ -n "$${IOS_DEVICE_UDID:-}" ]; then device="$$IOS_DEVICE_UDID"; else \
+		matches="$$(xcrun simctl list devices available | awk -F '[()]' -v destination='$(IOS_HOST_DESTINATION)' 'BEGIN { n=split(destination, parts, ","); for (i=1; i<=n; i++) { if (index(parts[i], "name=")==1) name=substr(parts[i], 6); if (index(parts[i], "OS=")==1) os=substr(parts[i], 4) } } /^-- / { runtime=""; if ($$2=="iOS") runtime=$$3; next } runtime==os && NF>=3 { device_name=$$1; sub(/ *$$/, "", device_name); sub(/^ */, "", device_name); if (device_name==name) print $$2 }')"; \
+		count="$$(printf '%s\n' "$$matches" | awk 'NF { count++ } END { print count+0 }')"; \
+		if [ "$$count" -eq 0 ]; then echo "No available simulator matches IOS_HOST_DESTINATION: $(IOS_HOST_DESTINATION)."; exit 1; fi; \
+		if [ "$$count" -gt 1 ]; then echo "Multiple available simulators match IOS_HOST_DESTINATION: $(IOS_HOST_DESTINATION); set IOS_DEVICE_UDID."; exit 1; fi; \
+		device="$$matches"; \
+	fi
+endef
 
 help: ## Show this help message.
 	@echo "\n📊 BillionBeers Makefile Help"
@@ -97,14 +107,14 @@ update-android-skills: ## Sync official Android skills (github.com/android/skill
 
 # Basic Commands
 build: ## Assemble the debug APK.
-	$(GRADLE_RUNNER) $(MODULE)assembleDebug
+	$(GRADLE_RUNNER) $(MODULE_PREFIX)assembleDebug
 
 install: ## Install debug build. App install includes on-demand beerdetail via bundletool local-testing; pass MODULE=:foo for a plain installDebug.
 ifeq ($(MODULE_TRIMMED),)
 	$(GRADLE_RUNNER) :app:bundleDebug
 	@bash scripts/install-local-testing.sh
 else
-	$(GRADLE_RUNNER) $(MODULE)installDebug
+	$(GRADLE_RUNNER) $(MODULE_PREFIX)installDebug
 endif
 
 bundle-release: ## Assemble the signed release App Bundle (.aab) for Play Store upload, incl. the beerdetail dynamic feature. Needs keystore.properties or STORE_FILE/STORE_PASSWORD/ALIAS/PASSWORD env vars.
@@ -193,12 +203,21 @@ ios-host-build: ## Build the unsigned iOS host for the arm64 simulator.
 	xcodebuild -project iosApp/BillionBeers.xcodeproj -scheme BillionBeers -configuration Debug -sdk iphonesimulator -destination '$(IOS_HOST_DESTINATION)' -derivedDataPath iosApp/build/DerivedData CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
 
 ios-host-run: ios-host-build ## Install and launch the iOS host on a booted or available simulator.
-	@device="$${IOS_DEVICE_UDID:-$$(xcrun simctl list devices available | awk -F '[()]' '/iPhone 17 Pro/{print $$2; exit}')}"; \
-	if [ -z "$$device" ]; then echo "No available iPhone 17 Pro simulator found; set IOS_DEVICE_UDID."; exit 1; fi; \
+	@$(IOS_SIMULATOR_RESOLVE); \
 	xcrun simctl boot "$$device" >/dev/null 2>&1 || true; \
 	xcrun simctl bootstatus "$$device" -b; \
 	xcrun simctl install "$$device" iosApp/build/DerivedData/Build/Products/Debug-iphonesimulator/BillionBeers.app; \
 	xcrun simctl launch "$$device" com.simtop.billionbeers.ios
+
+ios-simulator-stop: ## Shut down the configured iOS simulator while preserving its data.
+	@$(IOS_SIMULATOR_RESOLVE); \
+	xcrun simctl shutdown "$$device"
+
+ios-simulator-open: ## Open the iOS Simulator app.
+	open -a Simulator
+
+ios-simulator-list: ## List available iOS simulator devices.
+	xcrun simctl list devices available
 
 ios-simulator-evidence: ## Create and independently verify unsigned iOS simulator evidence from existing outputs.
 	rm -rf "$(IOS_SIMULATOR_CONFIDENCE_DIR)"
@@ -551,11 +570,22 @@ benchmark-macro: ## Run macrobenchmarks on a connected device.
 	$(GRADLE_RUNNER) :benchmark:macrobenchmark:connectedCheck
 
 benchmark-check: ## Run macrobenchmarks and fail if results exceed the configured performance budget.
-	$(GRADLE_RUNNER) :benchmark:macrobenchmark:connectedCheck
-	@chmod +x scripts/check-benchmark-budget.sh
-	@JSON_FILE=$$(find benchmark/macrobenchmark/build/outputs/connected_android_test_additional_output -iname "*-benchmarkData.json" | head -1); \
-	if [ -z "$$JSON_FILE" ]; then echo "error: no benchmarkData.json found" >&2; exit 1; fi; \
-	./scripts/check-benchmark-budget.sh "$$JSON_FILE"
+	@set -e; \
+	chmod +x scripts/check-benchmark-budget.sh; \
+	marker=$$(mktemp "$${TMPDIR:-/tmp}/benchmark-check.XXXXXX"); \
+	trap 'rm -f "$$marker"' EXIT; \
+	touch "$$marker"; \
+	$(GRADLE_RUNNER) :benchmark:macrobenchmark:connectedCheck; \
+	output_dir=benchmark/macrobenchmark/build/outputs/connected_android_test_additional_output; \
+	if [ ! -d "$$output_dir" ]; then echo "error: benchmark output directory not found: $$output_dir" >&2; exit 1; fi; \
+	candidates=$$(find "$$output_dir" -type f -iname "*-benchmarkData.json" -newer "$$marker" -print); \
+	count=$$(printf '%s\n' "$$candidates" | awk 'NF { count++ } END { print count+0 }'); \
+	if [ "$$count" -ne 1 ]; then \
+		echo "error: expected exactly one fresh benchmarkData.json after this run; found $$count." >&2; \
+		if [ -n "$$candidates" ]; then printf 'Candidates:\n%s\n' "$$candidates" >&2; fi; \
+		exit 1; \
+	fi; \
+	./scripts/check-benchmark-budget.sh "$$candidates"
 
 generate-baseline: ## Generate Baseline Profiles for the app (needs a booted device/emulator).
 	$(GRADLE_RUNNER) :app:generateBaselineProfile

@@ -41,6 +41,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import com.simtop.beerdomain.domain.errors.SaveFilterPresetError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
@@ -61,6 +62,7 @@ import com.simtop.billionbeers.shared.favorites.SharedFavoritesContent
 import com.simtop.core.core.CommonUiErrorKey
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.CoroutineDispatcherProvider
+import com.simtop.core.core.Either
 import com.simtop.core.core.SystemEpochTimeProvider
 import com.simtop.navigation.contract.PortableRoute
 import kotlinx.coroutines.delay
@@ -80,6 +82,9 @@ data class SharedAppStrings(
   val savedFilters: String,
   val savedFiltersEmpty: String,
   val saveFilter: String,
+  val filterPresetLimitReached: String,
+  val saveFilterFailed: String,
+  val mutateFilterFailed: String,
   val filterNameHint: String,
   val renameFilter: String,
   val deleteFilter: String,
@@ -176,21 +181,32 @@ fun SharedAppShell(
     host.onNavigationEvent(SharedAppNavigationEvent.Push(navigation.current.route))
   }
 
-  fun savePreset(name: String, query: BeersQuery) {
+  suspend fun savePreset(name: String, query: BeersQuery): Boolean {
     val normalizedName = name.trim()
     if (normalizedName.isEmpty() || normalizedName.length > SavedFilterPreset.MAX_NAME_LENGTH) {
-      return
+      return false
     }
     val updatedAt = SystemEpochTimeProvider().epochMillis()
-    coroutineScope.launch {
-      repository.saveFilterPreset(
-        SavedFilterPreset(
-          id = "preset-${normalizedName.hashCode()}-${query.hashCode()}",
-          name = normalizedName,
-          query = query,
-          updatedAt = updatedAt,
+    return when (
+      val result =
+        repository.saveFilterPreset(
+          SavedFilterPreset(
+            id = "preset-${normalizedName.hashCode()}-${query.hashCode()}",
+            name = normalizedName,
+            query = query,
+            updatedAt = updatedAt,
+          )
         )
-      )
+    ) {
+      is Either.Right -> true
+      is Either.Left -> {
+        message =
+          when (result.value) {
+            SaveFilterPresetError.CapacityReached -> strings.filterPresetLimitReached
+            is SaveFilterPresetError.Unknown -> strings.saveFilterFailed
+          }
+        false
+      }
     }
   }
 
@@ -296,17 +312,21 @@ fun SharedAppShell(
                     normalizedName.isNotEmpty() &&
                       normalizedName.length <= SavedFilterPreset.MAX_NAME_LENGTH
                   ) {
-                    coroutineScope.launch {
+                    val result =
                       repository.renameFilterPreset(
                         preset.id,
                         normalizedName,
                         SystemEpochTimeProvider().epochMillis(),
                       )
-                    }
-                  }
+                    val succeeded = result is Either.Right
+                    if (!succeeded) message = strings.mutateFilterFailed
+                    succeeded
+                  } else false
                 },
                 onDelete = { preset ->
-                  coroutineScope.launch { repository.deleteFilterPreset(preset.id) }
+                  val succeeded = repository.deleteFilterPreset(preset.id) is Either.Right
+                  if (!succeeded) message = strings.mutateFilterFailed
+                  succeeded
                 },
               )
             is SearchEntry ->
@@ -441,7 +461,7 @@ private fun ListDestination(
   onBeerClick: (Beer) -> Unit,
   onSearch: () -> Unit,
   onBrowse: () -> Unit,
-  onSaveQuery: (String) -> Unit = {},
+  onSaveQuery: suspend (String) -> Boolean = { false },
 ) {
   val viewState by entry.viewModel.beerListViewState.collectAsState()
   Column(Modifier.fillMaxSize()) {
@@ -492,7 +512,7 @@ private fun SearchDestination(
   strings: SharedAppStrings,
   host: SharedAppHost,
   onBeerClick: (Beer) -> Unit,
-  onSaveQuery: (String) -> Unit,
+  onSaveQuery: suspend (String) -> Boolean,
 ) {
   val query by entry.viewModel.query.collectAsState()
   val styles by entry.viewModel.styles.collectAsState()
@@ -501,6 +521,7 @@ private fun SearchDestination(
   val viewState by entry.viewModel.viewState.collectAsState()
   val count = (viewState as? CommonUiState.Success)?.data?.items?.size ?: 0
   var presetName by remember { mutableStateOf("") }
+  val scope = rememberCoroutineScope()
   Column(Modifier.fillMaxSize()) {
     OutlinedTextField(
       value = query,
@@ -539,8 +560,9 @@ private fun SearchDestination(
       )
       Button(
         onClick = {
-          onSaveQuery(presetName)
-          presetName = ""
+          scope.launch {
+            if (onSaveQuery(presetName)) presetName = ""
+          }
         },
         enabled =
           presetName.isNotBlank() && (activeQuery.search != null || activeQuery.styleId != null),
@@ -610,10 +632,11 @@ private fun BrowseBeersDestination(
   host: SharedAppHost,
   onBack: () -> Unit,
   onBeerClick: (Beer) -> Unit,
-  onSaveQuery: (String) -> Unit,
+  onSaveQuery: suspend (String) -> Boolean,
 ) {
   val viewState by entry.viewModel.viewState.collectAsState()
   var presetName by remember { mutableStateOf("") }
+  val scope = rememberCoroutineScope()
   Column(Modifier.fillMaxSize()) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
       OutlinedTextField(
@@ -627,8 +650,9 @@ private fun BrowseBeersDestination(
       )
       Button(
         onClick = {
-          onSaveQuery(presetName)
-          presetName = ""
+          scope.launch {
+            if (onSaveQuery(presetName)) presetName = ""
+          }
         },
         enabled = presetName.isNotBlank(),
         modifier = Modifier.padding(start = 8.dp),
@@ -705,9 +729,10 @@ private fun ShellActions(
   strings: SharedAppStrings,
   onSearch: () -> Unit,
   onBrowse: () -> Unit,
-  onSaveQuery: (String) -> Unit,
+  onSaveQuery: suspend (String) -> Boolean,
 ) {
   var name by remember { mutableStateOf("") }
+  val scope = rememberCoroutineScope()
   Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
     Row(Modifier.fillMaxWidth()) {
       Button(onClick = onSearch, modifier = Modifier.weight(1f)) { Text(strings.search) }
@@ -727,8 +752,9 @@ private fun ShellActions(
       )
       Button(
         onClick = {
-          onSaveQuery(name)
-          name = ""
+          scope.launch {
+            if (onSaveQuery(name)) name = ""
+          }
         },
         enabled = name.isNotBlank(),
         modifier = Modifier.padding(start = 8.dp),

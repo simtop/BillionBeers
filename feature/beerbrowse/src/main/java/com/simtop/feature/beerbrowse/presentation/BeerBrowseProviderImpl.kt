@@ -15,7 +15,7 @@ class BeerBrowseProviderImpl : DynamicFeatureContentProvider<BeerBrowse> {
     key: BeerBrowse,
     onBack: () -> Unit,
     onNavigate: (NavKey) -> Unit,
-    onSaveQuery: ((String, BeersQuery) -> Unit)?,
+    onSaveQuery: (suspend (String, BeersQuery) -> Boolean)?,
     showBackButton: Boolean,
   ) {
     BeerBrowseScreenImpl(

@@ -16,7 +16,7 @@ class BeerDetailProviderImpl : DynamicFeatureContentProvider<BeerDetail> {
     key: BeerDetail,
     onBack: () -> Unit,
     onNavigate: (NavKey) -> Unit,
-    onSaveQuery: ((String, BeersQuery) -> Unit)?,
+    onSaveQuery: (suspend (String, BeersQuery) -> Boolean)?,
     showBackButton: Boolean,
   ) {
     BeerDetailScreenImpl(

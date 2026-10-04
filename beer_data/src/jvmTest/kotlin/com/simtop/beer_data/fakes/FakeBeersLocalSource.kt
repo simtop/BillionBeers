@@ -1,6 +1,7 @@
 package com.simtop.beer_data.fakes
 
 import com.simtop.beer_storage.api.BeersStorage
+import com.simtop.beer_storage.api.FilterPresetCapacityReachedException
 import com.simtop.beer_storage.api.StoredBeer
 import com.simtop.beer_storage.api.StoredFilterPreset
 import com.simtop.beer_storage.api.StoredPagingState
@@ -14,6 +15,7 @@ class FakeBeersLocalSource : BeersStorage {
   private val beersFlow = MutableStateFlow<List<StoredBeer>>(emptyList())
   private val presetsFlow = MutableStateFlow<List<StoredFilterPreset>>(emptyList())
   private val pagingState = mutableMapOf<String, StoredPagingState>()
+  var presetMutationFailure: Exception? = null
 
   // Helper to inspect state
   fun getBeers(): List<StoredBeer> = beersFlow.value
@@ -27,16 +29,18 @@ class FakeBeersLocalSource : BeersStorage {
   override fun observeSavedFilterPresets(): Flow<List<StoredFilterPreset>> = presetsFlow
 
   override suspend fun saveFilterPreset(preset: StoredFilterPreset) {
+    presetMutationFailure?.let { throw it }
     require(preset.id.isNotBlank() && preset.name.isNotBlank())
     require(preset.name.length <= 64)
     val current = presetsFlow.value.toMutableList()
     val index = current.indexOfFirst { it.id == preset.id }
-    if (index < 0) require(current.size < MAX_STORED_FILTER_PRESETS)
+    if (index < 0 && current.size >= MAX_STORED_FILTER_PRESETS) throw FilterPresetCapacityReachedException()
     if (index < 0) current += preset else current[index] = preset
     presetsFlow.value = current.sortedWith(compareByDescending<StoredFilterPreset> { it.updatedAt }.thenBy { it.name }.thenBy { it.id })
   }
 
   override suspend fun renameFilterPreset(id: String, name: String, updatedAt: Long) {
+    presetMutationFailure?.let { throw it }
     require(name.isNotBlank() && name.length <= 64)
     presetsFlow.value = presetsFlow.value.map { preset ->
       if (preset.id == id) preset.copy(name = name, updatedAt = updatedAt) else preset
@@ -44,6 +48,7 @@ class FakeBeersLocalSource : BeersStorage {
   }
 
   override suspend fun deleteFilterPreset(id: String) {
+    presetMutationFailure?.let { throw it }
     presetsFlow.value = presetsFlow.value.filterNot { it.id == id }
   }
 

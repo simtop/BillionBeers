@@ -7,20 +7,28 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
 import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneStrategy
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_EXPANDED_LOWER_BOUND
+import com.simtop.beerdomain.domain.errors.SaveFilterPresetError
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.beerdomain.domain.models.BeersQuery
+import com.simtop.billionbeers.R
+import com.simtop.core.core.Either
 import com.simtop.feature.beersearch.BeersSearchScreen
 import com.simtop.feature.beerslist.BeersListScreen
 import com.simtop.feature.favorites.FavoritesScreen
@@ -83,9 +91,21 @@ fun AppNavigation(
   val selectedTab = backStack.firstOrNull()
   val showBottomBar =
     selectedTab == BeersList || selectedTab == Favorites || selectedTab == SavedFilterPresets
+  val snackbarHostState = remember { SnackbarHostState() }
+  val presetLimitMessage = stringResource(R.string.filter_preset_limit_reached)
+  val presetSaveFailedMessage = stringResource(R.string.filter_preset_save_failed)
+
+  suspend fun savePreset(name: String, query: BeersQuery): Boolean =
+    handleSavePresetResult(
+      result = viewModel.savePreset(name, query),
+      snackbarHostState = snackbarHostState,
+      presetLimitMessage = presetLimitMessage,
+      presetSaveFailedMessage = presetSaveFailedMessage,
+    )
 
   Scaffold(
     modifier = modifier,
+    snackbarHost = { SnackbarHost(snackbarHostState) },
     // The destination screens own their top-bar and content insets. Keeping the root inset-free
     // lets those top bars draw behind the status bar instead of placing the entire NavDisplay
     // below it. NavigationBar still contributes its measured height to innerPadding.
@@ -122,7 +142,7 @@ fun AppNavigation(
               onSearchClick = { navigate(BeersSearch) },
               onBrowseClick = { navigate(BeerBrowse) },
               onSaveQuery = { name ->
-                viewModel.savePreset(name, com.simtop.beerdomain.domain.models.BeersQuery())
+                savePreset(name, BeersQuery())
               },
             )
           }
@@ -147,7 +167,7 @@ fun AppNavigation(
             BeersSearchScreen(
               onBeerClick = ::navigateToBeerDetail,
               onBack = { backStack.removeLastOrNull() },
-              onSaveQuery = viewModel::savePreset,
+              onSaveQuery = ::savePreset,
             )
           }
 
@@ -172,10 +192,29 @@ fun AppNavigation(
                   navigate(destination)
                 }
               },
-              onSaveQuery = viewModel::savePreset,
+              onSaveQuery = ::savePreset,
             )
           }
         },
     )
   }
 }
+
+private suspend fun handleSavePresetResult(
+  result: Either<SaveFilterPresetError, Unit>,
+  snackbarHostState: SnackbarHostState,
+  presetLimitMessage: String,
+  presetSaveFailedMessage: String,
+): Boolean =
+  when (result) {
+    is Either.Right -> true
+    is Either.Left -> {
+      val message =
+        when (result.value) {
+          SaveFilterPresetError.CapacityReached -> presetLimitMessage
+          is SaveFilterPresetError.Unknown -> presetSaveFailedMessage
+        }
+      snackbarHostState.showSnackbar(message)
+      false
+    }
+  }

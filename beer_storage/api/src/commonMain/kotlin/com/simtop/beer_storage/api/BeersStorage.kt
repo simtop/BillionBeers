@@ -4,6 +4,9 @@ import kotlinx.coroutines.flow.Flow
 
 const val MAX_STORED_FILTER_PRESETS = 10
 
+class FilterPresetCapacityReachedException :
+  IllegalArgumentException("At most $MAX_STORED_FILTER_PRESETS filter presets may be saved")
+
 /**
  * Portable persistence contract for the beer catalog. Implementations must emit only committed
  * state, preserve local-only flags during catalog refreshes, and write a page with its bookmark as

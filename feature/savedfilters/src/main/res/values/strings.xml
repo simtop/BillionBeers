@@ -5,4 +5,5 @@
     <string name="savedfilters_name">Filter name</string>
     <string name="savedfilters_rename">Rename</string>
     <string name="savedfilters_delete">Delete</string>
+    <string name="savedfilters_mutation_failed">Could not update saved filters. Try again.</string>
 </resources>

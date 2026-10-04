@@ -55,7 +55,7 @@ private val BrowseSelectionSaver =
 fun BeerBrowseScreenImpl(
   onBack: () -> Unit,
   onNavigate: (NavKey) -> Unit,
-  onSaveQuery: ((String, BeersQuery) -> Unit)?,
+  onSaveQuery: (suspend (String, BeersQuery) -> Boolean)?,
 ) {
   val context = LocalContext.current
 
@@ -88,7 +88,7 @@ fun BeerBrowseScreenImpl(
           onBack = { selection = null },
           // The host gates the beerdetail install before pushing this key.
           onBeerClick = { beer -> onNavigate(BeerDetail(beer)) },
-          onSaveQuery = { name -> onSaveQuery?.invoke(name, current.toQuery()) },
+          onSaveQuery = { name -> onSaveQuery?.invoke(name, current.toQuery()) ?: false },
         )
     }
   }

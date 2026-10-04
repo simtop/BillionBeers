@@ -10,8 +10,11 @@ import com.simtop.beer_network.models.EmbeddedCountry
 import com.simtop.beer_network.models.EmbeddedImage
 import com.simtop.beer_network.models.TypologyApiResponseItem
 import com.simtop.beer_network.network.BeersServiceNetworkException
+import com.simtop.beer_storage.api.MAX_STORED_FILTER_PRESETS
 import com.simtop.beer_storage.api.StoredBeer
 import com.simtop.beerdomain.domain.errors.FetchBeersError
+import com.simtop.beerdomain.domain.errors.MutateFilterPresetError
+import com.simtop.beerdomain.domain.errors.SaveFilterPresetError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.beerdomain.domain.models.BeersQuery
@@ -22,7 +25,10 @@ import com.simtop.core.core.Either
 import com.simtop.core.core.EpochTimeProvider
 import com.simtop.core.core.LanguageProvider
 import com.simtop.core.core.NoOpLogger
+import kotlin.test.assertFailsWith
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.BeforeEach
@@ -78,6 +84,67 @@ class BeersRepositoryTest {
         expectThat(awaitItem()).isEqualTo(emptyList())
         cancelAndIgnoreRemainingEvents()
       }
+    }
+
+  @Test
+  fun `preset mutations preserve rows on failure and cancellation then recover`() =
+    runTest(testDispatcher) {
+      val preset = SavedFilterPreset("preset-1", "IPA", BeersQuery(), 1L)
+      beersRepository.saveFilterPreset(preset)
+      val storageFailure = IllegalStateException("storage")
+      beersLocalSource.presetMutationFailure = storageFailure
+      val expectedError = Either.Left(MutateFilterPresetError.Unknown(storageFailure))
+      expectThat(beersRepository.renameFilterPreset(preset.id, "Renamed", 2L))
+        .isEqualTo(expectedError)
+      expectThat(beersRepository.deleteFilterPreset(preset.id)).isEqualTo(expectedError)
+      expectThat(beersRepository.observeSavedFilterPresets().first()).isEqualTo(listOf(preset))
+
+      beersLocalSource.presetMutationFailure = CancellationException("cancel")
+      assertFailsWith<CancellationException> {
+        beersRepository.renameFilterPreset(preset.id, "Cancelled", 3L)
+      }
+      assertFailsWith<CancellationException> { beersRepository.deleteFilterPreset(preset.id) }
+      expectThat(beersRepository.observeSavedFilterPresets().first()).isEqualTo(listOf(preset))
+
+      beersLocalSource.presetMutationFailure = null
+      expectThat(beersRepository.renameFilterPreset(preset.id, "Renamed", 4L))
+        .isEqualTo(Either.Right(Unit))
+      expectThat(beersRepository.observeSavedFilterPresets().first())
+        .isEqualTo(listOf(preset.copy(name = "Renamed", updatedAt = 4L)))
+      expectThat(beersRepository.deleteFilterPreset(preset.id)).isEqualTo(Either.Right(Unit))
+      expectThat(beersRepository.observeSavedFilterPresets().first()).isEqualTo(emptyList())
+    }
+
+  @Test
+  fun `save distinguishes capacity and write failures and permits updates at capacity`() =
+    runTest(testDispatcher) {
+      repeat(MAX_STORED_FILTER_PRESETS) { index ->
+        beersRepository.saveFilterPreset(
+          SavedFilterPreset("p$index", "Preset $index", BeersQuery(), index.toLong())
+        )
+      }
+      val overflow = SavedFilterPreset("overflow", "Overflow", BeersQuery(), 20L)
+      expectThat(beersRepository.saveFilterPreset(overflow))
+        .isEqualTo(Either.Left(SaveFilterPresetError.CapacityReached))
+      val updated = SavedFilterPreset("p0", "Updated", BeersQuery(), 21L)
+      expectThat(beersRepository.saveFilterPreset(updated)).isEqualTo(Either.Right(Unit))
+      val rowsAtCapacity = beersRepository.observeSavedFilterPresets().first()
+      expectThat(rowsAtCapacity.size).isEqualTo(MAX_STORED_FILTER_PRESETS)
+      expectThat(rowsAtCapacity.first()).isEqualTo(updated)
+
+      val storageFailure = IllegalStateException("storage")
+      beersLocalSource.presetMutationFailure = storageFailure
+      expectThat(beersRepository.saveFilterPreset(overflow))
+        .isEqualTo(Either.Left(SaveFilterPresetError.Unknown(storageFailure)))
+      beersLocalSource.presetMutationFailure = CancellationException("cancel")
+      assertFailsWith<CancellationException> { beersRepository.saveFilterPreset(overflow) }
+      expectThat(beersRepository.observeSavedFilterPresets().first()).isEqualTo(rowsAtCapacity)
+
+      beersLocalSource.presetMutationFailure = null
+      beersRepository.deleteFilterPreset("p1")
+      expectThat(beersRepository.saveFilterPreset(overflow)).isEqualTo(Either.Right(Unit))
+      expectThat(beersRepository.observeSavedFilterPresets().first().size)
+        .isEqualTo(MAX_STORED_FILTER_PRESETS)
     }
 
   @Test

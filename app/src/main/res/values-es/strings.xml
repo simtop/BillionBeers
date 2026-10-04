@@ -1,0 +1,4 @@
+<resources>
+    <string name="filter_preset_limit_reached">Puedes guardar hasta 10 filtros. Elimina uno antes de guardar otro.</string>
+    <string name="filter_preset_save_failed">No se pudo guardar el filtro.</string>
+</resources>
