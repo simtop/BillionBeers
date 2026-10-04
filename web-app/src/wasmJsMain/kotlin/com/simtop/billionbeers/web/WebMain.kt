@@ -165,10 +165,13 @@ private class WebRouteSession(
       is SharedAppNavigationEvent.Push -> {
         val hash = event.route.toWebHash()
         if (window.location.hash != hash) window.history.pushState(null, "", hash)
+        markObservedHash()
       }
       is SharedAppNavigationEvent.Pop -> window.history.back()
-      is SharedAppNavigationEvent.Replace ->
+      is SharedAppNavigationEvent.Replace -> {
         window.history.replaceState(null, "", event.route.toWebHash())
+        markObservedHash()
+      }
     }
   }
 

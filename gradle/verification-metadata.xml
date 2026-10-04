@@ -6757,6 +6757,9 @@
          </artifact>
       </component>
       <component group="com.github.webassembly" name="binaryen" version="130">
+         <artifact name="binaryen-130-arm64-macos.tar.gz">
+            <sha256 value="79d3ab9f417d9e215f15f598f523d001a7d9ac1e59367e5c869fbdabd1cba72e" origin="Manual verification of https://github.com/WebAssembly/binaryen/releases/download/version_130/binaryen-version_130-arm64-macos.tar.gz"/>
+         </artifact>
          <artifact name="binaryen-130-x86_64-linux.tar.gz">
             <sha256 value="0a18362361ad05465118cd8eeb72edaeec89de6894bc283576ef4e07aa3babcc" origin="Manual verification of https://github.com/WebAssembly/binaryen/releases/download/version_130/binaryen-version_130-x86_64-linux.tar.gz"/>
          </artifact>

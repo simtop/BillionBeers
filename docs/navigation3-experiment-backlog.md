@@ -42,8 +42,12 @@ is not a passing result.
 ### N3-1 — Browser cold deep links and missing-cache behavior
 
 **Evidence status:** The route parser and bounded hash reload/history semantics are proven in the
-matrix. Missing-cache behavior on a real cold browser journey remains deferred until that host
-acceptance journey is exercised.
+matrix. The packaged Web smoke now exercises style-category selection, detail, in-app Back, browser
+Back/Forward, and category reload against deterministic API fixtures in local Chromium. Shared
+navigation actions notify the host after their stack transition; host restoration does not echo an
+event. This repairs the missing category history entry and stale observed-hash bookkeeping after
+`pushState`. Missing-cache behavior on a real cold detail journey remains deferred until that host
+acceptance journey is exercised; this category proof does not close N3-1.
 
 **Question:** Can a portable route enter the Web application directly, reload safely, and produce an
 explicit result when the route refers to data that is not in the local cache?

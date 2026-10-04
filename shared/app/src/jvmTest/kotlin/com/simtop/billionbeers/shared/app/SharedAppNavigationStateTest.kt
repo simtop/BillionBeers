@@ -111,6 +111,87 @@ class SharedAppNavigationStateTest {
   }
 
   @Test
+  fun browseSelectionsNotifyTheHostAfterEachTransition() =
+    runTest(mainDispatcher.testDispatcher) {
+      categoryRoutesAndQueries.forEach { (categoryRoute, _) ->
+        val events = mutableListOf<SharedAppNavigationEvent>()
+        lateinit var state: SharedAppNavigationState
+        state = navigation { event ->
+          val eventRoute =
+            when (event) {
+              is SharedAppNavigationEvent.Push -> event.route
+              is SharedAppNavigationEvent.Pop -> event.route
+              is SharedAppNavigationEvent.Replace -> event.route
+            }
+          assertEquals(state.current.route, eventRoute)
+          events += event
+        }
+
+        try {
+          assertTrue(events.isEmpty())
+          state.navigate(PortableRoute.BeerBrowse)
+          state.selectBrowse(BrowseSelection.fromCategory(categoryRoute.category))
+          state.navigate(PortableRoute.BeerDetail(beer))
+          assertTrue(state.pop())
+          assertTrue(state.pop())
+          assertTrue(state.pop())
+          assertFalse(state.pop())
+
+          assertEquals(
+            listOf(
+              SharedAppNavigationEvent.Push(PortableRoute.BeerBrowse),
+              SharedAppNavigationEvent.Push(categoryRoute),
+              SharedAppNavigationEvent.Push(PortableRoute.BeerDetail(beer)),
+              SharedAppNavigationEvent.Pop(categoryRoute),
+              SharedAppNavigationEvent.Pop(PortableRoute.BeerBrowse),
+              SharedAppNavigationEvent.Pop(PortableRoute.BeersList),
+            ),
+            events,
+          )
+        } finally {
+          state.disposeAll()
+        }
+      }
+    }
+
+  @Test
+  fun rootAndPresetActionsNotifyOnceWhileHostRestorationDoesNotEcho() {
+    val events = mutableListOf<SharedAppNavigationEvent>()
+    val navigation = navigation(events::add)
+    val preset =
+      SavedFilterPreset(
+        id = "preset-history",
+        name = "Lager",
+        query = BeersQuery(styleId = "style-1"),
+        updatedAt = 1L,
+      )
+    try {
+      navigation.navigate(PortableRoute.Favorites)
+      navigation.navigate(PortableRoute.SavedFilterPresets)
+      navigation.selectSavedFilter(preset)
+      assertEquals(
+        listOf<SharedAppNavigationEvent>(
+          SharedAppNavigationEvent.Push(PortableRoute.Favorites),
+          SharedAppNavigationEvent.Push(PortableRoute.SavedFilterPresets),
+          SharedAppNavigationEvent.Push(PortableRoute.SavedFilterPresets),
+        ),
+        events,
+      )
+      events.clear()
+
+      navigation.replaceFromRoute(PortableRoute.BeerBrowse)
+      navigation.replaceFromRoute(categoryRoutesAndQueries.first().first)
+      navigation.replaceFromRoute(PortableRoute.BeerDetail(beer))
+      navigation.replaceFromRoute(categoryRoutesAndQueries.first().first)
+      navigation.replaceFromRoute(PortableRoute.BeersList)
+      assertTrue(events.isEmpty())
+    } finally {
+      navigation.disposeAll()
+    }
+    assertTrue(events.isEmpty())
+  }
+
+  @Test
   fun externalCategoryRouteRestoresRetainedCategoryEntry() {
     val navigation = navigation()
     navigation.navigate(PortableRoute.BeerBrowse)
@@ -265,13 +346,16 @@ class SharedAppNavigationStateTest {
     assertTrue(favorites.isClosed)
   }
 
-  private fun navigation(): SharedAppNavigationState {
+  private fun navigation(
+    onNavigationEvent: (SharedAppNavigationEvent) -> Unit = {}
+  ): SharedAppNavigationState {
     val repository = FakeBeersRepository()
     return SharedAppNavigationState(
       repository = repository,
       pagerFactory = FakeBeersPagerFactory(repository),
       coroutineDispatcher = DefaultCoroutineDispatcherProvider(),
       initialRoute = PortableRoute.BeersList,
+      onNavigationEvent = onNavigationEvent,
     )
   }
 }
