@@ -212,6 +212,7 @@ internal class SharedAppNavigationState(
   private val pagerFactory: BeersPagerFactory,
   private val coroutineDispatcher: CoroutineDispatcherProvider,
   initialRoute: PortableRoute,
+  private val onNavigationEvent: (SharedAppNavigationEvent) -> Unit = {},
 ) {
   private var nextId = 0L
   private val rootEntries = mutableMapOf<PortableRoute, SharedAppEntry>()
@@ -235,14 +236,16 @@ internal class SharedAppNavigationState(
     } else {
       append(createEntry(route))
     }
+    onNavigationEvent(SharedAppNavigationEvent.Push(current.route))
   }
 
   fun selectBrowse(selection: BrowseSelection) {
-    append(BrowseBeersEntry(nextId(), selection, pagerFactory, coroutineDispatcher))
+    navigate(selection.toRoute())
   }
 
   fun selectSavedFilter(preset: SavedFilterPreset) {
     append(SavedFilterResultsEntry(nextId(), preset, pagerFactory, coroutineDispatcher))
+    onNavigationEvent(SharedAppNavigationEvent.Push(current.route))
   }
 
   fun pop(): Boolean {
@@ -250,9 +253,11 @@ internal class SharedAppNavigationState(
     val removed = entries.last()
     removed.close()
     entriesState.value = entries.dropLast(1)
+    onNavigationEvent(SharedAppNavigationEvent.Pop(current.route))
     return true
   }
 
+  // Host history already changed. Restore the stack without emitting an event back to the host.
   fun replaceFromRoute(route: PortableRoute) {
     if (route.isRoot()) {
       switchRoot(route)

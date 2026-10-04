@@ -223,6 +223,85 @@ async function evaluate(devtools, expression) {
   return result.result.value;
 }
 
+// Compose's accessibility nodes expose the bounds of the rendered canvas controls, including
+// controls inside shadow roots. Click those bounds through real browser input.
+function accessibilityNodesExpression() {
+  return `(() => {
+    const collect = root => [...root.querySelectorAll('*')].flatMap(node => [
+      ...(node.id === 'cmp_a11y_root' ? [...node.querySelectorAll('*')] : []),
+      ...(node.shadowRoot ? collect(node.shadowRoot) : [])
+    ]);
+    return collect(document);
+  })()`;
+}
+
+async function clickControl(devtools, label) {
+  const point = await waitFor(devtools, `(() => {
+    const nodes = ${accessibilityNodesExpression()}.filter(node =>
+      node.getAttribute('aria-label') === ${JSON.stringify(label)} ||
+      node.textContent.trim() === ${JSON.stringify(label)});
+    const bounds = nodes.map(node => node.getBoundingClientRect()).filter(bounds => {
+      const x = bounds.left + bounds.width / 2;
+      const y = bounds.top + bounds.height / 2;
+      return bounds.width && bounds.height && x >= 0 && x < innerWidth && y >= 0 && y < innerHeight;
+    }).sort((a, b) => a.width * a.height - b.width * b.height);
+    // A container with only one label can have the same text but extend over empty list space.
+    const target = bounds[0];
+    return target ? { x: target.left + target.width / 2, y: target.top + target.height / 2 } : null;
+  })()`);
+  for (const type of ['mousePressed', 'mouseReleased']) {
+    await devtools.send('Input.dispatchMouseEvent', { type, ...point, button: 'left', clickCount: 1 });
+  }
+}
+
+async function waitForRouteContent(devtools, hash, text) {
+  return waitFor(devtools, `location.hash === ${JSON.stringify(hash)} &&
+    ${accessibilityNodesExpression()}.some(node =>
+      node.textContent.includes(${JSON.stringify(text)})) &&
+    (${JSON.stringify(text)} === 'Production smoke fixture.' ||
+      !${accessibilityNodesExpression()}.some(node =>
+        node.textContent.includes('Production smoke fixture.'))) ? location.hash : ''`);
+}
+
+async function verifyBrowseHistory(devtools) {
+  const category = '#browse/style/web-smoke-style';
+  const detail = '#beer/web-smoke-1';
+  const steps = [];
+  const record = async (name, hash, text) => {
+    try {
+      steps.push({ name, hash: await waitForRouteContent(devtools, hash, text) });
+    } catch (error) {
+      const observed = await evaluate(devtools, 'location.hash');
+      throw new Error(`Browse history step '${name}' expected ${hash}, observed ${observed}: ${error.message}`);
+    }
+  };
+  await evaluate(devtools, 'history.back()');
+  await record('catalog', '#catalog', 'Browse');
+  await clickControl(devtools, 'Browse');
+  await record('browse', '#browse', 'Lager');
+  await clickControl(devtools, 'Lager');
+  await record('category', category, 'Web Smoke Lager');
+  await clickControl(devtools, 'Web Smoke Lager. Available');
+  await record('detail', detail, 'Production smoke fixture.');
+  await clickControl(devtools, 'Back');
+  await record('in-app back to category', category, 'Web Smoke Lager');
+  await clickControl(devtools, 'Back');
+  await record('in-app back to browse', '#browse', 'Styles');
+  await evaluate(devtools, 'history.forward()');
+  await record('browser forward to category', category, 'Web Smoke Lager');
+  await evaluate(devtools, 'history.forward()');
+  await record('browser forward to detail', detail, 'Production smoke fixture.');
+  await evaluate(devtools, 'history.back()');
+  await record('browser back to category', category, 'Web Smoke Lager');
+  await devtools.send('Page.reload');
+  await record('reload category', category, 'Web Smoke Lager');
+  await evaluate(devtools, 'history.back()');
+  await record('browser back after reload', '#browse', 'Styles');
+  await evaluate(devtools, 'history.forward()');
+  await record('browser forward after reload', category, 'Web Smoke Lager');
+  return steps;
+}
+
 function waitForExit(child, timeoutMs) {
   if (child.exitCode !== null || child.signalCode !== null) return Promise.resolve(true);
   return new Promise(resolve => {
@@ -445,8 +524,10 @@ async function main() {
     }
     const wideRoute = await evaluate(devtools, 'location.hash');
     if (wideRoute !== route) throw new Error(`Wide resize changed route: ${wideRoute}`);
+    await devtools.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: false });
+    const browseHistory = await verifyBrowseHistory(devtools);
     if (errors.length) throw new Error(`Unexpected browser errors: ${errors.join('; ')}`);
-    console.log(JSON.stringify({ distribution, url: `http://127.0.0.1:${port}${prefix}`, browser: browserVersion.product, compact, route, wide, wideRoute, errors }, null, 2));
+    console.log(JSON.stringify({ distribution, url: `http://127.0.0.1:${port}${prefix}`, browser: browserVersion.product, compact, route, wide, wideRoute, browseHistory, errors }, null, 2));
   } catch (error) {
     smokeError = error;
     throw error;

@@ -33,6 +33,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -146,9 +147,16 @@ fun SharedAppShell(
   initialRoute: PortableRoute = PortableRoute.BeersList,
   onClose: () -> Unit = {},
 ) {
+  val onNavigationEvent by rememberUpdatedState(host.onNavigationEvent)
   val navigation =
     remember(repository, pagerFactory, coroutineDispatcher) {
-      SharedAppNavigationState(repository, pagerFactory, coroutineDispatcher, initialRoute)
+      SharedAppNavigationState(
+        repository,
+        pagerFactory,
+        coroutineDispatcher,
+        initialRoute,
+        onNavigationEvent = { onNavigationEvent(it) },
+      )
     }
   DisposableEffect(navigation) { onDispose { navigation.disposeAll() } }
   val coroutineScope = rememberCoroutineScope()
@@ -169,16 +177,13 @@ fun SharedAppShell(
   }
 
   fun pop() {
-    if (navigation.pop()) {
-      host.onNavigationEvent(SharedAppNavigationEvent.Pop(navigation.current.route))
-    } else {
+    if (!navigation.pop()) {
       onClose()
     }
   }
 
   fun navigate(next: PortableRoute) {
     navigation.navigate(next)
-    host.onNavigationEvent(SharedAppNavigationEvent.Push(navigation.current.route))
   }
 
   suspend fun savePreset(name: String, query: BeersQuery): Boolean {
@@ -212,7 +217,6 @@ fun SharedAppShell(
 
   fun applyPreset(preset: SavedFilterPreset) {
     navigation.selectSavedFilter(preset)
-    host.onNavigationEvent(SharedAppNavigationEvent.Push(navigation.current.route))
   }
 
   BillionBeersTheme(darkTheme = host.darkTheme) {
