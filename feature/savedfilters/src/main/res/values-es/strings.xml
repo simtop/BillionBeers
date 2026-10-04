@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="savedfilters_title">Filtros guardados</string>
+    <string name="savedfilters_empty">Aún no hay filtros guardados</string>
+    <string name="savedfilters_name">Nombre del filtro</string>
+    <string name="savedfilters_rename">Renombrar</string>
+    <string name="savedfilters_delete">Eliminar</string>
+    <string name="savedfilters_mutation_failed">No se pudo cambiar este filtro guardado. Inténtalo de nuevo.</string>
+</resources>

@@ -84,6 +84,7 @@ data class SharedAppStrings(
   val saveFilter: String,
   val filterPresetLimitReached: String,
   val saveFilterFailed: String,
+  val mutateFilterFailed: String,
   val filterNameHint: String,
   val renameFilter: String,
   val deleteFilter: String,
@@ -187,14 +188,15 @@ fun SharedAppShell(
     }
     val updatedAt = SystemEpochTimeProvider().epochMillis()
     return when (
-      val result = repository.saveFilterPreset(
-        SavedFilterPreset(
-          id = "preset-${normalizedName.hashCode()}-${query.hashCode()}",
-          name = normalizedName,
-          query = query,
-          updatedAt = updatedAt,
+      val result =
+        repository.saveFilterPreset(
+          SavedFilterPreset(
+            id = "preset-${normalizedName.hashCode()}-${query.hashCode()}",
+            name = normalizedName,
+            query = query,
+            updatedAt = updatedAt,
+          )
         )
-      )
     ) {
       is Either.Right -> true
       is Either.Left -> {
@@ -310,17 +312,21 @@ fun SharedAppShell(
                     normalizedName.isNotEmpty() &&
                       normalizedName.length <= SavedFilterPreset.MAX_NAME_LENGTH
                   ) {
-                    coroutineScope.launch {
+                    val result =
                       repository.renameFilterPreset(
                         preset.id,
                         normalizedName,
                         SystemEpochTimeProvider().epochMillis(),
                       )
-                    }
-                  }
+                    val succeeded = result is Either.Right
+                    if (!succeeded) message = strings.mutateFilterFailed
+                    succeeded
+                  } else false
                 },
                 onDelete = { preset ->
-                  coroutineScope.launch { repository.deleteFilterPreset(preset.id) }
+                  val succeeded = repository.deleteFilterPreset(preset.id) is Either.Right
+                  if (!succeeded) message = strings.mutateFilterFailed
+                  succeeded
                 },
               )
             is SearchEntry ->

@@ -1,6 +1,7 @@
 package com.simtop.beerdomain.fakes
 
 import com.simtop.beerdomain.domain.errors.FetchBeersError
+import com.simtop.beerdomain.domain.errors.MutateFilterPresetError
 import com.simtop.beerdomain.domain.errors.SaveFilterPresetError
 import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
 import com.simtop.beerdomain.domain.errors.UpdateFavoriteError
@@ -59,12 +60,21 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersReposit
     return Either.Right(Unit)
   }
 
-  override suspend fun renameFilterPreset(id: String, name: String, updatedAt: Long) {
+  var mutateFilterPresetError: MutateFilterPresetError? = null
+  var mutateFilterPresetException: Exception? = null
+
+  override suspend fun renameFilterPreset(id: String, name: String, updatedAt: Long): Either<MutateFilterPresetError, Unit> {
+    mutateFilterPresetException?.let { throw it }
+    mutateFilterPresetError?.let { return Either.Left(it) }
     presetsFlow.value = presetsFlow.value.map { if (it.id == id) it.copy(name = name, updatedAt = updatedAt) else it }
+    return Either.Right(Unit)
   }
 
-  override suspend fun deleteFilterPreset(id: String) {
+  override suspend fun deleteFilterPreset(id: String): Either<MutateFilterPresetError, Unit> {
+    mutateFilterPresetException?.let { throw it }
+    mutateFilterPresetError?.let { return Either.Left(it) }
     presetsFlow.value = presetsFlow.value.filterNot { it.id == id }
+    return Either.Right(Unit)
   }
 
   override fun observeBeers(): Flow<List<Beer>> {

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="savedfilters_title">Filtres enregistrés</string>
+    <string name="savedfilters_empty">Aucun filtre enregistré</string>
+    <string name="savedfilters_name">Nom du filtre</string>
+    <string name="savedfilters_rename">Renommer</string>
+    <string name="savedfilters_delete">Supprimer</string>
+    <string name="savedfilters_mutation_failed">Impossible de modifier ce filtre enregistré. Réessayez.</string>
+</resources>

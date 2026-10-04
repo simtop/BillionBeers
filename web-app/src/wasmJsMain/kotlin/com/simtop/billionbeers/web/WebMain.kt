@@ -398,6 +398,7 @@ private val webStrings =
     saveFilter = "Save",
     filterPresetLimitReached = "You can save up to 10 filters. Delete one before saving another.",
     saveFilterFailed = "The filter could not be saved.",
+    mutateFilterFailed = "This saved filter could not be changed. Try again.",
     filterNameHint = "Filter name",
     renameFilter = "Rename",
     deleteFilter = "Delete",

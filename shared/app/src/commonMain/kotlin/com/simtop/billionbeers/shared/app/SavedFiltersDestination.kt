@@ -12,19 +12,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
+import kotlinx.coroutines.launch
 
 @Composable
 internal fun SavedFiltersDestination(
   entry: SavedFiltersEntry,
   strings: SharedAppStrings,
   onApply: (SavedFilterPreset) -> Unit,
-  onRename: (SavedFilterPreset, String) -> Unit,
-  onDelete: (SavedFilterPreset) -> Unit,
+  onRename: suspend (SavedFilterPreset, String) -> Boolean,
+  onDelete: suspend (SavedFilterPreset) -> Boolean,
 ) {
   val presets by entry.presets.collectAsState(emptyList())
   LazyColumn(Modifier.padding(12.dp)) {
@@ -48,28 +50,41 @@ private fun SavedFilterRow(
   preset: SavedFilterPreset,
   strings: SharedAppStrings,
   onApply: (SavedFilterPreset) -> Unit,
-  onRename: (SavedFilterPreset, String) -> Unit,
-  onDelete: (SavedFilterPreset) -> Unit,
+  onRename: suspend (SavedFilterPreset, String) -> Boolean,
+  onDelete: suspend (SavedFilterPreset) -> Boolean,
 ) {
   var editing by rememberSaveable(preset.id) { mutableStateOf(false) }
   var name by rememberSaveable(preset.id, preset.name) { mutableStateOf(preset.name) }
+  var renaming by androidx.compose.runtime.remember { mutableStateOf(false) }
+  val scope = rememberCoroutineScope()
   if (editing) {
     Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
       OutlinedTextField(
         value = name,
         onValueChange = { value ->
+          if (renaming) return@OutlinedTextField
           if (value.length <= SavedFilterPreset.MAX_NAME_LENGTH) name = value
         },
         label = { Text(strings.filterNameHint) },
         modifier = Modifier.weight(1f),
         singleLine = true,
+        enabled = !renaming,
       )
       Button(
         onClick = {
-          onRename(preset, name)
-          editing = false
+          if (!renaming) {
+            renaming = true
+            scope.launch {
+              try {
+                if (onRename(preset, name)) editing = false
+              } finally {
+                renaming = false
+              }
+            }
+          }
         },
         modifier = Modifier.padding(start = 8.dp),
+        enabled = !renaming,
       ) {
         Text(strings.renameFilter)
       }
@@ -86,7 +101,7 @@ private fun SavedFilterRow(
         Text(strings.renameFilter)
       }
       Button(
-        onClick = { onDelete(preset) },
+        onClick = { scope.launch { onDelete(preset) } },
         modifier = Modifier.padding(start = 8.dp),
       ) {
         Text(strings.deleteFilter)

@@ -5,6 +5,7 @@ import com.simtop.beer_network.remotesources.BeersRemoteSource
 import com.simtop.beer_storage.api.BeersStorage
 import com.simtop.beer_storage.api.FilterPresetCapacityReachedException
 import com.simtop.beerdomain.domain.errors.FetchBeersError
+import com.simtop.beerdomain.domain.errors.MutateFilterPresetError
 import com.simtop.beerdomain.domain.errors.SaveFilterPresetError
 import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
 import com.simtop.beerdomain.domain.errors.UpdateFavoriteError
@@ -165,9 +166,23 @@ class BeersRepositoryImpl(
     }
 
   override suspend fun renameFilterPreset(id: String, name: String, updatedAt: Long) =
-    beersStorage.renameFilterPreset(id, name, updatedAt)
+    mutateFilterPreset { beersStorage.renameFilterPreset(id, name, updatedAt) }
 
-  override suspend fun deleteFilterPreset(id: String) = beersStorage.deleteFilterPreset(id)
+  override suspend fun deleteFilterPreset(id: String) =
+    mutateFilterPreset { beersStorage.deleteFilterPreset(id) }
+
+  @Suppress("TooGenericExceptionCaught")
+  private suspend inline fun mutateFilterPreset(
+    mutation: () -> Unit
+  ): Either<MutateFilterPresetError, Unit> =
+    try {
+      mutation()
+      Either.Right(Unit)
+    } catch (e: CancellationException) {
+      throw e
+    } catch (e: Exception) {
+      Either.Left(MutateFilterPresetError.Unknown(e))
+    }
 
   override fun observeBeers(): Flow<List<Beer>> =
     beersStorage.observeBeers().map { list ->

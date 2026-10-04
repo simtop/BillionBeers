@@ -13,12 +13,17 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -43,6 +48,8 @@ import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import com.simtop.presentation_utils.custom_views.ComposeErrorView
 import dev.zacsweers.metrox.viewmodel.assistedMetroViewModel
 import dev.zacsweers.metrox.viewmodel.metroViewModel
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,6 +59,11 @@ fun SavedFiltersScreen(
   viewModel: SavedFiltersViewModel = metroViewModel(),
 ) {
   val presets by viewModel.presets.collectAsState()
+  val mutationFailedMessage = stringResource(R.string.savedfilters_mutation_failed)
+  val snackbarHostState = remember { SnackbarHostState() }
+  LaunchedEffect(viewModel, mutationFailedMessage) {
+    viewModel.mutationFailed.collect { snackbarHostState.showSnackbar(mutationFailedMessage) }
+  }
   SavedFiltersContent(
     presets = presets,
     onApply = { preset ->
@@ -65,6 +77,7 @@ fun SavedFiltersScreen(
         )
       )
     },
+    snackbarHostState = snackbarHostState,
     onRename = viewModel::rename,
     onDelete = viewModel::delete,
     modifier = modifier,
@@ -73,16 +86,19 @@ fun SavedFiltersScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@Suppress("LongParameterList")
 fun SavedFiltersContent(
   presets: List<SavedFilterPreset>,
   onApply: (SavedFilterPreset) -> Unit,
-  onRename: (SavedFilterPreset, String) -> Unit,
-  onDelete: (SavedFilterPreset) -> Unit,
+  onRename: suspend (SavedFilterPreset, String) -> Boolean,
+  onDelete: suspend (SavedFilterPreset) -> Boolean,
   modifier: Modifier = Modifier,
+  snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
   Scaffold(
     modifier = modifier,
     topBar = { TopAppBar(title = { Text(stringResource(R.string.savedfilters_title)) }) },
+    snackbarHost = { SnackbarHost(snackbarHostState) },
   ) { paddingValues ->
     LazyColumn(Modifier.fillMaxSize().padding(paddingValues).padding(12.dp)) {
       if (presets.isEmpty()) {
@@ -100,28 +116,41 @@ fun SavedFiltersContent(
 private fun SavedFilterRow(
   preset: SavedFilterPreset,
   onApply: (SavedFilterPreset) -> Unit,
-  onRename: (SavedFilterPreset, String) -> Unit,
-  onDelete: (SavedFilterPreset) -> Unit,
+  onRename: suspend (SavedFilterPreset, String) -> Boolean,
+  onDelete: suspend (SavedFilterPreset) -> Boolean,
 ) {
   var editing by rememberSaveable(preset.id) { mutableStateOf(false) }
   var name by rememberSaveable(preset.id, preset.name) { mutableStateOf(preset.name) }
+  var renaming by remember { mutableStateOf(false) }
+  val scope = rememberCoroutineScope()
   if (editing) {
     Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
       OutlinedTextField(
         value = name,
         onValueChange = { value ->
+          if (renaming) return@OutlinedTextField
           if (value.length <= SavedFilterPreset.MAX_NAME_LENGTH) name = value
         },
         label = { Text(stringResource(R.string.savedfilters_name)) },
         modifier = Modifier.weight(1f),
         singleLine = true,
+        enabled = !renaming,
       )
       Button(
         onClick = {
-          onRename(preset, name)
-          editing = false
+          if (!renaming) {
+            renaming = true
+            scope.launch {
+              try {
+                if (onRename(preset, name)) editing = false
+              } finally {
+                renaming = false
+              }
+            }
+          }
         },
         modifier = Modifier.padding(start = 8.dp),
+        enabled = !renaming,
       ) {
         Text(stringResource(R.string.savedfilters_rename))
       }
@@ -138,7 +167,9 @@ private fun SavedFilterRow(
         Text(stringResource(R.string.savedfilters_rename))
       }
       Button(
-        onClick = { onDelete(preset) },
+        onClick = {
+          scope.launch { onDelete(preset) }
+        },
         modifier = Modifier.padding(start = 8.dp),
       ) {
         Text(stringResource(R.string.savedfilters_delete))
@@ -242,6 +273,6 @@ internal fun SavedFiltersPreview(
   @PreviewParameter(SavedFiltersPreviewProvider::class) presets: List<SavedFilterPreset>
 ) {
   BillionBeersTheme {
-    SavedFiltersContent(presets, onApply = {}, onRename = { _, _ -> }, onDelete = {})
+    SavedFiltersContent(presets, onApply = {}, onRename = { _, _ -> false }, onDelete = { false })
   }
 }
