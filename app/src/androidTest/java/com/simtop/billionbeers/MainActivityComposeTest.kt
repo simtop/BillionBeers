@@ -1,6 +1,15 @@
 package com.simtop.billionbeers
 
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_EXPANDED_LOWER_BOUND
 import com.simtop.beerdomain.domain.models.Beer
@@ -8,13 +17,18 @@ import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.billionbeers.di.BaseAppGraph
 import com.simtop.billionbeers.di.FakeBeersRepositoryModule
+import com.simtop.billionbeers.fakes.FakeSplitInstallManager
+import com.simtop.billionbeers.presentation.MainActivity
 import com.simtop.billionbeers.utils.browseScreen
 import com.simtop.billionbeers.utils.detailScreen
 import com.simtop.billionbeers.utils.homeScreen
 import com.simtop.billionbeers.utils.runMainActivityTest
 import com.simtop.billionbeers.utils.searchScreen
 import com.simtop.core.core.Either
+import com.simtop.navigation.DynamicFeature
 import dev.zacsweers.metro.createGraphFactory
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertSame
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
@@ -23,6 +37,7 @@ import org.junit.Test
 class MainActivityComposeTest {
 
   @get:Rule val composeTestRule = createEmptyComposeRule()
+  private lateinit var fakeSplitInstallManager: FakeSplitInstallManager
 
   private val fakeBeer =
     Beer(
@@ -66,8 +81,98 @@ class MainActivityComposeTest {
     FakeBeersRepositoryModule.fakeBeersRepository.breweries = Either.Right(listOf(fakeBrewery))
     val testGraph =
       createGraphFactory<TestAppGraph.Factory>().create(context = context) as BaseAppGraph
+    fakeSplitInstallManager =
+      (testGraph.splitInstallManager as FakeSplitInstallManager).also { it.reset() }
 
     app.activateAppGraph(testGraph)
+  }
+
+  @Test
+  fun repeatedFavoritesDeepLinkReturnsToFavoritesInTheSameActivity() {
+    val link = deepLinkIntent("billionbeers://favorites")
+    ActivityScenario.launch<MainActivity>(link).use { scenario ->
+      lateinit var originalActivity: MainActivity
+      scenario.onActivity { originalActivity = it }
+      assertSelectedTab("favorites_tab")
+      composeTestRule.onNodeWithTag("home_tab").performClick()
+      assertSelectedTab("home_tab")
+
+      scenario.onActivity { it.startActivity(Intent(link).setFlags(0)) }
+      composeTestRule.waitForIdle()
+      assertSelectedTab("favorites_tab")
+      scenario.onActivity { assertSame(originalActivity, it) }
+    }
+  }
+
+  @Test
+  fun consumedDeepLinkDoesNotOverrideNavigationAfterRecreation() {
+    val link = deepLinkIntent("billionbeers://favorites")
+    ActivityScenario.launch<MainActivity>(link).use { scenario ->
+      assertSelectedTab("favorites_tab")
+      composeTestRule.onNodeWithTag("home_tab").performClick()
+      assertSelectedTab("home_tab")
+
+      scenario.recreate()
+      composeTestRule.waitForIdle()
+      assertSelectedTab("home_tab")
+
+      scenario.onActivity { it.startActivity(Intent(link).setFlags(0)) }
+      composeTestRule.waitForIdle()
+      assertSelectedTab("favorites_tab")
+    }
+  }
+
+  @Test
+  fun repeatedCachedBeerDeepLinkReopensDetailAfterBack() {
+    val link = deepLinkIntent("billionbeers://beers/${fakeBeer.id}")
+    ActivityScenario.launch<MainActivity>(link).use { scenario ->
+      composeTestRule.detailScreen {
+        waitUntilNodeWithTextIsDisplayed(fakeBeer.description)
+        navigateBack()
+      }
+      composeTestRule.homeScreen { waitUntilNodeWithTextIsDisplayed(fakeBeer.name) }
+
+      scenario.onActivity { it.startActivity(Intent(link).setFlags(0)) }
+      composeTestRule.detailScreen {
+        waitUntilNodeWithTextIsDisplayed(fakeBeer.description)
+        assertBeerDetailIsDisplayed(fakeBeer.name, fakeBeer.description)
+        navigateBack()
+      }
+      assertSelectedTab("home_tab")
+    }
+  }
+
+  @Test
+  fun cachedBeerDeepLinkDoesNotBypassAMissingDetailSplit() {
+    fakeSplitInstallManager.failInstallOf(DynamicFeature.BeerDetail.moduleName)
+    val link = deepLinkIntent("billionbeers://beers/${fakeBeer.id}")
+    ActivityScenario.launch<MainActivity>(link).use {
+      val failureMessage =
+        InstrumentationRegistry.getInstrumentation()
+          .targetContext
+          .getString(com.simtop.presentation_utils.R.string.failed_to_install_feature)
+      composeTestRule.homeScreen { waitUntilNodeWithTextIsDisplayed(failureMessage) }
+      composeTestRule.onNodeWithText(fakeBeer.description).assertDoesNotExist()
+      assertEquals(
+        listOf(DynamicFeature.BeerDetail.moduleName),
+        fakeSplitInstallManager.requestedModules,
+      )
+    }
+  }
+
+  private fun deepLinkIntent(uri: String): Intent =
+    Intent(
+      Intent.ACTION_VIEW,
+      Uri.parse(uri),
+      InstrumentationRegistry.getInstrumentation().targetContext,
+      MainActivity::class.java,
+    )
+
+  private fun assertSelectedTab(tag: String) {
+    composeTestRule.waitUntil(timeoutMillis = 5_000) {
+      composeTestRule.onAllNodes(hasTestTag(tag) and isSelected()).fetchSemanticsNodes().size == 1
+    }
+    composeTestRule.onNodeWithTag(tag).assertIsSelected()
   }
 
   @Test

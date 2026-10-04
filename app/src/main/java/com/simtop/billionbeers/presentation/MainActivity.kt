@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -27,9 +28,9 @@ class MainActivity : ComponentActivity() {
 
   lateinit var splitInstallManager: SplitInstallManager
 
-  // Holds the current deep link Uri as Compose state so both a cold start (onCreate) and a
-  // deep link arriving while already running (onNewIntent) feed AppNavigation the same way.
+  // URI equality does not identify a delivery: an identical warm link is still a new request.
   private var deepLinkUri by mutableStateOf<android.net.Uri?>(null)
+  private var deepLinkDeliveryId by mutableLongStateOf(0L)
 
   override fun onCreate(savedInstanceState: Bundle?) {
     installSplashScreen()
@@ -40,14 +41,22 @@ class MainActivity : ComponentActivity() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
       window.isNavigationBarContrastEnforced = false
     }
-    deepLinkUri = intent?.data
+    if (savedInstanceState?.getBoolean(DEEP_LINK_CONSUMED) != true) {
+      deepLinkUri = intent?.data
+    }
     setContent {
       CompositionLocalProvider(
         LocalMetroViewModelFactory provides appGraph.metroViewModelFactory,
         LocalSplitInstallManager provides splitInstallManager,
       ) {
         BillionBeersTheme(darkTheme = isDarkTheme(appGraph.themeController)) {
-          DebugDrawerHost(appGraph = appGraph) { AppNavigation(deepLinkUri = deepLinkUri) }
+          DebugDrawerHost(appGraph = appGraph) {
+            AppNavigation(
+              deepLinkUri = deepLinkUri,
+              deepLinkDeliveryId = deepLinkDeliveryId,
+              onDeepLinkConsumed = ::consumeDeepLink,
+            )
+          }
         }
       }
     }
@@ -56,7 +65,23 @@ class MainActivity : ComponentActivity() {
   override fun onNewIntent(intent: Intent) {
     super.onNewIntent(intent)
     setIntent(intent)
+    deepLinkDeliveryId++
     deepLinkUri = intent.data
+  }
+
+  override fun onSaveInstanceState(outState: Bundle) {
+    // Do not replay the Activity's old Intent over the user's restored navigation stack.
+    outState.putBoolean(DEEP_LINK_CONSUMED, deepLinkUri == null)
+    super.onSaveInstanceState(outState)
+  }
+
+  private fun consumeDeepLink(deliveryId: Long) {
+    // A suspended lookup for an older request must not clear a newer delivery.
+    if (deliveryId == deepLinkDeliveryId) deepLinkUri = null
+  }
+
+  private companion object {
+    const val DEEP_LINK_CONSUMED = "deep_link_consumed"
   }
 }
 

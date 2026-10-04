@@ -100,8 +100,13 @@ without introducing a global lifecycle registry or a second persistence format.
 
 ### N3-4 — Android dynamic-feature failure and restoration proof
 
-**Evidence status:** Installer state transitions and successful host journeys are proven, but
-end-to-end Play cancellation/failure and Activity-recreation behavior remain unproven and deferred.
+**Evidence status:** Installer state transitions and successful host journeys are proven. Android
+host tests also exercise repeated identical Favorites/cached-detail links, consumed-link Activity
+recreation, and a cached external detail link whose missing split returns an injected network
+failure. The failure test verifies the module request and visible feedback without rendering detail.
+These API 35 phone-emulator results do not prove end-to-end Play cancellation/failure, pending
+installation across Activity recreation, process death, or expanded-layout deep-link delivery;
+those remain unproven and deferred.
 
 **Question:** Does a Navigation 3 route adapter preserve Android's on-demand delivery boundary when
 installation is cancelled or fails during navigation and when the activity is recreated?

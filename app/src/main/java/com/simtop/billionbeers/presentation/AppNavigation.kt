@@ -51,6 +51,8 @@ import dev.zacsweers.metrox.viewmodel.metroViewModel
 fun AppNavigation(
   modifier: Modifier = Modifier,
   deepLinkUri: Uri? = null,
+  deepLinkDeliveryId: Long = 0L,
+  onDeepLinkConsumed: (Long) -> Unit = {},
   viewModel: AppNavigationViewModel = metroViewModel(),
 ) {
   val backStack = rememberNavBackStack(BeersList)
@@ -71,21 +73,11 @@ fun AppNavigation(
     navigate(BeerDetail(beer))
   }
 
-  LaunchedEffect(deepLinkUri) {
-    when (val destination = deepLinkUri?.toDeepLinkDestination()) {
-      null -> Unit
-      DeepLinkDestination.BeersList -> {
-        backStack.clear()
-        backStack.add(BeersList)
-      }
-      DeepLinkDestination.Favorites -> {
-        backStack.clear()
-        backStack.add(Favorites)
-      }
-      // An unresolvable beer id stays on the current screen.
-      is DeepLinkDestination.BeerDetail ->
-        viewModel.resolveBeer(destination.beerId)?.let(::navigateToBeerDetail)
-    }
+  LaunchedEffect(deepLinkUri, deepLinkDeliveryId) {
+    val uri = deepLinkUri ?: return@LaunchedEffect
+    handleDeepLink(uri, backStack, viewModel, ::navigateToBeerDetail)
+    // Handoff to the split navigator consumes the request; it owns any pending installation.
+    onDeepLinkConsumed(deepLinkDeliveryId)
   }
 
   val selectedTab = backStack.firstOrNull()
@@ -197,6 +189,28 @@ fun AppNavigation(
           }
         },
     )
+  }
+}
+
+private suspend fun handleDeepLink(
+  uri: Uri,
+  backStack: MutableList<NavKey>,
+  viewModel: AppNavigationViewModel,
+  navigateToBeerDetail: (Beer) -> Unit,
+) {
+  when (val destination = uri.toDeepLinkDestination()) {
+    null -> Unit
+    DeepLinkDestination.BeersList -> {
+      backStack.clear()
+      backStack.add(BeersList)
+    }
+    DeepLinkDestination.Favorites -> {
+      backStack.clear()
+      backStack.add(Favorites)
+    }
+    // An unresolvable beer id stays on the current screen.
+    is DeepLinkDestination.BeerDetail ->
+      viewModel.resolveBeer(destination.beerId)?.let(navigateToBeerDetail)
   }
 }
 
