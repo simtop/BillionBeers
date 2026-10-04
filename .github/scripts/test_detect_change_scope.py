@@ -101,6 +101,25 @@ with tempfile.TemporaryDirectory() as temporary:
         "web": "false",
     }
 
+    (repository / "scripts").mkdir()
+    before_head = common_head
+    for verifier, owner in (
+        ("verify-release-smoke-artifacts.sh", "instrumented"),
+        ("verify_web_release_artifacts.py", "web"),
+        ("test_verify_web_release_artifacts.py", "web"),
+    ):
+        (repository / "scripts" / verifier).write_text("verifier change\n")
+        verifier_head = commit(repository, f"change {verifier}")
+        expected = {lane: "false" for lane in ("unit", "screenshot", "instrumented", "native", "web")}
+        expected[owner] = "true"
+        # An isolated verifier PR must be treated as code, with first-run fail-open coverage.
+        opened_result = run_detector(repository, event="pull_request", action="opened", base=before_head)
+        assert opened_result == {lane: "true" for lane in expected}, (verifier, opened_result)
+        # A prior green verdict must not be adopted after changing its verifier.
+        result = run_detector(repository, event="pull_request", action="synchronize", base=base, before=before_head, after=verifier_head, jobs=jobs)
+        assert result == expected, (verifier, result)
+        before_head = verifier_head
+
 workflow = (ROOT / ".github/workflows/ci.yml").read_text()
 report_workflow = (ROOT / ".github/workflows/ci-report.yml").read_text()
 producer_name = next(line.removeprefix("name: ").strip() for line in workflow.splitlines() if line.startswith("name:"))
