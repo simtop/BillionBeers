@@ -21,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,10 +54,13 @@ import com.simtop.navigation.contract.PortableRoute
 import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import org.jetbrains.skia.Image as SkiaImage
 import org.w3c.dom.events.Event
@@ -149,15 +153,16 @@ private class WebRouteSession(
   private val runtime: WebDataRuntime,
   private val scope: CoroutineScope,
 ) {
-  private val routeRequests = MutableSharedFlow<PortableRoute>(extraBufferCapacity = 1)
+  private val routeRequests = Channel<PortableRoute>(Channel.BUFFERED)
+  private val routeFlow = routeRequests.receiveAsFlow()
+  private val resolutionState = MutableStateFlow<WebRouteResolution?>(null)
+  val resolution = resolutionState.asStateFlow()
   private var closed = false
   private var listener: ((Event) -> Unit)? = null
   private var lastObservedHash: String? = null
+  private var resolutionJob: Job? = null
 
-  fun routes() = routeRequests.asSharedFlow()
-
-  suspend fun initialRoute(): PortableRoute =
-    resolveWebHash(window.location.hash, runtime.repository)
+  fun routes() = routeFlow
 
   fun onNavigationEvent(event: SharedAppNavigationEvent) {
     if (closed) return
@@ -179,23 +184,45 @@ private class WebRouteSession(
     if (!closed) window.history.back()
   }
 
-  fun markObservedHash() {
+  private fun markObservedHash() {
+    resolutionJob?.cancel()
     lastObservedHash = window.location.hash
   }
 
   fun start() {
+    if (closed || listener != null) return
     val callback: (Event) -> Unit = {
       val hash = window.location.hash
       if (hash != lastObservedHash) {
-        lastObservedHash = hash
-        scope.launch {
-          if (!closed) routeRequests.emit(resolveWebHash(hash, runtime.repository))
-        }
+        requestRoute(hash)
       }
     }
     listener = callback
     window.addEventListener("hashchange", callback)
     window.addEventListener("popstate", callback)
+    requestRoute(window.location.hash, canonicalize = true)
+  }
+
+  fun openCatalog() {
+    if (closed) return
+    // Replace the unavailable entry so recovery cannot loop back to the same missing link.
+    window.history.replaceState(null, "", PortableRoute.BeersList.toWebHash())
+    requestRoute(window.location.hash)
+  }
+
+  private fun requestRoute(hash: String, canonicalize: Boolean = false) {
+    lastObservedHash = hash
+    resolutionJob?.cancel()
+    resolutionJob = scope.launch {
+      val result = resolveWebHash(hash, runtime.repository::getBeerById)
+      if (closed || window.location.hash != hash) return@launch
+      if (canonicalize && result is WebRouteResolution.Ready) {
+        window.history.replaceState(null, "", result.route.toWebHash())
+        lastObservedHash = window.location.hash
+      }
+      resolutionState.value = result
+      if (result is WebRouteResolution.Ready) routeRequests.send(result.route)
+    }
   }
 
   fun close() {
@@ -207,59 +234,33 @@ private class WebRouteSession(
     }
     runtime.close()
     scope.cancel()
+    routeRequests.close()
   }
-}
-
-private suspend fun resolveWebHash(
-  hash: String,
-  repository: com.simtop.beerdomain.domain.repositories.BeersRepository,
-): PortableRoute =
-  when (val destination = parseWebHash(hash)) {
-    WebRouteDestination.Catalog,
-    null -> PortableRoute.BeersList
-    WebRouteDestination.Favorites -> PortableRoute.Favorites
-    WebRouteDestination.Search -> PortableRoute.BeersSearch
-    WebRouteDestination.SavedFilters -> PortableRoute.SavedFilterPresets
-    WebRouteDestination.Browse -> PortableRoute.BeerBrowse
-    is WebRouteDestination.BrowseSelection ->
-      PortableRoute.BeerBrowseSelection(
-        category =
-          when (destination.kind) {
-            WebRouteDestination.BrowseSelection.Kind.Style ->
-              com.simtop.navigation.contract.BrowseCategory.Style(destination.id, destination.id)
-            WebRouteDestination.BrowseSelection.Kind.Brewery ->
-              com.simtop.navigation.contract.BrowseCategory.Brewery(destination.id, destination.id)
-          }
-      )
-    is WebRouteDestination.BeerDetail ->
-      repository.getBeerById(destination.id)?.let(PortableRoute::BeerDetail)
-        ?: PortableRoute.BeersList
-  }
-
-private suspend fun WebRouteSession.initialRouteAndStart(): PortableRoute {
-  val route = initialRoute()
-  if (window.location.hash != route.toWebHash()) {
-    window.history.replaceState(null, "", route.toWebHash())
-  }
-  markObservedHash()
-  start()
-  return route
 }
 
 @Composable
 private fun WebShell(runtime: WebDataRuntime, session: WebRouteSession) {
-  var initialRoute by remember { mutableStateOf<PortableRoute?>(null) }
-  LaunchedEffect(Unit) { initialRoute = session.initialRouteAndStart() }
-  val route = initialRoute ?: return
-  SharedAppShell(
-    repository = runtime.repository,
-    pagerFactory = runtime.pagerFactory,
-    coroutineDispatcher = com.simtop.core.core.DefaultCoroutineDispatcherProvider(),
-    strings = webStrings,
-    initialRoute = route,
-    host = webHost(runtime, session),
-    onClose = session::goBack,
-  )
+  val resolution by session.resolution.collectAsState()
+  // The graph's unscoped pager-factory getter creates a new instance on every access.
+  // Keep shell dependencies stable while external route resolution recomposes this host.
+  val repository = remember(runtime) { runtime.repository }
+  val pagerFactory = remember(runtime) { runtime.pagerFactory }
+  val coroutineDispatcher = remember { com.simtop.core.core.DefaultCoroutineDispatcherProvider() }
+  LaunchedEffect(session) { session.start() }
+  when (val current = resolution) {
+    null -> WebStartupLoading()
+    is WebRouteResolution.MissingBeer -> WebMissingBeer(onOpenCatalog = session::openCatalog)
+    is WebRouteResolution.Ready ->
+      SharedAppShell(
+        repository = repository,
+        pagerFactory = pagerFactory,
+        coroutineDispatcher = coroutineDispatcher,
+        strings = webStrings,
+        initialRoute = current.route,
+        host = webHost(runtime, session),
+        onClose = session::goBack,
+      )
+  }
 }
 
 private fun webHost(runtime: WebDataRuntime, session: WebRouteSession) =

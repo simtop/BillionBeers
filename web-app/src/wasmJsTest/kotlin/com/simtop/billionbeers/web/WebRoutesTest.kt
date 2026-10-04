@@ -7,8 +7,44 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.test.runTest
 
 class WebRoutesTest {
+
+  @Test
+  fun missingLocalBeerIsAnExplicitOutcome() = runTest {
+    val lookups = mutableListOf<String>()
+    val resolution =
+      resolveWebHash("#beer/beer-42") { id ->
+        lookups += id
+        null
+      }
+
+    assertEquals(WebRouteResolution.MissingBeer("beer-42"), resolution)
+    assertEquals(listOf("beer-42"), lookups)
+  }
+
+  @Test
+  fun cachedBeerResolvesToDetailWithoutChangingItsId() = runTest {
+    val beer = Beer.empty.copy(id = "beer-42", name = "Cached beer")
+    val resolution = resolveWebHash("#beer/beer-42") { beer }
+
+    assertEquals(WebRouteResolution.Ready(PortableRoute.BeerDetail(beer)), resolution)
+  }
+
+  @Test
+  fun malformedOrNonDetailLinksDoNotLookUpABeer() = runTest {
+    for (hash in listOf("#beer/", "#beer/42/extra", "#unknown", "#catalog")) {
+      assertEquals(
+        WebRouteResolution.Ready(PortableRoute.BeersList),
+        resolveWebHash(hash) { error("Unexpected beer lookup for $hash") },
+      )
+    }
+    assertEquals(
+      WebRouteResolution.Ready(PortableRoute.Favorites),
+      resolveWebHash("#favorites") { error("Unexpected beer lookup") },
+    )
+  }
 
   @Test
   fun supportedHashesMapToKnownDestinations() {

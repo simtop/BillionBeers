@@ -29,8 +29,10 @@ For the CI-equivalent browser and static-output verification, run:
 make web-verify
 ```
 
-This runs the Web browser tests, builds `wasmJsBrowserDistribution`, copies the current HTML
-bootstrap into the exact production output, verifies that every JavaScript-referenced Wasm asset is
+This runs the Web browser tests, builds `wasmJsBrowserDistribution`, and verifies Gradle's final
+`web-app/build/dist/wasmJs/productionExecutable` output, including Compose resources. The intermediate
+Webpack directory omits those resources and is not the distribution to publish. The command copies
+the current HTML bootstrap into the final output, verifies that every JavaScript-referenced Wasm asset is
 present, and boots that output in the packaged-production smoke. The smoke serves the bundle under a
 non-root path and checks compact/wide root and canvas bounds plus deterministic fixture content. Set
 `WEB_SMOKE_BROWSER` (or `CHROME_BIN`) when the browser executable is not discoverable on `PATH`.
@@ -89,15 +91,32 @@ The host uses hash routes so local development does not require server rewrite r
 - `#beer/<id>`
 
 Only the route kind and stable ID are public; whole beer records are never serialized into
-URLs. A beer detail route is resolved through the local IndexedDB-backed repository. A missing
-cached ID, malformed hash, or unsupported route is canonicalized to `#catalog` with
-`replaceState`, without a remote detail request. Browse category hashes retain the category kind
+URLs. A beer detail route is resolved through the local IndexedDB-backed repository. An uncached ID
+keeps its `#beer/<id>` URL and displays **Beer unavailable**, an explanation, and **Open catalog**.
+The page's title, explanation and button use Compose resources in English, French and Spanish,
+selected by browser locale; other locales fall back to English. This does not localize the rest of
+the existing English Web shell. Opening Catalog replaces the unavailable history entry, so recovery
+does not create a Back loop. No API request occurs for a cold missing-beer entry until recovery.
+Malformed or unsupported routes still canonicalize to `#catalog` on startup, without a remote
+detail request. Browse category hashes retain the category kind
 and ID, using the ID as a deterministic cold-link title until browse metadata is available.
 
 The shared shell emits explicit `Push`, `Pop`, and `Replace` events. User pushes use
 `history.pushState`, app Back requests browser traversal with `history.back()`, and browser
 `popstate`/`hashchange` events enter the shell without writing another history entry. Duplicate
 browser notifications are suppressed so browser history remains the single traversal authority.
+External requests use a buffered channel while the shell is absent on the missing-beer page. The
+shell's dependencies remain stable across route-resolution recomposition, and superseded local
+lookups are cancelled and checked against the current URL before publishing. Visiting an unavailable
+entry disposes the shared shell; returning reconstructs the requested URL from local data rather than
+promising restoration of unsaved drafts or scroll position across that entry.
+
+The packaged smoke exercises uncached entry/reload in all three copy languages, zero API requests
+before recovery, cached-detail reload, and warm missing-link Back/Forward/recovery alongside the
+existing style-category journey. Its report records the exact Kotlin `wasmExports` memory-access
+deprecation message as a known warning; every other console message or runtime exception still fails.
+This compatibility warning remains a dependency/toolchain follow-up, not a claim of warning-free
+runtime behavior.
 
 ## Lifecycle and images
 

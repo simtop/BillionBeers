@@ -46,8 +46,12 @@ matrix. The packaged Web smoke now exercises style-category selection, detail, i
 Back/Forward, and category reload against deterministic API fixtures in local Chromium. Shared
 navigation actions notify the host after their stack transition; host restoration does not echo an
 event. This repairs the missing category history entry and stale observed-hash bookkeeping after
-`pushState`. Missing-cache behavior on a real cold detail journey remains deferred until that host
-acceptance journey is exercised; this category proof does not close N3-1.
+`pushState`. The packaged smoke now also exercises cold uncached detail entry and English/French/Spanish
+reloads without API requests before recovery, cached-detail reload, and warm missing-detail
+Back/Forward/recovery. The unavailable entry retains its URL, shows translated explanation and an
+Open catalog action, and recovery replaces that history entry. Gradle's final distribution supplies
+the Compose resources. This closes the bounded local missing-beer outcome; deployed origins, other
+browsers, category-data absence, URL-length extremes and broader accessibility remain unproven.
 
 **Question:** Can a portable route enter the Web application directly, reload safely, and produce an
 explicit result when the route refers to data that is not in the local cache?

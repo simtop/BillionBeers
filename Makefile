@@ -55,7 +55,8 @@ GRADLE_RUNNER ?= $(shell if command -v rtk >/dev/null 2>&1; then echo "rtk gradl
 IOS_HOST_DESTINATION ?= platform=iOS Simulator,name=iPhone 17 Pro,OS=26.4
 IOS_SIMULATOR_CONFIDENCE_DIR ?= iosApp/build/ios-simulator-confidence
 NODE_BIN_DIR ?= $(shell node_path="$$(command -v node 2>/dev/null || true)"; if [ -n "$$node_path" ]; then dirname "$$node_path"; else printf '%s' /opt/homebrew/bin; fi)
-WEB_DISTRIBUTION_DIR ?= web-app/build/kotlin-webpack/wasmJs/productionExecutable
+# The final distribution includes Compose resources; the intermediate Webpack output does not.
+WEB_DISTRIBUTION_DIR ?= web-app/build/dist/wasmJs/productionExecutable
 WEB_RELEASE_CONFIDENCE_DIR ?= web-app/build/web-release-confidence
 DESKTOP_APP_DIR ?= desktop-app/build/compose/binaries/main/app/BillionBeers.app
 DESKTOP_DMG_DIR ?= desktop-app/build/compose/binaries/main/dmg
@@ -167,7 +168,8 @@ web-verify: ## Run Web browser tests and verify the production static distributi
 	python3 scripts/test_verify_web_static.py
 	python3 scripts/test_verify_web_release_artifacts.py
 	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) :web-app:wasmJsBrowserTest --continue
-	rm -f "$(WEB_DISTRIBUTION_DIR)/index.html"
+	# Remove the legacy bootstrap from Webpack output; Gradle also copies the resource entrypoint.
+	rm -f web-app/build/kotlin-webpack/wasmJs/productionExecutable/index.html
 	PATH="$(NODE_BIN_DIR):$$PATH" $(GRADLE_RUNNER) :web-app:wasmJsBrowserDistribution
 	install -m 644 web-app/src/wasmJsMain/resources/index.html "$(WEB_DISTRIBUTION_DIR)/index.html"
 	python3 scripts/verify_web_static.py "$(WEB_DISTRIBUTION_DIR)"

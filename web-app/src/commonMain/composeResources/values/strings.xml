@@ -1,0 +1,5 @@
+<resources>
+    <string name="web_missing_beer_title">Beer unavailable</string>
+    <string name="web_missing_beer_message">This browser has not loaded this beer yet. Open the catalog to find beers.</string>
+    <string name="web_open_catalog">Open catalog</string>
+</resources>
