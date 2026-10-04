@@ -1,6 +1,43 @@
 package com.simtop.billionbeers.web
 
+import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.navigation.contract.BrowseCategory
 import com.simtop.navigation.contract.PortableRoute
+
+internal sealed interface WebRouteResolution {
+  data class Ready(val route: PortableRoute) : WebRouteResolution
+
+  data class MissingBeer(val id: String) : WebRouteResolution
+}
+
+/** External detail links only resolve locally; an absent record is a visible host outcome. */
+internal suspend fun resolveWebHash(
+  hash: String,
+  findLocalBeer: suspend (String) -> Beer?,
+): WebRouteResolution =
+  when (val destination = parseWebHash(hash)) {
+    WebRouteDestination.Catalog,
+    null -> WebRouteResolution.Ready(PortableRoute.BeersList)
+    WebRouteDestination.Favorites -> WebRouteResolution.Ready(PortableRoute.Favorites)
+    WebRouteDestination.Search -> WebRouteResolution.Ready(PortableRoute.BeersSearch)
+    WebRouteDestination.SavedFilters -> WebRouteResolution.Ready(PortableRoute.SavedFilterPresets)
+    WebRouteDestination.Browse -> WebRouteResolution.Ready(PortableRoute.BeerBrowse)
+    is WebRouteDestination.BrowseSelection ->
+      WebRouteResolution.Ready(
+        PortableRoute.BeerBrowseSelection(
+          category =
+            when (destination.kind) {
+              WebRouteDestination.BrowseSelection.Kind.Style ->
+                BrowseCategory.Style(destination.id, destination.id)
+              WebRouteDestination.BrowseSelection.Kind.Brewery ->
+                BrowseCategory.Brewery(destination.id, destination.id)
+            }
+        )
+      )
+    is WebRouteDestination.BeerDetail ->
+      findLocalBeer(destination.id)?.let { WebRouteResolution.Ready(PortableRoute.BeerDetail(it)) }
+        ?: WebRouteResolution.MissingBeer(destination.id)
+  }
 
 internal sealed interface WebRouteDestination {
   data object Catalog : WebRouteDestination

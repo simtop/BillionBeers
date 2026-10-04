@@ -6,7 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { spawn } = require('node:child_process');
 
-const distribution = path.resolve(process.argv[2] || 'web-app/build/kotlin-webpack/wasmJs/productionExecutable');
+const distribution = path.resolve(process.argv[2] || 'web-app/build/dist/wasmJs/productionExecutable');
 const prefix = '/web-smoke/';
 const browserCandidates = [
   '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser',
@@ -33,6 +33,7 @@ if (!browser) {
 const smokeEvidenceDir = process.env.WEB_SMOKE_ARTIFACT_DIR ? path.resolve(process.env.WEB_SMOKE_ARTIFACT_DIR) : null;
 const ANSI_PATTERN = /\x1b(?:\[[0-?]*[ -/]*[@-~]|\][^\x07]*(?:\x07|\x1b\\))/g;
 const RUNNER_PATH_PATTERN = /(?:\/Users|\/home|\/opt|\/private|\/tmp)\/[^\s,)]+/g;
+const WASM_MEMORY_DEPRECATION = 'Accessing `memory` via `wasmExports` is deprecated. Use `kotlin.wasm.unsafe.wasmMemory` or update dependencies. Read more: https://kotl.in/vr3szr';
 
 function sanitizeDiagnostic(value) {
   return String(value)
@@ -302,6 +303,88 @@ async function verifyBrowseHistory(devtools) {
   return steps;
 }
 
+const missingBeerCopy = {
+  en: {
+    title: 'Beer unavailable',
+    message: 'This browser has not loaded this beer yet. Open the catalog to find beers.',
+    action: 'Open catalog',
+  },
+  fr: {
+    title: 'Bière indisponible',
+    message: 'Ce navigateur n’a pas encore chargé cette bière. Ouvrez le catalogue pour trouver des bières.',
+    action: 'Ouvrir le catalogue',
+  },
+  es: {
+    title: 'Cerveza no disponible',
+    message: 'Este navegador aún no ha cargado esta cerveza. Abre el catálogo para encontrar cervezas.',
+    action: 'Abrir catálogo',
+  },
+};
+
+async function waitForMissingBeer(devtools, hash, language = 'en') {
+  const copy = missingBeerCopy[language];
+  await waitForRouteContent(devtools, hash, copy.title);
+  await waitForRouteContent(devtools, hash, copy.message);
+  await waitFor(devtools, `${accessibilityNodesExpression()}.some(node =>
+    node.textContent.trim() === ${JSON.stringify(copy.action)})`);
+}
+
+async function verifyColdMissingBeer(devtools, requests, browserVersion) {
+  const hash = '#beer/web-smoke-1';
+  const steps = [];
+  await waitForMissingBeer(devtools, hash);
+  steps.push({ name: 'cold uncached detail', hash: await evaluate(devtools, 'location.hash') });
+  if (smokeEvidenceDir) {
+    await fs.promises.mkdir(smokeEvidenceDir, { recursive: true });
+    const screenshot = await devtools.send('Page.captureScreenshot', { format: 'png' });
+    await fs.promises.writeFile(path.join(smokeEvidenceDir, 'web-missing-beer.png'), Buffer.from(screenshot.data, 'base64'));
+  }
+  for (const language of ['fr', 'es', 'en']) {
+    await devtools.send('Emulation.setUserAgentOverride', {
+      userAgent: browserVersion.userAgent,
+      acceptLanguage: language,
+    });
+    await devtools.send('Page.reload');
+    await waitForMissingBeer(devtools, hash, language);
+    steps.push({ name: `uncached reload (${language})`, hash: await evaluate(devtools, 'location.hash') });
+  }
+  const apiRequests = requests.filter(url => url.startsWith('https://brewbuddy.dev/'));
+  if (apiRequests.length) throw new Error(`An uncached detail entry made API requests: ${JSON.stringify(apiRequests)}`);
+  const historyLength = await evaluate(devtools, 'history.length');
+  await clickControl(devtools, missingBeerCopy.en.action);
+  await waitForRouteContent(devtools, '#catalog', 'Web Smoke Lager');
+  if (await evaluate(devtools, 'history.length') !== historyLength) throw new Error('Missing-beer recovery added a browser history entry');
+  steps.push({ name: 'open catalog', hash: await evaluate(devtools, 'location.hash'), apiRequestsBeforeRecovery: 0 });
+  return steps;
+}
+
+async function verifyWarmMissingBeer(devtools) {
+  const previous = '#browse/style/web-smoke-style';
+  const missing = '#beer/web-smoke-missing';
+  const steps = [];
+  await evaluate(devtools, `location.hash = ${JSON.stringify(missing)}`);
+  await waitForMissingBeer(devtools, missing);
+  steps.push({ name: 'warm missing detail', hash: await evaluate(devtools, 'location.hash') });
+  await evaluate(devtools, 'history.back()');
+  await waitForRouteContent(devtools, previous, 'Web Smoke Lager');
+  steps.push({ name: 'back from missing detail', hash: await evaluate(devtools, 'location.hash') });
+  await evaluate(devtools, 'history.forward()');
+  await waitForMissingBeer(devtools, missing);
+  await devtools.send('Page.reload');
+  await waitForMissingBeer(devtools, missing);
+  steps.push({ name: 'forward and reload missing detail', hash: await evaluate(devtools, 'location.hash') });
+  const historyLength = await evaluate(devtools, 'history.length');
+  await clickControl(devtools, missingBeerCopy.en.action);
+  await waitForRouteContent(devtools, '#catalog', 'Web Smoke Lager');
+  if (await evaluate(devtools, 'history.length') !== historyLength) throw new Error('Warm missing-beer recovery added a browser history entry');
+  await evaluate(devtools, 'history.back()');
+  await waitForRouteContent(devtools, previous, 'Web Smoke Lager');
+  await evaluate(devtools, 'history.forward()');
+  await waitForRouteContent(devtools, '#catalog', 'Web Smoke Lager');
+  steps.push({ name: 'recovery back/forward', hash: await evaluate(devtools, 'location.hash') });
+  return steps;
+}
+
 function waitForExit(child, timeoutMs) {
   if (child.exitCode !== null || child.signalCode !== null) return Promise.resolve(true);
   return new Promise(resolve => {
@@ -355,6 +438,7 @@ async function main() {
   let browserVersion;
   let smokeError;
   const errors = [];
+  const warnings = [];
   const requests = [];
   const collect = chunk => { output += chunk.toString(); };
   chrome.stdout.on('data', collect);
@@ -386,7 +470,13 @@ async function main() {
     });
     devtools.on('Runtime.consoleAPICalled', event => {
       const values = (event.args || []).map(arg => arg.value ?? arg.description ?? '').join(' ');
-      if (values) errors.push(`console.${event.type}: ${values}`);
+      // Kotlin logs this compatibility warning as an error when Compose resources read Wasm
+      // memory. Record the exact warning; every other console/runtime message still fails.
+      if (event.type === 'error' && values === WASM_MEMORY_DEPRECATION) {
+        warnings.push(values);
+      } else if (values) {
+        errors.push(`console.${event.type}: ${values}`);
+      }
     });
     devtools.on('Fetch.requestPaused', async event => {
       requests.push(event.request.url);
@@ -410,7 +500,9 @@ async function main() {
     await devtools.send('Page.enable');
     await devtools.send('Fetch.enable', { patterns: [{ urlPattern: 'https://brewbuddy.dev/*', requestStage: 'Request' }] });
     await devtools.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: false });
-    await devtools.send('Page.navigate', { url: `http://127.0.0.1:${port}${prefix}` });
+    await devtools.send('Emulation.setUserAgentOverride', { userAgent: browserVersion.userAgent, acceptLanguage: 'en' });
+    await devtools.send('Page.navigate', { url: `http://127.0.0.1:${port}${prefix}#beer/web-smoke-1` });
+    const coldMissingBeer = await verifyColdMissingBeer(devtools, requests, browserVersion);
     const canvasExpression = `(() => {
       const findCanvas = root => {
         const direct = root.querySelector?.('canvas');
@@ -525,9 +617,12 @@ async function main() {
     const wideRoute = await evaluate(devtools, 'location.hash');
     if (wideRoute !== route) throw new Error(`Wide resize changed route: ${wideRoute}`);
     await devtools.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: false });
+    await devtools.send('Page.reload');
+    await waitForRouteContent(devtools, route, 'Production smoke fixture.');
     const browseHistory = await verifyBrowseHistory(devtools);
+    const warmMissingBeer = await verifyWarmMissingBeer(devtools);
     if (errors.length) throw new Error(`Unexpected browser errors: ${errors.join('; ')}`);
-    console.log(JSON.stringify({ distribution, url: `http://127.0.0.1:${port}${prefix}`, browser: browserVersion.product, compact, route, wide, wideRoute, browseHistory, errors }, null, 2));
+    console.log(JSON.stringify({ distribution, url: `http://127.0.0.1:${port}${prefix}`, browser: browserVersion.product, coldMissingBeer, compact, route, wide, wideRoute, cachedDetailReload: route, browseHistory, warmMissingBeer, warnings, errors }, null, 2));
   } catch (error) {
     smokeError = error;
     throw error;
