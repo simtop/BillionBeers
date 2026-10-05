@@ -185,20 +185,20 @@ class SavedFiltersLayoutTest {
 }
 
 // Only the saved-filter labels are rendered by this isolated destination fixture.
-private fun savedFilterStrings(rename: String, delete: String) =
+internal fun savedFilterStrings(rename: String, delete: String) =
   SharedAppStrings(
-    appTitle = "",
+    appTitle = "Billion Beers",
     back = "",
-    list = "",
+    list = "List",
     favorites = "",
-    search = "",
+    search = "Search",
     browse = "",
     savedFilters = "Saved filters",
     savedFiltersEmpty = "No saved filters",
-    saveFilter = "",
-    filterPresetLimitReached = "",
-    saveFilterFailed = "",
-    mutateFilterFailed = "",
+    saveFilter = "Save filter",
+    filterPresetLimitReached = "Ten filters already saved",
+    saveFilterFailed = "Could not save filter",
+    mutateFilterFailed = "Could not update saved filters",
     filterNameHint = "Filter name",
     renameFilter = rename,
     deleteFilter = delete,
