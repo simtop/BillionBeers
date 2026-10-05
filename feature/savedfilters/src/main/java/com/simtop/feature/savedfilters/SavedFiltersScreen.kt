@@ -1,9 +1,12 @@
 package com.simtop.feature.savedfilters
 
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -27,8 +30,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
@@ -123,8 +128,12 @@ private fun SavedFilterRow(
   var name by rememberSaveable(preset.id, preset.name) { mutableStateOf(preset.name) }
   var renaming by remember { mutableStateOf(false) }
   val scope = rememberCoroutineScope()
-  if (editing) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+  Column(
+    modifier =
+      Modifier.fillMaxWidth().padding(vertical = 4.dp).testTag("saved-filter-${preset.id}"),
+    verticalArrangement = Arrangement.spacedBy(8.dp),
+  ) {
+    if (editing) {
       OutlinedTextField(
         value = name,
         onValueChange = { value ->
@@ -132,7 +141,7 @@ private fun SavedFilterRow(
           if (value.length <= SavedFilterPreset.MAX_NAME_LENGTH) name = value
         },
         label = { Text(stringResource(R.string.savedfilters_name)) },
-        modifier = Modifier.weight(1f),
+        modifier = Modifier.fillMaxWidth(),
         singleLine = true,
         enabled = !renaming,
       )
@@ -149,30 +158,24 @@ private fun SavedFilterRow(
             }
           }
         },
-        modifier = Modifier.padding(start = 8.dp),
         enabled = !renaming,
       ) {
         Text(stringResource(R.string.savedfilters_rename))
       }
-    }
-  } else {
-    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-      Button(onClick = { onApply(preset) }, modifier = Modifier.weight(1f)) {
+    } else {
+      Button(onClick = { onApply(preset) }, modifier = Modifier.fillMaxWidth()) {
         Text(preset.name)
       }
-      Button(
-        onClick = { editing = true },
-        modifier = Modifier.padding(start = 8.dp),
+      FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
       ) {
-        Text(stringResource(R.string.savedfilters_rename))
-      }
-      Button(
-        onClick = {
-          scope.launch { onDelete(preset) }
-        },
-        modifier = Modifier.padding(start = 8.dp),
-      ) {
-        Text(stringResource(R.string.savedfilters_delete))
+        Button(onClick = { editing = true }) {
+          Text(stringResource(R.string.savedfilters_rename))
+        }
+        Button(onClick = { scope.launch { onDelete(preset) } }) {
+          Text(stringResource(R.string.savedfilters_delete))
+        }
       }
     }
   }
@@ -274,5 +277,28 @@ internal fun SavedFiltersPreview(
 ) {
   BillionBeersTheme {
     SavedFiltersContent(presets, onApply = {}, onRename = { _, _ -> false }, onDelete = { false })
+  }
+}
+
+@Preview(widthDp = 320, heightDp = 640, fontScale = 2f)
+@Preview(widthDp = 320, heightDp = 640, fontScale = 2f, locale = "fr")
+@Composable
+internal fun SavedFiltersLargeTextPreview() {
+  BillionBeersTheme {
+    SavedFiltersContent(
+      presets =
+        List(SavedFilterPreset.MAX_COUNT) { index ->
+          SavedFilterPreset(
+            "preset-$index",
+            "Favorite IPA ${index + 1}",
+            BeersQuery(),
+            index.toLong(),
+          )
+        },
+      onApply = {},
+      onRename = { _, _ -> false },
+      onDelete = { false },
+      modifier = Modifier.size(width = 320.dp, height = 640.dp),
+    )
   }
 }
