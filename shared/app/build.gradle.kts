@@ -1,4 +1,7 @@
-@file:OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)
+@file:OptIn(
+  org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class,
+  org.jetbrains.compose.ExperimentalComposeLibrary::class,
+)
 
 plugins {
   id("billionbeers.kmp.compose")
@@ -30,6 +33,8 @@ kotlin {
       implementation(kotlin("test"))
       implementation(project(":beerdomain:fakes"))
       implementation(project(":testing-utils"))
+      implementation(compose.uiTest)
+      implementation(compose.desktop.currentOs)
     }
   }
 }

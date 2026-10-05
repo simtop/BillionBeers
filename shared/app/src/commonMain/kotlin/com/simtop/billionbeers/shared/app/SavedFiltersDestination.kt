@@ -1,6 +1,8 @@
 package com.simtop.billionbeers.shared.app
 
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,6 +18,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import kotlinx.coroutines.launch
@@ -57,8 +60,12 @@ private fun SavedFilterRow(
   var name by rememberSaveable(preset.id, preset.name) { mutableStateOf(preset.name) }
   var renaming by androidx.compose.runtime.remember { mutableStateOf(false) }
   val scope = rememberCoroutineScope()
-  if (editing) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+  Column(
+    modifier =
+      Modifier.fillMaxWidth().padding(vertical = 4.dp).testTag("saved-filter-${preset.id}"),
+    verticalArrangement = Arrangement.spacedBy(8.dp),
+  ) {
+    if (editing) {
       OutlinedTextField(
         value = name,
         onValueChange = { value ->
@@ -66,7 +73,7 @@ private fun SavedFilterRow(
           if (value.length <= SavedFilterPreset.MAX_NAME_LENGTH) name = value
         },
         label = { Text(strings.filterNameHint) },
-        modifier = Modifier.weight(1f),
+        modifier = Modifier.fillMaxWidth(),
         singleLine = true,
         enabled = !renaming,
       )
@@ -83,28 +90,24 @@ private fun SavedFilterRow(
             }
           }
         },
-        modifier = Modifier.padding(start = 8.dp),
         enabled = !renaming,
       ) {
         Text(strings.renameFilter)
       }
-    }
-  } else {
-    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-      Button(onClick = { onApply(preset) }, modifier = Modifier.weight(1f)) {
+    } else {
+      Button(onClick = { onApply(preset) }, modifier = Modifier.fillMaxWidth()) {
         Text(preset.name)
       }
-      Button(
-        onClick = { editing = true },
-        modifier = Modifier.padding(start = 8.dp),
+      FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
       ) {
-        Text(strings.renameFilter)
-      }
-      Button(
-        onClick = { scope.launch { onDelete(preset) } },
-        modifier = Modifier.padding(start = 8.dp),
-      ) {
-        Text(strings.deleteFilter)
+        Button(onClick = { editing = true }) {
+          Text(strings.renameFilter)
+        }
+        Button(onClick = { scope.launch { onDelete(preset) } }) {
+          Text(strings.deleteFilter)
+        }
       }
     }
   }
