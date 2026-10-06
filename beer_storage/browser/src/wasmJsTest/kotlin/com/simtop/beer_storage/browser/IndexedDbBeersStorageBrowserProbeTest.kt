@@ -22,6 +22,7 @@ import kotlin.test.Test
     getAll: store.getAll,
     get: store.get,
     put: store.put,
+    delete: store.delete,
     clear: store.clear,
     count: store.count,
     parse: global.JSON.parse,
@@ -33,6 +34,8 @@ import kotlin.test.Test
     probe.transactions = 0;
     probe.closes = 0;
     probe.failTransactionSetup = false;
+    probe.abortNextPresetMutation = false;
+    probe.presetAborts = 0;
     probe.getAll = 0;
     probe.get = 0;
     probe.put = 0;
@@ -50,6 +53,7 @@ import kotlin.test.Test
     store.getAll = originals.getAll;
     store.get = originals.get;
     store.put = originals.put;
+    store.delete = originals.delete;
     store.clear = originals.clear;
     store.count = originals.count;
     global.JSON.parse = originals.parse;
@@ -79,7 +83,20 @@ import kotlin.test.Test
   };
   store.put = function (...args) {
     probe.put += 1;
-    return originals.put.apply(this, args);
+    return abortPresetMutation(this, originals.put.apply(this, args));
+  };
+  const abortPresetMutation = (store, request) => {
+    if (store.name === 'filter_presets' && probe.abortNextPresetMutation) {
+      probe.abortNextPresetMutation = false;
+      request.addEventListener('success', () => {
+        probe.presetAborts += 1;
+        store.transaction.abort();
+      });
+    }
+    return request;
+  };
+  store.delete = function (...args) {
+    return abortPresetMutation(this, originals.delete.apply(this, args));
   };
   store.clear = function (...args) {
     probe.clear += 1;
@@ -121,6 +138,18 @@ private external fun resetStorageProbe()
 }
 """)
 internal external fun failNextStorageTransactionSetup()
+
+@JsFun("""
+() => {
+  globalThis.__billionBeersStorageProbe.probe.abortNextPresetMutation = true;
+}
+""")
+internal external fun abortNextPresetMutation()
+
+@JsFun("""
+() => globalThis.__billionBeersStorageProbe.probe.presetAborts
+""")
+internal external fun storageProbePresetAbortCount(): Int
 
 @JsFun("""
 () => {
