@@ -40,6 +40,10 @@ The project follows **Clean Architecture** principles with a robust **Multi-modu
 
 ### High-Level Module Dependency
 
+This diagram shows selected Android assembly boundaries. Shared screens and the Desktop, iOS,
+and Web hosts have their own adapters; see the [KMP support matrix](docs/kmp_support_matrix.md)
+for the available evidence and target limits.
+
 Dependencies point **inwards**: features and data both depend on the domain, and the domain depends
 on nothing but pure Kotlin. The load-bearing edges here — features never reaching each other, the
 domain staying Android-free, data never leaking upwards — are checked by
@@ -52,6 +56,8 @@ graph TD
     subgraph FEATURES ["Features — never depend on each other"]
         List[":feature:beerslist"]
         Search[":feature:beersearch"]
+        Favorites[":feature:favorites"]
+        Presets[":feature:savedfilters"]
         Detail[":feature:beerdetail<br/><i>on-demand</i>"]
         Browse[":feature:beerbrowse<br/><i>on-demand</i>"]
     end
@@ -65,15 +71,16 @@ graph TD
     subgraph DATA ["Data — implements the domain interfaces"]
         Data[":beer_data"]
         Network[":beer_network"]
+        Storage[":beer_storage:api"]
         DB[":beer_database"]
     end
 
-    subgraph DOMAIN ["Domain — pure JVM, zero Android"]
+    subgraph DOMAIN ["Domain — common Kotlin, zero Android"]
         Api[":beerdomain:api<br/><i>models · repo interfaces · typed errors</i>"]
         Fakes[":beerdomain:fakes"]
     end
 
-    CoreCommon[":core-common<br/><i>pure JVM · paging · Either · seams</i>"]
+    CoreCommon[":core-common<br/><i>common Kotlin · paging · Either · seams</i>"]
 
     App --> FEATURES
     App --> DATA
@@ -81,7 +88,8 @@ graph TD
     FEATURES --> Api
     SHARED --> Api
     Data --> Network
-    Data --> DB
+    Data --> Storage
+    DB --> Storage
     Data --> Api
     Fakes --> Api
     Api --> CoreCommon
@@ -193,7 +201,9 @@ This project goes beyond standard libraries, incorporating advanced engineering 
 - **Testing**:
     - **Paparazzi**: JVM-based Snapshot Testing. It renders your Composables directly on the JVM using Android Studio's `LayoutLib`, allowing for lightning-fast regression testing without emulators.
     - **Robot Pattern**: Standardized E2E/UI testing architecture for readability.
-- **Data**: Room (SSOT), Retrofit, Kotlin Serialization, and a **hand-rolled `PagingMediator`** —
+- **Data**: Ktor with platform engines (OkHttp on Android/JVM, Darwin on iOS, Fetch on Web),
+  Kotlin Serialization, Room storage on Android/JVM/iOS and IndexedDB on Web, and a
+  **hand-rolled `PagingMediator`** —
   Paging 3 was deliberately dropped because `PagingData` leaks through every layer
   ([ADR 0002](docs/adr/0002-hand-rolled-paging.md)).
 - **Errors**: typed sealed errors carried in `Either<DomainError, T>`, converted at the data boundary
@@ -280,6 +290,10 @@ invocations separate because the property controls source roots, runner selectio
 ---
 
 ## 🤝 Contributing
+
+For a change that persists local data across targets, start with the
+[durable-feature change guide](docs/durable_feature_changes.md). It maps saved filters from
+the domain contract through storage, host UI, localization and the relevant checks.
 
 Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 

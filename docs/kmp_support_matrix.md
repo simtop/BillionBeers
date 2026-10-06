@@ -14,7 +14,9 @@ host rendering, packaging, and release distribution are separate claims; one doe
 
 ## Shared behavior and verification boundaries
 
-The shared product scope is catalog, paging, search, browse/detail, favorites and availability.
+The shared product scope is catalog, paging, search, browse/detail, favorites, availability and
+saved filters. For contributor ownership and checks, see the
+[durable-feature change guide](durable_feature_changes.md).
 Android-only delivery mechanisms remain at the Android edge: Glance widgets, Play dynamic delivery,
 split installation and Android component plumbing are not reproduced on other hosts.
 
