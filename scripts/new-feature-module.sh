@@ -215,22 +215,33 @@ settings.gradle.kts edit was needed, it's auto-discovered.
 1. Replace \`${PASCAL}UiState\`/\`${PASCAL}ViewModel\`/\`${PASCAL}Content\` with the real screen -
    this is a bare skeleton with no repository/domain dependency wired in, since every feature
    needs a different one. Follow \`feature/beerslist\` as the reference pattern (paginated list,
-   \`BeersRepository\` injected, \`CoroutineDispatcherProvider\` for dispatching).
-2. If this needs a Konsist cross-feature boundary check (no other feature module should import
-   \`$PACKAGE\`, and this module shouldn't import another feature's package), add a pair of tests
-   to \`konsist/src/test/kotlin/com/simtop/konsist/FeatureModuleBoundaryTest.kt\` following its
-   existing beerslist/beerdetail pattern.
-3. If this screen needs on-demand delivery (Play Feature Delivery), it needs to become a dynamic
+   \`BeersRepository\` injected). Choose a dispatcher where blocking or CPU work happens.
+2. Review \`docs/durable_feature_changes.md\` for changes that persist local data: domain/API
+   contracts, storage adapters, Room migrations and exported schemas when needed, fake updates,
+   and persistence/failure tests on the affected targets. Update translated strings and register
+   navigation in \`:navigation\` and the app host; review shared routes/hosts if they are affected.
+3. Konsist automatically discovers every \`feature/*/build.gradle.kts\` and checks sibling
+   isolation; existing rules cover this module. Run \`make konsist\` and
+   \`make architecture-policy\` to check source boundaries and resolved production dependencies.
+   Review \`config/architecture/project-dependency-policy.json\` before adding project edges;
+   update the policy and enforcement together if an intentional new edge requires a rule change.
+4. If this screen needs on-demand delivery (Play Feature Delivery), it needs to become a dynamic
    feature instead - that's a manual conversion, not something this script does. See
    \`feature/beerdetail/build.gradle.kts\` (applies \`billionbeers.android.dynamic.feature\`) and
    \`docs/beerdetail_dev_app.md\` for why that comes with real trade-offs of its own.
-4. \`./gradlew :feature:$NAME:testDebugUnitTest\` and
-   \`./gradlew :feature:$NAME:recordPaparazziDebug\` (there's no baseline snapshot yet - record one
-   for \`${PASCAL}ScreenPreview\` before running \`make screenshot-verify\`).
+   Dynamic-feature strings belong in \`:presentation_utils\`, including translations.
+5. Run \`make build MODULE=:feature:$NAME\` and \`make test MODULE=:feature:$NAME\`.
+   Record the initial \`${PASCAL}ScreenPreview\` golden with
+   \`make screenshot-record MODULE=:feature:$NAME\`, inspect the images, then run
+   \`make screenshot-verify MODULE=:feature:$NAME\`.
+6. Before landing, run \`make test\`, \`make lint\`, and the boundary checks above.
+   UI changes need \`make screenshot-verify\`; resource changes also need \`make android-lint\`.
+   Choose device tests for changed navigation or persistence behavior, and use \`make docs-check\`
+   for documentation. See \`make help\` for the available wrappers.
 EOF
 
 echo "Created $MODULE_DIR (auto-discovered by settings.gradle.kts - no include(...) needed)."
 echo "Next steps:"
 echo "  1. Read $MODULE_DIR/README.md"
-echo "  2. ./gradlew :feature:$NAME:testDebugUnitTest"
-echo "  3. ./gradlew :feature:$NAME:recordPaparazziDebug   # record the initial preview baseline"
+echo "  2. make build MODULE=:feature:$NAME && make test MODULE=:feature:$NAME"
+echo "  3. make screenshot-record MODULE=:feature:$NAME   # record and inspect the initial preview baseline"
