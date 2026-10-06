@@ -1,4 +1,6 @@
 # Variables
+.DEFAULT_GOAL := help
+
 MODULE ?=
 REPO ?=
 BRANCH ?=
@@ -73,16 +75,15 @@ define IOS_SIMULATOR_RESOLVE
 	fi
 endef
 
-help: ## Show this help message.
-	@echo "\n📊 BillionBeers Makefile Help"
-	@printf "%.s━" {1..40}
-	@echo "\nUsage: make <target> [MODULE=<module_path>] [SCENARIO=<scenario_name>]\n"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-25s\033[0m %s\n", $$1, $$2}'
-	@echo "\n💡 Examples:"
-	@echo "  make setup"
-	@echo "  make test MODULE=:feature:beerslist"
-	@echo "  make screenshot-record MODULE=:core:designsystem"
-	@echo "  make gradle-benchmark SCENARIO=clean_build_warm"
+##@ Getting started
+help: ## Show commands grouped by purpose.
+	@printf '\nBillionBeers commands\nUsage: make <target> [MODULE=:module] [SCENARIO=name]\n'
+	@awk 'BEGIN {FS = ":.*## "} /^##@ / {printf "\n\033[1m%s\033[0m\n", substr($$0, 5); next} /^[a-zA-Z0-9_-]+:.*## / {printf "\033[36m%-40s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@printf '\nExamples:\n  make install\n  make test MODULE=:feature:beerslist\n  make ui-test-managed MODULE=:app\n  make ios-simulator-open\n  make gradle-benchmark SCENARIO=clean_build_warm\n'
+
+.PHONY: make-help-test
+make-help-test: ## Test grouped help, default invocation and documented action targets without Gradle.
+	python3 scripts/test_make_help.py
 
 setup: ## Setup local development environment (Git hooks, Git LFS, etc.).
 	@echo "🔧 Setting up local development environment..."
@@ -106,11 +107,11 @@ setup-ai-tools: ## Install RTK for local output compression (optional outside ga
 update-android-skills: ## Sync official Android skills (github.com/android/skills) into .claude/skills.
 	@bash scripts/update-android-skills.sh
 
-# Basic Commands
-build: ## Assemble the debug APK.
+##@ Android builds and release
+build: ## Assemble Android debug outputs, optionally scoped with MODULE=:module.
 	$(GRADLE_RUNNER) $(MODULE_PREFIX)assembleDebug
 
-install: ## Install debug build. App install includes on-demand beerdetail via bundletool local-testing; pass MODULE=:foo for a plain installDebug.
+install: ## Install the app with beerdetail and beerbrowse via bundletool local testing; MODULE=:module uses installDebug.
 ifeq ($(MODULE_TRIMMED),)
 	$(GRADLE_RUNNER) :app:bundleDebug
 	@bash scripts/install-local-testing.sh
@@ -118,7 +119,7 @@ else
 	$(GRADLE_RUNNER) $(MODULE_PREFIX)installDebug
 endif
 
-bundle-release: ## Assemble the signed release App Bundle (.aab) for Play Store upload, incl. the beerdetail dynamic feature. Needs keystore.properties or STORE_FILE/STORE_PASSWORD/ALIAS/PASSWORD env vars.
+bundle-release: ## Assemble the release App Bundle with both dynamic features; signing needs keystore.properties or STORE_FILE/STORE_PASSWORD/ALIAS/PASSWORD.
 	@if [ ! -f keystore.properties ] && [ -z "$$STORE_FILE" ]; then \
 		echo "⚠️  No signing config found: create keystore.properties (STORE_FILE, STORE_PASSWORD, ALIAS, PASSWORD)"; \
 		echo "    or export those as environment variables. The .aab will be unsigned otherwise."; \
@@ -132,6 +133,7 @@ release-smoke: ## Run black-box launch and behavior smoke against the debug-sign
 	$(GRADLE_RUNNER) :feature:beerdetail:assembleReleaseSmoke :feature:beerbrowse:assembleReleaseSmoke
 	@bash scripts/verify-release-smoke-artifacts.sh
 
+##@ Desktop
 desktop-test: ## Run deterministic real JVM data vertical-slice integration tests.
 	$(GRADLE_RUNNER) :desktop-app:test
 
@@ -156,6 +158,7 @@ desktop-package-verify: desktop-package ## Build and structurally verify the mac
 	if [ -z "$$dmg" ]; then echo "Desktop distribution DMG not found under $(DESKTOP_DMG_DIR)" >&2; exit 1; fi; \
 	python3 scripts/verify_desktop_distribution.py "$(DESKTOP_APP_DIR)" --dmg "$$dmg"
 
+##@ Web
 web-image-proxy-test: ## Test the local Web image proxy without contacting the upstream CDN.
 	python3 scripts/test_web_image_proxy.py
 
@@ -191,11 +194,12 @@ web-run: ## Start the local Wasm browser host and image proxy for manual Web QA.
 	if ! curl --silent --fail "http://127.0.0.1:8787/healthz" >/dev/null; then cat "$$proxy_log"; exit 1; fi; \
 	PATH="$(NODE_BIN_DIR):$$PATH" $(GRADLE_RUNNER) :web-app:wasmJsBrowserDevelopmentRun
 
+##@ iOS
 ios-compile: ## Compile all shared modules for both supported Apple targets.
 	$(GRADLE_RUNNER) :core-common:compileKotlinIosArm64 :beerdomain:api:compileKotlinIosArm64 :beerdomain:fakes:compileKotlinIosArm64 :beer_network:api:compileKotlinIosArm64 :beer_network:fixtures:compileKotlinIosArm64 :beer_network:compileKotlinIosArm64 :beer_storage:api:compileKotlinIosArm64 :beer_database:compileKotlinIosArm64 :beer_data:compileKotlinIosArm64 :shared:favorites:compileKotlinIosArm64 :shared:beerslist:compileKotlinIosArm64 :shared:beersearch:compileKotlinIosArm64 :shared:beerbrowse:compileKotlinIosArm64 :shared:beerdetail:compileKotlinIosArm64 :shared:app:compileKotlinIosArm64 :ios-shared:compileKotlinIosArm64 # gitleaks:allow
 	$(GRADLE_RUNNER) :core-common:compileKotlinIosSimulatorArm64 :beerdomain:api:compileKotlinIosSimulatorArm64 :beerdomain:fakes:compileKotlinIosSimulatorArm64 :beer_network:api:compileKotlinIosSimulatorArm64 :beer_network:fixtures:compileKotlinIosSimulatorArm64 :beer_network:compileKotlinIosSimulatorArm64 :beer_storage:api:compileKotlinIosSimulatorArm64 :beer_database:compileKotlinIosSimulatorArm64 :beer_data:compileKotlinIosSimulatorArm64 :shared:favorites:compileKotlinIosSimulatorArm64 :shared:beerslist:compileKotlinIosSimulatorArm64 :shared:beersearch:compileKotlinIosSimulatorArm64 :shared:beerbrowse:compileKotlinIosSimulatorArm64 :shared:beerdetail:compileKotlinIosSimulatorArm64 :shared:app:compileKotlinIosSimulatorArm64 :ios-shared:compileKotlinIosSimulatorArm64
 
-ios-framework: ## Link the consuming iOS data framework for simulator and device.
+ios-framework: ## Link the shared iOS framework for simulator and device.
 	$(GRADLE_RUNNER) :ios-shared:linkDebugFrameworkIosSimulatorArm64 :ios-shared:linkDebugFrameworkIosArm64
 
 ios-test: ## Execute native core, network, Room, and iOS runtime tests on the arm64 simulator.
@@ -230,6 +234,7 @@ ios-simulator-evidence: ## Create and independently verify unsigned iOS simulato
 		--destination "$(IOS_HOST_DESTINATION)"
 	python3 scripts/verify_ios_simulator_artifacts.py --verify-packet "$(IOS_SIMULATOR_CONFIDENCE_DIR)"
 
+##@ Cleanup
 clean: ## Clean all build outputs.
 	$(GRADLE_RUNNER) clean
 
@@ -242,7 +247,7 @@ deep-clean: ## Stop daemon and deeply clean all gradle caches to fix corrupted s
 	rm -rf ~/.gradle/caches/9.*
 	$(GRADLE_RUNNER) clean
 
-# Testing
+##@ Unit tests and CI guards
 # Pure-JVM modules have no testDebugUnitTest task, so they are invisible to the Android-flavored
 # test invocation and must be listed here explicitly (:konsist has its own target).
 JVM_TEST_MODULES := :testing-utils :snapshot-processor :desktop-app
@@ -271,7 +276,7 @@ kmp_test_tasks = $(foreach module,$(KMP_JVM_TEST_MODULES),$(module):jvmTest) \
 # deterministic until that upstream Gradle/Kotlin integration is fixed.
 TEST_FLAGS := --no-configuration-cache
 
-test: ## Run unit tests for the specified module (or all).
+test: ## Run JVM/Android/browser unit suites and build-logic, or the registered tier for MODULE=:module.
 ifeq ($(MODULE_TRIMMED),)
 	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) $(TEST_FLAGS) testDebugUnitTest $(addsuffix :test,$(JVM_TEST_MODULES)) $(kmp_test_tasks) --continue
 	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) -p build-logic $(TEST_FLAGS) :convention:test --continue
@@ -291,6 +296,7 @@ endif
 
 .PHONY: ci-report-test
 ci-report-test: ## Test CI diagnosis, evidence parsing, and incremental comment lifecycle.
+	@$(MAKE) --no-print-directory make-help-test
 	@$(MAKE) --no-print-directory benchmark-budget-test
 	@python3 -m unittest discover -s .github/scripts -p 'test_*ci*.py'
 	@python3 .github/scripts/test_detect_change_scope.py
@@ -310,6 +316,7 @@ test-tier-inventory: ## Write the informational test-tier ownership report.
 	@bash scripts/test-tier-inventory.sh --output build/reports/test-tier-inventory.md
 	@echo "📋 Test-tier inventory: build/reports/test-tier-inventory.md"
 
+##@ Architecture and Compose analysis
 konsist: ## Run Konsist architecture rules.
 	$(GRADLE_RUNNER) :konsist:test
 
@@ -326,12 +333,14 @@ compose-metrics: ## Regenerate Compose compiler stability/skippability reports i
 	# immutable ones via compose-stability.conf (see that file's header).
 	$(GRADLE_RUNNER) --rerun-tasks -PcomposeCompilerReports=true $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,)compileReleaseKotlin
 
+##@ Android UI tests - connected
 ui-test: ## Run connected Android tests (UI tests) on an already-running device/emulator.
 	$(GRADLE_RUNNER) $(UI_TEST_PREFIX)connectedDebugAndroidTest
 
 ui-test-local: emulator-start ## Start/reuse the local resizable emulator, then run connected UI tests.
 	$(GRADLE_RUNNER) $(UI_TEST_PREFIX)connectedDebugAndroidTest
 
+##@ Android emulators
 # Local emulator lifecycle. Settings are explicit above and can be overridden with EMULATOR_*.
 emulator-create: ## Create the local resizable emulator and install its system image if needed.
 	@$(EMULATOR_RUN) create
@@ -351,6 +360,7 @@ emulator-status: ## Show local emulator settings and running state.
 emulator-delete: ## Delete the local emulator (wipes data; CONFIRM=1 required).
 	@$(EMULATOR_RUN) delete
 
+##@ Android UI tests - managed
 ui-test-managed: ## Run instrumented tests on the ATD fast-lane managed device (boots/tears down its own emulator).
 	$(GRADLE_RUNNER) $(UI_TEST_PREFIX)atdApi35DebugAndroidTest
 
@@ -363,7 +373,7 @@ ui-test-managed-ci: ## Run what CI runs per push: the ATD fast lane, every opted
 ui-test-managed-all: ## Run instrumented tests on both managed devices, every opted-in module.
 	$(GRADLE_RUNNER) allDevicesDebugAndroidTest
 
-# Screenshots (Paparazzi)
+##@ Screenshots
 screenshot-record: ## Record golden images for Paparazzi.
 	$(GRADLE_RUNNER) $(MODULE_PREFIX)recordPaparazziDebug
 
@@ -375,7 +385,7 @@ screenshot-verify: ## Verify screenshots against golden images and write the exe
 screenshot-clean: ## Clean and re-record golden images.
 	$(GRADLE_RUNNER) clean $(MODULE_PREFIX)recordPaparazziDebug
 
-# Quality & Analysis
+##@ Static analysis and formatting
 lint: ## Run static analysis (Detekt).
 	$(GRADLE_RUNNER) $(MODULE_PREFIX)detekt
 
@@ -391,7 +401,7 @@ detekt-baseline: ## Re-baseline Detekt (all modules, or MODULE=:foo). ALWAYS rev
 format: ## Apply code formatting (Spotless).
 	$(GRADLE_RUNNER) $(MODULE_PREFIX)spotlessApply
 
-check: ## Run all quality checks (lint + test).
+check: ## Run the Gradle check lifecycle, optionally scoped with MODULE=:module.
 	$(GRADLE_RUNNER) $(MODULE_PREFIX)check
 
 check-duplicates: ## Check for duplicate classes in the dependency graph.
@@ -400,12 +410,14 @@ check-duplicates: ## Check for duplicate classes in the dependency graph.
 check-unused-deps: ## Detect declared but unused dependencies.
 	$(GRADLE_RUNNER) $(MODULE_PREFIX)detectUnusedDependencies
 
+##@ Dependencies and verification metadata
 dependency-guard: ## Verify the app's release runtime dependency graph against its committed baseline.
 	$(GRADLE_RUNNER) :app:dependencyGuard
 
 dependency-guard-baseline: ## Re-baseline the dependency graph after an intentional change (review the diff before committing).
 	$(GRADLE_RUNNER) :app:dependencyGuardBaseline
 
+.PHONY: dependency-guard-baseline-unverified
 dependency-guard-baseline-unverified: ## Re-baseline after reviewing an intentional coordinate change; bypasses dependency verification.
 	$(GRADLE_RUNNER) --dependency-verification off :app:dependencyGuardBaseline
 
@@ -485,6 +497,7 @@ VERIFICATION_METADATA_CANDIDATE_SMOKE_DEVICE_TASKS := \
 	:app:assembleReleaseSmoke \
 	:app:assembleReleaseSmokeAndroidTest
 
+.PHONY: verification-metadata-format
 verification-metadata-format: ## Apply formatting inside the guarded metadata-writing preparation sequence.
 	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) spotlessApply
 
@@ -539,6 +552,7 @@ else
 	@echo "Unknown metadata preparation lane: $(LANE)" >&2; exit 2
 endif
 
+##@ Repository reports
 health: ## Generate current Markdown and JSON health reports under build/reports/health.
 	@bash scripts/health-report.sh --run --json build/reports/health/health.json build/reports/health/report.md
 	@echo "📊 Markdown: build/reports/health/report.md"
@@ -565,7 +579,7 @@ architecture-report: module-graph metro-graph ## Generate both the Gradle module
 repo-doctor: ## Verify read-only GitHub repository settings and CODEOWNERS coverage.
 	@REPO="$(REPO)" BRANCH="$(BRANCH)" bash scripts/repo-doctor.sh
 
-# Benchmarking
+##@ Performance and baseline profiles
 .PHONY: benchmark-budget-test
 benchmark-budget-test: ## Test startup-budget parsing and fresh-report selection without a device.
 	python3 scripts/test_benchmark_budget.py
@@ -613,7 +627,7 @@ build-budget: ## Measure build times and check them against config/build-time-bu
 build-budget-check: ## Re-check the last build-budget measurement without re-measuring.
 	@bash scripts/check-build-budget.sh profile-out/baseline/benchmark.csv
 
-# Reporting
+##@ Coverage
 jacoco-report: ## Generate the unified Jacoco coverage report.
 	$(GRADLE_RUNNER) jacocoRootReport
 
@@ -621,10 +635,12 @@ coverage-check: ## Fail if line coverage dropped below config/coverage-floor.txt
 	$(GRADLE_RUNNER) jacocoRootReport
 	@bash scripts/coverage-check.sh
 
+##@ Documentation
 update-docs: ## Update README.md with the latest library versions from the catalog.
 	@chmod +x scripts/update_readme_versions.sh
 	@./scripts/update_readme_versions.sh
 
+##@ Play Store assets
 store-frames: ## Render marketing store frames from the captured screenshots. Usage: make store-frames [LOCALE=en-US]
 	@bash scripts/store-frames.sh $(if $(strip $(LOCALE)),$(LOCALE),en-US)
 
@@ -637,6 +653,7 @@ play-listing-capture: ## Put a device in capture state for Play screenshots (see
 play-listing-reset: ## Restore a device after `make play-listing-capture`.
 	@bash scripts/play-listing.sh reset
 
+##@ Scaffolding
 new-feature-module: ## Scaffold a feature/<NAME> module. Usage: make new-feature-module NAME=favorites [PASCAL=Favorites]
 	@chmod +x scripts/new-feature-module.sh
 	@./scripts/new-feature-module.sh "$(NAME)" "$(PASCAL)"
@@ -645,7 +662,7 @@ new-dev-app: ## Scaffold a standalone app-dev-<FEATURE> module. Usage: make new-
 	@chmod +x scripts/new-dev-app.sh
 	@./scripts/new-dev-app.sh "$(FEATURE)" "$(PASCAL)" "$(GRADLE_PATH)"
 
-# Helper Scripts
+##@ Optional local tools
 install-profiler: ## Install gradle-profiler via Homebrew.
 	brew install gradle-profiler
 
