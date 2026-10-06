@@ -303,6 +303,78 @@ async function verifyBrowseHistory(devtools) {
   return steps;
 }
 
+async function verifySavedFilterHistory(devtools) {
+  const steps = [];
+  const record = async (name, hash, text) => {
+    try {
+      steps.push({ name, hash: await waitForRouteContent(devtools, hash, text) });
+    } catch (error) {
+      const observed = await evaluate(devtools, 'location.hash');
+      throw new Error(`Saved-filter history step '${name}' expected ${hash}, observed ${observed}: ${error.message}`);
+    }
+  };
+  const point = await waitFor(devtools, `(() => {
+    const field = ${accessibilityNodesExpression()}.find(n => n.getAttribute('role') === 'textbox');
+    const bounds = field?.getBoundingClientRect();
+    return bounds?.width ? {x: bounds.left + bounds.width / 2, y: bounds.top + bounds.height / 2} : null;
+  })()`);
+  for (const type of ['mousePressed', 'mouseReleased']) {
+    await devtools.send('Input.dispatchMouseEvent', { type, ...point, button: 'left', clickCount: 1 });
+  }
+  for (const text of 'Smoke saved filter') {
+    await devtools.send('Input.dispatchKeyEvent', { type: 'keyDown', key: text, text });
+    await devtools.send('Input.dispatchKeyEvent', { type: 'keyUp', key: text });
+  }
+  await waitFor(devtools, `${accessibilityNodesExpression()}.some(n => n.textContent.includes('Smoke saved filter'))`);
+  await new Promise(resolve => setTimeout(resolve, 300));
+  await clickControl(devtools, 'Save');
+  await new Promise(resolve => setTimeout(resolve, 300));
+  await clickControl(devtools, 'Saved filters');
+  await record('preset list', '#saved-filters', 'Smoke saved filter');
+  await new Promise(resolve => setTimeout(resolve, 300));
+  await clickControl(devtools, 'Smoke saved filter');
+  await record('applied results', '#saved-filters', 'Web Smoke Lager');
+  await waitFor(devtools, `!${accessibilityNodesExpression()}.some(n => n.textContent.trim() === 'Rename')`);
+  await new Promise(resolve => setTimeout(resolve, 300));
+  await clickControl(devtools, 'Web Smoke Lager. Available');
+  await record('detail', '#beer/web-smoke-1', 'Production smoke fixture.');
+  await clickControl(devtools, 'Back');
+  await record('in-app back to results', '#saved-filters', 'Web Smoke Lager');
+  await new Promise(resolve => setTimeout(resolve, 300));
+  await clickControl(devtools, 'Back');
+  await record('in-app back to preset list', '#saved-filters', 'Rename');
+  await evaluate(devtools, 'history.forward()');
+  await record('browser forward to results', '#saved-filters', 'Web Smoke Lager');
+  await evaluate(devtools, 'history.forward()');
+  await record('browser forward to detail', '#beer/web-smoke-1', 'Production smoke fixture.');
+  await evaluate(devtools, 'history.back()');
+  await record('browser back to results', '#saved-filters', 'Web Smoke Lager');
+  await evaluate(devtools, 'history.back()');
+  await record('browser back to preset list', '#saved-filters', 'Rename');
+  await evaluate(devtools, 'history.forward()');
+  await record('browser forward to results again', '#saved-filters', 'Web Smoke Lager');
+  await devtools.send('Page.reload');
+  await record('reload results falls back to preset list', '#saved-filters', 'Rename');
+  await evaluate(devtools, 'history.back()');
+  await record('browser back after reload', '#saved-filters', 'Rename');
+  await evaluate(devtools, 'history.forward()');
+  await record('browser forward after reload', '#saved-filters', 'Rename');
+  await evaluate(devtools, 'history.forward()');
+  await record('detail survives reload of prior result entry', '#beer/web-smoke-1', 'Production smoke fixture.');
+  await evaluate(devtools, 'history.back()');
+  await record('old result token falls back to list', '#saved-filters', 'Rename');
+  await new Promise(resolve => setTimeout(resolve, 300));
+  await clickControl(devtools, 'Smoke saved filter');
+  await record('reapply after reload', '#saved-filters', 'Web Smoke Lager');
+  await evaluate(devtools, 'history.back()');
+  await record('back after reapply', '#saved-filters', 'Rename');
+  if (smokeEvidenceDir) {
+    const screenshot = await devtools.send('Page.captureScreenshot', { format: 'png' });
+    await fs.promises.writeFile(path.join(smokeEvidenceDir, 'web-saved-filter-list.png'), Buffer.from(screenshot.data, 'base64'));
+  }
+  return steps;
+}
+
 const missingBeerCopy = {
   en: {
     title: 'Beer unavailable',
@@ -621,8 +693,9 @@ async function main() {
     await waitForRouteContent(devtools, route, 'Production smoke fixture.');
     const browseHistory = await verifyBrowseHistory(devtools);
     const warmMissingBeer = await verifyWarmMissingBeer(devtools);
+    const savedFilterHistory = await verifySavedFilterHistory(devtools);
     if (errors.length) throw new Error(`Unexpected browser errors: ${errors.join('; ')}`);
-    console.log(JSON.stringify({ distribution, url: `http://127.0.0.1:${port}${prefix}`, browser: browserVersion.product, coldMissingBeer, compact, route, wide, wideRoute, cachedDetailReload: route, browseHistory, warmMissingBeer, warnings, errors }, null, 2));
+    console.log(JSON.stringify({ distribution, url: `http://127.0.0.1:${port}${prefix}`, browser: browserVersion.product, coldMissingBeer, compact, route, wide, wideRoute, cachedDetailReload: route, browseHistory, warmMissingBeer, savedFilterHistory, warnings, errors }, null, 2));
   } catch (error) {
     smokeError = error;
     throw error;

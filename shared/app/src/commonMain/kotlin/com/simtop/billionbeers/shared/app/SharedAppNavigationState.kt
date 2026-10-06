@@ -245,7 +245,7 @@ internal class SharedAppNavigationState(
 
   fun selectSavedFilter(preset: SavedFilterPreset) {
     append(SavedFilterResultsEntry(nextId(), preset, pagerFactory, coroutineDispatcher))
-    onNavigationEvent(SharedAppNavigationEvent.Push(current.route))
+    onNavigationEvent(SharedAppNavigationEvent.Push(current.route, savedFilter = preset))
   }
 
   fun pop(): Boolean {
@@ -271,6 +271,18 @@ internal class SharedAppNavigationState(
     }
     entries.drop(1).forEach(SharedAppEntry::close)
     entriesState.value = listOf(entries.first(), createEntry(route))
+  }
+
+  // A host's transient history entry identifies the exact applied query snapshot.
+  fun replaceFromSavedFilter(preset: SavedFilterPreset) {
+    val existingIndex = entries.indexOfLast { it is SavedFilterResultsEntry && it.preset == preset }
+    if (existingIndex >= 0) {
+      entries.drop(existingIndex + 1).forEach(SharedAppEntry::close)
+      entriesState.value = entries.take(existingIndex + 1)
+    } else {
+      switchRoot(PortableRoute.SavedFilterPresets)
+      append(SavedFilterResultsEntry(nextId(), preset, pagerFactory, coroutineDispatcher))
+    }
   }
 
   fun disposeAll() {

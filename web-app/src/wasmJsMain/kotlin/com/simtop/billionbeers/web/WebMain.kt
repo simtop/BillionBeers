@@ -43,6 +43,7 @@ import androidx.compose.ui.window.ComposeViewport
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.shared.app.SharedAppHost
 import com.simtop.billionbeers.shared.app.SharedAppNavigationEvent
+import com.simtop.billionbeers.shared.app.SharedAppNavigationRequest
 import com.simtop.billionbeers.shared.app.SharedAppShell
 import com.simtop.billionbeers.shared.app.SharedAppStrings
 import com.simtop.billionbeers.shared.app.formatCount
@@ -51,6 +52,7 @@ import com.simtop.billionbeers.shared.beerdetail.BeerDetailStrings
 import com.simtop.billionbeers.shared.beerdetail.formatServingTemperatureRange
 import com.simtop.core.core.CommonUiState
 import com.simtop.navigation.contract.PortableRoute
+import kotlin.js.toJsString
 import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -149,17 +151,24 @@ private fun webDataConfigForHost(): WebDataConfig =
       }
   )
 
+@JsFun("() => crypto.randomUUID()") private external fun webHistorySessionId(): String
+
+@JsFun("() => typeof history.state === 'string' ? history.state : ''")
+private external fun webHistoryToken(): String
+
 private class WebRouteSession(
   private val runtime: WebDataRuntime,
   private val scope: CoroutineScope,
 ) {
-  private val routeRequests = Channel<PortableRoute>(Channel.BUFFERED)
+  private val routeRequests = Channel<SharedAppNavigationRequest>(Channel.BUFFERED)
   private val routeFlow = routeRequests.receiveAsFlow()
   private val resolutionState = MutableStateFlow<WebRouteResolution?>(null)
   val resolution = resolutionState.asStateFlow()
   private var closed = false
   private var listener: ((Event) -> Unit)? = null
   private var lastObservedHash: String? = null
+  private var lastObservedToken = ""
+  private val savedFilterHistory = WebSavedFilterHistory(webHistorySessionId())
   private var resolutionJob: Job? = null
 
   fun routes() = routeFlow
@@ -169,7 +178,13 @@ private class WebRouteSession(
     when (event) {
       is SharedAppNavigationEvent.Push -> {
         val hash = event.route.toWebHash()
-        if (window.location.hash != hash) window.history.pushState(null, "", hash)
+        val preset = event.savedFilter
+        if (preset != null) {
+          val token = savedFilterHistory.remember(preset)
+          window.history.pushState(token.toJsString(), "", hash)
+        } else if (window.location.hash != hash || webHistoryToken().isNotEmpty()) {
+          window.history.pushState(null, "", hash)
+        }
         markObservedHash()
       }
       is SharedAppNavigationEvent.Pop -> window.history.back()
@@ -187,13 +202,14 @@ private class WebRouteSession(
   private fun markObservedHash() {
     resolutionJob?.cancel()
     lastObservedHash = window.location.hash
+    lastObservedToken = webHistoryToken()
   }
 
   fun start() {
     if (closed || listener != null) return
     val callback: (Event) -> Unit = {
       val hash = window.location.hash
-      if (hash != lastObservedHash) {
+      if (hash != lastObservedHash || webHistoryToken() != lastObservedToken) {
         requestRoute(hash)
       }
     }
@@ -212,16 +228,28 @@ private class WebRouteSession(
 
   private fun requestRoute(hash: String, canonicalize: Boolean = false) {
     lastObservedHash = hash
+    val token = webHistoryToken()
+    lastObservedToken = token
     resolutionJob?.cancel()
     resolutionJob = scope.launch {
       val result = resolveWebHash(hash, runtime.repository::getBeerById)
-      if (closed || window.location.hash != hash) return@launch
+      if (closed || window.location.hash != hash || webHistoryToken() != token) return@launch
       if (canonicalize && result is WebRouteResolution.Ready) {
         window.history.replaceState(null, "", result.route.toWebHash())
         lastObservedHash = window.location.hash
+        lastObservedToken = ""
       }
       resolutionState.value = result
-      if (result is WebRouteResolution.Ready) routeRequests.send(result.route)
+      if (result is WebRouteResolution.Ready) {
+        val preset =
+          if (result.route == PortableRoute.SavedFilterPresets && !canonicalize) {
+            savedFilterHistory.resolve(token)
+          } else null
+        routeRequests.send(
+          if (preset != null) SharedAppNavigationRequest.SavedFilter(preset)
+          else SharedAppNavigationRequest.Route(result.route)
+        )
+      }
     }
   }
 
@@ -235,6 +263,7 @@ private class WebRouteSession(
     runtime.close()
     scope.cancel()
     routeRequests.close()
+    savedFilterHistory.clear()
   }
 }
 
@@ -284,7 +313,7 @@ private fun webHost(runtime: WebDataRuntime, session: WebRouteSession) =
     imageContent = { imageUrl, description, modifier ->
       WebImage(runtime, imageUrl, description, modifier)
     },
-    routeRequests = session.routes(),
+    navigationRequests = session.routes(),
     onNavigationEvent = session::onNavigationEvent,
     detailCollapsingToolbarEnabled = false,
     detailAnimationsDisabled = true,

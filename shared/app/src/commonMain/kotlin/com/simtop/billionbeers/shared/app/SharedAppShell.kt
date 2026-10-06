@@ -70,6 +70,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
 
 /** Host-owned copy and formatting strings for the portable application shell. */
@@ -108,11 +110,19 @@ data class SharedAppStrings(
 )
 
 sealed interface SharedAppNavigationEvent {
-  data class Push(val route: PortableRoute) : SharedAppNavigationEvent
+  data class Push(val route: PortableRoute, val savedFilter: SavedFilterPreset? = null) :
+    SharedAppNavigationEvent
 
   data class Pop(val route: PortableRoute) : SharedAppNavigationEvent
 
   data class Replace(val route: PortableRoute) : SharedAppNavigationEvent
+}
+
+/** Host restoration commands; saved results remain internal, not a portable public route. */
+sealed interface SharedAppNavigationRequest {
+  data class Route(val route: PortableRoute) : SharedAppNavigationRequest
+
+  data class SavedFilter(val preset: SavedFilterPreset) : SharedAppNavigationRequest
 }
 
 /** Platform slots for resources, images, rows, and errors that cannot live in common code. */
@@ -127,6 +137,7 @@ data class SharedAppHost(
   val detailTitleTextStyle: TextStyle? = null,
   val darkTheme: Boolean = false,
   val routeRequests: Flow<PortableRoute> = emptyFlow(),
+  val navigationRequests: Flow<SharedAppNavigationRequest> = emptyFlow(),
   val onNavigationEvent: (SharedAppNavigationEvent) -> Unit = {},
   val messageContent: @Composable (String) -> Unit = { message ->
     Surface(modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) {
@@ -161,8 +172,18 @@ fun SharedAppShell(
   DisposableEffect(navigation) { onDispose { navigation.disposeAll() } }
   val coroutineScope = rememberCoroutineScope()
 
-  LaunchedEffect(host.routeRequests) {
-    host.routeRequests.collectLatest(navigation::replaceFromRoute)
+  LaunchedEffect(host.routeRequests, host.navigationRequests) {
+    merge(
+        host.routeRequests.map { SharedAppNavigationRequest.Route(it) },
+        host.navigationRequests,
+      )
+      .collectLatest { request ->
+        when (request) {
+          is SharedAppNavigationRequest.Route -> navigation.replaceFromRoute(request.route)
+          is SharedAppNavigationRequest.SavedFilter ->
+            navigation.replaceFromSavedFilter(request.preset)
+        }
+      }
   }
 
   val entry = navigation.current

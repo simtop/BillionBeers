@@ -118,6 +118,26 @@ deprecation message as a known warning; every other console message or runtime e
 This compatibility warning remains a dependency/toolchain follow-up, not a claim of warning-free
 runtime behavior.
 
+## Saved-filter results and browser history
+
+The preset list and applied results keep `#saved-filters` as their public URL. Applying a preset
+creates a separate browser-history entry with an opaque, page-session token in `history.state`.
+The Web adapter retains the applied name/query snapshot in memory; no query or whole preset is
+written to the URL, browser storage or history state. Back/Forward within that page session restores
+the exact applied snapshot, even if its entry owner was disposed. Restoration does not emit another
+host navigation event. Returning to the list closes the result owner.
+
+Reload deliberately restores the durable preset list, not the applied results. The new page session
+cannot resolve older tokens, including entries reached through Back/Forward after reload, so those
+entries also show the list. Saved presets themselves remain in IndexedDB and can be reapplied.
+Session IDs prevent an old token from resolving to an unrelated newly applied preset. A copied URL
+opens the list rather than sharing a query. A durable/shareable result URL remains a separate product
+and route-contract decision; this host correction does not add `SavedFilterResults` to `PortableRoute`.
+
+The packaged smoke saves and applies a preset using browser keyboard/mouse input, then checks detail,
+both Back affordances, Forward, reload fallback, stale-token traversal and reapplication. This local
+Chromium evidence does not establish deployed-origin or other-browser behavior.
+
 ## Lifecycle and images
 
 `WebDataRuntime` owns the browser storage and Ktor Fetch client. It is opened once for the
