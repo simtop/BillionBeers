@@ -1,5 +1,9 @@
+@file:OptIn(kotlin.js.ExperimentalWasmJsInterop::class)
+
 package com.simtop.beer_storage.browser
 
+import com.simtop.beer_storage.api.FilterPresetCapacityReachedException
+import com.simtop.beer_storage.api.MAX_STORED_FILTER_PRESETS
 import com.simtop.beer_storage.api.StoredBeer
 import com.simtop.beer_storage.api.StoredFilterPreset
 import kotlin.test.Test
@@ -13,6 +17,113 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 
 class IndexedDbBeersStorageBrowserTest {
+  @Test
+  fun capacityRejectionPreservesDurablePresetsAndAllowsUpdateAndRetry() = runTest {
+    val databaseName = "billionbeers-presets-capacity-${hashCode()}"
+    var writer = IndexedDbBeersStorage(databaseName)
+    val peer = IndexedDbBeersStorage(databaseName)
+    val presets = (0 until MAX_STORED_FILTER_PRESETS).map { index ->
+      StoredFilterPreset("preset-$index", "Preset $index", "beer $index", null, null, index.toLong())
+    }
+    val added = StoredFilterPreset("added", "Lagers", "lager", null, "brewery-1", 11L)
+    try {
+      presets.forEach { writer.saveFilterPreset(it) }
+      val before = presets.sortedByDescending { it.updatedAt }
+      assertEquals(before, peer.observeSavedFilterPresets().first { it == before })
+
+      assertFailsWith<FilterPresetCapacityReachedException> { writer.saveFilterPreset(added) }
+      assertEquals(before, writer.observeSavedFilterPresets().first())
+      assertEquals(before, peer.observeSavedFilterPresets().first())
+      assertReopenedPresets(databaseName, before)
+
+      val updated = presets.first().copy(name = "Updated", updatedAt = 20L)
+      writer.saveFilterPreset(updated)
+      writer.deleteFilterPreset(presets.last().id)
+      writer.saveFilterPreset(added)
+      val expected = (presets.drop(1).dropLast(1) + updated + added).sortedByDescending { it.updatedAt }
+      assertEquals(expected, writer.observeSavedFilterPresets().first())
+      assertEquals(expected, peer.observeSavedFilterPresets().first { it == expected })
+      writer.close()
+      writer = IndexedDbBeersStorage(databaseName)
+      assertEquals(expected, writer.observeSavedFilterPresets().first())
+    } finally {
+      clearPresetsAndClose(writer, peer)
+    }
+  }
+
+  @Test
+  fun abortedPresetSavePreservesDurableRowsAndAllowsRetry() = runTest {
+    val added = StoredFilterPreset("added", "Lagers", "lager", null, "brewery-1", 2L)
+    assertPresetAbortRecovery("save", { listOf(added, it) }) { it.saveFilterPreset(added) }
+  }
+
+  @Test
+  fun abortedPresetRenamePreservesDurableRowsAndAllowsRetry() = runTest {
+    assertPresetAbortRecovery("rename", { listOf(it.copy(name = "Renamed", updatedAt = 3L)) }) {
+      it.renameFilterPreset("initial", "Renamed", 3L)
+    }
+  }
+
+  @Test
+  fun abortedPresetDeletePreservesDurableRowsAndAllowsRetry() = runTest {
+    assertPresetAbortRecovery("delete", { emptyList() }) { it.deleteFilterPreset("initial") }
+  }
+
+  private suspend fun assertPresetAbortRecovery(
+    operation: String,
+    expectedAfter: (StoredFilterPreset) -> List<StoredFilterPreset>,
+    mutate: suspend (IndexedDbBeersStorage) -> Unit,
+  ) {
+    val databaseName = "billionbeers-presets-abort-$operation-${hashCode()}"
+    var writer = IndexedDbBeersStorage(databaseName)
+    val peer = IndexedDbBeersStorage(databaseName)
+    val initial = StoredFilterPreset("initial", "IPAs", "ipa", "style-1", null, 1L)
+    try {
+      writer.saveFilterPreset(initial)
+      assertEquals(listOf(initial), peer.observeSavedFilterPresets().first { it == listOf(initial) })
+      installStorageProbe()
+      try {
+        // Abort a real transaction after its mutation request succeeds but before commit.
+        abortNextPresetMutation()
+        assertFailsWith<Throwable> { mutate(writer) }
+        assertEquals(1, storageProbePresetAbortCount())
+        assertEquals(listOf(initial), writer.observeSavedFilterPresets().first())
+        assertEquals(listOf(initial), peer.observeSavedFilterPresets().first())
+      } finally {
+        finishStorageProbe()
+      }
+      assertReopenedPresets(databaseName, listOf(initial))
+
+      mutate(writer)
+      val expected = expectedAfter(initial)
+      assertEquals(expected, writer.observeSavedFilterPresets().first())
+      assertEquals(expected, peer.observeSavedFilterPresets().first { it == expected })
+      writer.close()
+      writer = IndexedDbBeersStorage(databaseName)
+      assertEquals(expected, writer.observeSavedFilterPresets().first())
+    } finally {
+      clearPresetsAndClose(writer, peer)
+    }
+  }
+
+  private suspend fun clearPresetsAndClose(writer: IndexedDbBeersStorage, peer: IndexedDbBeersStorage) {
+    peer.close()
+    try {
+      writer.observeSavedFilterPresets().first().forEach { writer.deleteFilterPreset(it.id) }
+    } finally {
+      writer.close()
+    }
+  }
+
+  private suspend fun assertReopenedPresets(databaseName: String, expected: List<StoredFilterPreset>) {
+    val reopened = IndexedDbBeersStorage(databaseName)
+    try {
+      assertEquals(expected, reopened.observeSavedFilterPresets().first())
+    } finally {
+      reopened.close()
+    }
+  }
+
   @Test
   fun committedRowsSurviveCloseAndReopen() = runTest {
     val databaseName = "billionbeers-test-${hashCode()}"
