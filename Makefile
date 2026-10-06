@@ -291,6 +291,7 @@ endif
 
 .PHONY: ci-report-test
 ci-report-test: ## Test CI diagnosis, evidence parsing, and incremental comment lifecycle.
+	@$(MAKE) --no-print-directory benchmark-budget-test
 	@python3 -m unittest discover -s .github/scripts -p 'test_*ci*.py'
 	@python3 .github/scripts/test_detect_change_scope.py
 	@python3 .github/scripts/test_validate_native_test_reports.py
@@ -565,6 +566,10 @@ repo-doctor: ## Verify read-only GitHub repository settings and CODEOWNERS cover
 	@REPO="$(REPO)" BRANCH="$(BRANCH)" bash scripts/repo-doctor.sh
 
 # Benchmarking
+.PHONY: benchmark-budget-test
+benchmark-budget-test: ## Test startup-budget parsing and fresh-report selection without a device.
+	python3 scripts/test_benchmark_budget.py
+
 benchmark-micro: ## Run microbenchmarks on a connected device.
 	$(GRADLE_RUNNER) :benchmark:microbenchmark:connectedCheck
 
