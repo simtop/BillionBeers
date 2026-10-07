@@ -74,6 +74,30 @@ class RouteContractTest {
   }
 
   @Test
+  fun `decoder ignores fields added by newer clients`() {
+    val payload =
+      """
+      {"type":"beer_detail","futureRouteField":true,"beer":{"id":"42","name":"Punk IPA","tagline":"Classic","description":"Hoppy","imageUrl":"","abv":5.6,"ibu":41.0,"foodPairing":[],"futureBeerField":"ignored"}}
+      """.trimIndent()
+
+    assertEquals(
+      PortableRoute.BeerDetail(
+        Beer(
+          id = "42",
+          name = "Punk IPA",
+          tagline = "Classic",
+          description = "Hoppy",
+          imageUrl = "",
+          abv = 5.6,
+          ibu = 41.0,
+          foodPairing = emptyList(),
+        )
+      ),
+      decodeRoute(payload),
+    )
+  }
+
+  @Test
   fun `parser accepts list favorites and detail destinations`() {
     assertEquals(
       DeepLinkDestination.BeersList,
@@ -82,6 +106,10 @@ class RouteContractTest {
     assertEquals(
       DeepLinkDestination.Favorites,
       DeepLinkParser.parse(DeepLinkParser.SCHEME, DeepLinkParser.HOST_FAVORITES, emptyList()),
+    )
+    assertEquals(
+      DeepLinkDestination.Favorites,
+      DeepLinkParser.parse(DeepLinkParser.SCHEME, DeepLinkParser.HOST_FAVORITES, listOf("")),
     )
     assertEquals(
       DeepLinkDestination.BeerDetail("42"),

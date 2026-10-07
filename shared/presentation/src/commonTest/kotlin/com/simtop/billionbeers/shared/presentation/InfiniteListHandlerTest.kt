@@ -79,6 +79,14 @@ class InfiniteListHandlerTest {
   }
 
   @Test
+  fun aSingleItemListCanTriggerAtItsOnlyItem() = runTest {
+    assertEquals(
+      1,
+      signalsFor(ListPosition(totalItems = 1, lastVisibleIndex = 0)),
+    )
+  }
+
+  @Test
   fun bufferWidensTheNearBottomTrigger() = runTest {
     assertEquals(
       1,

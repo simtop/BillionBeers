@@ -91,6 +91,7 @@ class SharedAppNavigationStateTest {
     val navigation = navigation()
     navigation.navigate(PortableRoute.BeerBrowse)
     val home = navigation.current as BrowseHomeEntry
+    assertEquals(0, home.selectedTab)
     home.selectedTab = 1
     navigation.selectBrowse(BrowseSelection(styleId = "style", name = "Lager"))
     val category = navigation.current as BrowseBeersEntry
@@ -108,6 +109,17 @@ class SharedAppNavigationStateTest {
     assertFalse(home.isClosed)
     assertTrue(navigation.pop())
     assertTrue(home.isClosed)
+  }
+
+  @Test
+  fun closingSavedFilterPresetsMarksEntryClosed() {
+    val navigation = navigation()
+    navigation.navigate(PortableRoute.SavedFilterPresets)
+    val presets = navigation.current as SavedFiltersEntry
+
+    assertFalse(presets.isClosed)
+    navigation.disposeAll()
+    assertTrue(presets.isClosed)
   }
 
   @Test
