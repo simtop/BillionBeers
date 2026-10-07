@@ -11,6 +11,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import com.simtop.beerdomain.domain.errors.MutateFilterPresetError
@@ -25,6 +26,7 @@ import dev.zacsweers.metro.createGraphFactory
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -140,6 +142,21 @@ class SavedFiltersMutationUiTest {
       assertEquals(preset.id, persistedRename.id)
       assertEquals(draft, persistedRename.name)
       assertEquals(preset.query, persistedRename.query)
+    }
+  }
+
+  @Test
+  fun renameEditorRemainsSingleLineWhenTextContainsNewline() {
+    ActivityScenario.launch(MainActivity::class.java).use {
+      openSavedFilters()
+      rowAction(preset, renameLabel).performClick()
+      editor(preset).performTextReplacement("First line\nSecond line")
+
+      val editorHeight = editor(preset).fetchSemanticsNode().size.height
+      assertTrue(
+        "single-line editor height was $editorHeight",
+        editorHeight <= with(composeTestRule.density) { 64.dp.toPx() },
+      )
     }
   }
 

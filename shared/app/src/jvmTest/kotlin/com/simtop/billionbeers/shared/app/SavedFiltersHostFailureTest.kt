@@ -61,6 +61,21 @@ class SavedFiltersHostFailureTest {
   }
 
   @Test
+  fun selectingSavedFilterShowsResultsAndBackRestoresPresetList() = runSkikoComposeUiTest {
+    val fixture = Fixture(presetCount = 1)
+    val preset = fixture.presets.value.single()
+    val strings =
+      savedFilterStrings("Rename", "Delete").let {
+        it.copy(back = "Back", browseStrings = it.browseStrings.copy(back = "Back"))
+      }
+    showShell(fixture, PortableRoute.SavedFilterPresets, strings)
+
+    onNodeWithText(preset.name).assertIsDisplayed().performClick()
+    onNodeWithText("Back").assertIsDisplayed().performClick()
+    onNodeWithTag("saved-filter-${preset.id}").assertIsDisplayed()
+  }
+
+  @Test
   fun mutationFailureKeepsDraftAndPresetUntilRenameAndDeleteRecover() = runSkikoComposeUiTest {
     val fixture = Fixture(presetCount = 1)
     val preset = fixture.presets.value.single()
@@ -99,18 +114,19 @@ class SavedFiltersHostFailureTest {
   private fun androidx.compose.ui.test.ComposeUiTest.showShell(
     fixture: Fixture,
     initialRoute: PortableRoute,
+    strings: SharedAppStrings = savedFilterStrings("Rename", "Delete"),
   ) {
     setContent {
       SharedAppShell(
         repository = fixture.repository,
         pagerFactory = FakeBeersPagerFactory(fixture.backingRepository),
         coroutineDispatcher = DefaultCoroutineDispatcherProvider(),
-        strings = savedFilterStrings("Rename", "Delete"),
+        strings = strings,
         host =
           SharedAppHost(
             beerRow = { _, _ -> },
             errorContent = { _, _ -> Text("Load error") },
-            backIcon = {},
+            backIcon = { text -> Text(text) },
             favoriteIcon = { _, _ -> },
             imageContent = { _, _, _ -> },
             messageContent = { message ->
