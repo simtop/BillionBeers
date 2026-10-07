@@ -10,7 +10,9 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasAnyAncestor
@@ -38,6 +40,7 @@ import java.io.File
 import javax.imageio.ImageIO
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow
 
 /** Desktop Compose renderer checks with controlled width/font scale and in-memory callbacks. */
@@ -76,6 +79,33 @@ class SavedFiltersLayoutTest {
         assertEquals(fixture.initialPresets.reversed(), fixture.presets.value)
         assertEquals(listOf(first.id), fixture.renamedIds)
       }
+    }
+
+  @Test
+  fun renameControlsAreDisabledWhileRenameIsInFlight() =
+    runSkikoComposeUiTest(size = Size(320f, 640f), density = Density(1f, fontScale = 2f)) {
+      val fixture = Fixture()
+      fixture.blockRename = true
+      val strings = savedFilterStrings("Rename", "Delete")
+      showContent(fixture, strings)
+      val first = fixture.initialPresets.first()
+
+      scrollTo(fixture, first)
+      action(first, strings.renameFilter).performClick()
+      editor(first).performTextReplacement("Renamed while waiting")
+      action(first, strings.renameFilter).performClick()
+
+      waitUntil { fixture.renameStarted.isCompleted }
+      onNode(
+          hasText("Renamed while waiting") and
+            hasAnyAncestor(hasTestTag("saved-filter-${first.id}"))
+        )
+        .assertIsNotEnabled()
+      action(first, strings.renameFilter).assertIsNotEnabled()
+
+      fixture.renameRelease.complete(Unit)
+      waitUntil { fixture.presets.value.first().name == "Renamed while waiting" }
+      action(first, "Renamed while waiting").assertIsDisplayed().assertIsEnabled()
     }
 
   private fun verifyAllActions(strings: SharedAppStrings, imageName: String) =
@@ -123,6 +153,10 @@ class SavedFiltersLayoutTest {
             onApply = { fixture.appliedIds += it.id },
             onRename = { preset, name ->
               fixture.renamedIds += preset.id
+              if (fixture.blockRename) {
+                fixture.renameStarted.complete(Unit)
+                fixture.renameRelease.await()
+              }
               if (fixture.renameSucceeds) {
                 fixture.presets.value =
                   fixture.presets.value.map { if (it.id == preset.id) it.copy(name = name) else it }
@@ -163,6 +197,9 @@ class SavedFiltersLayoutTest {
   }
 
   private class Fixture(val renameSucceeds: Boolean = true) {
+    var blockRename = false
+    val renameStarted = CompletableDeferred<Unit>()
+    val renameRelease = CompletableDeferred<Unit>()
     val initialPresets =
       List(SavedFilterPreset.MAX_COUNT) { index ->
         SavedFilterPreset(
