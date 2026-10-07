@@ -35,14 +35,14 @@ class KtorBeersServiceTest {
 
     KtorBeersService(client).getListOfBeers(
       page = 2,
-      search = "ipa & stout",
+      search = "ipa-._~ & stout",
       typologyId = "style/1",
       breweryId = "brewery 1",
     )
 
     assertEquals(
       "/beers?_page=2&_limit=25&translations.language.code=en" +
-        "&q=ipa%20%26%20stout&typology.id=style%2F1&brewery.id=brewery%201",
+        "&q=ipa-._~%20%26%20stout&typology.id=style%2F1&brewery.id=brewery%201",
       requestPath,
     )
     client.close()

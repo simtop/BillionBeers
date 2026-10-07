@@ -224,6 +224,35 @@ class BeersSearchViewModelTest {
     }
 
   @Test
+  fun `selected style resolves to the matching style`() =
+    runTest(mainDispatcher.testDispatcher) {
+      fakeRepository.beerStyles = Either.Right(listOf(BeerStyle(id = "style-1", name = "IPA")))
+      val viewModel = buildViewModel()
+
+      runCurrent()
+      viewModel.onStyleSelected("style-1")
+      runCurrent()
+
+      expectThat(viewModel.selectedStyle.value).isEqualTo(BeerStyle("style-1", "IPA"))
+    }
+
+  @Test
+  fun `initial style creates one style-only query after debounce`() =
+    runTest(mainDispatcher.testDispatcher) {
+      val viewModel = buildViewModel(initialStyleId = "style-1")
+
+      viewModel.viewState.test {
+        expectThat(awaitItem()).isEqualTo(CommonUiState.Empty)
+        advanceTimeBy(pastDebounce)
+        runCurrent()
+
+        expectThat(fakeFactory.createdQueries.toList())
+          .isEqualTo(listOf(BeersQuery(styleId = "style-1")))
+        cancelAndIgnoreRemainingEvents()
+      }
+    }
+
+  @Test
   fun `selected style creates a style-only query`() =
     runTest(mainDispatcher.testDispatcher) {
       val viewModel = buildViewModel()
