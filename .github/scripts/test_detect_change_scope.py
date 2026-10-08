@@ -104,18 +104,24 @@ with tempfile.TemporaryDirectory() as temporary:
     (repository / "scripts").mkdir()
     before_head = common_head
     for verifier, owner in (
-        ("verify-release-smoke-artifacts.sh", "instrumented"),
-        ("verify_web_release_artifacts.py", "web"),
-        ("test_verify_web_release_artifacts.py", "web"),
+        ("scripts/verify-release-smoke-artifacts.sh", ("instrumented",)),
+        ("scripts/verify_web_release_artifacts.py", ("web",)),
+        ("scripts/test_verify_web_release_artifacts.py", ("web",)),
+        ("qa/project.config.json", ()),
+        ("skills/agent-qa/scripts/project_index.py", ()),
+        ("scripts/test_qa_integration.py", ()),
     ):
-        (repository / "scripts" / verifier).write_text("verifier change\n")
+        changed_path = repository / verifier
+        changed_path.parent.mkdir(parents=True, exist_ok=True)
+        changed_path.write_text("verifier change\n")
         verifier_head = commit(repository, f"change {verifier}")
         expected = {lane: "false" for lane in ("unit", "screenshot", "instrumented", "native", "web")}
-        expected[owner] = "true"
-        # An isolated verifier PR must be treated as code, with first-run fail-open coverage.
+        for lane in owner:
+            expected[lane] = "true"
+        # App verifiers fail open on first run; QA-only discovery is checked in format on every run.
         opened_result = run_detector(repository, event="pull_request", action="opened", base=before_head)
-        assert opened_result == {lane: "true" for lane in expected}, (verifier, opened_result)
-        # A prior green verdict must not be adopted after changing its verifier.
+        assert opened_result == {lane: "true" if owner else "false" for lane in expected}, (verifier, opened_result)
+        # Product verifier edits invalidate their owner; discovery changes preserve app verdicts.
         result = run_detector(repository, event="pull_request", action="synchronize", base=base, before=before_head, after=verifier_head, jobs=jobs)
         assert result == expected, (verifier, result)
         before_head = verifier_head

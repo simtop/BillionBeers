@@ -51,6 +51,8 @@ EMULATOR_RUN = $(EMULATOR_SCRIPT_ENV) bash scripts/emulator.sh
 MODULE_TRIMMED := $(strip $(MODULE))
 MODULE_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,)
 UI_TEST_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,:app:)
+UI_TEST_CLASS ?=
+UI_TEST_ARGS = $(if $(strip $(UI_TEST_CLASS)),-Pandroid.testInstrumentationRunnerArguments.class="$(strip $(UI_TEST_CLASS))",)
 
 # One local output filter. Gateway sessions can export GRADLE_RUNNER=./gradlew.
 GRADLE_RUNNER ?= $(shell if command -v rtk >/dev/null 2>&1; then echo "rtk gradlew"; else echo "./gradlew"; fi)
@@ -165,6 +167,30 @@ web-image-proxy-test: ## Test the local Web image proxy without contacting the u
 web-static-test: ## Test the generated Web static-distribution verifier.
 	python3 scripts/test_verify_web_static.py
 	python3 scripts/test_verify_web_release_artifacts.py
+
+##@ Agent QA
+export QA_HOST
+export QA_QUERY = $(QUERY)
+export QA_SCREEN = $(SCREEN)
+
+.PHONY: qa-index qa-find qa-screen qa-validate qa-test
+qa-index: ## Generate a source-backed screen/state index at build/qa/project.json.
+	python3 skills/agent-qa/scripts/project_index.py generate
+
+qa-find: ## Search visible text, symbols, selectors or states with QUERY=text and optional QA_HOST.
+	python3 skills/agent-qa/scripts/project_index.py search
+
+qa-screen: ## Show entry steps, source owners and available state recipes with SCREEN=id and optional QA_HOST.
+	python3 skills/agent-qa/scripts/project_index.py show
+
+qa-validate: ## Validate screen/source anchors, host bindings and state recipes.
+	python3 skills/agent-qa/scripts/project_index.py validate
+
+qa-test: ## Test portable QA behavior and project integration without an app build or device.
+	python3 skills/agent-qa/scripts/test_project_index.py
+	python3 scripts/test_qa_integration.py
+
+##@ Web verification
 
 web-verify: ## Run Web browser tests and verify the production static distribution.
 	rm -rf "$(WEB_RELEASE_CONFIDENCE_DIR)"
@@ -296,6 +322,7 @@ endif
 
 .PHONY: ci-report-test
 ci-report-test: ## Test CI diagnosis, evidence parsing, and incremental comment lifecycle.
+	@$(MAKE) --no-print-directory qa-test qa-validate
 	@$(MAKE) --no-print-directory make-help-test
 	@$(MAKE) --no-print-directory benchmark-budget-test
 	@python3 -m unittest discover -s .github/scripts -p 'test_*ci*.py'
@@ -335,10 +362,10 @@ compose-metrics: ## Regenerate Compose compiler stability/skippability reports i
 
 ##@ Android UI tests - connected
 ui-test: ## Run connected Android tests (UI tests) on an already-running device/emulator.
-	$(GRADLE_RUNNER) $(UI_TEST_PREFIX)connectedDebugAndroidTest
+	$(GRADLE_RUNNER) $(UI_TEST_PREFIX)connectedDebugAndroidTest $(UI_TEST_ARGS)
 
 ui-test-local: emulator-start ## Start/reuse the local resizable emulator, then run connected UI tests.
-	$(GRADLE_RUNNER) $(UI_TEST_PREFIX)connectedDebugAndroidTest
+	$(GRADLE_RUNNER) $(UI_TEST_PREFIX)connectedDebugAndroidTest $(UI_TEST_ARGS)
 
 ##@ Android emulators
 # Local emulator lifecycle. Settings are explicit above and can be overridden with EMULATOR_*.
