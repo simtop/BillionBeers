@@ -1,0 +1,796 @@
+{
+  "schema": 1,
+  "hosts": {
+    "android": {
+      "launch": [
+        "make install GRADLE_RUNNER=./gradlew",
+        "Use the installed Android CLI to launch the installed app; consult command help."
+      ],
+      "preconditions": [
+        "Select a disposable test device explicitly.",
+        "Full-app bundletool local-testing split staging is required; clearing data removes staging."
+      ],
+      "evidence": [
+        {
+          "path": "Makefile",
+          "needle": "install: ## Install the app with beerdetail and beerbrowse"
+        }
+      ]
+    },
+    "web": {
+      "launch": [
+        "make web-run GRADLE_RUNNER=./gradlew",
+        "Open the dev-server URL printed by the command."
+      ],
+      "preconditions": [
+        "Node and a browser with the project Wasm support are available.",
+        "Use current screenshot/accessibility semantics to interact with Compose canvas."
+      ],
+      "evidence": [
+        {
+          "path": "Makefile",
+          "needle": "web-run: ## Start the local Wasm browser host"
+        }
+      ]
+    },
+    "ios": {
+      "launch": [
+        "make ios-host-run",
+        "make ios-simulator-open"
+      ],
+      "preconditions": [
+        "The configured arm64 simulator and Xcode are available."
+      ],
+      "evidence": [
+        {
+          "path": "Makefile",
+          "needle": "ios-host-run: ios-host-build"
+        }
+      ]
+    },
+    "desktop": {
+      "launch": [
+        "make desktop-run GRADLE_RUNNER=./gradlew"
+      ],
+      "preconditions": [
+        "Use the Compose window; --cli/--live/--favorites select nonvisual CLI modes."
+      ],
+      "evidence": [
+        {
+          "path": "desktop-app/src/main/kotlin/com/simtop/billionbeers/desktop/Main.kt",
+          "needle": "Window("
+        }
+      ]
+    }
+  },
+  "screens": [
+    {
+      "id": "catalog",
+      "name": "Catalog / Home",
+      "hosts": [
+        "android",
+        "web",
+        "ios",
+        "desktop"
+      ],
+      "recognition": [
+        "Catalog",
+        "Home",
+        "Billion Beers",
+        "beer_list"
+      ],
+      "owners": [
+        {
+          "path": "feature/beerslist/src/main/java/com/simtop/feature/beerslist/BeersListScreen.kt",
+          "needle": "fun BeersListScreen(",
+          "hosts": [
+            "android"
+          ]
+        },
+        {
+          "path": "shared/beerslist/src/commonMain/kotlin/com/simtop/billionbeers/shared/beerslist/BeersListContent.kt",
+          "needle": "fun SharedBeersListContent(",
+          "hosts": [
+            "web",
+            "ios",
+            "desktop"
+          ]
+        }
+      ],
+      "entry": {
+        "steps": [
+          "Launch the app or select the Catalog/Home root tab."
+        ],
+        "preconditions": [
+          "Launch the reported host with suitable isolated catalog data."
+        ],
+        "evidence": [
+          {
+            "path": "app/src/main/java/com/simtop/billionbeers/presentation/AppNavigation.kt",
+            "needle": "entry<BeersList>"
+          },
+          {
+            "path": "shared/app/src/commonMain/kotlin/com/simtop/billionbeers/shared/app/SharedAppNavigationState.kt",
+            "needle": "internal class SharedAppNavigationState("
+          }
+        ]
+      },
+      "states": [],
+      "limits": [
+        "Entry/state recipes are declarations; verify each action in the running host."
+      ]
+    },
+    {
+      "id": "favorites",
+      "name": "Favorites",
+      "hosts": [
+        "android",
+        "web",
+        "ios",
+        "desktop"
+      ],
+      "recognition": [
+        "Favorites",
+        "favorites_empty",
+        "favorites_list"
+      ],
+      "owners": [
+        {
+          "path": "feature/favorites/src/main/java/com/simtop/feature/favorites/FavoritesScreen.kt",
+          "needle": "fun FavoritesScreen(",
+          "hosts": [
+            "android"
+          ]
+        },
+        {
+          "path": "shared/favorites/src/commonMain/kotlin/com/simtop/billionbeers/shared/favorites/FavoritesContent.kt",
+          "needle": "fun SharedFavoritesContent(",
+          "hosts": [
+            "web",
+            "ios",
+            "desktop"
+          ]
+        }
+      ],
+      "entry": {
+        "steps": [
+          "Launch the app.",
+          "Select the Favorites root tab."
+        ],
+        "preconditions": [
+          "Launch the reported host with suitable isolated catalog data."
+        ],
+        "evidence": [
+          {
+            "path": "app/src/main/java/com/simtop/billionbeers/presentation/AppNavigation.kt",
+            "needle": "entry<Favorites>"
+          },
+          {
+            "path": "shared/app/src/commonMain/kotlin/com/simtop/billionbeers/shared/app/SharedAppNavigationState.kt",
+            "needle": "internal class SharedAppNavigationState("
+          }
+        ]
+      },
+      "states": [
+        {
+          "id": "empty",
+          "hosts": [
+            "android",
+            "web",
+            "ios",
+            "desktop"
+          ],
+          "mechanism": "ui",
+          "scope": "live-app",
+          "steps": [
+            "Use an isolated profile with no favorites; select Favorites."
+          ],
+          "observe": "Favorites shows its empty message instead of beer rows.",
+          "evidence": [
+            {
+              "path": "shared/favorites/src/commonMain/kotlin/com/simtop/billionbeers/shared/favorites/FavoritesContent.kt",
+              "needle": "fun SharedFavoritesContent(",
+              "hosts": [
+                "web",
+                "ios",
+                "desktop"
+              ]
+            }
+          ],
+          "limits": [
+            "Do not delete developer/user favorites to force this state."
+          ]
+        }
+      ],
+      "limits": [
+        "Entry/state recipes are declarations; verify each action in the running host."
+      ]
+    },
+    {
+      "id": "search",
+      "name": "Search",
+      "hosts": [
+        "android",
+        "web",
+        "ios",
+        "desktop"
+      ],
+      "recognition": [
+        "Search",
+        "style_filter",
+        "query",
+        "no results"
+      ],
+      "owners": [
+        {
+          "path": "feature/beersearch/src/main/java/com/simtop/feature/beersearch/BeersSearchScreen.kt",
+          "needle": "fun BeersSearchScreen(",
+          "hosts": [
+            "android"
+          ]
+        },
+        {
+          "path": "shared/beersearch/src/commonMain/kotlin/com/simtop/billionbeers/shared/beersearch/BeersSearchContent.kt",
+          "needle": "fun SharedBeersSearchContent(",
+          "hosts": [
+            "web",
+            "ios",
+            "desktop"
+          ]
+        }
+      ],
+      "entry": {
+        "steps": [
+          "Open Catalog/Home.",
+          "Select Search.",
+          "Enter the reported query and style filter if relevant."
+        ],
+        "preconditions": [
+          "Launch the reported host with suitable isolated catalog data."
+        ],
+        "evidence": [
+          {
+            "path": "app/src/main/java/com/simtop/billionbeers/presentation/AppNavigation.kt",
+            "needle": "entry<BeersSearch>"
+          },
+          {
+            "path": "shared/app/src/commonMain/kotlin/com/simtop/billionbeers/shared/app/SharedAppNavigationState.kt",
+            "needle": "internal class SharedAppNavigationState("
+          }
+        ]
+      },
+      "states": [],
+      "limits": [
+        "Entry/state recipes are declarations; verify each action in the running host."
+      ]
+    },
+    {
+      "id": "browse",
+      "name": "Browse categories",
+      "hosts": [
+        "android",
+        "web",
+        "ios",
+        "desktop"
+      ],
+      "recognition": [
+        "Browse",
+        "Styles",
+        "Breweries"
+      ],
+      "owners": [
+        {
+          "path": "feature/beerbrowse/src/main/java/com/simtop/feature/beerbrowse/presentation/BrowseHomeScreen.kt",
+          "needle": "fun BrowseHomeScreen(",
+          "hosts": [
+            "android"
+          ]
+        },
+        {
+          "path": "shared/beerbrowse/src/commonMain/kotlin/com/simtop/billionbeers/shared/beerbrowse/BrowseContent.kt",
+          "needle": "fun SharedBrowseHomeContent(",
+          "hosts": [
+            "web",
+            "ios",
+            "desktop"
+          ]
+        }
+      ],
+      "entry": {
+        "steps": [
+          "Open Catalog/Home.",
+          "Select Browse.",
+          "Allow Android split installation to complete."
+        ],
+        "preconditions": [
+          "Launch the reported host with suitable isolated catalog data."
+        ],
+        "evidence": [
+          {
+            "path": "app/src/main/java/com/simtop/billionbeers/presentation/AppNavigation.kt",
+            "needle": "entry<BeerBrowse>"
+          },
+          {
+            "path": "shared/app/src/commonMain/kotlin/com/simtop/billionbeers/shared/app/SharedAppNavigationState.kt",
+            "needle": "internal class SharedAppNavigationState("
+          }
+        ]
+      },
+      "states": [],
+      "limits": [
+        "Entry/state recipes are declarations; verify each action in the running host."
+      ]
+    },
+    {
+      "id": "browse-results",
+      "name": "Browse category results",
+      "hosts": [
+        "android",
+        "web",
+        "ios",
+        "desktop"
+      ],
+      "recognition": [
+        "style results",
+        "brewery results",
+        "category name"
+      ],
+      "owners": [
+        {
+          "path": "feature/beerbrowse/src/main/java/com/simtop/feature/beerbrowse/presentation/BrowseBeersScreen.kt",
+          "needle": "fun BrowseBeersScreen(",
+          "hosts": [
+            "android"
+          ]
+        },
+        {
+          "path": "shared/beerbrowse/src/commonMain/kotlin/com/simtop/billionbeers/shared/beerbrowse/BrowseContent.kt",
+          "needle": "fun SharedBrowseBeersContent(",
+          "hosts": [
+            "web",
+            "ios",
+            "desktop"
+          ]
+        }
+      ],
+      "entry": {
+        "steps": [
+          "Open Catalog/Home → Browse.",
+          "Select Styles or Breweries.",
+          "Select the reported category."
+        ],
+        "preconditions": [
+          "Launch the reported host with suitable isolated catalog data."
+        ],
+        "evidence": [
+          {
+            "path": "app/src/main/java/com/simtop/billionbeers/presentation/AppNavigation.kt",
+            "needle": "entry<BeerBrowse>"
+          },
+          {
+            "path": "shared/app/src/commonMain/kotlin/com/simtop/billionbeers/shared/app/SharedAppNavigationState.kt",
+            "needle": "internal class SharedAppNavigationState("
+          }
+        ]
+      },
+      "states": [],
+      "limits": [
+        "Entry/state recipes are declarations; verify each action in the running host."
+      ]
+    },
+    {
+      "id": "saved-filters",
+      "name": "Saved filter presets",
+      "hosts": [
+        "android",
+        "web",
+        "ios",
+        "desktop"
+      ],
+      "recognition": [
+        "Saved filters",
+        "rename",
+        "delete",
+        "saved-filter-"
+      ],
+      "owners": [
+        {
+          "path": "feature/savedfilters/src/main/java/com/simtop/feature/savedfilters/SavedFiltersScreen.kt",
+          "needle": "fun SavedFiltersScreen(",
+          "hosts": [
+            "android"
+          ]
+        },
+        {
+          "path": "shared/app/src/commonMain/kotlin/com/simtop/billionbeers/shared/app/SavedFiltersDestination.kt",
+          "needle": "fun SavedFiltersDestination(",
+          "hosts": [
+            "web",
+            "ios",
+            "desktop"
+          ]
+        }
+      ],
+      "entry": {
+        "steps": [
+          "Open Catalog/Home or Search.",
+          "Save the desired query with a recognizable name.",
+          "Select the Saved filters root tab."
+        ],
+        "preconditions": [
+          "Launch the reported host with suitable isolated catalog data."
+        ],
+        "evidence": [
+          {
+            "path": "app/src/main/java/com/simtop/billionbeers/presentation/AppNavigation.kt",
+            "needle": "entry<SavedFilterPresets>"
+          },
+          {
+            "path": "shared/app/src/commonMain/kotlin/com/simtop/billionbeers/shared/app/SharedAppNavigationState.kt",
+            "needle": "internal class SharedAppNavigationState("
+          }
+        ]
+      },
+      "states": [
+        {
+          "id": "large-text",
+          "hosts": [
+            "android"
+          ],
+          "mechanism": "environment",
+          "scope": "live-app",
+          "steps": [
+            "Use a disposable compact emulator/window.",
+            "Increase system text size to match the report.",
+            "Navigate to Saved filters and inspect all action controls."
+          ],
+          "observe": "Text is visibly enlarged; rename/delete/apply controls remain reachable.",
+          "evidence": [
+            {
+              "path": "feature/savedfilters/src/main/java/com/simtop/feature/savedfilters/SavedFiltersScreen.kt",
+              "needle": "fun SavedFiltersLargeTextPreview(",
+              "hosts": [
+                "android"
+              ]
+            }
+          ],
+          "limits": [
+            "The source includes a 320×640dp, fontScale 2 preview; it does not confirm the actual device settings."
+          ]
+        },
+        {
+          "id": "rename-failure",
+          "hosts": [
+            "android"
+          ],
+          "mechanism": "fixture",
+          "scope": "test",
+          "steps": [
+            "Select a disposable emulator and set ANDROID_SERIAL.",
+            "Run make ui-test MODULE=:app UI_TEST_CLASS=com.simtop.billionbeers.SavedFiltersMutationUiTest#failedRenameShowsFeedbackRetainsDraftAndPresetThenRetryPersistsRename GRADLE_RUNNER=./gradlew."
+          ],
+          "observe": "The rename failure preserves the draft/preset and succeeds after the injected error is cleared.",
+          "evidence": [
+            {
+              "path": "app/src/androidTest/java/com/simtop/billionbeers/SavedFiltersMutationUiTest.kt",
+              "needle": "fun failedRenameShowsFeedbackRetainsDraftAndPresetThenRetryPersistsRename()"
+            }
+          ],
+          "limits": [
+            "Instrumented fake repository; not a state-forcing switch in the ordinary app."
+          ]
+        },
+        {
+          "id": "live-mutation-failure",
+          "hosts": [
+            "android",
+            "web",
+            "ios",
+            "desktop"
+          ],
+          "mechanism": "unavailable",
+          "scope": "none",
+          "steps": [
+            "There is no general live-app mutation-error switch in this index; investigate existing host fixtures or add a scoped debug control if needed."
+          ],
+          "observe": "Cannot claim a normal-app forced-error reproduction from a passing fake-repository test.",
+          "evidence": [
+            {
+              "path": "app/src/androidTest/java/com/simtop/billionbeers/SavedFiltersMutationUiTest.kt",
+              "needle": "FakeBeersRepositoryModule.fakeBeersRepository.mutateFilterPresetError = storageFailure()"
+            }
+          ],
+          "limits": [
+            "No live error injection mechanism is implemented by this index."
+          ]
+        }
+      ],
+      "limits": [
+        "Entry/state recipes are declarations; verify each action in the running host."
+      ]
+    },
+    {
+      "id": "saved-filter-results",
+      "name": "Applied saved-filter results",
+      "hosts": [
+        "android",
+        "web",
+        "ios",
+        "desktop"
+      ],
+      "recognition": [
+        "preset name as title",
+        "saved filter results",
+        "applied results"
+      ],
+      "owners": [
+        {
+          "path": "feature/savedfilters/src/main/java/com/simtop/feature/savedfilters/SavedFiltersScreen.kt",
+          "needle": "fun SavedFilterResultsScreen(",
+          "hosts": [
+            "android"
+          ]
+        },
+        {
+          "path": "shared/app/src/commonMain/kotlin/com/simtop/billionbeers/shared/app/SharedAppNavigationState.kt",
+          "needle": "internal class SavedFilterResultsEntry(",
+          "hosts": [
+            "web",
+            "ios",
+            "desktop"
+          ]
+        },
+        {
+          "path": "shared/app/src/commonMain/kotlin/com/simtop/billionbeers/shared/app/SharedAppShell.kt",
+          "needle": "is SavedFilterResultsEntry ->",
+          "hosts": [
+            "web",
+            "ios",
+            "desktop"
+          ]
+        }
+      ],
+      "entry": {
+        "steps": [
+          "Open Catalog/Home or Search.",
+          "Save the reported query as a named preset.",
+          "Select Saved filters.",
+          "Apply the named preset by selecting its button."
+        ],
+        "preconditions": [
+          "Launch the reported host with suitable isolated catalog data."
+        ],
+        "evidence": [
+          {
+            "path": "app/src/main/java/com/simtop/billionbeers/presentation/AppNavigation.kt",
+            "needle": "entry<SavedFilterResults>"
+          },
+          {
+            "path": "shared/app/src/commonMain/kotlin/com/simtop/billionbeers/shared/app/SharedAppNavigationState.kt",
+            "needle": "internal class SharedAppNavigationState("
+          },
+          {
+            "path": "web-app/src/commonMain/kotlin/com/simtop/billionbeers/web/WebSavedFilterHistory.kt",
+            "needle": "internal class WebSavedFilterHistory("
+          }
+        ]
+      },
+      "states": [
+        {
+          "id": "history-fixture",
+          "hosts": [
+            "web"
+          ],
+          "mechanism": "fixture",
+          "scope": "test",
+          "steps": [
+            "Run make web-verify GRADLE_RUNNER=./gradlew; its existing full Web smoke exercises saved-filter history with deterministic data."
+          ],
+          "observe": "Named results survive Back/Forward within the session; reload falls back to the preset list.",
+          "evidence": [
+            {
+              "path": "scripts/smoke_web_distribution.cjs",
+              "needle": "async function verifySavedFilterHistory("
+            }
+          ],
+          "limits": [
+            "One-beer intercepted API fixture in a fresh Chromium profile; not normal upstream-data reproduction."
+          ]
+        }
+      ],
+      "limits": [
+        "Entry/state recipes are declarations; verify each action in the running host.",
+        "Web #saved-filters identifies both presets and results; open results by applying a preset. Reload loses the session-only history token."
+      ]
+    },
+    {
+      "id": "beer-detail",
+      "name": "Beer detail",
+      "hosts": [
+        "android",
+        "web",
+        "ios",
+        "desktop"
+      ],
+      "recognition": [
+        "beer name",
+        "ABV",
+        "IBU",
+        "favorite toggle",
+        "detail"
+      ],
+      "owners": [
+        {
+          "path": "feature/beerdetail/src/main/java/com/simtop/feature/beerdetail/presentation/BeerDetailScreen.kt",
+          "needle": "fun BeerDetailScreenImpl(",
+          "hosts": [
+            "android"
+          ]
+        },
+        {
+          "path": "shared/beerdetail/src/commonMain/kotlin/com/simtop/billionbeers/shared/beerdetail/BeerDetailContent.kt",
+          "needle": "fun SharedBeerDetailContent(",
+          "hosts": [
+            "web",
+            "ios",
+            "desktop"
+          ]
+        }
+      ],
+      "entry": {
+        "steps": [
+          "Open the original Catalog/Favorites/Search/Browse/saved-filter result list.",
+          "Find the reported beer and select it.",
+          "Allow Android detail split installation to complete."
+        ],
+        "preconditions": [
+          "Launch the reported host with suitable isolated catalog data."
+        ],
+        "evidence": [
+          {
+            "path": "app/src/main/java/com/simtop/billionbeers/presentation/AppNavigation.kt",
+            "needle": "entry<BeerDetail>"
+          },
+          {
+            "path": "shared/app/src/commonMain/kotlin/com/simtop/billionbeers/shared/app/SharedAppNavigationState.kt",
+            "needle": "internal class SharedAppNavigationState("
+          }
+        ]
+      },
+      "states": [
+        {
+          "id": "missing-split",
+          "hosts": [
+            "android"
+          ],
+          "mechanism": "fixture",
+          "scope": "test",
+          "steps": [
+            "Use a disposable emulator and set ANDROID_SERIAL.",
+            "Run make ui-test MODULE=:app UI_TEST_CLASS=com.simtop.billionbeers.MainActivityComposeTest#cachedBeerDeepLinkDoesNotBypassAMissingDetailSplit GRADLE_RUNNER=./gradlew."
+          ],
+          "observe": "A cached beer does not bypass failed missing-split installation.",
+          "evidence": [
+            {
+              "path": "app/src/androidTest/java/com/simtop/billionbeers/MainActivityComposeTest.kt",
+              "needle": "fun cachedBeerDeepLinkDoesNotBypassAMissingDetailSplit()"
+            }
+          ],
+          "limits": [
+            "FakeSplitInstallManager; does not reproduce real Play delivery."
+          ]
+        }
+      ],
+      "limits": [
+        "Entry/state recipes are declarations; verify each action in the running host.",
+        "Android detail links require local beer resolution; Web cold missing IDs show a distinct host outcome. A shortcut does not recreate the original back stack."
+      ]
+    },
+    {
+      "id": "beer-unavailable",
+      "name": "Beer unavailable",
+      "hosts": [
+        "web"
+      ],
+      "recognition": [
+        "unavailable beer detail",
+        "missing local beer",
+        "Open catalog"
+      ],
+      "owners": [
+        {
+          "path": "web-app/src/wasmJsMain/kotlin/com/simtop/billionbeers/web/WebMissingBeer.kt",
+          "needle": "fun WebMissingBeer("
+        }
+      ],
+      "entry": {
+        "steps": [
+          "Launch the Web host.",
+          "Open its URL with #beer/qa-unloaded-beer-20261008, or another ID absent from local browser storage."
+        ],
+        "preconditions": [
+          "The selected beer ID must not have been cached locally; use an isolated browser session if necessary."
+        ],
+        "evidence": [
+          {
+            "path": "web-app/src/commonMain/kotlin/com/simtop/billionbeers/web/WebRoutes.kt",
+            "needle": "?: WebRouteResolution.MissingBeer(destination.id)"
+          }
+        ]
+      },
+      "states": [
+        {
+          "id": "cold-detail-link",
+          "hosts": [
+            "web"
+          ],
+          "mechanism": "ui",
+          "scope": "live-app",
+          "steps": [
+            "Open the Web URL with #beer/<uncached-id>.",
+            "Check the missing-beer message, then select Open catalog (or its localized label)."
+          ],
+          "observe": "The missing-beer screen is shown; recovery replaces the URL with #catalog instead of reopening the missing entry.",
+          "limits": [
+            "This forces a local-cache miss, not a network/API failure. Do not clear developer data to create it."
+          ],
+          "evidence": [
+            {
+              "path": "web-app/src/wasmJsMain/kotlin/com/simtop/billionbeers/web/WebMain.kt",
+              "needle": "fun openCatalog()"
+            }
+          ]
+        }
+      ],
+      "limits": [
+        "Web-only host outcome; Android leaves an unresolved beer link on its existing screen."
+      ]
+    }
+  ],
+  "scan": {
+    "include": [
+      "feature/*/src/main/**/*.kt",
+      "shared/*/src/commonMain/**/*.kt",
+      "app/src/main/**/*.kt",
+      "web-app/src/wasmJsMain/**/*.kt",
+      "web-app/src/commonMain/**/*.kt",
+      "navigation/src/main/**/*.kt",
+      "feature/*/src/main/res/values*/strings.xml",
+      "presentation_utils/src/main/res/values*/strings.xml",
+      "app/src/main/res/values*/strings.xml",
+      "web-app/src/commonMain/composeResources/values*/strings.xml"
+    ],
+    "extractors": [
+      {
+        "kind": "component",
+        "files": "*.kt",
+        "pattern": "\\bfun\\s+([A-Za-z_]\\w*(?:Screen(?:Impl)?|Content|Destination))\\s*\\("
+      },
+      {
+        "kind": "selector",
+        "files": "*.kt",
+        "pattern": "\\btestTag\\(\"([^\"\\n]+)\""
+      },
+      {
+        "kind": "literal-text",
+        "files": "*.kt",
+        "pattern": "\\bText\\(\\s*(?:text\\s*=\\s*)?\"([^\"\\n]+)\""
+      },
+      {
+        "kind": "resource-reference",
+        "files": "*.kt",
+        "pattern": "\\bstringResource\\(\\s*[\\w.]+\\.string\\.(\\w+)"
+      },
+      {
+        "kind": "resource-text",
+        "files": "*.xml",
+        "pattern": "<string\\s+name=\"(?P<key>[^\"]+)\"[^>]*>(?P<value>[^<]+)</string>"
+      },
+      {
+        "kind": "registered-route",
+        "files": "*.kt",
+        "pattern": "\\bentry<(\\w+)>"
+      }
+    ]
+  }
+}

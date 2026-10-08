@@ -93,6 +93,8 @@ classify_path() {
   local f="$1"
   if [ "$f" = "scripts/coverage-check.sh" ]; then
     a_unit=true # the unit lane executes it (make coverage-check)
+  elif [ "$f" = "qa/project.config.json" ] || [[ "$f" == skills/agent-qa/scripts/*.py ]] || [ "$f" = "scripts/test_qa_integration.py" ]; then
+    : # QA discovery contracts run in always-run format checks; no app test runner consumes them.
   elif [ "$f" = "scripts/verify-release-smoke-artifacts.sh" ]; then
     a_instrumented=true # the instrumented lane executes it (make release-smoke)
   elif [ "$f" = "scripts/verify_web_release_artifacts.py" ] || [ "$f" = "scripts/test_verify_web_release_artifacts.py" ]; then
@@ -162,6 +164,11 @@ if [[ "${1:-}" == "--self-test" ]]; then
   assert_lanes "scripts/verify_web_static.py" false false false false true
   assert_lanes "scripts/test_web_image_proxy.py" false false false false true
   assert_lanes "scripts/smoke_web_distribution.cjs" false false false false true
+  assert_lanes "qa/project.config.json" false false false false false
+  assert_lanes "skills/agent-qa/scripts/project_index.py" false false false false false
+  assert_lanes "skills/agent-qa/scripts/test_project_index.py" false false false false false
+  assert_lanes "scripts/test_qa_integration.py" false false false false false
+  assert_lanes "skills/agent-qa/SKILL.md" false false false false false
   assert_lanes "scripts/verify_ios_simulator_artifacts.py" false false false true false
   assert_lanes "scripts/test_verify_ios_simulator_artifacts.py" false false false true false
   assert_lanes "scripts/test-tier-inventory.sh" true false false false false
