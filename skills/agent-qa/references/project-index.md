@@ -67,8 +67,10 @@ locale fallback, XML markup/escaping or runtime formatting; verify the actual re
 ## Agent use
 
 Extract clues from the image, search a few distinctive labels/selectors and inspect candidate
-records with `show`. Search requires every query term to match, prioritizing full phrases and declared recognition
-hints over contextual text. Matching resource values include their source locations. Scores are ordering hints, not probabilities. Confirm screen, host and state
+records with `show`. Search requires every query term to match within one recognition clue,
+recipe field or source match; it does not assemble a title from unrelated labels/translations.
+Full phrases and declared recognition hints take priority over contextual text. Matching resource
+values include their source locations. Scores are ordering hints, not probabilities. Confirm screen, host and state
 in the live UI before using a recipe. Host filtering selects relevant owners and state recipes.
 
 State recipes describe the setup mechanism and its boundary. A fixture marked `test` or

@@ -125,6 +125,9 @@ class ProjectIndexTest(unittest.TestCase):
         self.assertEqual("strings.txt", result["source_matches"][0]["path"])
 
     def test_unknown_title_does_not_match_a_common_word_or_json_metadata(self):
+        (self.root / "screen.txt").write_text(
+            'SCREEN Search\nLABEL No matches\nLABEL Cerveza especial\nLABEL Disponible\n'
+        )
         index = self.generate()
         for query in ("Cerveza no disponible", "Search unknown-gibberish", "scope", "source_files"):
             self.assertEqual([], indexer.search(index, query, "browser", 5)["screens"], query)

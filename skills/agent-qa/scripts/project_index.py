@@ -243,7 +243,8 @@ def search(index: dict, query: str, host: str | None, limit: int) -> dict:
             contextual_values.extend([state["id"], state["observe"], *state["steps"], *state["limits"]])
         supplemental = " ".join(contextual_values).casefold()
         fact_text = " ".join(fact["value"] for fact in facts).casefold()
-        if not all(term in primary or term in supplemental or term in fact_text for term in terms):
+        candidate_values = [*primary_values, *contextual_values, *(fact["value"] for fact in facts)]
+        if not any(all(term in value.casefold() for term in terms) for value in candidate_values):
             continue
         score = sum(4 if term in primary else 2 if term in supplemental else 1 if term in fact_text else 0
                     for term in terms)

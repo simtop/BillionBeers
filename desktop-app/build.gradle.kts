@@ -1,3 +1,5 @@
+@file:OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
+
 plugins {
   id("billionbeers.jvm.library")
   id("org.jetbrains.compose")
@@ -47,6 +49,7 @@ dependencies {
 
   testImplementation(libs.okhttp3Mockwebserver)
   testImplementation(project(":beer_network:fixtures"))
+  testImplementation(compose.uiTest)
 }
 
 tasks.withType<JavaExec>().configureEach {
