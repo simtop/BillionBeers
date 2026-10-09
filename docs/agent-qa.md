@@ -25,7 +25,8 @@ current source, returning JSON without launching an app or executing recipe comm
 The index includes nine screen recipes, source locations/hashes, discovered components,
 labels/translations, UI tags and Android route registrations. Undeclared source components
 remain searchable without an invented navigation recipe. Search requires every term to match
-and includes matching resource evidence. Candidates still need confirmation in the live UI.
+within one recognition clue, recipe field or source match, and includes matching resource evidence.
+Candidates still need confirmation in the live UI.
 
 [qa/project.config.json](../qa/project.config.json) supplies project-specific source globs,
 extraction patterns, hosts, owners, recognition clues, entry actions and state recipes.

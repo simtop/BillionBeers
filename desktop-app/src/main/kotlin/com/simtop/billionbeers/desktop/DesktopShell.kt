@@ -9,9 +9,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,12 +47,19 @@ fun DesktopShell(runtime: DesktopDataRuntime) {
   )
 }
 
-private val desktopHost =
+internal val desktopHost =
   SharedAppHost(
     beerRow = { beer, onClick -> DesktopBeerRow(beer, onClick) },
     errorContent = { state, retry -> DesktopError(state, retry) },
-    backIcon = { contentDescription -> Text("←", modifier = Modifier.padding(8.dp)) },
-    favoriteIcon = { isFavorite, contentDescription -> Text(if (isFavorite) "♥" else "♡") },
+    backIcon = { contentDescription ->
+      Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = contentDescription)
+    },
+    favoriteIcon = { isFavorite, contentDescription ->
+      Icon(
+        if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+        contentDescription = contentDescription,
+      )
+    },
     imageContent = { imageUrl, contentDescription, modifier ->
       if (imageUrl.isNullOrBlank()) {
         Box(modifier, contentAlignment = Alignment.Center) { Text("No image") }
@@ -64,7 +76,7 @@ private val desktopHost =
     detailCollapsingToolbarEnabled = false,
   )
 
-private val desktopStrings =
+internal val desktopStrings =
   SharedAppStrings(
     appTitle = "Billion Beers",
     back = "Back",

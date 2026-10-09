@@ -101,19 +101,20 @@ fun ComposeBeersListItem(
 
         Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.small))
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        FlowRow(
+          horizontalArrangement = Arrangement.spacedBy(BillionBeersTheme.spacing.small),
+          verticalArrangement = Arrangement.spacedBy(BillionBeersTheme.spacing.small),
+        ) {
           BeerChip(
             text = stringResource(R.string.abv_chip, beer.abv),
             color = Color(ABV_BG_COLOR),
             textColor = Color(ABV_TEXT_COLOR),
           )
-          Spacer(modifier = Modifier.width(BillionBeersTheme.spacing.small))
           BeerChip(
             text = stringResource(R.string.ibu_chip, beer.ibu),
             color = Color(IBU_BG_COLOR),
             textColor = Color(IBU_TEXT_COLOR),
           )
-          Spacer(modifier = Modifier.width(BillionBeersTheme.spacing.small))
           if (beer.availability) {
             BeerChip(
               text = stringResource(R.string.beer_available),

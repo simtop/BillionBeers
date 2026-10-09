@@ -21,6 +21,15 @@ def cli(*args):
 
 
 class QaIntegrationTest(unittest.TestCase):
+    def test_android_shared_row_clues_resolve_to_consuming_screens(self):
+        expected = {"catalog", "search", "favorites", "browse-results", "saved-filter-results"}
+        for query in ("ComposeBeersListItem", "Available"):
+            found = cli("search", query, "--host", "android", "--limit", "20")
+            self.assertTrue(expected <= {item["screen"] for item in found["screens"]})
+        shown = cli("show", "search", "--host", "android")
+        self.assertTrue(any(state["id"] == "large-text-row" and state["scope"] == "live-app"
+                            for state in shown["states"]))
+
     def test_error_screenshot_titles_resolve_through_current_resource_text(self):
         for text in ("Beer unavailable", "Cerveza no disponible", "Bière indisponible"):
             found = cli("search", text, "--host", "web")

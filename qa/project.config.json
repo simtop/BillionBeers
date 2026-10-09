@@ -95,6 +95,13 @@
             "ios",
             "desktop"
           ]
+        },
+        {
+          "path": "presentation_utils/src/main/java/com/simtop/presentation_utils/custom_views/ComposeBeersListItem.kt",
+          "needle": "fun ComposeBeersListItem(",
+          "hosts": [
+            "android"
+          ]
         }
       ],
       "entry": {
@@ -149,6 +156,13 @@
             "web",
             "ios",
             "desktop"
+          ]
+        },
+        {
+          "path": "presentation_utils/src/main/java/com/simtop/presentation_utils/custom_views/ComposeBeersListItem.kt",
+          "needle": "fun ComposeBeersListItem(",
+          "hosts": [
+            "android"
           ]
         }
       ],
@@ -237,6 +251,13 @@
             "ios",
             "desktop"
           ]
+        },
+        {
+          "path": "presentation_utils/src/main/java/com/simtop/presentation_utils/custom_views/ComposeBeersListItem.kt",
+          "needle": "fun ComposeBeersListItem(",
+          "hosts": [
+            "android"
+          ]
         }
       ],
       "entry": {
@@ -259,7 +280,40 @@
           }
         ]
       },
-      "states": [],
+      "states": [
+        {
+          "id": "large-text-row",
+          "hosts": [
+            "android"
+          ],
+          "mechanism": "environment",
+          "scope": "live-app",
+          "steps": [
+            "Use a disposable compact emulator and record the original font scale.",
+            "Set system font scale to 2.0, open Search and enter a query with results (for example ipa).",
+            "Dismiss the keyboard and inspect ABV, IBU and availability in the same beer row.",
+            "Restore the original font scale after QA."
+          ],
+          "observe": "All three chip labels remain readable, wrapping into additional rows when necessary; no thin status strip or excessively tall beer card.",
+          "limits": [
+            "API data is variable; use the existing BeerRowLargeTextTest for an isolated available/out-of-stock fixture.",
+            "This is visual/Compose-renderer evidence, not a TalkBack acceptance check."
+          ],
+          "evidence": [
+            {
+              "path": "presentation_utils/src/main/java/com/simtop/presentation_utils/custom_views/ComposeBeersListItem.kt",
+              "needle": "fun ComposeBeersListItem(",
+              "hosts": [
+                "android"
+              ]
+            },
+            {
+              "path": "app/src/androidTest/java/com/simtop/billionbeers/BeerRowLargeTextTest.kt",
+              "needle": "fun compactRowKeepsBothAvailabilityLabelsReadableAtDoubleTextSize()"
+            }
+          ]
+        }
+      ],
       "limits": [
         "Entry/state recipes are declarations; verify each action in the running host."
       ]
@@ -350,6 +404,13 @@
             "web",
             "ios",
             "desktop"
+          ]
+        },
+        {
+          "path": "presentation_utils/src/main/java/com/simtop/presentation_utils/custom_views/ComposeBeersListItem.kt",
+          "needle": "fun ComposeBeersListItem(",
+          "hosts": [
+            "android"
           ]
         }
       ],
@@ -547,6 +608,13 @@
             "web",
             "ios",
             "desktop"
+          ]
+        },
+        {
+          "path": "presentation_utils/src/main/java/com/simtop/presentation_utils/custom_views/ComposeBeersListItem.kt",
+          "needle": "fun ComposeBeersListItem(",
+          "hosts": [
+            "android"
           ]
         }
       ],
@@ -750,6 +818,7 @@
   "scan": {
     "include": [
       "feature/*/src/main/**/*.kt",
+      "presentation_utils/src/main/**/*.kt",
       "shared/*/src/commonMain/**/*.kt",
       "app/src/main/**/*.kt",
       "web-app/src/wasmJsMain/**/*.kt",
@@ -764,7 +833,7 @@
       {
         "kind": "component",
         "files": "*.kt",
-        "pattern": "\\bfun\\s+([A-Za-z_]\\w*(?:Screen(?:Impl)?|Content|Destination))\\s*\\("
+        "pattern": "\\bfun\\s+([A-Za-z_]\\w*(?:Screen(?:Impl)?|Content|Destination|Item|Chip|Image))\\s*\\("
       },
       {
         "kind": "selector",

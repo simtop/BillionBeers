@@ -1,7 +1,9 @@
 # Desktop host
 
 The Desktop host is a Compose Multiplatform JVM application backed by the shared repository and
-local database. Its deterministic data integration tests run with:
+local database. Its tests cover the real data graph and the Desktop icons inside the shared detail
+screen: Back has a clickable button label, and Favorite exposes its current action and state.
+These Compose renderer assertions do not establish macOS VoiceOver behavior. Run them with:
 
 ```shell
 make desktop-test
