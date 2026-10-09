@@ -21,6 +21,14 @@ def cli(*args):
 
 
 class QaIntegrationTest(unittest.TestCase):
+    def test_shared_beer_row_resolves_only_for_its_consuming_hosts(self):
+        expected = {"catalog", "favorites", "search", "browse-results", "saved-filter-results"}
+        for host in ("android", "web"):
+            found = cli("search", "SharedBeerListItem", "--host", host, "--limit", "20")
+            self.assertEqual(expected, {item["screen"] for item in found["screens"]})
+        for host in ("ios", "desktop"):
+            self.assertEqual([], cli("search", "SharedBeerListItem", "--host", host)["screens"])
+
     def test_android_save_form_resolves_to_its_consuming_screens(self):
         found = cli("search", "ComposeFilterPresetForm", "--host", "android", "--limit", "20")
         expected = {"catalog", "search", "browse-results", "saved-filter-results"}

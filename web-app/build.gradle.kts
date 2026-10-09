@@ -30,6 +30,7 @@ kotlin {
       implementation(project(":beer_storage:api"))
       implementation(project(":beer_storage:browser"))
       implementation(project(":shared:app"))
+      implementation(project(":shared:presentation"))
       implementation(project(":shared:beerbrowse"))
       implementation(project(":shared:beerdetail"))
       implementation(project(":navigation-contract"))
