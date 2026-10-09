@@ -2,19 +2,31 @@ package com.simtop.billionbeers
 
 import android.content.Intent
 import android.net.Uri
+import android.view.KeyEvent
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isFocused
 import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.longClick
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeRight
 import androidx.test.core.app.ActivityScenario
+import androidx.test.espresso.Espresso.pressBack
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_EXPANDED_LOWER_BOUND
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.beerdomain.domain.models.Brewery
+import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
 import com.simtop.billionbeers.di.BaseAppGraph
 import com.simtop.billionbeers.di.FakeBeersRepositoryModule
 import com.simtop.billionbeers.fakes.FakeSplitInstallManager
@@ -25,10 +37,12 @@ import com.simtop.billionbeers.utils.homeScreen
 import com.simtop.billionbeers.utils.runMainActivityTest
 import com.simtop.billionbeers.utils.searchScreen
 import com.simtop.core.core.Either
+import com.simtop.feature.beersearch.SEARCH_FIELD_TAG
 import com.simtop.navigation.DynamicFeature
 import dev.zacsweers.metro.createGraphFactory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
@@ -38,6 +52,7 @@ class MainActivityComposeTest {
 
   @get:Rule val composeTestRule = createEmptyComposeRule()
   private lateinit var fakeSplitInstallManager: FakeSplitInstallManager
+  private lateinit var fakePagerFactory: FakeBeersPagerFactory
 
   private val fakeBeer =
     Beer(
@@ -83,9 +98,87 @@ class MainActivityComposeTest {
       createGraphFactory<TestAppGraph.Factory>().create(context = context) as BaseAppGraph
     fakeSplitInstallManager =
       (testGraph.splitInstallManager as FakeSplitInstallManager).also { it.reset() }
+    fakePagerFactory = testGraph.beersPagerFactory as FakeBeersPagerFactory
 
     app.activateAppGraph(testGraph)
   }
+
+  @Test
+  fun keyboardCanReachAndActivateASearchResult() =
+    runMainActivityTest(composeTestRule) {
+      homeScreen {
+        waitUntilNodeWithTextIsDisplayed(fakeBeer.name)
+        clickOnSearch()
+      }
+      onNodeWithTag(SEARCH_FIELD_TAG).performTextInput("Buzz")
+      waitUntil(timeoutMillis = 5_000) {
+        fakePagerFactory.createdQueries.lastOrNull()?.search == "Buzz"
+      }
+      runOnIdle { fakePagerFactory.searchPagers.last().setData(listOf(fakeBeer)) }
+      waitUntil(timeoutMillis = 5_000) {
+        onAllNodes(hasTestTag("beer_list_item") and hasText(fakeBeer.name))
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+      }
+      tabToSearchResult()
+      pressKeyboardKey(KeyEvent.KEYCODE_ENTER)
+      detailScreen { waitUntilNodeWithTextIsDisplayed(fakeBeer.description) }
+      pressBack()
+      onNodeWithTag(SEARCH_FIELD_TAG).assertIsDisplayed()
+      tabToSearchResult()
+      pressKeyboardKey(KeyEvent.KEYCODE_SPACE)
+      detailScreen { waitUntilNodeWithTextIsDisplayed(fakeBeer.description) }
+    }
+
+  private fun tabToSearchResult() {
+    var reachedResult = false
+    for (step in 1..20) {
+      pressKeyboardKey(KeyEvent.KEYCODE_TAB)
+      val focused =
+        composeTestRule.onAllNodes(isFocused(), useUnmergedTree = true).fetchSemanticsNodes()
+      val viewport = composeTestRule.onRoot().fetchSemanticsNode().boundsInRoot
+      focused.forEach {
+        assertTrue(
+          "Tab $step focused an offscreen control: ${it.config}",
+          it.boundsInRoot.overlaps(viewport),
+        )
+      }
+      if (
+        composeTestRule
+          .onAllNodes(hasTestTag("beer_list_item") and hasText(fakeBeer.name) and isFocused())
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+      ) {
+        reachedResult = true
+        break
+      }
+    }
+    assertTrue("Tab must reach a search result", reachedResult)
+  }
+
+  private fun pressKeyboardKey(keyCode: Int) {
+    // Platform injection leaves touch mode; direct view dispatch can skip clickable focus targets.
+    InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(keyCode)
+    composeTestRule.waitForIdle()
+  }
+
+  @Test
+  fun debugDrawerRequiresRevealAndBackReturnsToContent() =
+    runMainActivityTest(composeTestRule) {
+      homeScreen { waitUntilNodeWithTextIsDisplayed(fakeBeer.name) }
+      onRoot().performTouchInput { swipeRight(startX = 1f, endX = width - 1f) }
+      onNodeWithText("Debug Drawer").assertDoesNotExist()
+      val title =
+        InstrumentationRegistry.getInstrumentation()
+          .targetContext
+          .getString(com.simtop.feature.beerslist.R.string.billion_beers_list)
+      onNodeWithText(title).performTouchInput { longClick() }
+      onNodeWithContentDescription("Open debug drawer").performClick()
+      onNodeWithText("Network fault injection").assertIsDisplayed()
+      pressBack()
+      onNodeWithText("Debug Drawer").assertDoesNotExist()
+      onNodeWithText(fakeBeer.name).assertIsDisplayed()
+    }
 
   @Test
   fun repeatedFavoritesDeepLinkReturnsToFavoritesInTheSameActivity() {
