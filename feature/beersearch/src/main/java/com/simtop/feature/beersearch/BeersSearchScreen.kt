@@ -14,13 +14,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -54,7 +52,6 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.beerdomain.domain.models.BeersQuery
-import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.billionbeers.core.designsystem.component.AccessibilityMatrixPreview
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.component.showToast
@@ -68,6 +65,7 @@ import com.simtop.presentation_utils.R as PresentationUtilsR
 import com.simtop.presentation_utils.core.resolvedMessage
 import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import com.simtop.presentation_utils.custom_views.ComposeErrorView
+import com.simtop.presentation_utils.custom_views.ComposeFilterPresetForm
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 import kotlinx.coroutines.launch
 
@@ -209,82 +207,72 @@ fun BeersSearchContent(
         }
       }
       val resultCount = (viewState as? CommonUiState.Success)?.data?.items?.size ?: 0
-      SharedBeersSearchContent(
-        viewState = viewState,
-        query = query,
-        beerRow = { beer -> ComposeBeersListItem(beer = beer, onClick = onBeerClick) },
-        loadingContent = {
-          Box(
-            modifier = Modifier.fillMaxSize().padding(contentPadding),
-            contentAlignment = Alignment.Center,
-          ) {
-            CircularProgressIndicator()
-          }
-        },
-        emptyContent = {
-          CenteredHint(
-            text = stringResource(R.string.search_prompt),
-            modifier = Modifier.fillMaxSize().padding(contentPadding),
-          )
-        },
-        noResultsContent = { term ->
-          CenteredHint(
-            text = stringResource(R.string.search_no_results, term),
-            modifier = Modifier.fillMaxSize().padding(contentPadding),
-          )
-        },
-        errorContent = { error, retry ->
-          ComposeErrorView(
-            message = error.resolvedMessage().orEmpty(),
-            onRetry = retry,
-            modifier = Modifier.fillMaxSize().padding(contentPadding),
-          )
-        },
-        resultCountContent = { count ->
-          Text(
-            text = pluralStringResource(R.plurals.search_result_count, count, count),
-            style = MaterialTheme.typography.labelLarge,
-            modifier =
-              Modifier.fillMaxWidth()
-                .padding(
-                  horizontal = BillionBeersTheme.spacing.medium,
-                  vertical = BillionBeersTheme.spacing.small,
-                ),
-          )
-        },
-        loadMoreFailedText = stringResource(PresentationUtilsR.string.paged_list_load_more_failed),
-        retryText = stringResource(PresentationUtilsR.string.retry),
-        endOfListText =
-          pluralStringResource(R.plurals.search_end_of_list, resultCount, resultCount),
-        onScrollToBottom = onScrollToBottom,
-        onRetryLoadMore = onRetryLoadMore,
-        onRetrySearch = onRetrySearch,
-        contentPadding = contentPadding,
-        modifier = Modifier.weight(1f),
-      )
-      Row(Modifier.fillMaxWidth().padding(horizontal = BillionBeersTheme.spacing.medium)) {
-        OutlinedTextField(
-          value = presetName,
-          onValueChange = { value ->
-            if (value.length <= SavedFilterPreset.MAX_NAME_LENGTH) presetName = value
-          },
-          label = { Text(stringResource(PresentationUtilsR.string.filter_name_hint)) },
-          modifier = Modifier.weight(1f),
-          singleLine = true,
-        )
-        Button(
-          onClick = {
-            saveScope.launch {
-              if (onSaveQuery(presetName, activeQuery)) presetName = ""
+      Box(Modifier.weight(1f)) {
+        SharedBeersSearchContent(
+          viewState = viewState,
+          query = query,
+          beerRow = { beer -> ComposeBeersListItem(beer = beer, onClick = onBeerClick) },
+          loadingContent = {
+            Box(
+              modifier = Modifier.fillMaxSize().padding(contentPadding),
+              contentAlignment = Alignment.Center,
+            ) {
+              CircularProgressIndicator()
             }
           },
-          enabled =
-            presetName.isNotBlank() && (activeQuery.search != null || activeQuery.styleId != null),
-          modifier = Modifier.padding(start = BillionBeersTheme.spacing.small),
-        ) {
-          Text(stringResource(PresentationUtilsR.string.save_filter))
-        }
+          emptyContent = {
+            CenteredHint(
+              text = stringResource(R.string.search_prompt),
+              modifier = Modifier.fillMaxSize().padding(contentPadding),
+            )
+          },
+          noResultsContent = { term ->
+            CenteredHint(
+              text = stringResource(R.string.search_no_results, term),
+              modifier = Modifier.fillMaxSize().padding(contentPadding),
+            )
+          },
+          errorContent = { error, retry ->
+            ComposeErrorView(
+              message = error.resolvedMessage().orEmpty(),
+              onRetry = retry,
+              modifier = Modifier.fillMaxSize().padding(contentPadding),
+            )
+          },
+          resultCountContent = { count ->
+            Text(
+              text = pluralStringResource(R.plurals.search_result_count, count, count),
+              style = MaterialTheme.typography.labelLarge,
+              modifier =
+                Modifier.fillMaxWidth()
+                  .padding(
+                    horizontal = BillionBeersTheme.spacing.medium,
+                    vertical = BillionBeersTheme.spacing.small,
+                  ),
+            )
+          },
+          loadMoreFailedText =
+            stringResource(PresentationUtilsR.string.paged_list_load_more_failed),
+          retryText = stringResource(PresentationUtilsR.string.retry),
+          endOfListText =
+            pluralStringResource(R.plurals.search_end_of_list, resultCount, resultCount),
+          onScrollToBottom = onScrollToBottom,
+          onRetryLoadMore = onRetryLoadMore,
+          onRetrySearch = onRetrySearch,
+          contentPadding = contentPadding,
+        )
       }
+      ComposeFilterPresetForm(
+        name = presetName,
+        onNameChange = { presetName = it },
+        onSave = {
+          saveScope.launch {
+            if (onSaveQuery(presetName, activeQuery)) presetName = ""
+          }
+        },
+        modifier = Modifier.padding(horizontal = BillionBeersTheme.spacing.medium),
+        enabled = activeQuery.search != null || activeQuery.styleId != null,
+      )
     }
   }
 }

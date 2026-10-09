@@ -21,6 +21,14 @@ def cli(*args):
 
 
 class QaIntegrationTest(unittest.TestCase):
+    def test_android_save_form_resolves_to_its_consuming_screens(self):
+        found = cli("search", "ComposeFilterPresetForm", "--host", "android", "--limit", "20")
+        expected = {"catalog", "search", "browse-results", "saved-filter-results"}
+        self.assertEqual(expected, {item["screen"] for item in found["screens"]})
+        shown = cli("show", "search", "--host", "android")
+        self.assertTrue(any(state["id"] == "large-text-save-form" and state["scope"] == "live-app"
+                            for state in shown["states"]))
+
     def test_android_shared_row_clues_resolve_to_consuming_screens(self):
         expected = {"catalog", "search", "favorites", "browse-results", "saved-filter-results"}
         for query in ("ComposeBeersListItem", "Available"):

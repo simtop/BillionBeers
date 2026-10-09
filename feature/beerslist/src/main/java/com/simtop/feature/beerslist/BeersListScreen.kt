@@ -25,14 +25,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -72,6 +70,7 @@ import com.simtop.presentation_utils.core.LocalDebugDrawerToggle
 import com.simtop.presentation_utils.core.resolvedMessage
 import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import com.simtop.presentation_utils.custom_views.ComposeErrorView
+import com.simtop.presentation_utils.custom_views.ComposeFilterPresetForm
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 import kotlinx.coroutines.launch
 
@@ -226,32 +225,16 @@ fun BeersListContent(
         animationsDisabled = animationsDisabled,
         modifier = Modifier.weight(1f),
       )
-      Row(Modifier.fillMaxWidth().padding(horizontal = BillionBeersTheme.spacing.medium)) {
-        OutlinedTextField(
-          value = presetName,
-          onValueChange = { value ->
-            if (
-              value.length <= com.simtop.beerdomain.domain.models.SavedFilterPreset.MAX_NAME_LENGTH
-            ) {
-              presetName = value
-            }
-          },
-          label = { Text(stringResource(PresentationUtilsR.string.filter_name_hint)) },
-          modifier = Modifier.weight(1f),
-          singleLine = true,
-        )
-        Button(
-          onClick = {
-            saveScope.launch {
-              if (onSaveQuery(presetName)) presetName = ""
-            }
-          },
-          enabled = presetName.isNotBlank(),
-          modifier = Modifier.padding(start = BillionBeersTheme.spacing.small),
-        ) {
-          Text(stringResource(PresentationUtilsR.string.save_filter))
-        }
-      }
+      ComposeFilterPresetForm(
+        name = presetName,
+        onNameChange = { presetName = it },
+        onSave = {
+          saveScope.launch {
+            if (onSaveQuery(presetName)) presetName = ""
+          }
+        },
+        modifier = Modifier.padding(horizontal = BillionBeersTheme.spacing.medium),
+      )
     }
   }
 }
