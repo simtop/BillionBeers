@@ -55,3 +55,26 @@ long-content, and end-of-list states.
 Record device, Android version, locale, font scale, theme, and any failed step with the release QA
 result. Adaptive multi-pane navigation is a separate implementation follow-up; this checklist is
 intended to expose its product-level failures before that work lands.
+
+## Debug-build keyboard regression
+
+The Android debug wrapper must not introduce hidden focus targets into these journeys. A closed
+Material drawer keeps its content composed off-screen; keyboard focus can still enter those
+controls even when a layout dump omits them. BillionBeers composes debug controls only while the
+drawer is open or opening, and enables drawer swipes after long-pressing the Catalog title reveals
+its trigger. The state-aware drawer sheet handles Back without leaving the current screen.
+
+The production-host regressions in
+[MainActivityComposeTest](../app/src/androidTest/java/com/simtop/billionbeers/MainActivityComposeTest.kt)
+check that Tab reaches a populated Search result without focusing off-screen controls, Enter opens
+detail, and traversal/Space activation remain usable after Back. A second case checks that an
+unrevealed drawer does not open on swipe, while the revealed trigger opens its controls and Back
+closes them. Run the bounded cases on a selected disposable device:
+
+```bash
+ANDROID_SERIAL=<serial> make ui-test MODULE=:app \
+  UI_TEST_CLASS='com.simtop.billionbeers.MainActivityComposeTest#keyboardCanReachAndActivateASearchResult,com.simtop.billionbeers.MainActivityComposeTest#debugDrawerRequiresRevealAndBackReturnsToContent'
+```
+
+These are injected key/touch events with repository fakes. They complement live QA and do not
+prove physical-keyboard behavior, TalkBack speech, or accessibility parity across hosts.

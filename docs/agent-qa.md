@@ -45,6 +45,13 @@ Keep incident notes, logs and before/after captures under an ignored `build/qa/`
 Record actual host/build, state, ordered actions and observed behavior. Use existing native
 Make targets for regression checks; `ui-test` supports `UI_TEST_CLASS=class#method` selection.
 
+Android debug builds expose existing network fault, theme, feature-flag and deep-link controls:
+long-press the Catalog title, then activate **Open debug drawer**. Drawer swipes are enabled
+after that trigger is revealed. Closed drawer controls stay out of keyboard traversal; Back
+closes the open drawer. Restore any changed controls before comparing the normal journey.
+These controls are Android debug tooling; they do not establish equivalent state forcing on
+other hosts. See the [accessibility checklist](accessibility-release-qa.md) for acceptance limits.
+
 ## Maintain and reuse
 
 `make qa-validate` checks anchors, IDs, host bindings and state scope. `make qa-test` verifies

@@ -43,7 +43,18 @@ fun DebugDrawerHost(appGraph: BaseAppGraph, content: @Composable () -> Unit) {
   CompositionLocalProvider(LocalDebugDrawerToggle provides { isFabVisible = !isFabVisible }) {
     ModalNavigationDrawer(
       drawerState = drawerState,
-      drawerContent = { ModalDrawerSheet { DebugDrawerContent(appGraph = appGraph) } },
+      gesturesEnabled = isFabVisible,
+      drawerContent = {
+        ModalDrawerSheet(drawerState = drawerState) {
+          // A translated-offscreen drawer still participates in keyboard focus traversal.
+          if (
+            drawerState.currentValue == DrawerValue.Open ||
+              drawerState.targetValue == DrawerValue.Open
+          ) {
+            DebugDrawerContent(appGraph = appGraph)
+          }
+        }
+      },
     ) {
       Box(modifier = Modifier.fillMaxSize()) {
         content()
