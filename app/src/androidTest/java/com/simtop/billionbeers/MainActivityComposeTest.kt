@@ -2,7 +2,7 @@ package com.simtop.billionbeers
 
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.ui.input.key.Key
+import android.view.KeyEvent
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasTestTag
@@ -16,10 +16,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
-import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.swipeRight
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.pressBack
@@ -123,19 +121,19 @@ class MainActivityComposeTest {
           .isNotEmpty()
       }
       tabToSearchResult()
-      onRoot().performKeyInput { pressKey(Key.Enter) }
+      pressKeyboardKey(KeyEvent.KEYCODE_ENTER)
       detailScreen { waitUntilNodeWithTextIsDisplayed(fakeBeer.description) }
       pressBack()
       onNodeWithTag(SEARCH_FIELD_TAG).assertIsDisplayed()
       tabToSearchResult()
-      onRoot().performKeyInput { pressKey(Key.Spacebar) }
+      pressKeyboardKey(KeyEvent.KEYCODE_SPACE)
       detailScreen { waitUntilNodeWithTextIsDisplayed(fakeBeer.description) }
     }
 
   private fun tabToSearchResult() {
     var reachedResult = false
     for (step in 1..20) {
-      composeTestRule.onRoot().performKeyInput { pressKey(Key.Tab) }
+      pressKeyboardKey(KeyEvent.KEYCODE_TAB)
       val focused =
         composeTestRule.onAllNodes(isFocused(), useUnmergedTree = true).fetchSemanticsNodes()
       val viewport = composeTestRule.onRoot().fetchSemanticsNode().boundsInRoot
@@ -147,7 +145,7 @@ class MainActivityComposeTest {
       }
       if (
         composeTestRule
-          .onAllNodes(hasText(fakeBeer.name) and isFocused())
+          .onAllNodes(hasTestTag("beer_list_item") and hasText(fakeBeer.name) and isFocused())
           .fetchSemanticsNodes()
           .isNotEmpty()
       ) {
@@ -156,6 +154,12 @@ class MainActivityComposeTest {
       }
     }
     assertTrue("Tab must reach a search result", reachedResult)
+  }
+
+  private fun pressKeyboardKey(keyCode: Int) {
+    // Platform injection leaves touch mode; direct view dispatch can skip clickable focus targets.
+    InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(keyCode)
+    composeTestRule.waitForIdle()
   }
 
   @Test
