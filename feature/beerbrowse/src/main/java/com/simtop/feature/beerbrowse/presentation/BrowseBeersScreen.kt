@@ -1,16 +1,11 @@
 package com.simtop.feature.beerbrowse.presentation
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -28,7 +23,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.billionbeers.core.designsystem.component.AccessibilityMatrixPreview
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.component.showToast
@@ -43,6 +37,7 @@ import com.simtop.presentation_utils.R
 import com.simtop.presentation_utils.core.resolvedMessage
 import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import com.simtop.presentation_utils.custom_views.ComposeErrorView
+import com.simtop.presentation_utils.custom_views.ComposeFilterPresetForm
 import dev.zacsweers.metrox.viewmodel.assistedMetroViewModel
 import kotlinx.coroutines.launch
 
@@ -127,28 +122,16 @@ internal fun BrowseBeersContent(
         ComposeBeersListItem(beer = beer, onClick = { onClick() })
       },
     )
-    Row(Modifier.fillMaxWidth().padding(horizontal = BillionBeersTheme.spacing.medium)) {
-      OutlinedTextField(
-        value = presetName,
-        onValueChange = { value ->
-          if (value.length <= SavedFilterPreset.MAX_NAME_LENGTH) presetName = value
-        },
-        label = { Text(stringResource(R.string.filter_name_hint)) },
-        modifier = Modifier.weight(1f),
-        singleLine = true,
-      )
-      Button(
-        onClick = {
-          saveScope.launch {
-            if (onSaveQuery(presetName)) presetName = ""
-          }
-        },
-        enabled = presetName.isNotBlank(),
-        modifier = Modifier.padding(start = BillionBeersTheme.spacing.small),
-      ) {
-        Text(stringResource(R.string.save_filter))
-      }
-    }
+    ComposeFilterPresetForm(
+      name = presetName,
+      onNameChange = { presetName = it },
+      onSave = {
+        saveScope.launch {
+          if (onSaveQuery(presetName)) presetName = ""
+        }
+      },
+      modifier = Modifier.padding(horizontal = BillionBeersTheme.spacing.medium),
+    )
   }
 }
 

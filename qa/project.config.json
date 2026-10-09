@@ -102,6 +102,13 @@
           "hosts": [
             "android"
           ]
+        },
+        {
+          "path": "presentation_utils/src/main/java/com/simtop/presentation_utils/custom_views/ComposeFilterPresetForm.kt",
+          "needle": "fun ComposeFilterPresetForm(",
+          "hosts": [
+            "android"
+          ]
         }
       ],
       "entry": {
@@ -258,6 +265,13 @@
           "hosts": [
             "android"
           ]
+        },
+        {
+          "path": "presentation_utils/src/main/java/com/simtop/presentation_utils/custom_views/ComposeFilterPresetForm.kt",
+          "needle": "fun ComposeFilterPresetForm(",
+          "hosts": [
+            "android"
+          ]
         }
       ],
       "entry": {
@@ -310,6 +324,39 @@
             {
               "path": "app/src/androidTest/java/com/simtop/billionbeers/BeerRowLargeTextTest.kt",
               "needle": "fun compactRowKeepsBothAvailabilityLabelsReadableAtDoubleTextSize()"
+            }
+          ]
+        },
+        {
+          "id": "large-text-save-form",
+          "hosts": [
+            "android"
+          ],
+          "mechanism": "environment",
+          "scope": "live-app",
+          "steps": [
+            "Use a disposable compact emulator and record its original font scale and locales.",
+            "Select French, ensure the installed bundle includes French language resources, and set font scale to 2.0.",
+            "Open Search, enter ipa, dismiss the keyboard, then enter a preset name and save it.",
+            "Open Saved filters and apply that preset; restore the original device and app settings afterwards."
+          ],
+          "observe": "The name field remains wide and its French label readable; the Save action is reachable and the preset can be applied.",
+          "limits": [
+            "Language-split installation follows device language availability; merely setting app locale may leave English resources installed.",
+            "API results vary; FilterPresetFormLayoutTest uses isolated Catalog/Search content and simulated save outcomes.",
+            "Visual and interaction evidence does not establish TalkBack acceptance."
+          ],
+          "evidence": [
+            {
+              "path": "presentation_utils/src/main/java/com/simtop/presentation_utils/custom_views/ComposeFilterPresetForm.kt",
+              "needle": "fun ComposeFilterPresetForm(",
+              "hosts": [
+                "android"
+              ]
+            },
+            {
+              "path": "app/src/androidTest/java/com/simtop/billionbeers/FilterPresetFormLayoutTest.kt",
+              "needle": "fun frenchLargeTextNameFieldRemainsUsableAndSaveRetainsFailureDraft()"
             }
           ]
         }
@@ -412,11 +459,18 @@
           "hosts": [
             "android"
           ]
+        },
+        {
+          "path": "presentation_utils/src/main/java/com/simtop/presentation_utils/custom_views/ComposeFilterPresetForm.kt",
+          "needle": "fun ComposeFilterPresetForm(",
+          "hosts": [
+            "android"
+          ]
         }
       ],
       "entry": {
         "steps": [
-          "Open Catalog/Home → Browse.",
+          "Open Catalog/Home \u2192 Browse.",
           "Select Styles or Breweries.",
           "Select the reported category."
         ],
@@ -516,7 +570,7 @@
             }
           ],
           "limits": [
-            "The source includes a 320×640dp, fontScale 2 preview; it does not confirm the actual device settings."
+            "The source includes a 320\u00d7640dp, fontScale 2 preview; it does not confirm the actual device settings."
           ]
         },
         {
@@ -613,6 +667,13 @@
         {
           "path": "presentation_utils/src/main/java/com/simtop/presentation_utils/custom_views/ComposeBeersListItem.kt",
           "needle": "fun ComposeBeersListItem(",
+          "hosts": [
+            "android"
+          ]
+        },
+        {
+          "path": "presentation_utils/src/main/java/com/simtop/presentation_utils/custom_views/ComposeFilterPresetForm.kt",
+          "needle": "fun ComposeFilterPresetForm(",
           "hosts": [
             "android"
           ]
@@ -833,7 +894,7 @@
       {
         "kind": "component",
         "files": "*.kt",
-        "pattern": "\\bfun\\s+([A-Za-z_]\\w*(?:Screen(?:Impl)?|Content|Destination|Item|Chip|Image))\\s*\\("
+        "pattern": "\\bfun\\s+([A-Za-z_]\\w*(?:Screen(?:Impl)?|Content|Destination|Item|Chip|Image|Form))\\s*\\("
       },
       {
         "kind": "selector",
