@@ -3,25 +3,18 @@ package com.simtop.presentation_utils.custom_views
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
@@ -31,9 +24,10 @@ import coil3.request.error
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.catalog_annotations.CatalogComponent
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
-import com.simtop.billionbeers.core.designsystem.component.noRippleClickable
 import com.simtop.billionbeers.core.designsystem.component.shimmerBrush
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.billionbeers.shared.presentation.BeerListItemLabels
+import com.simtop.billionbeers.shared.presentation.SharedBeerListItem
 import com.simtop.presentation_utils.R
 
 @CatalogComponent(tab = "Utilities")
@@ -43,95 +37,26 @@ fun ComposeBeersListItem(
   beer: Beer = Beer.empty,
   onClick: ((Beer) -> Unit)? = null,
 ) {
-  Card(
-    modifier =
-      modifier
-        .fillMaxWidth()
-        .padding(
-          horizontal = BillionBeersTheme.spacing.medium,
-          vertical = BillionBeersTheme.spacing.small,
-        )
-        .testTag("beer_list_item")
-        .minimumInteractiveComponentSize()
-        .noRippleClickable { onClick?.invoke(beer) },
-    shape = RoundedCornerShape(BillionBeersTheme.spacing.medium),
-    elevation = CardDefaults.cardElevation(defaultElevation = BillionBeersTheme.spacing.extraSmall),
-    colors =
-      CardDefaults.cardColors(
-        containerColor =
-          if (beer.availability) MaterialTheme.colorScheme.surface
-          else MaterialTheme.colorScheme.errorContainer
+  SharedBeerListItem(
+    modifier = modifier,
+    beer = beer,
+    labels =
+      BeerListItemLabels(
+        abv = stringResource(R.string.abv_chip, beer.abv),
+        ibu = stringResource(R.string.ibu_chip, beer.ibu),
+        availability =
+          if (beer.availability) stringResource(R.string.beer_available)
+          else stringResource(R.string.beer_out_of_stock),
       ),
-  ) {
-    Row(
-      modifier =
-        Modifier.fillMaxWidth()
-          .padding(BillionBeersTheme.spacing.small + BillionBeersTheme.spacing.extraSmall),
-      verticalAlignment = Alignment.CenterVertically,
-    ) {
-      // Beer Image
+    onClick = { onClick?.invoke(beer) },
+    imageContent = { imageModifier ->
       BeerImage(
         imageUrl = beer.imageUrl,
+        modifier = imageModifier,
         contentDescription = stringResource(R.string.beer_list_item_image_description, beer.name),
       )
-
-      Spacer(modifier = Modifier.width(BillionBeersTheme.spacing.medium))
-
-      // Beer Details
-      Column(modifier = Modifier.weight(1f)) {
-        Text(
-          text = beer.name,
-          style = MaterialTheme.typography.titleLarge,
-          maxLines = 1,
-          overflow = TextOverflow.Ellipsis,
-        )
-
-        Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.extraSmall))
-
-        Text(
-          text = beer.tagline,
-          style =
-            MaterialTheme.typography.bodyMedium.copy(
-              fontStyle = FontStyle.Italic,
-              color = MaterialTheme.colorScheme.onSurfaceVariant,
-            ),
-          maxLines = 2,
-          overflow = TextOverflow.Ellipsis,
-        )
-
-        Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.small))
-
-        FlowRow(
-          horizontalArrangement = Arrangement.spacedBy(BillionBeersTheme.spacing.small),
-          verticalArrangement = Arrangement.spacedBy(BillionBeersTheme.spacing.small),
-        ) {
-          BeerChip(
-            text = stringResource(R.string.abv_chip, beer.abv),
-            color = Color(ABV_BG_COLOR),
-            textColor = Color(ABV_TEXT_COLOR),
-          )
-          BeerChip(
-            text = stringResource(R.string.ibu_chip, beer.ibu),
-            color = Color(IBU_BG_COLOR),
-            textColor = Color(IBU_TEXT_COLOR),
-          )
-          if (beer.availability) {
-            BeerChip(
-              text = stringResource(R.string.beer_available),
-              color = Color(AVAILABLE_BG_COLOR),
-              textColor = Color(AVAILABLE_TEXT_COLOR),
-            )
-          } else {
-            BeerChip(
-              text = stringResource(R.string.beer_out_of_stock),
-              color = Color(UNAVAILABLE_BG_COLOR),
-              textColor = Color(UNAVAILABLE_TEXT_COLOR),
-            )
-          }
-        }
-      }
-    }
-  }
+    },
+  )
 }
 
 @CatalogComponent(tab = "Utilities")
@@ -172,29 +97,6 @@ fun BeerImage(
   }
 }
 
-@Composable
-fun BeerChip(text: String, color: Color, textColor: Color, modifier: Modifier = Modifier) {
-  Surface(
-    modifier = modifier,
-    color = color,
-    shape = RoundedCornerShape(BillionBeersTheme.spacing.small),
-  ) {
-    Text(
-      text = text,
-      modifier =
-        Modifier.padding(
-          horizontal = BillionBeersTheme.spacing.small,
-          vertical = BillionBeersTheme.spacing.extraSmall,
-        ),
-      style =
-        MaterialTheme.typography.labelSmall.copy(
-          fontWeight = FontWeight.SemiBold,
-          color = textColor,
-        ),
-    )
-  }
-}
-
 class BeerPreviewParameterProvider : PreviewParameterProvider<Beer> {
   override val values =
     sequenceOf(
@@ -223,12 +125,3 @@ internal fun ComposeBeersListItemPreview(
 ) {
   BillionBeersTheme { ComposeBeersListItem(beer = beer) }
 }
-
-private const val ABV_BG_COLOR = 0xFFE0F7FA
-private const val ABV_TEXT_COLOR = 0xFF006064
-private const val IBU_BG_COLOR = 0xFFFBE9E7
-private const val IBU_TEXT_COLOR = 0xFFBF360C
-private const val AVAILABLE_BG_COLOR = 0xFFE8F5E9
-private const val AVAILABLE_TEXT_COLOR = 0xFF1B5E20
-private const val UNAVAILABLE_BG_COLOR = 0xFFFFEBEE
-private const val UNAVAILABLE_TEXT_COLOR = 0xFFB71C1C

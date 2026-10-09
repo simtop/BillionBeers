@@ -6,8 +6,8 @@ binary library.
 
 ## Ownership
 
-- `:core:designsystem` owns the theme wrapper, semantic color/spacing/typography tokens, reusable
-  components, and preview annotations.
+- `:shared:designsystem` owns portable semantic color/spacing/typography tokens and Material mapping.
+  `:core:designsystem` supplies the Android theme facade, components and preview annotations.
 - `:catalog` owns the interactive catalog shell. Catalog demos remain owned by the module that
   declares them, while `:catalog-processor` owns discovery and generated providers.
 - Changes to either surface should be reviewed as design-system changes, even when the code diff is
@@ -54,6 +54,30 @@ actually needs them.
   separately versioned template.
 
 ## Component contract
+
+### Android/Web beer row
+
+[SharedBeerListItem](../shared/presentation/src/commonMain/kotlin/com/simtop/billionbeers/shared/presentation/SharedBeerListItem.kt)
+owns the Android/Web card layout: title hierarchy, rounded image tile, spacing, wrapping ABV/IBU
+and availability chips, and one button action with availability state semantics. It belongs in
+`:shared:presentation` because it consumes a domain beer; generic theme tokens remain in the design
+system. Android's existing catalog previews and translations remain in
+[ComposeBeersListItem](../presentation_utils/src/main/java/com/simtop/presentation_utils/custom_views/ComposeBeersListItem.kt).
+Desktop and iOS still use their host rows.
+
+Hosts supply formatted/localized labels and image content. Android retains Coil loading/shimmer
+and error resources; Web retains Fetch/Skia and its deterministic placeholder. Web list images use
+`Fit` to preserve the whole bottle; detail's image policy remains host-owned. The shared row caps
+the Android title/tagline at one/two lines, with full text in semantics and detail available through the row.
+Web retains wrapping full titles through `titleMaxLines` so the shared style does not hide beer names.
+Metric/status labels wrap rather than squeezing into a narrow fixed row.
+
+Run `make test MODULE=:shared:presentation` for compact normal/2× text, translated status, light/dark,
+RTL, image-slot sizing and row action/state checks. Run `make screenshot-verify` for Android previews
+and `make web-verify` for the production Web host and route interactions. Inspect actual host images
+alongside these checks; shared JVM renders do not establish browser or spoken screen-reader acceptance.
+
+### Reusable component states
 
 A component is governed when it is intended for reuse outside its defining source file. Its API and
 previews should make the following states explicit where the component supports them:

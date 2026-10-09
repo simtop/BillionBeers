@@ -3,19 +3,13 @@
 package com.simtop.billionbeers.web
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -50,6 +44,8 @@ import com.simtop.billionbeers.shared.app.formatCount
 import com.simtop.billionbeers.shared.beerbrowse.BrowseStrings
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailStrings
 import com.simtop.billionbeers.shared.beerdetail.formatServingTemperatureRange
+import com.simtop.billionbeers.shared.presentation.BeerListItemLabels
+import com.simtop.billionbeers.shared.presentation.SharedBeerListItem
 import com.simtop.core.core.CommonUiState
 import com.simtop.navigation.contract.PortableRoute
 import kotlin.js.toJsString
@@ -322,43 +318,27 @@ private fun webHost(runtime: WebDataRuntime, session: WebRouteSession) =
 @Composable
 private fun WebBeerRow(runtime: WebDataRuntime, beer: Beer, onClick: () -> Unit) {
   val availability = if (beer.availability) "Available" else "Out of stock"
-  Card(
-    modifier =
-      Modifier.fillMaxWidth()
-        .padding(horizontal = 12.dp, vertical = 4.dp)
-        .clickable(onClick = onClick)
-        .semantics(mergeDescendants = true) {
-          contentDescription = "${beer.name}. $availability"
-          role = Role.Button
-          stateDescription = availability
-        },
-    colors =
-      CardDefaults.cardColors(
-        containerColor =
-          if (beer.availability) MaterialTheme.colorScheme.surface
-          else MaterialTheme.colorScheme.errorContainer
+  SharedBeerListItem(
+    modifier = Modifier.semantics { contentDescription = "${beer.name}. $availability" },
+    titleMaxLines = Int.MAX_VALUE,
+    beer = beer,
+    labels =
+      BeerListItemLabels(
+        abv = "ABV: ${beer.abv}%",
+        ibu = "IBU: ${beer.ibu}",
+        availability = availability,
       ),
-  ) {
-    Row(
-      Modifier.fillMaxWidth().padding(12.dp),
-      horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-      WebImage(runtime, beer.imageUrl, null, Modifier.width(72.dp).height(96.dp))
-      Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(beer.name, style = MaterialTheme.typography.titleMedium)
-        if (beer.tagline.isNotBlank())
-          Text(beer.tagline, style = MaterialTheme.typography.bodyMedium)
-        Text("ABV ${beer.abv}% · IBU ${beer.ibu}", style = MaterialTheme.typography.labelMedium)
-        Text(
-          availability,
-          color =
-            if (beer.availability) MaterialTheme.colorScheme.primary
-            else MaterialTheme.colorScheme.onErrorContainer,
-          style = MaterialTheme.typography.labelMedium,
-        )
-      }
-    }
-  }
+    onClick = onClick,
+    imageContent = { modifier ->
+      WebImage(
+        runtime,
+        beer.imageUrl,
+        null,
+        modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh),
+        contentScale = ContentScale.Fit,
+      )
+    },
+  )
 }
 
 @Composable
@@ -367,6 +347,7 @@ private fun WebImage(
   url: String,
   description: String?,
   modifier: Modifier,
+  contentScale: ContentScale = ContentScale.Crop,
 ) {
   var bitmap by remember(url) { mutableStateOf<ImageBitmap?>(null) }
   LaunchedEffect(url) {
@@ -387,7 +368,7 @@ private fun WebImage(
     Image(
       bitmap = loadedBitmap,
       contentDescription = description,
-      contentScale = ContentScale.Crop,
+      contentScale = contentScale,
       modifier = modifier,
     )
   }

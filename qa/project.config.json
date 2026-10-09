@@ -109,6 +109,14 @@
           "hosts": [
             "android"
           ]
+        },
+        {
+          "path": "shared/presentation/src/commonMain/kotlin/com/simtop/billionbeers/shared/presentation/SharedBeerListItem.kt",
+          "needle": "fun SharedBeerListItem(",
+          "hosts": [
+            "android",
+            "web"
+          ]
         }
       ],
       "entry": {
@@ -170,6 +178,14 @@
           "needle": "fun ComposeBeersListItem(",
           "hosts": [
             "android"
+          ]
+        },
+        {
+          "path": "shared/presentation/src/commonMain/kotlin/com/simtop/billionbeers/shared/presentation/SharedBeerListItem.kt",
+          "needle": "fun SharedBeerListItem(",
+          "hosts": [
+            "android",
+            "web"
           ]
         }
       ],
@@ -271,6 +287,14 @@
           "needle": "fun ComposeFilterPresetForm(",
           "hosts": [
             "android"
+          ]
+        },
+        {
+          "path": "shared/presentation/src/commonMain/kotlin/com/simtop/billionbeers/shared/presentation/SharedBeerListItem.kt",
+          "needle": "fun SharedBeerListItem(",
+          "hosts": [
+            "android",
+            "web"
           ]
         }
       ],
@@ -465,6 +489,14 @@
           "needle": "fun ComposeFilterPresetForm(",
           "hosts": [
             "android"
+          ]
+        },
+        {
+          "path": "shared/presentation/src/commonMain/kotlin/com/simtop/billionbeers/shared/presentation/SharedBeerListItem.kt",
+          "needle": "fun SharedBeerListItem(",
+          "hosts": [
+            "android",
+            "web"
           ]
         }
       ],
@@ -676,6 +708,14 @@
           "needle": "fun ComposeFilterPresetForm(",
           "hosts": [
             "android"
+          ]
+        },
+        {
+          "path": "shared/presentation/src/commonMain/kotlin/com/simtop/billionbeers/shared/presentation/SharedBeerListItem.kt",
+          "needle": "fun SharedBeerListItem(",
+          "hosts": [
+            "android",
+            "web"
           ]
         }
       ],
