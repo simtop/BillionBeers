@@ -117,6 +117,16 @@
             "android",
             "web"
           ]
+        },
+        {
+          "path": "shared/presentation/src/commonMain/kotlin/com/simtop/billionbeers/shared/presentation/SharedFilterPresetForm.kt",
+          "needle": "fun SharedFilterPresetForm(",
+          "hosts": [
+            "android",
+            "web",
+            "ios",
+            "desktop"
+          ]
         }
       ],
       "entry": {
@@ -296,6 +306,16 @@
             "android",
             "web"
           ]
+        },
+        {
+          "path": "shared/presentation/src/commonMain/kotlin/com/simtop/billionbeers/shared/presentation/SharedFilterPresetForm.kt",
+          "needle": "fun SharedFilterPresetForm(",
+          "hosts": [
+            "android",
+            "web",
+            "ios",
+            "desktop"
+          ]
         }
       ],
       "entry": {
@@ -381,6 +401,34 @@
             {
               "path": "app/src/androidTest/java/com/simtop/billionbeers/FilterPresetFormLayoutTest.kt",
               "needle": "fun frenchLargeTextNameFieldRemainsUsableAndSaveRetainsFailureDraft()"
+            }
+          ]
+        },
+        {
+          "id": "shared-large-text-save-form",
+          "hosts": [
+            "web",
+            "ios",
+            "desktop"
+          ],
+          "scope": "test",
+          "mechanism": "fixture",
+          "preconditions": [
+            "A shared Compose JVM renderer with 320dp width and 2\u00d7 text; French form labels are injected fixture copy, not Web shell localization."
+          ],
+          "steps": [
+            "Run make test MODULE=:shared:app GRADLE_RUNNER=./gradlew.",
+            "FilterPresetFormLayoutTest exercises Catalog/Search/Browse name width, inactive-query gating, blank/length validation, failed-save draft retention, non-overlapping feedback and successful clearing."
+          ],
+          "observe": "The name editor stays at least 240dp wide; Save is reachable, preserves the failed draft and clears it after a successful retry with the original query.",
+          "limits": [
+            "Shared JVM rendering uses injected labels and save outcomes; it does not establish browser/native accessibility or Web shell localization.",
+            "Replay the corresponding screen in the running host for platform-specific keyboard, insets and feedback behavior."
+          ],
+          "evidence": [
+            {
+              "path": "shared/app/src/jvmTest/kotlin/com/simtop/billionbeers/shared/app/FilterPresetFormLayoutTest.kt",
+              "needle": "class FilterPresetFormLayoutTest"
             }
           ]
         }
@@ -497,6 +545,16 @@
           "hosts": [
             "android",
             "web"
+          ]
+        },
+        {
+          "path": "shared/presentation/src/commonMain/kotlin/com/simtop/billionbeers/shared/presentation/SharedFilterPresetForm.kt",
+          "needle": "fun SharedFilterPresetForm(",
+          "hosts": [
+            "android",
+            "web",
+            "ios",
+            "desktop"
           ]
         }
       ],
@@ -716,6 +774,13 @@
           "hosts": [
             "android",
             "web"
+          ]
+        },
+        {
+          "path": "shared/presentation/src/commonMain/kotlin/com/simtop/billionbeers/shared/presentation/SharedFilterPresetForm.kt",
+          "needle": "fun SharedFilterPresetForm(",
+          "hosts": [
+            "android"
           ]
         }
       ],

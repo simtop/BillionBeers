@@ -99,7 +99,7 @@ classify_path() {
     a_instrumented=true # the instrumented lane executes it (make release-smoke)
   elif [ "$f" = "scripts/verify_web_release_artifacts.py" ] || [ "$f" = "scripts/test_verify_web_release_artifacts.py" ]; then
     a_web=true # the Web lane executes the release verifier and its tests
-  elif [ "$f" = "scripts/verify_web_static.py" ] || [ "$f" = "scripts/test_verify_web_static.py" ] || [ "$f" = "scripts/test_web_image_proxy.py" ] || [ "$f" = "scripts/smoke_web_distribution.cjs" ]; then
+  elif [ "$f" = "scripts/verify_web_static.py" ] || [ "$f" = "scripts/test_verify_web_static.py" ] || [ "$f" = "scripts/test_web_image_proxy.py" ] || [ "$f" = "scripts/smoke_web_distribution.cjs" ] || [ "$f" = "scripts/web_smoke_devtools.cjs" ] || [ "$f" = "scripts/test_web_smoke_devtools.cjs" ]; then
     a_web=true # the Web lane executes the static verifier, image-proxy tests, smoke and their tests
   elif [ "$f" = "scripts/verify_ios_simulator_artifacts.py" ] || [ "$f" = "scripts/test_verify_ios_simulator_artifacts.py" ]; then
     a_native=true # the native lane creates and verifies the simulator evidence packet
@@ -164,6 +164,8 @@ if [[ "${1:-}" == "--self-test" ]]; then
   assert_lanes "scripts/verify_web_static.py" false false false false true
   assert_lanes "scripts/test_web_image_proxy.py" false false false false true
   assert_lanes "scripts/smoke_web_distribution.cjs" false false false false true
+  assert_lanes "scripts/web_smoke_devtools.cjs" false false false false true
+  assert_lanes "scripts/test_web_smoke_devtools.cjs" false false false false true
   assert_lanes "qa/project.config.json" false false false false false
   assert_lanes "skills/agent-qa/scripts/project_index.py" false false false false false
   assert_lanes "skills/agent-qa/scripts/test_project_index.py" false false false false false

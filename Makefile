@@ -192,7 +192,11 @@ qa-test: ## Test portable QA behavior and project integration without an app bui
 
 ##@ Web verification
 
-web-verify: ## Run Web browser tests and verify the production static distribution.
+.PHONY: web-smoke-test
+web-smoke-test: ## Test browser-smoke transport completion and failure handling without a browser.
+	node --test scripts/test_web_smoke_devtools.cjs
+
+web-verify: web-smoke-test ## Run Web browser tests and verify the production static distribution.
 	rm -rf "$(WEB_RELEASE_CONFIDENCE_DIR)"
 	python3 scripts/test_verify_web_static.py
 	python3 scripts/test_verify_web_release_artifacts.py

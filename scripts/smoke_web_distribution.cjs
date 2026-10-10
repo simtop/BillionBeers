@@ -5,6 +5,7 @@ const http = require('node:http');
 const os = require('node:os');
 const path = require('node:path');
 const { spawn } = require('node:child_process');
+const { DevTools } = require('./web_smoke_devtools.cjs');
 
 const distribution = path.resolve(process.argv[2] || 'web-app/build/dist/wasmJs/productionExecutable');
 const prefix = '/web-smoke/';
@@ -157,42 +158,6 @@ function startServer() {
   return new Promise(resolve => server.listen(0, '127.0.0.1', () => resolve(server)));
 }
 
-class DevTools {
-  constructor(socket) {
-    this.socket = socket;
-    this.nextId = 1;
-    this.pending = new Map();
-    this.events = new Map();
-    socket.onmessage = event => {
-      const message = JSON.parse(event.data);
-      if (message.id) {
-        const pending = this.pending.get(message.id);
-        if (!pending) return;
-        this.pending.delete(message.id);
-        if (message.error) pending.reject(new Error(message.error.message));
-        else pending.resolve(message.result);
-        return;
-      }
-      const listeners = this.events.get(message.method) || [];
-      for (const listener of listeners) listener(message.params || {});
-    };
-  }
-
-  send(method, params = {}) {
-    const id = this.nextId++;
-    return new Promise((resolve, reject) => {
-      this.pending.set(id, { resolve, reject });
-      this.socket.send(JSON.stringify({ id, method, params }));
-    });
-  }
-
-  on(method, listener) {
-    const listeners = this.events.get(method) || [];
-    listeners.push(listener);
-    this.events.set(method, listeners);
-  }
-}
-
 async function waitForSocket(url) {
   for (let attempt = 0; attempt < 100; attempt++) {
     try {
@@ -264,6 +229,51 @@ async function waitForRouteContent(devtools, hash, text) {
         node.textContent.includes('Production smoke fixture.'))) ? location.hash : ''`);
 }
 
+async function verifyCompactFilterForms(devtools) {
+  await devtools.send('Emulation.setDeviceMetricsOverride', { width: 320, height: 844, deviceScaleFactor: 1, mobile: false });
+  const forms = [];
+  const inspect = async (screen, fieldIndex) => {
+    const bounds = await waitFor(devtools, `(() => {
+      const nodes = ${accessibilityNodesExpression()};
+      const field = nodes.filter(n => n.getAttribute('role') === 'textbox')[${fieldIndex}]?.getBoundingClientRect();
+      const saves = nodes.filter(n => n.getAttribute('aria-label') === 'Save' || n.textContent.trim() === 'Save')
+        .map(n => n.getBoundingClientRect()).filter(b => b.width && b.height)
+        .sort((a, b) => a.width * a.height - b.width * b.height);
+      const save = saves[0];
+      return innerWidth === 320 && field?.width && save && field.right <= innerWidth + 1 && save.right <= innerWidth + 1
+        ? {field: field.toJSON(), save: save.toJSON(), viewport: [innerWidth, innerHeight]} : null;
+    })()`);
+    if (bounds.field.width < 240 || bounds.save.top < bounds.field.bottom - 1 || bounds.save.bottom > bounds.viewport[1]) {
+      throw new Error(`Compact ${screen} saved-filter form is squeezed or obscured: ${JSON.stringify(bounds)}`);
+    }
+    forms.push({ screen, ...bounds });
+    if (smokeEvidenceDir) {
+      await fs.promises.mkdir(smokeEvidenceDir, { recursive: true });
+      const screenshot = await devtools.send('Page.captureScreenshot', { format: 'png' });
+      await fs.promises.writeFile(path.join(smokeEvidenceDir, `web-${screen}-filter-form.png`), Buffer.from(screenshot.data, 'base64'));
+    }
+  };
+  await inspect('catalog', 0);
+  await clickControl(devtools, 'Search');
+  // Compose exposes text-field hints through semantics rather than DOM textContent.
+  await waitFor(devtools, `location.hash === '#search' && ${accessibilityNodesExpression()}.filter(n => n.getAttribute('role') === 'textbox').length === 2`);
+  await inspect('search', 1);
+  await clickControl(devtools, 'Back');
+  await waitForRouteContent(devtools, '#catalog', 'Browse');
+  await clickControl(devtools, 'Browse');
+  await waitForRouteContent(devtools, '#browse', 'Lager');
+  await clickControl(devtools, 'Lager');
+  await waitForRouteContent(devtools, '#browse/style/web-smoke-style', 'Web Smoke Lager');
+  await inspect('browse', 0);
+  await clickControl(devtools, 'Back');
+  await waitForRouteContent(devtools, '#browse', 'Styles');
+  await clickControl(devtools, 'Back');
+  await waitForRouteContent(devtools, '#catalog', 'Browse');
+  await devtools.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: false });
+  await waitFor(devtools, `${accessibilityNodesExpression()}.some(n => n.getAttribute('role') === 'textbox' && n.getBoundingClientRect().width > 320)`);
+  return forms;
+}
+
 async function verifyBrowseHistory(devtools) {
   const category = '#browse/style/web-smoke-style';
   const detail = '#beer/web-smoke-1';
@@ -321,6 +331,13 @@ async function verifySavedFilterHistory(devtools) {
   for (const type of ['mousePressed', 'mouseReleased']) {
     await devtools.send('Input.dispatchMouseEvent', { type, ...point, button: 'left', clickCount: 1 });
   }
+  // Compose activates its native backing editor asynchronously after a canvas click.
+  // Wait for input focus inside the shadow root before dispatching any keystrokes.
+  await waitFor(devtools, `(() => {
+    let active = document.activeElement;
+    while (active?.shadowRoot?.activeElement) active = active.shadowRoot.activeElement;
+    return active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA';
+  })()`);
   for (const text of 'Smoke saved filter') {
     await devtools.send('Input.dispatchKeyEvent', { type: 'keyDown', key: text, text });
     await devtools.send('Input.dispatchKeyEvent', { type: 'keyUp', key: text });
@@ -622,6 +639,7 @@ async function main() {
     if (compact.root[0] < 300 || compact.root[1] < 600 || compact.canvas[0] < 300 || compact.canvas[1] < 600 || !compact.hasFixture) {
       throw new Error(`Compact Web smoke failed: ${JSON.stringify({ ...compact, requests, errors })}`);
     }
+    const compactFilterForms = await verifyCompactFilterForms(devtools);
     await devtools.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: 30, y: 110, button: 'left', clickCount: 1 });
     await devtools.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: 30, y: 110, button: 'left', clickCount: 1 });
     const route = await waitFor(devtools, `location.hash === '#beer/web-smoke-1' ? location.hash : ''`);
@@ -695,7 +713,7 @@ async function main() {
     const warmMissingBeer = await verifyWarmMissingBeer(devtools);
     const savedFilterHistory = await verifySavedFilterHistory(devtools);
     if (errors.length) throw new Error(`Unexpected browser errors: ${errors.join('; ')}`);
-    console.log(JSON.stringify({ distribution, url: `http://127.0.0.1:${port}${prefix}`, browser: browserVersion.product, coldMissingBeer, compact, route, wide, wideRoute, cachedDetailReload: route, browseHistory, warmMissingBeer, savedFilterHistory, warnings, errors }, null, 2));
+    console.log(JSON.stringify({ distribution, url: `http://127.0.0.1:${port}${prefix}`, browser: browserVersion.product, coldMissingBeer, compact, compactFilterForms, route, wide, wideRoute, cachedDetailReload: route, browseHistory, warmMissingBeer, savedFilterHistory, warnings, errors }, null, 2));
   } catch (error) {
     smokeError = error;
     throw error;

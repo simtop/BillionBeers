@@ -138,6 +138,16 @@ The packaged smoke saves and applies a preset using browser keyboard/mouse input
 both Back affordances, Forward, reload fallback, stale-token traversal and reapplication. This local
 Chromium evidence does not establish deployed-origin or other-browser behavior.
 
+Catalog, Search and Browse use the shared stacked save form: the name editor occupies the full width,
+and Save sits below it. The packaged smoke checks all three at a 320px viewport, including editor
+width and action placement. Shared shell feedback reserves space so a failed save cannot cover its
+retry action. `make test MODULE=:shared:app` also exercises 2× text and long French fixture labels;
+those injected labels do not localize the Web shell, whose save-form copy remains English.
+
+The smoke transport rejects pending commands when its DevTools socket closes or errors, and
+caps each command at 15 seconds so browser shutdown cannot wait indefinitely for an acknowledgement.
+`make web-smoke-test` verifies those cases without a browser and runs as part of `make web-verify`.
+
 ## Lifecycle and images
 
 `WebDataRuntime` owns the browser storage and Ktor Fetch client. It is opened once for the

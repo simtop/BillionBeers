@@ -107,6 +107,8 @@ with tempfile.TemporaryDirectory() as temporary:
         ("scripts/verify-release-smoke-artifacts.sh", ("instrumented",)),
         ("scripts/verify_web_release_artifacts.py", ("web",)),
         ("scripts/test_verify_web_release_artifacts.py", ("web",)),
+        ("scripts/web_smoke_devtools.cjs", ("web",)),
+        ("scripts/test_web_smoke_devtools.cjs", ("web",)),
         ("qa/project.config.json", ()),
         ("skills/agent-qa/scripts/project_index.py", ()),
         ("scripts/test_qa_integration.py", ()),

@@ -37,6 +37,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
@@ -60,6 +61,8 @@ import com.simtop.billionbeers.shared.beersearch.SharedBeersSearchContent
 import com.simtop.billionbeers.shared.beerslist.SharedBeersListContent
 import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersTheme
 import com.simtop.billionbeers.shared.favorites.SharedFavoritesContent
+import com.simtop.billionbeers.shared.presentation.FilterPresetFormLabels
+import com.simtop.billionbeers.shared.presentation.SharedFilterPresetForm
 import com.simtop.core.core.CommonUiErrorKey
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.CoroutineDispatcherProvider
@@ -265,30 +268,37 @@ fun SharedAppShell(
         }
       },
       bottomBar = {
-        if (
-          route == PortableRoute.BeersList ||
-            route == PortableRoute.Favorites ||
-            route == PortableRoute.SavedFilterPresets
-        ) {
-          NavigationBar {
-            NavigationBarItem(
-              selected = route == PortableRoute.BeersList,
-              onClick = { navigate(PortableRoute.BeersList) },
-              icon = {},
-              label = { Text(strings.list) },
-            )
-            NavigationBarItem(
-              selected = route == PortableRoute.Favorites,
-              onClick = { navigate(PortableRoute.Favorites) },
-              icon = {},
-              label = { Text(strings.favorites) },
-            )
-            NavigationBarItem(
-              selected = route == PortableRoute.SavedFilterPresets,
-              onClick = { navigate(PortableRoute.SavedFilterPresets) },
-              icon = {},
-              label = { Text(strings.savedFilters) },
-            )
+        Column {
+          message?.let { currentMessage ->
+            Box(Modifier.fillMaxWidth().padding(16.dp).testTag("shell_message")) {
+              host.messageContent(currentMessage)
+            }
+          }
+          if (
+            route == PortableRoute.BeersList ||
+              route == PortableRoute.Favorites ||
+              route == PortableRoute.SavedFilterPresets
+          ) {
+            NavigationBar {
+              NavigationBarItem(
+                selected = route == PortableRoute.BeersList,
+                onClick = { navigate(PortableRoute.BeersList) },
+                icon = {},
+                label = { Text(strings.list) },
+              )
+              NavigationBarItem(
+                selected = route == PortableRoute.Favorites,
+                onClick = { navigate(PortableRoute.Favorites) },
+                icon = {},
+                label = { Text(strings.favorites) },
+              )
+              NavigationBarItem(
+                selected = route == PortableRoute.SavedFilterPresets,
+                onClick = { navigate(PortableRoute.SavedFilterPresets) },
+                icon = {},
+                label = { Text(strings.savedFilters) },
+              )
+            }
           }
         }
       },
@@ -396,11 +406,6 @@ fun SharedAppShell(
                 animationsDisabled = host.detailAnimationsDisabled,
                 onMessage = { message = it },
               )
-          }
-        }
-        message?.let { currentMessage ->
-          Box(Modifier.align(Alignment.BottomCenter).padding(16.dp)) {
-            host.messageContent(currentMessage)
           }
         }
       }
@@ -545,8 +550,6 @@ private fun SearchDestination(
   val activeQuery by entry.viewModel.activeQuery.collectAsState()
   val viewState by entry.viewModel.viewState.collectAsState()
   val count = (viewState as? CommonUiState.Success)?.data?.items?.size ?: 0
-  var presetName by remember { mutableStateOf("") }
-  val scope = rememberCoroutineScope()
   Column(Modifier.fillMaxSize()) {
     OutlinedTextField(
       value = query,
@@ -573,29 +576,12 @@ private fun SearchDestination(
         TextButton(onClick = entry.viewModel::onResetFilters) { Text(strings.clearFilters) }
       }
     }
-    Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
-      OutlinedTextField(
-        value = presetName,
-        onValueChange = { value ->
-          if (value.length <= SavedFilterPreset.MAX_NAME_LENGTH) presetName = value
-        },
-        label = { Text(strings.filterNameHint) },
-        modifier = Modifier.weight(1f),
-        singleLine = true,
-      )
-      Button(
-        onClick = {
-          scope.launch {
-            if (onSaveQuery(presetName)) presetName = ""
-          }
-        },
-        enabled =
-          presetName.isNotBlank() && (activeQuery.search != null || activeQuery.styleId != null),
-        modifier = Modifier.padding(start = 8.dp),
-      ) {
-        Text(strings.saveFilter)
-      }
-    }
+    SaveFilterForm(
+      strings = strings,
+      onSaveQuery = onSaveQuery,
+      modifier = Modifier.padding(horizontal = 12.dp),
+      enabled = activeQuery.search != null || activeQuery.styleId != null,
+    )
     Box(Modifier.weight(1f)) {
       SharedBeersSearchContent(
         viewState = viewState,
@@ -660,31 +646,12 @@ private fun BrowseBeersDestination(
   onSaveQuery: suspend (String) -> Boolean,
 ) {
   val viewState by entry.viewModel.viewState.collectAsState()
-  var presetName by remember { mutableStateOf("") }
-  val scope = rememberCoroutineScope()
   Column(Modifier.fillMaxSize()) {
-    Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
-      OutlinedTextField(
-        value = presetName,
-        onValueChange = { value ->
-          if (value.length <= SavedFilterPreset.MAX_NAME_LENGTH) presetName = value
-        },
-        label = { Text(strings.filterNameHint) },
-        modifier = Modifier.weight(1f),
-        singleLine = true,
-      )
-      Button(
-        onClick = {
-          scope.launch {
-            if (onSaveQuery(presetName)) presetName = ""
-          }
-        },
-        enabled = presetName.isNotBlank(),
-        modifier = Modifier.padding(start = 8.dp),
-      ) {
-        Text(strings.saveFilter)
-      }
-    }
+    SaveFilterForm(
+      strings = strings,
+      onSaveQuery = onSaveQuery,
+      modifier = Modifier.padding(horizontal = 12.dp),
+    )
     Box(Modifier.weight(1f)) {
       SharedBrowseBeersContent(
         strings = strings.browseStrings,
@@ -756,8 +723,6 @@ private fun ShellActions(
   onBrowse: () -> Unit,
   onSaveQuery: suspend (String) -> Boolean,
 ) {
-  var name by remember { mutableStateOf("") }
-  val scope = rememberCoroutineScope()
   Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
     Row(Modifier.fillMaxWidth()) {
       Button(onClick = onSearch, modifier = Modifier.weight(1f)) { Text(strings.search) }
@@ -765,29 +730,31 @@ private fun ShellActions(
         Text(strings.browse)
       }
     }
-    Row(Modifier.fillMaxWidth().padding(top = 8.dp)) {
-      OutlinedTextField(
-        value = name,
-        onValueChange = { value ->
-          if (value.length <= SavedFilterPreset.MAX_NAME_LENGTH) name = value
-        },
-        label = { Text(strings.filterNameHint) },
-        modifier = Modifier.weight(1f),
-        singleLine = true,
-      )
-      Button(
-        onClick = {
-          scope.launch {
-            if (onSaveQuery(name)) name = ""
-          }
-        },
-        enabled = name.isNotBlank(),
-        modifier = Modifier.padding(start = 8.dp),
-      ) {
-        Text(strings.saveFilter)
-      }
-    }
+    SaveFilterForm(strings, onSaveQuery, modifier = Modifier.padding(top = 8.dp))
   }
+}
+
+@Composable
+private fun SaveFilterForm(
+  strings: SharedAppStrings,
+  onSaveQuery: suspend (String) -> Boolean,
+  modifier: Modifier = Modifier,
+  enabled: Boolean = true,
+) {
+  var name by remember { mutableStateOf("") }
+  val scope = rememberCoroutineScope()
+  SharedFilterPresetForm(
+    name = name,
+    onNameChange = { name = it },
+    onSave = {
+      scope.launch {
+        if (onSaveQuery(name)) name = ""
+      }
+    },
+    labels = FilterPresetFormLabels(strings.filterNameHint, strings.saveFilter),
+    modifier = modifier,
+    enabled = enabled,
+  )
 }
 
 @Composable
