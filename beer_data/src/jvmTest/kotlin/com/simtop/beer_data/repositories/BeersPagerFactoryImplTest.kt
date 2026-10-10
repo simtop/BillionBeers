@@ -98,6 +98,31 @@ class BeersPagerFactoryImplTest {
       expectThat(repository.countDBEntries()).isEqualTo(26)
     }
 
+  @Test
+  fun `failed refresh over a warm catalog preserves the stored load-more bookmark`() =
+    runTest(testDispatcher) {
+      repository.insertPage(
+        (1..75).map { Beer.empty.copy(id = "$it") },
+        surface = "catalog:en",
+        nextKey = 4,
+        totalCount = 206,
+      )
+      beersRemoteSource.setShouldThrowError(true, BeersServiceNetworkException())
+      val pager = factory.create()
+
+      pager.loadFirstPage()
+      expectThat(pager.pagingState.value)
+        .isEqualTo(PagingState.Error(FetchBeersError.Network, isFirstPage = true))
+
+      beersRemoteSource.setShouldThrowError(false)
+      beersRemoteSource.setBeersResponse(listOf(apiItem(id = "76")), totalCount = 206)
+      pager.loadNextPage()
+
+      expectThat(beersRemoteSource.requestedPages.toList()).isEqualTo(listOf(1, 4))
+      expectThat(repository.getBeerById("76")).isNotNull()
+      expectThat(pager.pagingState.value).isEqualTo(PagingState.Success(totalCount = 206))
+    }
+
   // Language switch (Paging 2.0 Phase 4): the cached rows and bookmark belong to another
   // language's surface, so "load more" must restart from page 1 and re-walk (re-translating via
   // the upsert) - the row-count estimate would skip pages 1-2 and leave them in the old language.

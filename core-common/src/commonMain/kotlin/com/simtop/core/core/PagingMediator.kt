@@ -145,13 +145,14 @@ class InMemoryPagingStorage<Key : Any, Value : Any> : PagingStorage<Key, Value> 
  * [PagingStorage] for single-source-of-truth caching).
  *
  * Retry is free by construction: the page key only advances after a successful fetch-and-store, so
- * after a [PagingState.Error] any entry point simply re-requests the failed page. That includes a
- * failed first page or refresh retried through [loadNextPage]: the retry re-runs it *as* a first
- * page (stored via [PagingStorage.storeFirstPage]), never as an append of page one.
+ * a failed load-more re-requests the same page. A failed initial load can also be retried through
+ * [loadNextPage]; with no stored position it resolves [initialKey] and stores it as a first page.
  *
- * [loadFirstPage] is also refresh: it resets the key and hands the new first page to
- * [PagingStorage.storeFirstPage] - only *after* a successful fetch, so a failed refresh never
- * touches stored data. Concurrent [loadNextPage] calls (e.g. scroll-spam) collapse into the single
+ * [loadFirstPage] is also refresh: it hands the new first page to
+ * [PagingStorage.storeFirstPage] and commits the refreshed position only after the fetch and store
+ * succeed. A failed refresh therefore keeps both stored data and the last successful continuation
+ * key; another [loadFirstPage] retries the refresh, while [loadNextPage] can continue after the
+ * cached pages. Concurrent [loadNextPage] calls (e.g. scroll-spam) collapse into the single
  * in-flight load.
  *
  * ```kotlin
@@ -206,18 +207,8 @@ class PagingMediator<Key : Any, Value : Any, E : Any>(
   private var isKeyInitialized = false
   private var isLastPage = false
 
-  // Set while the page to retry is a *first* page (a failed initial load or refresh). Without it,
-  // a loadNextPage after a failed loadFirstPage would refetch the first page but store it through
-  // append - duplicating it in a replacing storage and mispositioning a merging one.
-  private var retryFirstPage = false
-
   override suspend fun loadFirstPage() {
-    mutex.withLock {
-      currentKey = initialKey
-      isKeyInitialized = true
-      isLastPage = false
-      loadPage(initialKey, isFirstPage = true)
-    }
+    mutex.withLock { loadPage(initialKey, isFirstPage = true) }
   }
 
   @Suppress("TooGenericExceptionCaught")
@@ -225,8 +216,11 @@ class PagingMediator<Key : Any, Value : Any, E : Any>(
     if (!mutex.tryLock()) return
     try {
       if (isLastPage) return
-      if (!isKeyInitialized) {
-        currentKey =
+      val wasKeyInitialized = isKeyInitialized
+      val key =
+        if (wasKeyInitialized) {
+          currentKey
+        } else {
           try {
             nextKeyFromStorage?.invoke() ?: initialKey
           } catch (e: CancellationException) {
@@ -235,28 +229,35 @@ class PagingMediator<Key : Any, Value : Any, E : Any>(
             _pagingState.value = PagingState.Error(classifyError(e), isFirstPage = false)
             return
           }
-        isKeyInitialized = true
+        }
+      key?.let {
+        val storeAsFirstPage = !wasKeyInitialized && it == initialKey
+        val isFirstPage = storeAsFirstPage && nextKeyFromStorage == null
+        loadPage(it, isFirstPage, storeAsFirstPage)
       }
-      currentKey?.let { key -> loadPage(key, isFirstPage = retryFirstPage) }
     } finally {
       mutex.unlock()
     }
   }
 
   @Suppress("TooGenericExceptionCaught")
-  private suspend fun loadPage(key: Key, isFirstPage: Boolean) {
+  private suspend fun loadPage(
+    key: Key,
+    isFirstPage: Boolean,
+    storeAsFirstPage: Boolean = isFirstPage,
+  ) {
     try {
       _pagingState.value = if (isFirstPage) PagingState.Loading else PagingState.LoadingNextPage
 
       val result = fetchRemote(key)
       val items = result.items
-      if (isFirstPage) storage.storeFirstPage(result)
+      if (storeAsFirstPage) storage.storeFirstPage(result)
       else if (items.isNotEmpty()) storage.append(result)
-      retryFirstPage = false
 
       // Empty-page probe: the fallback end signal when the server reports no total (nextKey stays
       // non-null) - preserves the pre-2.0 behaviour for a header-less backend.
       if (items.isEmpty()) {
+        commitPosition(nextKey = null)
         endPagination(result.totalCount)
         return
       }
@@ -266,10 +267,14 @@ class PagingMediator<Key : Any, Value : Any, E : Any>(
       // the fetch itself says the first page is also the last (nextKey == null): the total-count
       // math is authoritative about the end, and a row-count estimate from storage (e.g. a
       // sub-page dataset rounding to "page 1 is next") must not resurrect pagination past it.
-      currentKey =
-        if (isFirstPage && result.nextKey != null) nextKeyFromStorage?.invoke() ?: result.nextKey
-        else result.nextKey
-      if (currentKey == null) {
+      val nextKey =
+        if (storeAsFirstPage && result.nextKey != null) {
+          nextKeyFromStorage?.invoke() ?: result.nextKey
+        } else {
+          result.nextKey
+        }
+      commitPosition(nextKey)
+      if (nextKey == null) {
         endPagination(result.totalCount)
       } else {
         _pagingState.value = PagingState.Success(result.totalCount)
@@ -277,13 +282,18 @@ class PagingMediator<Key : Any, Value : Any, E : Any>(
     } catch (e: CancellationException) {
       throw e
     } catch (e: Exception) {
-      retryFirstPage = isFirstPage
       val error = classifyError(e)
       // A subsequent-page failure keeps the list, so it also fires a one-shot event for a transient
       // notice; a first-page failure is the full-screen Error condition and needs no event.
       if (!isFirstPage) _events.trySend(PagingEvent.LoadMoreFailed(error))
       _pagingState.value = PagingState.Error(error, isFirstPage)
     }
+  }
+
+  private fun commitPosition(nextKey: Key?) {
+    currentKey = nextKey
+    isKeyInitialized = true
+    isLastPage = nextKey == null
   }
 
   private fun endPagination(totalCount: Int?) {

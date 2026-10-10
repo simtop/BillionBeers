@@ -19,6 +19,7 @@ import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.shared.presentation.InfiniteListHandler
 import com.simtop.billionbeers.shared.presentation.sharedPagedListFooter
 import com.simtop.core.core.CommonUiState
+import com.simtop.core.core.PagedListFooter
 import com.simtop.core.core.PagedListUiModel
 
 private const val LIST_STATE_ANIMATION_DURATION_MILLIS = 300
@@ -92,9 +93,13 @@ private fun SharedBeersListSuccessContent(
 ) {
   val resolvedListState = listState ?: rememberLazyListState()
 
-  if (model.footer !is com.simtop.core.core.PagedListFooter.Retry) {
-    InfiniteListHandler(listState = resolvedListState, onLoadMore = onScrollToBottom)
-  }
+  InfiniteListHandler(
+    listState = resolvedListState,
+    itemCount = model.items.size,
+    loadMoreEnabled =
+      !model.isRefreshing && !model.isLoadingNextPage && model.footer is PagedListFooter.Hidden,
+    onLoadMore = onScrollToBottom,
+  )
 
   PullToRefreshBox(
     isRefreshing = model.isRefreshing,
