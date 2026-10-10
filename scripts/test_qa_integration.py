@@ -21,6 +21,17 @@ def cli(*args):
 
 
 class QaIntegrationTest(unittest.TestCase):
+    def test_shared_save_form_resolves_to_actual_consumers_and_names_fixture_scope(self):
+        shared = {"catalog", "search", "browse-results"}
+        for host in ("android", "web", "ios", "desktop"):
+            expected = shared | {"saved-filter-results"} if host == "android" else shared
+            found = cli("search", "SharedFilterPresetForm", "--host", host, "--limit", "20")
+            self.assertEqual(expected, {item["screen"] for item in found["screens"]})
+        shown = cli("show", "search", "--host", "web")
+        recipe = next(state for state in shown["states"] if state["id"] == "shared-large-text-save-form")
+        self.assertEqual("test", recipe["scope"])
+        self.assertEqual("fixture", recipe["mechanism"])
+
     def test_shared_beer_row_resolves_only_for_its_consuming_hosts(self):
         expected = {"catalog", "favorites", "search", "browse-results", "saved-filter-results"}
         for host in ("android", "web"):

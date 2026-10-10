@@ -79,6 +79,20 @@ alongside these checks; shared JVM renders do not establish browser or spoken sc
 
 ### Reusable component states
 
+[SharedFilterPresetForm](../shared/presentation/src/commonMain/kotlin/com/simtop/billionbeers/shared/presentation/SharedFilterPresetForm.kt)
+owns the saved-filter editor/action layout on Android and in the shared shell. A full-width,
+single-line name field sits above Save so large text and translated actions cannot consume its
+width. Hosts provide labels, the draft, query eligibility and save callbacks. The form enforces the
+64-character limit and blank-name disablement; hosts clear the draft after success and retain it
+after failure. Android's `ComposeFilterPresetForm` remains its resource adapter.
+
+The shared shell reserves feedback space above navigation, or at the bottom when navigation is
+absent. Feedback may reduce the visible list area temporarily; it must not cover the retry action.
+The shared renderer's `FilterPresetFormLayoutTest` covers Catalog, Search and Browse at compact
+width, 2× text, long French fixture labels and RTL, plus query/draft preservation and non-overlap.
+The Web production smoke checks all three forms at 320px and exercises saving/persistence/history.
+Injected French labels do not establish localization of the English Web shell or spoken accessibility.
+
 A component is governed when it is intended for reuse outside its defining source file. Its API and
 previews should make the following states explicit where the component supports them:
 
