@@ -134,6 +134,9 @@ producer_name = next(line.removeprefix("name: ").strip() for line in workflow.sp
 subscription = next(line.strip() for line in report_workflow.splitlines() if line.strip().startswith("workflows:"))
 assert producer_name in subscription
 assert "Regenerate Verification Metadata" in subscription
+spotless_step = workflow.split("      - name: Run Spotless Check", 1)[1].split("\n      - name:", 1)[0]
+assert "set -o pipefail" in spotless_step
+assert "./gradlew spotlessCheck 2>&1 | tee" in spotless_step
 for marker in (
     "native: ${{ steps.filter.outputs.native }}",
     "web: ${{ steps.filter.outputs.web }}",
