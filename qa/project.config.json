@@ -340,6 +340,42 @@
       },
       "states": [
         {
+          "id": "web-back-first-frame",
+          "hosts": [
+            "web"
+          ],
+          "mechanism": "ui",
+          "scope": "live-app",
+          "preconditions": [
+            "Use an isolated fresh browser profile and a current Web distribution at 320\u00d7844 CSS pixels; record browser/revision."
+          ],
+          "steps": [
+            "Open Catalog and select Search with an empty query.",
+            "Capture as soon as the Search fields are visible, then again after one second; do not wait for the icon to settle before the first capture.",
+            "Reload Search and repeat the captures, then activate Back and confirm Catalog is shown."
+          ],
+          "observe": "Back is a complete arrow in the first and settled frames and remains a working, named action.",
+          "limits": [
+            "The original text-arrow defect was transient on first navigation; warm/reloaded entries may already render correctly.",
+            "Document fonts readiness does not establish Compose canvas font readiness. The index describes this setup; it does not launch a browser or capture frames.",
+            "The existing production smoke uses intercepted API fixtures. Ordinary Web API data may vary; this empty-query visual state does not require a specific beer."
+          ],
+          "evidence": [
+            {
+              "path": "web-app/src/wasmJsMain/kotlin/com/simtop/billionbeers/web/WebMain.kt",
+              "needle": "private fun webHost("
+            },
+            {
+              "path": "shared/app/src/commonMain/kotlin/com/simtop/billionbeers/shared/app/SharedAppShell.kt",
+              "needle": "private fun ShellTopBar("
+            },
+            {
+              "path": "shared/presentation/src/commonMain/kotlin/com/simtop/billionbeers/shared/presentation/SharedBackIcon.kt",
+              "needle": "fun SharedBackIcon("
+            }
+          ]
+        },
+        {
           "id": "large-text-row",
           "hosts": [
             "android"
