@@ -33,6 +33,102 @@ class InfiniteListHandlerTest {
   }
 
   @Test
+  fun disabledThenEnabledRearmsTheSameItemCount() = runTest {
+    assertEquals(
+      2,
+      signalsFor(
+        ListPosition(
+          totalItems = 25,
+          lastVisibleIndex = 24,
+          itemCount = 25,
+          loadMoreEnabled = true,
+        ),
+        ListPosition(
+          totalItems = 25,
+          lastVisibleIndex = 24,
+          itemCount = 25,
+          loadMoreEnabled = false,
+        ),
+        ListPosition(
+          totalItems = 25,
+          lastVisibleIndex = 24,
+          itemCount = 25,
+          loadMoreEnabled = true,
+        ),
+      ),
+    )
+  }
+
+  @Test
+  fun initiallyDisabledPagingFiresWhenEnabled() = runTest {
+    assertEquals(
+      1,
+      signalsFor(
+        ListPosition(
+          totalItems = 25,
+          lastVisibleIndex = 24,
+          itemCount = 25,
+          loadMoreEnabled = false,
+        ),
+        ListPosition(
+          totalItems = 25,
+          lastVisibleIndex = 24,
+          itemCount = 25,
+          loadMoreEnabled = true,
+        ),
+      ),
+    )
+  }
+
+  @Test
+  fun disabledLoadingAndRetryStatesDoNotAutoRetry() = runTest {
+    assertEquals(
+      1,
+      signalsFor(
+        ListPosition(
+          totalItems = 25,
+          lastVisibleIndex = 24,
+          itemCount = 25,
+          loadMoreEnabled = true,
+        ),
+        ListPosition(
+          totalItems = 26,
+          lastVisibleIndex = 25,
+          itemCount = 25,
+          loadMoreEnabled = false,
+        ),
+        ListPosition(
+          totalItems = 26,
+          lastVisibleIndex = 25,
+          itemCount = 25,
+          loadMoreEnabled = false,
+        ),
+      ),
+    )
+  }
+
+  @Test
+  fun renderedFooterGrowthDoesNotCountAsDataGrowth() = runTest {
+    assertEquals(
+      1,
+      signalsFor(
+        ListPosition(
+          totalItems = 25,
+          lastVisibleIndex = 24,
+          itemCount = 25,
+          loadMoreEnabled = true,
+        ),
+        ListPosition(
+          totalItems = 26,
+          lastVisibleIndex = 25,
+          itemCount = 25,
+          loadMoreEnabled = true,
+        ),
+      ),
+    )
+  }
+
+  @Test
   fun bottomAwayBottomDoesNotRefireForSameCount() = runTest {
     assertEquals(
       1,

@@ -255,9 +255,13 @@ private fun SharedBrowseBeersResults(
   listState: LazyListState?,
 ) {
   val resolvedListState = listState ?: rememberLazyListState()
-  if (model.footer !is PagedListFooter.Retry) {
-    InfiniteListHandler(listState = resolvedListState, onLoadMore = onScrollToBottom)
-  }
+  InfiniteListHandler(
+    listState = resolvedListState,
+    itemCount = model.items.size,
+    loadMoreEnabled =
+      !model.isRefreshing && !model.isLoadingNextPage && model.footer is PagedListFooter.Hidden,
+    onLoadMore = onScrollToBottom,
+  )
 
   PullToRefreshBox(isRefreshing = model.isRefreshing, onRefresh = onRefresh) {
     Column {

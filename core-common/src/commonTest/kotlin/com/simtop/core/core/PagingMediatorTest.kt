@@ -274,6 +274,23 @@ class PagingMediatorTest {
   }
 
   @Test
+  fun `failed refresh after end of pagination preserves the end gate`() = runTest {
+    val harness = Harness(pages = { page -> if (page >= 2) emptyList() else listOf("item") })
+    harness.mediator.loadFirstPage()
+    harness.mediator.loadNextPage() // reaches EndOfPagination
+    harness.failOnKey(1)
+
+    harness.mediator.loadFirstPage() // refresh fails
+    harness.mediator.loadNextPage()
+
+    assertEquals(listOf(1, 2, 1), harness.fetchedKeys)
+    assertEquals(
+      PagingState.Error("fetch 1 failed", isFirstPage = true),
+      harness.mediator.pagingState.value,
+    )
+  }
+
+  @Test
   fun `concurrent loadNextPage calls collapse to a single fetch`() = runTest {
     val gate = CompletableDeferred<Unit>()
     var fetchCount = 0
@@ -374,23 +391,53 @@ class PagingMediatorTest {
     }
 
   @Test
-  fun `after a failed refresh loadNextPage re-runs the refresh instead of appending page 1`() =
-    runTest {
-      val harness = Harness()
-      harness.mediator.loadFirstPage()
-      harness.mediator.loadNextPage() // pages 1 and 2 on screen
-      harness.failOnKey(1)
-      harness.mediator.loadFirstPage() // refresh fails
-      harness.succeedOnKey(1)
-      harness.storage.events.clear()
+  fun `failed refresh over resumable storage retries its initial key as load more`() = runTest {
+    val storage = RecordingStorage()
+    storage.stored.value = listOf("cached item")
+    var failFetch = true
+    val mediator =
+      PagingMediator<Int, String, String>(
+        initialKey = 1,
+        fetchRemote = { key ->
+          storage.events += "fetch $key"
+          if (failFetch) throw RuntimeException("fetch failed")
+          PageResult(listOf("item $key"), nextKey = key + 1)
+        },
+        classifyError = { it.message ?: "unknown" },
+        storage = storage,
+        nextKeyFromStorage = { 1 },
+      )
 
-      harness.mediator.loadNextPage()
-
-      assertEquals(listOf("fetch 1", "storeFirstPage"), harness.storage.events)
-      // The replacing storage holds exactly the refreshed first page - "item 1" was not appended
-      // after the stale list.
-      assertEquals(listOf("item 1"), harness.storage.stored.value)
+    mediator.loadFirstPage()
+    mediator.events.test {
+      mediator.loadNextPage()
+      assertEquals(PagingEvent.LoadMoreFailed("fetch failed"), awaitItem())
     }
+    assertEquals(PagingState.Error("fetch failed", isFirstPage = false), mediator.pagingState.value)
+
+    failFetch = false
+    storage.events.clear()
+    mediator.loadNextPage()
+
+    assertEquals(listOf("fetch 1", "storeFirstPage"), storage.events)
+  }
+
+  @Test
+  fun `after a failed refresh loadNextPage resumes the last successful next page`() = runTest {
+    val harness = Harness()
+    harness.mediator.loadFirstPage()
+    harness.mediator.loadNextPage() // pages 1 and 2 on screen, page 3 is next
+    harness.failOnKey(1)
+    harness.mediator.loadFirstPage() // refresh fails without discarding page 3
+    harness.succeedOnKey(1)
+    harness.storage.events.clear()
+
+    harness.mediator.loadNextPage()
+
+    assertEquals(listOf("fetch 3", "append"), harness.storage.events)
+    assertEquals(listOf(1, 2, 1, 3), harness.fetchedKeys)
+    assertEquals(listOf("item 1", "item 2", "item 3"), harness.storage.stored.value)
+  }
 
   @Test
   fun `storage write failure emits Error and does not advance the key`() = runTest {
