@@ -50,7 +50,9 @@ jobs:
 
       - name: Run Spotless Check
         id: spotless-check
-        run: ./gradlew spotlessCheck 2>&1 | tee "$RUNNER_TEMP/spotless-check.log"
+        run: |
+          set -o pipefail
+          ./gradlew spotlessCheck 2>&1 | tee "$RUNNER_TEMP/spotless-check.log"
 
       # Lives here because this lane always runs and already has Gradle set up. Guards the one
       # verification gap CI is otherwise blind to: artifacts only Android Studio's sync resolves.
