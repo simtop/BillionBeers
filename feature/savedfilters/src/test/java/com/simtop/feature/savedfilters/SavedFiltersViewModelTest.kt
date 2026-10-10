@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 import strikt.api.expectThat
 import strikt.assertions.containsExactly
+import strikt.assertions.isEmpty
 import strikt.assertions.isEqualTo
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -48,14 +49,21 @@ class SavedFiltersViewModelTest {
     runTest(mainDispatcher.testDispatcher) {
       val repository = FakeBeersRepository()
       val viewModel = SavedFiltersViewModel(repository)
+      val reportedFailures = mutableListOf<Unit>()
       backgroundScope.launch { viewModel.presets.collect() }
+      backgroundScope.launch { viewModel.mutationFailed.collect { reportedFailures += it } }
       val preset = SavedFilterPreset("ipa", "IPA", BeersQuery(search = "ipa"), 1L)
       repository.saveFilterPreset(preset)
       runCurrent()
 
-      viewModel.rename(preset, " ")
+      listOf(" ", "x".repeat(SavedFilterPreset.MAX_NAME_LENGTH + 1)).forEach { name ->
+        expectThat(viewModel.rename(preset, name)).isEqualTo(false)
+      }
       runCurrent()
+
       expectThat(viewModel.presets.value.single().name).isEqualTo("IPA")
+      expectThat(repository.renameFilterPresetRequests).isEmpty()
+      expectThat(reportedFailures).isEmpty()
     }
 
   @Test

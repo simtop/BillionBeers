@@ -2,9 +2,11 @@ package com.simtop.feature.savedfilters
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.simtop.beerdomain.domain.errors.MutateFilterPresetError
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.beerdomain.domain.repositories.BeersRepository
-import com.simtop.core.core.SystemEpochTimeProvider
+import com.simtop.beerdomain.domain.usecases.RenameFilterPresetUseCase
+import com.simtop.core.core.Either
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
@@ -27,6 +29,7 @@ private const val PRESETS_STOP_TIMEOUT_MILLIS = 5_000L
 @ViewModelKey(SavedFiltersViewModel::class)
 @Inject
 class SavedFiltersViewModel(private val repository: BeersRepository) : ViewModel() {
+  private val renameFilterPreset = RenameFilterPresetUseCase(repository)
   private val mutationErrors = Channel<Unit>(Channel.BUFFERED)
   val mutationFailed = mutationErrors.receiveAsFlow()
   val presets: StateFlow<List<SavedFilterPreset>> =
@@ -38,24 +41,17 @@ class SavedFiltersViewModel(private val repository: BeersRepository) : ViewModel
         emptyList(),
       )
 
-  suspend fun rename(preset: SavedFilterPreset, name: String): Boolean {
-    val normalizedName = name.trim()
-    if (normalizedName.isEmpty() || normalizedName.length > SavedFilterPreset.MAX_NAME_LENGTH) {
-      return false
+  suspend fun rename(preset: SavedFilterPreset, name: String): Boolean =
+    when (val result = renameFilterPreset(preset.id, name)) {
+      is Either.Right -> true
+      is Either.Left -> {
+        if (result.value is MutateFilterPresetError.Unknown) mutationErrors.trySend(Unit)
+        false
+      }
     }
-    val result =
-      repository.renameFilterPreset(
-        preset.id,
-        normalizedName,
-        SystemEpochTimeProvider().epochMillis(),
-      )
-    val succeeded = result is com.simtop.core.core.Either.Right
-    if (!succeeded) mutationErrors.trySend(Unit)
-    return succeeded
-  }
 
   suspend fun delete(preset: SavedFilterPreset): Boolean {
-    val succeeded = repository.deleteFilterPreset(preset.id) is com.simtop.core.core.Either.Right
+    val succeeded = repository.deleteFilterPreset(preset.id) is Either.Right
     if (!succeeded) mutationErrors.trySend(Unit)
     return succeeded
   }

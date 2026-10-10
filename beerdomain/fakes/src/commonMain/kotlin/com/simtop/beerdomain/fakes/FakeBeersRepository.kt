@@ -49,7 +49,14 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersReposit
 
   override fun observeSavedFilterPresets(): Flow<List<SavedFilterPreset>> = presetsFlow
 
+  val saveFilterPresetRequests = mutableListOf<SavedFilterPreset>()
+  var saveFilterPresetError: SaveFilterPresetError? = null
+  var saveFilterPresetException: Exception? = null
+
   override suspend fun saveFilterPreset(preset: SavedFilterPreset): Either<SaveFilterPresetError, Unit> {
+    saveFilterPresetRequests += preset
+    saveFilterPresetException?.let { throw it }
+    saveFilterPresetError?.let { return Either.Left(it) }
     val current = presetsFlow.value.toMutableList()
     val index = current.indexOfFirst { it.id == preset.id }
     if (index < 0 && current.size >= SavedFilterPreset.MAX_COUNT) {
@@ -60,10 +67,12 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersReposit
     return Either.Right(Unit)
   }
 
+  val renameFilterPresetRequests = mutableListOf<Triple<String, String, Long>>()
   var mutateFilterPresetError: MutateFilterPresetError? = null
   var mutateFilterPresetException: Exception? = null
 
   override suspend fun renameFilterPreset(id: String, name: String, updatedAt: Long): Either<MutateFilterPresetError, Unit> {
+    renameFilterPresetRequests += Triple(id, name, updatedAt)
     mutateFilterPresetException?.let { throw it }
     mutateFilterPresetError?.let { return Either.Left(it) }
     presetsFlow.value = presetsFlow.value.map { if (it.id == id) it.copy(name = name, updatedAt = updatedAt) else it }

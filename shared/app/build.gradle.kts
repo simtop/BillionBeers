@@ -17,6 +17,7 @@ kotlin {
   sourceSets {
     commonMain.dependencies {
       implementation(project(":beerdomain:api"))
+      implementation(project(":beerdomain:impl"))
       implementation(project(":core-common"))
       implementation(project(":navigation-contract"))
       implementation(project(":shared:designsystem"))

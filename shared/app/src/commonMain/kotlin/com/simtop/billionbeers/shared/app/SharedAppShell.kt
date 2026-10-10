@@ -43,12 +43,15 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import com.simtop.beerdomain.domain.errors.MutateFilterPresetError
 import com.simtop.beerdomain.domain.errors.SaveFilterPresetError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.beerdomain.domain.usecases.RenameFilterPresetUseCase
+import com.simtop.beerdomain.domain.usecases.SaveFilterPresetUseCase
 import com.simtop.billionbeers.shared.beerbrowse.BrowseStrings
 import com.simtop.billionbeers.shared.beerbrowse.SharedBrowseBeersContent
 import com.simtop.billionbeers.shared.beerbrowse.SharedBrowseHomeContent
@@ -67,7 +70,6 @@ import com.simtop.core.core.CommonUiErrorKey
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.Either
-import com.simtop.core.core.SystemEpochTimeProvider
 import com.simtop.navigation.contract.PortableRoute
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -174,6 +176,8 @@ fun SharedAppShell(
     }
   DisposableEffect(navigation) { onDispose { navigation.disposeAll() } }
   val coroutineScope = rememberCoroutineScope()
+  val saveFilterPreset = remember(repository) { SaveFilterPresetUseCase(repository) }
+  val renameFilterPreset = remember(repository) { RenameFilterPresetUseCase(repository) }
 
   LaunchedEffect(host.routeRequests, host.navigationRequests) {
     merge(
@@ -210,34 +214,18 @@ fun SharedAppShell(
     navigation.navigate(next)
   }
 
-  suspend fun savePreset(name: String, query: BeersQuery): Boolean {
-    val normalizedName = name.trim()
-    if (normalizedName.isEmpty() || normalizedName.length > SavedFilterPreset.MAX_NAME_LENGTH) {
-      return false
-    }
-    val updatedAt = SystemEpochTimeProvider().epochMillis()
-    return when (
-      val result =
-        repository.saveFilterPreset(
-          SavedFilterPreset(
-            id = "preset-${normalizedName.hashCode()}-${query.hashCode()}",
-            name = normalizedName,
-            query = query,
-            updatedAt = updatedAt,
-          )
-        )
-    ) {
+  suspend fun savePreset(name: String, query: BeersQuery): Boolean =
+    when (val result = saveFilterPreset(name, query)) {
       is Either.Right -> true
       is Either.Left -> {
-        message =
-          when (result.value) {
-            SaveFilterPresetError.CapacityReached -> strings.filterPresetLimitReached
-            is SaveFilterPresetError.Unknown -> strings.saveFilterFailed
-          }
+        when (result.value) {
+          SaveFilterPresetError.InvalidName -> Unit
+          SaveFilterPresetError.CapacityReached -> message = strings.filterPresetLimitReached
+          is SaveFilterPresetError.Unknown -> message = strings.saveFilterFailed
+        }
         false
       }
     }
-  }
 
   fun applyPreset(preset: SavedFilterPreset) {
     navigation.selectSavedFilter(preset)
@@ -342,21 +330,15 @@ fun SharedAppShell(
                 strings = strings,
                 onApply = ::applyPreset,
                 onRename = { preset, name ->
-                  val normalizedName = name.trim()
-                  if (
-                    normalizedName.isNotEmpty() &&
-                      normalizedName.length <= SavedFilterPreset.MAX_NAME_LENGTH
-                  ) {
-                    val result =
-                      repository.renameFilterPreset(
-                        preset.id,
-                        normalizedName,
-                        SystemEpochTimeProvider().epochMillis(),
-                      )
-                    val succeeded = result is Either.Right
-                    if (!succeeded) message = strings.mutateFilterFailed
-                    succeeded
-                  } else false
+                  when (val result = renameFilterPreset(preset.id, name)) {
+                    is Either.Right -> true
+                    is Either.Left -> {
+                      if (result.value is MutateFilterPresetError.Unknown) {
+                        message = strings.mutateFilterFailed
+                      }
+                      false
+                    }
+                  }
                 },
                 onDelete = { preset ->
                   val succeeded = repository.deleteFilterPreset(preset.id) is Either.Right
