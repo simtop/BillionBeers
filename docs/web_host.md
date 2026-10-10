@@ -144,6 +144,10 @@ width and action placement. Shared shell feedback reserves space so a failed sav
 retry action. `make test MODULE=:shared:app` also exercises 2× text and long French fixture labels;
 those injected labels do not localize the Web shell, whose save-form copy remains English.
 
+The smoke transport rejects pending commands when its DevTools socket closes or errors, and
+caps each command at 15 seconds so browser shutdown cannot wait indefinitely for an acknowledgement.
+`make web-smoke-test` verifies those cases without a browser and runs as part of `make web-verify`.
+
 ## Lifecycle and images
 
 `WebDataRuntime` owns the browser storage and Ktor Fetch client. It is opened once for the

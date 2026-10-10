@@ -5,6 +5,7 @@ const http = require('node:http');
 const os = require('node:os');
 const path = require('node:path');
 const { spawn } = require('node:child_process');
+const { DevTools } = require('./web_smoke_devtools.cjs');
 
 const distribution = path.resolve(process.argv[2] || 'web-app/build/dist/wasmJs/productionExecutable');
 const prefix = '/web-smoke/';
@@ -155,42 +156,6 @@ function startServer() {
     });
   });
   return new Promise(resolve => server.listen(0, '127.0.0.1', () => resolve(server)));
-}
-
-class DevTools {
-  constructor(socket) {
-    this.socket = socket;
-    this.nextId = 1;
-    this.pending = new Map();
-    this.events = new Map();
-    socket.onmessage = event => {
-      const message = JSON.parse(event.data);
-      if (message.id) {
-        const pending = this.pending.get(message.id);
-        if (!pending) return;
-        this.pending.delete(message.id);
-        if (message.error) pending.reject(new Error(message.error.message));
-        else pending.resolve(message.result);
-        return;
-      }
-      const listeners = this.events.get(message.method) || [];
-      for (const listener of listeners) listener(message.params || {});
-    };
-  }
-
-  send(method, params = {}) {
-    const id = this.nextId++;
-    return new Promise((resolve, reject) => {
-      this.pending.set(id, { resolve, reject });
-      this.socket.send(JSON.stringify({ id, method, params }));
-    });
-  }
-
-  on(method, listener) {
-    const listeners = this.events.get(method) || [];
-    listeners.push(listener);
-    this.events.set(method, listeners);
-  }
 }
 
 async function waitForSocket(url) {
