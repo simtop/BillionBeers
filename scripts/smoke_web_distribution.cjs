@@ -220,6 +220,30 @@ async function clickControl(devtools, label) {
   }
 }
 
+async function focusNativeEditor(devtools) {
+  const focusExpression = `(() => {
+    let active = document.activeElement;
+    while (active?.shadowRoot?.activeElement) active = active.shadowRoot.activeElement;
+    return active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA';
+  })()`;
+  const deadline = Date.now() + 15000;
+  while (Date.now() < deadline) {
+    const point = await evaluate(devtools, `(() => {
+      const field = ${accessibilityNodesExpression()}.find(n => n.getAttribute('role') === 'textbox');
+      const bounds = field?.getBoundingClientRect();
+      return bounds?.width ? {x: bounds.left + bounds.width / 2, y: bounds.top + bounds.height / 2} : null;
+    })()`);
+    if (point) {
+      for (const type of ['mousePressed', 'mouseReleased']) {
+        await devtools.send('Input.dispatchMouseEvent', { type, ...point, button: 'left', clickCount: 1 });
+      }
+      if (await evaluate(devtools, focusExpression)) return;
+    }
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  throw new Error(`Timed out waiting for: ${focusExpression}`);
+}
+
 async function waitForRouteContent(devtools, hash, text) {
   return waitFor(devtools, `location.hash === ${JSON.stringify(hash)} &&
     ${accessibilityNodesExpression()}.some(node =>
@@ -323,21 +347,9 @@ async function verifySavedFilterHistory(devtools) {
       throw new Error(`Saved-filter history step '${name}' expected ${hash}, observed ${observed}: ${error.message}`);
     }
   };
-  const point = await waitFor(devtools, `(() => {
-    const field = ${accessibilityNodesExpression()}.find(n => n.getAttribute('role') === 'textbox');
-    const bounds = field?.getBoundingClientRect();
-    return bounds?.width ? {x: bounds.left + bounds.width / 2, y: bounds.top + bounds.height / 2} : null;
-  })()`);
-  for (const type of ['mousePressed', 'mouseReleased']) {
-    await devtools.send('Input.dispatchMouseEvent', { type, ...point, button: 'left', clickCount: 1 });
-  }
-  // Compose activates its native backing editor asynchronously after a canvas click.
-  // Wait for input focus inside the shadow root before dispatching any keystrokes.
-  await waitFor(devtools, `(() => {
-    let active = document.activeElement;
-    while (active?.shadowRoot?.activeElement) active = active.shadowRoot.activeElement;
-    return active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA';
-  })()`);
+  // Compose may replace the native editor while a near-end list is recomposing. Reacquire the
+  // field bounds and replay the real click until the backing editor owns focus.
+  await focusNativeEditor(devtools);
   for (const text of 'Smoke saved filter') {
     await devtools.send('Input.dispatchKeyEvent', { type: 'keyDown', key: text, text });
     await devtools.send('Input.dispatchKeyEvent', { type: 'keyUp', key: text });
