@@ -331,6 +331,13 @@ async function verifySavedFilterHistory(devtools) {
   for (const type of ['mousePressed', 'mouseReleased']) {
     await devtools.send('Input.dispatchMouseEvent', { type, ...point, button: 'left', clickCount: 1 });
   }
+  // Compose activates its native backing editor asynchronously after a canvas click.
+  // Wait for input focus inside the shadow root before dispatching any keystrokes.
+  await waitFor(devtools, `(() => {
+    let active = document.activeElement;
+    while (active?.shadowRoot?.activeElement) active = active.shadowRoot.activeElement;
+    return active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA';
+  })()`);
   for (const text of 'Smoke saved filter') {
     await devtools.send('Input.dispatchKeyEvent', { type: 'keyDown', key: text, text });
     await devtools.send('Input.dispatchKeyEvent', { type: 'keyUp', key: text });
