@@ -45,6 +45,7 @@ import com.simtop.billionbeers.shared.beerbrowse.BrowseStrings
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailStrings
 import com.simtop.billionbeers.shared.beerdetail.formatServingTemperatureRange
 import com.simtop.billionbeers.shared.presentation.BeerListItemLabels
+import com.simtop.billionbeers.shared.presentation.SharedBackIcon
 import com.simtop.billionbeers.shared.presentation.SharedBeerListItem
 import com.simtop.core.core.CommonUiState
 import com.simtop.navigation.contract.PortableRoute
@@ -292,9 +293,7 @@ private fun webHost(runtime: WebDataRuntime, session: WebRouteSession) =
   SharedAppHost(
     beerRow = { beer, onClick -> WebBeerRow(runtime, beer, onClick) },
     errorContent = { state, retry -> WebError(state, retry) },
-    backIcon = { description ->
-      Text("←", modifier = Modifier.semantics { contentDescription = description })
-    },
+    backIcon = { description -> SharedBackIcon(description) },
     favoriteIcon = { isFavorite, description ->
       Text(
         if (isFavorite) "♥" else "♡",

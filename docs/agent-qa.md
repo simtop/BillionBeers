@@ -52,6 +52,10 @@ closes the open drawer. Restore any changed controls before comparing the normal
 These controls are Android debug tooling; they do not establish equivalent state forcing on
 other hosts. See the [accessibility checklist](accessibility-release-qa.md) for acceptance limits.
 
+The [Web Back pilot](qa-web-back-pilot.md) records a transient glyph reproduction, vector repair
+and bounded lookup-to-capture timings. Use Search's `web-back-first-frame` recipe for early-frame
+capture; the pilot establishes fewer lookup operations, without claiming an agent speedup.
+
 ## Maintain and reuse
 
 `make qa-validate` checks anchors, IDs, host bindings and state scope. `make qa-test` verifies

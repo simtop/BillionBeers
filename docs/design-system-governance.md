@@ -77,6 +77,16 @@ RTL, image-slot sizing and row action/state checks. Run `make screenshot-verify`
 and `make web-verify` for the production Web host and route interactions. Inspect actual host images
 alongside these checks; shared JVM renders do not establish browser or spoken screen-reader acceptance.
 
+### Portable Back affordance
+
+[SharedBackIcon](../shared/presentation/src/commonMain/kotlin/com/simtop/billionbeers/shared/presentation/SharedBackIcon.kt)
+provides a 24dp vector Back arrow for Web's host slot, tinted with the local content color and
+automatically mirrored in RTL. Its localized description remains in semantics. It avoids the
+font-fallback dependency of a text arrow; Desktop and Android retain their platform icon providers.
+`BackIconRenderTest` checks rendered arrowhead/shaft pixels, description, fixed size and absence of
+glyph text at normal/2× text in LTR/RTL. Browser smoke still checks real Back/history actions;
+inspect early-frame Web captures to verify the reported transient symptom.
+
 ### Reusable component states
 
 [SharedFilterPresetForm](../shared/presentation/src/commonMain/kotlin/com/simtop/billionbeers/shared/presentation/SharedFilterPresetForm.kt)
