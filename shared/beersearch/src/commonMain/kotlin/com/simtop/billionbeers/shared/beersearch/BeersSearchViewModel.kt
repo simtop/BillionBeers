@@ -87,11 +87,7 @@ open class BeersSearchViewModel(
           emitAll(searchFlow(query))
         }
       }
-      .stateIn(
-        viewModelScope,
-        SharingStarted.WhileSubscribed(SUBSCRIPTION_TIMEOUT_MILLIS),
-        CommonUiState.Empty,
-      )
+      .stateIn(viewModelScope, SharingStarted.Eagerly, CommonUiState.Empty)
 
   init {
     retryStyles()
@@ -169,7 +165,6 @@ open class BeersSearchViewModel(
   private companion object {
     const val DEBOUNCE_MILLIS = 700L
     const val MIN_QUERY_LENGTH = 2
-    const val SUBSCRIPTION_TIMEOUT_MILLIS = 5_000L
   }
 }
 
