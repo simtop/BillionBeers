@@ -109,6 +109,52 @@ class BeersSearchViewModelTest {
       }
     }
 
+  @Test
+  fun `search results survive a collector gap beyond the old timeout`() =
+    runTest(mainDispatcher.testDispatcher) {
+      val viewModel = buildViewModel()
+      val result = Beer.empty.copy(id = "1")
+
+      viewModel.viewState.test {
+        expectThat(awaitItem()).isEqualTo(CommonUiState.Empty)
+
+        viewModel.onQueryChange("ipa")
+        advanceTimeBy(pastDebounce)
+        runCurrent()
+        val pager = fakeFactory.searchPagers.single()
+        pager.setData(listOf(result))
+        pager.setPagingState(PagingState.Success(totalCount = 159))
+        runCurrent()
+
+        val state = expectMostRecentItem()
+        expectThat((state as CommonUiState.Success).data.items.map { it.id }).isEqualTo(listOf("1"))
+        cancelAndIgnoreRemainingEvents()
+      }
+
+      val originalPager = fakeFactory.searchPagers.single()
+      advanceTimeBy(5_001L)
+      runCurrent()
+
+      viewModel.viewState.test {
+        expectThat(awaitItem()).isA<CommonUiState.Success<PagedListUiModel<Beer>>>()
+        advanceTimeBy(pastDebounce)
+        runCurrent()
+
+        expectThat(fakeFactory.createdQueries.toList()).isEqualTo(listOf(BeersQuery("ipa")))
+        expectThat(fakeFactory.searchPagers.toList()).isEqualTo(listOf(originalPager))
+        expectThat(originalPager.loadFirstPageCallCount).isEqualTo(1)
+        val retained = viewModel.viewState.value as CommonUiState.Success
+        expectThat(retained.data.items.map { it.id }).isEqualTo(listOf("1"))
+        expectThat(retained.data.totalCount).isEqualTo(159)
+
+        viewModel.onScrollToBottom()
+        runCurrent()
+
+        expectThat(originalPager.loadNextPageCallCount).isEqualTo(1)
+        cancelAndIgnoreRemainingEvents()
+      }
+    }
+
   // A valid query that matches nothing: empty first page -> EndOfPagination over an empty list.
   // Surfaces as Success with zero results (count 0), which 2c's "No results" empty state reads.
   @Test
