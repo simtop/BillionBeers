@@ -6,11 +6,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -21,7 +19,6 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -34,10 +31,9 @@ import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersTheme
-import com.simtop.billionbeers.shared.presentation.InfiniteListHandler
-import com.simtop.billionbeers.shared.presentation.sharedPagedListFooter
+import com.simtop.billionbeers.shared.presentation.SharedPagedBeersContent
+import com.simtop.billionbeers.shared.presentation.SharedPagedBeersStrings
 import com.simtop.core.core.CommonUiState
-import com.simtop.core.core.PagedListFooter
 import com.simtop.core.core.PagedListUiModel
 
 private const val TAB_STYLES = 0
@@ -159,7 +155,6 @@ fun SharedBrowseHomeContent(
   }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SharedBrowseBeersContent(
   strings: BrowseStrings,
@@ -176,50 +171,29 @@ fun SharedBrowseBeersContent(
   listState: LazyListState? = null,
   modifier: Modifier = Modifier,
 ) {
-  Scaffold(
-    modifier = modifier,
-    topBar = {
-      BrowseTopAppBar(
-        title = title,
+  SharedPagedBeersContent(
+    strings =
+      SharedPagedBeersStrings(
         back = strings.back,
-        onBack = onBack,
-        backIcon = backIcon,
-      )
-    },
-  ) { padding ->
-    Box(modifier = Modifier.fillMaxSize().consumeWindowInsets(padding)) {
-      when (val state = viewState) {
-        CommonUiState.Empty,
-        CommonUiState.Loading ->
-          Box(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentAlignment = Alignment.Center,
-          ) {
-            CircularProgressIndicator()
-          }
-        is CommonUiState.Error ->
-          Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-            errorContent(state, onRetryFirstPage)
-          }
-        is CommonUiState.Success ->
-          if (state.data.items.isEmpty()) {
-            BrowseCenteredHint(strings.noBeers, Modifier.padding(padding))
-          } else {
-            SharedBrowseBeersResults(
-              strings = strings,
-              model = state.data,
-              contentPadding = padding,
-              beerRow = beerRow,
-              onBeerClick = onBeerClick,
-              onScrollToBottom = onScrollToBottom,
-              onRefresh = onRetryFirstPage,
-              onRetryLoadMore = onRetryLoadMore,
-              listState = listState,
-            )
-          }
-      }
-    }
-  }
+        noBeers = strings.noBeers,
+        retry = strings.retry,
+        loadMoreFailed = strings.loadMoreFailed,
+        beersCount = strings.beersCount,
+        endOfList = strings.endOfList,
+      ),
+    title = title,
+    viewState = viewState,
+    onBack = onBack,
+    backIcon = backIcon,
+    onBeerClick = onBeerClick,
+    onScrollToBottom = onScrollToBottom,
+    onRetryLoadMore = onRetryLoadMore,
+    onRetryFirstPage = onRetryFirstPage,
+    errorContent = errorContent,
+    beerRow = beerRow,
+    listState = listState,
+    modifier = modifier,
+  )
 }
 
 @Composable
@@ -238,65 +212,6 @@ private fun <T> BrowseListState(
     is CommonUiState.Error -> errorContent(state, onRetry)
     CommonUiState.Empty -> BrowseCenteredHint(emptyText, Modifier)
     is CommonUiState.Success -> content(state.data)
-  }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SharedBrowseBeersResults(
-  strings: BrowseStrings,
-  model: PagedListUiModel<Beer>,
-  contentPadding: PaddingValues,
-  beerRow: @Composable (Beer, () -> Unit) -> Unit,
-  onBeerClick: (Beer) -> Unit,
-  onScrollToBottom: () -> Unit,
-  onRefresh: () -> Unit,
-  onRetryLoadMore: () -> Unit,
-  listState: LazyListState?,
-) {
-  val resolvedListState = listState ?: rememberLazyListState()
-  InfiniteListHandler(
-    listState = resolvedListState,
-    itemCount = model.items.size,
-    loadMoreEnabled =
-      !model.isRefreshing && !model.isLoadingNextPage && model.footer is PagedListFooter.Hidden,
-    onLoadMore = onScrollToBottom,
-  )
-
-  PullToRefreshBox(isRefreshing = model.isRefreshing, onRefresh = onRefresh) {
-    Column {
-      model.totalCount?.let { count ->
-        Text(
-          text = strings.beersCount(count),
-          style = MaterialTheme.typography.labelLarge,
-          modifier =
-            Modifier.fillMaxWidth()
-              .padding(
-                horizontal = BillionBeersTheme.spacing.medium,
-                vertical = BillionBeersTheme.spacing.small,
-              ),
-        )
-      }
-
-      val endOfListText = strings.endOfList(model.items.size)
-      LazyColumn(
-        state = resolvedListState,
-        modifier = Modifier.fillMaxSize().consumeWindowInsets(contentPadding),
-        contentPadding = contentPadding,
-      ) {
-        items(model.items.size, key = { index -> model.items[index].id }) { index ->
-          val beer = model.items[index]
-          beerRow(beer) { onBeerClick(beer) }
-        }
-        sharedPagedListFooter(
-          model = model,
-          loadMoreFailedText = { strings.loadMoreFailed },
-          retryText = { strings.retry },
-          endOfListText = endOfListText,
-          onRetryLoadMore = onRetryLoadMore,
-        )
-      }
-    }
   }
 }
 

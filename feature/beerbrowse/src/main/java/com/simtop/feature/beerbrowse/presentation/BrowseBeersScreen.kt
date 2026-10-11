@@ -27,8 +27,8 @@ import com.simtop.billionbeers.core.designsystem.component.AccessibilityMatrixPr
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.component.showToast
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
-import com.simtop.billionbeers.shared.beerbrowse.BrowseBeersEvent as SharedBrowseBeersEvent
 import com.simtop.billionbeers.shared.beerbrowse.SharedBrowseBeersContent
+import com.simtop.billionbeers.shared.presentation.BrowseBeersEvent as SharedBrowseBeersEvent
 import com.simtop.core.core.CommonUiErrorKey
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.PagedListFooter

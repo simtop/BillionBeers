@@ -64,7 +64,7 @@ constructor(
   beersPagerFactory: com.simtop.beerdomain.domain.repositories.BeersPagerFactory,
   @Assisted query: com.simtop.beerdomain.domain.models.BeersQuery,
 ) :
-  com.simtop.billionbeers.shared.beerbrowse.BrowseBeersViewModel(
+  com.simtop.billionbeers.shared.presentation.BrowseBeersViewModel(
     coroutineDispatcher,
     beersPagerFactory,
     query,

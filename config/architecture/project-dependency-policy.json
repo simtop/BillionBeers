@@ -7,6 +7,7 @@
     { "name": "dev-application", "match": "prefix", "value": ":app-dev-" },
     { "name": "release-smoke", "match": "exact", "value": ":app-release-smoke" },
     { "name": "dynamic-feature", "match": "prefix", "value": ":feature:", "plugin": "com.android.dynamic-feature" },
+    { "name": "savedfilters-feature", "match": "exact", "value": ":feature:savedfilters" },
     { "name": "regular-feature", "match": "prefix", "value": ":feature:" },
     { "name": "domain-api", "match": "exact", "value": ":beerdomain:api" },
     { "name": "domain-impl", "match": "exact", "value": ":beerdomain:impl" },
@@ -46,13 +47,14 @@
     { "name": "android-screenshot-fixture", "match": "exact", "value": ":compose-multiplatform-screenshot-fixture" }
   ],
   "allowedEdges": [
-    { "source": "application", "targets": ["domain-api", "domain-impl", "regular-feature", "dynamic-feature", "core", "design-system", "navigation", "data", "database", "network", "presentation"], "scopes": ["main"] },
+    { "source": "application", "targets": ["domain-api", "domain-impl", "regular-feature", "savedfilters-feature", "dynamic-feature", "core", "design-system", "navigation", "data", "database", "network", "presentation"], "scopes": ["main"] },
     { "source": "desktop-application", "targets": ["domain-api", "data", "database", "network", "core-common", "shared-favorites", "shared-beerbrowse", "shared-beerdetail", "shared-app"], "scopes": ["main"] },
     { "source": "web-application", "targets": ["domain-api", "data", "network", "network-api", "core-common", "storage-api", "storage-browser", "navigation-contract", "shared-app", "shared-presentation", "shared-beerbrowse", "shared-beerdetail"], "scopes": ["main"] },
-    { "source": "ios-shared", "targets": ["domain-api", "data", "database", "network", "core-common", "navigation-contract", "shared-app"], "scopes": ["main"] },
-    { "source": "dev-application", "targets": ["regular-feature", "domain-api", "domain-fakes", "core", "design-system", "navigation", "presentation"], "scopes": ["main"] },
-    { "source": "regular-feature", "targets": ["domain-api", "domain-impl", "core", "core-common", "presentation", "design-system", "navigation", "shared-favorites", "shared-beerslist", "shared-beersearch", "shared-beerdetail", "shared-beerbrowse", "snapshot-testing"], "scopes": ["main"] },
-    { "source": "dynamic-feature", "targets": ["application", "domain-api", "core", "design-system", "presentation", "navigation", "shared-beerdetail", "shared-beerbrowse", "snapshot-testing"], "scopes": ["main"] },
+    { "source": "ios-shared", "targets": ["domain-api", "data", "database", "network", "core-common", "navigation-contract", "shared-app", "shared-beerbrowse"], "scopes": ["main"] },
+    { "source": "dev-application", "targets": ["regular-feature", "savedfilters-feature", "domain-api", "domain-fakes", "core", "design-system", "navigation", "presentation"], "scopes": ["main"] },
+    { "source": "savedfilters-feature", "targets": ["domain-api", "domain-impl", "core", "core-common", "presentation", "design-system", "navigation", "shared-presentation", "snapshot-testing"], "scopes": ["main"] },
+    { "source": "regular-feature", "targets": ["domain-api", "domain-impl", "core", "core-common", "presentation", "design-system", "navigation", "shared-presentation", "shared-favorites", "shared-beerslist", "shared-beersearch", "shared-beerdetail", "shared-beerbrowse", "snapshot-testing"], "scopes": ["main"] },
+    { "source": "dynamic-feature", "targets": ["application", "domain-api", "core", "design-system", "presentation", "navigation", "shared-presentation", "shared-beerdetail", "shared-beerbrowse", "snapshot-testing"], "scopes": ["main"] },
     { "source": "domain-api", "targets": ["core-common"], "scopes": ["main"] },
     { "source": "domain-impl", "targets": ["domain-api", "core-common"], "scopes": ["main"] },
     { "source": "domain-fakes", "targets": ["domain-api", "core-common"], "scopes": ["main"] },
@@ -77,20 +79,22 @@
     { "source": "navigation", "targets": ["domain-api", "navigation-contract"], "scopes": ["main"] },
     { "source": "presentation", "targets": ["domain-api", "catalog-annotations", "core", "design-system", "shared-presentation", "snapshot-testing"], "scopes": ["main"] },
     { "source": "test-support", "targets": ["core-common"], "scopes": ["main"] },
-    { "source": "catalog", "targets": ["regular-feature", "design-system", "presentation", "catalog-annotations", "snapshot-testing"], "scopes": ["main"] },
+    { "source": "catalog", "targets": ["regular-feature", "savedfilters-feature", "design-system", "presentation", "catalog-annotations", "snapshot-testing"], "scopes": ["main"] },
     { "source": "benchmark", "targets": ["data", "domain-api", "database", "network", "core-common"], "scopes": ["main"] },
     { "source": "android-screenshot-fixture", "targets": ["shared-ui-fixture", "design-system", "snapshot-testing"], "scopes": ["main"] }
   ],
   "allowedApiEdges": [
+    { "source": "shared-presentation", "target": "domain-api", "reason": "the shared paged-results API exposes portable beer and query models" },
     { "source": "shared-presentation", "target": "core-common", "reason": "the shared footer API exposes the portable paging UI model" },
     { "source": "design-system", "target": "shared-design-system", "reason": "the Android design-system facade exposes shared token types to existing consumers" },
     { "source": "core", "target": "core-common", "reason": "core is the Android facade that exposes the pure-JVM core contract" },
     { "source": "network-fixture", "target": "network-api", "reason": "the fixture module deliberately re-exports the transport-neutral service contract for tests" }
   ],
   "forbiddenCompileClasspathRoles": [
-    { "source": "regular-feature", "targets": ["regular-feature", "dynamic-feature", "data", "database", "storage-api", "network"] },
-    { "source": "dynamic-feature", "targets": ["regular-feature", "dynamic-feature", "data", "database", "storage-api", "network"] },
-    { "source": "domain-api", "targets": ["application", "dev-application", "regular-feature", "dynamic-feature", "domain-impl", "data", "database", "storage-api", "network", "core", "design-system", "navigation", "presentation"] },
-    { "source": "domain-impl", "targets": ["application", "desktop-application", "web-application", "dev-application", "release-smoke", "regular-feature", "dynamic-feature", "domain-fakes", "data", "database", "storage-api", "storage-browser", "network-api", "network-fixture", "network", "ios-shared", "design-system", "shared-design-system", "shared-presentation", "shared-favorites", "shared-beerslist", "shared-beersearch", "shared-beerdetail", "shared-beerbrowse", "shared-app", "navigation-contract", "core", "navigation", "presentation"] }
+    { "source": "regular-feature", "targets": ["regular-feature", "savedfilters-feature", "dynamic-feature", "data", "database", "storage-api", "network"] },
+    { "source": "savedfilters-feature", "targets": ["regular-feature", "dynamic-feature", "data", "database", "storage-api", "network", "shared-beerbrowse"] },
+    { "source": "dynamic-feature", "targets": ["regular-feature", "savedfilters-feature", "dynamic-feature", "data", "database", "storage-api", "network"] },
+    { "source": "domain-api", "targets": ["application", "dev-application", "regular-feature", "savedfilters-feature", "dynamic-feature", "domain-impl", "data", "database", "storage-api", "network", "core", "design-system", "navigation", "presentation"] },
+    { "source": "domain-impl", "targets": ["application", "desktop-application", "web-application", "dev-application", "release-smoke", "regular-feature", "savedfilters-feature", "dynamic-feature", "domain-fakes", "data", "database", "storage-api", "storage-browser", "network-api", "network-fixture", "network", "ios-shared", "design-system", "shared-design-system", "shared-presentation", "shared-favorites", "shared-beerslist", "shared-beersearch", "shared-beerdetail", "shared-beerbrowse", "shared-app", "navigation-contract", "core", "navigation", "presentation"] }
   ]
 }

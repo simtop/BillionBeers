@@ -1,4 +1,4 @@
-package com.simtop.billionbeers.shared.beerbrowse
+package com.simtop.billionbeers.shared.presentation
 
 import app.cash.turbine.test
 import com.simtop.beerdomain.domain.errors.FetchBeersError
