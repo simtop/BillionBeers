@@ -1,0 +1,41 @@
+name: Update ready PR branches
+
+# Run trusted default-branch code only. No PR checkout or build receives the write key.
+# The timer also catches auto-merge enabled by GITHUB_TOKEN, whose events do not start workflows.
+on:
+  push:
+    branches: [master]
+  workflow_run:
+    workflows: [BillionBeers CI]
+    types: [completed]
+  schedule:
+    - cron: '7,17,27,37,47,57 * * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pull-requests: read
+  actions: read
+
+concurrency:
+  group: update-ready-prs
+  cancel-in-progress: false
+
+jobs:
+  update:
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: master
+          ssh-key: ${{ secrets.VERIFICATION_METADATA_DEPLOY_KEY }}
+          # Merge-tree needs the common ancestor, not just the checked-out commit.
+          fetch-depth: 0
+
+      - name: Update eligible branches
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/update-ready-prs.py --repo "$GITHUB_REPOSITORY" --base master

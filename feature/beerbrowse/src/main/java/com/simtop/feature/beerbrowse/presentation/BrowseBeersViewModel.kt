@@ -2,8 +2,8 @@ package com.simtop.feature.beerbrowse.presentation
 
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
-import com.simtop.billionbeers.shared.beerbrowse.BrowseBeersEvent as SharedBrowseBeersEvent
-import com.simtop.billionbeers.shared.beerbrowse.BrowseBeersViewModel as SharedBrowseBeersViewModel
+import com.simtop.billionbeers.shared.presentation.BrowseBeersEvent as SharedBrowseBeersEvent
+import com.simtop.billionbeers.shared.presentation.BrowseBeersViewModel as SharedBrowseBeersViewModel
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.feature.beerbrowse.presentation.di.FeatureBrowseScope
 import dev.zacsweers.metro.Assisted

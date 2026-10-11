@@ -42,8 +42,8 @@ import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
-import com.simtop.billionbeers.shared.beerbrowse.BrowseStrings
-import com.simtop.billionbeers.shared.beerbrowse.SharedBrowseBeersContent
+import com.simtop.billionbeers.shared.presentation.SharedPagedBeersContent
+import com.simtop.billionbeers.shared.presentation.SharedPagedBeersStrings
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.PagedListUiModel
 import com.simtop.navigation.SavedFilterResults
@@ -219,9 +219,9 @@ private fun SavedFilterResultsContent(
   onRetryFirstPage: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
-  SharedBrowseBeersContent(
+  SharedPagedBeersContent(
     modifier = modifier,
-    strings = androidBrowseStrings,
+    strings = androidPagedBeersStrings,
     title = title,
     viewState = viewState,
     onBack = onBack,
@@ -239,21 +239,14 @@ private fun SavedFilterResultsContent(
   )
 }
 
-private val androidBrowseStrings
+private val androidPagedBeersStrings
   @Composable
   get() =
-    BrowseStrings(
+    SharedPagedBeersStrings(
       back = stringResource(PresentationUtilsR.string.browse_back),
-      title = stringResource(PresentationUtilsR.string.browse_title),
-      stylesTab = stringResource(PresentationUtilsR.string.browse_tab_styles),
-      breweriesTab = stringResource(PresentationUtilsR.string.browse_tab_breweries),
-      emptyState = stringResource(PresentationUtilsR.string.empty_state),
       noBeers = stringResource(PresentationUtilsR.string.browse_no_beers),
       retry = stringResource(PresentationUtilsR.string.retry),
       loadMoreFailed = stringResource(PresentationUtilsR.string.paged_list_load_more_failed),
-      breweryFounded = { country, year ->
-        stringResource(PresentationUtilsR.string.browse_brewery_founded, country, year)
-      },
       beersCount = { count ->
         pluralStringResource(PresentationUtilsR.plurals.browse_beers_count, count, count)
       },

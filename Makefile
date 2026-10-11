@@ -332,6 +332,7 @@ ci-report-test: ## Test CI diagnosis, evidence parsing, and incremental comment 
 	@$(MAKE) --no-print-directory benchmark-budget-test
 	@python3 -m unittest discover -s .github/scripts -p 'test_*ci*.py'
 	@python3 .github/scripts/test_detect_change_scope.py
+	@python3 .github/scripts/test_update_ready_prs.py
 	@python3 .github/scripts/test_validate_native_test_reports.py
 	@python3 .github/scripts/test_validate_test_lane_reports.py
 	@python3 scripts/test_verify_ios_simulator_artifacts.py
