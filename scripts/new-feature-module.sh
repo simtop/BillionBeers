@@ -1,146 +1,236 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
-# Scaffolds a new feature/<name> module: build.gradle.kts (billionbeers.android.feature +
-# billionbeers.android.screenshot), manifest, a minimal Screen/ViewModel skeleton with one
-# @PreviewLightDark preview (so the screenshot convention plugin's auto-generated Paparazzi test
-# has something to snapshot), and a starter unit test. No settings.gradle.kts edit needed -
-# settings.gradle.kts auto-discovers any directory with a build.gradle.kts.
-#
-# This produces a REGULAR feature module only (com.android.library), not a dynamic feature.
-# Turning it into a dynamic feature afterward is a separate, manual step - see
-# feature/beerdetail/build.gradle.kts (applies billionbeers.android.dynamic.feature instead) and
-# add its Gradle path to app/build.gradle.kts's `dynamicFeatures` set, plus a
-# DynamicFeatureContentProvider implementation (see
-# navigation/.../DynamicFeatureContentProvider.kt and feature/beerdetail's *ProviderImpl*).
-#
-# Usage:
-#   scripts/new-feature-module.sh <name> [PascalName]
-#
-# Examples:
-#   scripts/new-feature-module.sh favorites
-#   scripts/new-feature-module.sh favorites Favorites
-
-NAME="${1:-}"
-if [ -z "$NAME" ]; then
+usage() {
   echo "Usage: scripts/new-feature-module.sh <name> [PascalName]" >&2
   echo "Example: scripts/new-feature-module.sh favorites Favorites" >&2
+}
+
+NAME="${1:-}"
+if [[ -z "$NAME" ]]; then
+  usage
+  exit 1
+fi
+if [[ ! "$NAME" =~ ^[a-z][a-z0-9]*$ ]]; then
+  echo "error: name must match ^[a-z][a-z0-9]*$" >&2
   exit 1
 fi
 
-DEFAULT_PASCAL="$(tr '[:lower:]' '[:upper:]' <<< "${NAME:0:1}")${NAME:1}"
+DEFAULT_PASCAL="$(printf '%s' "${NAME:0:1}" | tr '[:lower:]' '[:upper:]')${NAME:1}"
 PASCAL="${2:-$DEFAULT_PASCAL}"
-
-MODULE_DIR="feature/$NAME"
-PACKAGE="com.simtop.feature.$NAME"
-PACKAGE_PATH="com/simtop/feature/$NAME"
-
-if [ -d "$MODULE_DIR" ]; then
-  echo "error: $MODULE_DIR already exists" >&2
+if [[ ! "$PASCAL" =~ ^[A-Z][A-Za-z0-9]*$ ]]; then
+  echo "error: PascalName must be a PascalCase Kotlin identifier" >&2
   exit 1
 fi
 
-SRC_MAIN="$MODULE_DIR/src/main/java/$PACKAGE_PATH"
-SRC_TEST="$MODULE_DIR/src/test/java/$PACKAGE_PATH"
-mkdir -p "$SRC_MAIN" "$SRC_TEST" "$MODULE_DIR/src/main/res/values"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+DEFAULT_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd -P)"
+ROOT_INPUT="${BILLIONBEERS_REPO_ROOT:-$DEFAULT_ROOT}"
+if ! ROOT="$(cd -- "$ROOT_INPUT" 2>/dev/null && pwd -P)"; then
+  echo "error: repository root does not exist: $ROOT_INPUT" >&2
+  exit 1
+fi
+if [[ ! -f "$ROOT/settings.gradle.kts" || ! -f "$ROOT/Makefile" || ! -d "$ROOT/feature" || ! -d "$ROOT/shared" ]]; then
+  echo "error: repository root must contain settings.gradle.kts, Makefile, feature/, and shared/: $ROOT" >&2
+  exit 1
+fi
 
-cat > "$MODULE_DIR/build.gradle.kts" <<EOF
+FEATURE_DEST="$ROOT/feature/$NAME"
+SHARED_DEST="$ROOT/shared/$NAME"
+LOCK_DIR="$ROOT/.new-feature-module.lock"
+if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+  echo "error: another feature scaffold is already running for $ROOT" >&2
+  exit 1
+fi
+
+TRANSACTION_ID="$$-${RANDOM:-0}-$(date +%s)"
+MARKER=".billionbeers-scaffold-$TRANSACTION_ID"
+STAGING=""
+COMMITTED=false
+cleanup() {
+  local status=$?
+  trap - EXIT HUP INT TERM
+  if [[ "$COMMITTED" == "true" ]]; then
+    rm -f -- "$FEATURE_DEST/$MARKER" "$SHARED_DEST/$MARKER"
+  else
+    if [[ -f "$FEATURE_DEST/$MARKER" ]]; then
+      rm -rf -- "$FEATURE_DEST"
+    fi
+    if [[ -f "$SHARED_DEST/$MARKER" ]]; then
+      rm -rf -- "$SHARED_DEST"
+    fi
+  fi
+  if [[ -n "$STAGING" ]]; then
+    rm -rf -- "$STAGING"
+  fi
+  rm -rf -- "$LOCK_DIR"
+  exit "$status"
+}
+trap cleanup EXIT
+trap 'exit 130' HUP INT TERM
+
+for destination in "$FEATURE_DEST" "$SHARED_DEST"; do
+  if [[ -e "$destination" ]]; then
+    echo "error: ${destination#"$ROOT/"} already exists" >&2
+    exit 1
+  fi
+done
+
+STAGING="$(mktemp -d "$ROOT/.new-feature-module.XXXXXX")"
+FEATURE_MODULE="$STAGING/feature/$NAME"
+SHARED_MODULE="$STAGING/shared/$NAME"
+FEATURE_PACKAGE="com.simtop.feature.$NAME"
+FEATURE_PACKAGE_PATH="com/simtop/feature/$NAME"
+SHARED_PACKAGE="com.simtop.billionbeers.shared.$NAME"
+SHARED_PACKAGE_PATH="com/simtop/billionbeers/shared/$NAME"
+
+mkdir -p \
+  "$FEATURE_MODULE/src/main/java/$FEATURE_PACKAGE_PATH" \
+  "$FEATURE_MODULE/src/main/res/values" \
+  "$FEATURE_MODULE/src/main/res/values-es" \
+  "$FEATURE_MODULE/src/main/res/values-fr" \
+  "$FEATURE_MODULE/src/test/java/$FEATURE_PACKAGE_PATH" \
+  "$SHARED_MODULE/src/commonMain/kotlin/$SHARED_PACKAGE_PATH" \
+  "$SHARED_MODULE/src/commonTest/kotlin/$SHARED_PACKAGE_PATH"
+touch "$FEATURE_MODULE/$MARKER" "$SHARED_MODULE/$MARKER"
+
+cat > "$SHARED_MODULE/build.gradle.kts" <<'EOF'
+plugins {
+  id("billionbeers.kmp.feature")
+}
+EOF
+
+cat > "$SHARED_MODULE/.gitignore" <<'EOF'
+/build
+EOF
+
+cat > "$SHARED_MODULE/src/commonMain/kotlin/$SHARED_PACKAGE_PATH/${PASCAL}ViewModel.kt" <<EOF
+package $SHARED_PACKAGE
+
+import androidx.lifecycle.ViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+data object ${PASCAL}UiState
+
+open class ${PASCAL}ViewModel : ViewModel() {
+  private val _uiState = MutableStateFlow(${PASCAL}UiState)
+  val uiState: StateFlow<${PASCAL}UiState> = _uiState.asStateFlow()
+}
+EOF
+
+cat > "$SHARED_MODULE/src/commonMain/kotlin/$SHARED_PACKAGE_PATH/${PASCAL}Content.kt" <<EOF
+package $SHARED_PACKAGE
+
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+
+@Composable
+fun Shared${PASCAL}Content(
+  uiState: ${PASCAL}UiState,
+  title: String,
+  modifier: Modifier = Modifier,
+) {
+  when (uiState) {
+    ${PASCAL}UiState ->
+      Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text(text = title)
+      }
+  }
+}
+EOF
+
+cat > "$SHARED_MODULE/src/commonTest/kotlin/$SHARED_PACKAGE_PATH/${PASCAL}ViewModelTest.kt" <<EOF
+package $SHARED_PACKAGE
+
+import kotlin.test.Test
+import kotlin.test.assertSame
+
+class ${PASCAL}ViewModelTest {
+  @Test
+  fun initialStateIsAvailable() {
+    val viewModel = ${PASCAL}ViewModel()
+
+    assertSame(${PASCAL}UiState, viewModel.uiState.value)
+  }
+}
+EOF
+
+cat > "$SHARED_MODULE/README.md" <<EOF
+# shared/$NAME
+
+Portable UI and ViewModel ownership for the paired feature/$NAME Android adapter. The module is
+auto-discovered; do not add it to settings.gradle.kts.
+
+Before integrating the feature, register this shared module in the current Makefile KMP target lists
+and add the required exact role and dependency edges to the architecture policy. Those registries are
+not edited by the scaffold. Routes, platform hosts, product behavior, wording, and screenshots also
+remain deliberate integration work. Dynamic delivery and managed-device coverage are separate
+choices rather than scaffold defaults.
+EOF
+
+cat > "$FEATURE_MODULE/build.gradle.kts" <<EOF
 plugins {
   id("billionbeers.android.feature")
   id("billionbeers.android.screenshot")
 }
 
-android { namespace = "$PACKAGE" }
+android { namespace = "$FEATURE_PACKAGE" }
 
 dependencies {
-  implementation(project(":beerdomain:api"))
-  implementation(project(":navigation"))
-  implementation(project(":presentation_utils"))
-  implementation(project(":core"))
-  implementation(project(":core:designsystem"))
-  implementation(libs.kotlinx.serialization.json)
-
-  implementation(libs.androidx.material3.android)
-  implementation(libs.androidx.ui.tooling.preview.android)
-
-  testImplementation(project(":beerdomain:fakes"))
-  testImplementation(libs.striktCore)
+  implementation(this.project(":core:designsystem"))
+  implementation(this.project(":shared:$NAME"))
 }
 EOF
 
-cat > "$MODULE_DIR/.gitignore" <<'EOF'
+cat > "$FEATURE_MODULE/.gitignore" <<'EOF'
 /build
 EOF
 
-cat > "$MODULE_DIR/consumer-rules.pro" <<'EOF'
+: > "$FEATURE_MODULE/consumer-rules.pro"
+cat > "$FEATURE_MODULE/proguard-rules.pro" <<'EOF'
+# Add feature-specific shrinking rules only when the implementation requires them.
 EOF
 
-cat > "$MODULE_DIR/proguard-rules.pro" <<'EOF'
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
-
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
-
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
-
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
-EOF
-
-mkdir -p "$MODULE_DIR/src/main"
-cat > "$MODULE_DIR/src/main/AndroidManifest.xml" <<'EOF'
+cat > "$FEATURE_MODULE/src/main/AndroidManifest.xml" <<'EOF'
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-</manifest>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" />
 EOF
 
-cat > "$MODULE_DIR/src/main/res/values/strings.xml" <<EOF
+for locale in values values-es values-fr; do
+  cat > "$FEATURE_MODULE/src/main/res/$locale/strings.xml" <<EOF
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="${NAME}_title">$PASCAL</string>
 </resources>
 EOF
+done
 
-cat > "$SRC_MAIN/${PASCAL}ViewModel.kt" <<EOF
-package $PACKAGE
+cat > "$FEATURE_MODULE/src/main/java/$FEATURE_PACKAGE_PATH/${PASCAL}ViewModel.kt" <<EOF
+package $FEATURE_PACKAGE
 
 import androidx.lifecycle.ViewModel
+import com.simtop.billionbeers.shared.$NAME.${PASCAL}ViewModel as Shared${PASCAL}ViewModel
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.binding
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 
-data class ${PASCAL}UiState(val isLoading: Boolean = false)
-
-@ContributesIntoMap(AppScope::class)
+@ContributesIntoMap(AppScope::class, binding = binding<ViewModel>())
 @ViewModelKey(${PASCAL}ViewModel::class)
 @Inject
-class ${PASCAL}ViewModel : ViewModel() {
-
-  private val _uiState = MutableStateFlow(${PASCAL}UiState())
-  val uiState: StateFlow<${PASCAL}UiState> = _uiState.asStateFlow()
-}
+class ${PASCAL}ViewModel : Shared${PASCAL}ViewModel()
 EOF
 
-cat > "$SRC_MAIN/${PASCAL}Screen.kt" <<EOF
-package $PACKAGE
+cat > "$FEATURE_MODULE/src/main/java/$FEATURE_PACKAGE_PATH/${PASCAL}Screen.kt" <<EOF
+package $FEATURE_PACKAGE
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -150,98 +240,106 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.billionbeers.shared.$NAME.${PASCAL}UiState
+import com.simtop.billionbeers.shared.$NAME.Shared${PASCAL}Content
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ${PASCAL}Screen(viewModel: ${PASCAL}ViewModel = metroViewModel()) {
+fun ${PASCAL}Screen(
+  modifier: Modifier = Modifier,
+  viewModel: ${PASCAL}ViewModel = metroViewModel(),
+) {
   val uiState by viewModel.uiState.collectAsState()
-  ${PASCAL}Content(uiState = uiState)
+  ${PASCAL}Content(uiState = uiState, modifier = modifier)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ${PASCAL}Content(uiState: ${PASCAL}UiState) {
-  Scaffold(topBar = { TopAppBar(title = { Text(text = stringResource(R.string.${NAME}_title)) }) }) {
-    paddingValues ->
-    Box(
+fun ${PASCAL}Content(
+  uiState: ${PASCAL}UiState,
+  modifier: Modifier = Modifier,
+) {
+  val title = stringResource(R.string.${NAME}_title)
+  Scaffold(
+    modifier = modifier,
+    topBar = { TopAppBar(title = { Text(text = title) }) },
+  ) { paddingValues ->
+    Shared${PASCAL}Content(
+      uiState = uiState,
+      title = title,
       modifier = Modifier.fillMaxSize().padding(paddingValues),
-      contentAlignment = Alignment.Center,
-    ) {
-      // TODO: build the real $PASCAL screen here.
-      Text(text = "TODO: $PASCAL (isLoading=\${uiState.isLoading})")
-    }
+    )
   }
 }
 
 @PreviewLightDark
 @Composable
-fun ${PASCAL}ScreenPreview() {
-  BillionBeersTheme { ${PASCAL}Content(uiState = ${PASCAL}UiState()) }
+internal fun ${PASCAL}ScreenPreview() {
+  BillionBeersTheme { ${PASCAL}Content(uiState = ${PASCAL}UiState) }
 }
 EOF
 
-cat > "$SRC_TEST/${PASCAL}ViewModelTest.kt" <<EOF
-package $PACKAGE
+cat > "$FEATURE_MODULE/src/test/java/$FEATURE_PACKAGE_PATH/${PASCAL}ViewModelTest.kt" <<EOF
+package $FEATURE_PACKAGE
 
+import com.simtop.billionbeers.shared.$NAME.${PASCAL}UiState
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
-import strikt.api.expectThat
-import strikt.assertions.isFalse
 
 class ${PASCAL}ViewModelTest {
-
   @Test
-  fun \`initial state is not loading\`() {
+  fun adapterExposesSharedInitialState() {
     val viewModel = ${PASCAL}ViewModel()
 
-    expectThat(viewModel.uiState.value.isLoading).isFalse()
+    assertSame(${PASCAL}UiState, viewModel.uiState.value)
   }
 }
 EOF
 
-cat > "$MODULE_DIR/README.md" <<EOF
+cat > "$FEATURE_MODULE/README.md" <<EOF
 # feature/$NAME
 
-Stamped out by \`scripts/new-feature-module.sh\`. A regular (non-dynamic) feature module - no
-settings.gradle.kts edit was needed, it's auto-discovered.
+Regular Android adapter for shared/$NAME, generated by scripts/new-feature-module.sh. Both modules
+are auto-discovered; do not edit settings.gradle.kts.
 
-## Still TODO after generation
+## Remaining integration
 
-1. Replace \`${PASCAL}UiState\`/\`${PASCAL}ViewModel\`/\`${PASCAL}Content\` with the real screen -
-   this is a bare skeleton with no repository/domain dependency wired in, since every feature
-   needs a different one. Follow \`feature/beerslist\` as the reference pattern (paginated list,
-   \`BeersRepository\` injected). Choose a dispatcher where blocking or CPU work happens.
-2. Review \`docs/durable_feature_changes.md\` for changes that persist local data: domain/API
-   contracts, storage adapters, Room migrations and exported schemas when needed, fake updates,
-   and persistence/failure tests on the affected targets. Update translated strings and register
-   navigation in \`:navigation\` and the app host; review shared routes/hosts if they are affected.
-3. Konsist automatically discovers every \`feature/*/build.gradle.kts\` and checks sibling
-   isolation; existing rules cover this module. Run \`make konsist\` and
-   \`make architecture-policy\` to check source boundaries and resolved production dependencies.
-   Review \`config/architecture/project-dependency-policy.json\` before adding project edges;
-   update the policy and enforcement together if an intentional new edge requires a rule change.
-4. If this screen needs on-demand delivery (Play Feature Delivery), it needs to become a dynamic
-   feature instead - that's a manual conversion, not something this script does. See
-   \`feature/beerdetail/build.gradle.kts\` (applies \`billionbeers.android.dynamic.feature\`) and
-   \`docs/beerdetail_dev_app.md\` for why that comes with real trade-offs of its own.
-   Dynamic-feature strings belong in \`:presentation_utils\`, including translations.
-5. Run \`make build MODULE=:feature:$NAME\` and \`make test MODULE=:feature:$NAME\`.
-   Record the initial \`${PASCAL}ScreenPreview\` golden with
-   \`make screenshot-record MODULE=:feature:$NAME\`, inspect the images, then run
-   \`make screenshot-verify MODULE=:feature:$NAME\`.
-6. Before landing, run \`make test\`, \`make lint\`, and the boundary checks above.
-   UI changes need \`make screenshot-verify\`; resource changes also need \`make android-lint\`.
-   Choose device tests for changed navigation or persistence behavior, and use \`make docs-check\`
-   for documentation. See \`make help\` for the available wrappers.
+1. Replace the neutral starter state/content with the real domain behavior. Keep portable ViewModel
+   and Compose content in shared/$NAME and Android resources, Metro binding, previews, and platform
+   behavior here.
+2. Review the default, Spanish, and French title resources with the product wording. Register routes,
+   navigation contracts, Android and shared platform hosts, app dependencies, and required strings.
+3. Register shared/$NAME in the current Makefile KMP target lists. Add its exact architecture-policy
+   role and the feature/$NAME to shared/$NAME edge with enforcement in the same change. The scaffold
+   intentionally does not edit global registries.
+4. This is not a dynamic feature and has no managed-device or Android UI-test enrollment. Make either
+   change only when delivery or behavior requires it.
+5. Run make build MODULE=:feature:$NAME, make test MODULE=:feature:$NAME, and the shared-module target
+   checks. Record and inspect the preview with make screenshot-record MODULE=:feature:$NAME, then run
+   screenshot verification, Android lint for resources, Konsist, and the architecture policy gate.
 EOF
 
-echo "Created $MODULE_DIR (auto-discovered by settings.gradle.kts - no include(...) needed)."
+for destination in "$FEATURE_DEST" "$SHARED_DEST"; do
+  if [[ -e "$destination" ]]; then
+    echo "error: ${destination#"$ROOT/"} appeared while the scaffold was being prepared" >&2
+    exit 1
+  fi
+done
+
+mv -- "$FEATURE_MODULE" "$FEATURE_DEST"
+if [[ "${BILLIONBEERS_SCAFFOLD_TEST_FAIL_AFTER_FIRST_PUBLISH:-}" == "1" ]]; then
+  echo "error: injected scaffold publication failure" >&2
+  exit 1
+fi
+mv -- "$SHARED_MODULE" "$SHARED_DEST"
+COMMITTED=true
+
+echo "Created feature/$NAME and shared/$NAME."
 echo "Next steps:"
-echo "  1. Read $MODULE_DIR/README.md"
-echo "  2. make build MODULE=:feature:$NAME && make test MODULE=:feature:$NAME"
-echo "  3. make screenshot-record MODULE=:feature:$NAME   # record and inspect the initial preview baseline"
+echo "  1. Read feature/$NAME/README.md and shared/$NAME/README.md"
+echo "  2. Register architecture-policy and current KMP test-routing entries"
+echo "  3. Integrate routes, hosts, strings, behavior, and screenshots deliberately"

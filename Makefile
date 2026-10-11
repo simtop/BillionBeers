@@ -308,6 +308,7 @@ TEST_FLAGS := --no-configuration-cache
 
 test: ## Run JVM/Android/browser unit suites and build-logic, or the registered tier for MODULE=:module.
 ifeq ($(MODULE_TRIMMED),)
+	@$(MAKE) --no-print-directory new-feature-module-test
 	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) $(TEST_FLAGS) testDebugUnitTest $(addsuffix :test,$(JVM_TEST_MODULES)) $(kmp_test_tasks) --continue
 	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) -p build-logic $(TEST_FLAGS) :convention:test --continue
 else ifneq ($(filter $(MODULE_TRIMMED),$(KMP_JVM_TEST_MODULES)),)
@@ -685,9 +686,12 @@ play-listing-reset: ## Restore a device after `make play-listing-capture`.
 	@bash scripts/play-listing.sh reset
 
 ##@ Scaffolding
-new-feature-module: ## Scaffold a feature/<NAME> module. Usage: make new-feature-module NAME=favorites [PASCAL=Favorites]
-	@chmod +x scripts/new-feature-module.sh
-	@./scripts/new-feature-module.sh "$(NAME)" "$(PASCAL)"
+.PHONY: new-feature-module-test
+new-feature-module-test: ## Test paired Android/shared feature scaffolding in isolated fixtures.
+	python3 -I scripts/test_new_feature_module.py
+
+new-feature-module: ## Scaffold feature/<NAME> and shared/<NAME>. Usage: make new-feature-module NAME=favorites [PASCAL=Favorites]
+	@bash scripts/new-feature-module.sh "$(NAME)" "$(PASCAL)"
 
 new-dev-app: ## Scaffold a standalone app-dev-<FEATURE> module. Usage: make new-dev-app FEATURE=beerdetail [PASCAL=BeerDetail] [GRADLE_PATH=:feature:beerdetail]
 	@chmod +x scripts/new-dev-app.sh
