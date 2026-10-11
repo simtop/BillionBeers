@@ -28,6 +28,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
+      # The checker allows newly added artifacts, but rejects checksum edits/removals and any
+      # change to the trust policy. Run it on every PR so a ledger edit cannot avoid the guard
+      # through a path-filter mistake.
+      - name: Guard verification metadata changes
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git fetch --no-tags --depth=1 origin "$BASE_SHA"
+          git show "$BASE_SHA:gradle/verification-metadata.xml" > "$RUNNER_TEMP/verification-metadata-before.xml"
+          python3 .github/scripts/check-verification-metadata-update.py \
+            "$RUNNER_TEMP/verification-metadata-before.xml" gradle/verification-metadata.xml
+
       - name: Test CI reporting
         run: make ci-report-test
 
