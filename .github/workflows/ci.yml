@@ -31,6 +31,9 @@ jobs:
       - name: Test CI reporting
         run: make ci-report-test
 
+      - name: Test feature scaffolding
+        run: make new-feature-module-test
+
       - name: Test Markdown checker
         run: python3 scripts/test_check_markdown_links.py
 
