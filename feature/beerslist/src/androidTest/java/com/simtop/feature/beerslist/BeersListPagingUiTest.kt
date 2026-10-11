@@ -15,14 +15,11 @@ import org.junit.Test
 
 /**
  * The half of load-more that a JVM test cannot reach: a real `LazyColumn` laying itself out and
- * feeding [com.simtop.presentation_utils.core.InfiniteListHandler] through `snapshotFlow`.
+ * feeding [com.simtop.billionbeers.shared.presentation.InfiniteListHandler] through `snapshotFlow`.
  *
- * The signal logic itself is *not* retested here - `InfiniteListHandlerTest` in
- * `:presentation_utils` already covers it with seven cases over synthetic `ListPosition` values,
- * including the count-based dedup that PR #70 fixed. What those cannot see is whether the handler
- * is wired to the list at all, whether it is wired to the *same* `LazyListState` the `LazyColumn`
- * uses, and whether the screen's own suppression rule holds. Those need real layout, so they live
- * here.
+ * The signal logic itself is covered by `InfiniteListHandlerTest` in `:shared:presentation`. This
+ * test verifies the real layout wiring - whether the handler observes the same `LazyListState` the
+ * `LazyColumn` uses - and whether the screen's own suppression rule holds.
  */
 class BeersListPagingUiTest {
 
