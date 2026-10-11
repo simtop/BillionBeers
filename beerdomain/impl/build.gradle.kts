@@ -13,6 +13,7 @@ val catalog = billionBeersCatalog()
 dependencies {
   commonMainImplementation(this.project(":beerdomain:api"))
   commonMainImplementation(this.project(":core-common"))
+  commonMainImplementation(libs.kotlinx.coroutines.core)
 
   commonTestImplementation(this.project(":beerdomain:fakes"))
   commonTestImplementation(libs.coroutinesTest)
