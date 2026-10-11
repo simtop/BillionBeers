@@ -634,11 +634,14 @@ jobs:
           bash .github/scripts/run-timed-command.sh
           ./gradlew ciGroupDebugAndroidTest --profile
 
-      - name: Run expanded-width app tests on a managed tablet
+      - name: Run the expanded-width app journey on a managed tablet
         id: tablet_tests
         run: >-
           bash .github/scripts/run-timed-command.sh
-          ./gradlew :app:pixelTabletApi35DebugAndroidTest --profile
+          env
+          GRADLE_RUNNER="./gradlew --profile"
+          UI_TEST_CLASS=com.simtop.billionbeers.MainActivityComposeTest#expandedListDetailKeepsTheListVisibleAfterSelection
+          make ui-test-managed-tablet
 
       - name: Verify managed-device reports executed tests
         run: >-

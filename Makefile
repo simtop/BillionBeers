@@ -400,8 +400,8 @@ ui-test-managed: ## Run instrumented tests on the ATD fast-lane managed device (
 ui-test-managed-newest: ## Run instrumented tests on the API 37 managed device (forward-compat lane).
 	$(GRADLE_RUNNER) $(UI_TEST_PREFIX)pixel9Api37DebugAndroidTest
 
-ui-test-managed-tablet: ## Run app instrumented tests on the API 35 Pixel Tablet (expanded-width coverage).
-	$(GRADLE_RUNNER) :app:pixelTabletApi35DebugAndroidTest
+ui-test-managed-tablet: ## Run a selected app test on the API 35 Pixel Tablet (expanded-width coverage).
+	$(GRADLE_RUNNER) :app:pixelTabletApi35DebugAndroidTest $(UI_TEST_ARGS)
 
 ui-test-managed-ci: ## Run what CI runs per push: the ATD fast lane, every opted-in module.
 	$(GRADLE_RUNNER) ciGroupDebugAndroidTest
