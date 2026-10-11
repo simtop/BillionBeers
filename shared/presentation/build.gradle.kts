@@ -7,6 +7,8 @@ plugins {
   id("billionbeers.kmp.compose")
 }
 
+val catalog = billionBeersCatalog()
+
 kotlin {
   wasmJs {
     binaries.executable()
@@ -15,12 +17,18 @@ kotlin {
   sourceSets {
     commonMain.dependencies {
       api(project(":core-common"))
-      implementation(project(":beerdomain:api"))
+      api(project(":beerdomain:api"))
       implementation(project(":shared:designsystem"))
+      implementation(catalog.billionBeersLibrary("lifecycle-viewmodel"))
     }
     jvmTest.dependencies {
       implementation(compose.uiTest)
       implementation(compose.desktop.currentOs)
+      implementation(project(":beerdomain:fakes"))
+      implementation(project(":testing-utils"))
+      implementation(catalog.billionBeersLibrary("turbine"))
+      implementation(catalog.billionBeersLibrary("striktCore"))
+      implementation(catalog.billionBeersBundle("unitTestJunit5"))
     }
     commonTest.dependencies {
       implementation(kotlin("test"))
@@ -30,4 +38,6 @@ kotlin {
 
 dependencies {
   commonTestImplementation(libs.coroutinesTest)
+  jvmTestRuntimeOnly(catalog.billionBeersBundle("unitTestJunit5Runtime"))
+  jvmTestRuntimeOnly(catalog.billionBeersLibrary("junit-platform-launcher"))
 }

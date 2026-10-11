@@ -27,6 +27,7 @@ dependencies {
   commonTestImplementation(project(":beerdomain:fakes"))
 
   commonMainImplementation(project(":shared:app"))
+  commonMainImplementation(project(":shared:beerbrowse"))
   commonMainImplementation(project(":beer_data"))
   commonMainImplementation(project(":beer_database"))
   commonMainImplementation(project(":beer_network"))
