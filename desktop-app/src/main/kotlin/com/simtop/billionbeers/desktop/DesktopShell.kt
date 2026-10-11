@@ -20,6 +20,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -38,10 +39,14 @@ import com.simtop.core.core.DefaultCoroutineDispatcherProvider
 
 @Composable
 fun DesktopShell(runtime: DesktopDataRuntime) {
+  // The pager-factory binding is unscoped, and the dispatcher is created here. Keep both stable
+  // for this runtime so an incidental host recomposition preserves SharedAppShell navigation.
+  val pagerFactory = remember(runtime) { runtime.pagerFactory }
+  val coroutineDispatcher = remember(runtime) { DefaultCoroutineDispatcherProvider() }
   SharedAppShell(
     repository = runtime.repository,
-    pagerFactory = runtime.pagerFactory,
-    coroutineDispatcher = DefaultCoroutineDispatcherProvider(),
+    pagerFactory = pagerFactory,
+    coroutineDispatcher = coroutineDispatcher,
     strings = desktopStrings,
     host = desktopHost,
   )

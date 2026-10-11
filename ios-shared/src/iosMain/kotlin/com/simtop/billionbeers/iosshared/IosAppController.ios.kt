@@ -98,10 +98,14 @@ private fun IosShell(
   routeRequests: kotlinx.coroutines.flow.Flow<PortableRoute>,
 ) {
   val darkTheme = isSystemInDarkTheme()
+  // Graph getters for the pager factory and dispatchers are unscoped. Keep the identities stable
+  // across host recompositions so SharedAppShell does not discard its navigation state.
+  val pagerFactory = remember(runtime) { runtime.pagerFactory }
+  val coroutineDispatcher = remember(runtime) { runtime.coroutineDispatcherProvider }
   SharedAppShell(
     repository = runtime.repository,
-    pagerFactory = runtime.pagerFactory,
-    coroutineDispatcher = runtime.coroutineDispatcherProvider,
+    pagerFactory = pagerFactory,
+    coroutineDispatcher = coroutineDispatcher,
     strings = strings,
     host =
       iosHost(
