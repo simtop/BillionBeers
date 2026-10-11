@@ -11,9 +11,9 @@
  * **This tier is for behaviour that only a real device can show** - fling and layout-driven paging,
  * a real IME, accessibility traversal, state restoration. Anything a JVM test can already prove
  * belongs in `src/test/`, and anything about a static rendering belongs in Paparazzi; both are
- * faster and neither needs an emulator. `:feature:beerslist`'s `InfiniteListHandler` is the model
- * case: its signal logic has seven unit tests in `:presentation_utils`, so the instrumented test
- * covers only the part those cannot reach - the real `LazyColumn` layout feeding the handler.
+ * faster and neither needs an emulator. `:shared:presentation`'s `InfiniteListHandler` is the
+ * model case: its signal logic has a shared unit test, so the instrumented test covers only the
+ * part that needs a device - the real `LazyColumn` layout feeding the handler.
  *
  * Applying this plugin adds the module to `ciGroupDebugAndroidTest`, so its tests run on every push
  * (AGENTS.md §5). Dynamic-feature modules cannot use this tier - resources declared inside them
