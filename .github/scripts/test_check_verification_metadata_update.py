@@ -103,6 +103,34 @@ class VerificationMetadataUpdateTest(unittest.TestCase):
                 MODULE.verify(before_path, after_path, require_equivalent=True),
             )
 
+    def test_ci_checks_pr_ledger_against_its_base(self) -> None:
+        root = Path(__file__).resolve().parents[2]
+        workflow = (root / ".github/workflows/ci.yml").read_text()
+        self.assertIn("- name: Guard verification metadata changes", workflow)
+        self.assertIn("if: github.event_name == 'pull_request'", workflow)
+        self.assertIn('git show "$BASE_SHA:gradle/verification-metadata.xml"', workflow)
+        self.assertIn("check-verification-metadata-update.py", workflow)
+
+    def test_dependabot_waits_seven_days_for_both_ecosystems(self) -> None:
+        root = Path(__file__).resolve().parents[2]
+        config = (root / ".github/dependabot.yml").read_text()
+        for ecosystem in ("gradle", "github-actions"):
+            with self.subTest(ecosystem=ecosystem):
+                block = config.split(f'package-ecosystem: "{ecosystem}"', 1)[1].split(
+                    "  - package-ecosystem:", 1
+                )[0]
+                self.assertRegex(block, r"(?m)^    cooldown:\n      default-days: 7$")
+
+    def test_actions_group_is_excluded_from_auto_merge_and_wrapper_is_pinned(self) -> None:
+        root = Path(__file__).resolve().parents[2]
+        workflow = (root / ".github/workflows/dependabot-auto-merge.yml").read_text()
+        self.assertIn("steps.metadata.outputs.dependency-group != 'github-actions'", workflow)
+        self.assertIn("steps.metadata.outputs.update-type == 'version-update:semver-patch'", workflow)
+        self.assertIn("steps.metadata.outputs.update-type == 'version-update:semver-minor'", workflow)
+
+        wrapper = (root / "gradle/wrapper/gradle-wrapper.properties").read_text()
+        self.assertRegex(wrapper, r"(?m)^distributionSha256Sum=[a-f0-9]{64}$")
+
 
 if __name__ == "__main__":
     unittest.main()

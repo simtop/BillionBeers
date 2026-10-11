@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   auto-merge:
-    name: Auto-merge patch/minor Dependabot PRs
+    name: Auto-merge patch/minor Gradle Dependabot PRs
     if: github.actor == 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
@@ -19,14 +19,15 @@ jobs:
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
 
-      # Major bumps are never auto-merged, regardless of dependabot.yml's group update-types
-      # filter - this is the second, independent gate. Requires branch protection on master with
-      # required status checks (see repo settings) - otherwise `--auto` has nothing to wait for
-      # and merges immediately.
+      # Only grouped Gradle dependencies are eligible for auto-merge. GitHub Actions changes
+      # always require a human review, even for patch/minor updates. Major Gradle bumps are also
+      # excluded, regardless of dependabot.yml's group update-types filter. Requires branch
+      # protection on master with required status checks; otherwise `--auto` merges immediately.
       - name: Enable auto-merge for patch/minor updates
         if:
-          steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
-          steps.metadata.outputs.update-type == 'version-update:semver-minor'
+          steps.metadata.outputs.dependency-group != 'github-actions' &&
+          (steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
+          steps.metadata.outputs.update-type == 'version-update:semver-minor')
         run: gh pr merge --auto --squash "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
