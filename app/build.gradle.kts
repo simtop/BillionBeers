@@ -112,6 +112,7 @@ android {
 
 dependencies {
   implementation(this.project(":beerdomain:api"))
+  implementation(this.project(":beerdomain:impl"))
   testImplementation(this.project(":beerdomain:fakes"))
   androidTestImplementation(this.project(":beerdomain:fakes"))
   testImplementation(this.project(":testing-utils"))

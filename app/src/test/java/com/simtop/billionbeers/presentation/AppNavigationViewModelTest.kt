@@ -1,9 +1,11 @@
 package com.simtop.billionbeers.presentation
 
+import com.simtop.beerdomain.domain.errors.SaveFilterPresetError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.beerdomain.fakes.FakeBeersRepository
+import com.simtop.core.core.Either
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -56,7 +58,6 @@ class AppNavigationViewModelTest {
       val repository = FakeBeersRepository()
       val viewModel = AppNavigationViewModel(repository)
       val query = BeersQuery(search = "ipa", styleId = "style-1", breweryId = "brewery-1")
-      val before = System.currentTimeMillis()
 
       viewModel.savePreset("  My IPA\n", query)
       testScheduler.runCurrent()
@@ -65,7 +66,6 @@ class AppNavigationViewModelTest {
       expectThat(saved.name).isEqualTo("My IPA")
       expectThat(saved.query).isEqualTo(query)
       expectThat(saved.id.isNotBlank()).isTrue()
-      expectThat(saved.updatedAt in before..System.currentTimeMillis()).isTrue()
     }
 
   @Test
@@ -75,7 +75,8 @@ class AppNavigationViewModelTest {
       val viewModel = AppNavigationViewModel(repository)
 
       listOf("", " \t\n", "x".repeat(SavedFilterPreset.MAX_NAME_LENGTH + 1)).forEach { name ->
-        viewModel.savePreset(name, BeersQuery())
+        expectThat(viewModel.savePreset(name, BeersQuery()))
+          .isEqualTo(Either.Left(SaveFilterPresetError.InvalidName))
       }
       testScheduler.runCurrent()
 

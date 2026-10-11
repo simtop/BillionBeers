@@ -35,6 +35,18 @@ class ArchitecturePolicyTest {
   }
 
   @Test
+  fun `domain implementation is shared behavior with a narrow dependency boundary`() {
+    assertEquals("domain-impl", policy.roleForPath(":beerdomain:impl"))
+    assertTrue(policy.allows("domain-impl", "domain-api", "main"))
+    assertTrue(policy.allows("domain-impl", "core-common", "main"))
+    assertTrue(policy.allows("application", "domain-impl", "main"))
+    assertTrue(policy.allows("regular-feature", "domain-impl", "main"))
+    assertTrue(policy.allows("shared-app", "domain-impl", "main"))
+    assertFalse(policy.allows("domain-impl", "data", "main"))
+    assertTrue("data" in policy.forbiddenRoles("domain-impl"))
+  }
+
+  @Test
   fun `api exposure requires an explicit policy entry`() {
     assertTrue(policy.allowsApi("core", "core-common"))
     assertFalse(policy.allowsApi("core", "data"))

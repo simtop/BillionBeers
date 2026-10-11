@@ -67,6 +67,18 @@ class ArchitecturePolicyFunctionalTest {
   }
 
   @Test
+  fun `resolved graph rejects domain implementation depending on data`() {
+    writeFixture(
+      includes = listOf(":beerdomain:impl", ":beer_data"),
+      dependencies = "project(\":beerdomain:impl\") { dependencies { add(\"implementation\", project(\":beer_data\")) } }",
+    )
+
+    val result = runner().withArguments(":beerdomain:impl:verifyArchitecturePolicy").buildAndFail()
+
+    assertTrue(result.output.contains("edge is not allowed"), result.output)
+  }
+
+  @Test
   fun `resolved graph rejects an unapproved project api exposure`() {
     writeFixture(
       includes = listOf(":core", ":beer_data"),

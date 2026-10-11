@@ -223,12 +223,11 @@ private suspend fun handleSavePresetResult(
   when (result) {
     is Either.Right -> true
     is Either.Left -> {
-      val message =
-        when (result.value) {
-          SaveFilterPresetError.CapacityReached -> presetLimitMessage
-          is SaveFilterPresetError.Unknown -> presetSaveFailedMessage
-        }
-      snackbarHostState.showSnackbar(message)
+      when (result.value) {
+        SaveFilterPresetError.InvalidName -> Unit
+        SaveFilterPresetError.CapacityReached -> snackbarHostState.showSnackbar(presetLimitMessage)
+        is SaveFilterPresetError.Unknown -> snackbarHostState.showSnackbar(presetSaveFailedMessage)
+      }
       false
     }
   }
