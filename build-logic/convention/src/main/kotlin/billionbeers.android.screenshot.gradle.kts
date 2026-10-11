@@ -260,12 +260,27 @@ tasks.matching {
     dependsOn(generatePaparazziTest)
 }
 
-// Isolate ordinary tests from Paparazzi screenshot tests entirely
+// Isolate unit and Paparazzi runs. A combined invocation runs both categories in one Test task,
+// so leave the filter open when both task families were requested.
+val requestedTasks = project.gradle.startParameter.taskRequests.flatMap { it.args }
+val screenshotTaskSelectors = requestedTasks.filter { it.contains("Paparazzi", ignoreCase = true) }
+val unitTaskSelectors = requestedTasks.filter {
+    it.substringAfterLast(':').contains("UnitTest", ignoreCase = true) ||
+        it.substringAfterLast(':') == "test"
+}
+
+fun selectorTargetsProject(selector: String): Boolean {
+    if (!selector.startsWith(":")) return true
+    val targetProjectPath = selector.substringBeforeLast(':')
+    return targetProjectPath == project.path
+}
+
+val runsPaparazziOnly = screenshotTaskSelectors.any(::selectorTargetsProject) &&
+    unitTaskSelectors.none(::selectorTargetsProject)
+val runsUnitOnly = unitTaskSelectors.any(::selectorTargetsProject) &&
+    screenshotTaskSelectors.none(::selectorTargetsProject)
+
 tasks.withType<Test>().configureEach {
-    val isPaparazziRun = project.gradle.startParameter.taskNames.any { 
-        it.contains("Paparazzi", ignoreCase = true) 
-    }
-    
     // A `--tests` filter that matches nothing must fail, or a typo'd filter reads as a green run -
     // the bug that forced a mutation-probe to prove a test had executed at all. Restoring it
     // unconditionally is not an option: with the excludeTestsMatching below and no `--tests`, a
@@ -285,10 +300,10 @@ tasks.withType<Test>().configureEach {
 
     filter {
         isFailOnNoMatchingTests = hasCommandLineTestFilter
-        if (isPaparazziRun) {
+        if (runsPaparazziOnly) {
             // Paparazzi task strictly executes the auto-generated Screenshot runner
             includeTestsMatching("com.simtop.billionbeers.screenshot.*")
-        } else {
+        } else if (runsUnitOnly) {
             // Standard Android/JVM test runs skip the Paparazzi runner
             excludeTestsMatching("com.simtop.billionbeers.screenshot.*")
         }

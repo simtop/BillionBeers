@@ -337,6 +337,9 @@ jobs:
         id: unit_phase
         run: bash .github/scripts/run-timed-command.sh make test
 
+      - name: Verify unit-test reports executed tests
+        run: python3 .github/scripts/validate-test-lane-reports.py unit
+
       - name: Generate test-tier ownership inventory
         id: inventory_phase
         run: bash .github/scripts/run-timed-command.sh make test-tier-inventory
@@ -630,6 +633,21 @@ jobs:
         run: >-
           bash .github/scripts/run-timed-command.sh
           ./gradlew ciGroupDebugAndroidTest --profile
+
+      - name: Run the expanded-width app journey on a managed tablet
+        id: tablet_tests
+        run: >-
+          bash .github/scripts/run-timed-command.sh
+          env
+          GRADLE_RUNNER="./gradlew --profile"
+          UI_TEST_CLASS=com.simtop.billionbeers.MainActivityComposeTest#expandedListDetailKeepsTheListVisibleAfterSelection
+          make ui-test-managed-tablet
+
+      - name: Verify managed-device reports executed tests
+        run: >-
+          python3 .github/scripts/validate-test-lane-reports.py managed-device
+          --require-test
+          com.simtop.billionbeers.MainActivityComposeTest.expandedListDetailKeepsTheListVisibleAfterSelection
 
       # The standalone lane proves package-level launch isolation; the app-owned lane proves the
       # minified graph, mapping, dynamic route and Room persistence without a Play signing identity.

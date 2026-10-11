@@ -17,6 +17,8 @@ import com.android.build.api.dsl.ManagedVirtualDevice
  * - **`pixel9Api37`** - the newest lane, matching the project's `targetSdk` (37) on a full image.
  *   It remains a separate compatibility lane because it exercises the latest platform APIs and
  *   the production target behavior; there are no ATD images for 37, so this one pays full price.
+ * - **`pixelTabletApi35`** - a full Pixel Tablet image used by the app's expanded-width journey.
+ *   It is invoked directly for `:app`, keeping tablet coverage focused on the adaptive shell.
  *
  * The fast lane runs on every push; the newest lane runs monthly, because booting its full image
  * costs ~2m28s against the ATD's ~30s.
@@ -59,9 +61,14 @@ fun ManagedDevices.configureBillionBeersDevices(testedAbiForHost: String) {
         pageAlignment = ManagedVirtualDevice.PageAlignment.FORCE_16KB_PAGES
     }
 
-    // Groups exist so the workflows never name devices: lanes change here, CI stays untouched.
-    // Both are currently groups of one, which is deliberate - it keeps that indirection while the
-    // split is "fast lane on every push, slow lane monthly".
+    localDevices.create("pixelTabletApi35") {
+        device = "Pixel Tablet"
+        sdkVersion = 35
+        systemImageSource = "google_apis"
+        testedAbi = testedAbiForHost
+    }
+
+    // The recurring phone lanes are groups so their device sets can change here without editing CI.
 
     // Every push and PR. Measured on a GitHub runner: ~1m for both modules.
     groups.create("ci") {
@@ -73,6 +80,7 @@ fun ManagedDevices.configureBillionBeersDevices(testedAbiForHost: String) {
     groups.create("compat") {
         targetDevices.add(newest)
     }
+
 }
 
 val testedAbiForHost = providers.systemProperty("os.arch").map { architecture ->
