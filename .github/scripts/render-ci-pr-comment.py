@@ -184,7 +184,7 @@ def render(data: dict, run_url: str, repository: str, run_id: str) -> str:
                       for item in stale_runs[:5]]
             lines += [""]
     if data.get("mergeable_state") == "behind":
-        lines += ["**Branch is behind master.** Strict protection requires an update and fresh CI even if the previous run is green. Rebase the Dependabot branch; preparation will regenerate its derived files.", ""]
+        lines += ["**Branch is behind master.** Strict protection requires an update and fresh CI even if the previous run is green. With auto-merge enabled, the branch updater will merge the latest base after active CI/preparation finishes; otherwise update manually. Resolve any merge conflicts manually and let preparation regenerate its derived files.", ""]
     if conclusion == "success" and preparation_bad:
         lines += ["CI passed, but dependency preparation remains unresolved.", ""]
     elif conclusion in {"success", "skipped"}:

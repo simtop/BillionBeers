@@ -61,6 +61,14 @@ Renovate's real advantages are given up deliberately:
   constraint. Transfer to organization ownership is the reopen trigger; after a transfer, configure
   and validate the native queue before considering a custom sequencer. A transfer is not implied by
   this ADR because it changes repository ownership and URLs.
+- Until a native queue is available, `update-ready-prs.yml` merges the latest `master` into open,
+  non-draft, same-repository PRs with auto-merge enabled. It preserves shared branch history, uses
+  fast-forward updates guarded by an expected-head lease, leaves conflicts for manual resolution,
+  and waits for active CI/preparation.
+  It does not merge PRs or bypass checks: GitHub's existing strict protection and auto-merge remain
+  responsible for landing. The existing write deploy key triggers fresh CI after branch updates;
+  no PR checkout or build runs in this credential-bearing workflow. See the
+  [automatic update guide](../automatic-pr-updates.md) for triggers and contributor behavior.
 - Revisit Dependabot versus Renovate if the ~130-entry catalog's monthly PR volume becomes
   unmanageable even with grouping, or if this ever grows into a multi-repo/team setup where
   Renovate's dashboard earns its third-party-trust cost.

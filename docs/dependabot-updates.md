@@ -19,12 +19,12 @@ change during the final write rejects it.
 
 Before merging each Gradle update:
 
-1. Rebase the PR onto the current `master` and review the exact dependency graph and any approved
+1. Update the PR onto the current `master` and review the exact dependency graph and any approved
    coordinate delta.
 2. Verify all four preparation lanes and confirm preparation succeeded for the exact current PR
    head.
 3. Wait for fresh green required CI on that same head, then merge the PR.
-4. Rebase/update the next Dependabot PR before repeating this checklist.
+4. Update the next Dependabot PR before repeating this checklist.
 
 The existing CI diagnosis includes preparation results and links to its evidence. A Gradle
 verification failure before Spotless starts is not diagnosed as a formatting defect. CI Gate also
@@ -108,9 +108,12 @@ baseline manually.
 ## Green but behind master
 
 Strict branch protection requires the latest base, not merely green checks against an older one.
-When one update merges, another previously green PR may need a rebase and fresh validation.
-The diagnosis reports `behind` explicitly. Request a Dependabot rebase using its PR controls,
-then let preparation and CI finish; re-review any coordinate approval because it binds the old SHA.
+When one update merges, another previously green PR may need a branch update and fresh validation.
+The diagnosis reports `behind` explicitly. PRs with auto-merge enabled are updated by the
+[automatic branch updater](automatic-pr-updates.md) once active CI/preparation finishes. It merges
+the latest base while preserving branch history and leaves conflicts for manual resolution. Other PRs need a
+manual update. Let fresh preparation and CI finish; re-review any coordinate approval because it
+binds the old SHA.
 
 Keep strict protection. Reusing an old green verdict across a changed base would miss interactions
 between updates. The repository is personal-account-owned, so GitHub's native merge queue is not
