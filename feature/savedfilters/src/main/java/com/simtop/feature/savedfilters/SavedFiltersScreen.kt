@@ -1,20 +1,12 @@
 package com.simtop.feature.savedfilters
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -24,13 +16,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -44,6 +32,8 @@ import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.billionbeers.shared.presentation.SharedPagedBeersContent
 import com.simtop.billionbeers.shared.presentation.SharedPagedBeersStrings
+import com.simtop.billionbeers.shared.savedfilters.SavedFiltersStrings
+import com.simtop.billionbeers.shared.savedfilters.SharedSavedFiltersContent
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.PagedListUiModel
 import com.simtop.navigation.SavedFilterResults
@@ -54,7 +44,6 @@ import com.simtop.presentation_utils.custom_views.ComposeErrorView
 import dev.zacsweers.metrox.viewmodel.assistedMetroViewModel
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -100,84 +89,26 @@ fun SavedFiltersContent(
   modifier: Modifier = Modifier,
   snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
+  val strings =
+    SavedFiltersStrings(
+      empty = stringResource(R.string.savedfilters_empty),
+      name = stringResource(R.string.savedfilters_name),
+      rename = stringResource(R.string.savedfilters_rename),
+      delete = stringResource(R.string.savedfilters_delete),
+    )
   Scaffold(
     modifier = modifier,
     topBar = { TopAppBar(title = { Text(stringResource(R.string.savedfilters_title)) }) },
     snackbarHost = { SnackbarHost(snackbarHostState) },
   ) { paddingValues ->
-    LazyColumn(Modifier.fillMaxSize().padding(paddingValues).padding(12.dp)) {
-      if (presets.isEmpty()) {
-        item { Text(stringResource(R.string.savedfilters_empty)) }
-      } else {
-        items(presets, key = SavedFilterPreset::id) { preset ->
-          SavedFilterRow(preset, onApply, onRename, onDelete)
-        }
-      }
-    }
-  }
-}
-
-@Composable
-private fun SavedFilterRow(
-  preset: SavedFilterPreset,
-  onApply: (SavedFilterPreset) -> Unit,
-  onRename: suspend (SavedFilterPreset, String) -> Boolean,
-  onDelete: suspend (SavedFilterPreset) -> Boolean,
-) {
-  var editing by rememberSaveable(preset.id) { mutableStateOf(false) }
-  var name by rememberSaveable(preset.id, preset.name) { mutableStateOf(preset.name) }
-  var renaming by remember { mutableStateOf(false) }
-  val scope = rememberCoroutineScope()
-  Column(
-    modifier =
-      Modifier.fillMaxWidth().padding(vertical = 4.dp).testTag("saved-filter-${preset.id}"),
-    verticalArrangement = Arrangement.spacedBy(8.dp),
-  ) {
-    if (editing) {
-      OutlinedTextField(
-        value = name,
-        onValueChange = { value ->
-          if (renaming) return@OutlinedTextField
-          if (value.length <= SavedFilterPreset.MAX_NAME_LENGTH) name = value
-        },
-        label = { Text(stringResource(R.string.savedfilters_name)) },
-        modifier = Modifier.fillMaxWidth(),
-        singleLine = true,
-        enabled = !renaming,
-      )
-      Button(
-        onClick = {
-          if (!renaming) {
-            renaming = true
-            scope.launch {
-              try {
-                if (onRename(preset, name)) editing = false
-              } finally {
-                renaming = false
-              }
-            }
-          }
-        },
-        enabled = !renaming,
-      ) {
-        Text(stringResource(R.string.savedfilters_rename))
-      }
-    } else {
-      Button(onClick = { onApply(preset) }, modifier = Modifier.fillMaxWidth()) {
-        Text(preset.name)
-      }
-      FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-      ) {
-        Button(onClick = { editing = true }) {
-          Text(stringResource(R.string.savedfilters_rename))
-        }
-        Button(onClick = { scope.launch { onDelete(preset) } }) {
-          Text(stringResource(R.string.savedfilters_delete))
-        }
-      }
-    }
+    SharedSavedFiltersContent(
+      presets = presets,
+      strings = strings,
+      onApply = onApply,
+      onRename = onRename,
+      onDelete = onDelete,
+      modifier = Modifier.fillMaxSize().padding(paddingValues),
+    )
   }
 }
 
