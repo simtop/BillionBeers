@@ -11,7 +11,7 @@ dependencies {
   implementation(project(":navigation"))
   implementation(project(":presentation_utils"))
   implementation(project(":core"))
-  implementation(project(":shared:beerbrowse"))
+  implementation(project(":shared:presentation"))
   implementation(project(":core:designsystem"))
   implementation(libs.kotlinx.serialization.json)
   implementation(libs.androidx.navigation3.runtime)

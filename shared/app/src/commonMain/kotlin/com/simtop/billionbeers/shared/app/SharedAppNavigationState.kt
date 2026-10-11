@@ -10,12 +10,12 @@ import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
-import com.simtop.billionbeers.shared.beerbrowse.BrowseBeersViewModel
 import com.simtop.billionbeers.shared.beerbrowse.BrowseViewModel
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailViewModel
 import com.simtop.billionbeers.shared.beersearch.BeersSearchViewModel
 import com.simtop.billionbeers.shared.beerslist.BeersListViewModel
 import com.simtop.billionbeers.shared.favorites.FavoritesViewModel
+import com.simtop.billionbeers.shared.presentation.BrowseBeersViewModel
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.navigation.contract.BrowseCategory
 import com.simtop.navigation.contract.PortableRoute
