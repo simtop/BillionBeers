@@ -528,6 +528,7 @@ VERIFICATION_METADATA_CANDIDATE_DEBUG_DEVICE_TASKS := \
 	:feature:beerbrowse:assembleDebugAndroidTest \
 	:feature:beerdetail:assembleDebugAndroidTest \
 	:feature:beerslist:assembleDebugAndroidTest \
+	:feature:favorites:assembleDebugAndroidTest \
 	:feature:beersearch:assembleDebugAndroidTest \
 	:app-release-smoke:assembleReleaseSmoke
 VERIFICATION_METADATA_CANDIDATE_SMOKE_DEVICE_TASKS := \
