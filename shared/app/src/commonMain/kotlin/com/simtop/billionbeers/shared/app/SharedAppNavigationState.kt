@@ -16,6 +16,7 @@ import com.simtop.billionbeers.shared.beersearch.BeersSearchViewModel
 import com.simtop.billionbeers.shared.beerslist.BeersListViewModel
 import com.simtop.billionbeers.shared.favorites.FavoritesViewModel
 import com.simtop.billionbeers.shared.presentation.BrowseBeersViewModel
+import com.simtop.billionbeers.shared.savedfilters.SavedFiltersModel
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.navigation.contract.BrowseCategory
 import com.simtop.navigation.contract.PortableRoute
@@ -114,10 +115,16 @@ internal class SearchEntry(
 
 internal class SavedFiltersEntry(
   override val id: Long,
-  private val repository: BeersRepository,
+  repository: BeersRepository,
 ) : SharedAppEntry {
   override val route = PortableRoute.SavedFilterPresets
-  val presets = repository.observeSavedFilterPresets()
+  private val savedFilters = SavedFiltersModel(repository)
+  val presets = savedFilters.presets
+
+  suspend fun rename(id: String, name: String) = savedFilters.rename(id, name)
+
+  suspend fun delete(id: String) = savedFilters.delete(id)
+
   private var closed = false
   override val isClosed: Boolean
     get() = closed
