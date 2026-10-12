@@ -43,7 +43,7 @@ permissions:
 # GitHub concurrency keeps one running and at most one pending per workflow, source repository,
 # and branch. A newer request for the same scope can supersede an older pending request.
 concurrency:
-  group: dependency-verification-preparation-${{ github.workflow }}-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.head_ref || github.ref_name }}
+  group: dependency-verification-preparation-${{ github.workflow }}-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.head_ref || github.ref_name }}-${{ inputs.mode }}
   cancel-in-progress: false
 
 jobs:

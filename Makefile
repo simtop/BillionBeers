@@ -332,6 +332,7 @@ ci-report-test: ## Test CI diagnosis, evidence parsing, and incremental comment 
 	@$(MAKE) --no-print-directory benchmark-budget-test
 	@python3 -m unittest discover -s .github/scripts -p 'test_*ci*.py'
 	@python3 .github/scripts/test_detect_change_scope.py
+	@python3 .github/scripts/test_ios_framework_build.py
 	@python3 .github/scripts/test_update_ready_prs.py
 	@python3 .github/scripts/test_validate_native_test_reports.py
 	@python3 .github/scripts/test_validate_test_lane_reports.py
@@ -587,7 +588,7 @@ else
 		:app:atdApi35ReleaseSmokeAndroidTest :feature:beerdetail:assembleReleaseSmoke :feature:beerbrowse:assembleReleaseSmoke
 endif
 else ifeq ($(LANE),apple)
-	$(MAKE) GRADLE_RUNNER='$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS)' ios-compile ios-framework ios-host-build ios-test
+	IOS_HOST_WRITE_VERIFICATION_METADATA=1 $(MAKE) GRADLE_RUNNER='$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS)' ios-compile ios-framework ios-host-build ios-test
 else
 	@echo "Unknown metadata preparation lane: $(LANE)" >&2; exit 2
 endif
