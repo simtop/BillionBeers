@@ -59,7 +59,7 @@ detekt = "1.23.8"
 compose-rules = "0.6.7"
 dependency-guard = "0.5.0"
 kotlinpoet = "2.4.0"
-cytoscape = "3.34.1"
+cytoscape = "3.34.3"
 
 [libraries]
 # AndroidX Base

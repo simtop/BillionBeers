@@ -2,6 +2,7 @@ package com.simtop.billionbeers.buildlogic
 
 import groovy.json.JsonOutput
 import java.nio.charset.StandardCharsets
+import java.util.Properties
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
@@ -184,13 +185,13 @@ abstract class GenerateModuleGraphTask : DefaultTask() {
   }
 
   private fun renderHtml(json: String): String {
-    val cytoscape = loadResource(CYTOSCAPE_RESOURCE)
-    val cytoscapeLicense = loadResource(CYTOSCAPE_LICENSE_RESOURCE).replace("--", "—")
+    val cytoscape = loadCytoscapeResources()
+    val cytoscapeLicense = cytoscape.license.replace("--", "—")
     val jsonForHtml = json.replace("</", "<\\/")
     return """
       <!doctype html>
       <!--
-      Cytoscape.js 3.34.1 license notice:
+      Cytoscape.js ${cytoscape.version} license notice:
       $cytoscapeLicense
       -->
       <html lang="en">
@@ -281,7 +282,7 @@ abstract class GenerateModuleGraphTask : DefaultTask() {
             <h2>Module kinds</h2>
             <div id="kind-legend" class="legend"></div>
             <div id="cycle-warning" hidden></div>
-            <p class="license muted">Cytoscape.js 3.34.1 · Copyright Cytoscape.js contributors · MIT License. The viewer is embedded for offline use.</p>
+            <p class="license muted">Cytoscape.js ${cytoscape.version} · Copyright Cytoscape.js contributors · MIT License. The viewer is embedded for offline use.</p>
           </aside>
           <main id="cy" aria-label="Interactive module dependency graph"></main>
           <aside class="panel details">
@@ -291,7 +292,7 @@ abstract class GenerateModuleGraphTask : DefaultTask() {
         </div>
         <script id="graph-data" type="application/json">$jsonForHtml</script>
         <script>
-          $cytoscape
+          ${cytoscape.javascript}
         </script>
         <script>
           (function () {
@@ -557,12 +558,35 @@ abstract class GenerateModuleGraphTask : DefaultTask() {
     """.trimIndent() + "\n"
   }
 
-  private fun loadResource(path: String): String =
-    requireNotNull(javaClass.classLoader.getResourceAsStream(path)) {
-        "Cytoscape.js resource not found on the build-logic classpath: $path"
+  private fun loadCytoscapeResources(): CytoscapeResources {
+    val classLoader = javaClass.classLoader
+    val properties = Properties()
+    requireNotNull(classLoader.getResourceAsStream(CYTOSCAPE_VERSION_PROPERTIES)) {
+        "Cytoscape.js version metadata not found on the build-logic classpath"
       }
-      .bufferedReader(StandardCharsets.UTF_8)
-      .use { it.readText() }
+      .use(properties::load)
+    val version = requireNotNull(properties.getProperty("version")) {
+      "Cytoscape.js version metadata is missing the version property"
+    }
+    fun readResource(path: String): String =
+      requireNotNull(classLoader.getResourceAsStream(path)) {
+          "Cytoscape.js resource not found on the build-logic classpath: $path"
+        }
+        .bufferedReader(StandardCharsets.UTF_8)
+        .use { it.readText() }
+
+    return CytoscapeResources(
+      version = version,
+      javascript = readResource("$CYTOSCAPE_RESOURCE_PREFIX/$version/dist/cytoscape.min.js"),
+      license = readResource("$CYTOSCAPE_RESOURCE_PREFIX/$version/LICENSE"),
+    )
+  }
+
+  private data class CytoscapeResources(
+    val version: String,
+    val javascript: String,
+    val license: String,
+  )
 
   private data class ModuleNode(
     val path: String,
@@ -587,9 +611,7 @@ abstract class GenerateModuleGraphTask : DefaultTask() {
 
   companion object {
     const val RECORD_SEPARATOR = "\u001F"
-    private const val CYTOSCAPE_RESOURCE =
-      "META-INF/resources/webjars/cytoscape/3.34.1/dist/cytoscape.min.js"
-    private const val CYTOSCAPE_LICENSE_RESOURCE =
-      "META-INF/resources/webjars/cytoscape/3.34.1/LICENSE"
+    private const val CYTOSCAPE_VERSION_PROPERTIES = "META-INF/maven/org.webjars.npm/cytoscape/pom.properties"
+    private const val CYTOSCAPE_RESOURCE_PREFIX = "META-INF/resources/webjars/cytoscape"
   }
 }
