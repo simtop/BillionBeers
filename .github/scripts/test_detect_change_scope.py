@@ -138,8 +138,8 @@ spotless_step = workflow.split("      - name: Run Spotless Check", 1)[1].split("
 assert "set -o pipefail" in spotless_step
 assert "./gradlew spotlessCheck 2>&1 | tee" in spotless_step
 for marker in (
-    "native: ${{ steps.filter.outputs.native }}",
-    "web: ${{ steps.filter.outputs.web }}",
+    "native: ${{ steps.reuse.outputs.eligible == 'true' && 'false' || steps.filter.outputs.native }}",
+    "web: ${{ steps.reuse.outputs.eligible == 'true' && 'false' || steps.filter.outputs.web }}",
     "name: Native Tests (Apple)",
     "name: Web Tests (Wasm/static)",
     "needs: [format-check, changes]",
