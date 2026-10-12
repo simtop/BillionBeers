@@ -19,7 +19,6 @@ jobs:
 
   candidate:
     name: Cold candidate writer
-    needs: reference
     uses: ./.github/workflows/regen-verification-metadata.yml
     with:
       mode: candidate
