@@ -356,7 +356,12 @@ class DependencyGraphHandoffTest(unittest.TestCase):
         self.assertIn("pull_request:", review_workflow)
         self.assertIn("--review-only", review_workflow)
         self.assertIn("cache-disabled: true", review_workflow)
-        self.assertIn("dependency-verification-preparation-${{ github.repository_id }}", review_workflow)
+        self.assertIn(
+            "dependency-verification-preparation-${{ github.workflow }}-"
+            "${{ github.event.pull_request.head.repo.full_name || github.repository }}-"
+            "${{ github.head_ref || github.ref_name }}",
+            review_workflow,
+        )
         self.assertIn('cp app/dependencies/releaseRuntimeClasspath.txt "$RUNNER_TEMP/guard-before.txt"', review_workflow)
         self.assertNotIn("BASE_SHA:", review_workflow)
         self.assertNotIn("$HEAD_SHA:app/dependencies/releaseRuntimeClasspath.txt", review_workflow)

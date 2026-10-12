@@ -547,6 +547,29 @@ class DependabotPreparationTest(unittest.TestCase):
         self.assertIn("ios-test", makefile)
         self.assertIn("ciGroupDebugAndroidTest", makefile)
 
+    def test_preparation_workflows_have_independent_ref_scoped_concurrency(self):
+        root = Path(__file__).resolve().parents[2]
+        writer = (root / ".github/workflows/regen-verification-metadata.yml").read_text()
+        review = (root / ".github/workflows/dependency-graph-review.yml").read_text()
+        expected_group = (
+            "group: dependency-verification-preparation-${{ github.workflow }}-"
+            "${{ github.event.pull_request.head.repo.full_name || github.repository }}-"
+            "${{ github.head_ref || github.ref_name }}"
+        )
+
+        for workflow in (writer, review):
+            concurrency = workflow.split("concurrency:", 1)[1].split("jobs:", 1)[0]
+            self.assertIn(expected_group, concurrency)
+            self.assertIn("cancel-in-progress: false", concurrency)
+
+        self.assertNotEqual(
+            re.search(r"(?m)^name: (.+)$", writer).group(1),
+            re.search(r"(?m)^name: (.+)$", review).group(1),
+        )
+        self.assertIn("if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request'", writer)
+        self.assertIn("if: github.event.pull_request.user.login == 'dependabot[bot]'", review)
+        self.assertIn("max-parallel: 1", writer)
+
     def test_empty_prepared_patch_is_a_behavioral_no_op(self):
         root = Path(__file__).resolve().parents[2]
         flow = (root / ".github/workflows/regen-verification-metadata.yml").read_text()
