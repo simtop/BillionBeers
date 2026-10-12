@@ -248,7 +248,8 @@ def validate_preparation_result(api: GitHub, result: dict, run: dict, pr: dict, 
         raise ValueError("authoritative preparation result has a wrong repository, PR, branch, or run identity")
     if not valid_sha(result.get("source_sha")) or not valid_sha(result.get("output_sha")):
         raise ValueError("authoritative preparation result has a malformed source/output SHA")
-    if (result.get("graph_mode") != "reference"
+    if (not isinstance(result.get("graph_mode"), str)
+            or result.get("graph_mode") not in {"reference", "candidate"}
             or not isinstance(result.get("graph_digest"), str)
             or not re.fullmatch(r"[0-9a-f]{64}", result["graph_digest"])):
         raise ValueError("authoritative preparation result has a malformed graph identity")
@@ -260,7 +261,7 @@ def validate_preparation_result(api: GitHub, result: dict, run: dict, pr: dict, 
         for lane, identity in lanes.items():
             if not isinstance(identity, dict) or any(identity.get(key) != value for key, value in {
                 "lane": lane, "run_id": run.get("id"), "run_attempt": run.get("run_attempt"),
-                "head_sha": result["source_sha"], "mode": "write", "graph_mode": "reference",
+                "head_sha": result["source_sha"], "mode": "write", "graph_mode": result["graph_mode"],
                 "graph_digest": result["graph_digest"], "conclusion": "success",
             }.items()) or not isinstance(identity.get("manifest_sha256"), str) or not re.fullmatch(
                 r"[0-9a-f]{64}", identity["manifest_sha256"]):
@@ -284,6 +285,7 @@ def validate_preparation_result(api: GitHub, result: dict, run: dict, pr: dict, 
         origin_result, _ = result_archive(api, origin, pr, allow_reuse=False)
         if (origin_result.get("kind") != "full"
                 or origin_result.get("output_sha") != result.get("source_sha")
+                or origin_result.get("graph_mode") != result.get("graph_mode")
                 or origin_result.get("graph_digest") != result.get("graph_digest")):
             raise ValueError("reuse origin does not validate the current source head")
         result["origin_result"] = origin_result
