@@ -38,11 +38,11 @@ import com.simtop.navigation.BeerBrowse
 import com.simtop.navigation.BeerDetail
 import com.simtop.navigation.BeersList
 import com.simtop.navigation.BeersSearch
-import com.simtop.navigation.DeepLinkDestination
 import com.simtop.navigation.DynamicFeatureContent
 import com.simtop.navigation.Favorites
 import com.simtop.navigation.SavedFilterPresets
 import com.simtop.navigation.SavedFilterResults
+import com.simtop.navigation.contract.DeepLinkDestination
 import com.simtop.navigation.toDeepLinkDestination
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 
