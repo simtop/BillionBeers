@@ -476,9 +476,8 @@ check-gradle-compatibility-flags: ## Probe whether AGP/Kotlin compatibility prop
 # verification-metadata.xml of its own, so it is not governed by this root ledger; invoking it here
 # would execute tests without adding root-ledger coverage. ADR 0007 records that boundary.
 #
-# The reference target is the production writer. The candidate is deliberately an experiment: it
-# assembles each supported test APK without booting a device, then its cold-Linux ledger is compared
-# with the reference. Do not switch the alias until that comparison proves equivalent.
+# The candidate target is the production writer. The reference remains available for diagnostics
+# and controlled comparisons; both include the same native task inventory on macOS.
 #
 # ideSyncArtifacts is the deliberate exception to "mirrors what CI executes": it resolves what
 # Android Studio's sync needs and no build does, which the CI graph by definition cannot cover. It
@@ -539,7 +538,7 @@ VERIFICATION_METADATA_CANDIDATE_SMOKE_DEVICE_TASKS := \
 verification-metadata-format: ## Apply formatting inside the guarded metadata-writing preparation sequence.
 	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) spotlessApply
 
-verification-metadata: verification-metadata-reference ## Regenerate verification metadata with the proven reference graph (ADR 0007).
+verification-metadata: verification-metadata-candidate ## Regenerate verification metadata with the candidate graph (ADR 0007).
 
 verification-metadata-reference: ## Run the complete reference metadata graph, including managed-device execution.
 	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) $(VERIFICATION_METADATA_PASS_ONE)
@@ -551,10 +550,13 @@ endif
 	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) -PappTestBuildType=releaseSmoke \
 		$(VERIFICATION_METADATA_REFERENCE_SMOKE_DEVICE_TASKS)
 
-verification-metadata-candidate: ## Experiment: replace managed-device execution with explicit test APK assembly.
+verification-metadata-candidate: ## Run the complete candidate metadata graph with explicit test APK assembly.
 	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) $(VERIFICATION_METADATA_PASS_ONE)
 	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) \
 		$(VERIFICATION_METADATA_PASS_TWO) $(VERIFICATION_METADATA_CANDIDATE_DEBUG_DEVICE_TASKS)
+ifneq ($(strip $(VERIFICATION_METADATA_NATIVE_TASKS)),)
+	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) $(VERIFICATION_METADATA_NATIVE_TASKS)
+endif
 	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) -PappTestBuildType=releaseSmoke \
 		$(VERIFICATION_METADATA_CANDIDATE_SMOKE_DEVICE_TASKS)
 

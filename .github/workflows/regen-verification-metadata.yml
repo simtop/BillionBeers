@@ -40,10 +40,10 @@ on:
 permissions:
   contents: read
 
-# GitHub concurrency keeps one running and at most one pending. A newer queued request can
-# supersede an older pending request; users who need every ref prepared must dispatch again.
+# GitHub concurrency keeps one running and at most one pending per workflow, source repository,
+# and branch. A newer request for the same scope can supersede an older pending request.
 concurrency:
-  group: dependency-verification-preparation-${{ github.repository_id }}
+  group: dependency-verification-preparation-${{ github.workflow }}-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -70,6 +70,9 @@ jobs:
           - lane: managed
             runner: ubuntu-latest
             timeout: 90
+            gradle_runner: >-
+              ./gradlew --max-workers=2
+              -Pandroid.experimental.testOptions.managedDevices.maxConcurrentDevices=1
           - lane: apple
             runner: macos-14
             timeout: 60
@@ -102,7 +105,7 @@ jobs:
         run: |
           case "$REQUESTED_MODE" in write|reference|candidate) ;; *) exit 1 ;; esac
           echo "value=$REQUESTED_MODE" >> "$GITHUB_OUTPUT"
-          if [ "$REQUESTED_MODE" = candidate ]; then echo 'graph=candidate' >> "$GITHUB_OUTPUT"; else echo 'graph=reference' >> "$GITHUB_OUTPUT"; fi
+          if [ "$REQUESTED_MODE" = reference ]; then echo 'graph=reference' >> "$GITHUB_OUTPUT"; else echo 'graph=candidate' >> "$GITHUB_OUTPUT"; fi
 
       - name: Prevent writes to the default branch
         if: steps.mode.outputs.value == 'write'
@@ -259,12 +262,19 @@ jobs:
         if: success()
         env:
           LANE: ${{ matrix.lane }}
+          GRAPH_MODE: ${{ steps.mode.outputs.graph }}
           SKIPPED: ${{ steps.reuse.outputs.reuse }}
         run: |
           case "$LANE" in
             linux) coverage='Linux/JVM/Android-host: full KMP JVM, metadata and Android-host inventories, plain JVM tests, Android assembly, Paparazzi, architecture checks and coverage.' ;;
             web) coverage='Web: all KMP Wasm browser tests and the production Wasm distribution; these consuming tasks resolve Binaryen and Compose resources.' ;;
-            managed) coverage='Managed devices: debug GMD tests and separate release-smoke tests/assemblies.' ;;
+            managed)
+              if [ "$GRAPH_MODE" = candidate ]; then
+                coverage='Candidate graph: assembled six supported debug AndroidTest APKs plus the minified releaseSmoke app, its AndroidTest APK and the standalone smoke APK; no GMD tests ran.'
+              else
+                coverage='Reference graph: ran ciGroupDebugAndroidTest on managed devices, release-smoke managed tests and the associated releaseSmoke assemblies.'
+              fi
+              ;;
             apple) coverage='Apple: device and simulator native compiles, simulator/device framework links, iOS host build and iOS simulator tests.' ;;
           esac
           if [ "$SKIPPED" = true ]; then coverage="Validated reuse: $coverage (prior write result is attached below)."; fi
@@ -390,25 +400,25 @@ jobs:
         if: steps.reuse.outputs.reuse != 'true'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: dependency-preparation-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.mode == 'candidate' && 'candidate' || 'reference' }}-linux
+          name: dependency-preparation-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.mode == 'reference' && 'reference' || 'candidate' }}-linux
           path: .platform-evidence/linux
       - name: Download Web ledger and prepared patch
         if: steps.reuse.outputs.reuse != 'true'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: dependency-preparation-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.mode == 'candidate' && 'candidate' || 'reference' }}-web
+          name: dependency-preparation-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.mode == 'reference' && 'reference' || 'candidate' }}-web
           path: .platform-evidence/web
       - name: Download managed-device ledger and prepared patch
         if: steps.reuse.outputs.reuse != 'true'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: dependency-preparation-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.mode == 'candidate' && 'candidate' || 'reference' }}-managed
+          name: dependency-preparation-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.mode == 'reference' && 'reference' || 'candidate' }}-managed
           path: .platform-evidence/managed
       - name: Download Apple ledger and prepared patch
         if: steps.reuse.outputs.reuse != 'true'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
-          name: dependency-preparation-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.mode == 'candidate' && 'candidate' || 'reference' }}-apple
+          name: dependency-preparation-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.mode == 'reference' && 'reference' || 'candidate' }}-apple
           path: .platform-evidence/apple
 
       - name: Validate lane identities and merge metadata safely
