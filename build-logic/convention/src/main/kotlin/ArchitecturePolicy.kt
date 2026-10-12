@@ -36,6 +36,9 @@ data class ArchitecturePolicy(
         if (project.plugins.hasPlugin("com.android.dynamic-feature")) {
           add("com.android.dynamic-feature")
         }
+        if (project.plugins.hasPlugin("billionbeers.kmp.feature")) {
+          add("billionbeers.kmp.feature")
+        }
       },
     )
 
@@ -72,6 +75,26 @@ data class ArchitecturePolicy(
   fun forbiddenRoles(source: String): Set<String> = forbiddenCompileClasspathRoles[source].orEmpty()
 
   companion object {
+    fun sharedFeaturePairViolations(
+      androidFeatureNames: Set<String>,
+      sharedFeatureNames: Set<String>,
+    ): List<String> =
+      buildList {
+        (androidFeatureNames - sharedFeatureNames).sorted().forEach { name ->
+          add(":feature:$name has no matching :shared:$name module")
+        }
+        (sharedFeatureNames - androidFeatureNames).sorted().forEach { name ->
+          add(":shared:$name has no matching :feature:$name module")
+        }
+      }
+
+    fun isSameNameFeaturePair(sourcePath: String, targetPath: String): Boolean {
+      if (!sourcePath.startsWith(":feature:") || !targetPath.startsWith(":shared:")) return false
+      val featureName = sourcePath.removePrefix(":feature:")
+      val sharedName = targetPath.removePrefix(":shared:")
+      return ':' !in featureName && ':' !in sharedName && featureName == sharedName
+    }
+
     fun load(file: File): ArchitecturePolicy {
       val root = JsonSlurper().parse(file) as? Map<*, *>
         ?: error("Architecture policy must be a JSON object: ${file.path}")
