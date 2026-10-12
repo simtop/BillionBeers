@@ -39,7 +39,7 @@ import com.simtop.billionbeers.di.BaseAppGraph
 import com.simtop.core.core.FeatureFlag
 import com.simtop.core.core.NetworkFaultMode
 import com.simtop.core.core.ThemeMode
-import com.simtop.navigation.DeepLinkParser
+import com.simtop.navigation.contract.DeepLinkParser
 
 private data class DeepLinkEntry(val label: String, val uri: String)
 
