@@ -68,6 +68,11 @@ class UpdateTests(unittest.TestCase):
 
     def api(self, endpoint: str, *, paginate: bool = False):
         self.reads.append(endpoint)
+        if "/workflows/ci.yml/runs?" in endpoint:
+            return [{"workflow_runs": [{
+                "head_sha": self.base, "head_branch": "master", "event": "push",
+                "status": "completed", "conclusion": "success",
+            }]}]
         if "/actions/runs?" in endpoint:
             return [{"workflow_runs": [{"status": "queued" if self.active else "completed"}]}]
         if endpoint.endswith("/pulls/7"):
@@ -215,15 +220,126 @@ class UpdateTests(unittest.TestCase):
         self.assertEqual(self.head, self.remote_head())
 
     def test_paginated_pr_inventory_and_error_status(self):
-        with patch.object(self.updater, "update", side_effect=RuntimeError("test failure")):
+        with patch.object(self.updater, "ensure_master_ci"), patch.object(
+            self.updater, "update", side_effect=RuntimeError("test failure")
+        ):
             self.assertEqual(1, self.updater.run())
         self.assertIn("state=open", self.reads[0])
         self.assertEqual(self.head, self.remote_head())
 
+    def test_master_ci_is_not_dispatched_when_exact_sha_has_a_run(self):
+        with patch.object(MODULE, "dispatch_ci") as dispatch:
+            self.updater.ensure_master_ci()
+        dispatch.assert_not_called()
+        self.assertTrue(any("/workflows/ci.yml/runs?head_sha=" in item for item in self.reads))
+
+    def test_ci_completion_for_a_dispatched_master_run_does_not_recurse(self):
+        with patch.object(MODULE, "api", return_value=[{"workflow_runs": [
+            {"head_sha": self.base, "head_branch": "master",
+             "event": "workflow_dispatch", "status": "completed"}
+        ]}]), patch.object(MODULE, "dispatch_ci") as dispatch:
+            self.updater.ensure_master_ci()
+        dispatch.assert_not_called()
+
+    def test_master_ci_dispatches_when_no_run_exists_for_exact_sha(self):
+        with patch.object(MODULE, "api", return_value=[{"workflow_runs": [
+            {"head_sha": "older-master-sha", "head_branch": "master", "event": "push"}
+        ]}]), patch.object(MODULE, "dispatch_ci") as dispatch:
+            self.updater.ensure_master_ci()
+        dispatch.assert_called_once_with(REPO)
+
+    def test_master_ci_dispatches_when_no_runs_exist(self):
+        with patch.object(MODULE, "api", return_value=[{"workflow_runs": []}]), patch.object(
+            MODULE, "dispatch_ci"
+        ) as dispatch:
+            self.updater.ensure_master_ci()
+        dispatch.assert_called_once_with(REPO)
+
+    def test_master_ci_dry_run_never_dispatches_or_queries_actions(self):
+        self.updater.dry_run = True
+        with patch.object(MODULE, "api") as api_call, patch.object(
+            MODULE, "dispatch_ci"
+        ) as dispatch:
+            self.updater.ensure_master_ci()
+        api_call.assert_not_called()
+        dispatch.assert_not_called()
+
+    def test_master_ci_ignores_exact_sha_run_from_a_pr(self):
+        with patch.object(MODULE, "api", return_value=[{"workflow_runs": [
+            {"head_sha": self.base, "head_branch": "feature", "event": "pull_request"}
+        ]}]), patch.object(MODULE, "dispatch_ci") as dispatch:
+            self.updater.ensure_master_ci()
+        dispatch.assert_called_once_with(REPO)
+
+    def test_queued_running_and_failed_master_runs_do_not_retry(self):
+        for status, conclusion in (("queued", None), ("in_progress", None),
+                                  ("completed", "failure")):
+            with self.subTest(status=status, conclusion=conclusion):
+                with patch.object(MODULE, "api", return_value=[{"workflow_runs": [{
+                    "head_sha": self.base, "head_branch": "master",
+                    "event": "push", "status": status, "conclusion": conclusion,
+                }]}]), patch.object(MODULE, "dispatch_ci") as dispatch:
+                    self.updater.ensure_master_ci()
+                dispatch.assert_not_called()
+
+    def test_master_tip_change_skips_dispatch(self):
+        original_git = self.updater.git
+
+        def advance_before_dispatch(*args, **kwargs):
+            if args == ("fetch", "--no-tags", "origin", "refs/heads/master"):
+                return original_git(*args, **kwargs)
+            if args == ("rev-parse", "FETCH_HEAD"):
+                return subprocess.CompletedProcess(args, 0, "new-master-tip\n", "")
+            return original_git(*args, **kwargs)
+
+        with patch.object(MODULE, "api", return_value=[{"workflow_runs": []}]), patch.object(
+            self.updater, "git", side_effect=advance_before_dispatch
+        ), patch.object(MODULE, "dispatch_ci") as dispatch:
+            self.updater.ensure_master_ci()
+        dispatch.assert_not_called()
+
+    def test_non_master_base_skips_master_ci_fallback(self):
+        self.updater.base = "release"
+        with patch.object(MODULE, "api") as api_call, patch.object(
+            MODULE, "dispatch_ci"
+        ) as dispatch:
+            self.updater.ensure_master_ci()
+        api_call.assert_not_called()
+        dispatch.assert_not_called()
+
+    def test_second_invocation_after_dispatch_does_not_recurse(self):
+        calls = 0
+
+        def runs(*args, **kwargs):
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                return [{"workflow_runs": []}]
+            return [{"workflow_runs": [{
+                "head_sha": self.base, "head_branch": "master",
+                "event": "workflow_dispatch", "status": "queued",
+            }]}]
+
+        with patch.object(MODULE, "api", side_effect=runs), patch.object(
+            MODULE, "dispatch_ci"
+        ) as dispatch:
+            self.updater.ensure_master_ci()
+            self.updater.ensure_master_ci()
+        dispatch.assert_called_once_with(REPO)
+
+    def test_dispatch_uses_workflow_dispatch_on_master(self):
+        with patch.object(MODULE.subprocess, "run") as run:
+            MODULE.dispatch_ci(REPO)
+        command = run.call_args.args[0]
+        self.assertIn("repos/example/repository/actions/workflows/ci.yml/dispatches", command)
+        self.assertEqual(["--method", "POST", "-f", "ref=master"], command[-4:])
+
     def test_every_pr_inventory_page_is_processed(self):
         pages = [[self.pr], [self.pr | {"number": 8}]]
         with patch.object(MODULE, "api", return_value=pages) as inventory:
-            with patch.object(self.updater, "update") as update:
+            with patch.object(self.updater, "ensure_master_ci"), patch.object(
+                self.updater, "update"
+            ) as update:
                 self.assertEqual(0, self.updater.run())
         inventory.assert_called_once()
         self.assertTrue(inventory.call_args.kwargs["paginate"])
@@ -239,7 +355,18 @@ class WorkflowTests(unittest.TestCase):
         self.assertNotIn("pull_request_target:", workflow)
         self.assertNotIn("github.event.workflow_run.head", workflow)
         self.assertNotIn("contents: write", workflow)
+        update_job = workflow.split("  update:\n", 1)[1]
+        self.assertIn("actions: write", update_job)
+        self.assertIn("actions: read", workflow.split("jobs:", 1)[0])
         self.assertIn("test_update_ready_prs.py", (ROOT / "Makefile").read_text())
+
+    def test_ci_dispatch_is_master_only_and_fails_off_master(self):
+        workflow = (ROOT / ".github/workflows/ci.yml").read_text()
+        self.assertIn("workflow_dispatch:", workflow)
+        format_job = workflow.split("  format-check:", 1)[1].split("\n  changes:", 1)[0]
+        self.assertIn("github.event_name == 'workflow_dispatch'", format_job)
+        self.assertIn("github.ref != 'refs/heads/master'", format_job)
+        self.assertIn("exit 1", format_job)
 
 
 if __name__ == "__main__":

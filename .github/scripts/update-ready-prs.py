@@ -18,6 +18,14 @@ def api(endpoint: str, *, paginate: bool = False):
     return json.loads(subprocess.check_output(command, text=True))
 
 
+def dispatch_ci(repo: str) -> None:
+    subprocess.run(
+        ["gh", "api", f"repos/{repo}/actions/workflows/ci.yml/dispatches",
+         "--method", "POST", "-f", "ref=master"],
+        check=True, capture_output=True, text=True,
+    )
+
+
 def eligible(pr: dict, repo: str, base: str) -> bool:
     return (
         pr.get("state") == "open"
@@ -58,6 +66,39 @@ class Updater:
         # Include preparation and queued runs, not just the aggregate CI check.
         return any(run.get("status") != "completed"
                    for page in pages for run in page["workflow_runs"])
+
+    def ensure_master_ci(self) -> None:
+        if self.base != "master":
+            print(f"Skipping master CI fallback for non-master base {self.base}.", flush=True)
+            return
+        if self.dry_run:
+            print("Dry run: skipping master CI fallback.", flush=True)
+            return
+
+        # GITHUB_TOKEN pushes do not start workflows. Check the exact checked-out master SHA so
+        # the updater can restore the post-merge CI run that those pushes may have suppressed.
+        master_sha = self.git("rev-parse", "HEAD").stdout.strip()
+        query = urlencode({"head_sha": master_sha, "per_page": 100})
+        pages = api(
+            f"repos/{self.repo}/actions/workflows/ci.yml/runs?{query}", paginate=True
+        )
+        if any(run.get("head_sha") == master_sha
+               and run.get("head_branch") == "master"
+               and run.get("event") in {"push", "workflow_dispatch"}
+               for page in pages for run in page.get("workflow_runs", [])):
+            print(f"CI already exists for master {master_sha}.", flush=True)
+            return
+
+        self.git("fetch", "--no-tags", "origin", "refs/heads/master")
+        current_master = self.git("rev-parse", "FETCH_HEAD").stdout.strip()
+        if current_master != master_sha:
+            print(
+                f"Skipping CI dispatch: master advanced from {master_sha} to {current_master}.",
+                flush=True,
+            )
+            return
+        dispatch_ci(self.repo)
+        print(f"Dispatched CI for master {master_sha}.", flush=True)
 
     def update(self, pr: dict) -> None:
         number = pr["number"]
@@ -118,6 +159,7 @@ class Updater:
         self.report(number, "base merged; waiting for fresh required CI and GitHub auto-merge")
 
     def run(self) -> int:
+        self.ensure_master_ci()
         query = urlencode({"state": "open", "base": self.base, "per_page": 100})
         pages = api(f"repos/{self.repo}/pulls?{query}", paginate=True)
         failures = 0

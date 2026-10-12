@@ -12,6 +12,15 @@ ten minutes. GitHub can delay scheduled runs. For an immediate retry, dispatch i
 gh workflow run update-ready-prs.yml --ref master
 ```
 
+The deploy-key push that updates a PR branch starts PR CI. GitHub suppresses workflow runs caused
+by `GITHUB_TOKEN` pushes, including the bot's later merge into `master`. The updater checks for
+a `BillionBeers CI` run on the exact current `master` revision and dispatches one on `master`
+when none exists. A run for an older revision does not count, and the updater checks that master
+has not advanced before dispatching. Existing queued, running, successful, or failed runs all count,
+so a failed CI run is reported by CI and is not automatically retried. Branch updates continue
+independently of this fallback. Manual CI dispatches on other refs fail the required `CI Gate`,
+because dependency preparation is only available for pull request events.
+
 Updates use merge commits and preserve existing history. Existing commit IDs remain stable for collaborators;
 pull the remote branch before continuing local work. An explicit expected-head lease rejects a concurrent
 head change, including a rewind or branch deletion. Every accepted push is a fast-forward,
