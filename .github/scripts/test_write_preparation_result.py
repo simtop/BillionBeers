@@ -11,7 +11,7 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 
 def load(name, filename):
@@ -36,14 +36,14 @@ def api_pr():
             "base": {"repo": {"id": 42, "full_name": REPOSITORY}}}
 
 
-def full_result(run_id=RUN_ID, attempt=ATTEMPT, *, output_sha=SHA, source_sha=SHA):
+def full_result(run_id=RUN_ID, attempt=ATTEMPT, *, output_sha=SHA, source_sha=SHA, graph_mode="reference"):
     graph_digest = "b" * 64
     return {"schema": 1, "repository": REPOSITORY, "repository_id": 42, "pr_number": 7,
             "branch": BRANCH, "source_sha": source_sha, "output_sha": output_sha,
             "mode": "write", "run_id": run_id, "run_attempt": attempt, "kind": "full",
-            "graph_mode": "reference", "graph_digest": graph_digest,
+            "graph_mode": graph_mode, "graph_digest": graph_digest,
             "lanes": {lane: {"lane": lane, "run_id": run_id, "run_attempt": attempt,
-                "head_sha": source_sha, "mode": "write", "graph_mode": "reference",
+                "head_sha": source_sha, "mode": "write", "graph_mode": graph_mode,
                 "graph_digest": graph_digest, "conclusion": "success", "manifest_sha256": "c" * 64}
                 for lane in WRITER.LANES}}
 
@@ -97,27 +97,32 @@ class FakeEvidenceApi:
 
 
 class WritePreparationResultTest(unittest.TestCase):
+    def prepare_graph_identity(self, root: Path, graph_mode: str):
+        review = WRITER.PREPARATION.graph_review("a:lib:1\n", "a:lib:1\n", SHA)
+        for lane in WRITER.LANES:
+            folder = root / lane
+            folder.mkdir()
+            patch = b""
+            formatting = b""
+            (folder / "prepared.patch").write_bytes(patch)
+            (folder / "formatting-files").write_bytes(formatting)
+            (folder / "verification-metadata.xml").write_text("<verification-metadata/>")
+            (folder / "graph-review.json").write_text(json.dumps(review))
+            manifest = {"lane": lane, "head_sha": SHA, "run_id": str(RUN_ID),
+                "run_attempt": str(ATTEMPT), "source_ref": BRANCH, "conclusion": "success",
+                "mode": "write", "skipped": False,
+                "prepared_sha256": hashlib.sha256(patch).hexdigest(),
+                "formatting_files_sha256": hashlib.sha256(formatting).hexdigest(),
+                "graph_mode": graph_mode, "graph_digest": review["digest"]}
+            (folder / "manifest.json").write_text(json.dumps(manifest))
+        return review
+
     def test_graph_identity_requires_all_four_successful_manifests_and_matching_reviews(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            review = WRITER.PREPARATION.graph_review("a:lib:1\n", "a:lib:1\n", SHA)
-            for lane in WRITER.LANES:
-                folder = root / lane
-                folder.mkdir()
-                patch = b""
-                formatting = b""
-                (folder / "prepared.patch").write_bytes(patch)
-                (folder / "formatting-files").write_bytes(formatting)
-                (folder / "verification-metadata.xml").write_text("<verification-metadata/>")
-                (folder / "graph-review.json").write_text(json.dumps(review))
-                manifest = {"lane": lane, "head_sha": SHA, "run_id": str(RUN_ID),
-                    "run_attempt": str(ATTEMPT), "source_ref": BRANCH, "conclusion": "success",
-                    "mode": "write", "skipped": False,
-                    "prepared_sha256": hashlib.sha256(patch).hexdigest(),
-                    "formatting_files_sha256": hashlib.sha256(formatting).hexdigest(),
-                    "graph_mode": "reference", "graph_digest": review["digest"]}
-                (folder / "manifest.json").write_text(json.dumps(manifest))
-            digest, identities = WRITER.graph_identity(root, SHA, RUN_ID, ATTEMPT, BRANCH)
+            review = self.prepare_graph_identity(root, "reference")
+            graph_mode, digest, identities = WRITER.graph_identity(root, SHA, RUN_ID, ATTEMPT, BRANCH)
+            self.assertEqual("reference", graph_mode)
             self.assertEqual(review["digest"], digest)
             self.assertEqual(WRITER.LANES, set(identities))
             self.assertTrue(all(item["conclusion"] == "success" for item in identities.values()))
@@ -127,6 +132,47 @@ class WritePreparationResultTest(unittest.TestCase):
             broken.write_text(json.dumps(payload))
             with self.assertRaises(ValueError):
                 WRITER.graph_identity(root, SHA, RUN_ID, ATTEMPT, BRANCH)
+
+    def test_candidate_full_graph_is_an_accepted_authoritative_lane_set(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            review = self.prepare_graph_identity(root, "candidate")
+            graph_mode, digest, identities = WRITER.graph_identity(root, SHA, RUN_ID, ATTEMPT, BRANCH)
+            self.assertEqual("candidate", graph_mode)
+            self.assertEqual(review["digest"], digest)
+            self.assertEqual(WRITER.LANES, set(identities))
+            self.assertTrue(all(item["graph_mode"] == "candidate" for item in identities.values()))
+
+            manifest_path = root / "apple" / "manifest.json"
+            manifest = json.loads(manifest_path.read_text())
+            manifest["graph_mode"] = "reference"
+            manifest_path.write_text(json.dumps(manifest))
+            with self.assertRaisesRegex(ValueError, "platform lanes disagree"):
+                WRITER.graph_identity(root, SHA, RUN_ID, ATTEMPT, BRANCH)
+
+    def test_new_write_reuses_candidate_and_legacy_reference_results(self):
+        for graph_mode in ("candidate", "reference"):
+            with self.subTest(graph_mode=graph_mode):
+                selection = {"authoritative_valid": True,
+                             "result": full_result(graph_mode=graph_mode), "stale_runs": []}
+                with patch.object(WRITER.RECONCILE, "preparation_current", return_value=selection):
+                    self.assertIs(selection, WRITER.find_reuse(Mock(), api_pr(), RUN_ID + 1, SHA, 0))
+
+                reused = full_result(graph_mode=graph_mode)
+                reused["kind"] = "reuse"
+                reused["origin_result"] = full_result(graph_mode=graph_mode)
+                reused["origin_run"] = {"id": RUN_ID, "run_attempt": ATTEMPT}
+                selection["result"] = reused
+                with patch.object(WRITER.RECONCILE, "preparation_current", return_value=selection):
+                    flattened = WRITER.find_reuse(Mock(), api_pr(), RUN_ID + 1, SHA, 0)
+                self.assertEqual(reused["origin_run"], flattened["reuse_origin"])
+                self.assertEqual(graph_mode, flattened["reuse_result"]["graph_mode"])
+
+                reused["origin_result"] = full_result(
+                    graph_mode="reference" if graph_mode == "candidate" else "candidate"
+                )
+                with patch.object(WRITER.RECONCILE, "preparation_current", return_value=selection):
+                    self.assertIsNone(WRITER.find_reuse(Mock(), api_pr(), RUN_ID + 1, SHA, 0))
 
     def test_result_schema_binds_every_lane_and_exact_pr_run_identity(self):
         run = {"id": RUN_ID, "run_attempt": ATTEMPT, "head_sha": SHA}
@@ -151,6 +197,21 @@ class WritePreparationResultTest(unittest.TestCase):
         altered["lanes"]["web"]["run_attempt"] = 1
         with self.assertRaises(ValueError):
             RECONCILE.validate_preparation_result(Mock(repository=REPOSITORY), altered, run, api_pr())
+
+    def test_candidate_and_legacy_reference_results_require_uniform_lane_graphs(self):
+        run = {"id": RUN_ID, "run_attempt": ATTEMPT, "head_sha": SHA}
+        for graph_mode in ("candidate", "reference"):
+            result = full_result(graph_mode=graph_mode)
+            RECONCILE.validate_preparation_result(Mock(repository=REPOSITORY), result, run, api_pr())
+        for bad_mode in ("unknown", ["candidate"]):
+            result = full_result()
+            result["graph_mode"] = bad_mode
+            with self.assertRaises((ValueError, TypeError)):
+                RECONCILE.validate_preparation_result(Mock(repository=REPOSITORY), result, run, api_pr())
+        result = full_result(graph_mode="candidate")
+        result["lanes"]["apple"]["graph_mode"] = "reference"
+        with self.assertRaisesRegex(ValueError, "platform lane"):
+            RECONCILE.validate_preparation_result(Mock(repository=REPOSITORY), result, run, api_pr())
 
     def test_result_archive_accepts_only_bounded_named_json_with_matching_run_identity(self):
         run = {"id": RUN_ID, "run_attempt": ATTEMPT, "head_sha": SHA, "run_number": 1}
@@ -207,6 +268,37 @@ class WritePreparationResultTest(unittest.TestCase):
         nested_origin.update({"source_sha": SHA, "origin_run_id": RUN_ID, "origin_run_attempt": 1})
         with self.assertRaises(ValueError):
             RECONCILE.validate_preparation_result(api, nested, current, api_pr())
+
+    def test_reuse_requires_origin_with_identical_graph_mode_and_digest(self):
+        source = "d" * 40
+        origin = {"id": RUN_ID, "run_number": 1, "run_attempt": 1, "head_sha": source,
+                  "head_branch": BRANCH, "head_repository": {"full_name": REPOSITORY},
+                  "path": f".github/workflows/{RECONCILE.PREPARATION.WORKFLOW}", "event": "workflow_dispatch",
+                  "display_title": f"Dependency preparation | mode=write | ref={BRANCH}",
+                  "status": "completed", "conclusion": "success"}
+        current = {"id": RUN_ID + 1, "run_number": 2, "run_attempt": 1, "head_sha": SHA}
+        result = full_result(graph_mode="candidate", run_id=current["id"], attempt=1)
+        result.update({"kind": "reuse", "origin_run_id": RUN_ID, "origin_run_attempt": 1})
+        result.pop("lanes")
+        api = FakeEvidenceApi(origin, full_result(run_id=RUN_ID, attempt=1, source_sha=source,
+                                                  output_sha=SHA, graph_mode="candidate"))
+        api.runs[origin["id"]] = origin
+        api.results[origin["id"]] = full_result(run_id=RUN_ID, attempt=1, source_sha=source,
+                                                 output_sha=SHA, graph_mode="candidate")
+        RECONCILE.validate_preparation_result(api, result, current, api_pr())
+
+        api.results[origin["id"]] = full_result(run_id=RUN_ID, attempt=1, source_sha=source,
+                                                 output_sha=SHA, graph_mode="reference")
+        with self.assertRaisesRegex(ValueError, "reuse origin"):
+            RECONCILE.validate_preparation_result(api, result, current, api_pr())
+
+        api.results[origin["id"]] = full_result(run_id=RUN_ID, attempt=1, source_sha=source,
+                                                 output_sha=SHA, graph_mode="candidate")
+        api.results[origin["id"]]["graph_digest"] = "d" * 64
+        for lane in api.results[origin["id"]]["lanes"].values():
+            lane["graph_digest"] = "d" * 64
+        with self.assertRaisesRegex(ValueError, "reuse origin"):
+            RECONCILE.validate_preparation_result(api, result, current, api_pr())
 
     def test_live_selector_requires_valid_result_for_current_pr_output(self):
         run = {"id": RUN_ID, "run_number": 1, "run_attempt": ATTEMPT, "head_sha": SHA,

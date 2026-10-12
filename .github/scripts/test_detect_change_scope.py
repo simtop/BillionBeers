@@ -104,6 +104,8 @@ with tempfile.TemporaryDirectory() as temporary:
     (repository / "scripts").mkdir()
     before_head = common_head
     for verifier, owner in (
+        ("scripts/ios-framework-build.sh", ("native",)),
+        (".github/scripts/test_ios_framework_build.py", ("native",)),
         ("scripts/verify-release-smoke-artifacts.sh", ("instrumented",)),
         ("scripts/verify_web_release_artifacts.py", ("web",)),
         ("scripts/test_verify_web_release_artifacts.py", ("web",)),

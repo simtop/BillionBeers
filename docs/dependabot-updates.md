@@ -9,7 +9,14 @@ batch is not restricted to three groups. Actions updates do not need Gradle prep
 The preparation workflow checks out an immutable PR head, snapshots the verification ledger,
 resolves the proposed runtime baseline, checks its coordinate delta, and applies the explicitly
 versioned ktfmt formatter. Four cold lanes then run serially: Linux/JVM/Android-host, Web Wasm,
-managed-device debug and release smoke, and Apple native/framework/iOS simulator closure. Each lane
+explicit debug AndroidTest APK and release-smoke APK assembly, and Apple native/framework/iOS
+simulator closure. Candidate assembly includes each debug AndroidTest APK, the minified `:app`
+releaseSmoke APK and its AndroidTest APK, and the separate `:app-release-smoke` APK. The Apple
+metadata lane opts the nested Xcode Gradle call into writing; ordinary `make ios-host-build` remains
+strict. The merged ledger is still checked against the original verification policy and accepted
+checksums before any write is pushed.
+Write runs retain `mode=write` in their immutable run title and select the candidate resolution
+graph; the reference graph remains available for diagnostics and non-writing comparison. Each lane
 uploads its own ledger, resource log, and immutable head/run/source identity. The final job verifies
 all lane evidence and prepared-input digests, checks every lane against the original checksums and
 policy, and unions platform-only artifacts. Shared artifacts must have matching accepted
@@ -37,7 +44,7 @@ required after the preparation commit.
 
 Write runs identify their intent in the immutable Actions run title and publish a small result
 artifact before pushing. The result binds the open same-repository Dependabot PR, source and output
-SHA, run and attempt, graph digest, and all four successful lane identities. CI Gate accepts only
+SHA, run and attempt, graph mode and digest, and all four successful lane identities. CI Gate accepts only
 the newest validated write result for the live PR head; reference/candidate experiments do not
 count. A later queued, failed, or evidence-missing write blocks a previously green Gate. The trusted
 completion collector reruns only CI Gate when its recorded preparation generation is outdated, or
@@ -49,8 +56,14 @@ freshness. Dispatch **Regenerate Verification Metadata** again in `write` mode o
 branch; if CI Gate had already terminated, the collector refreshes only that Gate after validating
 the new write intent. Dispatch again if a newer request for the same workflow, source repository,
 and branch superseded a pending run.
-Hosted preparation still uses cold Linux, Web, managed-device, and Apple runners; queue time can
+Hosted preparation still uses cold Linux, Web, managed-platform, and Apple runners; queue time can
 exceed the Gate's wait bound, and hosted lane execution remains the evidence for platform closure.
+Isolated closure comparisons on two immutable revisions established candidate equivalence for those
+graphs; [ADR 0007](adr/0007-gradle-dependency-verification.md) records the run links, audit checks,
+and bounded results. Each comparison started with empty artifact components while preserving the
+verification policy. This evidence does not cover every future dependency change. The proof runs
+used experimental parallel scheduling; production write preparation continues to run its four cold
+platform lanes serially. Strict verification, graph-approval rules, and ordinary CI remain in force.
 
 A trusted default-branch completion collector can retry a preparation run once, only when both
 the actual runner-shutdown error and exit 143 are present, the failed step is a platform resolver, no
@@ -58,8 +71,11 @@ build/policy rejection is present, the open same-repository PR is still authored
 and neither a newer run nor a changed head supersedes it. It never executes PR code or accepts a
 dependency graph. Manual dispatches, cancellations and second attempts are not automatically retried.
 Preparation records elapsed time and samples memory, disk and process usage every 30 seconds using
-Linux/macOS-compatible probes; runner shutdown can still prevent the evidence upload, so the
-completed job log is authoritative. The graph-review and metadata-writer workflows have separate
+Linux/macOS-compatible probes; each bounded snapshot is streamed to the job log as well as retained
+for upload, so runner shutdown can still leave resource evidence in the completed log. The managed
+preparation lane limits Gradle-managed device concurrency to one after runner shutdowns during
+multi-emulator reference runs. This is a resource-pressure mitigation, not a confirmed OOM diagnosis;
+the failed runs did not upload metrics artifacts. The graph-review and metadata-writer workflows have separate
 concurrency groups scoped by workflow, source repository, and branch. PR and manual dispatch runs
 for the same writer branch share its group; different refs and workflows do not compete. GitHub
 keeps one pending run per group, so a newer request for the same scope may supersede the pending

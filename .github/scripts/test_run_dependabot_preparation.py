@@ -97,6 +97,25 @@ class PreparationSupervisorTest(unittest.TestCase):
         self.assertIn("classification=success", step_output)
         self.assertIn("classification=build_test_or_policy_failure", step_output)
 
+    def test_bounded_resource_snapshot_is_streamed_and_retained(self):
+        for command, output in {
+            "free": "Mem: bounded-memory-snapshot",
+            "df": "Filesystem bounded-disk-snapshot",
+            "ps": "PID RSS COMMAND bounded-process-snapshot",
+        }.items():
+            probe = self.fake_bin / command
+            probe.write_text(f"#!/bin/sh\nprintf '%s\\n' '{output}'\n", encoding="utf-8")
+            probe.chmod(0o755)
+
+        result = self.run_wrapper("managed", "reference")
+        self.assertEqual(0, result.returncode, result.stderr)
+        wrapper_log = (self.root / "managed-reference.log").read_text()
+        retained_artifact = (self.root / "dependency-preparation-resources.log").read_text()
+        for line in ("Mem: bounded-memory-snapshot", "Filesystem bounded-disk-snapshot",
+                     "PID RSS COMMAND bounded-process-snapshot"):
+            self.assertIn(line, wrapper_log)
+            self.assertIn(line, retained_artifact)
+
     def test_bare_signal_statuses_are_diagnostic_only_and_tee_is_drained(self):
         for status in (143, 130):
             self.environment["FAKE_MAKE_EXIT"] = str(status)

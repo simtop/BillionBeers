@@ -40,7 +40,8 @@ class PlatformMetadataMergeTest(unittest.TestCase):
             folder = incoming / lane
             folder.mkdir(exist_ok=True)
             manifest = {"lane": lane, "head_sha": HEAD, "run_id": RUN_ID, "run_attempt": ATTEMPT,
-                        "source_ref": REF, "conclusion": "success", "mode": "write", "skipped": False}
+                        "source_ref": REF, "conclusion": "success", "mode": "write",
+                        "graph_mode": "reference", "skipped": False}
             (folder / "prepared.patch").write_bytes(b"prepared inputs")
             manifest["prepared_sha256"] = hashlib.sha256((folder / "prepared.patch").read_bytes()).hexdigest()
             (folder / "formatting-files").write_bytes(b"src/Foo.kt\0")
@@ -202,7 +203,7 @@ class PlatformMetadataMergeTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "identity"):
                 MODULE.validate_evidence(incoming, HEAD, RUN_ID, ATTEMPT, REF, "candidate")
 
-        for mutation in ("missing", "wrong_shape", "wrong_skipped_type"):
+        for mutation in ("missing", "missing_graph_mode", "wrong_shape", "wrong_skipped_type"):
             with tempfile.TemporaryDirectory() as tmp:
                 root = Path(tmp)
                 incoming, _ = self.prepare(root)
@@ -213,11 +214,34 @@ class PlatformMetadataMergeTest(unittest.TestCase):
                     manifest = json.loads(manifest_path.read_text())
                     if mutation == "missing":
                         del manifest["mode"]
+                    elif mutation == "missing_graph_mode":
+                        del manifest["graph_mode"]
                     else:
                         manifest["skipped"] = "false"
                     manifest_path.write_text(json.dumps(manifest))
                 with self.subTest(mutation=mutation), self.assertRaisesRegex(ValueError, "manifest"):
                     MODULE.validate_evidence(incoming, HEAD, RUN_ID, ATTEMPT, REF, "write")
+
+    def test_rejects_mixed_or_unknown_graph_modes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            incoming, _ = self.prepare(root)
+            manifest_path = incoming / "apple" / "manifest.json"
+            manifest = json.loads(manifest_path.read_text())
+            manifest["graph_mode"] = "candidate"
+            manifest_path.write_text(json.dumps(manifest))
+            with self.assertRaisesRegex(ValueError, "disagree"):
+                MODULE.validate_evidence(incoming, HEAD, RUN_ID, ATTEMPT, REF, "write")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            incoming, _ = self.prepare(root)
+            manifest_path = incoming / "linux" / "manifest.json"
+            manifest = json.loads(manifest_path.read_text())
+            manifest["graph_mode"] = "experimental"
+            manifest_path.write_text(json.dumps(manifest))
+            with self.assertRaisesRegex(ValueError, "unknown graph mode"):
+                MODULE.validate_evidence(incoming, HEAD, RUN_ID, ATTEMPT, REF, "write")
 
 
 if __name__ == "__main__":
