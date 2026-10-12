@@ -39,11 +39,13 @@ def eligible(pr: dict, repo: str, base: str) -> bool:
 
 
 class Updater:
-    def __init__(self, repo: str, base: str, directory: Path, *, dry_run: bool = False):
+    def __init__(self, repo: str, base: str, directory: Path, *, dry_run: bool = False,
+                 event_name: str = ""):
         self.repo = repo
         self.base = base
         self.directory = directory
         self.dry_run = dry_run
+        self.event_name = event_name
         self.messages: list[str] = []
 
     def git(self, *args: str, check: bool = True) -> subprocess.CompletedProcess:
@@ -70,6 +72,9 @@ class Updater:
     def ensure_master_ci(self) -> None:
         if self.base != "master":
             print(f"Skipping master CI fallback for non-master base {self.base}.", flush=True)
+            return
+        if self.event_name == "push":
+            print("Master push already triggers CI; skipping fallback dispatch.", flush=True)
             return
         if self.dry_run:
             print("Dry run: skipping master CI fallback.", flush=True)
@@ -190,7 +195,8 @@ def main() -> int:
     parser.add_argument("--base", default="master")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
-    return Updater(args.repo, args.base, Path.cwd(), dry_run=args.dry_run).run()
+    return Updater(args.repo, args.base, Path.cwd(), dry_run=args.dry_run,
+                   event_name=os.environ.get("GITHUB_EVENT_NAME", "")).run()
 
 
 if __name__ == "__main__":

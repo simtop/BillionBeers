@@ -13,13 +13,17 @@ gh workflow run update-ready-prs.yml --ref master
 ```
 
 The deploy-key push that updates a PR branch starts PR CI. GitHub suppresses workflow runs caused
-by `GITHUB_TOKEN` pushes, including the bot's later merge into `master`. The updater checks for
-a `BillionBeers CI` run on the exact current `master` revision and dispatches one on `master`
-when none exists. A run for an older revision does not count, and the updater checks that master
-has not advanced before dispatching. Existing queued, running, successful, or failed runs all count,
-so a failed CI run is reported by CI and is not automatically retried. Branch updates continue
-independently of this fallback. Manual CI dispatches on other refs fail the required `CI Gate`,
-because dependency preparation is only available for pull request events.
+by `GITHUB_TOKEN` pushes, including the bot's later merge into `master`. The updater skips its
+CI fallback on a `master` push because that same push starts ordinary `BillionBeers CI`; it still
+updates eligible branches during that run. This avoids dispatching a duplicate when GitHub has not
+yet listed the push-triggered run. On a schedule, after the `BillionBeers CI` workflow completes,
+or on manual dispatch, the updater checks for a CI run on the exact current `master` revision and
+dispatches one on `master` only when none exists. This fallback restores post-merge CI suppressed
+by the bot's `GITHUB_TOKEN` push. A run for an older revision does not count, and the updater
+checks that master has not advanced before dispatching. Existing queued, running, successful, or
+failed runs all count, so a failed CI run is reported by CI and is not automatically retried.
+Branch updates continue independently of this fallback. Manual CI dispatches on other refs fail the
+required `CI Gate`, because dependency preparation is only available for pull request events.
 
 Updates use merge commits and preserve existing history. Existing commit IDs remain stable for collaborators;
 pull the remote branch before continuing local work. An explicit expected-head lease rejects a concurrent
