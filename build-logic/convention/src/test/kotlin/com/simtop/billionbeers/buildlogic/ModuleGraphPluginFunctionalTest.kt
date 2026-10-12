@@ -1,7 +1,9 @@
 package com.simtop.billionbeers.buildlogic
 
 import groovy.json.JsonSlurper
+import java.nio.charset.StandardCharsets
 import java.nio.file.Path
+import java.util.Properties
 import kotlin.io.path.copyTo
 import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
@@ -75,6 +77,7 @@ class ModuleGraphPluginFunctionalTest {
     assertFalse(firstJson.contains("org.example"))
 
     val html = htmlPath.readText()
+    val (cytoscapeVersion, cytoscapeJavascript) = resolvedCytoscapeAssets()
     assertTrue(html.contains("<script id=\"graph-data\" type=\"application/json\">$firstJson</script>"))
     assertTrue(html.contains("id=\"module-search\""))
     assertTrue(html.contains("id=\"transitive\""))
@@ -82,7 +85,8 @@ class ModuleGraphPluginFunctionalTest {
     assertTrue(html.contains("id=\"scope-filters\""))
     assertTrue(html.contains("id=\"cycle-warning\""))
     assertTrue(html.contains("selected.removeClass('hidden-by-filter').addClass('selected-node');"))
-    assertTrue(html.contains("Cytoscape.js 3.34.1"))
+    assertTrue(html.contains("Cytoscape.js $cytoscapeVersion"))
+    assertTrue(html.contains(cytoscapeJavascript))
     assertFalse(Regex("<script[^>]+src=").containsMatchIn(html))
 
     val second =
@@ -90,7 +94,26 @@ class ModuleGraphPluginFunctionalTest {
         .withArguments("generateModuleGraph", "--configuration-cache", "--stacktrace")
         .build()
     assertTrue(second.output.contains("Configuration cache entry reused."))
+    assertEquals(TaskOutcome.UP_TO_DATE, second.task(":generateModuleGraph")?.outcome)
     assertEquals(firstJson, jsonPath.readText())
+  }
+
+  private fun resolvedCytoscapeAssets(): Pair<String, String> {
+    val classLoader = javaClass.classLoader
+    val properties = Properties()
+    requireNotNull(
+      classLoader.getResourceAsStream("META-INF/maven/org.webjars.npm/cytoscape/pom.properties")
+    )
+      .use(properties::load)
+    val version = requireNotNull(properties.getProperty("version"))
+    val javascriptPath =
+      "META-INF/resources/webjars/cytoscape/$version/dist/cytoscape.min.js"
+    val javascript =
+      requireNotNull(classLoader.getResourceAsStream(javascriptPath))
+        .bufferedReader(StandardCharsets.UTF_8)
+        .use { it.readText() }
+        .trim()
+    return version to javascript
   }
 
   private fun writeFixture() {
