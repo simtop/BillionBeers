@@ -486,6 +486,23 @@ class ReconcileCiReportTest(unittest.TestCase):
         step_names = set(MODULE.re.findall(r"- name: (.+)", ci))
         self.assertEqual(set(), set(MODULE.RENDER.STEP_RULES) - step_names - {"Signal Failure"})
 
+    def test_preparation_guards_use_stable_workflow_path_with_custom_run_title(self):
+        root = SCRIPT.parents[2]
+        workflow = (root / ".github/workflows/ci-report.yml").read_text()
+        preparation = (root / ".github/workflows/regen-verification-metadata.yml").read_text()
+        preparation_path = "github.event.workflow_run.path == '.github/workflows/regen-verification-metadata.yml'"
+        refresh = workflow.split("  refresh-gate:", 1)[1].split("  resolve:", 1)[0]
+        resolve = workflow.split("  resolve:", 1)[1].split("  recovery:", 1)[0]
+        recovery = workflow.split("  recovery:", 1)[1].split("  comment:", 1)[0]
+
+        for job in (refresh, resolve, recovery):
+            self.assertIn(preparation_path, job)
+        self.assertIn("github.event.workflow_run.event == 'pull_request' ||", resolve)
+        self.assertIn("github.event.workflow_run.conclusion == 'failure'", recovery)
+        self.assertNotIn("workflow_run.name == 'Regenerate Verification Metadata'", workflow)
+        self.assertRegex(preparation, r"(?m)^run-name: Dependency preparation \| mode=")
+        self.assertIn("workflows: [BillionBeers CI, Regenerate Verification Metadata]", workflow)
+
     def test_transient_download_error_can_recover(self):
         api = FakeApi([{"run": run(), "downloads": {"actions/jobs/10/logs": OSError("not ready")}},
                        {"run": run(), "downloads": {"actions/jobs/10/logs": b"2026-09-17T12:01:30Z ##[error]real failure"}}])
