@@ -8,22 +8,25 @@ import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.Either
 import com.simtop.core.core.EpochTimeProvider
 import com.simtop.core.core.SystemEpochTimeProvider
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.first
 
 fun interface SavedFilterPresetIdProvider {
-  fun idFor(name: String, query: BeersQuery): String
+  fun newId(): String
 }
 
-/** Preserves the existing same-name/same-query upsert identity until product semantics change. */
-object DeterministicSavedFilterPresetIdProvider : SavedFilterPresetIdProvider {
-  override fun idFor(name: String, query: BeersQuery): String =
-    "preset-${name.hashCode()}-${query.hashCode()}"
+object RandomSavedFilterPresetIdProvider : SavedFilterPresetIdProvider {
+  @OptIn(ExperimentalUuidApi::class)
+  override fun newId(): String = Uuid.random().toString()
 }
 
 class SaveFilterPresetUseCase(
   private val repository: BeersRepository,
   private val epochTimeProvider: EpochTimeProvider = SystemEpochTimeProvider(),
   private val idProvider: SavedFilterPresetIdProvider =
-    DeterministicSavedFilterPresetIdProvider,
+    RandomSavedFilterPresetIdProvider,
 ) {
   suspend operator fun invoke(
     name: String,
@@ -31,9 +34,19 @@ class SaveFilterPresetUseCase(
   ): Either<SaveFilterPresetError, Unit> {
     val normalizedName = normalizeFilterPresetName(name)
       ?: return Either.Left(SaveFilterPresetError.InvalidName)
+    val existingId =
+      try {
+        repository.observeSavedFilterPresets().first().firstOrNull {
+          it.name == normalizedName && it.query == query
+        }?.id
+      } catch (e: CancellationException) {
+        throw e
+      } catch (e: Exception) {
+        return Either.Left(SaveFilterPresetError.Unknown(e))
+      }
     return repository.saveFilterPreset(
       SavedFilterPreset(
-        id = idProvider.idFor(normalizedName, query),
+        id = existingId ?: idProvider.newId(),
         name = normalizedName,
         query = query,
         updatedAt = epochTimeProvider.epochMillis(),
