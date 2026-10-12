@@ -48,7 +48,7 @@
     { "name": "android-screenshot-fixture", "match": "exact", "value": ":compose-multiplatform-screenshot-fixture" }
   ],
   "allowedEdges": [
-    { "source": "application", "targets": ["domain-api", "domain-impl", "regular-feature", "savedfilters-feature", "dynamic-feature", "core", "design-system", "navigation", "data", "database", "network", "presentation"], "scopes": ["main"] },
+    { "source": "application", "targets": ["domain-api", "domain-impl", "regular-feature", "savedfilters-feature", "dynamic-feature", "core", "design-system", "navigation", "navigation-contract", "data", "database", "network", "presentation"], "scopes": ["main"] },
     { "source": "desktop-application", "targets": ["domain-api", "data", "database", "network", "core-common", "shared-favorites", "shared-beerbrowse", "shared-beerdetail", "shared-app"], "scopes": ["main"] },
     { "source": "web-application", "targets": ["domain-api", "data", "network", "network-api", "core-common", "storage-api", "storage-browser", "navigation-contract", "shared-app", "shared-presentation", "shared-beerbrowse", "shared-beerdetail"], "scopes": ["main"] },
     { "source": "ios-shared", "targets": ["domain-api", "data", "database", "network", "core-common", "navigation-contract", "shared-app", "shared-beerbrowse"], "scopes": ["main"] },

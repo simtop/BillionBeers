@@ -1,5 +1,6 @@
 package com.simtop.navigation
 
+import com.simtop.navigation.contract.DeepLinkDestination
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
