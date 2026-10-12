@@ -7,6 +7,7 @@ on:
     branches: [ main, master ]
   merge_group:
     types: [checks_requested]
+  workflow_dispatch: {}
 
 # Jobs declare additional read permissions where needed.
 permissions:
@@ -25,6 +26,12 @@ jobs:
     name: Code Style Formatting Check
     runs-on: ubuntu-latest
     steps:
+      - name: Reject manual runs outside master
+        if: github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/master'
+        run: |
+          echo "::error::Manual CI dispatch is supported only on master."
+          exit 1
+
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
