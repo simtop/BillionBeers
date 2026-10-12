@@ -15,10 +15,14 @@ class KmpTestRoutingTest {
         "KMP_METADATA_MODULES :=",
         "KMP_ANDROID_HOST_TEST_MODULES :=",
         "KMP_BROWSER_TEST_MODULES :=",
-        "$(module):jvmTest",
-        "$(module):allMetadataJar",
-        "$(module):testAndroidHostTest",
-        "$(module):wasmJsBrowserTest",
+        "$(MODULE_TRIMMED):jvmTest",
+        "$(MODULE_TRIMMED):allMetadataJar",
+        "$(MODULE_TRIMMED):testAndroidHostTest",
+        "$(MODULE_TRIMMED):wasmJsBrowserTest",
+        "kmpJvmTest",
+        "kmpMetadata",
+        "kmpAndroidHostTest",
+        "kmpBrowserTest",
       )
       .forEach { declaration ->
         assertTrue(
@@ -34,6 +38,10 @@ class KmpTestRoutingTest {
     assertTrue(
       makefile.contains("else ifneq ($(filter $(MODULE_TRIMMED),$(JVM_TEST_MODULES) :konsist),)"),
       "Existing JVM routing must remain a separate fallback",
+    )
+    assertTrue(
+      makefile.contains("kmpTest"),
+      "The full test target must use the Gradle KMP aggregate",
     )
   }
 

@@ -25,6 +25,7 @@ buildscript {
 
 plugins {
     id("billionbeers.module.graph")
+    id("billionbeers.kmp.verification")
     alias(libs.plugins.compose.compiler) apply false
     alias(libs.plugins.com.google.devtools.ksp) apply false
 
