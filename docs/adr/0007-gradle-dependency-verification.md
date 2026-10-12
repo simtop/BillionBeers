@@ -195,8 +195,9 @@ dependency graph.
 
 Manual dispatch accepts `reference` and `candidate` modes. A non-pushing comparison workflow runs
 both through the same reusable writer on separate cold platform lanes, with Gradle caches disabled,
-and requires comparator equality. The comparison calls are sequential under the repository-wide
-preparation lock. Both modes run the pre-write safety checks, upload the merged ledger and runtime
+and requires comparator equality. The comparison calls are sequential under the comparison
+workflow's workflow-and-ref-scoped concurrency group; reusable calls inherit the caller workflow
+name. Both modes run the pre-write safety checks, upload the merged ledger and runtime
 baseline, and never commit or push. After downloading artifacts from the same SHA, compare them
 with:
 
@@ -226,10 +227,13 @@ head it consumed. A trusted collector reruns only CI Gate if a later write makes
 stale, or if Gate's only failure is the missing-preparation check; other CI failures stay intact.
 Legacy runs without the intent title or result artifact require a fresh write-mode dispatch.
 
-A repository-wide concurrency group serializes preparations with `cancel-in-progress: false`.
-GitHub keeps at most one pending run, however, so a newer request may replace an older pending one.
-This is not a durable FIFO queue; dispatch any superseded ref again after the active preparation
-completes.
+The graph-review and metadata-writer workflows use separate concurrency groups, each scoped to
+the workflow, source repository, and branch, with `cancel-in-progress: false`. A skipped
+human-authored graph-review job therefore cannot evict a metadata-writer run, and a different PR
+on a different branch has its own pending slot. PR runs and dispatches for the same source branch
+share the writer scope. GitHub still keeps at most one pending run for each workflow/ref, so a
+newer request for that same scope may replace an older pending one. This is not a durable FIFO
+queue; dispatch any superseded ref again after the active preparation completes.
 
 ### Write mode must not bless changed bytes
 

@@ -47,7 +47,8 @@ A successful write that pushes a generated commit gets normal fresh CI on that n
 Legacy write runs without the immutable write title or authoritative result artifact cannot establish
 freshness. Dispatch **Regenerate Verification Metadata** again in `write` mode on the current PR
 branch; if CI Gate had already terminated, the collector refreshes only that Gate after validating
-the new write intent. Dispatch again as well when repository concurrency superseded a pending run.
+the new write intent. Dispatch again if a newer request for the same workflow, source repository,
+and branch superseded a pending run.
 Hosted preparation still uses cold Linux, Web, managed-device, and Apple runners; queue time can
 exceed the Gate's wait bound, and hosted lane execution remains the evidence for platform closure.
 
@@ -58,9 +59,11 @@ and neither a newer run nor a changed head supersedes it. It never executes PR c
 dependency graph. Manual dispatches, cancellations and second attempts are not automatically retried.
 Preparation records elapsed time and samples memory, disk and process usage every 30 seconds using
 Linux/macOS-compatible probes; runner shutdown can still prevent the evidence upload, so the
-completed job log is authoritative. A repository-wide concurrency group serializes preparations,
-but GitHub keeps only one pending run and a newer request may supersede it. Dispatch a
-superseded ref again after the current preparation completes.
+completed job log is authoritative. The graph-review and metadata-writer workflows have separate
+concurrency groups scoped by workflow, source repository, and branch. PR and manual dispatch runs
+for the same writer branch share its group; different refs and workflows do not compete. GitHub
+keeps one pending run per group, so a newer request for the same scope may supersede the pending
+one. Dispatch that ref again after the active preparation completes if its run was superseded.
 
 The platform matrix stops queued lanes after a lane fails. Failed runs can therefore have less
 all-platform diagnostic coverage because companions that had not started are cancelled. Recovery
