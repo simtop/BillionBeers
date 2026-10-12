@@ -16,9 +16,37 @@ class ArchitecturePolicyTest {
   fun `new feature paths use the regular feature role without a package list`() {
     assertEquals("regular-feature", policy.roleForPath(":feature:alpha"))
     assertEquals(
+      "shared-feature",
+      policy.role(":shared:alpha", setOf("billionbeers.kmp.feature")),
+    )
+    assertEquals(
       "dynamic-feature",
       policy.role(":feature:detail", setOf("com.android.dynamic-feature")),
     )
+  }
+
+  @Test
+  fun `feature modules require exact same-name shared pairs`() {
+    assertEquals(
+      listOf(
+        ":feature:search has no matching :shared:search module",
+        ":shared:detail has no matching :feature:detail module",
+      ),
+      ArchitecturePolicy.sharedFeaturePairViolations(
+        androidFeatureNames = setOf("catalog", "search"),
+        sharedFeatureNames = setOf("catalog", "detail"),
+      ),
+    )
+    assertTrue(
+      ArchitecturePolicy.sharedFeaturePairViolations(
+          androidFeatureNames = setOf("catalog"),
+          sharedFeatureNames = setOf("catalog"),
+        )
+        .isEmpty()
+    )
+    assertTrue(ArchitecturePolicy.isSameNameFeaturePair(":feature:search", ":shared:search"))
+    assertFalse(ArchitecturePolicy.isSameNameFeaturePair(":feature:search", ":shared:detail"))
+    assertFalse(ArchitecturePolicy.isSameNameFeaturePair(":feature:search", ":shared:search:api"))
   }
 
   @Test

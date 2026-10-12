@@ -78,7 +78,9 @@ abstract class VerifyArchitecturePolicyTask : DefaultTask() {
       .filter { it != source }
       .associateWith { path -> moduleRoles[path] ?: policy.roleForPath(path) }
     val forbidden = policy.forbiddenRoles(sourceRole)
-    resolvedRoles.filterValues { it in forbidden }.forEach { (path, role) ->
+    resolvedRoles.filter { (path, role) ->
+      role in forbidden && !ArchitecturePolicy.isSameNameFeaturePair(source, path)
+    }.forEach { (path, role) ->
       violations +=
         "$source resolves forbidden $role module $path on its compile classpath; " +
           "the dependency is visible transitively and must be removed or moved behind an allowed API"

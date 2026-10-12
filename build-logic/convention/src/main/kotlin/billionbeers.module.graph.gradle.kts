@@ -73,6 +73,11 @@ val verifyArchitectureGraph =
     group = "verification"
     description = "Verifies the resolved project dependency graph against the checked-in architecture policy."
   }
+val verifySharedFeaturePairs =
+  tasks.register<VerifySharedFeaturePairsTask>("verifySharedFeaturePairs") {
+    group = "verification"
+    description = "Verifies every Android feature has a same-name shared feature module."
+  }
 
 val generateModuleGraph =
   tasks.register<GenerateModuleGraphTask>("generateModuleGraph") {
@@ -123,6 +128,25 @@ gradle.projectsEvaluated {
     val moduleRoleRecords = modules.map { project ->
       listOf(project.path, architecturePolicy.role(project)).joinToString(separator)
     }
+    val androidFeatures =
+      modules.filter { project ->
+        project.plugins.hasPlugin("billionbeers.android.feature") ||
+          project.plugins.hasPlugin("com.android.dynamic-feature")
+      }
+    val sharedFeatures =
+      modules.filter { project -> project.plugins.hasPlugin("billionbeers.kmp.feature") }
+    fun featureName(project: Project, parentPath: String): String {
+      val name = project.path.removePrefix("$parentPath:")
+      check(name != project.path && ':' !in name) {
+        "Feature modules must be direct children of $parentPath: ${project.path}"
+      }
+      return name
+    }
+    verifySharedFeaturePairs.configure {
+      androidFeatureNames.set(androidFeatures.map { featureName(it, ":feature") }.sorted())
+      sharedFeatureNames.set(sharedFeatures.map { featureName(it, ":shared") }.sorted())
+    }
+    verifyArchitectureGraph.configure { dependsOn(verifySharedFeaturePairs) }
     modules.forEach { project ->
       val compileConfigurations = architectureCompileConfigurations(project)
       check(compileConfigurations.isNotEmpty() || !isKmpProject(project)) {
