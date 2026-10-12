@@ -56,7 +56,7 @@ class SaveFilterPresetUseCaseTest {
 
     assertTrue(repository.saveFilterPresetRequests.isEmpty())
     assertTrue(clock.calls.isEmpty())
-    assertEquals(0, idProvider.calls)
+    assertEquals(0, idProvider.calls.size)
   }
 
   @Test
@@ -86,7 +86,7 @@ class SaveFilterPresetUseCaseTest {
     val presets = repository.observeSavedFilterPresets().first()
     assertEquals(2, presets.size)
     assertEquals(setOf(firstQuery, secondQuery), presets.map { it.query }.toSet())
-    assertEquals(2, idProvider.calls)
+    assertEquals(2, idProvider.calls.size)
   }
 
   @Test
@@ -157,12 +157,11 @@ class SaveFilterPresetUseCaseTest {
   }
 
   private class RecordingIdProvider : SavedFilterPresetIdProvider {
-    var calls = 0
-      private set
+    val calls = mutableListOf<Unit>()
 
     override fun newId(): String {
-      calls += 1
-      return "id-$calls"
+      calls += Unit
+      return "id-${calls.size}"
     }
   }
 }
