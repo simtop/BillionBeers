@@ -7,11 +7,11 @@ android { namespace = "com.simtop.feature.savedfilters" }
 
 dependencies {
   implementation(project(":beerdomain:api"))
-  implementation(project(":beerdomain:impl"))
   implementation(project(":navigation"))
   implementation(project(":presentation_utils"))
   implementation(project(":core"))
   implementation(project(":shared:presentation"))
+  implementation(project(":shared:savedfilters"))
   implementation(project(":core:designsystem"))
   implementation(libs.kotlinx.serialization.json)
   implementation(libs.androidx.navigation3.runtime)

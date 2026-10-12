@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.simtop.beerdomain.domain.errors.MutateFilterPresetError
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.beerdomain.domain.repositories.BeersRepository
-import com.simtop.beerdomain.domain.usecases.RenameFilterPresetUseCase
+import com.simtop.billionbeers.shared.savedfilters.SavedFiltersModel
 import com.simtop.core.core.Either
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
@@ -28,21 +28,19 @@ private const val PRESETS_STOP_TIMEOUT_MILLIS = 5_000L
 @ContributesIntoMap(AppScope::class, binding = binding<ViewModel>())
 @ViewModelKey(SavedFiltersViewModel::class)
 @Inject
-class SavedFiltersViewModel(private val repository: BeersRepository) : ViewModel() {
-  private val renameFilterPreset = RenameFilterPresetUseCase(repository)
+class SavedFiltersViewModel(repository: BeersRepository) : ViewModel() {
+  private val savedFilters = SavedFiltersModel(repository)
   private val mutationErrors = Channel<Unit>(Channel.BUFFERED)
   val mutationFailed = mutationErrors.receiveAsFlow()
   val presets: StateFlow<List<SavedFilterPreset>> =
-    repository
-      .observeSavedFilterPresets()
-      .stateIn(
-        viewModelScope,
-        SharingStarted.WhileSubscribed(PRESETS_STOP_TIMEOUT_MILLIS),
-        emptyList(),
-      )
+    savedFilters.presets.stateIn(
+      viewModelScope,
+      SharingStarted.WhileSubscribed(PRESETS_STOP_TIMEOUT_MILLIS),
+      emptyList(),
+    )
 
   suspend fun rename(preset: SavedFilterPreset, name: String): Boolean =
-    when (val result = renameFilterPreset(preset.id, name)) {
+    when (val result = savedFilters.rename(preset.id, name)) {
       is Either.Right -> true
       is Either.Left -> {
         if (result.value is MutateFilterPresetError.Unknown) mutationErrors.trySend(Unit)
@@ -51,7 +49,7 @@ class SavedFiltersViewModel(private val repository: BeersRepository) : ViewModel
     }
 
   suspend fun delete(preset: SavedFilterPreset): Boolean {
-    val succeeded = repository.deleteFilterPreset(preset.id) is Either.Right
+    val succeeded = savedFilters.delete(preset.id) is Either.Right
     if (!succeeded) mutationErrors.trySend(Unit)
     return succeeded
   }
