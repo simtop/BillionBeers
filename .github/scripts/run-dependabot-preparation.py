@@ -104,6 +104,7 @@ class Supervisor:
         content = "\n".join(line.rstrip() for line in lines if line).strip()
         if content:
             self.write_metrics(content)
+            print(content, flush=True)
 
     def sampler_loop(self) -> None:
         while not self.stop_sampler.wait(SAMPLE_INTERVAL_SECONDS):

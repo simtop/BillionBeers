@@ -80,10 +80,10 @@ reverted code. The two-dot form reports the revert as a change and runs everythi
 
 ### 5. Everything uncertain fails open
 
-Non-PR events, a PR's first run, an unreachable `before` (the normal outcome of a force-push, since
-the orphaned commit is never fetched), no or unreadable previous run, a non-numeric run id, a
-renamed job, and a previous run still in flight all run the full suite. Skipping a real test is the
-costly mistake; an extra run is minutes.
+Non-PR events, except the verified post-merge master case in §7, a PR's first run, an unreachable
+`before` (the normal outcome of a force-push, since the orphaned commit is never fetched), no or
+unreadable previous run, a non-numeric run id, a renamed job, and a previous run still in flight all
+run the full suite. Skipping a real test is the costly mistake; an extra run is minutes.
 
 ### 6. Merge-group candidates always run complete validation
 
@@ -91,6 +91,31 @@ The required workflow subscribes to GitHub's `merge_group: checks_requested` eve
 SHA represents the latest base plus the queued entries, not the already-tested pull-request head, so
 it goes through the existing non-PR fail-open branch and runs all five test lanes. It never adopts
 a PR-head verdict. The same stable `CI Gate` is then reported for branch protection.
+
+### 7. Post-merge runs may reuse a verified PR result only for the identical tree
+
+Master pushes and manual runs on `master` may skip the five heavy lanes only when the current
+commit is the exact merge commit of one merged, same-repository PR and a bounded proof artifact
+from that PR's newest CI run establishes the same tested tree. The proof records the actual
+checkout commit, tree, workflow blob, repository and PR identities, run and attempt, and event.
+The selector independently resolves the merged PR, source run, required job results, artifact,
+checkout commit parents, tree, and workflow blobs through the GitHub API. The source workflow
+blob must also match the workflow at the PR base, so a PR cannot change its own proof producer and
+then authorize reuse after merge. The tested base must be the merged commit's first parent, and
+the source run must have succeeded on attempt 1 with every heavy lane and required static check
+executed successfully. Missing, stale, skipped, ambiguous, expired, or inconsistent evidence
+runs the full suite. Pull requests, merge groups, and all other events keep the existing
+selection behavior.
+
+The proof is produced inline in the final `CI Gate`, after all required jobs succeed, then uploaded
+as a 30-day artifact. The `changes` job only consumes it for later master validation. The first
+merge that changes the CI workflow cannot reuse its PR result because the PR-base workflow differs.
+The merged, reviewed workflow version can then issue proofs for later eligible runs.
+
+For an operator-requested full master validation, manually dispatch CI with
+`gh workflow run ci.yml --ref master -f force_full=true`. This bypasses the verified-result lookup
+and runs all five heavy lanes; the default remains reuse when exact proof is available. PR and
+merge-group selection is unaffected.
 
 ## Consequences
 

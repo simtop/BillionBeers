@@ -104,6 +104,8 @@ with tempfile.TemporaryDirectory() as temporary:
     (repository / "scripts").mkdir()
     before_head = common_head
     for verifier, owner in (
+        ("scripts/ios-framework-build.sh", ("native",)),
+        (".github/scripts/test_ios_framework_build.py", ("native",)),
         ("scripts/verify-release-smoke-artifacts.sh", ("instrumented",)),
         ("scripts/verify_web_release_artifacts.py", ("web",)),
         ("scripts/test_verify_web_release_artifacts.py", ("web",)),
@@ -138,8 +140,8 @@ spotless_step = workflow.split("      - name: Run Spotless Check", 1)[1].split("
 assert "set -o pipefail" in spotless_step
 assert "./gradlew spotlessCheck 2>&1 | tee" in spotless_step
 for marker in (
-    "native: ${{ steps.filter.outputs.native }}",
-    "web: ${{ steps.filter.outputs.web }}",
+    "native: ${{ steps.reuse.outputs.eligible == 'true' && 'false' || steps.filter.outputs.native }}",
+    "web: ${{ steps.reuse.outputs.eligible == 'true' && 'false' || steps.filter.outputs.web }}",
     "name: Native Tests (Apple)",
     "name: Web Tests (Wasm/static)",
     "needs: [format-check, changes]",

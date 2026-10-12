@@ -64,11 +64,13 @@ def find_reuse(api, pr: dict, current_run_id: int, source_sha: str, wait_seconds
     while True:
         selection = RECONCILE.preparation_current(api, pr, exclude_run_id=current_run_id)
         result = selection.get("result") if selection else None
-        if selection and selection.get("authoritative_valid") and result and result.get("output_sha") == source_sha:
+        if (selection and selection.get("authoritative_valid") and result
+                and result.get("output_sha") == source_sha):
             if result.get("kind") == "full":
                 return selection
-            if result.get("kind") == "reuse" and result.get("origin_result"):
-                # Flatten the reference so every reuse points directly at retained full lane evidence.
+            if (result.get("kind") == "reuse" and result.get("origin_result")
+                    and result["origin_result"].get("graph_mode") == result.get("graph_mode")):
+                # Flatten reuse so every result points directly at retained full lane evidence.
                 selection = dict(selection)
                 selection["reuse_origin"] = result["origin_run"]
                 selection["reuse_result"] = result["origin_result"]
@@ -106,11 +108,14 @@ def find_reuse_main(args) -> int:
     return 0
 
 
-def graph_identity(evidence: Path, source_sha: str, run_id: int, attempt: int, branch: str) -> tuple[str, dict]:
+def graph_identity(
+    evidence: Path, source_sha: str, run_id: int, attempt: int, branch: str
+) -> tuple[str, str, dict]:
     ledgers = MERGE.validate_evidence(evidence, source_sha, str(run_id), str(attempt), branch, "write")
     del ledgers
     lane_results = {}
     graph_digest = None
+    graph_mode = None
     for lane in sorted(LANES):
         folder = evidence / lane
         manifest_path = folder / "manifest.json"
@@ -123,8 +128,12 @@ def graph_identity(evidence: Path, source_sha: str, run_id: int, attempt: int, b
         )
         if normalized != review:
             raise ValueError(f"{lane} graph-review digest or contents do not validate")
-        if manifest.get("mode") != "write" or manifest.get("graph_mode") != "reference":
-            raise ValueError(f"{lane} manifest is not a write/reference lane")
+        if manifest.get("mode") != "write" or manifest.get("graph_mode") not in {"reference", "candidate"}:
+            raise ValueError(f"{lane} manifest is not a supported write graph lane")
+        if graph_mode is None:
+            graph_mode = manifest["graph_mode"]
+        elif graph_mode != manifest["graph_mode"]:
+            raise ValueError("platform lanes disagree on the verification graph mode")
         if manifest.get("graph_digest") != review["digest"]:
             raise ValueError(f"{lane} graph identity disagrees with its review file")
         if graph_digest is None:
@@ -137,14 +146,16 @@ def graph_identity(evidence: Path, source_sha: str, run_id: int, attempt: int, b
             "run_attempt": attempt,
             "head_sha": source_sha,
             "mode": "write",
-            "graph_mode": "reference",
+            "graph_mode": graph_mode,
             "graph_digest": graph_digest,
             "conclusion": "success",
             "manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest(),
         }
     if graph_digest is None:
         raise ValueError("no platform graph identity was recorded")
-    return graph_digest, lane_results
+    if graph_mode is None:
+        raise ValueError("no verification graph mode was recorded")
+    return graph_mode, graph_digest, lane_results
 
 
 def parent_shas(output_sha: str) -> list[str]:
@@ -192,9 +203,9 @@ def build_result(api, args) -> tuple[dict, dict]:
                          "graph_digest": origin_result["graph_digest"],
                          "origin_run_id": origin["id"], "origin_run_attempt": origin["run_attempt"]})
     else:
-        graph_digest, lanes = graph_identity(args.evidence, args.source_sha, run["id"],
-                                             run["run_attempt"], args.branch)
-        identity.update({"kind": "full", "graph_mode": "reference", "graph_digest": graph_digest,
+        graph_mode, graph_digest, lanes = graph_identity(args.evidence, args.source_sha, run["id"],
+                                                         run["run_attempt"], args.branch)
+        identity.update({"kind": "full", "graph_mode": graph_mode, "graph_digest": graph_digest,
                          "lanes": lanes})
     return identity, pr
 

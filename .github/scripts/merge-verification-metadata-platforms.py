@@ -46,7 +46,7 @@ def validate_evidence(
         required_fields = {
             "lane": str, "head_sha": str, "run_id": str, "run_attempt": str,
             "source_ref": str, "conclusion": str, "mode": str, "skipped": bool,
-            "prepared_sha256": str, "formatting_files_sha256": str,
+            "graph_mode": str, "prepared_sha256": str, "formatting_files_sha256": str,
         }
         if not isinstance(manifest, dict) or any(
             key not in manifest or not isinstance(manifest[key], value_type)
@@ -58,8 +58,10 @@ def validate_evidence(
                     "conclusion": "success", "mode": mode}
         if any(str(manifest.get(key, "")) != value for key, value in expected.items()):
             raise ValueError(f"{lane} evidence has a stale or wrong run/head/source identity")
+        if manifest["graph_mode"] not in {"reference", "candidate"}:
+            raise ValueError(f"{lane} evidence has an unknown graph mode")
         identity = {key: str(manifest.get(key, "")) for key in
-                    ("mode", "prepared_sha256", "formatting_files_sha256", "skipped")}
+                    ("mode", "graph_mode", "prepared_sha256", "formatting_files_sha256", "skipped")}
         prepared = lane_dirs[lane] / "prepared.patch"
         if not prepared.is_file():
             raise ValueError(f"{lane} prepared inputs are missing")

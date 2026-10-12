@@ -498,7 +498,12 @@ class DependabotPreparationTest(unittest.TestCase):
         self.assertIn("max-parallel: 1", flow)
         self.assertIn("name: Regenerate verification-metadata.xml (${{ matrix.lane }})", flow)
         self.assertIn("GRADLE_RUNNER: ${{ matrix.gradle_runner || './gradlew' }}", flow)
-        self.assertEqual(2, flow.count("./gradlew --max-workers=2"))
+        self.assertEqual(3, flow.count("./gradlew --max-workers=2"))
+        managed_lane = flow.split("- lane: managed", 1)[1].split("- lane: apple", 1)[0]
+        property_name = "android.experimental.testOptions.managedDevices.maxConcurrentDevices"
+        self.assertIn(f"-P{property_name}=1", managed_lane)
+        self.assertNotIn(property_name, (root / "gradle.properties").read_text())
+        self.assertNotIn(property_name, (root / ".github/workflows/ci.yml").read_text())
         self.assertEqual(2, flow.count("-Xmx4g -XX:MaxMetaspaceSize=768m"))
         self.assertIn("/tmp/unit-kotlin-gc-*.log", flow)
         self.assertIn("dependency-preparation-resources-", flow)
@@ -532,8 +537,14 @@ class DependabotPreparationTest(unittest.TestCase):
         self.assertLessEqual(timeout, 360)
         self.assertEqual(360, timeout)
         self.assertIn("-${{ steps.mode.outputs.graph }}-${{ matrix.lane }}", flow)
-        self.assertIn("${{ inputs.mode == 'candidate' && 'candidate' || 'reference' }}-linux", flow)
+        self.assertIn("${{ inputs.mode == 'reference' && 'reference' || 'candidate' }}-linux", flow)
+        self.assertIn("REQUESTED_MODE\" = reference", flow)
+        self.assertIn("else echo 'graph=candidate'", flow)
         self.assertIn("steps.mode.outputs.value == 'write'", flow)
+        self.assertIn("GRAPH_MODE: ${{ steps.mode.outputs.graph }}", flow)
+        self.assertIn('if [ "$GRAPH_MODE" = candidate ]; then', flow)
+        self.assertIn("assembled six supported debug AndroidTest APKs", flow)
+        self.assertIn("ran ciGroupDebugAndroidTest on managed devices", flow)
         comparison = (root / ".github/workflows/verification-metadata-compare.yml").read_text()
         self.assertIn("needs: reference", comparison)
         self.assertIn("mode: candidate", comparison)
@@ -546,6 +557,89 @@ class DependabotPreparationTest(unittest.TestCase):
         self.assertIn(":web-app:wasmJsBrowserDistribution", makefile)
         self.assertIn("ios-test", makefile)
         self.assertIn("ciGroupDebugAndroidTest", makefile)
+        self.assertIn("verification-metadata: verification-metadata-candidate", makefile)
+        self.assertEqual(4, makefile.count("$(VERIFICATION_METADATA_NATIVE_TASKS)"))
+
+    def test_candidate_apk_inventory_covers_every_managed_device_opt_in_once(self):
+        root = Path(__file__).resolve().parents[2]
+        makefile = (root / "Makefile").read_text()
+        settings = (root / "settings.gradle.kts").read_text()
+        exclusions = re.search(r"(?ms)^val excludedDirNames\s*=\s*setOf\((.*?)^\s*\)", settings)
+        self.assertIsNotNone(exclusions, "Could not read settings.gradle.kts module discovery exclusions")
+        excluded = set(re.findall(r'"([^"]+)"', exclusions.group(1))) | {"bin"}
+        opt_in_ids = (
+            'id("billionbeers.android.managed.device")',
+            'id("billionbeers.android.feature.uitest")',
+        )
+        modules = {}
+        managed_device_convention = (
+            root / "build-logic/convention/src/main/kotlin/billionbeers.android.managed.device.gradle.kts"
+        ).read_text()
+        managed_device_plugins = set(re.findall(
+            r'pluginManager\.withPlugin\("([^"]+)"\)', managed_device_convention
+        ))
+        kmp_library_convention = (
+            root / "build-logic/convention/src/main/kotlin/billionbeers.kmp.library.gradle.kts"
+        ).read_text()
+        kmp_android_plugin = re.search(r'id\("([^"]+)"\)', kmp_library_convention).group(1)
+        for current, directories, filenames in os.walk(root):
+            directories[:] = [
+                name for name in directories if name not in excluded and not name.startswith(".")
+            ]
+            build_scripts = [name for name in filenames if name in {"build.gradle", "build.gradle.kts"}]
+            for filename in build_scripts:
+                script = Path(current) / filename
+                relative = script.relative_to(root)
+                if len(relative.parts) < 2:
+                    continue
+                source = re.sub(r"(?m)^\s*//.*$", "", script.read_text())
+                if any(plugin in source for plugin in opt_in_ids):
+                    module = ":" + ":".join(relative.parent.parts)
+                    standalone_test_app = 'id("com.android.test")' in source
+                    # The managed-device convention currently configures AGP application/library/
+                    # dynamic-feature/test plugins. The KMP Android plugin is not among those
+                    # callbacks, so KMP androidTest sources are not an active managed-device lane.
+                    if ('id("billionbeers.kmp.library")' in source
+                            and kmp_android_plugin not in managed_device_plugins):
+                        continue
+                    modules[module] = standalone_test_app
+
+        self.assertTrue(modules, "No real managed-device modules were discovered")
+
+        def tasks(variable):
+            match = re.search(
+                rf"(?ms)^{re.escape(variable)} := \\\n(.*?)(?=^[A-Z0-9_]+ :=|^\.PHONY)", makefile
+            )
+            self.assertIsNotNone(match, f"Missing explicit task inventory {variable}")
+            return re.sub(r"\\\n", " ", match.group(1)).split()
+
+        debug_tasks = tasks("VERIFICATION_METADATA_CANDIDATE_DEBUG_DEVICE_TASKS")
+        smoke_tasks = tasks("VERIFICATION_METADATA_CANDIDATE_SMOKE_DEVICE_TASKS")
+        failures = []
+        for module, standalone_test_app in sorted(modules.items()):
+            expected = (
+                f"{module}:assembleReleaseSmoke" if standalone_test_app
+                else f"{module}:assembleDebugAndroidTest"
+            )
+            matching = [task for task in debug_tasks if task.startswith(f"{module}:") and task in {
+                f"{module}:assembleDebugAndroidTest",
+                f"{module}:assembleReleaseSmoke",
+            }]
+            if matching != [expected]:
+                failures.append(f"{module}: expected exactly {expected}, found {matching}")
+
+        required_release_smoke = {
+            ":app:assembleReleaseSmoke",
+            ":app:assembleReleaseSmokeAndroidTest",
+        }
+        wrong_release_smoke_counts = {
+            task: smoke_tasks.count(task) for task in sorted(required_release_smoke) if smoke_tasks.count(task) != 1
+        }
+        if wrong_release_smoke_counts:
+            failures.append(f"app releaseSmoke APK variants must each occur once: {wrong_release_smoke_counts}")
+
+        self.assertEqual([], failures, "Candidate metadata graph must explicitly cover managed-device modules:\n"
+                         + "\n".join(failures))
 
     def test_preparation_workflows_have_independent_ref_scoped_concurrency(self):
         root = Path(__file__).resolve().parents[2]

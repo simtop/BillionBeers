@@ -116,7 +116,7 @@
       );
       runOnlyForDeploymentPostprocessing = 0;
       shellPath = /bin/sh;
-      shellScript = "cd \"$SRCROOT/..\"\n./gradlew :ios-shared:embedAndSignAppleFrameworkForXcode\n";
+      shellScript = "cd \"$SRCROOT/..\"\nscripts/ios-framework-build.sh\n";
       showEnvVarsInLog = 0;
     };
 /* End PBXShellScriptBuildPhase section */

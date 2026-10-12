@@ -93,6 +93,8 @@ classify_path() {
   local f="$1"
   if [ "$f" = "scripts/coverage-check.sh" ]; then
     a_unit=true # the unit lane executes it (make coverage-check)
+  elif [ "$f" = "scripts/ios-framework-build.sh" ] || [ "$f" = ".github/scripts/test_ios_framework_build.py" ]; then
+    a_native=true # the Apple lane builds the Xcode host through this Gradle bridge
   elif [ "$f" = "qa/project.config.json" ] || [[ "$f" == skills/agent-qa/scripts/*.py ]] || [ "$f" = "scripts/test_qa_integration.py" ]; then
     : # QA discovery contracts run in always-run format checks; no app test runner consumes them.
   elif [ "$f" = "scripts/verify-release-smoke-artifacts.sh" ]; then

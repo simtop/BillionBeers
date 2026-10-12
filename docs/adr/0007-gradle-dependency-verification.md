@@ -24,12 +24,15 @@ that are easy to get wrong.
    every Gradle invocation (local and CI) verifies sha256 checksums automatically from then on.
    No CI change is needed for enforcement — the file's existence is the switch.
 2. **Regenerate via `make verification-metadata`.** The target runs
-   `--write-verification-metadata sha256` **attached to the full root-build CI task graph**: build,
-   Android and pure-JVM unit tests, Konsist and resolved architecture checks, Paparazzi, lint,
-   dependency-guard, Jacoco, the GMD debug lane, and the standalone minified-app smoke test. A bare
-   `--write-verification-metadata` invocation only runs `help` and resolves almost nothing —
-   the ledger only covers configurations a build actually resolves, so the regen must execute
-   what CI executes. `--no-configuration-cache` because the flag is incompatible with it.
+   `--write-verification-metadata sha256` over the root-build dependency-resolution inventory used
+   by CI: build, Android and pure-JVM unit tests, Konsist and resolved architecture checks,
+   Paparazzi, lint, dependency-guard, Jacoco, explicit debug AndroidTest APK assemblies, and the
+   standalone minified-app smoke APK. Candidate mode resolves the managed-test APK and runner
+   dependencies without executing GMD tests; the reference target remains available to execute
+   the GMD lane for diagnostics. A bare `--write-verification-metadata` invocation only runs `help`
+   and resolves almost nothing — the ledger only covers configurations a build actually resolves,
+   so regeneration must cover the dependency surfaces CI uses. `--no-configuration-cache` because
+   the flag is incompatible with it.
 3. **A narrowly triggered regen workflow keeps Dependabot auto-merge alive**
    (`.github/workflows/regen-verification-metadata.yml`). On Dependabot PRs that change a Gradle
    dependency input, it regenerates the ledger and pushes the diff back to the branch; CI re-runs
@@ -108,8 +111,8 @@ A dedicated read-only `Dependency Graph Review` workflow runs one Linux dependen
 for an in-repository Dependabot PR. It publishes `graph-review.json` with the full before/after
 versioned baselines, added/removed coordinates, source head SHA and a digest covering all of them,
 plus a readable summary. It has no write credential, permits coordinate changes as review evidence,
-and is distinct from the reference/candidate assembly experiment. It does not replace the later
-four-lane write preparation.
+and is distinct from the non-writing reference/candidate writer comparison. It does not replace
+the later four-lane write preparation.
 
 `Approve Dependency Graph` is dispatched on the trusted default branch with the review run ID and
 attempt. Its approval input defaults to false. With explicit approval, trusted code validates the
@@ -143,15 +146,22 @@ and conclusion. Linux follows the CI test inventories in the Makefile, including
 metadata and Android-host tasks, plain JVM tests, Android assembly, Paparazzi, architecture checks,
 and coverage. Web runs every `KMP_BROWSER_TEST_MODULES` browser task and the production Wasm
 distribution task, which resolves the Binaryen distribution and Compose resources used by the
-browser build. The managed lane executes the debug GMD suite and release-smoke tests separately,
-matching CI's variant and test filters. Apple compiles device and simulator targets, links both
+browser build. Candidate write mode assembles the six supported debug AndroidTest APKs, the
+minified `:app` releaseSmoke APK and its AndroidTest APK, and the separate
+`:app-release-smoke:assembleReleaseSmoke` APK without booting managed devices. Reference mode
+remains available for diagnostics and runs `ciGroupDebugAndroidTest` plus the release-smoke
+managed-device test path. The
+normal CI workflow still executes the managed-device suite; only candidate ledger preparation
+replaces those executions with APK assembly. Apple compiles device and simulator targets, links both
 frameworks, builds the iOS simulator host, and runs `ios-test`, including
 `:ios-shared:iosSimulatorArm64Test`.
 
 `--dry-run`, task listing, and Gradle's `dependencies` report do not prove artifact closure. The
-writer executes the consuming tasks above so Kotlin/Native, Binaryen, Compose resource ZIPs,
-GMD/UTP tooling, and platform-specific artifacts are actually resolved. If CI adds or moves a
-consuming task, update the lane target and its regression contract in the same change.
+lane targets execute the consuming tasks above so Kotlin/Native, Binaryen, Compose resource ZIPs,
+and platform-specific artifacts are actually resolved. Reference mode also resolves GMD/UTP
+tooling; candidate mode resolves the APK and test-runner dependencies without device execution. If
+CI adds or moves a consuming task, update the lane target and its regression contract in the same
+change.
 
 The merger requires exactly one successful evidence record per lane, bound to the source ref,
 head SHA, workflow run and attempt. It compares the actual re-baseline/format patch across lanes,
@@ -182,16 +192,57 @@ path: a `build-logic/gradle/verification-metadata.xml` ledger, a documented
 and a CI check that uses that ledger. Merely invoking the test from the root writer, or asserting
 that the root ledger exists, would not provide that protection.
 
-### Resolution-only writer is an experiment, not an assumption
+### Candidate graph promotion and isolated closure evidence
 
-`verification-metadata-reference` remains the Makefile reference graph. The hosted production
-writer uses the four platform lanes above; its managed reference lane runs actual GMD and
-release-smoke execution. `verification-metadata-candidate` replaces those managed executions with
-explicit assembly of the six opted-in debug test APKs, the minified `releaseSmoke` app, and its
-standalone test APK. It intentionally names each supported module rather than calling a broad root
-`assembleDebugAndroidTest`, which would pull unsupported benchmark or container variants into the
-graph. Candidate mode changes only managed-device execution; it does not imply approval of a new
-dependency graph.
+The hosted `write` mode keeps its immutable run title and authorization contract, but resolves the
+candidate graph. The Makefile `verification-metadata` alias follows
+`verification-metadata-candidate`; `verification-metadata-reference` remains available for
+diagnostics and comparison. Candidate mode replaces managed-device execution with explicit
+assembly of the six supported debug AndroidTest APKs, the minified `:app` releaseSmoke APK and its
+AndroidTest APK, plus the separate `:app-release-smoke:assembleReleaseSmoke` APK. It names each
+supported module rather than calling a broad root `assembleDebugAndroidTest`, which would pull
+unsupported benchmark or container variants into the graph. On macOS, both local targets retain
+the same explicit native compile, framework-link and simulator-test tasks; the hosted Apple lane
+also builds the iOS simulator host.
+
+The Xcode host build contains a nested Gradle invocation for framework embedding. In the failed
+[reference metadata-preparation run](https://github.com/simtop/BillionBeers/actions/runs/38287446142),
+the Apple compile and framework-link tasks completed, then Xcode's project phase invoked
+`./gradlew` directly without Make's verification-writing arguments. With an empty artifact ledger,
+that nested call failed because it could not verify
+`library-1.12.1.kotlin_resources.zip` for `components-resources-iosArm64:1.12.1`. The Xcode phase
+now calls `scripts/ios-framework-build.sh`: its default remains strict, and only the Apple
+metadata-preparation lane opts into fixed writer arguments through
+`IOS_HOST_WRITE_VERIFICATION_METADATA=1`. The lane's later checks still enforce the original
+verification policy and accepted checksums. This repairs the missing write path; closure is
+established separately by the isolated comparisons below.
+
+The result artifact records both the writer mode (`write`) and graph mode (`candidate`). All four
+platform lanes must report one matching graph mode and digest. Reuse preserves the originating graph
+mode and accepts only full write evidence with the same mode and digest, including valid legacy
+`reference` results for the exact current head. Read-only reference/candidate comparison runs remain
+non-authoritative and never push.
+
+Comparisons against the populated verification ledger cannot establish closure because existing
+artifact entries can hide omitted resolution paths. Two isolated hosted comparisons started with
+empty artifact components while preserving the verification policy. On each immutable source
+revision, each reference and candidate union contained exactly 3,456 artifacts, with equal
+verification policy and accepted checksum sets. An independent audit validated source SHA/ref,
+run, attempt, mode, non-skipped manifests and graph-review digests; it reconstructed each union
+from the validated lane ledgers, matched it to the uploaded union, and confirmed both reference/candidate
+comparisons were equivalent:
+
+| Isolated source revision | Hosted comparison run | Reference → candidate managed consuming step |
+| --- | --- | --- |
+| [Paparazzi `d574655e`](https://github.com/simtop/BillionBeers/commit/d574655e6e8b09a47c191edf0e0248d9b87a19f6) | [Run 38293329950, attempt 1](https://github.com/simtop/BillionBeers/actions/runs/38293329950) | 727 s → 414 s |
+| [Cytoscape `e7c44e07`](https://github.com/simtop/BillionBeers/commit/e7c44e07422070015831ebec90f7ee9b101b2eef) | [Run 38293339245, attempt 1](https://github.com/simtop/BillionBeers/actions/runs/38293339245) | 934 s → 374 s |
+
+These comparisons establish equivalence for these two revisions, not closure for every future
+dependency change. The measured times cover only the managed consuming step and do not establish a
+total workflow speedup. Parallel scheduling used for the isolated proof runs was experimental;
+production write preparation continues to run its four cold platform lanes serially. The candidate
+graph is the configured production writer, while dependency-graph approvals, strict verification,
+and ordinary CI remain required.
 
 Manual dispatch accepts `reference` and `candidate` modes. A non-pushing comparison workflow runs
 both through the same reusable writer on separate cold platform lanes, with Gradle caches disabled,
@@ -207,8 +258,9 @@ python3 .github/scripts/check-verification-metadata-update.py --require-equivale
 ```
 
 The comparison canonicalizes the verification policy and compares every component, artifact, and
-accepted checksum, including Gradle's nested `<also-trust>` alternatives. Assembly remains an
-experiment; it is separate from reference graph approval.
+accepted checksum, including Gradle's nested `<also-trust>` alternatives. This non-writing closure
+comparison is separate from graph approval; candidate APK assembly is part of the configured writer
+graph, with bounded isolated equivalence results recorded above.
 
 ### Loop termination and serialization
 

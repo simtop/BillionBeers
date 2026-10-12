@@ -7,7 +7,13 @@ on:
     branches: [ main, master ]
   merge_group:
     types: [checks_requested]
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      force_full:
+        description: Run all five test lanes even if a verified merged PR result exists.
+        type: boolean
+        required: false
+        default: false
 
 # Jobs declare additional read permissions where needed.
 permissions:
@@ -15,8 +21,8 @@ permissions:
 
 # Cancel superseded runs on the same ref. Scoped to PRs only: a new push to a PR makes the
 # in-flight run obsolete, so killing it saves a full emulator boot + 29-module test pass. Master
-# runs are left alone (cancel-in-progress false) so every merged commit is still validated end to
-# end - post-merge CI is the last line before a broken master.
+# runs are left alone (cancel-in-progress false) so every merged commit retains an independent
+# validation run; exact verified PR results may reduce that run's five heavy lanes.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -141,20 +147,41 @@ jobs:
     permissions:
       contents: read
       actions: read # reads the previous head's job conclusions for verdict adoption
+      pull-requests: read # verifies a merged same-repository PR before reusing its tested tree
     outputs:
-      unit: ${{ steps.filter.outputs.unit }}
-      screenshot: ${{ steps.filter.outputs.screenshot }}
-      instrumented: ${{ steps.filter.outputs.instrumented }}
-      native: ${{ steps.filter.outputs.native }}
-      web: ${{ steps.filter.outputs.web }}
+      unit: ${{ steps.reuse.outputs.eligible == 'true' && 'false' || steps.filter.outputs.unit }}
+      screenshot: ${{ steps.reuse.outputs.eligible == 'true' && 'false' || steps.filter.outputs.screenshot }}
+      instrumented: ${{ steps.reuse.outputs.eligible == 'true' && 'false' || steps.filter.outputs.instrumented }}
+      native: ${{ steps.reuse.outputs.eligible == 'true' && 'false' || steps.filter.outputs.native }}
+      web: ${{ steps.reuse.outputs.eligible == 'true' && 'false' || steps.filter.outputs.web }}
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0 # need the merge base and the previous head for the diffs
 
+      - name: Check for a verified post-merge test result
+        id: reuse
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+          FORCE_FULL: ${{ inputs.force_full }}
+        run: python3 -I .github/scripts/select-master-test-reuse.py
+
+      - name: Summarize reused test result
+        if: steps.reuse.outputs.eligible == 'true'
+        env:
+          SOURCE_RUN_ID: ${{ steps.reuse.outputs.source_run_id }}
+          SOURCE_PR: ${{ steps.reuse.outputs.source_pr }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          echo "### Reused verified PR test result" >> "$GITHUB_STEP_SUMMARY"
+          echo "The merged tree matches the successful, full-suite [PR #$SOURCE_PR run $SOURCE_RUN_ID](https://github.com/$REPOSITORY/actions/runs/$SOURCE_RUN_ID)." >> "$GITHUB_STEP_SUMMARY"
+
       - name: Classify changed paths
         id: filter
+        if: steps.reuse.outputs.eligible != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           EVENT_NAME: ${{ github.event_name }}
@@ -918,8 +945,8 @@ jobs:
           echo '${{ toJSON(needs) }}'
           exit 1
 
-      - name: Require successful Dependabot preparation on this head
-        if: github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]'
+      - name: Checkout tested source for the verified result proof
+        if: github.event_name == 'pull_request'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
@@ -933,3 +960,65 @@ jobs:
         run: >-
           python3 .github/scripts/dependabot-preparation.py --require-prepared-head "$PR_NUMBER"
           --expected-head "$EXPECTED_HEAD" --wait-seconds 21000
+
+      # Inline proof production so its implementation is bound by the workflow blob recorded
+      # below. The master selector requires that blob to match current master before trusting it.
+      - name: Record verified test result
+        id: record-result
+        continue-on-error: true
+        if: >-
+          github.event_name == 'pull_request' &&
+          needs.format-check.result == 'success' && needs.changes.result == 'success' &&
+          needs.secret-scan.result == 'success' && needs.lint.result == 'success' &&
+          needs.android-lint.result == 'success' && needs.dependency-guard.result == 'success' &&
+          needs.unit-tests.result == 'success' && needs.web-tests.result == 'success' &&
+          needs.screenshot-tests.result == 'success' && needs.instrumented-tests.result == 'success' &&
+          needs.native-tests.result == 'success'
+        env:
+          REPOSITORY: ${{ github.repository }}
+          REPOSITORY_ID: ${{ github.repository_id }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          python3 -I - <<'PY'
+          import json
+          import os
+          import subprocess
+
+          def git(*args):
+              return subprocess.check_output(["git", *args], text=True).strip()
+
+          result = {
+              "schema": 1,
+              "repository": os.environ["REPOSITORY"],
+              "repository_id": int(os.environ["REPOSITORY_ID"]),
+              "pr_number": int(os.environ["PR_NUMBER"]),
+              "pr_head": os.environ["PR_HEAD"],
+              "base_sha": os.environ["PR_BASE"],
+              "run_id": int(os.environ["RUN_ID"]),
+              "run_attempt": int(os.environ["RUN_ATTEMPT"]),
+              "event": os.environ["EVENT_NAME"],
+              "checkout_sha": git("rev-parse", "HEAD"),
+              "tree_sha": git("rev-parse", "HEAD^{tree}"),
+              "workflow": ".github/workflows/ci.yml",
+              "workflow_blob": git("rev-parse", "HEAD:.github/workflows/ci.yml"),
+          }
+          os.makedirs("build/verified-master-test-result", exist_ok=True)
+          with open("build/verified-master-test-result/verified-master-test-result.json", "w", encoding="utf-8") as output:
+              json.dump(result, output, sort_keys=True, separators=(",", ":"))
+          PY
+
+      - name: Upload verified test result
+        if: steps.record-result.outcome == 'success'
+        continue-on-error: true
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: verified-master-test-result-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/verified-master-test-result/verified-master-test-result.json
+          if-no-files-found: error
+          retention-days: 30
