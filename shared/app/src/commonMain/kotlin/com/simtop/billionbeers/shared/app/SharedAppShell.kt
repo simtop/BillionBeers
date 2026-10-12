@@ -50,7 +50,6 @@ import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
-import com.simtop.beerdomain.domain.usecases.RenameFilterPresetUseCase
 import com.simtop.beerdomain.domain.usecases.SaveFilterPresetUseCase
 import com.simtop.billionbeers.shared.beerbrowse.BrowseStrings
 import com.simtop.billionbeers.shared.beerbrowse.SharedBrowseBeersContent
@@ -177,7 +176,6 @@ fun SharedAppShell(
   DisposableEffect(navigation) { onDispose { navigation.disposeAll() } }
   val coroutineScope = rememberCoroutineScope()
   val saveFilterPreset = remember(repository) { SaveFilterPresetUseCase(repository) }
-  val renameFilterPreset = remember(repository) { RenameFilterPresetUseCase(repository) }
 
   LaunchedEffect(host.routeRequests, host.navigationRequests) {
     merge(
@@ -330,7 +328,7 @@ fun SharedAppShell(
                 strings = strings,
                 onApply = ::applyPreset,
                 onRename = { preset, name ->
-                  when (val result = renameFilterPreset(preset.id, name)) {
+                  when (val result = entry.rename(preset.id, name)) {
                     is Either.Right -> true
                     is Either.Left -> {
                       if (result.value is MutateFilterPresetError.Unknown) {
@@ -341,7 +339,7 @@ fun SharedAppShell(
                   }
                 },
                 onDelete = { preset ->
-                  val succeeded = repository.deleteFilterPreset(preset.id) is Either.Right
+                  val succeeded = entry.delete(preset.id) is Either.Right
                   if (!succeeded) message = strings.mutateFilterFailed
                   succeeded
                 },

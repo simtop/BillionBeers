@@ -23,6 +23,7 @@ kotlin {
       implementation(project(":shared:designsystem"))
       implementation(project(":shared:presentation"))
       implementation(project(":shared:favorites"))
+      implementation(project(":shared:savedfilters"))
       implementation(project(":shared:beerslist"))
       implementation(project(":shared:beersearch"))
       implementation(project(":shared:beerdetail"))
