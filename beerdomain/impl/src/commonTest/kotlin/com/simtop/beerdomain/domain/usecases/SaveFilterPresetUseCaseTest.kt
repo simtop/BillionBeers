@@ -19,24 +19,20 @@ class SaveFilterPresetUseCaseTest {
   fun `normalizes the name and retains the complete query`() = runTest {
     val repository = FakeBeersRepository()
     val clock = RecordingClock(42L)
-    var idInput: Pair<String, BeersQuery>? = null
+    val idProvider = RecordingIdProvider()
     val query = BeersQuery(search = "ipa", styleId = "style-1", breweryId = "brewery-1")
     val useCase =
       SaveFilterPresetUseCase(
         repository = repository,
         epochTimeProvider = clock,
-        idProvider = SavedFilterPresetIdProvider { name, receivedQuery ->
-          idInput = name to receivedQuery
-          "fixed-id"
-        },
+        idProvider = idProvider,
       )
 
     val result = useCase("  My IPA\n", query)
 
     assertEquals(Either.Right(Unit), result)
-    assertEquals("My IPA" to query, idInput)
     assertEquals(
-      SavedFilterPreset("fixed-id", "My IPA", query, 42L),
+      SavedFilterPreset("id-1", "My IPA", query, 42L),
       repository.observeSavedFilterPresets().first().single(),
     )
     assertEquals(1, clock.calls.size)
@@ -46,15 +42,12 @@ class SaveFilterPresetUseCaseTest {
   fun `invalid names return InvalidName without consulting dependencies`() = runTest {
     val repository = FakeBeersRepository()
     val clock = RecordingClock(42L)
-    var idCalls = 0
+    val idProvider = RecordingIdProvider()
     val useCase =
       SaveFilterPresetUseCase(
         repository = repository,
         epochTimeProvider = clock,
-        idProvider = SavedFilterPresetIdProvider { _, _ ->
-          idCalls++
-          "unused"
-        },
+        idProvider = idProvider,
       )
 
     listOf("", " \t\n", "x".repeat(SavedFilterPreset.MAX_NAME_LENGTH + 1)).forEach {
@@ -63,7 +56,7 @@ class SaveFilterPresetUseCaseTest {
 
     assertTrue(repository.saveFilterPresetRequests.isEmpty())
     assertTrue(clock.calls.isEmpty())
-    assertEquals(0, idCalls)
+    assertEquals(0, idProvider.calls.size)
   }
 
   @Test
@@ -78,9 +71,11 @@ class SaveFilterPresetUseCaseTest {
   }
 
   @Test
-  fun `default identity preserves current update and distinct-query behavior`() = runTest {
+  fun `exact name and query update while a different query creates a preset`() = runTest {
     val repository = FakeBeersRepository()
-    val useCase = SaveFilterPresetUseCase(repository, RecordingClock(1L))
+    val idProvider = RecordingIdProvider()
+    val useCase =
+      SaveFilterPresetUseCase(repository, RecordingClock(1L), idProvider)
     val firstQuery = BeersQuery(styleId = "style-1")
     val secondQuery = BeersQuery(breweryId = "brewery-1")
 
@@ -91,6 +86,39 @@ class SaveFilterPresetUseCaseTest {
     val presets = repository.observeSavedFilterPresets().first()
     assertEquals(2, presets.size)
     assertEquals(setOf(firstQuery, secondQuery), presets.map { it.query }.toSet())
+    assertEquals(2, idProvider.calls.size)
+  }
+
+  @Test
+  fun `hash-colliding names remain separate presets`() = runTest {
+    val repository = FakeBeersRepository()
+    val query = BeersQuery(search = "ipa")
+    val useCase = SaveFilterPresetUseCase(repository, RecordingClock(1L), RecordingIdProvider())
+
+    assertEquals("Aa".hashCode(), "BB".hashCode())
+    useCase("Aa", query)
+    useCase("BB", query)
+
+    val presets = repository.observeSavedFilterPresets().first()
+    assertEquals(setOf("Aa", "BB"), presets.map { it.name }.toSet())
+    assertEquals(2, presets.map { it.id }.toSet().size)
+  }
+
+  @Test
+  fun `saving the old tuple after rename does not overwrite renamed preset`() = runTest {
+    val repository = FakeBeersRepository()
+    val idProvider = RecordingIdProvider()
+    val query = BeersQuery(search = "ipa")
+    val save = SaveFilterPresetUseCase(repository, RecordingClock(1L), idProvider)
+
+    save("A", query)
+    val originalId = repository.observeSavedFilterPresets().first().single().id
+    RenameFilterPresetUseCase(repository, RecordingClock(2L))(originalId, "B")
+    save("A", query)
+
+    val presets = repository.observeSavedFilterPresets().first()
+    assertEquals(setOf("A", "B"), presets.map { it.name }.toSet())
+    assertEquals(2, presets.map { it.id }.toSet().size)
   }
 
   @Test
@@ -125,6 +153,15 @@ class SaveFilterPresetUseCaseTest {
     override fun epochMillis(): Long {
       calls += Unit
       return timestamp
+    }
+  }
+
+  private class RecordingIdProvider : SavedFilterPresetIdProvider {
+    val calls = mutableListOf<Unit>()
+
+    override fun newId(): String {
+      calls += Unit
+      return "id-${calls.size}"
     }
   }
 }

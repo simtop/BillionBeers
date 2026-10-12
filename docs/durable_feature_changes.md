@@ -7,11 +7,13 @@ The [support matrix](kmp_support_matrix.md) separates implementation from runtim
 
 ## Start with the behavior
 
-Saved filters persist a named `BeersQuery`, remain local-only, and have stable IDs. The domain
-model defines the ten-preset cap, nonblank names of 1–64 characters, and non-negative timestamps. Saving
-an existing ID remains possible at capacity. Storage rejects a new ID beyond the cap; the
-repository maps that failure to a typed result and propagates cancellation. Hosts retain drafts
-and rows when writes fail and provide feedback before allowing a retry.
+Saved filters persist a named `BeersQuery`, remain local-only, and have opaque IDs that remain
+stable across rename. Saving an exact normalized name/query pair updates that preset; a different
+pair creates a separate preset even when names have equal hash codes. The domain model defines the
+ten-preset cap, nonblank names of 1–64 characters, and non-negative timestamps. Saving an existing
+ID remains possible at capacity. Storage rejects a new ID beyond the cap; the repository maps that
+failure to a typed result and propagates cancellation. Hosts retain drafts and rows when writes fail
+and provide feedback before allowing a retry.
 
 Define the changed behavior before editing: field validity, identity, capacity, ordering,
 query reconstruction, and what the user sees after failure. Use the owners below to locate the
