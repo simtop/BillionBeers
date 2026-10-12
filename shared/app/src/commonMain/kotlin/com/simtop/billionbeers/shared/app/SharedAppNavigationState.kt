@@ -4,6 +4,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
@@ -53,166 +54,134 @@ internal sealed interface SharedAppEntry {
   fun close()
 }
 
-internal class ListEntry(
-  override val id: Long,
-  repository: BeersRepository,
-  pagerFactory: BeersPagerFactory,
+internal abstract class ManagedSharedAppEntry(
+  final override val id: Long,
+  final override val route: PortableRoute,
 ) : SharedAppEntry {
-  override val route = PortableRoute.BeersList
-  val viewModel = BeersListViewModel(repository, pagerFactory)
-  val listState = LazyListState()
   private var closed = false
-  override val isClosed: Boolean
+  final override val isClosed: Boolean
     get() = closed
 
-  override fun close() {
-    if (!closed) {
-      closed = true
-      viewModel.viewModelScope.cancel()
-    }
+  final override fun close() {
+    if (closed) return
+    closed = true
+    onClose()
   }
+
+  protected open fun onClose() {}
+}
+
+internal abstract class ViewModelSharedAppEntry<VM : ViewModel>(
+  id: Long,
+  route: PortableRoute,
+  val viewModel: VM,
+) : ManagedSharedAppEntry(id, route) {
+  override fun onClose() {
+    viewModel.viewModelScope.cancel()
+  }
+}
+
+internal class ListEntry(
+  id: Long,
+  repository: BeersRepository,
+  pagerFactory: BeersPagerFactory,
+) :
+  ViewModelSharedAppEntry<BeersListViewModel>(
+    id = id,
+    route = PortableRoute.BeersList,
+    viewModel = BeersListViewModel(repository, pagerFactory),
+  ) {
+  val listState = LazyListState()
 }
 
 internal class FavoritesEntry(
-  override val id: Long,
+  id: Long,
   repository: BeersRepository,
-) : SharedAppEntry {
-  override val route = PortableRoute.Favorites
-  val viewModel = FavoritesViewModel(repository)
+) :
+  ViewModelSharedAppEntry<FavoritesViewModel>(
+    id = id,
+    route = PortableRoute.Favorites,
+    viewModel = FavoritesViewModel(repository),
+  ) {
   val listState = LazyListState()
-  private var closed = false
-  override val isClosed: Boolean
-    get() = closed
-
-  override fun close() {
-    if (!closed) {
-      closed = true
-      viewModel.viewModelScope.cancel()
-    }
-  }
 }
 
 internal class SearchEntry(
-  override val id: Long,
+  id: Long,
   repository: BeersRepository,
   pagerFactory: BeersPagerFactory,
   coroutineDispatcher: CoroutineDispatcherProvider,
-) : SharedAppEntry {
-  override val route = PortableRoute.BeersSearch
-  val viewModel = BeersSearchViewModel(coroutineDispatcher, pagerFactory, repository)
+) :
+  ViewModelSharedAppEntry<BeersSearchViewModel>(
+    id = id,
+    route = PortableRoute.BeersSearch,
+    viewModel = BeersSearchViewModel(coroutineDispatcher, pagerFactory, repository),
+  ) {
   val listState = LazyListState()
-  private var closed = false
-  override val isClosed: Boolean
-    get() = closed
-
-  override fun close() {
-    if (!closed) {
-      closed = true
-      viewModel.viewModelScope.cancel()
-    }
-  }
 }
 
 internal class SavedFiltersEntry(
-  override val id: Long,
+  id: Long,
   repository: BeersRepository,
-) : SharedAppEntry {
-  override val route = PortableRoute.SavedFilterPresets
+) : ManagedSharedAppEntry(id, PortableRoute.SavedFilterPresets) {
   private val savedFilters = SavedFiltersModel(repository)
   val presets = savedFilters.presets
 
   suspend fun rename(id: String, name: String) = savedFilters.rename(id, name)
 
   suspend fun delete(id: String) = savedFilters.delete(id)
-
-  private var closed = false
-  override val isClosed: Boolean
-    get() = closed
-
-  override fun close() {
-    closed = true
-  }
 }
 
 internal class SavedFilterResultsEntry(
-  override val id: Long,
+  id: Long,
   val preset: SavedFilterPreset,
   pagerFactory: BeersPagerFactory,
   coroutineDispatcher: CoroutineDispatcherProvider,
-) : SharedAppEntry {
-  override val route = PortableRoute.SavedFilterPresets
-  val viewModel = BrowseBeersViewModel(coroutineDispatcher, pagerFactory, preset.query)
+) :
+  ViewModelSharedAppEntry<BrowseBeersViewModel>(
+    id = id,
+    route = PortableRoute.SavedFilterPresets,
+    viewModel = BrowseBeersViewModel(coroutineDispatcher, pagerFactory, preset.query),
+  ) {
   val listState = LazyListState()
-  private var closed = false
-  override val isClosed: Boolean
-    get() = closed
-
-  override fun close() {
-    if (!closed) {
-      closed = true
-      viewModel.viewModelScope.cancel()
-    }
-  }
 }
 
 internal class BrowseHomeEntry(
-  override val id: Long,
+  id: Long,
   repository: BeersRepository,
-) : SharedAppEntry {
-  override val route = PortableRoute.BeerBrowse
-  val viewModel = BrowseViewModel(repository)
+) :
+  ViewModelSharedAppEntry<BrowseViewModel>(
+    id = id,
+    route = PortableRoute.BeerBrowse,
+    viewModel = BrowseViewModel(repository),
+  ) {
   var selectedTab by mutableStateOf(0)
-  private var closed = false
-  override val isClosed: Boolean
-    get() = closed
-
-  override fun close() {
-    if (!closed) {
-      closed = true
-      viewModel.viewModelScope.cancel()
-    }
-  }
 }
 
 internal class BrowseBeersEntry(
-  override val id: Long,
+  id: Long,
   val selection: BrowseSelection,
   pagerFactory: BeersPagerFactory,
   coroutineDispatcher: CoroutineDispatcherProvider,
-) : SharedAppEntry {
-  override val route = selection.toRoute()
-  val viewModel = BrowseBeersViewModel(coroutineDispatcher, pagerFactory, selection.toQuery())
+) :
+  ViewModelSharedAppEntry<BrowseBeersViewModel>(
+    id = id,
+    route = selection.toRoute(),
+    viewModel = BrowseBeersViewModel(coroutineDispatcher, pagerFactory, selection.toQuery()),
+  ) {
   val listState = LazyListState()
-  private var closed = false
-  override val isClosed: Boolean
-    get() = closed
-
-  override fun close() {
-    if (!closed) {
-      closed = true
-      viewModel.viewModelScope.cancel()
-    }
-  }
 }
 
 internal class DetailEntry(
-  override val id: Long,
+  id: Long,
   val beer: Beer,
   repository: BeersRepository,
-) : SharedAppEntry {
-  override val route = PortableRoute.BeerDetail(beer)
-  val viewModel = BeerDetailViewModel(repository, beer)
-  private var closed = false
-  override val isClosed: Boolean
-    get() = closed
-
-  override fun close() {
-    if (!closed) {
-      closed = true
-      viewModel.viewModelScope.cancel()
-    }
-  }
-}
+) :
+  ViewModelSharedAppEntry<BeerDetailViewModel>(
+    id = id,
+    route = PortableRoute.BeerDetail(beer),
+    viewModel = BeerDetailViewModel(repository, beer),
+  )
 
 internal class SharedAppNavigationState(
   private val repository: BeersRepository,

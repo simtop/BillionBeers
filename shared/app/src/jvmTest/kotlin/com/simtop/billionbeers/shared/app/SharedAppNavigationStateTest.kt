@@ -1,5 +1,6 @@
 package com.simtop.billionbeers.shared.app
 
+import androidx.lifecycle.viewModelScope
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
@@ -13,8 +14,10 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.extension.RegisterExtension
 
@@ -120,6 +123,23 @@ class SharedAppNavigationStateTest {
     assertFalse(presets.isClosed)
     navigation.disposeAll()
     assertTrue(presets.isClosed)
+  }
+
+  @Test
+  fun closingViewModelEntryCancelsItsScopeAndIsIdempotent() {
+    val navigation = navigation()
+    val list = navigation.current as ListEntry
+    val scopeJob = list.viewModel.viewModelScope.coroutineContext[Job]
+    assertNotNull(scopeJob)
+    assertTrue(scopeJob.isActive)
+
+    list.close()
+    assertTrue(list.isClosed)
+    assertFalse(scopeJob.isActive)
+
+    list.close()
+    assertFalse(scopeJob.isActive)
+    navigation.disposeAll()
   }
 
   @Test

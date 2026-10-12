@@ -386,6 +386,7 @@ fun SharedAppShell(
                 animationsDisabled = host.detailAnimationsDisabled,
                 onMessage = { message = it },
               )
+            is ManagedSharedAppEntry -> error("Unhandled shared app entry: $entry")
           }
         }
       }
