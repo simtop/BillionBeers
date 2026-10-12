@@ -40,10 +40,10 @@ on:
 permissions:
   contents: read
 
-# GitHub concurrency keeps one running and at most one pending. A newer queued request can
-# supersede an older pending request; users who need every ref prepared must dispatch again.
+# GitHub concurrency keeps one running and at most one pending per workflow, source repository,
+# and branch. A newer request for the same scope can supersede an older pending request.
 concurrency:
-  group: dependency-verification-preparation-${{ github.repository_id }}
+  group: dependency-verification-preparation-${{ github.workflow }}-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
