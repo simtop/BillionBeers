@@ -283,6 +283,12 @@ prevent evidence artifacts from uploading, so completed job logs remain authorit
 - **Platform-specific artifacts:** independent lane ledgers are unioned after every lane succeeds.
   A local `make verification-metadata` still covers only the current host; dispatch the workflow
   against a branch to resolve the hosted Linux, Web, managed-device, and Apple closures together.
+- **Partial preparation reruns:** each attempt uploads attempt-scoped lane evidence, and the writer
+  requires all four ledgers from the same run attempt. GitHub's **Re-run failed jobs**
+  (`gh run rerun <run-id> --failed`) preserves successful lanes from the earlier attempt, so that
+  evidence cannot satisfy the writer. Use **Re-run all jobs** (`gh run rerun <run-id>`, without
+  `--failed`) or dispatch a fresh write-mode preparation on the current PR branch. This differs
+  from ordinary CI retries: rerun failed test jobs or `CI Gate` without repeating passed CI lanes.
 - **IDE-only artifacts are trusted by rule, not by hash.** Android Studio's Gradle sync resolves
   `-sources.jar` / `-javadoc.jar` variants that no build ever asks for. They were therefore absent
   from the ledger, and sync failed with ~137 "checksums are missing" entries while every CLI build

@@ -255,6 +255,36 @@ class UpdateTests(unittest.TestCase):
             self.updater.ensure_master_ci()
         dispatch.assert_called_once_with(REPO)
 
+    def test_master_push_skips_fallback_but_still_updates_branches(self):
+        self.updater.event_name = "push"
+
+        def api_with_no_ci_run(endpoint: str, *, paginate: bool = False):
+            if "/workflows/ci.yml/runs?" in endpoint:
+                self.reads.append(endpoint)
+                return [{"workflow_runs": []}]
+            return self.api(endpoint, paginate=paginate)
+
+        with patch.object(MODULE, "api", side_effect=api_with_no_ci_run), patch.object(
+            MODULE, "dispatch_ci"
+        ) as dispatch:
+            self.assertEqual(0, self.updater.run())
+        dispatch.assert_not_called()
+        self.assertEqual(
+            [self.head, self.base],
+            git(self.remote, "show", "-s", "--format=%P", self.remote_head()).split(),
+        )
+        self.assertFalse(any("/workflows/ci.yml/runs?" in item for item in self.reads))
+
+    def test_non_push_events_dispatch_missing_master_ci(self):
+        for event_name in ("schedule", "workflow_dispatch", "workflow_run"):
+            with self.subTest(event_name=event_name):
+                self.updater.event_name = event_name
+                with patch.object(MODULE, "api", return_value=[{"workflow_runs": []}]), patch.object(
+                    MODULE, "dispatch_ci"
+                ) as dispatch:
+                    self.updater.ensure_master_ci()
+                dispatch.assert_called_once_with(REPO)
+
     def test_master_ci_dry_run_never_dispatches_or_queries_actions(self):
         self.updater.dry_run = True
         with patch.object(MODULE, "api") as api_call, patch.object(
