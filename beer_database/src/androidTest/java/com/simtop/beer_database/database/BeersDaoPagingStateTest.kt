@@ -61,23 +61,24 @@ class BeersDaoPagingStateTest {
   }
 
   @Test
-  fun insertPage_scopesBookmarksBySurface() = runBlocking {
+  fun insertPage_invalidatesOtherLanguageCatalogBookmarks() = runBlocking {
     dao.insertPage(listOf(beer("1")), surface = "catalog:en", nextKey = 2, totalCount = 206, 0L)
     dao.insertPage(listOf(beer("2")), surface = "catalog:fr", nextKey = 9, totalCount = 300, 0L)
 
-    assertEquals(2, dao.getPagingState("catalog:en")?.nextKey)
+    assertEquals(null, dao.getPagingState("catalog:en"))
     assertEquals(9, dao.getPagingState("catalog:fr")?.nextKey)
+    assertEquals(1, dao.countPagingStates())
   }
 
-  // Zero distinguishes a legacy pre-paging_state cache from one whose bookmarks belong to
-  // other surfaces (the language-switch case) - the cache-status classification relies on it.
+  // Zero distinguishes a legacy pre-paging_state cache from one with bookmarks that belong to a
+  // different catalog language - the cache-status classification relies on it.
   @Test
-  fun countPagingStates_countsBookmarksAcrossSurfaces() = runBlocking {
+  fun countPagingStates_countsRemainingBookmarks() = runBlocking {
     assertEquals(0, dao.countPagingStates())
 
     dao.insertPage(listOf(beer("1")), surface = "catalog:en", nextKey = 2, totalCount = 206, 0L)
     dao.insertPage(listOf(beer("2")), surface = "catalog:fr", nextKey = 9, totalCount = 300, 0L)
 
-    assertEquals(2, dao.countPagingStates())
+    assertEquals(1, dao.countPagingStates())
   }
 }

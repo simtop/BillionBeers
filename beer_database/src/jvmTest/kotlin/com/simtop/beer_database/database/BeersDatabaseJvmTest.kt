@@ -58,6 +58,17 @@ class BeersDatabaseJvmTest {
   }
 
   @Test
+  fun insertPageInvalidatesOtherLanguageCatalogBookmarks() = runBlocking {
+    val dao = db.beersDao()
+    dao.insertPage(listOf(beer("1")), "catalog:en", 2, 206, 10L)
+    dao.insertPage(listOf(beer("1")), "catalog:fr", 3, 206, 20L)
+
+    assertEquals(null, dao.getPagingState("catalog:en"))
+    assertEquals(3, dao.getPagingState("catalog:fr")?.nextKey)
+    assertEquals(1, dao.countPagingStates())
+  }
+
+  @Test
   fun localFlagsSurviveCatalogRefreshAndFlowsExposeCommittedFavorites() = runBlocking {
     val dao = db.beersDao()
     dao.insertAll(listOf(beer("1", availability = false, isFavorite = true)))

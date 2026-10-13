@@ -10,7 +10,8 @@ class FilterPresetCapacityReachedException :
 /**
  * Portable persistence contract for the beer catalog. Implementations must emit only committed
  * state, preserve local-only flags during catalog refreshes, and write a page with its bookmark as
- * one atomic operation.
+ * one atomic operation. Since catalog rows are shared by language, writing a `catalog:<language>`
+ * page also invalidates bookmarks for other catalog languages.
  */
 interface BeersStorage {
   fun observeBeers(): Flow<List<StoredBeer>>

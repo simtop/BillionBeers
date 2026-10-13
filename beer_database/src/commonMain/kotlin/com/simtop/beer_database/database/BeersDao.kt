@@ -177,6 +177,11 @@ abstract class BeersDao {
 
   @Upsert abstract suspend fun upsertPagingState(state: PagingStateDbModel)
 
+  // Catalog rows are shared across languages, so rewriting them makes every other language's
+  // bookmark unsafe. Keep the active surface's bookmark and force other languages to refresh.
+  @Query("DELETE FROM paging_state WHERE surface LIKE 'catalog:%' AND surface != :surface")
+  abstract suspend fun deleteOtherCatalogPagingStates(surface: String)
+
   /**
    * Writes a fetched page and its paging bookmark atomically, so [PagingStateDbModel.nextKey] can
    * never point past — or short of — the rows actually stored (the PR #57 divergence class).
@@ -194,6 +199,7 @@ abstract class BeersDao {
     refreshedAt: Long,
   ) {
     insertAll(beers)
+    if (surface.startsWith("catalog:")) deleteOtherCatalogPagingStates(surface)
     val existing = getPagingState(surface)
     upsertPagingState(
       PagingStateDbModel(

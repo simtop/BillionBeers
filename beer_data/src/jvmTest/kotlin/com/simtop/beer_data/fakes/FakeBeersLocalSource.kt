@@ -77,6 +77,9 @@ class FakeBeersLocalSource : BeersStorage {
     nextKey: Int?,
     totalCount: Int?,
   ) {
+    if (surface.startsWith("catalog:")) {
+      pagingState.keys.filter { it.startsWith("catalog:") && it != surface }.forEach(pagingState::remove)
+    }
     insertAll(beers)
     val existing = pagingState[surface]
     pagingState[surface] =

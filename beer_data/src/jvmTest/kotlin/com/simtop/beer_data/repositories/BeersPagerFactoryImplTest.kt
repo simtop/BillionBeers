@@ -4,11 +4,14 @@ import com.simtop.beer_data.fakes.FakeBeersLocalSource
 import com.simtop.beer_data.fakes.FakeBeersRemoteSource
 import com.simtop.beer_data.mappers.BeersMapper
 import com.simtop.beer_network.models.BeersApiResponseItem
+import com.simtop.beer_network.models.Language
+import com.simtop.beer_network.models.Translation
 import com.simtop.beer_network.network.BeersServiceHttpException
 import com.simtop.beer_network.network.BeersServiceNetworkException
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
+import com.simtop.beerdomain.domain.models.CatalogCacheStatus
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.LanguageProvider
 import com.simtop.core.core.NoOpLogger
@@ -31,20 +34,23 @@ class BeersPagerFactoryImplTest {
   private lateinit var repository: BeersRepository
   private lateinit var factory: BeersPagerFactoryImpl
   private val testDispatcher = UnconfinedTestDispatcher()
+  private var currentLanguage = "en"
+  private val languageProvider = LanguageProvider { currentLanguage }
 
   @BeforeEach
   fun setUp() {
     beersRemoteSource = FakeBeersRemoteSource()
     beersLocalSource = FakeBeersLocalSource()
-    val beersMapper = BeersMapper(LanguageProvider { "en" }, NoOpLogger())
+    currentLanguage = "en"
+    val beersMapper = BeersMapper(languageProvider, NoOpLogger())
     repository =
       BeersRepositoryImpl(
         beersRemoteSource,
         beersLocalSource,
         beersMapper,
-        LanguageProvider { "en" },
+        languageProvider,
       )
-    factory = BeersPagerFactoryImpl(repository, LanguageProvider { "en" })
+    factory = BeersPagerFactoryImpl(repository, languageProvider)
   }
 
   // Regression test: availability is treated as local-only (the server value only seeds first
@@ -142,6 +148,36 @@ class BeersPagerFactoryImplTest {
       pager.loadNextPage()
 
       expectThat(beersRemoteSource.requestedPages.toList()).isEqualTo(listOf(1))
+    }
+
+  @Test
+  fun `rewriting catalog rows under a new language invalidates the previous bookmark`() =
+    runTest(testDispatcher) {
+      val translatedBeer =
+        BeersApiResponseItem(
+          id = "1",
+          name = "Beer 1",
+          translations =
+            listOf(
+              Translation(Language("en"), "English tagline", "English description"),
+              Translation(Language("fr"), "French tagline", "French description"),
+            ),
+          foodPairing = emptyList(),
+        )
+      beersRemoteSource.setBeersResponse(listOf(translatedBeer), totalCount = 206)
+      val pager = factory.create()
+      pager.loadFirstPage()
+      expectThat(repository.getBeerById("1")?.tagline).isEqualTo("English tagline")
+      expectThat(repository.pagingNextKey("catalog:en")).isEqualTo(2)
+
+      currentLanguage = "fr"
+      pager.loadFirstPage()
+
+      expectThat(repository.getBeerById("1")?.tagline).isEqualTo("French tagline")
+      expectThat(repository.pagingNextKey("catalog:en")).isEqualTo(null)
+      expectThat(repository.pagingNextKey("catalog:fr")).isEqualTo(2)
+      currentLanguage = "en"
+      expectThat(repository.catalogCacheStatus()).isEqualTo(CatalogCacheStatus.LanguageMismatch)
     }
 
   // Regression test: refresh upserts into the cache without deleting, so afterwards the cache -

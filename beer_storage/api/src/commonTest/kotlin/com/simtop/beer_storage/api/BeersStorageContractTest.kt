@@ -55,6 +55,17 @@ class BeersStorageContractTest {
     )
   }
 
+  @Test
+  fun `catalog rewrite invalidates bookmarks for other languages`() = runTest {
+    val storage = InMemoryBeersStorage()
+    storage.insertPage(emptyList(), "catalog:en", nextKey = 4, totalCount = 206)
+    storage.insertPage(emptyList(), "catalog:fr", nextKey = 2, totalCount = 206)
+
+    assertEquals(null, storage.getPagingState("catalog:en"))
+    assertEquals(2, storage.getPagingState("catalog:fr")?.nextKey)
+    assertEquals(1, storage.countPagingStates())
+  }
+
   private fun storedBeer(id: String, name: String) =
     StoredBeer(
       id = id,
@@ -111,6 +122,9 @@ class BeersStorageContractTest {
       nextKey: Int?,
       totalCount: Int?,
     ) {
+      if (surface.startsWith("catalog:")) {
+        states.keys.filter { it.startsWith("catalog:") && it != surface }.forEach(states::remove)
+      }
       insertAll(beers)
       val old = states[surface]
       states[surface] =
