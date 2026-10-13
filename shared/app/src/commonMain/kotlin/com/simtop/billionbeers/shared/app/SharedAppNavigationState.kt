@@ -239,7 +239,7 @@ internal class SharedAppNavigationState(
       switchRoot(route)
       return
     }
-    val existingIndex = entries.indexOfLast { it.route == route }
+    val existingIndex = entries.indexOfLast { it.route.matchesDestination(route) }
     if (existingIndex >= 0) {
       entries.drop(existingIndex + 1).forEach(SharedAppEntry::close)
       entriesState.value = entries.take(existingIndex + 1)
@@ -303,3 +303,17 @@ internal class SharedAppNavigationState(
       this == PortableRoute.Favorites ||
       this == PortableRoute.SavedFilterPresets
 }
+
+// Browser hashes contain browse kind and id, but omit the display name held by a live entry.
+private fun PortableRoute.matchesDestination(other: PortableRoute): Boolean =
+  when {
+    this is PortableRoute.BeerBrowseSelection && other is PortableRoute.BeerBrowseSelection ->
+      category.matchesSelection(other.category)
+    else -> this == other
+  }
+
+private fun BrowseCategory.matchesSelection(other: BrowseCategory): Boolean =
+  when (this) {
+    is BrowseCategory.Style -> other is BrowseCategory.Style && id == other.id
+    is BrowseCategory.Brewery -> other is BrowseCategory.Brewery && id == other.id
+  }
