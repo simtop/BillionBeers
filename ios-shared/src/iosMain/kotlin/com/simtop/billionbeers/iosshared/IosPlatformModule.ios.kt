@@ -2,20 +2,13 @@ package com.simtop.billionbeers.iosshared
 
 import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import com.simtop.beer_database.database.ALL_MIGRATIONS
 import com.simtop.beer_database.database.BeersDatabase
-import com.simtop.beer_database.database.MIGRATION_1_2
-import com.simtop.beer_database.database.MIGRATION_2_3
-import com.simtop.beer_database.database.MIGRATION_3_4
-import com.simtop.beer_database.database.MIGRATION_4_5
+import com.simtop.beer_network.network.configureBeersApi
 import com.simtop.core.core.EnvironmentConfig
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.darwin.Darwin
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.defaultRequest
-import io.ktor.client.request.url
-import io.ktor.serialization.kotlinx.json.json
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.serialization.json.Json
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSHomeDirectory
 
@@ -23,19 +16,7 @@ private const val DATABASE_DIRECTORY = "/Library/Application Support/BillionBeer
 private const val DATABASE_NAME = "beers_database.db"
 
 internal actual fun createBridgeHttpClient(environment: EnvironmentConfig): HttpClient =
-  HttpClient(Darwin) {
-    expectSuccess = false
-    defaultRequest { url(environment.apiBaseUrl) }
-    install(ContentNegotiation) {
-      json(
-        Json {
-          ignoreUnknownKeys = true
-          coerceInputValues = true
-          isLenient = true
-        }
-      )
-    }
-  }
+  HttpClient(Darwin) { configureBeersApi(environment) }
 
 @OptIn(ExperimentalForeignApi::class)
 internal actual fun createBridgeDatabase(): BeersDatabase {
@@ -48,6 +29,6 @@ internal actual fun createBridgeDatabase(): BeersDatabase {
   )
   return Room.databaseBuilder<BeersDatabase>("$directory/$DATABASE_NAME")
     .setDriver(BundledSQLiteDriver())
-    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+    .addMigrations(*ALL_MIGRATIONS.toTypedArray())
     .build()
 }

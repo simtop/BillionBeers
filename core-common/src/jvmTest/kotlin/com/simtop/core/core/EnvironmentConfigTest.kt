@@ -53,11 +53,13 @@ class EnvironmentConfigTest {
         connectTimeout = 3.seconds,
         readTimeout = 7.seconds,
         writeTimeout = 11.seconds,
+        requestTimeout = 19.seconds,
       )
 
     assertEquals(3.seconds, config.connectTimeout)
     assertEquals(7.seconds, config.readTimeout)
     assertEquals(11.seconds, config.writeTimeout)
+    assertEquals(19.seconds, config.requestTimeout)
   }
 
   @Test
@@ -86,6 +88,9 @@ class EnvironmentConfigTest {
   fun `rejects infinite timeouts`() {
     assertIllegalArgument {
       EnvironmentConfig("https://api.brewbuddy.dev/", connectTimeout = Duration.INFINITE)
+    }
+    assertIllegalArgument {
+      EnvironmentConfig("https://api.brewbuddy.dev/", requestTimeout = Duration.INFINITE)
     }
   }
 

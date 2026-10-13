@@ -26,6 +26,7 @@ data class EnvironmentConfig(
   val connectTimeout: Duration = 10.seconds,
   val readTimeout: Duration = 30.seconds,
   val writeTimeout: Duration = 10.seconds,
+  val requestTimeout: Duration = 60.seconds,
 ) {
 
   init {
@@ -45,6 +46,7 @@ data class EnvironmentConfig(
     requirePositiveFinite(connectTimeout, "connectTimeout")
     requirePositiveFinite(readTimeout, "readTimeout")
     requirePositiveFinite(writeTimeout, "writeTimeout")
+    requirePositiveFinite(requestTimeout, "requestTimeout")
   }
 
   /**
