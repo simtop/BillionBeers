@@ -425,6 +425,31 @@ class IndexedDbBeersStorageBrowserTest {
   }
 
   @Test
+  fun pageInsertInvalidatesBookmarksForOtherCatalogLanguages() = runTest {
+    val databaseName = "billionbeers-page-language-${hashCode()}"
+    val storage = IndexedDbBeersStorage(databaseName)
+    val beer = StoredBeer(
+      id = "language-1",
+      name = "French Lager",
+      tagline = "",
+      description = "",
+      imageUrl = "",
+      abv = 5.0,
+      ibu = 20.0,
+      foodPairing = emptyList(),
+    )
+    storage.insertPage(emptyList(), surface = "catalog:en", nextKey = 4, totalCount = 206)
+
+    storage.insertPage(listOf(beer), surface = "catalog:fr", nextKey = 2, totalCount = 206)
+
+    assertEquals(null, storage.getPagingState("catalog:en"))
+    assertEquals(2, storage.getPagingState("catalog:fr")?.nextKey)
+    assertEquals(1, storage.countPagingStates())
+    storage.deleteAll()
+    storage.close()
+  }
+
+  @Test
   fun fieldUpdatesPreserveTheOtherLocalFlagAndCatalogFields() = runTest {
     val databaseName = "billionbeers-field-${hashCode()}"
     val stored = StoredBeer(

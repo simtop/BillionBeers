@@ -52,7 +52,8 @@ interface BeersRepository {
    * Same keyed upsert as [insertAllToDB], but also records the paging bookmark for [surface] (the
    * resume [nextKey] and [totalCount]) in the *same* transaction, so the pager's position can never
    * diverge from the rows actually stored. [nextKey] is merged monotonically - a refresh
-   * re-fetching an earlier page never rewinds a warm cache's bookmark.
+   * re-fetching an earlier page never rewinds a warm cache's bookmark. Catalog writes also
+   * invalidate bookmarks for other language surfaces because all languages share the same rows.
    */
   suspend fun insertPage(beers: List<Beer>, surface: String, nextKey: Int?, totalCount: Int?)
 

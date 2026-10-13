@@ -24,14 +24,13 @@ class BeersPagerFactoryImpl(
 ) : BeersPagerFactory {
 
   override fun create(): Pager<Beer, FetchBeersError> {
-    // One paged surface, keyed by language (shared with the repository's cache-status check via
-    // catalogSurface). Read (resume) and write (store) share this value.
-    val surface = catalogSurface(languageProvider)
     return PagingMediator(
       initialKey = FIRST_PAGE,
       fetchRemote = fetchPage(BeersQuery()),
       classifyError = { it.toFetchBeersError() },
-      storage = BeersPagingStorage(repository, surface),
+      // A long-lived pager can survive a language change; resolve its surface when each page is
+      // written so the bookmark follows the language used to map that page's rows.
+      storage = BeersPagingStorage(repository) { catalogSurface(languageProvider) },
       // Exact resume: the paging_state bookmark records the first uncached page, written in the
       // same transaction as the rows. On a bookmark miss the fallback depends on *why* it missed:
       // - LanguageMismatch (rows fetched under another language): restart from page 1, so
@@ -40,7 +39,7 @@ class BeersPagerFactoryImpl(
       // - Otherwise (fresh install, or a legacy cache from before paging_state existed): the
       //   row-count estimate (N fully cached pages -> page N+1) keeps its original job.
       nextKeyFromStorage = {
-        repository.pagingNextKey(surface)
+        repository.pagingNextKey(catalogSurface(languageProvider))
           ?: when (repository.catalogCacheStatus()) {
             CatalogCacheStatus.LanguageMismatch -> FIRST_PAGE
             else -> repository.countDBEntries() / BeersService.DEFAULT_ITEMS_PER_PAGE + FIRST_PAGE
@@ -120,14 +119,14 @@ private class AvailabilityOverlayStorage(
  */
 private class BeersPagingStorage(
   private val repository: BeersRepository,
-  private val surface: String,
+  private val currentSurface: () -> String,
 ) : PagingStorage<Int, Beer> {
 
   override val data: Flow<List<Beer>> = repository.observeBeers()
 
   override suspend fun storeFirstPage(page: PageResult<Int, Beer>) =
-    repository.insertPage(page.items, surface, page.nextKey, page.totalCount)
+    repository.insertPage(page.items, currentSurface(), page.nextKey, page.totalCount)
 
   override suspend fun append(page: PageResult<Int, Beer>) =
-    repository.insertPage(page.items, surface, page.nextKey, page.totalCount)
+    repository.insertPage(page.items, currentSurface(), page.nextKey, page.totalCount)
 }
