@@ -5,6 +5,10 @@ plugins {
   id("dev.zacsweers.metro")
 }
 
+// This module's expect declarations have no Android actuals, so Android metadata and host-test
+// tasks fail. Its JVM tests and framework checks run in the JVM and Apple verification lanes.
+extra["kmpVerificationExcludedTasks"] = setOf("allMetadataJar", "testAndroidHostTest")
+
 kotlin {
   targets.withType<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget>().configureEach {
     binaries.framework {

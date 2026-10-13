@@ -5,6 +5,24 @@ plugins {
   id("com.android.kotlin.multiplatform.library")
 }
 
+afterEvaluate {
+  val extraProperties = extensions.extraProperties
+  val excludedTasks =
+    if (extraProperties.has("kmpVerificationExcludedTasks")) {
+      extraProperties.get("kmpVerificationExcludedTasks") as Set<*>
+    } else {
+      emptySet<String>()
+    }
+  tasks.named("check") {
+    dependsOn(
+      tasks.matching {
+        it.name in setOf("jvmTest", "testAndroidHostTest", "wasmJsBrowserTest") &&
+          it.name !in excludedTasks
+      }
+    )
+  }
+}
+
 apply(plugin = "billionbeers.jacoco")
 
 val libs = billionBeersCatalog()

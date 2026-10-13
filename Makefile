@@ -293,14 +293,6 @@ KMP_BROWSER_TEST_MODULES := :beerdomain:impl :beerdomain:fakes :beer_storage:bro
 # installed Brave binary on macOS, while allowing CI and callers to override CHROME_BIN explicitly.
 BRAVE_BROWSER_BIN := /Applications/Brave Browser.app/Contents/MacOS/Brave Browser
 BROWSER_TEST_ENV = $(if $(CHROME_BIN),CHROME_BIN="$(CHROME_BIN)",$(shell if [ -x "$(BRAVE_BROWSER_BIN)" ]; then printf 'CHROME_BIN="%s"' "$(BRAVE_BROWSER_BIN)"; fi))
-KMP_TEST_MODULES := $(KMP_JVM_TEST_MODULES) $(KMP_METADATA_MODULES) \
-	$(KMP_ANDROID_HOST_TEST_MODULES) $(KMP_BROWSER_TEST_MODULES)
-
-kmp_test_tasks = $(foreach module,$(KMP_JVM_TEST_MODULES),$(module):jvmTest) \
-	$(foreach module,$(KMP_METADATA_MODULES),$(module):allMetadataJar) \
-	$(foreach module,$(KMP_ANDROID_HOST_TEST_MODULES),$(module):testAndroidHostTest) \
-	$(foreach module,$(KMP_BROWSER_TEST_MODULES),$(module):wasmJsBrowserTest)
-
 # The full graph includes the Compose Desktop Kotlin compiler task, whose classpath snapshot
 # provider is not configuration-cache serializable on every CI host. Keep the unit-test gate
 # deterministic until that upstream Gradle/Kotlin integration is fixed.
@@ -309,7 +301,7 @@ TEST_FLAGS := --no-configuration-cache
 test: ## Run JVM/Android/browser unit suites and build-logic, or the registered tier for MODULE=:module.
 ifeq ($(MODULE_TRIMMED),)
 	@$(MAKE) --no-print-directory new-feature-module-test
-	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) $(TEST_FLAGS) testDebugUnitTest $(addsuffix :test,$(JVM_TEST_MODULES)) $(kmp_test_tasks) --continue
+	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) $(TEST_FLAGS) testDebugUnitTest $(addsuffix :test,$(JVM_TEST_MODULES)) kmpTest --continue
 	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) -p build-logic $(TEST_FLAGS) :convention:test --continue
 else ifneq ($(filter $(MODULE_TRIMMED),$(KMP_JVM_TEST_MODULES)),)
 	$(GRADLE_RUNNER) $(MODULE_TRIMMED):jvmTest --continue
@@ -570,11 +562,11 @@ verification-metadata-lane: ## Resolve one cold platform lane for guarded metada
 ifeq ($(LANE),linux)
 	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) $(VERIFICATION_METADATA_PASS_ONE)
 	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) $(VERIFICATION_METADATA_LINUX_PASS_TWO) \
-		$(filter-out $(foreach module,$(KMP_BROWSER_TEST_MODULES),$(module):wasmJsBrowserTest),$(kmp_test_tasks)) \
+		kmpJvmTest kmpMetadata kmpAndroidHostTest \
 		$(addsuffix :test,$(JVM_TEST_MODULES))
 else ifeq ($(LANE),web)
 	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) \
-		$(foreach module,$(KMP_BROWSER_TEST_MODULES),$(module):wasmJsBrowserTest)
+		kmpBrowserTest
 	PATH="$(NODE_BIN_DIR):$$PATH" $(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) :web-app:wasmJsBrowserDistribution
 else ifeq ($(LANE),managed)
 ifeq ($(MODE),candidate)
