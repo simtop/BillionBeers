@@ -1,5 +1,6 @@
 package com.simtop.billionbeers.web
 
+import com.simtop.beer_network.network.configureBeersApi
 import com.simtop.beer_storage.api.BeersStorage
 import com.simtop.beer_storage.browser.IndexedDbBeersStorage
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
@@ -19,12 +20,7 @@ import dev.zacsweers.metro.createGraphFactory
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.js.Js
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.request.get
-import io.ktor.client.request.url
-import io.ktor.serialization.kotlinx.json.json
-import kotlinx.serialization.json.Json
 import org.w3c.dom.url.URLSearchParams
 
 const val DEFAULT_WEB_API_BASE_URL = "https://brewbuddy.dev/"
@@ -116,17 +112,5 @@ interface WebHostModule {
   @Provides
   @SingleIn(AppScope::class)
   fun provideHttpClient(environment: EnvironmentConfig): HttpClient =
-    HttpClient(Js) {
-      expectSuccess = false
-      defaultRequest { url(environment.apiBaseUrl) }
-      install(ContentNegotiation) {
-        json(
-          Json {
-            ignoreUnknownKeys = true
-            coerceInputValues = true
-            isLenient = true
-          }
-        )
-      }
-    }
+    HttpClient(Js) { configureBeersApi(environment) }
 }

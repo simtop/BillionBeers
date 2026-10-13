@@ -2,12 +2,10 @@ package com.simtop.billionbeers.desktop
 
 import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import com.simtop.beer_database.database.ALL_MIGRATIONS
 import com.simtop.beer_database.database.BeersDatabase
 import com.simtop.beer_database.database.BeersDatabaseConstructor
-import com.simtop.beer_database.database.MIGRATION_1_2
-import com.simtop.beer_database.database.MIGRATION_2_3
-import com.simtop.beer_database.database.MIGRATION_3_4
-import com.simtop.beer_database.database.MIGRATION_4_5
+import com.simtop.beer_network.network.configureBeersApi
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.CoroutineDispatcherProvider
@@ -24,14 +22,9 @@ import dev.zacsweers.metro.SingleIn
 import dev.zacsweers.metro.createGraphFactory
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.defaultRequest
-import io.ktor.client.request.url
-import io.ktor.serialization.kotlinx.json.json
 import java.io.Closeable
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlinx.serialization.json.Json
 
 /** Configuration owned by a desktop host, not by the shared data layer. */
 const val DEFAULT_API_BASE_URL = "https://brewbuddy.dev/"
@@ -104,24 +97,15 @@ interface DesktopHostModule {
   @SingleIn(AppScope::class)
   fun provideHttpClient(environment: EnvironmentConfig): HttpClient =
     HttpClient(OkHttp) {
-      expectSuccess = false
-      defaultRequest { url(environment.apiBaseUrl) }
-      install(ContentNegotiation) {
-        json(
-          Json {
-            ignoreUnknownKeys = true
-            coerceInputValues = true
-            isLenient = true
-          }
-        )
-      }
+      configureBeersApi(environment)
     }
 
   @Provides
   @SingleIn(AppScope::class)
+  @Suppress("SpreadOperator") // Room accepts migrations as varargs; the shared registry is a list.
   fun provideDatabase(config: DesktopDataConfig): BeersDatabase =
     Room.databaseBuilder(config.databasePath) { BeersDatabaseConstructor.initialize() }
       .setDriver(BundledSQLiteDriver())
-      .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+      .addMigrations(*ALL_MIGRATIONS.toTypedArray())
       .build()
 }

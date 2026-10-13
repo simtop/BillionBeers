@@ -2,16 +2,13 @@ package com.simtop.beer_network
 
 import com.simtop.beer_network.network.BeersService
 import com.simtop.beer_network.network.KtorBeersService
+import com.simtop.beer_network.network.configureBeersApi
+import com.simtop.core.core.EnvironmentConfig
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.defaultRequest
-import io.ktor.client.request.url
-import io.ktor.serialization.kotlinx.json.json
 import java.io.File
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
-import kotlinx.serialization.json.Json
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 
@@ -66,17 +63,7 @@ abstract class TestMockWebService {
   private fun generateFakeApiService() {
     httpClient =
       HttpClient(OkHttp) {
-        expectSuccess = false
-        defaultRequest { url(mockServer.url("/").toString()) }
-        install(ContentNegotiation) {
-          json(
-            Json {
-              ignoreUnknownKeys = true
-              coerceInputValues = true
-              isLenient = true
-            },
-          )
-        }
+        configureBeersApi(EnvironmentConfig(mockServer.url("/").toString()))
       }
     apiService = KtorBeersService(httpClient)
   }

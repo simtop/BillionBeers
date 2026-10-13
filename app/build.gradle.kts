@@ -132,6 +132,9 @@ dependencies {
   implementation(this.project(":beer_database"))
   implementation(this.project(":beer_network"))
   implementation(this.project(":presentation_utils"))
+  implementation(libs.ktorClientCore)
+  implementation(libs.ktorClientOkhttp)
+  implementation(libs.okhttp3)
 
   implementation(libs.androidPlayCore)
   implementation(libs.androidPlayCoreKtx)

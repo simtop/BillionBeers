@@ -15,13 +15,7 @@ dependencies {
   implementation(libs.coreKtx)
   implementation(libs.appcompat)
   implementation(libs.material)
-  implementation(libs.kotlinx.serialization.json)
-
   implementation(libs.okhttp3)
   implementation(libs.okhttp3LoggingInterceptor)
-  implementation(libs.ktorClientCore)
-  implementation(libs.ktorClientOkhttp)
-  implementation(libs.ktorClientContentNegotiation)
-  implementation(libs.ktorSerializationKotlinxJson)
   implementation(libs.lifecycleRuntimeKtx)
 }

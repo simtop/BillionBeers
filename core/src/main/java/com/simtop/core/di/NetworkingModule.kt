@@ -5,20 +5,12 @@ import com.simtop.core.BuildConfig
 import com.simtop.core.core.EnvironmentConfig
 import com.simtop.core.core.NetworkFaultController
 import com.simtop.core.network.NetworkFaultInterceptor
-import com.simtop.core.network.NetworkJson
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.defaultRequest
-import io.ktor.client.request.url
-import io.ktor.serialization.kotlinx.json.json
 import java.io.File
 import java.util.concurrent.TimeUnit
-import kotlinx.serialization.json.Json
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -49,8 +41,6 @@ interface NetworkingModule {
       File(context.applicationInfo.dataDir, "cache/http")
   }
 
-  @Provides @SingleIn(AppScope::class) fun provideJson(): Json = NetworkJson
-
   @Provides
   @SingleIn(AppScope::class)
   fun provideLoggingInterceptor(): HttpLoggingInterceptor {
@@ -78,18 +68,4 @@ interface NetworkingModule {
       }
       .build()
   }
-
-  @Provides
-  @SingleIn(AppScope::class)
-  fun provideHttpClient(
-    environmentConfig: EnvironmentConfig,
-    json: Json,
-    okHttpClient: OkHttpClient,
-  ): HttpClient =
-    HttpClient(OkHttp) {
-      engine { preconfigured = okHttpClient }
-      expectSuccess = false
-      defaultRequest { url(environmentConfig.apiBaseUrl) }
-      install(ContentNegotiation) { json(json) }
-    }
 }
