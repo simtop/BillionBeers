@@ -15,6 +15,11 @@ kmpVerificationTasks.keys.forEach { taskName ->
   }
 }
 
+tasks.register("testModule") {
+  group = "verification"
+  description = "Runs the test tier configured for the project selected by -PtestModule."
+}
+
 gradle.projectsEvaluated {
   kmpVerificationTasks.forEach { (aggregateName, projectTaskName) ->
     val aggregate = tasks.named(aggregateName)
@@ -38,5 +43,22 @@ gradle.projectsEvaluated {
     group = "verification"
     description = "Runs every configured KMP JVM, metadata, Android-host and browser test tier."
     dependsOn(kmpVerificationTasks.keys.map(tasks::named))
+  }
+
+  providers.gradleProperty("testModule").orNull?.let { projectPath ->
+    val selectedProject =
+      findProject(projectPath)
+        ?: error("No Gradle project exists at -PtestModule=$projectPath")
+    val selectedTaskNames =
+      listOf("jvmTest", "allMetadataJar", "testAndroidHostTest", "wasmJsBrowserTest")
+        .firstOrNull { taskName -> selectedProject.tasks.names.contains(taskName) }
+        ?.let(::listOf)
+        ?: listOf("testDebugUnitTest", "test").firstOrNull(selectedProject.tasks.names::contains)
+        ?.let(::listOf)
+        ?: error("Project $projectPath does not expose a supported test task")
+
+    tasks.named("testModule") {
+      dependsOn(selectedTaskNames.map(selectedProject.tasks::named))
+    }
   }
 }

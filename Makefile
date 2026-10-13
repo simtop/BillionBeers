@@ -282,13 +282,6 @@ deep-clean: ## Stop daemon and deeply clean all gradle caches to fix corrupted s
 # test invocation and must be listed here explicitly (:konsist has its own target).
 JVM_TEST_MODULES := :testing-utils :snapshot-processor :desktop-app
 
-# KMP modules are intentionally classified by the task they expose. A KMP module must never fall
-# through to `test` or `testDebugUnitTest`, because those tasks either do not exist or omit the target
-# under test.
-KMP_JVM_TEST_MODULES := :core-common :beerdomain:api :beerdomain:impl :beerdomain:fakes :beer_network:api :beer_network :beer_storage:api :beer_database :beer_data :ios-shared :compose-multiplatform-fixture :shared:designsystem :shared:presentation :shared:favorites :shared:savedfilters :shared:beerslist :shared:beersearch :shared:beerdetail :shared:beerbrowse :shared:app :navigation-contract
-KMP_METADATA_MODULES := :core-common :beerdomain:api :beerdomain:impl :beerdomain:fakes :beer_network:api :beer_network :beer_network:fixtures :beer_storage:api :beer_database :beer_data :compose-multiplatform-fixture :shared:designsystem :shared:presentation :shared:favorites :shared:savedfilters :shared:beerslist :shared:beersearch :shared:beerdetail :shared:beerbrowse :shared:app :navigation-contract
-KMP_ANDROID_HOST_TEST_MODULES := :core-common :beerdomain:api :beerdomain:impl :beerdomain:fakes :beer_network:api :beer_network :beer_storage:api :beer_database :beer_data :compose-multiplatform-fixture :shared:designsystem :shared:presentation :shared:favorites :shared:savedfilters :shared:beerslist :shared:beersearch :shared:beerdetail :shared:beerbrowse :shared:app :navigation-contract
-KMP_BROWSER_TEST_MODULES := :beerdomain:impl :beerdomain:fakes :beer_storage:browser :web-app :compose-multiplatform-fixture :shared:presentation :shared:favorites :shared:savedfilters :shared:beerslist :shared:beersearch :shared:beerdetail :shared:beerbrowse :shared:app :navigation-contract
 # Kotlin/Wasm's ChromeHeadless launcher also accepts Chromium-compatible browsers. Prefer the
 # installed Brave binary on macOS, while allowing CI and callers to override CHROME_BIN explicitly.
 BRAVE_BROWSER_BIN := /Applications/Brave Browser.app/Contents/MacOS/Brave Browser
@@ -303,18 +296,8 @@ ifeq ($(MODULE_TRIMMED),)
 	@$(MAKE) --no-print-directory new-feature-module-test
 	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) $(TEST_FLAGS) testDebugUnitTest $(addsuffix :test,$(JVM_TEST_MODULES)) kmpTest --continue
 	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) -p build-logic $(TEST_FLAGS) :convention:test --continue
-else ifneq ($(filter $(MODULE_TRIMMED),$(KMP_JVM_TEST_MODULES)),)
-	$(GRADLE_RUNNER) $(MODULE_TRIMMED):jvmTest --continue
-else ifneq ($(filter $(MODULE_TRIMMED),$(KMP_METADATA_MODULES)),)
-	$(GRADLE_RUNNER) $(MODULE_TRIMMED):allMetadataJar --continue
-else ifneq ($(filter $(MODULE_TRIMMED),$(KMP_ANDROID_HOST_TEST_MODULES)),)
-	$(GRADLE_RUNNER) $(MODULE_TRIMMED):testAndroidHostTest --continue
-else ifneq ($(filter $(MODULE_TRIMMED),$(KMP_BROWSER_TEST_MODULES)),)
-	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) $(MODULE_TRIMMED):wasmJsBrowserTest --continue
-else ifneq ($(filter $(MODULE_TRIMMED),$(JVM_TEST_MODULES) :konsist),)
-	$(GRADLE_RUNNER) $(MODULE_TRIMMED):test --continue
 else
-	$(GRADLE_RUNNER) $(MODULE_PREFIX)testDebugUnitTest --continue
+	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) $(TEST_FLAGS) -PtestModule=$(MODULE_TRIMMED) testModule --continue
 endif
 
 .PHONY: ci-report-test

@@ -554,7 +554,6 @@ class DependabotPreparationTest(unittest.TestCase):
         self.assertIn("verification-metadata-lane", makefile)
         self.assertIn("kmpJvmTest kmpMetadata kmpAndroidHostTest", makefile)
         self.assertIn("kmpBrowserTest", makefile)
-        self.assertIn("$(KMP_BROWSER_TEST_MODULES)", makefile)
         self.assertIn(":web-app:wasmJsBrowserDistribution", makefile)
         self.assertIn("ios-test", makefile)
         self.assertIn("ciGroupDebugAndroidTest", makefile)
