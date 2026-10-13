@@ -102,6 +102,7 @@ interface DesktopHostModule {
 
   @Provides
   @SingleIn(AppScope::class)
+  @Suppress("SpreadOperator") // Room accepts migrations as varargs; the shared registry is a list.
   fun provideDatabase(config: DesktopDataConfig): BeersDatabase =
     Room.databaseBuilder(config.databasePath) { BeersDatabaseConstructor.initialize() }
       .setDriver(BundledSQLiteDriver())
