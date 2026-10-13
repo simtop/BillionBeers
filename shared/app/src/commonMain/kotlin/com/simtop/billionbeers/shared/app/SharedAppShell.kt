@@ -88,6 +88,7 @@ data class SharedAppStrings(
   val browse: String,
   val savedFilters: String,
   val savedFiltersEmpty: String,
+  val savedFiltersLoadFailed: String,
   val saveFilter: String,
   val filterPresetLimitReached: String,
   val saveFilterFailed: String,

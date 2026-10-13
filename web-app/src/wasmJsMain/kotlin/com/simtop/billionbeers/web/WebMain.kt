@@ -408,6 +408,7 @@ private val webStrings =
     browse = "Browse",
     savedFilters = "Saved filters",
     savedFiltersEmpty = "No saved filters yet",
+    savedFiltersLoadFailed = "Could not load saved filters. Retrying.",
     saveFilter = "Save",
     filterPresetLimitReached = "You can save up to 10 filters. Delete one before saving another.",
     saveFilterFailed = "The filter could not be saved.",

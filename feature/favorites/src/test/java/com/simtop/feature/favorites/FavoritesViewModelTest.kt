@@ -4,8 +4,10 @@ import app.cash.turbine.test
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.core.core.CommonUiState
+import com.simtop.core.core.FLOW_RETRY_DELAY_MILLIS
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
@@ -52,13 +54,17 @@ internal class FavoritesViewModelTest {
     }
 
   @Test
-  fun `upstream failure maps to error state`() =
+  fun `upstream failure emits error state and recovers on retry`() =
     runTest(dispatcher) {
+      var subscriptions = 0
+      val favorite = Beer.empty.copy(id = "1", name = "Favorite", isFavorite = true)
       val repository =
         FakeBeersRepository().apply {
           setFavoriteBeersObservationFlow(
             flow {
-              throw IllegalStateException("favorites unavailable")
+              if (subscriptions++ == 0) error("database unavailable")
+              emit(listOf(favorite))
+              awaitCancellation()
             }
           )
         }
@@ -68,7 +74,12 @@ internal class FavoritesViewModelTest {
         expectThat(awaitItem()).isA<CommonUiState.Loading>()
         val error = awaitItem()
         expectThat(error).isA<CommonUiState.Error>()
-        expectThat((error as CommonUiState.Error).message).isEqualTo("favorites unavailable")
+        advanceTimeBy(FLOW_RETRY_DELAY_MILLIS)
+        dispatcher.scheduler.runCurrent()
+        val recovered = awaitItem()
+        expectThat(recovered).isA<CommonUiState.Success<List<Beer>>>()
+        expectThat((recovered as CommonUiState.Success).data).isEqualTo(listOf(favorite))
+        expectThat(subscriptions).isEqualTo(2)
         cancelAndIgnoreRemainingEvents()
       }
     }

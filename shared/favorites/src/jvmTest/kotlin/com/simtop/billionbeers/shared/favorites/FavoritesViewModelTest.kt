@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.core.core.CommonUiState
+import com.simtop.core.core.FLOW_RETRY_DELAY_MILLIS
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlinx.coroutines.Dispatchers
@@ -47,19 +48,29 @@ class FavoritesViewModelTest {
     }
 
   @Test
-  fun `upstream failure maps to error state`() =
+  fun `upstream failure emits error state and recovers on retry`() =
     runTest(dispatcher) {
+      var subscriptions = 0
+      val favorites = listOf(Beer.empty.copy(id = "1", name = "Favorite", isFavorite = true))
       val repository =
         FakeBeersRepository().apply {
           setFavoriteBeersObservationFlow(
-            flow { throw IllegalStateException("favorites unavailable") }
+            flow {
+              if (subscriptions++ == 0) error("database unavailable")
+              emit(favorites)
+              awaitCancellation()
+            }
           )
         }
       val viewModel = FavoritesViewModel(repository)
 
       viewModel.viewState.test {
         awaitItem()
-        assertEquals("favorites unavailable", assertIs<CommonUiState.Error>(awaitItem()).message)
+        assertIs<CommonUiState.Error>(awaitItem())
+        advanceTimeBy(FLOW_RETRY_DELAY_MILLIS)
+        dispatcher.scheduler.runCurrent()
+        assertEquals(favorites, assertIs<CommonUiState.Success<List<Beer>>>(awaitItem()).data)
+        assertEquals(2, subscriptions)
         cancelAndIgnoreRemainingEvents()
       }
     }

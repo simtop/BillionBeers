@@ -9,7 +9,9 @@ import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
 import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.beerdomain.fakes.FakePager
+import com.simtop.core.core.CommonUiErrorKey
 import com.simtop.core.core.CommonUiState
+import com.simtop.core.core.FLOW_RETRY_DELAY_MILLIS
 import com.simtop.core.core.PagedListFooter
 import com.simtop.core.core.PagedListUiModel
 import com.simtop.core.core.Pager
@@ -17,8 +19,11 @@ import com.simtop.core.core.PagingEvent
 import com.simtop.core.core.PagingState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -91,6 +96,38 @@ class BeersListViewModelTest {
         val finalState = awaitItem()
         expectThat(finalState).isA<CommonUiState.Success<PagedListUiModel<Beer>>>()
         expectThat((finalState as CommonUiState.Success).data.isLoadingNextPage).isFalse()
+      }
+    }
+
+  @Test
+  fun `catalog observation emits error and recovers after retry`() =
+    runTest(testDispatcher) {
+      var subscriptions = 0
+      val beer = Beer.empty.copy(id = "recovered", name = "Recovered")
+      fakeBeersRepository.setBeersObservationFlow(
+        flow {
+          if (subscriptions++ == 0) error("database unavailable")
+          emit(listOf(beer))
+          awaitCancellation()
+        }
+      )
+      val pagerFactory = FakeBeersPagerFactory(fakeBeersRepository)
+      val viewModel = BeersListViewModel(fakeBeersRepository, pagerFactory)
+
+      viewModel.beerListViewState.test {
+        val error = awaitItem()
+        expectThat(error).isA<CommonUiState.Error>()
+        expectThat((error as CommonUiState.Error).errorKey)
+          .isEqualTo(CommonUiErrorKey.FailedToLoadBeers)
+
+        advanceTimeBy(FLOW_RETRY_DELAY_MILLIS)
+        testDispatcher.scheduler.runCurrent()
+
+        val recovered = awaitItem()
+        expectThat(recovered).isA<CommonUiState.Success<PagedListUiModel<Beer>>>()
+        expectThat((recovered as CommonUiState.Success).data.items).isEqualTo(listOf(beer))
+        expectThat(subscriptions).isEqualTo(2)
+        cancelAndIgnoreRemainingEvents()
       }
     }
 

@@ -52,14 +52,14 @@ fun SavedFiltersScreen(
   modifier: Modifier = Modifier,
   viewModel: SavedFiltersViewModel = metroViewModel(),
 ) {
-  val presets by viewModel.presets.collectAsState()
+  val viewState by viewModel.presets.collectAsState()
   val mutationFailedMessage = stringResource(R.string.savedfilters_mutation_failed)
   val snackbarHostState = remember { SnackbarHostState() }
   LaunchedEffect(viewModel, mutationFailedMessage) {
     viewModel.mutationFailed.collect { snackbarHostState.showSnackbar(mutationFailedMessage) }
   }
   SavedFiltersContent(
-    presets = presets,
+    viewState = viewState,
     onApply = { preset ->
       onApply(
         SavedFilterResults(
@@ -82,7 +82,7 @@ fun SavedFiltersScreen(
 @Composable
 @Suppress("LongParameterList")
 fun SavedFiltersContent(
-  presets: List<SavedFilterPreset>,
+  viewState: CommonUiState<List<SavedFilterPreset>>,
   onApply: (SavedFilterPreset) -> Unit,
   onRename: suspend (SavedFilterPreset, String) -> Boolean,
   onDelete: suspend (SavedFilterPreset) -> Boolean,
@@ -92,6 +92,7 @@ fun SavedFiltersContent(
   val strings =
     SavedFiltersStrings(
       empty = stringResource(R.string.savedfilters_empty),
+      loadFailed = stringResource(R.string.savedfilters_load_failed),
       name = stringResource(R.string.savedfilters_name),
       rename = stringResource(R.string.savedfilters_rename),
       delete = stringResource(R.string.savedfilters_delete),
@@ -102,7 +103,7 @@ fun SavedFiltersContent(
     snackbarHost = { SnackbarHost(snackbarHostState) },
   ) { paddingValues ->
     SharedSavedFiltersContent(
-      presets = presets,
+      viewState = viewState,
       strings = strings,
       onApply = onApply,
       onRename = onRename,
@@ -200,7 +201,12 @@ internal fun SavedFiltersPreview(
   @PreviewParameter(SavedFiltersPreviewProvider::class) presets: List<SavedFilterPreset>
 ) {
   BillionBeersTheme {
-    SavedFiltersContent(presets, onApply = {}, onRename = { _, _ -> false }, onDelete = { false })
+    SavedFiltersContent(
+      viewState = if (presets.isEmpty()) CommonUiState.Empty else CommonUiState.Success(presets),
+      onApply = {},
+      onRename = { _, _ -> false },
+      onDelete = { false },
+    )
   }
 }
 
@@ -210,15 +216,17 @@ internal fun SavedFiltersPreview(
 internal fun SavedFiltersLargeTextPreview() {
   BillionBeersTheme {
     SavedFiltersContent(
-      presets =
-        List(SavedFilterPreset.MAX_COUNT) { index ->
-          SavedFilterPreset(
-            "preset-$index",
-            "Favorite IPA ${index + 1}",
-            BeersQuery(),
-            index.toLong(),
-          )
-        },
+      viewState =
+        CommonUiState.Success(
+          List(SavedFilterPreset.MAX_COUNT) { index ->
+            SavedFilterPreset(
+              "preset-$index",
+              "Favorite IPA ${index + 1}",
+              BeersQuery(),
+              index.toLong(),
+            )
+          }
+        ),
       onApply = {},
       onRename = { _, _ -> false },
       onDelete = { false },

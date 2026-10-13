@@ -23,6 +23,16 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersReposit
 
   private val beersFlow = MutableStateFlow<List<Beer>>(initialBeers)
   private val presetsFlow = MutableStateFlow<List<SavedFilterPreset>>(emptyList())
+  private var beersObservationFlow: Flow<List<Beer>>? = null
+  private var savedFilterPresetsObservationFlow: Flow<List<SavedFilterPreset>>? = null
+
+  fun setBeersObservationFlow(flow: Flow<List<Beer>>?) {
+    beersObservationFlow = flow
+  }
+
+  fun setSavedFilterPresetsObservationFlow(flow: Flow<List<SavedFilterPreset>>?) {
+    savedFilterPresetsObservationFlow = flow
+  }
 
   // Helper to inspect state
   fun getBeers(): List<Beer> = beersFlow.value
@@ -47,7 +57,8 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersReposit
     return beersFlow.value.size
   }
 
-  override fun observeSavedFilterPresets(): Flow<List<SavedFilterPreset>> = presetsFlow
+  override fun observeSavedFilterPresets(): Flow<List<SavedFilterPreset>> =
+    savedFilterPresetsObservationFlow ?: presetsFlow
 
   val saveFilterPresetRequests = mutableListOf<SavedFilterPreset>()
   var saveFilterPresetError: SaveFilterPresetError? = null
@@ -87,7 +98,7 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersReposit
   }
 
   override fun observeBeers(): Flow<List<Beer>> {
-    return beersFlow
+    return beersObservationFlow ?: beersFlow
   }
 
   override fun observeFavoriteBeers(): Flow<List<Beer>> =

@@ -1,13 +1,16 @@
 package com.simtop.billionbeers.shared.savedfilters
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -17,14 +20,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
+import com.simtop.core.core.CommonUiState
 import kotlinx.coroutines.launch
 
 data class SavedFiltersStrings(
   val empty: String,
+  val loadFailed: String,
   val name: String,
   val rename: String,
   val delete: String,
@@ -32,12 +38,40 @@ data class SavedFiltersStrings(
 
 @Composable
 fun SharedSavedFiltersContent(
-  presets: List<SavedFilterPreset>,
+  viewState: CommonUiState<List<SavedFilterPreset>>,
   strings: SavedFiltersStrings,
   onApply: (SavedFilterPreset) -> Unit,
   onRename: suspend (SavedFilterPreset, String) -> Boolean,
   onDelete: suspend (SavedFilterPreset) -> Boolean,
   modifier: Modifier = Modifier,
+) {
+  when (val state = viewState) {
+    CommonUiState.Loading ->
+      Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator()
+      }
+    CommonUiState.Empty ->
+      SavedFiltersList(emptyList(), strings, onApply, onRename, onDelete, modifier)
+    is CommonUiState.Error ->
+      Box(
+        modifier.fillMaxSize().testTag("saved_filters_load_error"),
+        contentAlignment = Alignment.Center,
+      ) {
+        Text(strings.loadFailed)
+      }
+    is CommonUiState.Success ->
+      SavedFiltersList(state.data, strings, onApply, onRename, onDelete, modifier)
+  }
+}
+
+@Composable
+private fun SavedFiltersList(
+  presets: List<SavedFilterPreset>,
+  strings: SavedFiltersStrings,
+  onApply: (SavedFilterPreset) -> Unit,
+  onRename: suspend (SavedFilterPreset, String) -> Boolean,
+  onDelete: suspend (SavedFilterPreset) -> Boolean,
+  modifier: Modifier,
 ) {
   LazyColumn(modifier.padding(12.dp)) {
     if (presets.isEmpty()) item { Text(strings.empty) }
