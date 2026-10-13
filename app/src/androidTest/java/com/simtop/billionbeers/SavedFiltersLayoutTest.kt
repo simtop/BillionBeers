@@ -30,6 +30,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.core.core.CommonUiState
 import com.simtop.feature.savedfilters.R as SavedFiltersR
 import com.simtop.feature.savedfilters.SavedFiltersContent
 import org.junit.Assert.assertEquals
@@ -114,7 +115,8 @@ class SavedFiltersLayoutTest {
       CompositionLocalProvider(LocalDensity provides Density(density, fontScale = 2f)) {
         BillionBeersTheme {
           SavedFiltersContent(
-            presets = presets,
+            viewState =
+              if (presets.isEmpty()) CommonUiState.Empty else CommonUiState.Success(presets),
             onApply = { appliedIds += it.id },
             onRename = { preset, name ->
               renamedIds += preset.id
