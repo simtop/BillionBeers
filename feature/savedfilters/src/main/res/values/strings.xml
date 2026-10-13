@@ -2,6 +2,7 @@
 <resources>
     <string name="savedfilters_title">Saved filters</string>
     <string name="savedfilters_empty">No saved filters yet</string>
+    <string name="savedfilters_load_failed">Could not load saved filters. Retrying.</string>
     <string name="savedfilters_name">Filter name</string>
     <string name="savedfilters_rename">Rename</string>
     <string name="savedfilters_delete">Delete</string>

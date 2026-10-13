@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.billionbeers.shared.savedfilters.SavedFiltersStrings
 import com.simtop.billionbeers.shared.savedfilters.SharedSavedFiltersContent
+import com.simtop.core.core.CommonUiState
 
 @Composable
 internal fun SavedFiltersDestination(
@@ -16,12 +17,13 @@ internal fun SavedFiltersDestination(
   onRename: suspend (SavedFilterPreset, String) -> Boolean,
   onDelete: suspend (SavedFilterPreset) -> Boolean,
 ) {
-  val presets by entry.presets.collectAsState(emptyList())
+  val viewState by entry.presets.collectAsState(CommonUiState.Loading)
   SharedSavedFiltersContent(
-    presets = presets,
+    viewState = viewState,
     strings =
       SavedFiltersStrings(
         empty = strings.savedFiltersEmpty,
+        loadFailed = strings.savedFiltersLoadFailed,
         name = strings.filterNameHint,
         rename = strings.renameFilter,
         delete = strings.deleteFilter,

@@ -6,6 +6,7 @@ import com.simtop.beerdomain.domain.errors.MutateFilterPresetError
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.billionbeers.shared.savedfilters.SavedFiltersModel
+import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.Either
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
@@ -32,11 +33,11 @@ class SavedFiltersViewModel(repository: BeersRepository) : ViewModel() {
   private val savedFilters = SavedFiltersModel(repository)
   private val mutationErrors = Channel<Unit>(Channel.BUFFERED)
   val mutationFailed = mutationErrors.receiveAsFlow()
-  val presets: StateFlow<List<SavedFilterPreset>> =
+  val presets: StateFlow<CommonUiState<List<SavedFilterPreset>>> =
     savedFilters.presets.stateIn(
       viewModelScope,
       SharingStarted.WhileSubscribed(PRESETS_STOP_TIMEOUT_MILLIS),
-      emptyList(),
+      CommonUiState.Loading,
     )
 
   suspend fun rename(preset: SavedFilterPreset, name: String): Boolean =

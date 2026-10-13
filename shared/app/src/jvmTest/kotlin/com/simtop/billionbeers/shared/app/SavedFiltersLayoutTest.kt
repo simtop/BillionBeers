@@ -232,6 +232,7 @@ internal fun savedFilterStrings(rename: String, delete: String) =
     browse = "",
     savedFilters = "Saved filters",
     savedFiltersEmpty = "No saved filters",
+    savedFiltersLoadFailed = "Could not load saved filters. Retrying.",
     saveFilter = "Save filter",
     filterPresetLimitReached = "Ten filters already saved",
     saveFilterFailed = "Could not save filter",

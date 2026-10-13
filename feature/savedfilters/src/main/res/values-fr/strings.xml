@@ -2,6 +2,7 @@
 <resources>
     <string name="savedfilters_title">Filtres enregistrés</string>
     <string name="savedfilters_empty">Aucun filtre enregistré</string>
+    <string name="savedfilters_load_failed">Impossible de charger les filtres enregistrés. Nouvelle tentative.</string>
     <string name="savedfilters_name">Nom du filtre</string>
     <string name="savedfilters_rename">Renommer</string>
     <string name="savedfilters_delete">Supprimer</string>

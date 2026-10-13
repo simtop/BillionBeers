@@ -5,10 +5,15 @@ import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.billionbeers.testing_utils.MainDispatcherExtension
+import com.simtop.core.core.CommonUiState
+import com.simtop.core.core.FLOW_RETRY_DELAY_MILLIS
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
@@ -33,15 +38,15 @@ class SavedFiltersViewModelTest {
 
       repository.saveFilterPreset(preset)
       runCurrent()
-      expectThat(viewModel.presets.value).containsExactly(preset)
+      expectThat(presets(viewModel)).containsExactly(preset)
 
       viewModel.rename(preset, " India Pale Ale ")
       runCurrent()
-      expectThat(viewModel.presets.value.single().name).isEqualTo("India Pale Ale")
+      expectThat(presets(viewModel).single().name).isEqualTo("India Pale Ale")
 
       viewModel.delete(preset)
       runCurrent()
-      expectThat(viewModel.presets.value).isEqualTo(emptyList())
+      expectThat(viewModel.presets.value).isEqualTo(CommonUiState.Empty)
     }
 
   @Test
@@ -61,7 +66,7 @@ class SavedFiltersViewModelTest {
       }
       runCurrent()
 
-      expectThat(viewModel.presets.value.single().name).isEqualTo("IPA")
+      expectThat(presets(viewModel).single().name).isEqualTo("IPA")
       expectThat(repository.renameFilterPresetRequests).isEmpty()
       expectThat(reportedFailures).isEmpty()
     }
@@ -81,9 +86,9 @@ class SavedFiltersViewModelTest {
         MutateFilterPresetError.Unknown(IllegalStateException("storage"))
 
       expectThat(viewModel.rename(preset, "Renamed")).isEqualTo(false)
-      expectThat(viewModel.presets.value).containsExactly(preset)
+      expectThat(presets(viewModel)).containsExactly(preset)
       expectThat(viewModel.delete(preset)).isEqualTo(false)
-      expectThat(viewModel.presets.value).containsExactly(preset)
+      expectThat(presets(viewModel)).containsExactly(preset)
       runCurrent()
       expectThat(reportedFailures.size).isEqualTo(2)
 
@@ -103,15 +108,45 @@ class SavedFiltersViewModelTest {
       }
       expectThat(renameCancelled).isEqualTo(true)
       expectThat(deleteCancelled).isEqualTo(true)
-      expectThat(viewModel.presets.value).containsExactly(preset)
+      expectThat(presets(viewModel)).containsExactly(preset)
 
       repository.mutateFilterPresetException = null
       expectThat(viewModel.rename(preset, "Renamed")).isEqualTo(true)
       runCurrent()
-      expectThat(viewModel.presets.value.single().name).isEqualTo("Renamed")
-      expectThat(viewModel.delete(viewModel.presets.value.single())).isEqualTo(true)
+      expectThat(presets(viewModel).single().name).isEqualTo("Renamed")
+      expectThat(viewModel.delete(presets(viewModel).single())).isEqualTo(true)
       runCurrent()
-      expectThat(viewModel.presets.value).isEqualTo(emptyList())
+      expectThat(viewModel.presets.value).isEqualTo(CommonUiState.Empty)
       expectThat(reportedFailures.size).isEqualTo(2)
     }
+
+  @Test
+  fun `preset observation emits error and recovers after retry`() =
+    runTest(mainDispatcher.testDispatcher) {
+      var subscriptions = 0
+      val preset = SavedFilterPreset("ipa", "IPA", BeersQuery(), 1L)
+      val repository =
+        FakeBeersRepository().apply {
+          setSavedFilterPresetsObservationFlow(
+            flow {
+              if (subscriptions++ == 0) error("database unavailable")
+              emit(listOf(preset))
+              awaitCancellation()
+            }
+          )
+        }
+      val viewModel = SavedFiltersViewModel(repository)
+      backgroundScope.launch { viewModel.presets.collect() }
+      runCurrent()
+      expectThat(viewModel.presets.value).isEqualTo(CommonUiState.Error())
+
+      advanceTimeBy(FLOW_RETRY_DELAY_MILLIS)
+      runCurrent()
+
+      expectThat(presets(viewModel)).containsExactly(preset)
+      expectThat(subscriptions).isEqualTo(2)
+    }
+
+  private fun presets(viewModel: SavedFiltersViewModel): List<SavedFilterPreset> =
+    (viewModel.presets.value as CommonUiState.Success<List<SavedFilterPreset>>).data
 }

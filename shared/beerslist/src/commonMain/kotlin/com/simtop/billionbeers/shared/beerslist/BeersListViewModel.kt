@@ -8,17 +8,20 @@ import com.simtop.beerdomain.domain.models.CatalogCacheStatus
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.billionbeers.shared.presentation.toCommonUiErrorState
+import com.simtop.core.core.CommonUiErrorKey
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.PagedListReducer
 import com.simtop.core.core.PagedListUiModel
 import com.simtop.core.core.PagingEvent
 import com.simtop.core.core.PagingState
+import com.simtop.core.core.retryWithErrorState
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
@@ -36,8 +39,19 @@ open class BeersListViewModel(
   private val reducer =
     PagedListReducer<Beer, FetchBeersError>(errorState = { it.toCommonUiErrorState() })
 
+  private val observedBeers: Flow<CatalogBeersObservation> =
+    pager.data
+      .map { CatalogBeersObservation.Items(it) }
+      .retryWithErrorState { CatalogBeersObservation.Failed }
+
   val beerListViewState: StateFlow<CommonUiState<PagedListUiModel<Beer>>> =
-    combine(pager.data, pager.pagingState, reducer::reduce)
+    combine(observedBeers, pager.pagingState) { observation, pagingState ->
+        when (observation) {
+          is CatalogBeersObservation.Items -> reducer.reduce(observation.items, pagingState)
+          CatalogBeersObservation.Failed ->
+            CommonUiState.Error(errorKey = CommonUiErrorKey.FailedToLoadBeers)
+        }
+      }
       .stateIn(viewModelScope, SharingStarted.Eagerly, CommonUiState.Loading)
 
   private val _events = Channel<BeersListEvent>(Channel.BUFFERED)
@@ -92,6 +106,12 @@ open class BeersListViewModel(
   fun refresh() {
     viewModelScope.launch { pager.loadFirstPage() }
   }
+}
+
+private sealed interface CatalogBeersObservation {
+  data class Items(val items: List<Beer>) : CatalogBeersObservation
+
+  data object Failed : CatalogBeersObservation
 }
 
 sealed interface BeersListEvent {

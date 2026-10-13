@@ -5,9 +5,9 @@ import androidx.lifecycle.viewModelScope
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.CommonUiState
+import com.simtop.core.core.retryWithErrorState
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
@@ -21,7 +21,7 @@ open class FavoritesViewModel(private val beersRepository: BeersRepository) : Vi
       .map { favorites ->
         if (favorites.isEmpty()) CommonUiState.Empty else CommonUiState.Success(favorites)
       }
-      .catch { emit(CommonUiState.Error(message = it.message)) }
+      .retryWithErrorState { CommonUiState.Error() }
       .stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(FAVORITES_STOP_TIMEOUT_MILLIS),
