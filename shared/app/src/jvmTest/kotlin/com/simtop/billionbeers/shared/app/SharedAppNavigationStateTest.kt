@@ -224,20 +224,30 @@ class SharedAppNavigationStateTest {
   }
 
   @Test
-  fun externalCategoryRouteRestoresRetainedCategoryEntry() {
+  fun externalCategoryRouteMatchesRetainedCategoryByKindAndId() {
     val navigation = navigation()
     navigation.navigate(PortableRoute.BeerBrowse)
+    val browseHome = navigation.current as BrowseHomeEntry
     navigation.selectBrowse(BrowseSelection(styleId = "style", name = "Lager"))
     val category = navigation.current
     navigation.navigate(PortableRoute.BeerDetail(beer))
 
     navigation.replaceFromRoute(
-      PortableRoute.BeerBrowseSelection(BrowseCategory.Style("style", "Lager"))
+      PortableRoute.BeerBrowseSelection(BrowseCategory.Style("style", "style"))
     )
 
     assertSame(category, navigation.current)
     assertTrue(navigation.entries.none { it is DetailEntry })
+    assertSame(browseHome, navigation.entries[1])
+    assertFalse(browseHome.isClosed)
     assertFalse(category.isClosed)
+    assertEquals("Lager", (category as BrowseBeersEntry).selection.name)
+
+    navigation.replaceFromRoute(PortableRoute.BeerBrowse)
+
+    assertSame(browseHome, navigation.current)
+    assertTrue(category.isClosed)
+    assertFalse(browseHome.isClosed)
   }
 
   @Test
