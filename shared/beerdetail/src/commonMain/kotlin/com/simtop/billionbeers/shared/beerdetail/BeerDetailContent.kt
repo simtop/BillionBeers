@@ -239,15 +239,15 @@ fun SharedBeerDetailContent(
             StatCard(
               label = strings.abv,
               value = "${formatBeerMetric(beer.abv)}%",
-              color = Color(ABV_BG_COLOR),
-              textColor = Color(ABV_TEXT_COLOR),
+              color = BillionBeersTheme.colors.abvContainer,
+              textColor = BillionBeersTheme.colors.onAbvContainer,
               modifier = Modifier.fillMaxWidth(),
             )
             StatCard(
               label = strings.ibu,
               value = formatBeerMetric(beer.ibu),
-              color = Color(IBU_BG_COLOR),
-              textColor = Color(IBU_TEXT_COLOR),
+              color = BillionBeersTheme.colors.ibuContainer,
+              textColor = BillionBeersTheme.colors.onIbuContainer,
               modifier = Modifier.fillMaxWidth(),
             )
           }
@@ -259,15 +259,15 @@ fun SharedBeerDetailContent(
             StatCard(
               label = strings.abv,
               value = "${formatBeerMetric(beer.abv)}%",
-              color = Color(ABV_BG_COLOR),
-              textColor = Color(ABV_TEXT_COLOR),
+              color = BillionBeersTheme.colors.abvContainer,
+              textColor = BillionBeersTheme.colors.onAbvContainer,
               modifier = Modifier.weight(1f),
             )
             StatCard(
               label = strings.ibu,
               value = formatBeerMetric(beer.ibu),
-              color = Color(IBU_BG_COLOR),
-              textColor = Color(IBU_TEXT_COLOR),
+              color = BillionBeersTheme.colors.ibuContainer,
+              textColor = BillionBeersTheme.colors.onIbuContainer,
               modifier = Modifier.weight(1f),
             )
           }
@@ -391,7 +391,7 @@ private fun StatCard(
         style =
           MaterialTheme.typography.labelMedium.copy(
             fontWeight = FontWeight.SemiBold,
-            color = textColor.copy(alpha = 0.7f),
+            color = textColor,
           ),
       )
     }
@@ -400,9 +400,5 @@ private fun StatCard(
 
 private const val GRADIENT_ALPHA = 0.7f
 private const val TEXT_ALPHA = 0.8f
-private const val ABV_BG_COLOR = 0xFFE0F7FA
-private const val ABV_TEXT_COLOR = 0xFF006064
-private const val IBU_BG_COLOR = 0xFFFBE9E7
-private const val IBU_TEXT_COLOR = 0xFFBF360C
 private const val AVAILABILITY_ANIMATION_DURATION_MS = 300
 private const val LARGE_FONT_METRIC_CARD_SCALE = 2f

@@ -117,13 +117,13 @@ fun SharedBeerListItem(
         ) {
           BeerChip(
             text = labels.abv,
-            color = Color(ABV_BG_COLOR),
-            textColor = Color(ABV_TEXT_COLOR),
+            color = BillionBeersTheme.colors.abvContainer,
+            textColor = BillionBeersTheme.colors.onAbvContainer,
           )
           BeerChip(
             text = labels.ibu,
-            color = Color(IBU_BG_COLOR),
-            textColor = Color(IBU_TEXT_COLOR),
+            color = BillionBeersTheme.colors.ibuContainer,
+            textColor = BillionBeersTheme.colors.onIbuContainer,
           )
           if (beer.availability) {
             BeerChip(
@@ -167,10 +167,6 @@ private fun BeerChip(text: String, color: Color, textColor: Color, modifier: Mod
   }
 }
 
-private const val ABV_BG_COLOR = 0xFFE0F7FA
-private const val ABV_TEXT_COLOR = 0xFF006064
-private const val IBU_BG_COLOR = 0xFFFBE9E7
-private const val IBU_TEXT_COLOR = 0xFFBF360C
 private const val AVAILABLE_BG_COLOR = 0xFFE8F5E9
 private const val AVAILABLE_TEXT_COLOR = 0xFF1B5E20
 private const val UNAVAILABLE_BG_COLOR = 0xFFFFEBEE

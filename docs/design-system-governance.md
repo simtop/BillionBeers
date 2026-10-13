@@ -55,6 +55,15 @@ actually needs them.
 
 ## Component contract
 
+### Metric colors
+
+`BillionBeersTheme.colors.abvContainer` / `onAbvContainer` and `ibuContainer` /
+`onIbuContainer` own the paired colors for metric chips and detail cards, with distinct light/dark
+palettes. Apply the opaque on-color to values and small labels; reducing label opacity can put a
+normal-text pair below 4.5:1. `ThemeTest` checks opacity and contrast for both pairs in both themes.
+The catalog's Metric colors demo and light/dark previews show each pair together. Availability and
+error colors are separate roles; the metric palette does not define their meaning.
+
 ### Android/Web beer row
 
 [SharedBeerListItem](../shared/presentation/src/commonMain/kotlin/com/simtop/billionbeers/shared/presentation/SharedBeerListItem.kt)

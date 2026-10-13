@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import com.simtop.billionbeers.catalog_annotations.CatalogComponent
+import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 
 @CatalogComponent(tab = "Design System", name = "Colors")
 @Composable
@@ -31,6 +32,10 @@ fun ColorCatalogDemo(modifier: Modifier = Modifier) {
       "OnSurface" to BillionBeersTheme.colors.onSurface,
       "Error" to BillionBeersTheme.colors.error,
       "OnError" to BillionBeersTheme.colors.onError,
+      "AbvContainer" to BillionBeersTheme.colors.abvContainer,
+      "OnAbvContainer" to BillionBeersTheme.colors.onAbvContainer,
+      "IbuContainer" to BillionBeersTheme.colors.ibuContainer,
+      "OnIbuContainer" to BillionBeersTheme.colors.onIbuContainer,
     )
 
   LazyColumn(modifier = modifier.fillMaxSize().padding(16.dp)) {
@@ -53,6 +58,52 @@ private fun ColorRow(name: String, color: Color) {
     }
     Box(modifier = Modifier.size(40.dp).background(color))
   }
+}
+
+/** Catalog-only paired metric colors, including the small-label contrast contract. */
+@CatalogComponent(tab = "Design System", name = "Metric colors")
+@Composable
+fun MetricColorCatalogDemo(modifier: Modifier = Modifier) {
+  Column(
+    modifier = modifier.padding(BillionBeersTheme.spacing.medium),
+    verticalArrangement = Arrangement.spacedBy(BillionBeersTheme.spacing.medium),
+  ) {
+    val metrics =
+      listOf(
+        Triple(
+          "ABV",
+          BillionBeersTheme.colors.abvContainer,
+          BillionBeersTheme.colors.onAbvContainer,
+        ),
+        Triple(
+          "IBU",
+          BillionBeersTheme.colors.ibuContainer,
+          BillionBeersTheme.colors.onIbuContainer,
+        ),
+      )
+    metrics.forEach { (label, container, foreground) ->
+      androidx.compose.material3.Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = container,
+        contentColor = foreground,
+        shape = MaterialTheme.shapes.medium,
+      ) {
+        Column(modifier = Modifier.padding(BillionBeersTheme.spacing.medium)) {
+          Text(
+            text = if (label == "ABV") "5.6%" else "41.5",
+            style = MaterialTheme.typography.titleLarge,
+          )
+          Text(text = label, style = MaterialTheme.typography.labelMedium)
+        }
+      }
+    }
+  }
+}
+
+@PreviewLightDark
+@Composable
+internal fun MetricColorsPreview() {
+  BillionBeersTheme { MetricColorCatalogDemo() }
 }
 
 @CatalogComponent(tab = "Design System", name = "Typography")
