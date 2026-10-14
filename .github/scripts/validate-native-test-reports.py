@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 import sys
 import xml.etree.ElementTree as ET
@@ -14,7 +15,21 @@ REPORT_GLOB = "build/test-results/iosSimulatorArm64Test/*.xml"
 
 def validate(root: Path) -> list[str]:
     errors: list[str] = []
-    for module in REQUIRED_MODULES:
+    modules = set(REQUIRED_MODULES)
+    for current, directories, _ in os.walk(root):
+        directories[:] = [
+            name
+            for name in directories
+            if not name.startswith(".") and name not in {"bin", "build", "node_modules", "rod"}
+        ]
+        source_root = Path(current)
+        if source_root.name != "src" or "commonTest" not in directories:
+            continue
+        source_set = source_root / "commonTest"
+        if any(source_set.rglob("*.kt")):
+            modules.add(source_root.parent.relative_to(root).as_posix())
+
+    for module in sorted(modules):
         reports = sorted((root / module).glob(REPORT_GLOB))
         if not reports:
             errors.append(f"{module}: no JUnit reports at {module}/{REPORT_GLOB}")

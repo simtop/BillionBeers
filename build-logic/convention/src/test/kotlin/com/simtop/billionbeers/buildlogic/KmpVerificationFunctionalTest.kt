@@ -96,6 +96,40 @@ class KmpVerificationFunctionalTest {
   }
 
   @Test
+  fun `Apple simulator aggregate discovers every configured simulator test`() {
+    writeFile(
+      "settings.gradle.kts",
+      """
+      rootProject.name = "kmp-ios-verification-test"
+      include(":first", ":second", ":plain-jvm")
+      """.trimIndent(),
+    )
+    writeFile(
+      "build.gradle.kts",
+      """
+      plugins { id("billionbeers.kmp.verification") }
+      """.trimIndent(),
+    )
+    listOf("first", "second").forEach { module ->
+      writeFile(
+        "$module/build.gradle.kts",
+        "tasks.register(\"iosSimulatorArm64Test\") { doLast {} }",
+      )
+    }
+    writeFile(
+      "plain-jvm/build.gradle.kts",
+      "tasks.register(\"test\") { doLast {} }",
+    )
+
+    val result = runner().withArguments("kmpIosSimulatorTest", "--stacktrace").build()
+
+    listOf(":first:iosSimulatorArm64Test", ":second:iosSimulatorArm64Test").forEach { taskPath ->
+      assertEquals(TaskOutcome.SUCCESS, result.task(taskPath)?.outcome, result.output)
+    }
+    assertNull(result.task(":plain-jvm:test"), result.output)
+  }
+
+  @Test
   fun `selected module test routing follows available task tiers`() {
     writeFile(
       "settings.gradle.kts",

@@ -763,9 +763,10 @@ class DependabotPreparationTest(unittest.TestCase):
 
         apple = make_dry_run("apple")
         for task in (":ios-shared:compileKotlinIosArm64", ":ios-shared:compileKotlinIosSimulatorArm64",
-                     ":ios-shared:linkDebugFrameworkIosSimulatorArm64", ":ios-shared:linkDebugFrameworkIosArm64",
-                     ":ios-shared:iosSimulatorArm64Test"):
+                     ":ios-shared:linkDebugFrameworkIosSimulatorArm64", ":ios-shared:linkDebugFrameworkIosArm64"):
             self.assertIn(task, apple)
+        self.assertIn("kmpIosSimulatorTest", apple)
+        self.assertNotIn(":ios-shared:iosSimulatorArm64Test", apple)
 
 
 if __name__ == "__main__":

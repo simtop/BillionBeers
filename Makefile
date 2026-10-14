@@ -232,8 +232,8 @@ ios-compile: ## Compile all shared modules for both supported Apple targets.
 ios-framework: ## Link the shared iOS framework for simulator and device.
 	$(GRADLE_RUNNER) :ios-shared:linkDebugFrameworkIosSimulatorArm64 :ios-shared:linkDebugFrameworkIosArm64
 
-ios-test: ## Execute native core, network, Room, and iOS runtime tests on the arm64 simulator.
-	$(GRADLE_RUNNER) :core-common:iosSimulatorArm64Test :beerdomain:impl:iosSimulatorArm64Test :beer_network:iosSimulatorArm64Test :beer_database:iosSimulatorArm64Test :ios-shared:iosSimulatorArm64Test
+ios-test: ## Execute every configured KMP test on the Apple simulator.
+	$(GRADLE_RUNNER) kmpIosSimulatorTest
 
 ios-host-build: ## Build the unsigned iOS host for the arm64 simulator.
 	xcodebuild -project iosApp/BillionBeers.xcodeproj -scheme BillionBeers -configuration Debug -sdk iphonesimulator -destination '$(IOS_HOST_DESTINATION)' -derivedDataPath iosApp/build/DerivedData CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
