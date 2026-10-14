@@ -8,6 +8,7 @@ import com.simtop.billionbeers.di.AppGraph
 import com.simtop.billionbeers.di.BaseAppGraph
 import com.simtop.billionbeers.widget.FavoritesWidget
 import com.simtop.billionbeers.widget.FavoritesWidgetSynchronizer
+import com.simtop.core.di.DynamicDependencies
 import com.simtop.core.di.GraphProvider
 import dev.zacsweers.metro.createGraphFactory
 import dev.zacsweers.metrox.viewmodel.MetroViewModelFactory
@@ -18,7 +19,7 @@ import kotlinx.coroutines.launch
 
 private const val FAVORITES_WIDGET_LOG_TAG = "FavoritesWidget"
 
-class BillionBeersApplication : SplitCompatApplication(), GraphProvider {
+class BillionBeersApplication : SplitCompatApplication(), GraphProvider, DynamicDependencies {
   lateinit var appGraph: BaseAppGraph
     private set
 
@@ -26,6 +27,15 @@ class BillionBeersApplication : SplitCompatApplication(), GraphProvider {
 
   override val metroViewModelFactory: MetroViewModelFactory
     get() = appGraph.metroViewModelFactory
+
+  override val beersRepository
+    get() = appGraph.beersRepository
+
+  override val beersPagerFactory
+    get() = appGraph.beersPagerFactory
+
+  override val coroutineDispatcher
+    get() = appGraph.coroutineDispatcher
 
   // Deliberately does *not* pre-warm the networking branch of the graph on a background thread.
   // That was built, measured and reverted: a Perfetto trace of a cold start on a Pixel 8 shows no
