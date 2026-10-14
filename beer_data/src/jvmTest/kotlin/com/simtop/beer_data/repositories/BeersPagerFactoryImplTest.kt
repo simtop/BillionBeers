@@ -327,6 +327,19 @@ class BeersPagerFactoryImplTest {
     }
 
   @Test
+  fun `a browse pager removes duplicate beers returned on overlapping pages`() =
+    runTest(testDispatcher) {
+      beersRemoteSource.setBeersResponse(listOf(apiItem(id = "1")), totalCount = 50)
+      val pager = factory.create(BeersQuery(styleId = "style-1"))
+
+      pager.loadFirstPage()
+      pager.loadNextPage()
+
+      expectThat(pager.data.first().map { it.id }).isEqualTo(listOf("1"))
+      expectThat(beersRemoteSource.requestedPages.toList()).isEqualTo(listOf(1, 2))
+    }
+
+  @Test
   fun `a brewery-filtered pager fetches with the brewery id`() =
     runTest(testDispatcher) {
       beersRemoteSource.setBeersResponse(listOf(apiItem(id = "1")), totalCount = 1)

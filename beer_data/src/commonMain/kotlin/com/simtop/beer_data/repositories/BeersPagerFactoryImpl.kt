@@ -59,7 +59,7 @@ class BeersPagerFactoryImpl(
       initialKey = FIRST_PAGE,
       fetchRemote = fetchPage(query),
       classifyError = { it.toFetchBeersError() },
-      storage = AvailabilityOverlayStorage(InMemoryPagingStorage(), repository),
+      storage = AvailabilityOverlayStorage(InMemoryPagingStorage(keyOf = Beer::id), repository),
     )
 
   /**

@@ -125,18 +125,23 @@ interface PagingStorage<Key : Any, Value : Any> {
 }
 
 /** Network-only storage: pages accumulate in memory and vanish with the pager. */
-class InMemoryPagingStorage<Key : Any, Value : Any> : PagingStorage<Key, Value> {
+class InMemoryPagingStorage<Key : Any, Value : Any>(
+  private val keyOf: ((Value) -> Any)? = null,
+) : PagingStorage<Key, Value> {
   private val pages = MutableStateFlow<List<Value>>(emptyList())
 
   override val data: Flow<List<Value>> = pages.asStateFlow()
 
   override suspend fun storeFirstPage(page: PageResult<Key, Value>) {
-    pages.value = page.items
+    pages.value = distinct(page.items)
   }
 
   override suspend fun append(page: PageResult<Key, Value>) {
-    pages.update { current -> current + page.items }
+    pages.update { current -> distinct(current + page.items) }
   }
+
+  private fun distinct(items: List<Value>): List<Value> =
+    keyOf?.let(items::distinctBy) ?: items
 }
 
 /**

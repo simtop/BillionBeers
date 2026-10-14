@@ -81,6 +81,36 @@ class InMemoryPagingStorageContractTest : PagingStorageContractTest() {
   override val storeFirstPageReplaces = true
 }
 
+@ExperimentalCoroutinesApi
+class InMemoryPagingStorageIdentityTest {
+
+  private data class Item(val id: String, val value: String)
+
+  @Test
+  fun `configured identity keeps one item when pages overlap`() = runTest {
+    val storage = InMemoryPagingStorage<Int, Item>(keyOf = Item::id)
+    storage.storeFirstPage(PageResult(listOf(Item("1", "first"), Item("2", "two")), 2))
+
+    storage.append(PageResult(listOf(Item("2", "overlap"), Item("3", "three")), 3))
+
+    storage.data.test {
+      assertEquals(
+        listOf(Item("1", "first"), Item("2", "two"), Item("3", "three")),
+        awaitItem(),
+      )
+    }
+  }
+
+  @Test
+  fun `configured identity removes duplicates from the first page`() = runTest {
+    val storage = InMemoryPagingStorage<Int, Item>(keyOf = Item::id)
+
+    storage.storeFirstPage(PageResult(listOf(Item("1", "first"), Item("1", "duplicate")), 2))
+
+    storage.data.test { assertEquals(listOf(Item("1", "first")), awaitItem()) }
+  }
+}
+
 /**
  * A minimal upsert-by-value storage standing in for a DB-backed SSOT: every write merges instead of
  * replacing, mirroring the beers cache's "refresh never deletes" policy. The real Room storage's
