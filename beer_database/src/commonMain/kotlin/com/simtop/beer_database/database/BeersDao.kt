@@ -18,6 +18,9 @@ abstract class BeersDao {
 
   @Query("SELECT * FROM beers") abstract fun getAllBeers(): Flow<List<BeerDbModel>>
 
+  @Query("SELECT * FROM beers WHERE is_in_catalog = 1")
+  abstract fun getCatalogBeers(): Flow<List<BeerDbModel>>
+
   @Query("SELECT * FROM beers WHERE is_favorite = 1 ORDER BY name, id")
   abstract fun getFavoriteBeers(): Flow<List<BeerDbModel>>
 
@@ -77,7 +80,8 @@ abstract class BeersDao {
         max_serving_temperature = :maxServingTemperature,
         fermentation_method = :fermentationMethod,
         ingredients = :ingredients,
-        recommended_glasses = :recommendedGlasses
+        recommended_glasses = :recommendedGlasses,
+        is_in_catalog = is_in_catalog OR :isInCatalog
         WHERE id = :id
         """
   )
@@ -99,14 +103,20 @@ abstract class BeersDao {
     fermentationMethod: String,
     ingredients: String,
     recommendedGlasses: String,
+    isInCatalog: Boolean,
   )
 
   @Transaction
   open suspend fun insertAll(beers: List<BeerDbModel>) {
-    val results = insertIgnoringConflicts(beers)
+    upsertBeers(beers, isInCatalog = true)
+  }
+
+  private suspend fun upsertBeers(beers: List<BeerDbModel>, isInCatalog: Boolean) {
+    val catalogBeers = beers.map { it.copy(isInCatalog = isInCatalog) }
+    val results = insertIgnoringConflicts(catalogBeers)
     for (i in results.indices) {
       if (results[i] == -1L) {
-        val beer = beers[i]
+        val beer = catalogBeers[i]
         updateBeerDetails(
           beer.id,
           beer.name,
@@ -125,6 +135,7 @@ abstract class BeersDao {
           beer.fermentationMethod,
           beer.ingredients,
           beer.recommendedGlasses,
+          isInCatalog,
         )
       }
     }
@@ -150,7 +161,7 @@ abstract class BeersDao {
   @Transaction
   open suspend fun upsertAvailability(beer: BeerDbModel) {
     if (updateBeer(beer.id, beer.availability) == 0) {
-      insertIgnoringConflicts(listOf(beer))
+      insertIgnoringConflicts(listOf(beer.copy(isInCatalog = false)))
     }
   }
 
@@ -160,13 +171,16 @@ abstract class BeersDao {
   @Transaction
   open suspend fun upsertFavorite(beer: BeerDbModel) {
     if (updateFavorite(beer.id, beer.isFavorite) == 0) {
-      insertIgnoringConflicts(listOf(beer))
+      insertIgnoringConflicts(listOf(beer.copy(isInCatalog = false)))
     }
   }
 
   @Query("DELETE FROM beers") abstract suspend fun deleteAll()
 
   @Query("SELECT COUNT(id) FROM beers") abstract suspend fun getCount(): Int
+
+  @Query("SELECT COUNT(id) FROM beers WHERE is_in_catalog = 1")
+  abstract suspend fun getCatalogCount(): Int
 
   @Query("SELECT * FROM paging_state WHERE surface = :surface")
   abstract suspend fun getPagingState(surface: String): PagingStateDbModel?
@@ -198,7 +212,7 @@ abstract class BeersDao {
     totalCount: Int?,
     refreshedAt: Long,
   ) {
-    insertAll(beers)
+    upsertBeers(beers, isInCatalog = surface.startsWith("catalog:"))
     if (surface.startsWith("catalog:")) deleteOtherCatalogPagingStates(surface)
     val existing = getPagingState(surface)
     upsertPagingState(

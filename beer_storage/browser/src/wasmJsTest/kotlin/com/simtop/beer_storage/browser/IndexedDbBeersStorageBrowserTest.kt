@@ -143,15 +143,15 @@ class IndexedDbBeersStorageBrowserTest {
     val first = IndexedDbBeersStorage(databaseName)
     first.insertAll(listOf(beer))
     first.insertAll(listOf(beer.copy(name = "Updated Lager", availability = true, isFavorite = false)))
-    first.insertPage(listOf(beer.copy(name = "Updated Lager", availability = true, isFavorite = false)), surface = "catalog", nextKey = 2, totalCount = 1)
+    first.insertPage(listOf(beer.copy(name = "Updated Lager", availability = true, isFavorite = false)), surface = "catalog:en", nextKey = 2, totalCount = 1)
     first.close()
 
     val expected = beer.copy(name = "Updated Lager")
     val reopened = IndexedDbBeersStorage(databaseName)
     assertEquals(listOf(expected), reopened.observeBeers().first())
     assertEquals(expected, reopened.observeFavoriteBeers().first().single())
-    assertEquals(2, reopened.getPagingState("catalog")?.nextKey)
-    assertEquals(1, reopened.getPagingState("catalog")?.totalCount)
+    assertEquals(2, reopened.getPagingState("catalog:en")?.nextKey)
+    assertEquals(1, reopened.getPagingState("catalog:en")?.totalCount)
     assertTrue(reopened.count() == 1)
     reopened.deleteAll()
     reopened.close()
@@ -327,7 +327,7 @@ class IndexedDbBeersStorageBrowserTest {
 
     storage.insertPage(
       listOf(existingFirst, existingLast, newFirst, newLast),
-      surface = "catalog",
+      surface = "catalog:en",
       nextKey = 5,
       totalCount = 10,
     )
@@ -341,17 +341,17 @@ class IndexedDbBeersStorageBrowserTest {
       storage.observeBeers().first().single { it.id == newFirst.id },
     )
     assertEquals(2, storage.count())
-    assertEquals(5, storage.getPagingState("catalog")?.nextKey)
-    assertEquals(10, storage.getPagingState("catalog")?.totalCount)
+    assertEquals(5, storage.getPagingState("catalog:en")?.nextKey)
+    assertEquals(10, storage.getPagingState("catalog:en")?.totalCount)
 
     storage.insertPage(
       listOf(existingLast, newLast),
-      surface = "catalog",
+      surface = "catalog:en",
       nextKey = 3,
       totalCount = null,
     )
-    assertEquals(5, storage.getPagingState("catalog")?.nextKey)
-    assertEquals(10, storage.getPagingState("catalog")?.totalCount)
+    assertEquals(5, storage.getPagingState("catalog:en")?.nextKey)
+    assertEquals(10, storage.getPagingState("catalog:en")?.totalCount)
 
     storage.close()
     val reopened = IndexedDbBeersStorage(databaseName)
@@ -360,8 +360,8 @@ class IndexedDbBeersStorageBrowserTest {
       listOf(existingLast.copy(availability = existing.availability, isFavorite = existing.isFavorite)),
       reopened.observeFavoriteBeers().first(),
     )
-    assertEquals(5, reopened.getPagingState("catalog")?.nextKey)
-    assertEquals(10, reopened.getPagingState("catalog")?.totalCount)
+    assertEquals(5, reopened.getPagingState("catalog:en")?.nextKey)
+    assertEquals(10, reopened.getPagingState("catalog:en")?.totalCount)
     reopened.deleteAll()
     reopened.close()
   }
@@ -414,12 +414,44 @@ class IndexedDbBeersStorageBrowserTest {
     )
     val storage = IndexedDbBeersStorage(databaseName)
 
-    storage.insertPage(listOf(beer), surface = "catalog", nextKey = 2, totalCount = 1)
+    storage.insertPage(listOf(beer), surface = "catalog:en", nextKey = 2, totalCount = 1)
 
     assertEquals(listOf(beer), storage.observeBeers().first())
     assertEquals(listOf(beer), storage.observeFavoriteBeers().first())
-    assertEquals(2, storage.getPagingState("catalog")?.nextKey)
+    assertEquals(2, storage.getPagingState("catalog:en")?.nextKey)
     assertEquals(1, storage.count())
+    assertEquals(1, storage.countCatalogEntries())
+    assertEquals(listOf(beer), storage.observeCatalogBeers().first())
+    storage.deleteAll()
+    storage.close()
+  }
+
+  @Test
+  fun uncachedFavoriteDoesNotEnterCatalogUntilFetched() = runTest {
+    val storage = IndexedDbBeersStorage("billionbeers-favorite-catalog-${hashCode()}")
+    val favorite = StoredBeer(
+      id = "favorite-only",
+      name = "Favorite Only",
+      tagline = "",
+      description = "",
+      imageUrl = "",
+      abv = 4.0,
+      ibu = 20.0,
+      foodPairing = emptyList(),
+      isFavorite = true,
+    )
+
+    storage.upsertFavorite(favorite)
+
+    assertEquals(listOf(favorite), storage.observeBeers().first())
+    assertEquals(listOf(favorite), storage.observeFavoriteBeers().first())
+    assertEquals(emptyList(), storage.observeCatalogBeers().first())
+    assertEquals(0, storage.countCatalogEntries())
+
+    storage.insertPage(listOf(favorite.copy(isFavorite = false)), "catalog:en", 2, 1)
+
+    assertEquals(listOf(favorite), storage.observeCatalogBeers().first())
+    assertEquals(1, storage.countCatalogEntries())
     storage.deleteAll()
     storage.close()
   }

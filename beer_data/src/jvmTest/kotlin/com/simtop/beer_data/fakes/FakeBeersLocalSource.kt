@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.map
 class FakeBeersLocalSource : BeersStorage {
 
   private val beersFlow = MutableStateFlow<List<StoredBeer>>(emptyList())
+  private val catalogBeerIds = mutableSetOf<String>()
   private val presetsFlow = MutableStateFlow<List<StoredFilterPreset>>(emptyList())
   private val pagingState = mutableMapOf<String, StoredPagingState>()
   var presetMutationFailure: Exception? = null
@@ -21,6 +22,9 @@ class FakeBeersLocalSource : BeersStorage {
   fun getBeers(): List<StoredBeer> = beersFlow.value
 
   override fun observeBeers(): Flow<List<StoredBeer>> = beersFlow
+
+  override fun observeCatalogBeers(): Flow<List<StoredBeer>> =
+    beersFlow.map { beers -> beers.filter { it.id in catalogBeerIds } }
 
   override fun observeFavoriteBeers(): Flow<List<StoredBeer>> = beersFlow.map { beers ->
     beers.filter { it.isFavorite }.sortedWith(compareBy({ it.name }, { it.id }))
@@ -53,7 +57,9 @@ class FakeBeersLocalSource : BeersStorage {
   }
 
   // Mirrors the real DAO's upsert: existing rows keep their local-only availability.
-  override suspend fun insertAll(beers: List<StoredBeer>) {
+  override suspend fun insertAll(beers: List<StoredBeer>) = upsertBeers(beers, isCatalog = true)
+
+  private fun upsertBeers(beers: List<StoredBeer>, isCatalog: Boolean) {
     val current = beersFlow.value.toMutableList()
     beers.forEach { newBeer ->
       val index = current.indexOfFirst { it.id == newBeer.id }
@@ -66,6 +72,7 @@ class FakeBeersLocalSource : BeersStorage {
       } else {
         current.add(newBeer)
       }
+      if (isCatalog) catalogBeerIds += newBeer.id
     }
     beersFlow.value = current
   }
@@ -80,7 +87,7 @@ class FakeBeersLocalSource : BeersStorage {
     if (surface.startsWith("catalog:")) {
       pagingState.keys.filter { it.startsWith("catalog:") && it != surface }.forEach(pagingState::remove)
     }
-    insertAll(beers)
+    upsertBeers(beers, isCatalog = surface.startsWith("catalog:"))
     val existing = pagingState[surface]
     pagingState[surface] =
       StoredPagingState(
@@ -131,7 +138,10 @@ class FakeBeersLocalSource : BeersStorage {
 
   override suspend fun deleteAll() {
     beersFlow.value = emptyList()
+    catalogBeerIds.clear()
   }
 
   override suspend fun count(): Int = beersFlow.value.size
+
+  override suspend fun countCatalogEntries(): Int = catalogBeerIds.size
 }

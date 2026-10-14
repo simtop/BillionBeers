@@ -142,8 +142,34 @@ class BeersDatabaseMigrationTest {
   }
 
   @Test
-  fun migrate1To5_preservesRowsLocalDataAndPagingStateAcrossFullChain() {
-    val dbName = "migration-test-1-5"
+  fun migrate5To6_preservesExistingRowsAsCatalogEntries() {
+    val dbName = "migration-test-5-6"
+
+    helper.createDatabase(dbName, 5).apply {
+      execSQL(
+        "INSERT INTO beers " +
+          "(id, name, tagline, description, image_url, abv, ibu, food_pairing, availability, " +
+          "style_name, brewery_name, srm, released_year, min_serving_temperature, " +
+          "max_serving_temperature, fermentation_method, ingredients, recommended_glasses, is_favorite) " +
+          "VALUES ('1', 'Beer 1', '', '', '', 0.0, 0.0, '[]', 0, '', '', NULL, NULL, NULL, NULL, '', '[]', '[]', 1)"
+      )
+      close()
+    }
+
+    val db = helper.runMigrationsAndValidate(dbName, 6, true, MIGRATION_5_6)
+    db.query("SELECT availability, is_favorite, is_in_catalog FROM beers WHERE id = '1'").use {
+      cursor ->
+      assertTrue(cursor.moveToFirst())
+      assertEquals(0, cursor.getInt(0))
+      assertEquals(1, cursor.getInt(1))
+      assertEquals(1, cursor.getInt(2))
+    }
+    db.close()
+  }
+
+  @Test
+  fun migrate1To6_preservesRowsLocalDataAndPagingStateAcrossFullChain() {
+    val dbName = "migration-test-1-6"
 
     helper.createDatabase(dbName, 1).apply {
       execSQL(
@@ -157,22 +183,27 @@ class BeersDatabaseMigrationTest {
     val db =
       helper.runMigrationsAndValidate(
         dbName,
-        5,
+        6,
         true,
         MIGRATION_1_2,
         MIGRATION_2_3,
         MIGRATION_3_4,
         MIGRATION_4_5,
+        MIGRATION_5_6,
       )
 
     db
-      .query("SELECT availability, style_name, ingredients, is_favorite FROM beers WHERE id = '1'")
+      .query(
+        "SELECT availability, style_name, ingredients, is_favorite, is_in_catalog " +
+          "FROM beers WHERE id = '1'"
+      )
       .use { cursor ->
         assertTrue(cursor.moveToFirst())
         assertEquals(0, cursor.getInt(0))
         assertEquals("", cursor.getString(1))
         assertEquals("[]", cursor.getString(2))
         assertEquals(0, cursor.getInt(3))
+        assertEquals(1, cursor.getInt(4))
       }
     db.execSQL(
       "INSERT INTO paging_state (surface, next_key, total_count, refreshed_at) " +

@@ -16,6 +16,9 @@ class FilterPresetCapacityReachedException :
 interface BeersStorage {
   fun observeBeers(): Flow<List<StoredBeer>>
 
+  /** Catalog-only view; storage backends without surface membership retain all rows. */
+  fun observeCatalogBeers(): Flow<List<StoredBeer>> = observeBeers()
+
   fun observeSavedFilterPresets(): Flow<List<StoredFilterPreset>>
 
   suspend fun saveFilterPreset(preset: StoredFilterPreset)
@@ -46,6 +49,9 @@ interface BeersStorage {
   suspend fun deleteAll()
 
   suspend fun count(): Int
+
+  /** Number of rows available to the full catalog pager. */
+  suspend fun countCatalogEntries(): Int = count()
 }
 
 data class StoredBeer(

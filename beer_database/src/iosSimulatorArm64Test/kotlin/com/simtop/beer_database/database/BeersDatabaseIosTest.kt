@@ -36,7 +36,7 @@ class BeersDatabaseIosTest {
 
     first.beersDao().insertPage(
       beers = listOf(beer),
-      surface = "catalog",
+      surface = "catalog:en",
       nextKey = 2,
       totalCount = 1,
       refreshedAt = 1L,
@@ -46,7 +46,7 @@ class BeersDatabaseIosTest {
 
     assertEquals(false, first.beersDao().getAllBeers().first().single().availability)
     assertTrue(first.beersDao().getFavoriteBeers().first().single().isFavorite)
-    assertEquals(2, first.beersDao().getPagingState("catalog")?.nextKey)
+    assertEquals(2, first.beersDao().getPagingState("catalog:en")?.nextKey)
     first.close()
 
     val reopened = open(path)
@@ -54,7 +54,7 @@ class BeersDatabaseIosTest {
     assertEquals("native-1", persisted.id)
     assertFalse(persisted.availability)
     assertTrue(persisted.isFavorite)
-    assertEquals(2, reopened.beersDao().getPagingState("catalog")?.nextKey)
+    assertEquals(2, reopened.beersDao().getPagingState("catalog:en")?.nextKey)
     reopened.close()
 
     fileManager.removeItemAtPath(path, error = null)

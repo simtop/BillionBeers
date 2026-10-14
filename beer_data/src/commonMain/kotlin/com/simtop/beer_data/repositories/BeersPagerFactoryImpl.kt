@@ -42,7 +42,8 @@ class BeersPagerFactoryImpl(
         repository.pagingNextKey(catalogSurface(languageProvider))
           ?: when (repository.catalogCacheStatus()) {
             CatalogCacheStatus.LanguageMismatch -> FIRST_PAGE
-            else -> repository.countDBEntries() / BeersService.DEFAULT_ITEMS_PER_PAGE + FIRST_PAGE
+            else ->
+              repository.countCatalogDBEntries() / BeersService.DEFAULT_ITEMS_PER_PAGE + FIRST_PAGE
           }
       },
     )
@@ -122,7 +123,7 @@ private class BeersPagingStorage(
   private val currentSurface: () -> String,
 ) : PagingStorage<Int, Beer> {
 
-  override val data: Flow<List<Beer>> = repository.observeBeers()
+  override val data: Flow<List<Beer>> = repository.observeCatalogBeers()
 
   override suspend fun storeFirstPage(page: PageResult<Int, Beer>) =
     repository.insertPage(page.items, currentSurface(), page.nextKey, page.totalCount)

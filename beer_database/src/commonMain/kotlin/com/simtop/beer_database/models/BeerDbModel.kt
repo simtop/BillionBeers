@@ -29,4 +29,5 @@ data class BeerDbModel(
   @ColumnInfo(name = "ingredients", defaultValue = "[]") val ingredients: String = "[]",
   @ColumnInfo(name = "recommended_glasses", defaultValue = "[]")
   val recommendedGlasses: String = "[]",
+  @ColumnInfo(name = "is_in_catalog", defaultValue = "1") val isInCatalog: Boolean = true,
 )

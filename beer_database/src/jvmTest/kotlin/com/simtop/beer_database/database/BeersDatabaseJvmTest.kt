@@ -82,6 +82,24 @@ class BeersDatabaseJvmTest {
   }
 
   @Test
+  fun uncachedFavoriteStaysAvailableButDoesNotEnterCatalogUntilFetched() = runBlocking {
+    val dao = db.beersDao()
+    val favorite = beer("42", name = "Uncached", isFavorite = true, availability = false)
+
+    dao.upsertFavorite(favorite)
+
+    assertEquals(1, dao.getCount())
+    assertEquals(0, dao.getCatalogCount())
+    assertEquals(emptyList<BeerDbModel>(), dao.getCatalogBeers().first())
+    assertEquals(listOf(favorite.copy(isInCatalog = false)), dao.getFavoriteBeers().first())
+
+    dao.insertPage(listOf(favorite.copy(isFavorite = false)), "catalog:en", 2, 1, 10L)
+
+    assertEquals(1, dao.getCatalogCount())
+    assertTrue(dao.getCatalogBeers().first().single().isFavorite)
+  }
+
+  @Test
   fun filterPresetsAreBoundedOrderedRenamableAndDeletable() = runBlocking {
     val dao = db.beersDao()
     repeat(10) { index ->
@@ -199,7 +217,7 @@ class BeersDatabaseJvmTest {
 
     dao.upsertAvailability(uncached)
 
-    assertEquals(uncached, dao.getAllBeers().first().single())
+    assertEquals(uncached.copy(isInCatalog = false), dao.getAllBeers().first().single())
   }
 
   @Test
@@ -236,7 +254,7 @@ class BeersDatabaseJvmTest {
   }
 
   @Test
-  fun historicalVersionOneFileMigratesThroughVersionFive() = runBlocking {
+  fun historicalVersionOneFileMigratesThroughVersionSix() = runBlocking {
     val file = File(databaseDirectory, "version-one.db").absolutePath
     createVersionOneDatabase(file)
     db.close()
@@ -248,6 +266,7 @@ class BeersDatabaseJvmTest {
     assertEquals("", migrated.styleName)
     assertEquals("[]", migrated.ingredients)
     assertFalse(migrated.isFavorite)
+    assertTrue(migrated.isInCatalog)
   }
 
   @Test
