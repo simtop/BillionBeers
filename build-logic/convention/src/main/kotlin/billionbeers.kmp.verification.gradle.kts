@@ -20,7 +20,16 @@ tasks.register("testModule") {
   description = "Runs the test tier configured for the project selected by -PtestModule."
 }
 
+tasks.register("kmpIosSimulatorTest") {
+  group = "verification"
+  description = "Runs every configured Kotlin Multiplatform iOS simulator test task."
+}
+
 gradle.projectsEvaluated {
+  tasks.named("kmpIosSimulatorTest") {
+    dependsOn(subprojects.mapNotNull { it.tasks.findByName("iosSimulatorArm64Test") })
+  }
+
   kmpVerificationTasks.forEach { (aggregateName, projectTaskName) ->
     val aggregate = tasks.named(aggregateName)
     subprojects.forEach { subproject ->
