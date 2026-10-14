@@ -438,4 +438,26 @@ class MainActivityComposeTest {
 
       homeScreen { waitUntilNodeWithTextIsDisplayed(fakeBeer.name) }
     }
+
+  @Test
+  fun systemBackFromBrowseSelectionReturnsToBrowseHome() =
+    runMainActivityTest(composeTestRule) {
+      homeScreen {
+        waitUntilNodeWithTextIsDisplayed(fakeBeer.name)
+        clickOnBrowse()
+      }
+
+      browseScreen {
+        waitUntilNodeWithTextIsDisplayed(fakeStyle.name)
+        clickOnStyle(fakeStyle.name)
+        waitUntil(timeoutMillis = 5_000) {
+          fakePagerFactory.createdQueries.lastOrNull()?.styleId == fakeStyle.id
+        }
+        runOnIdle { fakePagerFactory.searchPagers.last().setData(listOf(fakeBeer)) }
+        waitUntilNodeWithTextIsDisplayed(fakeBeer.name)
+
+        pressBack()
+        assertStyleIsDisplayed(fakeStyle.name)
+      }
+    }
 }
