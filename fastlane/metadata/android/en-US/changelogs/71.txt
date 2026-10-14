@@ -1,0 +1,1 @@
+Switch between catalog sections without losing your place. Fixed repeated beers in browse and search results.
