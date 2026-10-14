@@ -8,6 +8,7 @@ class IosHostAdapterTest {
   fun languageCodesNormalizeToSupportedCatalogs() {
     assertEquals("en", iosLanguage("en-US"))
     assertEquals("fr", iosLanguage("fr-CA"))
+    assertEquals("es", iosLanguage("es-ES"))
     assertEquals("en", iosLanguage("ar"))
   }
 }
