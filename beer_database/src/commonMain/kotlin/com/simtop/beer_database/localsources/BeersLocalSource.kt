@@ -59,6 +59,7 @@ class BeersLocalSourceImpl(private val db: BeersDatabase) : BeersStorage {
     surface: String,
     nextKey: Int?,
     totalCount: Int?,
+    @Suppress("UNUSED_PARAMETER") pageKey: Int?,
   ) = db.beersDao().insertPage(
     beers.map { it.toDbModel() },
     surface,

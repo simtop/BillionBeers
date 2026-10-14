@@ -71,7 +71,7 @@ class BeersPagerFactoryImpl(
     val total = beerPage.totalCount
     val nextKey =
       if (total != null && page * BeersService.DEFAULT_ITEMS_PER_PAGE >= total) null else page + 1
-    PageResult(items = beerPage.items, nextKey = nextKey, totalCount = total)
+    PageResult(items = beerPage.items, nextKey = nextKey, totalCount = total, pageKey = page)
   }
 
   private companion object {
@@ -126,8 +126,20 @@ private class BeersPagingStorage(
   override val data: Flow<List<Beer>> = repository.observeCatalogBeers()
 
   override suspend fun storeFirstPage(page: PageResult<Int, Beer>) =
-    repository.insertPage(page.items, currentSurface(), page.nextKey, page.totalCount)
+    repository.insertPage(
+      page.items,
+      currentSurface(),
+      page.nextKey,
+      page.totalCount,
+      page.pageKey,
+    )
 
   override suspend fun append(page: PageResult<Int, Beer>) =
-    repository.insertPage(page.items, currentSurface(), page.nextKey, page.totalCount)
+    repository.insertPage(
+      page.items,
+      currentSurface(),
+      page.nextKey,
+      page.totalCount,
+      page.pageKey,
+    )
 }

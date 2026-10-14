@@ -51,6 +51,8 @@ data class PageResult<Key : Any, Value : Any>(
   val items: List<Value>,
   val nextKey: Key?,
   val totalCount: Int? = null,
+  /** The key used to fetch this page, when a storage backend needs stable page ordering. */
+  val pageKey: Key? = null,
 )
 
 /**

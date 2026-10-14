@@ -121,6 +121,7 @@ class BeersStorageContractTest {
       surface: String,
       nextKey: Int?,
       totalCount: Int?,
+      pageKey: Int?,
     ) {
       if (surface.startsWith("catalog:")) {
         states.keys.filter { it.startsWith("catalog:") && it != surface }.forEach(states::remove)

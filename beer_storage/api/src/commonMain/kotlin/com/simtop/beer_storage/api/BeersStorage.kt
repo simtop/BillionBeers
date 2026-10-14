@@ -36,6 +36,7 @@ interface BeersStorage {
     surface: String,
     nextKey: Int?,
     totalCount: Int?,
+    pageKey: Int? = null,
   )
 
   suspend fun getPagingState(surface: String): StoredPagingState?

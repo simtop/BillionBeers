@@ -49,7 +49,13 @@ interface BeersRepository {
    * re-fetching an earlier page never rewinds a warm cache's bookmark. Catalog writes also
    * invalidate bookmarks for other language surfaces because all languages share the same rows.
    */
-  suspend fun insertPage(beers: List<Beer>, surface: String, nextKey: Int?, totalCount: Int?)
+  suspend fun insertPage(
+    beers: List<Beer>,
+    surface: String,
+    nextKey: Int?,
+    totalCount: Int?,
+    pageKey: Int? = null,
+  )
 
   /**
    * The stored resume key for [surface] - the first page not yet cached - or null when no bookmark

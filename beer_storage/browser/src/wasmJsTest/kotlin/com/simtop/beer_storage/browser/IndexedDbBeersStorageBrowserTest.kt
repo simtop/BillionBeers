@@ -367,6 +367,53 @@ class IndexedDbBeersStorageBrowserTest {
   }
 
   @Test
+  fun catalogPreservesPageOrderAcrossAlphabeticalNamesAndReopen() = runTest {
+    val databaseName = "billionbeers-catalog-order-${hashCode()}"
+    fun beer(id: String, name: String) =
+      StoredBeer(
+        id = id,
+        name = name,
+        tagline = "",
+        description = "",
+        imageUrl = "",
+        abv = 4.5,
+        ibu = 18.0,
+        foodPairing = emptyList(),
+      )
+
+    val firstPage = listOf(beer("first-z", "Zulu"), beer("first-a", "Alpha"))
+    val secondPage = beer("second-b", "Bravo")
+    val storage = IndexedDbBeersStorage(databaseName)
+    storage.insertPage(
+      firstPage,
+      surface = "catalog:en",
+      nextKey = 2,
+      totalCount = 3,
+      pageKey = 1,
+    )
+    storage.insertPage(
+      listOf(secondPage),
+      surface = "catalog:en",
+      nextKey = null,
+      totalCount = 3,
+      pageKey = 2,
+    )
+
+    val expectedCatalog = listOf("first-z", "first-a", "second-b")
+    assertEquals(expectedCatalog, storage.observeCatalogBeers().first().map { it.id })
+    assertEquals(
+      listOf("Alpha", "Bravo", "Zulu"),
+      storage.observeBeers().first().map { it.name },
+    )
+    storage.close()
+
+    val reopened = IndexedDbBeersStorage(databaseName)
+    assertEquals(expectedCatalog, reopened.observeCatalogBeers().first().map { it.id })
+    reopened.deleteAll()
+    reopened.close()
+  }
+
+  @Test
   fun insertAllPreservesFlagsForExistingRowsAndAddsNewRows() = runTest {
     val databaseName = "billionbeers-mixed-${hashCode()}"
     val existing = StoredBeer(
