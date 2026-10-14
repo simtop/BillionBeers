@@ -65,7 +65,7 @@ WEB_RELEASE_CONFIDENCE_DIR ?= web-app/build/web-release-confidence
 DESKTOP_APP_DIR ?= desktop-app/build/compose/binaries/main/app/BillionBeers.app
 DESKTOP_DMG_DIR ?= desktop-app/build/compose/binaries/main/dmg
 SCREENSHOT_INVENTORY_DIR ?= build/reports/paparazzi/inventory
-.PHONY: detekt-baseline help setup setup-ai-tools update-android-skills build bundle-release release-smoke install desktop-test desktop-run desktop-live desktop-package desktop-package-test desktop-package-smoke desktop-package-verify ios-simulator-evidence web-run web-image-proxy-test web-static-test web-verify ios-compile ios-framework ios-test ios-host-build ios-host-run ios-simulator-open ios-simulator-list ios-simulator-stop clean deep-clean test test-tier-inventory konsist check-data-layer-boundary architecture-policy compose-metrics ui-test ui-test-local ui-test-managed ui-test-managed-newest ui-test-managed-tablet ui-test-managed-ci ui-test-managed-all emulator-create emulator-recreate emulator-start emulator-stop emulator-status emulator-delete screenshot-record screenshot-verify screenshot-clean lint android-lint format check docs-check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline check-gradle-compatibility-flags verification-metadata verification-metadata-reference verification-metadata-candidate health module-graph metro-graph architecture-report repo-doctor benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark build-budget build-budget-check jacoco-report coverage-check update-docs install-profiler install-diffuse new-feature-module new-dev-app play-listing-check play-listing-capture play-listing-reset store-frames
+.PHONY: detekt-baseline help setup setup-ai-tools update-android-skills build bundle-release release-smoke install desktop-test desktop-run desktop-live desktop-package desktop-package-test desktop-package-smoke desktop-package-verify ios-simulator-evidence web-run web-image-proxy-test web-static-test web-verify ios-compile ios-framework ios-test ios-host-build ios-host-run ios-simulator-open ios-simulator-list ios-simulator-stop clean deep-clean test test-tier-inventory konsist check-data-layer-boundary architecture-policy compose-metrics ui-test ui-test-local ui-test-managed ui-test-managed-newest ui-test-managed-tablet ui-test-managed-ci ui-test-managed-all emulator-create emulator-recreate emulator-start emulator-stop emulator-status emulator-delete screenshot-record screenshot-verify screenshot-clean lint android-lint format check docs-check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline check-gradle-compatibility-flags verification-metadata verification-metadata-reference verification-metadata-candidate health module-graph metro-graph architecture-report repo-doctor benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark build-budget build-budget-check jacoco-report coverage-check update-docs install-profiler install-diffuse new-feature-module new-dev-app release-preflight play-listing-check play-listing-capture play-listing-reset store-frames
 
 define IOS_SIMULATOR_RESOLVE
 	if [ -n "$${IOS_DEVICE_UDID:-}" ]; then device="$$IOS_DEVICE_UDID"; else \
@@ -289,6 +289,7 @@ TEST_FLAGS := --no-configuration-cache
 test: ## Run JVM/Android/browser unit suites and build-logic, or the registered tier for MODULE=:module.
 ifeq ($(MODULE_TRIMMED),)
 	@$(MAKE) --no-print-directory new-feature-module-test
+	@python3 -I scripts/test_release_preflight.py
 	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) $(TEST_FLAGS) testDebugUnitTest $(addsuffix :test,$(JVM_TEST_MODULES)) kmpTest --continue
 	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) -p build-logic $(TEST_FLAGS) :convention:test --continue
 else
@@ -652,6 +653,9 @@ update-docs: ## Update README.md with the latest library versions from the catal
 	@./scripts/update_readme_versions.sh
 
 ##@ Play Store assets
+release-preflight: ## Validate release notes for the current Android version code.
+	python3 scripts/release_preflight.py
+
 store-frames: ## Render marketing store frames from the captured screenshots. Usage: make store-frames [LOCALE=en-US]
 	@bash scripts/store-frames.sh $(if $(strip $(LOCALE)),$(LOCALE),en-US)
 
