@@ -1,0 +1,283 @@
+com.simtop.billionbeers.composefixture.screenshot	ComposeFixturePreview	light	1.0	en	ltr	compact	Compose Multiplatform fixture
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_dark_font100_en_ltr_compact	dark	1.0	en	ltr	compact
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_dark_font100_en_ltr_expanded	dark	1.0	en	ltr	expanded
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_dark_font100_en_rtl_compact	dark	1.0	en	rtl	compact
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_dark_font100_en_rtl_expanded	dark	1.0	en	rtl	expanded
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_dark_font100_fr_ltr_compact	dark	1.0	fr	ltr	compact
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_dark_font100_fr_ltr_expanded	dark	1.0	fr	ltr	expanded
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_dark_font150_en_ltr_compact	dark	1.5	en	ltr	compact
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_dark_font150_en_ltr_expanded	dark	1.5	en	ltr	expanded
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_dark_font150_en_rtl_compact	dark	1.5	en	rtl	compact
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_dark_font150_en_rtl_expanded	dark	1.5	en	rtl	expanded
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_dark_font150_fr_ltr_compact	dark	1.5	fr	ltr	compact
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_dark_font150_fr_ltr_expanded	dark	1.5	fr	ltr	expanded
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_dark_font200_en_ltr_compact	dark	2.0	en	ltr	compact
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_dark_font200_en_ltr_expanded	dark	2.0	en	ltr	expanded
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_dark_font200_en_rtl_compact	dark	2.0	en	rtl	compact
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_dark_font200_en_rtl_expanded	dark	2.0	en	rtl	expanded
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_dark_font200_fr_ltr_compact	dark	2.0	fr	ltr	compact
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_dark_font200_fr_ltr_expanded	dark	2.0	fr	ltr	expanded
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_light_font100_en_ltr_compact	light	1.0	en	ltr	compact
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_light_font100_en_ltr_expanded	light	1.0	en	ltr	expanded
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_light_font100_en_rtl_compact	light	1.0	en	rtl	compact
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_light_font100_en_rtl_expanded	light	1.0	en	rtl	expanded
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_light_font100_fr_ltr_compact	light	1.0	fr	ltr	compact
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_light_font100_fr_ltr_expanded	light	1.0	fr	ltr	expanded
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_light_font150_en_ltr_compact	light	1.5	en	ltr	compact
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_light_font150_en_ltr_expanded	light	1.5	en	ltr	expanded
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_light_font150_en_rtl_compact	light	1.5	en	rtl	compact
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_light_font150_en_rtl_expanded	light	1.5	en	rtl	expanded
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_light_font150_fr_ltr_compact	light	1.5	fr	ltr	compact
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_light_font150_fr_ltr_expanded	light	1.5	fr	ltr	expanded
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_light_font200_en_ltr_compact	light	2.0	en	ltr	compact
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_light_font200_en_ltr_expanded	light	2.0	en	ltr	expanded
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_light_font200_en_rtl_compact	light	2.0	en	rtl	compact
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_light_font200_en_rtl_expanded	light	2.0	en	rtl	expanded
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_light_font200_fr_ltr_compact	light	2.0	fr	ltr	compact
+com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_light_font200_fr_ltr_expanded	light	2.0	fr	ltr	expanded
+com.simtop.billionbeers.core.designsystem	DialogContentPreview_0	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.billionbeers.core.designsystem	DialogContentPreview_0_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.billionbeers.core.designsystem	DialogContentPreview_1	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.billionbeers.core.designsystem	DialogContentPreview_1_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.billionbeers.core.designsystem	DialogContentPreview_2	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.billionbeers.core.designsystem	DialogContentPreview_2_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.billionbeers.core.designsystem	MetricColorsPreview	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.billionbeers.core.designsystem	MetricColorsPreview_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_dark_font100_en_ltr_compact	dark	1.0	en	ltr	compact
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_dark_font100_en_ltr_expanded	dark	1.0	en	ltr	expanded
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_dark_font100_en_rtl_compact	dark	1.0	en	rtl	compact
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_dark_font100_en_rtl_expanded	dark	1.0	en	rtl	expanded
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_dark_font100_fr_ltr_compact	dark	1.0	fr	ltr	compact
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_dark_font100_fr_ltr_expanded	dark	1.0	fr	ltr	expanded
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_dark_font150_en_ltr_compact	dark	1.5	en	ltr	compact
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_dark_font150_en_ltr_expanded	dark	1.5	en	ltr	expanded
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_dark_font150_en_rtl_compact	dark	1.5	en	rtl	compact
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_dark_font150_en_rtl_expanded	dark	1.5	en	rtl	expanded
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_dark_font150_fr_ltr_compact	dark	1.5	fr	ltr	compact
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_dark_font150_fr_ltr_expanded	dark	1.5	fr	ltr	expanded
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_dark_font200_en_ltr_compact	dark	2.0	en	ltr	compact
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_dark_font200_en_ltr_expanded	dark	2.0	en	ltr	expanded
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_dark_font200_en_rtl_compact	dark	2.0	en	rtl	compact
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_dark_font200_en_rtl_expanded	dark	2.0	en	rtl	expanded
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_dark_font200_fr_ltr_compact	dark	2.0	fr	ltr	compact
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_dark_font200_fr_ltr_expanded	dark	2.0	fr	ltr	expanded
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_light_font100_en_ltr_compact	light	1.0	en	ltr	compact
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_light_font100_en_ltr_expanded	light	1.0	en	ltr	expanded
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_light_font100_en_rtl_compact	light	1.0	en	rtl	compact
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_light_font100_en_rtl_expanded	light	1.0	en	rtl	expanded
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_light_font100_fr_ltr_compact	light	1.0	fr	ltr	compact
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_light_font100_fr_ltr_expanded	light	1.0	fr	ltr	expanded
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_light_font150_en_ltr_compact	light	1.5	en	ltr	compact
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_light_font150_en_ltr_expanded	light	1.5	en	ltr	expanded
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_light_font150_en_rtl_compact	light	1.5	en	rtl	compact
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_light_font150_en_rtl_expanded	light	1.5	en	rtl	expanded
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_light_font150_fr_ltr_compact	light	1.5	fr	ltr	compact
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_light_font150_fr_ltr_expanded	light	1.5	fr	ltr	expanded
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_light_font200_en_ltr_compact	light	2.0	en	ltr	compact
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_light_font200_en_ltr_expanded	light	2.0	en	ltr	expanded
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_light_font200_en_rtl_compact	light	2.0	en	rtl	compact
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_light_font200_en_rtl_expanded	light	2.0	en	rtl	expanded
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_light_font200_fr_ltr_compact	light	2.0	fr	ltr	compact
+com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_light_font200_fr_ltr_expanded	light	2.0	fr	ltr	expanded
+com.simtop.feature.beerbrowse	BrowseBeersScreenPreview_0	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.feature.beerbrowse	BrowseBeersScreenPreview_0_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.beerbrowse	BrowseBeersScreenPreview_1	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.feature.beerbrowse	BrowseBeersScreenPreview_1_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.beerbrowse	BrowseBeersScreenPreview_2	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.feature.beerbrowse	BrowseBeersScreenPreview_2_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_dark_font100_en_ltr_compact	dark	1.0	en	ltr	compact
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_dark_font100_en_ltr_expanded	dark	1.0	en	ltr	expanded
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_dark_font100_en_rtl_compact	dark	1.0	en	rtl	compact
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_dark_font100_en_rtl_expanded	dark	1.0	en	rtl	expanded
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_dark_font100_fr_ltr_compact	dark	1.0	fr	ltr	compact
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_dark_font100_fr_ltr_expanded	dark	1.0	fr	ltr	expanded
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_dark_font150_en_ltr_compact	dark	1.5	en	ltr	compact
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_dark_font150_en_ltr_expanded	dark	1.5	en	ltr	expanded
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_dark_font150_en_rtl_compact	dark	1.5	en	rtl	compact
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_dark_font150_en_rtl_expanded	dark	1.5	en	rtl	expanded
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_dark_font150_fr_ltr_compact	dark	1.5	fr	ltr	compact
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_dark_font150_fr_ltr_expanded	dark	1.5	fr	ltr	expanded
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_dark_font200_en_ltr_compact	dark	2.0	en	ltr	compact
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_dark_font200_en_ltr_expanded	dark	2.0	en	ltr	expanded
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_dark_font200_en_rtl_compact	dark	2.0	en	rtl	compact
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_dark_font200_en_rtl_expanded	dark	2.0	en	rtl	expanded
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_dark_font200_fr_ltr_compact	dark	2.0	fr	ltr	compact
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_dark_font200_fr_ltr_expanded	dark	2.0	fr	ltr	expanded
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_light_font100_en_ltr_compact	light	1.0	en	ltr	compact
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_light_font100_en_ltr_expanded	light	1.0	en	ltr	expanded
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_light_font100_en_rtl_compact	light	1.0	en	rtl	compact
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_light_font100_en_rtl_expanded	light	1.0	en	rtl	expanded
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_light_font100_fr_ltr_compact	light	1.0	fr	ltr	compact
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_light_font100_fr_ltr_expanded	light	1.0	fr	ltr	expanded
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_light_font150_en_ltr_compact	light	1.5	en	ltr	compact
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_light_font150_en_ltr_expanded	light	1.5	en	ltr	expanded
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_light_font150_en_rtl_compact	light	1.5	en	rtl	compact
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_light_font150_en_rtl_expanded	light	1.5	en	rtl	expanded
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_light_font150_fr_ltr_compact	light	1.5	fr	ltr	compact
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_light_font150_fr_ltr_expanded	light	1.5	fr	ltr	expanded
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_light_font200_en_ltr_compact	light	2.0	en	ltr	compact
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_light_font200_en_ltr_expanded	light	2.0	en	ltr	expanded
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_light_font200_en_rtl_compact	light	2.0	en	rtl	compact
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_light_font200_en_rtl_expanded	light	2.0	en	rtl	expanded
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_light_font200_fr_ltr_compact	light	2.0	fr	ltr	compact
+com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_light_font200_fr_ltr_expanded	light	2.0	fr	ltr	expanded
+com.simtop.feature.beerbrowse	BrowseHomeScreenPreview_0	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.feature.beerbrowse	BrowseHomeScreenPreview_0_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.beerbrowse	BrowseHomeScreenPreview_1	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.feature.beerbrowse	BrowseHomeScreenPreview_1_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.beerbrowse	BrowseHomeScreenPreview_2	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.feature.beerbrowse	BrowseHomeScreenPreview_2_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_dark_font100_en_ltr_compact	dark	1.0	en	ltr	compact
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_dark_font100_en_ltr_expanded	dark	1.0	en	ltr	expanded
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_dark_font100_en_rtl_compact	dark	1.0	en	rtl	compact
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_dark_font100_en_rtl_expanded	dark	1.0	en	rtl	expanded
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_dark_font100_fr_ltr_compact	dark	1.0	fr	ltr	compact
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_dark_font100_fr_ltr_expanded	dark	1.0	fr	ltr	expanded
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_dark_font150_en_ltr_compact	dark	1.5	en	ltr	compact
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_dark_font150_en_ltr_expanded	dark	1.5	en	ltr	expanded
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_dark_font150_en_rtl_compact	dark	1.5	en	rtl	compact
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_dark_font150_en_rtl_expanded	dark	1.5	en	rtl	expanded
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_dark_font150_fr_ltr_compact	dark	1.5	fr	ltr	compact
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_dark_font150_fr_ltr_expanded	dark	1.5	fr	ltr	expanded
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_dark_font200_en_ltr_compact	dark	2.0	en	ltr	compact
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_dark_font200_en_ltr_expanded	dark	2.0	en	ltr	expanded
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_dark_font200_en_rtl_compact	dark	2.0	en	rtl	compact
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_dark_font200_en_rtl_expanded	dark	2.0	en	rtl	expanded
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_dark_font200_fr_ltr_compact	dark	2.0	fr	ltr	compact
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_dark_font200_fr_ltr_expanded	dark	2.0	fr	ltr	expanded
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_light_font100_en_ltr_compact	light	1.0	en	ltr	compact
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_light_font100_en_ltr_expanded	light	1.0	en	ltr	expanded
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_light_font100_en_rtl_compact	light	1.0	en	rtl	compact
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_light_font100_en_rtl_expanded	light	1.0	en	rtl	expanded
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_light_font100_fr_ltr_compact	light	1.0	fr	ltr	compact
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_light_font100_fr_ltr_expanded	light	1.0	fr	ltr	expanded
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_light_font150_en_ltr_compact	light	1.5	en	ltr	compact
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_light_font150_en_ltr_expanded	light	1.5	en	ltr	expanded
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_light_font150_en_rtl_compact	light	1.5	en	rtl	compact
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_light_font150_en_rtl_expanded	light	1.5	en	rtl	expanded
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_light_font150_fr_ltr_compact	light	1.5	fr	ltr	compact
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_light_font150_fr_ltr_expanded	light	1.5	fr	ltr	expanded
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_light_font200_en_ltr_compact	light	2.0	en	ltr	compact
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_light_font200_en_ltr_expanded	light	2.0	en	ltr	expanded
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_light_font200_en_rtl_compact	light	2.0	en	rtl	compact
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_light_font200_en_rtl_expanded	light	2.0	en	rtl	expanded
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_light_font200_fr_ltr_compact	light	2.0	fr	ltr	compact
+com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_light_font200_fr_ltr_expanded	light	2.0	fr	ltr	expanded
+com.simtop.feature.beerdetail	ComposeBeerDetailPreview	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.feature.beerdetail	ComposeBeerDetailPreview_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.beerdetail	ComposeBeerDetailWithoutEnrichedFieldsPreview	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.feature.beerdetail	ComposeBeerDetailWithoutEnrichedFieldsPreview_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_dark_font100_en_ltr_compact	dark	1.0	en	ltr	compact
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_dark_font100_en_ltr_expanded	dark	1.0	en	ltr	expanded
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_dark_font100_en_rtl_compact	dark	1.0	en	rtl	compact
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_dark_font100_en_rtl_expanded	dark	1.0	en	rtl	expanded
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_dark_font100_fr_ltr_compact	dark	1.0	fr	ltr	compact
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_dark_font100_fr_ltr_expanded	dark	1.0	fr	ltr	expanded
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_dark_font150_en_ltr_compact	dark	1.5	en	ltr	compact
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_dark_font150_en_ltr_expanded	dark	1.5	en	ltr	expanded
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_dark_font150_en_rtl_compact	dark	1.5	en	rtl	compact
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_dark_font150_en_rtl_expanded	dark	1.5	en	rtl	expanded
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_dark_font150_fr_ltr_compact	dark	1.5	fr	ltr	compact
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_dark_font150_fr_ltr_expanded	dark	1.5	fr	ltr	expanded
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_dark_font200_en_ltr_compact	dark	2.0	en	ltr	compact
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_dark_font200_en_ltr_expanded	dark	2.0	en	ltr	expanded
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_dark_font200_en_rtl_compact	dark	2.0	en	rtl	compact
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_dark_font200_en_rtl_expanded	dark	2.0	en	rtl	expanded
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_dark_font200_fr_ltr_compact	dark	2.0	fr	ltr	compact
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_dark_font200_fr_ltr_expanded	dark	2.0	fr	ltr	expanded
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_light_font100_en_ltr_compact	light	1.0	en	ltr	compact
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_light_font100_en_ltr_expanded	light	1.0	en	ltr	expanded
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_light_font100_en_rtl_compact	light	1.0	en	rtl	compact
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_light_font100_en_rtl_expanded	light	1.0	en	rtl	expanded
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_light_font100_fr_ltr_compact	light	1.0	fr	ltr	compact
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_light_font100_fr_ltr_expanded	light	1.0	fr	ltr	expanded
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_light_font150_en_ltr_compact	light	1.5	en	ltr	compact
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_light_font150_en_ltr_expanded	light	1.5	en	ltr	expanded
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_light_font150_en_rtl_compact	light	1.5	en	rtl	compact
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_light_font150_en_rtl_expanded	light	1.5	en	rtl	expanded
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_light_font150_fr_ltr_compact	light	1.5	fr	ltr	compact
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_light_font150_fr_ltr_expanded	light	1.5	fr	ltr	expanded
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_light_font200_en_ltr_compact	light	2.0	en	ltr	compact
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_light_font200_en_ltr_expanded	light	2.0	en	ltr	expanded
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_light_font200_en_rtl_compact	light	2.0	en	rtl	compact
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_light_font200_en_rtl_expanded	light	2.0	en	rtl	expanded
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_light_font200_fr_ltr_compact	light	2.0	fr	ltr	compact
+com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_light_font200_fr_ltr_expanded	light	2.0	fr	ltr	expanded
+com.simtop.feature.beersearch	BeersSearchScreenPreview_0	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.feature.beersearch	BeersSearchScreenPreview_0_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.beersearch	BeersSearchScreenPreview_1	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.feature.beersearch	BeersSearchScreenPreview_1_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.beersearch	BeersSearchScreenPreview_2	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.feature.beersearch	BeersSearchScreenPreview_2_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.beersearch	BeersSearchScreenPreview_3	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.feature.beersearch	BeersSearchScreenPreview_3_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.beersearch	BeersSearchScreenPreview_4	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.feature.beersearch	BeersSearchScreenPreview_4_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_dark_font100_en_ltr_compact	dark	1.0	en	ltr	compact
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_dark_font100_en_ltr_expanded	dark	1.0	en	ltr	expanded
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_dark_font100_en_rtl_compact	dark	1.0	en	rtl	compact
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_dark_font100_en_rtl_expanded	dark	1.0	en	rtl	expanded
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_dark_font100_fr_ltr_compact	dark	1.0	fr	ltr	compact
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_dark_font100_fr_ltr_expanded	dark	1.0	fr	ltr	expanded
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_dark_font150_en_ltr_compact	dark	1.5	en	ltr	compact
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_dark_font150_en_ltr_expanded	dark	1.5	en	ltr	expanded
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_dark_font150_en_rtl_compact	dark	1.5	en	rtl	compact
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_dark_font150_en_rtl_expanded	dark	1.5	en	rtl	expanded
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_dark_font150_fr_ltr_compact	dark	1.5	fr	ltr	compact
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_dark_font150_fr_ltr_expanded	dark	1.5	fr	ltr	expanded
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_dark_font200_en_ltr_compact	dark	2.0	en	ltr	compact
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_dark_font200_en_ltr_expanded	dark	2.0	en	ltr	expanded
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_dark_font200_en_rtl_compact	dark	2.0	en	rtl	compact
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_dark_font200_en_rtl_expanded	dark	2.0	en	rtl	expanded
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_dark_font200_fr_ltr_compact	dark	2.0	fr	ltr	compact
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_dark_font200_fr_ltr_expanded	dark	2.0	fr	ltr	expanded
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_light_font100_en_ltr_compact	light	1.0	en	ltr	compact
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_light_font100_en_ltr_expanded	light	1.0	en	ltr	expanded
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_light_font100_en_rtl_compact	light	1.0	en	rtl	compact
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_light_font100_en_rtl_expanded	light	1.0	en	rtl	expanded
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_light_font100_fr_ltr_compact	light	1.0	fr	ltr	compact
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_light_font100_fr_ltr_expanded	light	1.0	fr	ltr	expanded
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_light_font150_en_ltr_compact	light	1.5	en	ltr	compact
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_light_font150_en_ltr_expanded	light	1.5	en	ltr	expanded
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_light_font150_en_rtl_compact	light	1.5	en	rtl	compact
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_light_font150_en_rtl_expanded	light	1.5	en	rtl	expanded
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_light_font150_fr_ltr_compact	light	1.5	fr	ltr	compact
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_light_font150_fr_ltr_expanded	light	1.5	fr	ltr	expanded
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_light_font200_en_ltr_compact	light	2.0	en	ltr	compact
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_light_font200_en_ltr_expanded	light	2.0	en	ltr	expanded
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_light_font200_en_rtl_compact	light	2.0	en	rtl	compact
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_light_font200_en_rtl_expanded	light	2.0	en	rtl	expanded
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_light_font200_fr_ltr_compact	light	2.0	fr	ltr	compact
+com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_light_font200_fr_ltr_expanded	light	2.0	fr	ltr	expanded
+com.simtop.feature.beerslist	BeersListScreenPreview_EMPTY	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.feature.beerslist	BeersListScreenPreview_EMPTY_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.beerslist	BeersListScreenPreview_ERROR	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.feature.beerslist	BeersListScreenPreview_ERROR_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.beerslist	BeersListScreenPreview_LOADING	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.feature.beerslist	BeersListScreenPreview_LOADING_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.beerslist	BeersListScreenPreview_SUCCESS_END_OF_LIST	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.feature.beerslist	BeersListScreenPreview_SUCCESS_END_OF_LIST_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.beerslist	BeersListScreenPreview_SUCCESS_LOADING_MORE	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.feature.beerslist	BeersListScreenPreview_SUCCESS_LOADING_MORE_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.beerslist	BeersListScreenPreview_SUCCESS_LOAD_MORE_FAILED	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.feature.beerslist	BeersListScreenPreview_SUCCESS_LOAD_MORE_FAILED_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.beerslist	BeersListScreenPreview_SUCCESS_MULTIPLE_ITEMS	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.feature.beerslist	BeersListScreenPreview_SUCCESS_MULTIPLE_ITEMS_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.favorites	FavoritesEmptyPreview	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.feature.favorites	FavoritesEmptyPreview_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.savedfilters	SavedFiltersLargeTextPreview	light	2.0	en	ltr	compact
+com.simtop.feature.savedfilters	SavedFiltersLargeTextPreview_font200_fr	light	2.0	fr	ltr	compact
+com.simtop.feature.savedfilters	SavedFiltersPreview_0	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.feature.savedfilters	SavedFiltersPreview_0_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.savedfilters	SavedFiltersPreview_1	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.feature.savedfilters	SavedFiltersPreview_1_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.presentation_utils	ComposeBeersListItemPreview_0	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.presentation_utils	ComposeBeersListItemPreview_0_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.presentation_utils	ComposeBeersListItemPreview_1	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.presentation_utils	ComposeBeersListItemPreview_1_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.presentation_utils	ComposeErrorViewPreview	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.presentation_utils	ComposeErrorViewPreview_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.presentation_utils	ComposeTitlePreview	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.presentation_utils	ComposeTitlePreview_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.presentation_utils	InstallFailedContentPreview	light	1.0	en	ltr	compact	Light
+com.simtop.presentation_utils	InstallFailedContentPreview_dark	dark	1.0	en	ltr	compact	Dark

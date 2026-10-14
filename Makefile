@@ -67,6 +67,8 @@ DESKTOP_DMG_DIR ?= desktop-app/build/compose/binaries/main/dmg
 SCREENSHOT_INVENTORY_DIR ?= build/reports/paparazzi/inventory
 .PHONY: detekt-baseline help setup setup-ai-tools update-android-skills build bundle-release release-smoke install desktop-test desktop-run desktop-live desktop-package desktop-package-test desktop-package-smoke desktop-package-verify ios-simulator-evidence web-run web-image-proxy-test web-static-test web-verify ios-compile ios-framework ios-test ios-host-build ios-host-run ios-simulator-open ios-simulator-list ios-simulator-stop clean deep-clean test test-tier-inventory konsist check-data-layer-boundary architecture-policy compose-metrics ui-test ui-test-local ui-test-managed ui-test-managed-newest ui-test-managed-tablet ui-test-managed-ci ui-test-managed-all emulator-create emulator-recreate emulator-start emulator-stop emulator-status emulator-delete screenshot-record screenshot-verify screenshot-clean lint android-lint format check docs-check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline check-gradle-compatibility-flags verification-metadata verification-metadata-reference verification-metadata-candidate health module-graph metro-graph architecture-report repo-doctor benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark build-budget build-budget-check jacoco-report coverage-check update-docs install-profiler install-diffuse new-feature-module new-dev-app release-preflight play-listing-check play-listing-capture play-listing-reset store-frames
 
+.PHONY: screenshot-verify-run screenshot-inventory-record
+
 define IOS_SIMULATOR_RESOLVE
 	if [ -n "$${IOS_DEVICE_UDID:-}" ]; then device="$$IOS_DEVICE_UDID"; else \
 		matches="$$(xcrun simctl list devices available | awk -F '[()]' -v destination='$(IOS_HOST_DESTINATION)' 'BEGIN { n=split(destination, parts, ","); for (i=1; i<=n; i++) { if (index(parts[i], "name=")==1) name=substr(parts[i], 6); if (index(parts[i], "OS=")==1) os=substr(parts[i], 4) } } /^-- / { runtime=""; if ($$2=="iOS") runtime=$$3; next } runtime==os && NF>=3 { device_name=$$1; sub(/ *$$/, "", device_name); sub(/^ */, "", device_name); if (device_name==name) print $$2 }')"; \
@@ -386,7 +388,13 @@ ui-test-managed-all: ## Run instrumented tests on both managed devices, every op
 screenshot-record: ## Record golden images for Paparazzi.
 	$(GRADLE_RUNNER) $(MODULE_PREFIX)recordPaparazziDebug
 
-screenshot-verify: ## Verify screenshots against golden images and write the executed preview inventory.
+screenshot-verify: screenshot-verify-run ## Verify screenshots and check the executed preview inventory against its reviewed baseline.
+	python3 .github/scripts/check-screenshot-inventory.py "$(SCREENSHOT_INVENTORY_DIR)" config/screenshot-inventory.tsv
+
+screenshot-inventory-record: screenshot-verify-run ## Update the reviewed preview inventory after an intentional preview change.
+	python3 .github/scripts/check-screenshot-inventory.py "$(SCREENSHOT_INVENTORY_DIR)" config/screenshot-inventory.tsv --update
+
+screenshot-verify-run:
 	rm -rf "$(SCREENSHOT_INVENTORY_DIR)"
 	mkdir -p "$(SCREENSHOT_INVENTORY_DIR)"
 	$(GRADLE_RUNNER) $(MODULE_PREFIX)verifyPaparazziDebug -Pbillionbeers.screenshot.inventory="$(abspath $(SCREENSHOT_INVENTORY_DIR))/" --rerun-tasks --continue

@@ -1,0 +1,63 @@
+#!/usr/bin/env python3
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+SCRIPT = Path(__file__).with_name("check-screenshot-inventory.py")
+
+
+class ScreenshotInventoryTest(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp.name)
+        self.inventory = self.root / "inventory"
+        self.inventory.mkdir()
+        self.baseline = self.root / "baseline.tsv"
+        (self.inventory / "module.tsv").write_text(
+            "module\tPreviewA\tLIGHT\t1.0\ten\tLTR\tcompact\tPreviewA\tgroup\tdevice\n"
+            "module\tPreviewB\tDARK\t1.0\ten\tLTR\tcompact\tPreviewB\tgroup\tdevice\n",
+            encoding="utf-8",
+        )
+        self.baseline.write_text(
+            "module\tPreviewA\tLIGHT\t1.0\ten\tLTR\tcompact\tPreviewA\tgroup\tdevice\n"
+            "module\tPreviewB\tDARK\t1.0\ten\tLTR\tcompact\tPreviewB\tgroup\tdevice\n",
+            encoding="utf-8",
+        )
+
+    def tearDown(self):
+        self.temp.cleanup()
+
+    def run_checker(self, *extra):
+        return subprocess.run(
+            [sys.executable, str(SCRIPT), str(self.inventory), str(self.baseline), *extra],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+
+    def test_matching_inventory_passes(self):
+        result = self.run_checker()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("matches (2", result.stdout)
+
+    def test_dropped_preview_fails_and_names_the_missing_entry(self):
+        inventory = self.inventory / "module.tsv"
+        inventory.write_text(inventory.read_text(encoding="utf-8").splitlines()[0] + "\n", encoding="utf-8")
+        result = self.run_checker()
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("Missing x1: module / PreviewB", result.stderr)
+
+    def test_update_records_current_inventory(self):
+        (self.inventory / "module.tsv").write_text(
+            "module\tPreviewC\tLIGHT\t1.0\ten\tLTR\tcompact\tPreviewC\tgroup\tdevice\n",
+            encoding="utf-8",
+        )
+        result = self.run_checker("--update")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("PreviewC", self.baseline.read_text(encoding="utf-8"))
+
+
+if __name__ == "__main__":
+    unittest.main()
