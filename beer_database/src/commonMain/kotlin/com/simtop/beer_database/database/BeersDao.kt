@@ -18,6 +18,8 @@ abstract class BeersDao {
 
   @Query("SELECT * FROM beers") abstract fun getAllBeers(): Flow<List<BeerDbModel>>
 
+  @Query("SELECT * FROM beers WHERE id = :id") abstract suspend fun getBeerById(id: String): BeerDbModel?
+
   @Query("SELECT * FROM beers WHERE is_in_catalog = 1")
   abstract fun getCatalogBeers(): Flow<List<BeerDbModel>>
 

@@ -22,6 +22,9 @@ class BeersLocalSourceImpl(private val db: BeersDatabase) : BeersStorage {
   override fun observeBeers(): Flow<List<StoredBeer>> =
     db.beersDao().getAllBeers().map { beers -> beers.map { it.toStoredBeer() } }
 
+  override suspend fun getBeerById(id: String): StoredBeer? =
+    db.beersDao().getBeerById(id)?.toStoredBeer()
+
   override fun observeCatalogBeers(): Flow<List<StoredBeer>> =
     db.beersDao().getCatalogBeers().map { beers -> beers.map { it.toStoredBeer() } }
 
