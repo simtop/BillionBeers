@@ -306,6 +306,7 @@ fun SharedAppShell(
             onBeerClick = { navigate(PortableRoute.BeerDetail(it)) },
             onSearch = { navigate(PortableRoute.BeersSearch) },
             onBrowse = { navigate(PortableRoute.BeerBrowse) },
+            onSaveQuery = { name -> savePreset(name, BeersQuery()) },
             onBack = ::pop,
             animationsDisabled = host.detailAnimationsDisabled,
             onMessage = { message = it },
@@ -436,6 +437,7 @@ private fun ExpandedCatalogDetail(
   onBeerClick: (Beer) -> Unit,
   onSearch: () -> Unit,
   onBrowse: () -> Unit,
+  onSaveQuery: suspend (String) -> Boolean,
   onBack: () -> Unit,
   animationsDisabled: Boolean,
   onMessage: (String) -> Unit,
@@ -450,6 +452,7 @@ private fun ExpandedCatalogDetail(
           onBeerClick = onBeerClick,
           onSearch = onSearch,
           onBrowse = onBrowse,
+          onSaveQuery = onSaveQuery,
         )
       }
       Box(

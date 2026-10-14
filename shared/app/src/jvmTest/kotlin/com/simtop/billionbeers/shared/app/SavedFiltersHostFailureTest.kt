@@ -1,7 +1,10 @@
 package com.simtop.billionbeers.shared.app
 
+import androidx.compose.foundation.clickable
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsNodeInteraction
@@ -15,8 +18,10 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.v2.runSkikoComposeUiTest
+import androidx.compose.ui.unit.Density
 import com.simtop.beerdomain.domain.errors.MutateFilterPresetError
 import com.simtop.beerdomain.domain.errors.SaveFilterPresetError
+import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.beerdomain.domain.repositories.SavedFilterPresetsRepository
@@ -60,6 +65,31 @@ class SavedFiltersHostFailureTest {
       assertEquals(1, fixture.savedFilterPresetsRepository.savedPresetWrites)
     }
   }
+
+  @Test
+  fun expandedCatalogDetailCanSaveFilter() =
+    runSkikoComposeUiTest(size = Size(1000f, 800f), density = Density(1f)) {
+      val fixture = Fixture(presetCount = 0)
+      val beer = Beer.empty.copy(id = "expanded-beer", name = "Expanded beer")
+      fixture.backingRepository.setBeers(listOf(beer))
+      showShell(
+        fixture,
+        PortableRoute.BeersList,
+        beerRow = { item, onClick ->
+          Text(item.name, Modifier.testTag("beer-${item.id}").clickable(onClick = onClick))
+        },
+      )
+
+      onNodeWithTag("beer-${beer.id}").performClick()
+      onNode(hasSetTextAction()).performTextReplacement("Catalog filter")
+      onNodeWithText("Save filter").performClick()
+
+      runOnIdle {
+        assertEquals(1, fixture.savedFilterPresetsRepository.savedPresetWrites)
+        assertEquals("Catalog filter", fixture.presets.value.single().name)
+        assertEquals(BeersQuery(), fixture.presets.value.single().query)
+      }
+    }
 
   @Test
   fun selectingSavedFilterShowsResultsAndBackRestoresPresetList() = runSkikoComposeUiTest {
@@ -116,6 +146,7 @@ class SavedFiltersHostFailureTest {
     fixture: Fixture,
     initialRoute: PortableRoute,
     strings: SharedAppStrings = savedFilterStrings("Rename", "Delete"),
+    beerRow: @Composable (Beer, () -> Unit) -> Unit = { _, _ -> },
   ) {
     setContent {
       SharedAppShell(
@@ -126,7 +157,7 @@ class SavedFiltersHostFailureTest {
         strings = strings,
         host =
           SharedAppHost(
-            beerRow = { _, _ -> },
+            beerRow = beerRow,
             errorContent = { _, _ -> Text("Load error") },
             backIcon = { text -> Text(text) },
             favoriteIcon = { _, _ -> },
