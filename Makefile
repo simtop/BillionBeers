@@ -303,6 +303,7 @@ ci-report-test: ## Test CI diagnosis, evidence parsing, and incremental comment 
 	@$(MAKE) --no-print-directory qa-test qa-validate
 	@$(MAKE) --no-print-directory make-help-test
 	@$(MAKE) --no-print-directory benchmark-budget-test
+	@$(MAKE) --no-print-directory build-time-budget-test
 	@python3 -m unittest discover -s .github/scripts -p 'test_*ci*.py'
 	@python3 .github/scripts/test_detect_change_scope.py
 	@python3 .github/scripts/test_ios_framework_build.py
@@ -603,6 +604,10 @@ repo-doctor: ## Verify read-only GitHub repository settings and CODEOWNERS cover
 .PHONY: benchmark-budget-test
 benchmark-budget-test: ## Test startup-budget parsing and fresh-report selection without a device.
 	python3 scripts/test_benchmark_budget.py
+
+.PHONY: build-time-budget-test
+build-time-budget-test: ## Test build-time budget sample validation and scenario paths.
+	python3 scripts/test_build_budget.py
 
 benchmark-micro: ## Run microbenchmarks on a connected device.
 	$(GRADLE_RUNNER) :benchmark:microbenchmark:connectedCheck

@@ -44,7 +44,7 @@ incremental_leaf {
 // approaches the clean number, incremental compilation has stopped working somewhere.
 incremental_deep {
     tasks = ["assembleDebug"]
-    apply-abi-change-to = "beerdomain/api/src/main/java/com/simtop/beerdomain/domain/models/Beer.kt"
+    apply-abi-change-to = "beerdomain/api/src/commonMain/kotlin/com/simtop/beerdomain/domain/models/Beer.kt"
 }
 
 // Without a mutator this scenario measures nothing: `testDebugUnitTest` is up-to-date after the
