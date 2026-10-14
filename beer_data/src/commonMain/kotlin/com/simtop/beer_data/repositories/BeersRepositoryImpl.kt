@@ -22,6 +22,7 @@ import com.simtop.core.core.CachePolicy
 import com.simtop.core.core.Either
 import com.simtop.core.core.EpochTimeProvider
 import com.simtop.core.core.LanguageProvider
+import com.simtop.core.core.Logger
 import com.simtop.core.core.SystemEpochTimeProvider
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
@@ -38,6 +39,7 @@ class BeersRepositoryImpl(
   private val beersStorage: BeersStorage,
   private val beersMapper: BeersMapper,
   private val languageProvider: LanguageProvider,
+  private val logger: Logger,
   private val epochTimeProvider: EpochTimeProvider = SystemEpochTimeProvider(),
 ) : BeersRepository, SavedFilterPresetsRepository {
 
@@ -69,7 +71,7 @@ class BeersRepositoryImpl(
     } catch (e: CancellationException) {
       throw e
     } catch (e: Exception) {
-      Either.Left(e.toFetchBeersError())
+      Either.Left(e.toFetchBeersError(logger))
     }
 
   @Suppress("TooGenericExceptionCaught")

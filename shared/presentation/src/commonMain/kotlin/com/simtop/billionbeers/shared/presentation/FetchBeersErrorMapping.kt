@@ -10,5 +10,7 @@ fun FetchBeersError.toCommonUiErrorState(): CommonUiState.Error =
     FetchBeersError.NotFound -> CommonUiState.Error(errorKey = CommonUiErrorKey.NoBeersFound)
     FetchBeersError.Forbidden -> CommonUiState.Error(errorKey = CommonUiErrorKey.AccessDenied)
     FetchBeersError.RateLimited -> CommonUiState.Error(errorKey = CommonUiErrorKey.RateLimited)
+    FetchBeersError.Server -> CommonUiState.Error(errorKey = CommonUiErrorKey.FailedToLoadBeers)
+    FetchBeersError.Parse -> CommonUiState.Error(errorKey = CommonUiErrorKey.FailedToLoadBeers)
     is FetchBeersError.Unknown -> CommonUiState.Error(errorKey = CommonUiErrorKey.FailedToLoadBeers)
   }

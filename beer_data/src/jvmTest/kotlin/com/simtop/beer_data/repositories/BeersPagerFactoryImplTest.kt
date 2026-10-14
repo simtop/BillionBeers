@@ -49,8 +49,9 @@ class BeersPagerFactoryImplTest {
         beersLocalSource,
         beersMapper,
         languageProvider,
+        NoOpLogger(),
       )
-    factory = BeersPagerFactoryImpl(repository, languageProvider)
+    factory = BeersPagerFactoryImpl(repository, languageProvider, NoOpLogger())
   }
 
   // Regression test: availability is treated as local-only (the server value only seeds first

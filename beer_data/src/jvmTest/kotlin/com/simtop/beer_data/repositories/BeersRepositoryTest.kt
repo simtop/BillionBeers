@@ -56,6 +56,7 @@ class BeersRepositoryTest {
         beersLocalSource,
         beersMapper,
         LanguageProvider { "en" },
+        NoOpLogger(),
         EpochTimeProvider { now },
       )
   }

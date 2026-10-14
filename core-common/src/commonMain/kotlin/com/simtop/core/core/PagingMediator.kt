@@ -169,7 +169,7 @@ class InMemoryPagingStorage<Key : Any, Value : Any>(
  *     val res = api.getBeers(page) // items + X-Total-Count
  *     PageResult(res.items, nextKey = if (page * PAGE_SIZE >= res.total) null else page + 1, res.total)
  *   },
- *   classifyError = { it.toFetchBeersError() },
+ *   classifyError = { it.toFetchBeersError(logger) },
  *   storage = roomBackedStorage, // omit for in-memory paging
  * )
  * ```

@@ -10,5 +10,9 @@ sealed interface FetchBeersError {
   /** HTTP 429: the backend is rate-limiting us. Recoverable - the same retry path applies. */
   data object RateLimited : FetchBeersError
 
+  data object Server : FetchBeersError
+
+  data object Parse : FetchBeersError
+
   data class Unknown(val cause: Throwable) : FetchBeersError
 }

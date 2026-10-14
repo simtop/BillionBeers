@@ -9,6 +9,7 @@ import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.InMemoryPagingStorage
 import com.simtop.core.core.LanguageProvider
+import com.simtop.core.core.Logger
 import com.simtop.core.core.PageResult
 import com.simtop.core.core.Pager
 import com.simtop.core.core.PagingMediator
@@ -21,13 +22,14 @@ import kotlinx.coroutines.flow.combine
 class BeersPagerFactoryImpl(
   private val repository: BeersRepository,
   private val languageProvider: LanguageProvider,
+  private val logger: Logger,
 ) : BeersPagerFactory {
 
   override fun create(): Pager<Beer, FetchBeersError> {
     return PagingMediator(
       initialKey = FIRST_PAGE,
       fetchRemote = fetchPage(BeersQuery()),
-      classifyError = { it.toFetchBeersError() },
+      classifyError = { it.toFetchBeersError(logger) },
       // A long-lived pager can survive a language change; resolve its surface when each page is
       // written so the bookmark follows the language used to map that page's rows.
       storage = BeersPagingStorage(repository) { catalogSurface(languageProvider) },
@@ -58,7 +60,7 @@ class BeersPagerFactoryImpl(
     PagingMediator(
       initialKey = FIRST_PAGE,
       fetchRemote = fetchPage(query),
-      classifyError = { it.toFetchBeersError() },
+      classifyError = { it.toFetchBeersError(logger) },
       storage = AvailabilityOverlayStorage(InMemoryPagingStorage(keyOf = Beer::id), repository),
     )
 

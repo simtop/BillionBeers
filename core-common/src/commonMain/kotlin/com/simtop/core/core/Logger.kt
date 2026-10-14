@@ -20,7 +20,8 @@ fun interface Logger {
 }
 
 enum class LogTag(val value: String) {
-  BEERS_MAPPER("BeersMapper")
+  BEERS_MAPPER("BeersMapper"),
+  BEERS_REMOTE_SOURCE("BeersRemoteSource"),
 }
 
 class NoOpLogger : Logger {
