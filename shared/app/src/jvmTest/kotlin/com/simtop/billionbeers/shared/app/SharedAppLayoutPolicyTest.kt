@@ -4,6 +4,7 @@ import androidx.compose.ui.unit.dp
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
 import com.simtop.beerdomain.fakes.FakeBeersRepository
+import com.simtop.beerdomain.fakes.FakeSavedFilterPresetsRepository
 import com.simtop.core.core.DefaultCoroutineDispatcherProvider
 import com.simtop.navigation.contract.PortableRoute
 import kotlin.test.Test
@@ -41,6 +42,7 @@ class SharedAppLayoutPolicyTest {
     val repository = FakeBeersRepository()
     return SharedAppNavigationState(
       repository = repository,
+      savedFilterPresetsRepository = FakeSavedFilterPresetsRepository(),
       pagerFactory = FakeBeersPagerFactory(repository),
       coroutineDispatcher = DefaultCoroutineDispatcherProvider(),
       initialRoute = PortableRoute.BeersList,

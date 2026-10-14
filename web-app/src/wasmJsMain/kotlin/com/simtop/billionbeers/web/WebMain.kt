@@ -279,6 +279,7 @@ private fun WebShell(runtime: WebDataRuntime, session: WebRouteSession) {
     is WebRouteResolution.Ready ->
       SharedAppShell(
         repository = repository,
+        savedFilterPresetsRepository = runtime.savedFilterPresetsRepository,
         pagerFactory = pagerFactory,
         coroutineDispatcher = coroutineDispatcher,
         strings = webStrings,

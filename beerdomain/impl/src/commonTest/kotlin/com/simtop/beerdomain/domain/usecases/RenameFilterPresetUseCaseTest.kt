@@ -3,7 +3,7 @@ package com.simtop.beerdomain.domain.usecases
 import com.simtop.beerdomain.domain.errors.MutateFilterPresetError
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
-import com.simtop.beerdomain.fakes.FakeBeersRepository
+import com.simtop.beerdomain.fakes.FakeSavedFilterPresetsRepository
 import com.simtop.core.core.Either
 import com.simtop.core.core.EpochTimeProvider
 import kotlin.test.Test
@@ -16,20 +16,20 @@ import kotlinx.coroutines.test.runTest
 class RenameFilterPresetUseCaseTest {
   @Test
   fun `normalizes the name and delegates the injected time`() = runTest {
-    val repository = FakeBeersRepository()
+    val repository = FakeSavedFilterPresetsRepository()
     val clock = RecordingClock(42L)
     val useCase = RenameFilterPresetUseCase(repository, clock)
 
     val result = useCase("preset-id", "  India Pale Ale\n")
 
     assertEquals(Either.Right(Unit), result)
-    assertEquals(listOf(Triple("preset-id", "India Pale Ale", 42L)), repository.renameFilterPresetRequests)
+    assertEquals(listOf(Triple("preset-id", "India Pale Ale", 42L)), repository.renameRequests)
     assertEquals(1, clock.calls.size)
   }
 
   @Test
   fun `invalid names return InvalidName without consulting dependencies`() = runTest {
-    val repository = FakeBeersRepository()
+    val repository = FakeSavedFilterPresetsRepository()
     val clock = RecordingClock(42L)
     val useCase = RenameFilterPresetUseCase(repository, clock)
 
@@ -37,26 +37,26 @@ class RenameFilterPresetUseCaseTest {
       assertEquals(Either.Left(MutateFilterPresetError.InvalidName), useCase("preset-id", it))
     }
 
-    assertTrue(repository.renameFilterPresetRequests.isEmpty())
+    assertTrue(repository.renameRequests.isEmpty())
     assertTrue(clock.calls.isEmpty())
   }
 
   @Test
   fun `maximum normalized length succeeds`() = runTest {
-    val repository = FakeBeersRepository()
+    val repository = FakeSavedFilterPresetsRepository()
     val name = "x".repeat(SavedFilterPreset.MAX_NAME_LENGTH)
 
     val result = RenameFilterPresetUseCase(repository, RecordingClock(1L))("preset-id", " $name ")
 
     assertEquals(Either.Right(Unit), result)
-    assertEquals(listOf(Triple("preset-id", name, 1L)), repository.renameFilterPresetRequests)
+    assertEquals(listOf(Triple("preset-id", name, 1L)), repository.renameRequests)
   }
 
   @Test
   fun `repository failure is propagated unchanged`() = runTest {
-    val repository = FakeBeersRepository()
+    val repository = FakeSavedFilterPresetsRepository()
     val error = MutateFilterPresetError.Unknown(IllegalStateException("storage"))
-    repository.mutateFilterPresetError = error
+    repository.mutateError = error
 
     val result = RenameFilterPresetUseCase(repository, RecordingClock(1L))("preset-id", "IPA")
 
@@ -65,8 +65,8 @@ class RenameFilterPresetUseCaseTest {
 
   @Test
   fun `cancellation propagates`() = runTest {
-    val repository = FakeBeersRepository()
-    repository.mutateFilterPresetException = CancellationException("cancel")
+    val repository = FakeSavedFilterPresetsRepository()
+    repository.mutateException = CancellationException("cancel")
 
     assertFailsWith<CancellationException> {
       RenameFilterPresetUseCase(repository, RecordingClock(1L))("preset-id", "IPA")

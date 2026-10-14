@@ -17,6 +17,7 @@ import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.beerdomain.domain.models.CatalogCacheStatus
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.beerdomain.domain.repositories.SavedFilterPresetsRepository
 import com.simtop.core.core.CachePolicy
 import com.simtop.core.core.Either
 import com.simtop.core.core.EpochTimeProvider
@@ -38,7 +39,7 @@ class BeersRepositoryImpl(
   private val beersMapper: BeersMapper,
   private val languageProvider: LanguageProvider,
   private val epochTimeProvider: EpochTimeProvider = SystemEpochTimeProvider(),
-) : BeersRepository {
+) : BeersRepository, SavedFilterPresetsRepository {
 
   override suspend fun getBeersPageFromApi(page: Int, query: BeersQuery): BeerPage {
     val remotePage =

@@ -6,6 +6,7 @@ import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
 import com.simtop.beerdomain.fakes.FakeBeersRepository
+import com.simtop.beerdomain.fakes.FakeSavedFilterPresetsRepository
 import com.simtop.billionbeers.testing_utils.MainDispatcherExtension
 import com.simtop.core.core.DefaultCoroutineDispatcherProvider
 import com.simtop.navigation.contract.BrowseCategory
@@ -259,6 +260,7 @@ class SharedAppNavigationStateTest {
         val navigation =
           SharedAppNavigationState(
             repository = repository,
+            savedFilterPresetsRepository = FakeSavedFilterPresetsRepository(),
             pagerFactory = pagerFactory,
             coroutineDispatcher = mainDispatcher.dispatcherProvider,
             initialRoute = route,
@@ -286,6 +288,7 @@ class SharedAppNavigationStateTest {
         val navigation =
           SharedAppNavigationState(
             repository = repository,
+            savedFilterPresetsRepository = FakeSavedFilterPresetsRepository(),
             pagerFactory = pagerFactory,
             coroutineDispatcher = mainDispatcher.dispatcherProvider,
             initialRoute = PortableRoute.BeersList,
@@ -321,6 +324,7 @@ class SharedAppNavigationStateTest {
     val navigation =
       SharedAppNavigationState(
         repository = repository,
+        savedFilterPresetsRepository = FakeSavedFilterPresetsRepository(),
         pagerFactory = pagerFactory,
         coroutineDispatcher = DefaultCoroutineDispatcherProvider(),
         initialRoute = PortableRoute.BeersList,
@@ -437,6 +441,7 @@ class SharedAppNavigationStateTest {
     val repository = FakeBeersRepository()
     return SharedAppNavigationState(
       repository = repository,
+      savedFilterPresetsRepository = FakeSavedFilterPresetsRepository(),
       pagerFactory = FakeBeersPagerFactory(repository),
       coroutineDispatcher = DefaultCoroutineDispatcherProvider(),
       initialRoute = PortableRoute.BeersList,

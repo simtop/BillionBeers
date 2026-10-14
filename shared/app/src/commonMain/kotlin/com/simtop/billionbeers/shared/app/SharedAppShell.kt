@@ -50,6 +50,7 @@ import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.beerdomain.domain.repositories.SavedFilterPresetsRepository
 import com.simtop.beerdomain.domain.usecases.SaveFilterPresetUseCase
 import com.simtop.billionbeers.shared.beerbrowse.BrowseStrings
 import com.simtop.billionbeers.shared.beerbrowse.SharedBrowseBeersContent
@@ -155,6 +156,7 @@ data class SharedAppHost(
 @Composable
 fun SharedAppShell(
   repository: BeersRepository,
+  savedFilterPresetsRepository: SavedFilterPresetsRepository,
   pagerFactory: BeersPagerFactory,
   coroutineDispatcher: CoroutineDispatcherProvider,
   strings: SharedAppStrings,
@@ -165,9 +167,10 @@ fun SharedAppShell(
 ) {
   val onNavigationEvent by rememberUpdatedState(host.onNavigationEvent)
   val navigation =
-    remember(repository, pagerFactory, coroutineDispatcher) {
+    remember(repository, savedFilterPresetsRepository, pagerFactory, coroutineDispatcher) {
       SharedAppNavigationState(
         repository,
+        savedFilterPresetsRepository,
         pagerFactory,
         coroutineDispatcher,
         initialRoute,
@@ -176,7 +179,10 @@ fun SharedAppShell(
     }
   DisposableEffect(navigation) { onDispose { navigation.disposeAll() } }
   val coroutineScope = rememberCoroutineScope()
-  val saveFilterPreset = remember(repository) { SaveFilterPresetUseCase(repository) }
+  val saveFilterPreset =
+    remember(savedFilterPresetsRepository) {
+      SaveFilterPresetUseCase(savedFilterPresetsRepository)
+    }
 
   LaunchedEffect(host.routeRequests, host.navigationRequests) {
     merge(

@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.simtop.beerdomain.domain.errors.MutateFilterPresetError
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
-import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.beerdomain.domain.repositories.SavedFilterPresetsRepository
 import com.simtop.billionbeers.shared.savedfilters.SavedFiltersModel
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.Either
@@ -29,7 +29,7 @@ private const val PRESETS_STOP_TIMEOUT_MILLIS = 5_000L
 @ContributesIntoMap(AppScope::class, binding = binding<ViewModel>())
 @ViewModelKey(SavedFiltersViewModel::class)
 @Inject
-class SavedFiltersViewModel(repository: BeersRepository) : ViewModel() {
+class SavedFiltersViewModel(repository: SavedFilterPresetsRepository) : ViewModel() {
   private val savedFilters = SavedFiltersModel(repository)
   private val mutationErrors = Channel<Unit>(Channel.BUFFERED)
   val mutationFailed = mutationErrors.receiveAsFlow()

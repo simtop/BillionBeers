@@ -26,8 +26,10 @@ import com.simtop.beerdomain.domain.errors.SaveFilterPresetError
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.beerdomain.domain.repositories.SavedFilterPresetsRepository
 import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
 import com.simtop.beerdomain.fakes.FakeBeersRepository
+import com.simtop.beerdomain.fakes.FakeSavedFilterPresetsRepository
 import com.simtop.core.core.DefaultCoroutineDispatcherProvider
 import com.simtop.core.core.Either
 import com.simtop.navigation.contract.BrowseCategory
@@ -61,7 +63,7 @@ class FilterPresetFormLayoutTest {
   ) =
     runSkikoComposeUiTest(size = Size(320f, 844f), density = Density(1f, fontScale)) {
       val backing = FakeBeersRepository()
-      val repository = SavingRepository(backing)
+      val repository = SavingRepository(backing, FakeSavedFilterPresetsRepository())
       val pagers = FakeBeersPagerFactory(backing)
       val strings =
         savedFilterStrings("Rename", "Delete")
@@ -84,6 +86,7 @@ class FilterPresetFormLayoutTest {
         CompositionLocalProvider(LocalLayoutDirection provides direction) {
           SharedAppShell(
             repository = repository,
+            savedFilterPresetsRepository = repository,
             pagerFactory = pagers,
             coroutineDispatcher = DefaultCoroutineDispatcherProvider(),
             strings = strings,
@@ -161,8 +164,10 @@ class FilterPresetFormLayoutTest {
       assertEquals("", editor.fetchSemanticsNode().config[SemanticsProperties.EditableText].text)
     }
 
-  private class SavingRepository(private val backing: FakeBeersRepository) :
-    BeersRepository by backing {
+  private class SavingRepository(
+    private val backing: FakeBeersRepository,
+    private val backingSavedFilters: FakeSavedFilterPresetsRepository,
+  ) : BeersRepository by backing, SavedFilterPresetsRepository by backingSavedFilters {
     var succeeds = false
     val attempts = mutableListOf<SavedFilterPreset>()
 
@@ -170,7 +175,7 @@ class FilterPresetFormLayoutTest {
       preset: SavedFilterPreset
     ): Either<SaveFilterPresetError, Unit> {
       attempts += preset
-      return if (succeeds) backing.saveFilterPreset(preset)
+      return if (succeeds) backingSavedFilters.saveFilterPreset(preset)
       else Either.Left(SaveFilterPresetError.Unknown(IllegalStateException("fixture failure")))
     }
   }
