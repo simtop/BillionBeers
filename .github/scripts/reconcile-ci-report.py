@@ -126,7 +126,7 @@ def same_source(pr: dict, run: dict, repository: str) -> bool:
     head = pr.get("head", {})
     source = run.get("head_repository") or {}
     return (
-        pr.get("state") == "open"
+        (pr.get("state") == "open" or pr.get("merged_at"))
         and pr.get("base", {}).get("repo", {}).get("full_name") == repository
         and source.get("id") is not None
         and (head.get("repo") or {}).get("id") == source["id"]
@@ -150,7 +150,7 @@ def resolve_pr(api: GitHub, run: dict) -> int | None:
             candidates = []
     if not candidates:
         owner = run["head_repository"]["owner"]["login"]
-        query = urllib.parse.urlencode({"state": "open", "head": f"{owner}:{run['head_branch']}"})
+        query = urllib.parse.urlencode({"state": "all", "head": f"{owner}:{run['head_branch']}"})
         candidates = api.pages(f"pulls?{query}")
     matches = set()
     for candidate in candidates:
@@ -178,7 +178,7 @@ def resolve_pr(api: GitHub, run: dict) -> int | None:
 
 def current(api: GitHub, pr_number: int) -> tuple[dict, dict | None]:
     pr = api.get(f"pulls/{pr_number}")
-    if pr.get("state") != "open":
+    if pr.get("state") != "open" and not pr.get("merged_at"):
         return pr, None
     query = urllib.parse.urlencode({"event": "pull_request", "head_sha": pr["head"]["sha"]})
     runs = api.pages(f"actions/workflows/ci.yml/runs?{query}", "workflow_runs")
@@ -700,7 +700,10 @@ def watch(api: GitHub, pr_number: int, *, budget: float = 900, interval: float =
 
         def is_current():
             live_pr, live_run = current(api, pr_number)
-            return live_pr.get("state") == "open" and combined_generation(live_pr, live_run, preparation_current(api, live_pr)) == expected
+            reportable = live_pr.get("state") == "open" or live_pr.get("merged_at")
+            completed_after_merge = not live_pr.get("merged_at") or live_run and live_run.get("status") == "completed"
+            return bool(reportable and completed_after_merge
+                        and combined_generation(live_pr, live_run, preparation_current(api, live_pr)) == expected)
 
         url = run["html_url"] if run else f"{pr['html_url']}/checks"
         run_id = str(run["id"]) if run else ""
@@ -717,7 +720,9 @@ def watch(api: GitHub, pr_number: int, *, budget: float = 900, interval: float =
     while clock() < deadline:
         try:
             pr, run = current(api, pr_number)
-            if pr.get("state") != "open":
+            if pr.get("state") != "open" and not pr.get("merged_at"):
+                return
+            if pr.get("merged_at") and (not run or run.get("status") != "completed"):
                 return
             preparation = preparation_current(api, pr)
             identity = combined_generation(pr, run, preparation)
@@ -757,7 +762,7 @@ def watch(api: GitHub, pr_number: int, *, budget: float = 900, interval: float =
         try:
             pr, run = current(api, pr_number)
             preparation = preparation_current(api, pr)
-            if pr.get("state") == "open" and combined_generation(pr, run, preparation) == adopted:
+            if (pr.get("state") == "open" or pr.get("merged_at")) and combined_generation(pr, run, preparation) == adopted:
                 last_data["incomplete"] = True
                 publish(last_data, last_pr, run, preparation, create=False)
         except API_ERRORS:

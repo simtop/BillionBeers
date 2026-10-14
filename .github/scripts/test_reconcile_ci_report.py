@@ -382,6 +382,26 @@ class ReconcileCiReportTest(unittest.TestCase):
         _, publisher = watch([{"pr": dict(pr(), state="closed"), "run": run()}], initial="old")
         self.assertEqual([], publisher.writes)
 
+    def test_merged_pr_completion_refreshes_the_final_report(self):
+        merged = dict(pr(), state="closed", merged_at="2026-10-14T10:00:00Z")
+        completed = run(status="completed", conclusion="success")
+        api, publisher = watch([{"pr": merged, "run": completed}], initial="old failure from prior commit")
+        self.assertIn("CI passed", publisher.body)
+        self.assertNotIn("old failure", publisher.body)
+        self.assertEqual(1, api.time)
+
+    def test_merged_pr_is_resolved_from_delayed_completion_event(self):
+        merged = dict(pr(), state="closed", merged_at="2026-10-14T10:00:00Z")
+        api = Mock(repository="owner/repo")
+        api.pages.return_value = [{"number": 7}]
+        api.get.return_value = merged
+        self.assertEqual(7, MODULE.resolve_pr(api, run(status="completed", conclusion="success")))
+
+    def test_merged_pr_is_not_updated_until_ci_run_completes(self):
+        merged = dict(pr(), state="closed", merged_at="2026-10-14T10:00:00Z")
+        _, publisher = watch([{"pr": merged, "run": run()}], initial="old failure")
+        self.assertEqual([], publisher.writes)
+
     def test_missing_fork_association_uses_api_and_verifies_source_repository(self):
         api = Mock(repository="owner/repo")
         upstream = run()
