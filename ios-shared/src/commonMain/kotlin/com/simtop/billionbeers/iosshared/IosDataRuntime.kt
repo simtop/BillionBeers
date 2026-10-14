@@ -10,6 +10,7 @@ import com.simtop.core.core.EnvironmentConfig
 import com.simtop.core.core.LanguageProvider
 import com.simtop.core.core.Logger
 import com.simtop.core.core.NoOpLogger
+import com.simtop.core.core.runSuspendCatching
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.DependencyGraph
@@ -48,7 +49,7 @@ public class IosDataRuntime private constructor(private val graph: IosGraph) {
     get() = graph.coroutineDispatcherProvider
 
   internal suspend fun loadImage(url: String): ByteArray? =
-    runCatching { httpClient.get(url).body<ByteArray>() }.getOrNull()
+    runSuspendCatching { httpClient.get(url).body<ByteArray>() }.getOrNull()
 
   public fun close() {
     if (!closed) {

@@ -48,6 +48,7 @@ import com.simtop.billionbeers.shared.presentation.BeerListItemLabels
 import com.simtop.billionbeers.shared.presentation.SharedBackIcon
 import com.simtop.billionbeers.shared.presentation.SharedBeerListItem
 import com.simtop.core.core.CommonUiState
+import com.simtop.core.core.runSuspendCatching
 import com.simtop.navigation.contract.PortableRoute
 import kotlin.js.toJsString
 import kotlinx.browser.window
@@ -355,7 +356,7 @@ private fun WebImage(
       if (url.isBlank()) {
         null
       } else {
-        runCatching {
+        runSuspendCatching {
           runtime.loadImage(url)?.let { SkiaImage.makeFromEncoded(it).toComposeImageBitmap() }
         }
           .getOrNull()

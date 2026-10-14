@@ -12,6 +12,7 @@ import com.simtop.core.core.LanguageProvider
 import com.simtop.core.core.Logger
 import com.simtop.core.core.NoOpLogger
 import com.simtop.core.core.SystemEpochTimeProvider
+import com.simtop.core.core.runSuspendCatching
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.DependencyGraph
@@ -50,7 +51,7 @@ class WebDataRuntime private constructor(private val graph: WebGraph) {
   val storage: BeersStorage
     get() = graph.browserStorage
 
-  internal suspend fun loadImage(url: String): ByteArray? = runCatching {
+  internal suspend fun loadImage(url: String): ByteArray? = runSuspendCatching {
     val requestUrl =
       graph.config.imageProxyBaseUrl?.let { proxyBaseUrl ->
         URLSearchParams().apply { append("url", url) }.let { "$proxyBaseUrl?${it.toString()}" }

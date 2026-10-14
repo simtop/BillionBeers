@@ -44,6 +44,7 @@ import com.simtop.billionbeers.shared.app.SharedAppHost
 import com.simtop.billionbeers.shared.app.SharedAppShell
 import com.simtop.navigation.contract.PortableRoute
 import com.simtop.core.core.CommonUiState
+import com.simtop.core.core.runSuspendCatching
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -233,7 +234,7 @@ private fun IosImage(
       if (url.isBlank()) {
         null
       } else {
-        runCatching {
+        runSuspendCatching {
           runtime.loadImage(url)?.let { Image.makeFromEncoded(it).toComposeImageBitmap() }
         }.getOrNull()
       }
