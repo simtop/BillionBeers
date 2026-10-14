@@ -82,6 +82,16 @@ class MakeHelpTest(unittest.TestCase):
         missing = {name for name, _ in TARGET.findall(self.source)} - phony
         self.assertEqual(set(), missing)
 
+    def test_deep_clean_is_scoped_to_checkout_outputs(self) -> None:
+        recipe = run_make("-n", "deep-clean")
+        self.assertIn("--stop", recipe)
+        self.assertIn("-name .git -o -name .claude -o -name rod", recipe)
+        self.assertIn("-name node_modules -o -name gradle-user-home", recipe)
+        self.assertIn("-name .gradle -o -name build", recipe)
+        self.assertNotIn("~/.gradle", recipe)
+        self.assertNotIn("Gradle clean", recipe)
+        self.assertNotIn(" clean", recipe)
+
     def test_action_files_do_not_skip_metadata_recipes(self) -> None:
         with tempfile.TemporaryDirectory(prefix="make-help-actions-") as temporary:
             directory = Path(temporary)
