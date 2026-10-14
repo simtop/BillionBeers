@@ -47,20 +47,22 @@ class DomainModelImmutabilityTest {
       "Array",
     )
 
-  private fun domainClasses(): List<KoClassDeclaration> =
-    Konsist.scopeFromProject()
-      .files
-      .filter { it.packagee?.name?.startsWith("com.simtop.beerdomain.domain") == true }
-      .flatMap { it.classes(includeNested = true) }
-
-  @Test
-  fun `domain models expose no var properties`() {
-    val classes = domainClasses()
-
+  private fun domainClasses(): List<KoClassDeclaration> {
+    val classes =
+      Konsist.scopeFromProject()
+        .files
+        .filter { it.packagee?.name?.let(::isDomainPackage) == true }
+        .flatMap { it.classes(includeNested = true) }
     assertTrue(classes.isNotEmpty()) {
       "No classes found under com.simtop.beerdomain.domain - the domain layout changed and this " +
         "rule would pass vacuously"
     }
+    return classes
+  }
+
+  @Test
+  fun `domain models expose no var properties`() {
+    val classes = domainClasses()
 
     val violations = classes.flatMap { koClass ->
       koClass.properties().filter { it.hasVarModifier }.map { "${koClass.name}.${it.name}" }
@@ -89,4 +91,8 @@ class DomainModelImmutabilityTest {
         "received it can change what the sender is still holding."
     }
   }
+
+  private fun isDomainPackage(packageName: String): Boolean =
+    packageName == "com.simtop.beerdomain.domain" ||
+      packageName.startsWith("com.simtop.beerdomain.domain.")
 }
