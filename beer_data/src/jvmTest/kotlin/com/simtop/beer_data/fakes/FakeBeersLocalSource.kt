@@ -23,6 +23,8 @@ class FakeBeersLocalSource : BeersStorage {
 
   override fun observeBeers(): Flow<List<StoredBeer>> = beersFlow
 
+  override suspend fun getBeerById(id: String): StoredBeer? = beersFlow.value.firstOrNull { it.id == id }
+
   override fun observeCatalogBeers(): Flow<List<StoredBeer>> =
     beersFlow.map { beers -> beers.filter { it.id in catalogBeerIds } }
 

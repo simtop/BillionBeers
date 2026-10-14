@@ -199,7 +199,8 @@ class BeersRepositoryImpl(
 
   override suspend fun getAllBeersFromDB() = observeBeers().first()
 
-  override suspend fun getBeerById(id: String): Beer? = getAllBeersFromDB().find { it.id == id }
+  override suspend fun getBeerById(id: String): Beer? =
+    beersStorage.getBeerById(id)?.let(beersMapper::fromStoredBeerToBeer)
 
   override suspend fun countDBEntries() = beersStorage.count()
 

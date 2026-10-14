@@ -32,6 +32,16 @@ class BeersStorageContractTest {
   }
 
   @Test
+  fun `get beer by id returns matching cached row or null`() = runTest {
+    val storage = InMemoryBeersStorage()
+    val target = storedBeer("2", "Bravo")
+    storage.insertAll(listOf(storedBeer("1", "Alpha"), target, storedBeer("3", "Charlie")))
+
+    assertEquals(target, storage.getBeerById("2"))
+    assertEquals(null, storage.getBeerById("missing"))
+  }
+
+  @Test
   fun `paging duplicate rows keep first local flags and last catalog fields`() = runTest {
     val storage = InMemoryBeersStorage()
     val first = storedBeer("1", "First").copy(availability = false, isFavorite = true)
@@ -84,6 +94,8 @@ class BeersStorageContractTest {
     private val states = mutableMapOf<String, StoredPagingState>()
 
     override fun observeBeers(): Flow<List<StoredBeer>> = beers
+
+    override suspend fun getBeerById(id: String): StoredBeer? = beers.value.firstOrNull { it.id == id }
 
     override fun observeFavoriteBeers(): Flow<List<StoredBeer>> =
       beers.map { rows -> rows.filter { it.isFavorite }.sortedWith(compareBy({ it.name }, { it.id })) }

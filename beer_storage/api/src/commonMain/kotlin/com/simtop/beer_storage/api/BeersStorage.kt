@@ -16,6 +16,9 @@ class FilterPresetCapacityReachedException :
 interface BeersStorage {
   fun observeBeers(): Flow<List<StoredBeer>>
 
+  /** Reads one cached row by its primary key without materializing the full catalog. */
+  suspend fun getBeerById(id: String): StoredBeer?
+
   /** Catalog-only view; storage backends without surface membership retain all rows. */
   fun observeCatalogBeers(): Flow<List<StoredBeer>> = observeBeers()
 

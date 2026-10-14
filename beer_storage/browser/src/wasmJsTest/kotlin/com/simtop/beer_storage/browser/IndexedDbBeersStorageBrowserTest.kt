@@ -18,6 +18,21 @@ import kotlinx.coroutines.yield
 
 class IndexedDbBeersStorageBrowserTest {
   @Test
+  fun getBeerByIdUsesTheStoredPrimaryKey() = runTest {
+    val storage = IndexedDbBeersStorage("billionbeers-beer-by-id-${hashCode()}")
+    try {
+      storage.awaitReady()
+      val beers = listOf(storedBeer("1"), storedBeer("42"), storedBeer("99"))
+      storage.insertAll(beers)
+
+      assertEquals(beers[1], storage.getBeerById("42"))
+      assertEquals(null, storage.getBeerById("missing"))
+    } finally {
+      storage.close()
+    }
+  }
+
+  @Test
   fun capacityRejectionPreservesDurablePresetsAndAllowsUpdateAndRetry() = runTest {
     val databaseName = "billionbeers-presets-capacity-${hashCode()}"
     var writer = IndexedDbBeersStorage(databaseName)
@@ -105,6 +120,18 @@ class IndexedDbBeersStorageBrowserTest {
       clearPresetsAndClose(writer, peer)
     }
   }
+
+  private fun storedBeer(id: String) =
+    StoredBeer(
+      id = id,
+      name = "Beer $id",
+      tagline = "",
+      description = "",
+      imageUrl = "",
+      abv = 0.0,
+      ibu = 0.0,
+      foodPairing = emptyList(),
+    )
 
   private suspend fun clearPresetsAndClose(writer: IndexedDbBeersStorage, peer: IndexedDbBeersStorage) {
     peer.close()

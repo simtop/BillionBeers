@@ -47,6 +47,16 @@ class BeersDatabaseJvmTest {
   }
 
   @Test
+  fun getBeerByIdReadsThePrimaryKeyRowOrNull() = runBlocking {
+    val dao = db.beersDao()
+    val target = beer("42", name = "Target")
+    dao.insertAll(listOf(beer("1"), target, beer("99")))
+
+    assertEquals(target, dao.getBeerById("42"))
+    assertEquals(null, dao.getBeerById("missing"))
+  }
+
+  @Test
   fun insertPageMergesBookmarkMonotonicallyAndKeepsExistingTotal() = runBlocking {
     val dao = db.beersDao()
     dao.insertPage(listOf(beer("1")), "catalog:en", 5, 206, 10L)

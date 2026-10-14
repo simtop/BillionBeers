@@ -53,10 +53,10 @@ import kotlinx.serialization.json.Json
     openSettled = true;
     const db = request.result;
     db.onversionchange = () => db.close();
-    const readOnly = ['readBeers', 'readFavorites', 'readPaging', 'readPresets', 'countPaging', 'count'].includes(operation);
+    const readOnly = ['readBeers', 'readBeerById', 'readFavorites', 'readPaging', 'readPresets', 'countPaging', 'count'].includes(operation);
     const stores = operation === 'readPaging' || operation === 'countPaging' ? ['paging_state'] :
       operation === 'readPresets' || operation === 'savePreset' || operation === 'renamePreset' || operation === 'deletePreset' ? ['filter_presets'] :
-      operation === 'count' || operation === 'readBeers' || operation === 'readFavorites' ? ['beers'] :
+      operation === 'count' || operation === 'readBeers' || operation === 'readBeerById' || operation === 'readFavorites' ? ['beers'] :
       operation === 'deleteAll' ? ['beers', 'paging_state'] : ['beers', 'paging_state'];
     let tx = null;
     let beers = null;
@@ -89,7 +89,11 @@ import kotlinx.serialization.json.Json
         close();
         resolve(result);
       };
-      if (operation === 'readBeers' || operation === 'readFavorites') {
+      if (operation === 'readBeerById') {
+        const request = beers.get(payload);
+        request.onsuccess = () => finishRead(request.result || null);
+        request.onerror = () => fail(request.error);
+      } else if (operation === 'readBeers' || operation === 'readFavorites') {
         const request = beers.getAll();
         request.onsuccess = () => {
           const rows = operation === 'readFavorites' ? request.result.filter(row => row.isFavorite) : request.result;
@@ -486,6 +490,9 @@ class IndexedDbBeersStorage(
   }
 
   override fun observeBeers(): Flow<List<StoredBeer>> = initializedFlow(beersState)
+
+  override suspend fun getBeerById(id: String): StoredBeer? =
+    read("readBeerById", id).takeUnless { it == "null" }?.let { json.decodeFromString<BeerRecord>(it).toStored() }
 
   override fun observeCatalogBeers(): Flow<List<StoredBeer>> = initializedFlow(catalogBeersState)
 
