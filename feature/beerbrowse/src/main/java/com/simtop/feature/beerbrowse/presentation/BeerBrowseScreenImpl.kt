@@ -1,5 +1,6 @@
 package com.simtop.feature.beerbrowse.presentation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -69,6 +70,7 @@ fun BeerBrowseScreenImpl(
       rememberSaveable(stateSaver = BrowseSelectionSaver) {
         mutableStateOf<BrowseSelection?>(null)
       }
+    BackHandler(enabled = selection != null) { selection = null }
     when (val current = selection) {
       null ->
         BrowseHomeScreen(
