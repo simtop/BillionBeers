@@ -23,6 +23,11 @@ interface BeersRepository {
 
   fun observeBeers(): Flow<List<Beer>>
 
+  /** Catalog-only view; defaults to all stored rows for backends without surface membership. */
+  fun observeCatalogBeers(): Flow<List<Beer>> = observeBeers()
+
+  suspend fun countCatalogDBEntries(): Int = countDBEntries()
+
   fun observeFavoriteBeers(): Flow<List<Beer>>
 
   suspend fun getAllBeersFromDB(): List<Beer>

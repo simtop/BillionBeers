@@ -22,6 +22,9 @@ class BeersLocalSourceImpl(private val db: BeersDatabase) : BeersStorage {
   override fun observeBeers(): Flow<List<StoredBeer>> =
     db.beersDao().getAllBeers().map { beers -> beers.map { it.toStoredBeer() } }
 
+  override fun observeCatalogBeers(): Flow<List<StoredBeer>> =
+    db.beersDao().getCatalogBeers().map { beers -> beers.map { it.toStoredBeer() } }
+
   override fun observeFavoriteBeers(): Flow<List<StoredBeer>> =
     db.beersDao().getFavoriteBeers().map { beers -> beers.map { it.toStoredBeer() } }
 
@@ -78,6 +81,8 @@ class BeersLocalSourceImpl(private val db: BeersDatabase) : BeersStorage {
   override suspend fun deleteAll() = db.beersDao().deleteAll()
 
   override suspend fun count() = db.beersDao().getCount()
+
+  override suspend fun countCatalogEntries() = db.beersDao().getCatalogCount()
 
   private fun validatePreset(preset: StoredFilterPreset) {
     require(preset.id.isNotBlank()) { "Saved filter preset id must not be blank" }

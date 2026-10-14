@@ -170,6 +170,9 @@ import kotlinx.serialization.json.Json
               ...row,
               availability: existing.id == null ? row.availability : existing.availability,
               isFavorite: existing.id == null ? row.isFavorite : existing.isFavorite,
+              isInCatalog: existing.id == null
+                ? row.isInCatalog
+                : (existing.isInCatalog !== false || row.isInCatalog),
             };
             beers.put(merged);
             existingById[row.id] = merged;
@@ -202,7 +205,7 @@ import kotlinx.serialization.json.Json
                 ? {availability: incoming.availability}
                 : {isFavorite: incoming.isFavorite}),
             }
-            : incoming;
+            : {...incoming, isInCatalog: false};
           beers.put(committed);
           finishMutation([committed]);
         };
@@ -239,6 +242,9 @@ import kotlinx.serialization.json.Json
                 ...row,
                 availability: existing.id == null ? row.availability : existing.availability,
                 isFavorite: existing.id == null ? row.isFavorite : existing.isFavorite,
+                isInCatalog: existing.id == null
+                  ? input.surface.startsWith('catalog:')
+                  : (existing.isInCatalog !== false || input.surface.startsWith('catalog:')),
               };
               beers.put(committed);
               existingRows[row.id] = committed;
@@ -397,6 +403,7 @@ private data class BeerRecord(
   val fermentationMethod: String,
   val ingredients: List<String>,
   val recommendedGlasses: List<String>,
+  val isInCatalog: Boolean = true,
 )
 
 @Serializable
@@ -435,6 +442,8 @@ class IndexedDbBeersStorage(
   private val writeMutex = Mutex()
   private val refreshMutex = Mutex()
   private val beersState = MutableStateFlow<List<StoredBeer>>(emptyList())
+  private val catalogBeersState = MutableStateFlow<List<StoredBeer>>(emptyList())
+  private val catalogBeerIds = MutableStateFlow<Set<String>>(emptySet())
   private val favoritesState = MutableStateFlow<List<StoredBeer>>(emptyList())
   private val presetsState = MutableStateFlow<List<StoredFilterPreset>>(emptyList())
   private val initialized = CompletableDeferred<Unit>()
@@ -460,6 +469,8 @@ class IndexedDbBeersStorage(
   }
 
   override fun observeBeers(): Flow<List<StoredBeer>> = initializedFlow(beersState)
+
+  override fun observeCatalogBeers(): Flow<List<StoredBeer>> = initializedFlow(catalogBeersState)
 
   override fun observeFavoriteBeers(): Flow<List<StoredBeer>> = initializedFlow(favoritesState)
 
@@ -528,6 +539,11 @@ class IndexedDbBeersStorage(
 
   override suspend fun count(): Int = read("count", "0").toInt()
 
+  override suspend fun countCatalogEntries(): Int {
+    initialized.await()
+    return catalogBeerIds.value.size
+  }
+
   fun close() {
     if (closed) return
     closed = true
@@ -573,11 +589,13 @@ class IndexedDbBeersStorage(
     refreshMutex.withLock {
       if (closed) return
       if (mutation.cleared) {
-        publishSnapshot(emptyList())
+        publishSnapshot(emptyList(), catalogIds = emptySet())
       } else {
         val beersById = beersState.value.associateBy { it.id }.toMutableMap()
         mutation.beers.forEach { beer -> beersById[beer.id] = beer.toStored() }
-        publishSnapshot(beersById.values.toList())
+        val catalogIds = catalogBeerIds.value.toMutableSet()
+        mutation.beers.filter(BeerRecord::isInCatalog).forEach { beer -> catalogIds += beer.id }
+        publishSnapshot(beersById.values.toList(), catalogIds = catalogIds)
       }
     }
   }
@@ -585,19 +603,24 @@ class IndexedDbBeersStorage(
   private suspend fun refresh() {
     refreshMutex.withLock {
       if (closed) return
-      val beers = json.decodeFromString<List<BeerRecord>>(execute("readBeers", "")).map(BeerRecord::toStored)
+      val records = json.decodeFromString<List<BeerRecord>>(execute("readBeers", ""))
+      val beers = records.map(BeerRecord::toStored)
+      val catalogIds = records.filter(BeerRecord::isInCatalog).mapTo(mutableSetOf(), BeerRecord::id)
       val presets = json.decodeFromString<List<PresetRecord>>(execute("readPresets", "")).map(PresetRecord::toStored)
-      publishSnapshot(beers, presets)
+      publishSnapshot(beers, presets, catalogIds)
     }
   }
 
   private fun publishSnapshot(
     beers: List<StoredBeer>,
     presets: List<StoredFilterPreset> = presetsState.value,
+    catalogIds: Set<String> = catalogBeerIds.value,
   ) {
     val sortedBeers = beers.sortedWith(compareBy<StoredBeer> { it.name }.thenBy { it.id })
     beersState.value = sortedBeers
     favoritesState.value = sortedBeers.filter { it.isFavorite }
+    catalogBeerIds.value = catalogIds
+    catalogBeersState.value = sortedBeers.filter { it.id in catalogIds }
     presetsState.value = presets.sortedWith(compareByDescending<StoredFilterPreset> { it.updatedAt }.thenBy { it.name }.thenBy { it.id })
   }
 
@@ -659,6 +682,7 @@ private fun toRecord(beer: StoredBeer) = BeerRecord(
   fermentationMethod = beer.fermentationMethod,
   ingredients = beer.ingredients,
   recommendedGlasses = beer.recommendedGlasses,
+  isInCatalog = true,
 )
 
 private fun BeerRecord.toStored() = StoredBeer(

@@ -6,6 +6,7 @@ import androidx.sqlite.SQLiteConnection
 private const val DATABASE_VERSION_3 = 3
 private const val DATABASE_VERSION_4 = 4
 private const val DATABASE_VERSION_5 = 5
+private const val DATABASE_VERSION_6 = 6
 
 private fun SQLiteConnection.execute(sql: String) {
   prepare(sql).use { it.step() }
@@ -78,6 +79,14 @@ val MIGRATION_4_5 =
     }
   }
 
+/** v5 → v6: existing cached rows remain catalog rows; preference-only rows are marked on insert. */
+val MIGRATION_5_6 =
+  object : Migration(DATABASE_VERSION_5, DATABASE_VERSION_6) {
+    override fun migrate(connection: SQLiteConnection) {
+      connection.execute("ALTER TABLE `beers` ADD COLUMN `is_in_catalog` INTEGER NOT NULL DEFAULT 1")
+    }
+  }
+
 /** Every supported upgrade, in order, for all Room hosts and database tests. */
 val ALL_MIGRATIONS: List<Migration> =
-  listOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+  listOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)

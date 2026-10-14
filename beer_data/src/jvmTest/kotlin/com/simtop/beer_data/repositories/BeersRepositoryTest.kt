@@ -394,6 +394,16 @@ class BeersRepositoryTest {
     }
 
   @Test
+  fun `uncached favorite does not count as a catalog cache entry`() =
+    runTest(testDispatcher) {
+      beersRepository.updateFavorite(Beer.empty.copy(id = "42", isFavorite = true))
+
+      expectThat(beersRepository.countDBEntries()).isEqualTo(1)
+      expectThat(beersRepository.countCatalogDBEntries()).isEqualTo(0)
+      expectThat(beersRepository.observeCatalogBeers().first()).isEqualTo(emptyList())
+    }
+
+  @Test
   fun `observeFavoriteBeers emits sorted local favorites only`() =
     runTest(testDispatcher) {
       beersRepository.observeFavoriteBeers().test {

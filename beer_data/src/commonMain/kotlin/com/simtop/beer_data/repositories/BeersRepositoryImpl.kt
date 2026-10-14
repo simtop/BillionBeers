@@ -118,7 +118,7 @@ class BeersRepositoryImpl(
     beersStorage.getPagingState(surface)?.nextKey
 
   override suspend fun catalogCacheStatus(policy: CachePolicy): CatalogCacheStatus {
-    if (beersStorage.count() == 0) return CatalogCacheStatus.Empty
+    if (beersStorage.countCatalogEntries() == 0) return CatalogCacheStatus.Empty
     val state = beersStorage.getPagingState(catalogSurface(languageProvider))
     return when {
       // No bookmark for this language: either a legacy cache from before paging_state existed
@@ -200,4 +200,11 @@ class BeersRepositoryImpl(
   override suspend fun getBeerById(id: String): Beer? = getAllBeersFromDB().find { it.id == id }
 
   override suspend fun countDBEntries() = beersStorage.count()
+
+  override suspend fun countCatalogDBEntries() = beersStorage.countCatalogEntries()
+
+  override fun observeCatalogBeers(): Flow<List<Beer>> =
+    beersStorage.observeCatalogBeers().map { beers ->
+      beers.map { beersMapper.fromStoredBeerToBeer(it) }
+    }
 }
