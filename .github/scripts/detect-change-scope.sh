@@ -93,6 +93,8 @@ classify_path() {
   local f="$1"
   if [ "$f" = "scripts/coverage-check.sh" ]; then
     a_unit=true # the unit lane executes it (make coverage-check)
+  elif [ "$f" = ".github/scripts/check-room-schemas.py" ] || [ "$f" = ".github/scripts/test_check_room_schemas.py" ]; then
+    a_unit=true # the always-run format lane tests this guard; unit changes run it after Room compilation
   elif [ "$f" = "scripts/ios-framework-build.sh" ] || [ "$f" = ".github/scripts/test_ios_framework_build.py" ]; then
     a_native=true # the Apple lane builds the Xcode host through this Gradle bridge
   elif [ "$f" = "qa/project.config.json" ] || [[ "$f" == skills/agent-qa/scripts/*.py ]] || [ "$f" = "scripts/test_qa_integration.py" ]; then
@@ -177,6 +179,8 @@ if [[ "${1:-}" == "--self-test" ]]; then
   assert_lanes "scripts/test_verify_ios_simulator_artifacts.py" false false false true false
   assert_lanes "scripts/test-tier-inventory.sh" true false false false false
   assert_lanes "scripts/test-tier-inventory-test.py" true false false false false
+  assert_lanes ".github/scripts/check-room-schemas.py" true false false false false
+  assert_lanes ".github/scripts/test_check_room_schemas.py" true false false false false
   assert_lanes "compose-multiplatform-fixture/build.gradle.kts" true true true true true
   assert_lanes "compose-multiplatform-fixture/karma.config.d/compose-resources.js" true true true true true
   assert_lanes "docs/guide.md" false false false false false

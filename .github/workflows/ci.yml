@@ -73,6 +73,9 @@ jobs:
       - name: Test screenshot inventory guard
         run: python3 .github/scripts/test_check_screenshot_inventory.py
 
+      - name: Test Room schema guard
+        run: python3 .github/scripts/test_check_room_schemas.py
+
       - name: Set up JDK 23
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5
         with:
@@ -380,6 +383,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.event.inputs.pull_request_number != '' && format('refs/pull/{0}/merge', github.event.inputs.pull_request_number) || '' }}
+          fetch-depth: 0
 
       - name: Set up JDK 23
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5
@@ -403,6 +407,11 @@ jobs:
       - name: Run Unit Tests
         id: unit_phase
         run: bash .github/scripts/run-timed-command.sh make test
+
+      - name: Verify Room schemas are current
+        env:
+          ROOM_SCHEMA_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: python3 .github/scripts/check-room-schemas.py
 
       - name: Verify unit-test reports executed tests
         run: python3 .github/scripts/validate-test-lane-reports.py unit
@@ -662,6 +671,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.event.inputs.pull_request_number != '' && format('refs/pull/{0}/merge', github.event.inputs.pull_request_number) || '' }}
+          fetch-depth: 0
 
       - name: Enable KVM
         # GitHub's Linux runners support nested virtualization, but the device node is not
@@ -705,6 +715,11 @@ jobs:
         run: >-
           bash .github/scripts/run-timed-command.sh
           ./gradlew ciGroupDebugAndroidTest --profile
+
+      - name: Verify Room schemas are current
+        env:
+          ROOM_SCHEMA_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: python3 .github/scripts/check-room-schemas.py
 
       - name: Run the expanded-width app journey on a managed tablet
         id: tablet_tests
