@@ -11,6 +11,7 @@ import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.beerdomain.domain.repositories.SavedFilterPresetsRepository
 import com.simtop.billionbeers.shared.beerbrowse.BrowseViewModel
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailViewModel
 import com.simtop.billionbeers.shared.beersearch.BeersSearchViewModel
@@ -122,7 +123,7 @@ internal class SearchEntry(
 
 internal class SavedFiltersEntry(
   id: Long,
-  repository: BeersRepository,
+  repository: SavedFilterPresetsRepository,
 ) : ManagedSharedAppEntry(id, PortableRoute.SavedFilterPresets) {
   private val savedFilters = SavedFiltersModel(repository)
   val presets = savedFilters.presets
@@ -185,6 +186,7 @@ internal class DetailEntry(
 
 internal class SharedAppNavigationState(
   private val repository: BeersRepository,
+  private val savedFilterPresetsRepository: SavedFilterPresetsRepository,
   private val pagerFactory: BeersPagerFactory,
   private val coroutineDispatcher: CoroutineDispatcherProvider,
   initialRoute: PortableRoute,
@@ -284,7 +286,7 @@ internal class SharedAppNavigationState(
       PortableRoute.Favorites -> FavoritesEntry(nextId(), repository)
       PortableRoute.BeersSearch ->
         SearchEntry(nextId(), repository, pagerFactory, coroutineDispatcher)
-      PortableRoute.SavedFilterPresets -> SavedFiltersEntry(nextId(), repository)
+      PortableRoute.SavedFilterPresets -> SavedFiltersEntry(nextId(), savedFilterPresetsRepository)
       PortableRoute.BeerBrowse -> BrowseHomeEntry(nextId(), repository)
       is PortableRoute.BeerBrowseSelection ->
         BrowseBeersEntry(

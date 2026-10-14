@@ -3,7 +3,7 @@ package com.simtop.beerdomain.domain.usecases
 import com.simtop.beerdomain.domain.errors.SaveFilterPresetError
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
-import com.simtop.beerdomain.fakes.FakeBeersRepository
+import com.simtop.beerdomain.fakes.FakeSavedFilterPresetsRepository
 import com.simtop.core.core.Either
 import com.simtop.core.core.EpochTimeProvider
 import kotlin.test.Test
@@ -17,7 +17,7 @@ import kotlinx.coroutines.test.runTest
 class SaveFilterPresetUseCaseTest {
   @Test
   fun `normalizes the name and retains the complete query`() = runTest {
-    val repository = FakeBeersRepository()
+    val repository = FakeSavedFilterPresetsRepository()
     val clock = RecordingClock(42L)
     val idProvider = RecordingIdProvider()
     val query = BeersQuery(search = "ipa", styleId = "style-1", breweryId = "brewery-1")
@@ -40,7 +40,7 @@ class SaveFilterPresetUseCaseTest {
 
   @Test
   fun `invalid names return InvalidName without consulting dependencies`() = runTest {
-    val repository = FakeBeersRepository()
+    val repository = FakeSavedFilterPresetsRepository()
     val clock = RecordingClock(42L)
     val idProvider = RecordingIdProvider()
     val useCase =
@@ -54,14 +54,14 @@ class SaveFilterPresetUseCaseTest {
       assertEquals(Either.Left(SaveFilterPresetError.InvalidName), useCase(it, BeersQuery()))
     }
 
-    assertTrue(repository.saveFilterPresetRequests.isEmpty())
+    assertTrue(repository.saveRequests.isEmpty())
     assertTrue(clock.calls.isEmpty())
     assertEquals(0, idProvider.calls.size)
   }
 
   @Test
   fun `maximum normalized length succeeds`() = runTest {
-    val repository = FakeBeersRepository()
+    val repository = FakeSavedFilterPresetsRepository()
     val name = "x".repeat(SavedFilterPreset.MAX_NAME_LENGTH)
 
     val result = SaveFilterPresetUseCase(repository, RecordingClock(1L))(" $name ", BeersQuery())
@@ -72,7 +72,7 @@ class SaveFilterPresetUseCaseTest {
 
   @Test
   fun `exact name and query update while a different query creates a preset`() = runTest {
-    val repository = FakeBeersRepository()
+    val repository = FakeSavedFilterPresetsRepository()
     val idProvider = RecordingIdProvider()
     val useCase =
       SaveFilterPresetUseCase(repository, RecordingClock(1L), idProvider)
@@ -91,7 +91,7 @@ class SaveFilterPresetUseCaseTest {
 
   @Test
   fun `hash-colliding names remain separate presets`() = runTest {
-    val repository = FakeBeersRepository()
+    val repository = FakeSavedFilterPresetsRepository()
     val query = BeersQuery(search = "ipa")
     val useCase = SaveFilterPresetUseCase(repository, RecordingClock(1L), RecordingIdProvider())
 
@@ -106,7 +106,7 @@ class SaveFilterPresetUseCaseTest {
 
   @Test
   fun `saving the old tuple after rename does not overwrite renamed preset`() = runTest {
-    val repository = FakeBeersRepository()
+    val repository = FakeSavedFilterPresetsRepository()
     val idProvider = RecordingIdProvider()
     val query = BeersQuery(search = "ipa")
     val save = SaveFilterPresetUseCase(repository, RecordingClock(1L), idProvider)
@@ -123,24 +123,24 @@ class SaveFilterPresetUseCaseTest {
 
   @Test
   fun `repository failures are propagated unchanged`() = runTest {
-    val repository = FakeBeersRepository()
+    val repository = FakeSavedFilterPresetsRepository()
     val unknown = SaveFilterPresetError.Unknown(IllegalStateException("storage"))
     val useCase = SaveFilterPresetUseCase(repository, RecordingClock(1L))
 
-    repository.saveFilterPresetError = SaveFilterPresetError.CapacityReached
+    repository.saveError = SaveFilterPresetError.CapacityReached
     assertEquals(
       Either.Left(SaveFilterPresetError.CapacityReached),
       useCase("IPA", BeersQuery()),
     )
 
-    repository.saveFilterPresetError = unknown
+    repository.saveError = unknown
     assertEquals(Either.Left(unknown), useCase("IPA", BeersQuery()))
   }
 
   @Test
   fun `cancellation propagates`() = runTest {
-    val repository = FakeBeersRepository()
-    repository.saveFilterPresetException = CancellationException("cancel")
+    val repository = FakeSavedFilterPresetsRepository()
+    repository.saveException = CancellationException("cancel")
 
     assertFailsWith<CancellationException> {
       SaveFilterPresetUseCase(repository, RecordingClock(1L))("IPA", BeersQuery())

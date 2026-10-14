@@ -738,7 +738,7 @@
           "evidence": [
             {
               "path": "app/src/androidTest/java/com/simtop/billionbeers/SavedFiltersMutationUiTest.kt",
-              "needle": "FakeBeersRepositoryModule.fakeBeersRepository.mutateFilterPresetError = storageFailure()"
+              "needle": "FakeBeersRepositoryModule.fakeSavedFilterPresetsRepository.mutateError = storageFailure()"
             }
           ],
           "limits": [

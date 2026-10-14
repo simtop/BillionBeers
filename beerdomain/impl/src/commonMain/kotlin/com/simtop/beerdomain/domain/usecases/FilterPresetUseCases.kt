@@ -4,7 +4,7 @@ import com.simtop.beerdomain.domain.errors.MutateFilterPresetError
 import com.simtop.beerdomain.domain.errors.SaveFilterPresetError
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
-import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.beerdomain.domain.repositories.SavedFilterPresetsRepository
 import com.simtop.core.core.Either
 import com.simtop.core.core.EpochTimeProvider
 import com.simtop.core.core.SystemEpochTimeProvider
@@ -23,7 +23,7 @@ object RandomSavedFilterPresetIdProvider : SavedFilterPresetIdProvider {
 }
 
 class SaveFilterPresetUseCase(
-  private val repository: BeersRepository,
+  private val repository: SavedFilterPresetsRepository,
   private val epochTimeProvider: EpochTimeProvider = SystemEpochTimeProvider(),
   private val idProvider: SavedFilterPresetIdProvider =
     RandomSavedFilterPresetIdProvider,
@@ -56,7 +56,7 @@ class SaveFilterPresetUseCase(
 }
 
 class RenameFilterPresetUseCase(
-  private val repository: BeersRepository,
+  private val repository: SavedFilterPresetsRepository,
   private val epochTimeProvider: EpochTimeProvider = SystemEpochTimeProvider(),
 ) {
   suspend operator fun invoke(

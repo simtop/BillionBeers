@@ -5,6 +5,7 @@ import com.simtop.beer_storage.api.BeersStorage
 import com.simtop.beer_storage.browser.IndexedDbBeersStorage
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.beerdomain.domain.repositories.SavedFilterPresetsRepository
 import com.simtop.core.core.EnvironmentConfig
 import com.simtop.core.core.EpochTimeProvider
 import com.simtop.core.core.LanguageProvider
@@ -39,6 +40,9 @@ class WebDataRuntime private constructor(private val graph: WebGraph) {
 
   val repository: BeersRepository
     get() = graph.repository
+
+  val savedFilterPresetsRepository: SavedFilterPresetsRepository
+    get() = graph.savedFilterPresetsRepository
 
   val pagerFactory: BeersPagerFactory
     get() = graph.pagerFactory
@@ -81,6 +85,7 @@ class WebDataRuntime private constructor(private val graph: WebGraph) {
 @DependencyGraph(AppScope::class)
 interface WebGraph {
   val repository: BeersRepository
+  val savedFilterPresetsRepository: SavedFilterPresetsRepository
   val pagerFactory: BeersPagerFactory
   val httpClient: HttpClient
   val browserStorage: IndexedDbBeersStorage

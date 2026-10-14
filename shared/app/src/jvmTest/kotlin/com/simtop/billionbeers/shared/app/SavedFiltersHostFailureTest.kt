@@ -19,9 +19,10 @@ import com.simtop.beerdomain.domain.errors.MutateFilterPresetError
 import com.simtop.beerdomain.domain.errors.SaveFilterPresetError
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
-import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.beerdomain.domain.repositories.SavedFilterPresetsRepository
 import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
 import com.simtop.beerdomain.fakes.FakeBeersRepository
+import com.simtop.beerdomain.fakes.FakeSavedFilterPresetsRepository
 import com.simtop.core.core.DefaultCoroutineDispatcherProvider
 import com.simtop.core.core.Either
 import com.simtop.navigation.contract.PortableRoute
@@ -46,7 +47,7 @@ class SavedFiltersHostFailureTest {
     onNode(hasText("New saved filter")).assertIsDisplayed()
     runOnIdle {
       assertEquals(SavedFilterPreset.MAX_COUNT, fixture.presets.value.size)
-      assertEquals(0, fixture.repository.savedPresetWrites)
+      assertEquals(0, fixture.savedFilterPresetsRepository.savedPresetWrites)
       // Model a slot becoming available while the user keeps the list entry open.
       fixture.presets.value = fixture.presets.value.dropLast(1)
     }
@@ -56,7 +57,7 @@ class SavedFiltersHostFailureTest {
     runOnIdle {
       assertEquals(SavedFilterPreset.MAX_COUNT, fixture.presets.value.size)
       assertTrue(fixture.presets.value.any { it.name == "New saved filter" })
-      assertEquals(1, fixture.repository.savedPresetWrites)
+      assertEquals(1, fixture.savedFilterPresetsRepository.savedPresetWrites)
     }
   }
 
@@ -90,7 +91,7 @@ class SavedFiltersHostFailureTest {
     action(preset, "Recovered name").assertIsDisplayed()
     runOnIdle {
       assertEquals(preset, fixture.presets.value.single())
-      fixture.repository.mutationFails = false
+      fixture.savedFilterPresetsRepository.mutationFails = false
     }
 
     action(preset, "Rename").performClick()
@@ -98,12 +99,12 @@ class SavedFiltersHostFailureTest {
     runOnIdle { assertEquals("Recovered name", fixture.presets.value.single().name) }
 
     val renamed = fixture.presets.value.single()
-    fixture.repository.mutationFails = true
+    fixture.savedFilterPresetsRepository.mutationFails = true
     action(renamed, "Delete").performClick()
     onNodeWithText("Could not update saved filters").assertIsDisplayed()
     runOnIdle {
       assertEquals(listOf(renamed), fixture.presets.value)
-      fixture.repository.mutationFails = false
+      fixture.savedFilterPresetsRepository.mutationFails = false
     }
 
     action(renamed, "Delete").performClick()
@@ -119,6 +120,7 @@ class SavedFiltersHostFailureTest {
     setContent {
       SharedAppShell(
         repository = fixture.repository,
+        savedFilterPresetsRepository = fixture.savedFilterPresetsRepository,
         pagerFactory = FakeBeersPagerFactory(fixture.backingRepository),
         coroutineDispatcher = DefaultCoroutineDispatcherProvider(),
         strings = strings,
@@ -151,6 +153,7 @@ class SavedFiltersHostFailureTest {
 
   private class Fixture(presetCount: Int) {
     val backingRepository = FakeBeersRepository()
+    val backingSavedFilterPresetsRepository = FakeSavedFilterPresetsRepository()
     val presets =
       MutableStateFlow(
         List(presetCount) { index ->
@@ -162,13 +165,15 @@ class SavedFiltersHostFailureTest {
           )
         }
       )
-    val repository = ShellFailureRepository(backingRepository, presets)
+    val repository = backingRepository
+    val savedFilterPresetsRepository =
+      ShellFailureRepository(backingSavedFilterPresetsRepository, presets)
   }
 
   private class ShellFailureRepository(
-    backingRepository: FakeBeersRepository,
+    backingRepository: FakeSavedFilterPresetsRepository,
     private val presets: MutableStateFlow<List<SavedFilterPreset>>,
-  ) : BeersRepository by backingRepository {
+  ) : SavedFilterPresetsRepository by backingRepository {
     var mutationFails = true
     var savedPresetWrites = 0
 

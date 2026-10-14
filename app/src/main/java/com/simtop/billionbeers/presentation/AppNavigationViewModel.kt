@@ -5,6 +5,7 @@ import com.simtop.beerdomain.domain.errors.SaveFilterPresetError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.beerdomain.domain.repositories.SavedFilterPresetsRepository
 import com.simtop.beerdomain.domain.usecases.SaveFilterPresetUseCase
 import com.simtop.core.core.Either
 import dev.zacsweers.metro.AppScope
@@ -15,8 +16,11 @@ import dev.zacsweers.metrox.viewmodel.ViewModelKey
 @ContributesIntoMap(AppScope::class)
 @ViewModelKey(AppNavigationViewModel::class)
 @Inject
-class AppNavigationViewModel(private val beersRepository: BeersRepository) : ViewModel() {
-  private val saveFilterPreset = SaveFilterPresetUseCase(beersRepository)
+class AppNavigationViewModel(
+  private val beersRepository: BeersRepository,
+  savedFilterPresetsRepository: SavedFilterPresetsRepository,
+) : ViewModel() {
+  private val saveFilterPreset = SaveFilterPresetUseCase(savedFilterPresetsRepository)
 
   // Resolves a deep-linked beer id against the local cache - deep links only carry an id,
   // never the full Beer payload the BeerDetail nav key needs.

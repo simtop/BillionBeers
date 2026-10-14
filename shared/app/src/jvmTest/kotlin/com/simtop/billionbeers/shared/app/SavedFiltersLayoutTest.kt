@@ -31,8 +31,8 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
-import com.simtop.beerdomain.domain.repositories.BeersRepository
-import com.simtop.beerdomain.fakes.FakeBeersRepository
+import com.simtop.beerdomain.domain.repositories.SavedFilterPresetsRepository
+import com.simtop.beerdomain.fakes.FakeSavedFilterPresetsRepository
 import com.simtop.billionbeers.shared.beerbrowse.BrowseStrings
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailStrings
 import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersTheme
@@ -211,7 +211,7 @@ class SavedFiltersLayoutTest {
       }
     val presets = MutableStateFlow(initialPresets)
     private val repository =
-      object : BeersRepository by FakeBeersRepository() {
+      object : SavedFilterPresetsRepository by FakeSavedFilterPresetsRepository() {
         override fun observeSavedFilterPresets() = presets
       }
     val entry = SavedFiltersEntry(id = 1L, repository = repository)

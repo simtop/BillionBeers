@@ -45,6 +45,7 @@ fun DesktopShell(runtime: DesktopDataRuntime) {
   val coroutineDispatcher = remember(runtime) { DefaultCoroutineDispatcherProvider() }
   SharedAppShell(
     repository = runtime.repository,
+    savedFilterPresetsRepository = runtime.savedFilterPresetsRepository,
     pagerFactory = pagerFactory,
     coroutineDispatcher = coroutineDispatcher,
     strings = desktopStrings,

@@ -3,6 +3,7 @@ package com.simtop.billionbeers.iosshared
 import com.simtop.beer_database.database.BeersDatabase
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.beerdomain.domain.repositories.SavedFilterPresetsRepository
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.DefaultCoroutineDispatcherProvider
 import com.simtop.core.core.EnvironmentConfig
@@ -37,6 +38,9 @@ public class IosDataRuntime private constructor(private val graph: IosGraph) {
   public val repository: BeersRepository
     get() = graph.repository
 
+  public val savedFilterPresetsRepository: SavedFilterPresetsRepository
+    get() = graph.savedFilterPresetsRepository
+
   public val pagerFactory: BeersPagerFactory
     get() = graph.pagerFactory
 
@@ -63,6 +67,7 @@ public class IosDataRuntime private constructor(private val graph: IosGraph) {
 @DependencyGraph(AppScope::class)
 internal interface IosGraph {
   val repository: BeersRepository
+  val savedFilterPresetsRepository: SavedFilterPresetsRepository
   val pagerFactory: BeersPagerFactory
   val coroutineDispatcherProvider: CoroutineDispatcherProvider
   val httpClient: HttpClient

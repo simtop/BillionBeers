@@ -1,8 +1,6 @@
 package com.simtop.beerdomain.fakes
 
 import com.simtop.beerdomain.domain.errors.FetchBeersError
-import com.simtop.beerdomain.domain.errors.MutateFilterPresetError
-import com.simtop.beerdomain.domain.errors.SaveFilterPresetError
 import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
 import com.simtop.beerdomain.domain.errors.UpdateFavoriteError
 import com.simtop.beerdomain.domain.models.Beer
@@ -11,7 +9,6 @@ import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.beerdomain.domain.models.CatalogCacheStatus
-import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.CachePolicy
 import com.simtop.core.core.Either
@@ -22,16 +19,10 @@ import kotlinx.coroutines.flow.map
 class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersRepository {
 
   private val beersFlow = MutableStateFlow<List<Beer>>(initialBeers)
-  private val presetsFlow = MutableStateFlow<List<SavedFilterPreset>>(emptyList())
   private var beersObservationFlow: Flow<List<Beer>>? = null
-  private var savedFilterPresetsObservationFlow: Flow<List<SavedFilterPreset>>? = null
 
   fun setBeersObservationFlow(flow: Flow<List<Beer>>?) {
     beersObservationFlow = flow
-  }
-
-  fun setSavedFilterPresetsObservationFlow(flow: Flow<List<SavedFilterPreset>>?) {
-    savedFilterPresetsObservationFlow = flow
   }
 
   // Helper to inspect state
@@ -55,46 +46,6 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersReposit
 
   override suspend fun countDBEntries(): Int {
     return beersFlow.value.size
-  }
-
-  override fun observeSavedFilterPresets(): Flow<List<SavedFilterPreset>> =
-    savedFilterPresetsObservationFlow ?: presetsFlow
-
-  val saveFilterPresetRequests = mutableListOf<SavedFilterPreset>()
-  var saveFilterPresetError: SaveFilterPresetError? = null
-  var saveFilterPresetException: Exception? = null
-
-  override suspend fun saveFilterPreset(preset: SavedFilterPreset): Either<SaveFilterPresetError, Unit> {
-    saveFilterPresetRequests += preset
-    saveFilterPresetException?.let { throw it }
-    saveFilterPresetError?.let { return Either.Left(it) }
-    val current = presetsFlow.value.toMutableList()
-    val index = current.indexOfFirst { it.id == preset.id }
-    if (index < 0 && current.size >= SavedFilterPreset.MAX_COUNT) {
-      return Either.Left(SaveFilterPresetError.CapacityReached)
-    }
-    if (index < 0) current += preset else current[index] = preset
-    presetsFlow.value = current.sortedWith(compareByDescending<SavedFilterPreset> { it.updatedAt }.thenBy { it.name }.thenBy { it.id })
-    return Either.Right(Unit)
-  }
-
-  val renameFilterPresetRequests = mutableListOf<Triple<String, String, Long>>()
-  var mutateFilterPresetError: MutateFilterPresetError? = null
-  var mutateFilterPresetException: Exception? = null
-
-  override suspend fun renameFilterPreset(id: String, name: String, updatedAt: Long): Either<MutateFilterPresetError, Unit> {
-    renameFilterPresetRequests += Triple(id, name, updatedAt)
-    mutateFilterPresetException?.let { throw it }
-    mutateFilterPresetError?.let { return Either.Left(it) }
-    presetsFlow.value = presetsFlow.value.map { if (it.id == id) it.copy(name = name, updatedAt = updatedAt) else it }
-    return Either.Right(Unit)
-  }
-
-  override suspend fun deleteFilterPreset(id: String): Either<MutateFilterPresetError, Unit> {
-    mutateFilterPresetException?.let { throw it }
-    mutateFilterPresetError?.let { return Either.Left(it) }
-    presetsFlow.value = presetsFlow.value.filterNot { it.id == id }
-    return Either.Right(Unit)
   }
 
   override fun observeBeers(): Flow<List<Beer>> {

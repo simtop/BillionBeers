@@ -65,13 +65,16 @@ class SavedFiltersMutationUiTest {
   @Before
   fun setUp() {
     val context = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
-    FakeBeersRepositoryModule.fakeBeersRepository.mutateFilterPresetError = null
-    FakeBeersRepositoryModule.fakeBeersRepository.mutateFilterPresetException = null
+    FakeBeersRepositoryModule.fakeSavedFilterPresetsRepository.mutateError = null
+    FakeBeersRepositoryModule.fakeSavedFilterPresetsRepository.mutateException = null
     runBlocking {
-      FakeBeersRepositoryModule.fakeBeersRepository.observeSavedFilterPresets().first().forEach {
-        FakeBeersRepositoryModule.fakeBeersRepository.deleteFilterPreset(it.id)
-      }
-      FakeBeersRepositoryModule.fakeBeersRepository.saveFilterPreset(preset)
+      FakeBeersRepositoryModule.fakeSavedFilterPresetsRepository
+        .observeSavedFilterPresets()
+        .first()
+        .forEach {
+          FakeBeersRepositoryModule.fakeSavedFilterPresetsRepository.deleteFilterPreset(it.id)
+        }
+      FakeBeersRepositoryModule.fakeSavedFilterPresetsRepository.saveFilterPreset(preset)
     }
     val graph = createGraphFactory<TestAppGraph.Factory>().create(context = context) as BaseAppGraph
     (graph.splitInstallManager as com.simtop.billionbeers.fakes.FakeSplitInstallManager).reset()
@@ -87,7 +90,7 @@ class SavedFiltersMutationUiTest {
         }
     runBlocking {
       fullPresetList.drop(1).forEach {
-        FakeBeersRepositoryModule.fakeBeersRepository.saveFilterPreset(it)
+        FakeBeersRepositoryModule.fakeSavedFilterPresetsRepository.saveFilterPreset(it)
       }
     }
     val expectedIds = fullPresetList.map(SavedFilterPreset::id).toSet()
@@ -102,7 +105,9 @@ class SavedFiltersMutationUiTest {
       assertEquals(expectedIds, persistedPresets().map(SavedFilterPreset::id).toSet())
 
       runBlocking {
-        FakeBeersRepositoryModule.fakeBeersRepository.deleteFilterPreset(fullPresetList.first().id)
+        FakeBeersRepositoryModule.fakeSavedFilterPresetsRepository.deleteFilterPreset(
+          fullPresetList.first().id
+        )
       }
       composeTestRule.waitUntil(timeoutMillis = 6_000) {
         composeTestRule.onAllNodesWithText(capacityMessage).fetchSemanticsNodes().isEmpty()
@@ -120,7 +125,7 @@ class SavedFiltersMutationUiTest {
 
   @Test
   fun failedRenameShowsFeedbackRetainsDraftAndPresetThenRetryPersistsRename() {
-    FakeBeersRepositoryModule.fakeBeersRepository.mutateFilterPresetError = storageFailure()
+    FakeBeersRepositoryModule.fakeSavedFilterPresetsRepository.mutateError = storageFailure()
 
     ActivityScenario.launch(MainActivity::class.java).use {
       openSavedFilters()
@@ -134,7 +139,7 @@ class SavedFiltersMutationUiTest {
       composeTestRule.onNodeWithText(draft).assertIsDisplayed()
       assertEquals(listOf(preset), persistedPresets())
 
-      FakeBeersRepositoryModule.fakeBeersRepository.mutateFilterPresetError = null
+      FakeBeersRepositoryModule.fakeSavedFilterPresetsRepository.mutateError = null
       rowAction(preset, renameLabel).performClick()
 
       composeTestRule.onNodeWithText(draft).assertIsDisplayed()
@@ -162,7 +167,7 @@ class SavedFiltersMutationUiTest {
 
   @Test
   fun failedDeleteShowsFeedbackAndKeepsPresetThenRetryRemovesIt() {
-    FakeBeersRepositoryModule.fakeBeersRepository.mutateFilterPresetError = storageFailure()
+    FakeBeersRepositoryModule.fakeSavedFilterPresetsRepository.mutateError = storageFailure()
 
     ActivityScenario.launch(MainActivity::class.java).use {
       openSavedFilters()
@@ -172,12 +177,14 @@ class SavedFiltersMutationUiTest {
       composeTestRule.onNodeWithTag("saved-filter-${preset.id}").assertIsDisplayed()
       assertEquals(listOf(preset), persistedPresets())
 
-      FakeBeersRepositoryModule.fakeBeersRepository.mutateFilterPresetError = null
+      FakeBeersRepositoryModule.fakeSavedFilterPresetsRepository.mutateError = null
       rowAction(preset, deleteLabel).performClick()
 
       composeTestRule.waitUntil(timeoutMillis = 5_000) {
         runBlocking {
-          FakeBeersRepositoryModule.fakeBeersRepository.observeSavedFilterPresets().first()
+          FakeBeersRepositoryModule.fakeSavedFilterPresetsRepository
+            .observeSavedFilterPresets()
+            .first()
         }
           .isEmpty()
       }
@@ -208,7 +215,7 @@ class SavedFiltersMutationUiTest {
     )
 
   private fun persistedPresets(): List<SavedFilterPreset> = runBlocking {
-    FakeBeersRepositoryModule.fakeBeersRepository.observeSavedFilterPresets().first()
+    FakeBeersRepositoryModule.fakeSavedFilterPresetsRepository.observeSavedFilterPresets().first()
   }
 
   private fun storageFailure() =

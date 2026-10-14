@@ -1,8 +1,6 @@
 package com.simtop.beerdomain.domain.repositories
 
 import com.simtop.beerdomain.domain.errors.FetchBeersError
-import com.simtop.beerdomain.domain.errors.MutateFilterPresetError
-import com.simtop.beerdomain.domain.errors.SaveFilterPresetError
 import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
 import com.simtop.beerdomain.domain.errors.UpdateFavoriteError
 import com.simtop.beerdomain.domain.models.Beer
@@ -11,7 +9,6 @@ import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.beerdomain.domain.models.CatalogCacheStatus
-import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.core.core.CachePolicy
 import com.simtop.core.core.Either
 import kotlinx.coroutines.flow.Flow
@@ -23,14 +20,6 @@ import kotlinx.coroutines.flow.Flow
  */
 interface BeersRepository {
   suspend fun countDBEntries(): Int
-
-  fun observeSavedFilterPresets(): Flow<List<SavedFilterPreset>>
-
-  suspend fun saveFilterPreset(preset: SavedFilterPreset): Either<SaveFilterPresetError, Unit>
-
-  suspend fun renameFilterPreset(id: String, name: String, updatedAt: Long): Either<MutateFilterPresetError, Unit>
-
-  suspend fun deleteFilterPreset(id: String): Either<MutateFilterPresetError, Unit>
 
   fun observeBeers(): Flow<List<Beer>>
 
