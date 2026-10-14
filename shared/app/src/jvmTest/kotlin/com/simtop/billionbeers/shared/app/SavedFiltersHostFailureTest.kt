@@ -97,7 +97,10 @@ class SavedFiltersHostFailureTest {
     val preset = fixture.presets.value.single()
     val strings =
       savedFilterStrings("Rename", "Delete").let {
-        it.copy(back = "Back", browseStrings = it.browseStrings.copy(back = "Back"))
+        it.copy(
+          chrome = it.chrome.copy(back = "Back"),
+          browseStrings = it.browseStrings.copy(back = "Back"),
+        )
       }
     showShell(fixture, PortableRoute.SavedFilterPresets, strings)
 

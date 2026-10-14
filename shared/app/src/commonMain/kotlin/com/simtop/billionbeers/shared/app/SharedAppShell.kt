@@ -79,8 +79,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
 
-/** Host-owned copy and formatting strings for the portable application shell. */
-data class SharedAppStrings(
+/** Shared shell chrome copy, registered once by each platform host. */
+data class SharedAppChromeStrings(
   val appTitle: String,
   val back: String,
   val list: String,
@@ -88,29 +88,62 @@ data class SharedAppStrings(
   val search: String,
   val browse: String,
   val savedFilters: String,
-  val savedFiltersEmpty: String,
-  val savedFiltersLoadFailed: String,
-  val saveFilter: String,
-  val filterPresetLimitReached: String,
-  val saveFilterFailed: String,
-  val mutateFilterFailed: String,
-  val filterNameHint: String,
-  val renameFilter: String,
-  val deleteFilter: String,
-  val retry: String,
   val error: String,
-  val listLoadMoreFailed: String,
-  val listEndOfList: (Int) -> String,
-  val searchHint: String,
+)
+
+/** Copy used by the catalog destination and its paging footer. */
+data class SharedAppListStrings(
+  val loadMoreFailed: String,
+  val retry: String,
+  val endOfList: (Int) -> String,
+)
+
+/** Copy used by the search destination and its paging footer. */
+data class SharedAppSearchStrings(
+  val hint: String,
   val styleFilter: String,
   val allStyles: String,
   val clearStyle: String,
   val clearFilters: String,
-  val searchPrompt: String,
-  val searchNoResults: (String) -> String,
-  val searchResultCount: (Int) -> String,
-  val searchEndOfList: (Int) -> String,
-  val favoritesEmpty: String,
+  val prompt: String,
+  val noResults: (String) -> String,
+  val resultCount: (Int) -> String,
+  val loadMoreFailed: String,
+  val retry: String,
+  val endOfList: (Int) -> String,
+)
+
+/** Copy used by the favorites destination. */
+data class SharedAppFavoritesStrings(
+  val empty: String,
+  val error: String,
+)
+
+/** Copy supplied to the saved-filters destination. */
+data class SharedAppSavedFiltersStrings(
+  val empty: String,
+  val loadFailed: String,
+  val name: String,
+  val rename: String,
+  val delete: String,
+)
+
+/** Copy used by save/rename actions shared by the saved-filters destination and other screens. */
+data class SharedAppSavedFilterActionStrings(
+  val saveFilter: String,
+  val filterPresetLimitReached: String,
+  val saveFilterFailed: String,
+  val mutateFilterFailed: String,
+)
+
+/** Destination-scoped host copy grouped by the screen that owns each string set. */
+data class SharedAppStrings(
+  val chrome: SharedAppChromeStrings,
+  val list: SharedAppListStrings,
+  val favorites: SharedAppFavoritesStrings,
+  val search: SharedAppSearchStrings,
+  val savedFilters: SharedAppSavedFiltersStrings,
+  val savedFilterActions: SharedAppSavedFilterActionStrings,
   val browseStrings: BrowseStrings,
   val detailStrings: BeerDetailStrings,
 )
@@ -225,8 +258,9 @@ fun SharedAppShell(
       is Either.Left -> {
         when (result.value) {
           SaveFilterPresetError.InvalidName -> Unit
-          SaveFilterPresetError.CapacityReached -> message = strings.filterPresetLimitReached
-          is SaveFilterPresetError.Unknown -> message = strings.saveFilterFailed
+          SaveFilterPresetError.CapacityReached ->
+            message = strings.savedFilterActions.filterPresetLimitReached
+          is SaveFilterPresetError.Unknown -> message = strings.savedFilterActions.saveFilterFailed
         }
         false
       }
@@ -244,17 +278,17 @@ fun SharedAppShell(
           ShellTopBar(
             title =
               when (route) {
-                PortableRoute.BeersList -> strings.list
-                PortableRoute.Favorites -> strings.favorites
-                PortableRoute.BeersSearch -> strings.search
+                PortableRoute.BeersList -> strings.chrome.list
+                PortableRoute.Favorites -> strings.chrome.favorites
+                PortableRoute.BeersSearch -> strings.chrome.search
                 PortableRoute.SavedFilterPresets ->
-                  (entry as? SavedFilterResultsEntry)?.preset?.name ?: strings.savedFilters
-                PortableRoute.BeerBrowse -> strings.browse
+                  (entry as? SavedFilterResultsEntry)?.preset?.name ?: strings.chrome.savedFilters
+                PortableRoute.BeerBrowse -> strings.chrome.browse
                 is PortableRoute.BeerBrowseSelection -> route.category.name
                 is PortableRoute.BeerDetail -> route.beer.name
               },
             showBack = canGoBack,
-            back = strings.back,
+            back = strings.chrome.back,
             backIcon = host.backIcon,
             onBack = ::pop,
           )
@@ -277,19 +311,19 @@ fun SharedAppShell(
                 selected = route == PortableRoute.BeersList,
                 onClick = { navigate(PortableRoute.BeersList) },
                 icon = {},
-                label = { Text(strings.list) },
+                label = { Text(strings.chrome.list) },
               )
               NavigationBarItem(
                 selected = route == PortableRoute.Favorites,
                 onClick = { navigate(PortableRoute.Favorites) },
                 icon = {},
-                label = { Text(strings.favorites) },
+                label = { Text(strings.chrome.favorites) },
               )
               NavigationBarItem(
                 selected = route == PortableRoute.SavedFilterPresets,
                 onClick = { navigate(PortableRoute.SavedFilterPresets) },
                 icon = {},
-                label = { Text(strings.savedFilters) },
+                label = { Text(strings.chrome.savedFilters) },
               )
             }
           }
@@ -340,7 +374,7 @@ fun SharedAppShell(
                     is Either.Right -> true
                     is Either.Left -> {
                       if (result.value is MutateFilterPresetError.Unknown) {
-                        message = strings.mutateFilterFailed
+                        message = strings.savedFilterActions.mutateFilterFailed
                       }
                       false
                     }
@@ -348,7 +382,7 @@ fun SharedAppShell(
                 },
                 onDelete = { preset ->
                   val succeeded = entry.delete(preset.id) is Either.Right
-                  if (!succeeded) message = strings.mutateFilterFailed
+                  if (!succeeded) message = strings.savedFilterActions.mutateFilterFailed
                   succeeded
                 },
               )
@@ -495,10 +529,10 @@ private fun ListDestination(
           host.errorContent(CommonUiState.Error(errorKey = CommonUiErrorKey.NoBeersFound), retry)
         },
         errorContent = host.errorContent,
-        loadMoreFailedText = strings.listLoadMoreFailed,
-        retryText = strings.retry,
+        loadMoreFailedText = strings.list.loadMoreFailed,
+        retryText = strings.list.retry,
         endOfListText =
-          strings.listEndOfList((viewState as? CommonUiState.Success)?.data?.items?.size ?: 0),
+          strings.list.endOfList((viewState as? CommonUiState.Success)?.data?.items?.size ?: 0),
         onScrollToBottom = entry.viewModel::onScrollToBottom,
         onRefresh = entry.viewModel::refresh,
         onRetry = entry.viewModel::refresh,
@@ -520,8 +554,8 @@ private fun FavoritesDestination(
   val viewState by entry.viewModel.viewState.collectAsState()
   SharedFavoritesContent(
     viewState = viewState,
-    emptyText = strings.favoritesEmpty,
-    errorText = strings.error,
+    emptyText = strings.favorites.empty,
+    errorText = strings.favorites.error,
     beerRow = { beer -> host.beerRow(beer) { onBeerClick(beer) } },
     listState = entry.listState,
   )
@@ -545,7 +579,7 @@ private fun SearchDestination(
     OutlinedTextField(
       value = query,
       onValueChange = entry.viewModel::onQueryChange,
-      label = { Text(strings.searchHint) },
+      label = { Text(strings.search.hint) },
       singleLine = true,
       modifier = Modifier.fillMaxWidth().padding(12.dp),
     )
@@ -556,15 +590,15 @@ private fun SearchDestination(
       BeersSearchStyleFilter(
         styles = styles,
         selectedStyle = selectedStyle,
-        styleLabel = strings.styleFilter,
-        allStylesLabel = strings.allStyles,
-        clearStyleLabel = strings.clearStyle,
-        retryLabel = strings.retry,
+        styleLabel = strings.search.styleFilter,
+        allStylesLabel = strings.search.allStyles,
+        clearStyleLabel = strings.search.clearStyle,
+        retryLabel = strings.search.retry,
         onStyleChange = entry.viewModel::onStyleSelected,
         onRetryStyles = entry.viewModel::retryStyles,
       )
       if (activeQuery.search != null || activeQuery.styleId != null) {
-        TextButton(onClick = entry.viewModel::onResetFilters) { Text(strings.clearFilters) }
+        TextButton(onClick = entry.viewModel::onResetFilters) { Text(strings.search.clearFilters) }
       }
     }
     SaveFilterForm(
@@ -579,15 +613,15 @@ private fun SearchDestination(
         query = query,
         beerRow = { beer -> host.beerRow(beer) { onBeerClick(beer) } },
         loadingContent = { LoadingContent() },
-        emptyContent = { ShellHint(strings.searchPrompt) },
-        noResultsContent = { ShellHint(strings.searchNoResults(it)) },
+        emptyContent = { ShellHint(strings.search.prompt) },
+        noResultsContent = { ShellHint(strings.search.noResults(it)) },
         errorContent = host.errorContent,
         resultCountContent = {
-          Text(strings.searchResultCount(it), modifier = Modifier.padding(12.dp))
+          Text(strings.search.resultCount(it), modifier = Modifier.padding(12.dp))
         },
-        loadMoreFailedText = strings.listLoadMoreFailed,
-        retryText = strings.retry,
-        endOfListText = strings.searchEndOfList(count),
+        loadMoreFailedText = strings.search.loadMoreFailed,
+        retryText = strings.search.retry,
+        endOfListText = strings.search.endOfList(count),
         onScrollToBottom = entry.viewModel::onScrollToBottom,
         onRetryLoadMore = entry.viewModel::onRetryLoadMore,
         onRetrySearch = entry.viewModel::onRetrySearch,
@@ -679,7 +713,7 @@ private fun DetailDestination(
         onMessage(
           when (event.error) {
             BeerDetailError.FavoriteUpdate,
-            BeerDetailError.AvailabilityUpdate -> strings.error
+            BeerDetailError.AvailabilityUpdate -> strings.chrome.error
           }
         )
       }
@@ -716,9 +750,9 @@ private fun ShellActions(
 ) {
   Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
     Row(Modifier.fillMaxWidth()) {
-      Button(onClick = onSearch, modifier = Modifier.weight(1f)) { Text(strings.search) }
+      Button(onClick = onSearch, modifier = Modifier.weight(1f)) { Text(strings.chrome.search) }
       Button(onClick = onBrowse, modifier = Modifier.weight(1f).padding(start = 8.dp)) {
-        Text(strings.browse)
+        Text(strings.chrome.browse)
       }
     }
     SaveFilterForm(strings, onSaveQuery, modifier = Modifier.padding(top = 8.dp))
@@ -742,7 +776,11 @@ private fun SaveFilterForm(
         if (onSaveQuery(name)) name = ""
       }
     },
-    labels = FilterPresetFormLabels(strings.filterNameHint, strings.saveFilter),
+    labels =
+      FilterPresetFormLabels(
+        strings.savedFilters.name,
+        strings.savedFilterActions.saveFilter,
+      ),
     modifier = modifier,
     enabled = enabled,
   )
