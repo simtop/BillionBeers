@@ -11,8 +11,87 @@ internal object IosLocalizedStrings {
   fun forLanguage(languageCode: String): SharedAppStrings =
     when (iosLanguage(languageCode)) {
       "fr" -> french()
+      "es" -> spanish()
       else -> english()
     }
+
+  private fun spanish() =
+    SharedAppStrings(
+      appTitle = "Billion Beers",
+      back = "Atrás",
+      list = "Catálogo",
+      favorites = "Favoritos",
+      search = "Buscar",
+      browse = "Explorar",
+      savedFilters = "Filtros guardados",
+      savedFiltersEmpty = "Aún no hay filtros guardados",
+      savedFiltersLoadFailed = "No se pudieron cargar los filtros guardados. Reintentando.",
+      saveFilter = "Guardar",
+      filterPresetLimitReached = "Puedes guardar hasta 10 filtros. Elimina uno antes de guardar otro.",
+      saveFilterFailed = "No se pudo guardar el filtro.",
+      mutateFilterFailed = "No se pudo modificar este filtro guardado. Inténtalo de nuevo.",
+      filterNameHint = "Nombre del filtro",
+      renameFilter = "Cambiar nombre",
+      deleteFilter = "Eliminar",
+      retry = "Reintentar",
+      error = "No se pudieron cargar las cervezas",
+      listLoadMoreFailed = "No se pudieron cargar más cervezas",
+      listEndOfList = { count ->
+        "Fin de la lista · ${formatCount(count, "cerveza", "cervezas")}"
+      },
+      searchHint = "Buscar cervezas",
+      styleFilter = "Estilos",
+      allStyles = "Todos los estilos",
+      clearStyle = "Quitar estilo",
+      clearFilters = "Borrar filtros",
+      searchPrompt = "Escribe al menos dos caracteres para buscar",
+      searchNoResults = { term -> "No se encontraron cervezas para «$term»" },
+      searchResultCount = { count -> formatCount(count, "resultado", "resultados") },
+      searchEndOfList = { count ->
+        "Fin de los resultados · ${formatCount(count, "cerveza", "cervezas")}"
+      },
+      favoritesEmpty = "Aún no tienes cervezas favoritas",
+      browseStrings = BrowseStrings(
+        back = "Atrás",
+        title = "Explorar",
+        stylesTab = "Estilos",
+        breweriesTab = "Cervecerías",
+        emptyState = "No hay nada que explorar",
+        noBeers = "No se encontraron cervezas",
+        retry = "Reintentar",
+        loadMoreFailed = "No se pudieron cargar más cervezas",
+        breweryFounded = { country, year -> "$country · fundada en $year" },
+        beersCount = { count -> formatCount(count, "cerveza", "cervezas") },
+        endOfList = { count ->
+          "Fin de la lista · ${formatCount(count, "cerveza", "cervezas")}"
+        },
+      ),
+      detailStrings = detailStrings(
+        back = "Atrás",
+        imageDescription = { name -> "Imagen de $name" },
+        addToFavorites = "Añadir a favoritos",
+        removeFromFavorites = "Quitar de favoritos",
+        available = "Disponible",
+        outOfStock = "Agotada",
+        markAsEmpty = "Marcar como vacío",
+        refillBarrels = "Rellenar barriles",
+        styleAndBrewery = { style, brewery -> "$style · $brewery" },
+        description = "Descripción",
+        foodPairing = "Maridaje",
+        abv = "Alcohol",
+        ibu = "IBU",
+        details = "Detalles",
+        srm = "SRM",
+        released = "Lanzamiento",
+        servingTemperature = "Temperatura de servicio",
+        servingTemperatureValue = { minTemperature, maxTemperature ->
+          formatServingTemperatureRange(minTemperature, maxTemperature)
+        },
+        fermentation = "Fermentación",
+        ingredients = "Ingredientes",
+        recommendedGlasses = "Vasos recomendados",
+      ),
+    )
 
   private fun english() =
     SharedAppStrings(
