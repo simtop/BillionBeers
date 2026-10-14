@@ -164,7 +164,7 @@ class SelectMasterReuseTest(unittest.TestCase):
     def test_manual_workflow_exposes_boolean_force_full_input(self):
         workflow = (Path(__file__).resolve().parents[1] / "workflows" / "ci.yml").read_text()
         self.assertIn("force_full:", workflow)
-        self.assertIn("description: Run all five test lanes even if a verified merged PR result exists.", workflow)
+        self.assertIn("description: Run all five test lanes even if a verified test result exists.", workflow)
         self.assertRegex(workflow, r"force_full:\n\s+description:.*?\n\s+type: boolean\n\s+required: false\n\s+default: false")
         self.assertIn("FORCE_FULL: ${{ inputs.force_full }}", workflow)
 

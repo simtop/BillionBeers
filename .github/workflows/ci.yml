@@ -1,4 +1,5 @@
 name: BillionBeers CI
+run-name: CI validation for ${{ github.ref_name }}
 
 on:
   push:
@@ -10,10 +11,14 @@ on:
   workflow_dispatch:
     inputs:
       force_full:
-        description: Run all five test lanes even if a verified merged PR result exists.
+        description: Run all five test lanes even if a verified test result exists.
         type: boolean
         required: false
         default: false
+      pull_request_number:
+        description: Test this pull request's current merge ref with a full validation run.
+        type: string
+        required: false
 
 # Jobs declare additional read permissions where needed.
 permissions:
@@ -40,6 +45,8 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.inputs.pull_request_number != '' && format('refs/pull/{0}/merge', github.event.inputs.pull_request_number) || '' }}
 
       # The checker allows newly added artifacts, but rejects checksum edits/removals and any
       # change to the trust policy. Run it on every PR so a ledger edit cannot avoid the guard
@@ -158,6 +165,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          ref: ${{ github.event.inputs.pull_request_number != '' && format('refs/pull/{0}/merge', github.event.inputs.pull_request_number) || '' }}
           fetch-depth: 0 # need the merge base and the previous head for the diffs
 
       - name: Check for a verified post-merge test result
@@ -206,6 +214,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          ref: ${{ github.event.inputs.pull_request_number != '' && format('refs/pull/{0}/merge', github.event.inputs.pull_request_number) || '' }}
           # Full history so the base..head range below can be resolved; the scan itself is still
           # scoped to just this PR's commits.
           fetch-depth: 0
@@ -234,6 +243,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.inputs.pull_request_number != '' && format('refs/pull/{0}/merge', github.event.inputs.pull_request_number) || '' }}
 
       - name: Set up JDK 23
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5
@@ -287,6 +298,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.inputs.pull_request_number != '' && format('refs/pull/{0}/merge', github.event.inputs.pull_request_number) || '' }}
 
       - name: Set up JDK 23
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5
@@ -323,6 +336,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.inputs.pull_request_number != '' && format('refs/pull/{0}/merge', github.event.inputs.pull_request_number) || '' }}
 
       - name: Set up JDK 23
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5
@@ -360,6 +375,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.inputs.pull_request_number != '' && format('refs/pull/{0}/merge', github.event.inputs.pull_request_number) || '' }}
 
       - name: Set up JDK 23
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5
@@ -490,6 +507,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.inputs.pull_request_number != '' && format('refs/pull/{0}/merge', github.event.inputs.pull_request_number) || '' }}
 
       - name: Set up JDK 23
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5
@@ -562,6 +581,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          ref: ${{ github.event.inputs.pull_request_number != '' && format('refs/pull/{0}/merge', github.event.inputs.pull_request_number) || '' }}
           lfs: true
 
       - name: Set up JDK 23
@@ -637,6 +657,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.inputs.pull_request_number != '' && format('refs/pull/{0}/merge', github.event.inputs.pull_request_number) || '' }}
 
       - name: Enable KVM
         # GitHub's Linux runners support nested virtualization, but the device node is not
@@ -775,6 +797,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.inputs.pull_request_number != '' && format('refs/pull/{0}/merge', github.event.inputs.pull_request_number) || '' }}
 
       - name: Select pinned Xcode
         run: |
@@ -949,6 +973,7 @@ jobs:
         if: github.event_name == 'pull_request'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          ref: ${{ github.event.inputs.pull_request_number != '' && format('refs/pull/{0}/merge', github.event.inputs.pull_request_number) || '' }}
           persist-credentials: false
 
       - name: Verify dependency preparation result
