@@ -3,6 +3,7 @@ package com.simtop.konsist
 import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.ext.list.withNameEndingWith
 import com.lemonappdev.konsist.api.verify.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
@@ -22,7 +23,12 @@ class OneShotEventBoundaryTest {
 
   @Test
   fun `ViewModels do not use MutableSharedFlow for events`() {
-    Konsist.scopeFromProject().classes().withNameEndingWith("ViewModel").assertFalse { viewModel ->
+    val viewModels = Konsist.scopeFromProject().classes().withNameEndingWith("ViewModel")
+    assertTrue(viewModels.isNotEmpty()) {
+      "No ViewModel classes were discovered; this boundary would pass vacuously"
+    }
+
+    viewModels.assertFalse { viewModel ->
       viewModel.containingFile.hasImport { import ->
         import.name == "kotlinx.coroutines.flow.MutableSharedFlow"
       }

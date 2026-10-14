@@ -3,6 +3,7 @@ package com.simtop.konsist
 import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.ext.list.withNameEndingWith
 import com.lemonappdev.konsist.api.verify.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
@@ -18,8 +19,12 @@ class RepositoryBoundaryTest {
 
   @Test
   fun `repository interfaces do not import data-layer types`() {
-    Konsist.scopeFromProject().interfaces().withNameEndingWith("Repository").assertFalse {
-      repository ->
+    val repositories = Konsist.scopeFromProject().interfaces().withNameEndingWith("Repository")
+    assertTrue(repositories.isNotEmpty()) {
+      "No Repository interfaces were discovered; this boundary would pass vacuously"
+    }
+
+    repositories.assertFalse { repository ->
       forbiddenPackagePrefixes.any { prefix ->
         repository.containingFile.hasImport { import -> import.name.startsWith(prefix) }
       }
