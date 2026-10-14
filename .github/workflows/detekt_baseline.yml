@@ -1,6 +1,7 @@
 name: Detekt Baseline
 
-# Dispatch against a branch to regenerate the Detekt baselines and commit them to that same branch.
+# Dispatch against a branch to regenerate the Detekt baselines. The trusted CI Writeback workflow
+# validates and commits the resulting patch after this run completes.
 # The sibling of format_fix.yml, for the gate that replaced `ignoreFailures = true`.
 #
 # IT IS DELIBERATELY NOT AUTOMATIC, and that is the whole design note. spotlessApply is a
@@ -20,10 +21,6 @@ name: Detekt Baseline
 #
 # When NOT to: CI went red on a finding you just introduced. Fix the code. That is the point.
 #
-# Push uses the write deploy key, not GITHUB_TOKEN, for the reason in ADR 0007: events created with
-# GITHUB_TOKEN do not trigger workflow runs, so the commit would move an open PR's head to a SHA CI
-# never runs on, leaving "CI Gate" pending forever and `gh pr merge --auto` hanging silently.
-
 on:
   workflow_dispatch: {}
 
@@ -53,7 +50,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.ref_name }}
-          ssh-key: ${{ secrets.VERIFICATION_METADATA_DEPLOY_KEY }}
+          persist-credentials: false
 
       - name: Set up JDK 23
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5
@@ -72,47 +69,50 @@ jobs:
       - name: Regenerate Detekt baselines
         run: ./gradlew detektBaseline
 
-      - name: Summarise what changed, then commit
+      - name: Mark new baselines intent-to-add
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          while IFS= read -r -d '' file; do
+            git add -N -- "$file"
+          done < <(git ls-files --others --exclude-standard -z -- '**/detekt-baseline.xml')
 
-          # -u, not -A: only files already tracked. The repo deliberately carries untracked
-          # local-only content (planning notes) that must never be committed.
-          git add -u
-          # Newly created baselines are untracked, so add those explicitly by name.
-          git ls-files --others --exclude-standard -- '**/detekt-baseline.xml' \
-            | xargs -r git add --
-
-          if git diff --cached --quiet; then
+      - name: Summarise baseline changes
+        run: |
+          if git diff --quiet HEAD -- '**/detekt-baseline.xml'; then
             echo "No baseline changes - Detekt findings already match the committed baselines."
             echo "No baseline changes." >> "$GITHUB_STEP_SUMMARY"
-            exit 0
+          else
+            # Make the suppression visible in the run itself, not only in the eventual diff.
+            {
+              echo "## Detekt baseline changes"
+              echo ""
+              echo "A baseline is a suppression list. Review these before merging."
+              echo ""
+              echo "| file | rules added | rules removed |"
+              echo "|---|---|---|"
+              while IFS= read -r -d '' file; do
+                added=$(git diff HEAD -- "$file" | grep -c '^+.*<ID>' || true)
+                removed=$(git diff HEAD -- "$file" | grep -c '^-.*<ID>' || true)
+                echo "| \`$file\` | $added | $removed |"
+              done < <(git diff --name-only -z HEAD -- '**/detekt-baseline.xml')
+              echo ""
+              echo "Rules newly suppressed:"
+              echo ""
+              echo '```'
+              git diff HEAD -- '**/detekt-baseline.xml' \
+                | grep '^+.*<ID>' | sed 's/^+\s*//' | sort | uniq -c | sort -rn || true
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
           fi
 
-          # Make the suppression visible in the run itself, not only in the eventual diff. Counting
-          # added <ID> lines per file is enough to see at a glance whether this quietly grew.
-          {
-            echo "## Detekt baseline changes"
-            echo ""
-            echo "A baseline is a suppression list. Review these before merging."
-            echo ""
-            echo "| file | rules added | rules removed |"
-            echo "|---|---|---|"
-            for f in $(git diff --cached --name-only -- '**/detekt-baseline.xml'); do
-              added=$(git diff --cached -- "$f" | grep -c '^+.*<ID>' || true)
-              removed=$(git diff --cached -- "$f" | grep -c '^-.*<ID>' || true)
-              echo "| \`$f\` | $added | $removed |"
-            done
-            echo ""
-            echo "Rules newly suppressed:"
-            echo ""
-            echo '```'
-            git diff --cached -- '**/detekt-baseline.xml' \
-              | grep '^+.*<ID>' | sed 's/^+\s*//' | sort | uniq -c | sort -rn || true
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Snapshot baseline patch
+        run: |
+          git diff --binary --no-renames --no-ext-diff --no-textconv HEAD -- '**/detekt-baseline.xml' \
+            > "$RUNNER_TEMP/generated.patch"
 
-          git commit -m "chore: regenerate Detekt baselines"
-          git push origin HEAD:"$GITHUB_REF_NAME"
-          echo "Pushed a baseline commit to $GITHUB_REF_NAME - review the diff before merging."
+      - name: Upload baseline patch for trusted writeback
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: generated-output-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/generated.patch
+          if-no-files-found: error
+          retention-days: 1

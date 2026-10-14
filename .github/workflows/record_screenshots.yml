@@ -19,8 +19,7 @@ on:
         default: false
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 concurrency:
   group: record-screenshots-${{ github.ref_name }}
@@ -35,7 +34,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           lfs: true
-          ssh-key: ${{ secrets.VERIFICATION_METADATA_DEPLOY_KEY }}
+          persist-credentials: false
 
       - name: Set up JDK 23
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5
@@ -51,18 +50,6 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      - name: Configure Git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Create Screenshot Branch
-        run: |
-          BRANCH_NAME="${GITHUB_REF_NAME}"
-          SCREENSHOT_BRANCH="${BRANCH_NAME}_screenshots"
-          echo "SCREENSHOT_BRANCH=$SCREENSHOT_BRANCH" >> $GITHUB_ENV
-          git checkout -b "$SCREENSHOT_BRANCH"
-
       - name: Record Screenshots
         env:
           RECORD_ALL: ${{ github.event.inputs.record_all }}
@@ -70,33 +57,20 @@ jobs:
           USE_CLEAN: ${{ github.event.inputs.use_clean }}
         run: bash .github/scripts/record-screenshots.sh
 
-      - name: Commit and Push Screenshots
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Package recorded screenshot changes
         run: |
-          find . -path "*/src/test/snapshots/images" -type d -exec git add -A {} +
-          
-          if git diff --cached --quiet; then
-            echo "No changes in screenshots. Skipping commit and push."
-          else
-            git commit -m "Regenerate screenshots for $GITHUB_REF_NAME"
-            git push origin "$SCREENSHOT_BRANCH" --force-with-lease
-            
-            # Check if PR already exists
-            PR_EXISTS=$(gh pr list --head "$SCREENSHOT_BRANCH" --base "$GITHUB_REF_NAME" --json number --jq '.[0].number')
-            
-            if [ -z "$PR_EXISTS" ]; then
-              gh pr create \
-                --title "📸 Screenshot updates for $GITHUB_REF_NAME" \
-                --body "This PR was automatically generated to update the screenshot golden values for branch **$GITHUB_REF_NAME**." \
-                --base "$GITHUB_REF_NAME" \
-                --head "$SCREENSHOT_BRANCH"
-            else
-              echo "PR already exists: #$PR_EXISTS. Branch updated."
-            fi
-          fi
+          python3 -I .github/scripts/ci-writeback.py snapshot-screenshots \
+            --output "$RUNNER_TEMP/screenshots.zip"
 
-      - name: Archive New Snapshots
+      - name: Upload screenshots archive for trusted writeback
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: generated-output-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/screenshots.zip
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Archive recorded snapshots
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: recorded-snapshots
