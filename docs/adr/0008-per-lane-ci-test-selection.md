@@ -68,8 +68,9 @@ nothing is trusted and every unaffected lane re-runs — exactly the case the me
 speed up. Note `CI Gate` success implies filter success, so this rule skips in a strict superset of
 the old one's cases.
 
-The trade is explicit: the gate anchor was also the only thing periodically forcing a full
-re-execution. **The path map is now the sole safety net.**
+The gate anchor was also periodically forcing a full re-execution. That reduced repeated adoption,
+but it made unaffected lanes rerun on any unrelated gate failure. The weekly full-PR validation in
+§8 now provides a separate freshness bound while keeping per-push adoption anchored to the filter.
 
 ### 4. The pushed range is a direct tree diff, not a merge-base diff
 
@@ -116,6 +117,17 @@ For an operator-requested full master validation, manually dispatch CI with
 `gh workflow run ci.yml --ref master -f force_full=true`. This bypasses the verified-result lookup
 and runs all five heavy lanes; the default remains reuse when exact proof is available. PR and
 merge-group selection is unaffected.
+
+### 8. Weekly full validation bounds PR verdict reuse
+
+The `Weekly full PR CI` workflow runs every Monday at 05:00 UTC and dispatches a full CI run for
+each open PR targeting `main` or `master`. The dispatch runs the trusted workflow definition from
+`master`, sets `force_full=true`, and checks out `refs/pull/<number>/merge` in every job. This
+validates the current merge tree, including fork PRs, without running workflow code from an untrusted
+head branch. Failed dispatches fail the scheduled workflow and identify the affected PR numbers.
+
+This scheduled run is a freshness backstop. Normal PR pushes retain the one-run verdict adoption
+behavior above, and merge-group validation still runs the full suite independently.
 
 ## Consequences
 
@@ -217,8 +229,8 @@ unbounded. The failure mode is the worst one available (a skipped lane that shou
 the payoff is bounded by how often people push twice in quick succession. The one-run lookback
 fails open instead, which costs a few minutes and cannot be wrong.
 
-If bounded coasting is wanted later, the right lever is an explicit one — a scheduled full run on
-open PRs, or a `ci:full` label — not a longer inference chain.
+The weekly full-PR run in §8 bounds coasting without recursively classifying multiple push diffs.
+An operator can also force all lanes on a specific master validation with `force_full=true`.
 
 ## Notes for reuse elsewhere
 
