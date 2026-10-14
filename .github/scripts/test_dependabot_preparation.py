@@ -495,7 +495,7 @@ class DependabotPreparationTest(unittest.TestCase):
         self.assertIn('"$(git rev-parse FETCH_HEAD)" != "$PREPARATION_HEAD"', flow)
         self.assertIn("inputs.approved_graph_digest", flow)
         self.assertIn("cache-disabled:", flow)
-        self.assertIn("max-parallel: 1", flow)
+        self.assertIn("max-parallel: 2", flow)
         self.assertIn("name: Regenerate verification-metadata.xml (${{ matrix.lane }})", flow)
         self.assertIn("GRADLE_RUNNER: ${{ matrix.gradle_runner || './gradlew' }}", flow)
         self.assertEqual(3, flow.count("./gradlew --max-workers=2"))
@@ -662,7 +662,7 @@ class DependabotPreparationTest(unittest.TestCase):
         )
         self.assertIn("if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request'", writer)
         self.assertIn("if: github.event.pull_request.user.login == 'dependabot[bot]'", review)
-        self.assertIn("max-parallel: 1", writer)
+        self.assertIn("max-parallel: 2", writer)
 
     def test_empty_prepared_patch_is_a_behavioral_no_op(self):
         root = Path(__file__).resolve().parents[2]

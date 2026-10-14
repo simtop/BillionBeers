@@ -52,7 +52,9 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository)
     strategy:
       fail-fast: true
-      max-parallel: 1
+      # These lanes use separate runners and produce independent ledgers; cap cold Gradle builds
+      # at two per PR so a single preparation run does not hold its branch queue for hours.
+      max-parallel: 2
       matrix:
         include:
           - lane: linux
