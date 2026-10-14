@@ -235,8 +235,20 @@ import kotlinx.serialization.json.Json
               bookmarks.onerror = () => fail(bookmarks.error);
             }
             const committedRows = [];
+            const firstIndexById = {};
+            input.beers.forEach((row, index) => {
+              if (firstIndexById[row.id] == null) firstIndexById[row.id] = index;
+            });
             input.beers.forEach(row => {
               const existing = existingRows[row.id] || {};
+              const pageKey = input.pageKey;
+              const isCatalogPage = input.surface.startsWith('catalog:') && Number.isInteger(pageKey);
+              const keepEarlierPosition =
+                isCatalogPage && existing.catalogPage != null && existing.catalogPage < pageKey;
+              const catalogPage = isCatalogPage && !keepEarlierPosition ? pageKey : existing.catalogPage;
+              const catalogIndex = isCatalogPage && !keepEarlierPosition
+                ? firstIndexById[row.id]
+                : existing.catalogIndex;
               const committed = {
                 ...existing,
                 ...row,
@@ -245,6 +257,8 @@ import kotlinx.serialization.json.Json
                 isInCatalog: existing.id == null
                   ? input.surface.startsWith('catalog:')
                   : (existing.isInCatalog !== false || input.surface.startsWith('catalog:')),
+                catalogPage,
+                catalogIndex,
               };
               beers.put(committed);
               existingRows[row.id] = committed;
@@ -404,6 +418,8 @@ private data class BeerRecord(
   val ingredients: List<String>,
   val recommendedGlasses: List<String>,
   val isInCatalog: Boolean = true,
+  val catalogPage: Int? = null,
+  val catalogIndex: Int? = null,
 )
 
 @Serializable
@@ -444,6 +460,7 @@ class IndexedDbBeersStorage(
   private val beersState = MutableStateFlow<List<StoredBeer>>(emptyList())
   private val catalogBeersState = MutableStateFlow<List<StoredBeer>>(emptyList())
   private val catalogBeerIds = MutableStateFlow<Set<String>>(emptySet())
+  private val catalogPositions = MutableStateFlow<Map<String, CatalogPosition>>(emptyMap())
   private val favoritesState = MutableStateFlow<List<StoredBeer>>(emptyList())
   private val presetsState = MutableStateFlow<List<StoredFilterPreset>>(emptyList())
   private val initialized = CompletableDeferred<Unit>()
@@ -489,10 +506,13 @@ class IndexedDbBeersStorage(
     surface: String,
     nextKey: Int?,
     totalCount: Int?,
+    pageKey: Int?,
   ) {
     mutate(
       "insertPage",
-      json.encodeToString(InsertPagePayload(beers.map(::toRecord), surface, nextKey, totalCount)),
+      json.encodeToString(
+        InsertPagePayload(beers.map(::toRecord), surface, nextKey, totalCount, pageKey)
+      ),
     )
   }
 
@@ -589,13 +609,19 @@ class IndexedDbBeersStorage(
     refreshMutex.withLock {
       if (closed) return
       if (mutation.cleared) {
-        publishSnapshot(emptyList(), catalogIds = emptySet())
+        publishSnapshot(emptyList(), catalogIds = emptySet(), positions = emptyMap())
       } else {
         val beersById = beersState.value.associateBy { it.id }.toMutableMap()
         mutation.beers.forEach { beer -> beersById[beer.id] = beer.toStored() }
         val catalogIds = catalogBeerIds.value.toMutableSet()
         mutation.beers.filter(BeerRecord::isInCatalog).forEach { beer -> catalogIds += beer.id }
-        publishSnapshot(beersById.values.toList(), catalogIds = catalogIds)
+        val positions = catalogPositions.value.toMutableMap()
+        mutation.beers.forEach { beer ->
+          if (beer.isInCatalog && beer.catalogPage != null && beer.catalogIndex != null) {
+            positions[beer.id] = CatalogPosition(beer.catalogPage, beer.catalogIndex)
+          }
+        }
+        publishSnapshot(beersById.values.toList(), catalogIds = catalogIds, positions = positions)
       }
     }
   }
@@ -606,8 +632,13 @@ class IndexedDbBeersStorage(
       val records = json.decodeFromString<List<BeerRecord>>(execute("readBeers", ""))
       val beers = records.map(BeerRecord::toStored)
       val catalogIds = records.filter(BeerRecord::isInCatalog).mapTo(mutableSetOf(), BeerRecord::id)
+      val positions = records.mapNotNull { row ->
+        val page = row.catalogPage ?: return@mapNotNull null
+        val index = row.catalogIndex ?: return@mapNotNull null
+        row.id to CatalogPosition(page, index)
+      }.toMap()
       val presets = json.decodeFromString<List<PresetRecord>>(execute("readPresets", "")).map(PresetRecord::toStored)
-      publishSnapshot(beers, presets, catalogIds)
+      publishSnapshot(beers, presets, catalogIds, positions)
     }
   }
 
@@ -615,12 +646,22 @@ class IndexedDbBeersStorage(
     beers: List<StoredBeer>,
     presets: List<StoredFilterPreset> = presetsState.value,
     catalogIds: Set<String> = catalogBeerIds.value,
+    positions: Map<String, CatalogPosition> = catalogPositions.value,
   ) {
     val sortedBeers = beers.sortedWith(compareBy<StoredBeer> { it.name }.thenBy { it.id })
     beersState.value = sortedBeers
     favoritesState.value = sortedBeers.filter { it.isFavorite }
     catalogBeerIds.value = catalogIds
-    catalogBeersState.value = sortedBeers.filter { it.id in catalogIds }
+    catalogPositions.value = positions
+    catalogBeersState.value =
+      beers
+        .filter { it.id in catalogIds }
+        .sortedWith(
+          compareBy<StoredBeer> { positions[it.id]?.page ?: Int.MAX_VALUE }
+            .thenBy { positions[it.id]?.index ?: Int.MAX_VALUE }
+            .thenBy { it.name }
+            .thenBy { it.id }
+        )
     presetsState.value = presets.sortedWith(compareByDescending<StoredFilterPreset> { it.updatedAt }.thenBy { it.name }.thenBy { it.id })
   }
 
@@ -643,7 +684,10 @@ private data class InsertPagePayload(
   val surface: String,
   val nextKey: Int?,
   val totalCount: Int?,
+  val pageKey: Int? = null,
 )
+
+private data class CatalogPosition(val page: Int, val index: Int)
 
 private const val MAX_PRESET_NAME_LENGTH = 64
 

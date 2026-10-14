@@ -83,6 +83,7 @@ class FakeBeersLocalSource : BeersStorage {
     surface: String,
     nextKey: Int?,
     totalCount: Int?,
+    pageKey: Int?,
   ) {
     if (surface.startsWith("catalog:")) {
       pagingState.keys.filter { it.startsWith("catalog:") && it != surface }.forEach(pagingState::remove)

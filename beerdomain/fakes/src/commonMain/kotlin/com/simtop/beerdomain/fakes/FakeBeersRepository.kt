@@ -97,6 +97,7 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersReposit
     surface: String,
     nextKey: Int?,
     totalCount: Int?,
+    pageKey: Int?,
   ) {
     insertAllToDB(beers)
     pagingNextKeys[surface] = listOfNotNull(pagingNextKeys[surface], nextKey).maxOrNull()

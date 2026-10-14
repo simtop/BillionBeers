@@ -106,12 +106,14 @@ class BeersRepositoryImpl(
     surface: String,
     nextKey: Int?,
     totalCount: Int?,
+    pageKey: Int?,
   ) =
     beersStorage.insertPage(
       beers.map { beersMapper.fromBeerToStoredBeer(it) },
       surface,
       nextKey,
       totalCount,
+      pageKey,
     )
 
   override suspend fun pagingNextKey(surface: String): Int? =
