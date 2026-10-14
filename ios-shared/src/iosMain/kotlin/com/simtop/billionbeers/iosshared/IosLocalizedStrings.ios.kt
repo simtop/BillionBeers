@@ -1,6 +1,12 @@
 package com.simtop.billionbeers.iosshared
 
 import androidx.compose.runtime.Composable
+import com.simtop.billionbeers.shared.app.SharedAppChromeStrings
+import com.simtop.billionbeers.shared.app.SharedAppFavoritesStrings
+import com.simtop.billionbeers.shared.app.SharedAppListStrings
+import com.simtop.billionbeers.shared.app.SharedAppSavedFilterActionStrings
+import com.simtop.billionbeers.shared.app.SharedAppSavedFiltersStrings
+import com.simtop.billionbeers.shared.app.SharedAppSearchStrings
 import com.simtop.billionbeers.shared.app.SharedAppStrings
 import com.simtop.billionbeers.shared.app.formatCount
 import com.simtop.billionbeers.shared.beerbrowse.BrowseStrings
@@ -17,40 +23,61 @@ internal object IosLocalizedStrings {
 
   private fun spanish() =
     SharedAppStrings(
-      appTitle = "Billion Beers",
-      back = "Atrás",
-      list = "Catálogo",
-      favorites = "Favoritos",
-      search = "Buscar",
-      browse = "Explorar",
-      savedFilters = "Filtros guardados",
-      savedFiltersEmpty = "Aún no hay filtros guardados",
-      savedFiltersLoadFailed = "No se pudieron cargar los filtros guardados. Reintentando.",
-      saveFilter = "Guardar",
-      filterPresetLimitReached = "Puedes guardar hasta 10 filtros. Elimina uno antes de guardar otro.",
-      saveFilterFailed = "No se pudo guardar el filtro.",
-      mutateFilterFailed = "No se pudo modificar este filtro guardado. Inténtalo de nuevo.",
-      filterNameHint = "Nombre del filtro",
-      renameFilter = "Cambiar nombre",
-      deleteFilter = "Eliminar",
-      retry = "Reintentar",
-      error = "No se pudieron cargar las cervezas",
-      listLoadMoreFailed = "No se pudieron cargar más cervezas",
-      listEndOfList = { count ->
-        "Fin de la lista · ${formatCount(count, "cerveza", "cervezas")}"
-      },
-      searchHint = "Buscar cervezas",
-      styleFilter = "Estilos",
-      allStyles = "Todos los estilos",
-      clearStyle = "Quitar estilo",
-      clearFilters = "Borrar filtros",
-      searchPrompt = "Escribe al menos dos caracteres para buscar",
-      searchNoResults = { term -> "No se encontraron cervezas para «$term»" },
-      searchResultCount = { count -> formatCount(count, "resultado", "resultados") },
-      searchEndOfList = { count ->
-        "Fin de los resultados · ${formatCount(count, "cerveza", "cervezas")}"
-      },
-      favoritesEmpty = "Aún no tienes cervezas favoritas",
+      chrome =
+        SharedAppChromeStrings(
+          appTitle = "Billion Beers",
+          back = "Atrás",
+          list = "Catálogo",
+          favorites = "Favoritos",
+          search = "Buscar",
+          browse = "Explorar",
+          savedFilters = "Filtros guardados",
+          error = "No se pudieron cargar las cervezas",
+        ),
+      list =
+        SharedAppListStrings(
+          loadMoreFailed = "No se pudieron cargar más cervezas",
+          retry = "Reintentar",
+          endOfList = { count ->
+            "Fin de la lista · ${formatCount(count, "cerveza", "cervezas")}"
+          },
+        ),
+      favorites =
+        SharedAppFavoritesStrings(
+          empty = "Aún no tienes cervezas favoritas",
+          error = "No se pudieron cargar las cervezas",
+        ),
+      search =
+        SharedAppSearchStrings(
+          hint = "Buscar cervezas",
+          styleFilter = "Estilos",
+          allStyles = "Todos los estilos",
+          clearStyle = "Quitar estilo",
+          clearFilters = "Borrar filtros",
+          prompt = "Escribe al menos dos caracteres para buscar",
+          noResults = { term -> "No se encontraron cervezas para «$term»" },
+          resultCount = { count -> formatCount(count, "resultado", "resultados") },
+          loadMoreFailed = "No se pudieron cargar más cervezas",
+          retry = "Reintentar",
+          endOfList = { count ->
+            "Fin de los resultados · ${formatCount(count, "cerveza", "cervezas")}"
+          },
+        ),
+      savedFilters =
+        SharedAppSavedFiltersStrings(
+          empty = "Aún no hay filtros guardados",
+          loadFailed = "No se pudieron cargar los filtros guardados. Reintentando.",
+          name = "Nombre del filtro",
+          rename = "Cambiar nombre",
+          delete = "Eliminar",
+        ),
+      savedFilterActions =
+        SharedAppSavedFilterActionStrings(
+          saveFilter = "Guardar",
+          filterPresetLimitReached = "Puedes guardar hasta 10 filtros. Elimina uno antes de guardar otro.",
+          saveFilterFailed = "No se pudo guardar el filtro.",
+          mutateFilterFailed = "No se pudo modificar este filtro guardado. Inténtalo de nuevo.",
+        ),
       browseStrings = BrowseStrings(
         back = "Atrás",
         title = "Explorar",
@@ -95,38 +122,55 @@ internal object IosLocalizedStrings {
 
   private fun english() =
     SharedAppStrings(
-      appTitle = "Billion Beers",
-      back = "Back",
-      list = "Catalog",
-      favorites = "Favorites",
-      search = "Search",
-      browse = "Browse",
-      savedFilters = "Saved filters",
-      savedFiltersEmpty = "No saved filters yet",
-      savedFiltersLoadFailed = "Could not load saved filters. Retrying.",
-      saveFilter = "Save",
-      filterPresetLimitReached = "You can save up to 10 filters. Delete one before saving another.",
-      saveFilterFailed = "The filter could not be saved.",
-      mutateFilterFailed = "This saved filter could not be changed. Try again.",
-      filterNameHint = "Filter name",
-      renameFilter = "Rename",
-      deleteFilter = "Delete",
-      retry = "Retry",
-      error = "Unable to load beers",
-      listLoadMoreFailed = "More beers could not be loaded",
-      listEndOfList = { count -> "End of list · ${formatCount(count, "beer", "beers")}" },
-      searchHint = "Search beers",
-      styleFilter = "Styles",
-      allStyles = "All styles",
-      clearStyle = "Clear style",
-      clearFilters = "Clear filters",
-      searchPrompt = "Type at least two characters to search",
-      searchNoResults = { term -> "No beers found for \"$term\"" },
-      searchResultCount = { count -> formatCount(count, "result", "results") },
-      searchEndOfList = { count ->
-        "End of results · ${formatCount(count, "beer", "beers")}"
-      },
-      favoritesEmpty = "No favorite beers yet",
+      chrome =
+        SharedAppChromeStrings(
+          appTitle = "Billion Beers",
+          back = "Back",
+          list = "Catalog",
+          favorites = "Favorites",
+          search = "Search",
+          browse = "Browse",
+          savedFilters = "Saved filters",
+          error = "Unable to load beers",
+        ),
+      list =
+        SharedAppListStrings(
+          loadMoreFailed = "More beers could not be loaded",
+          retry = "Retry",
+          endOfList = { count -> "End of list · ${formatCount(count, "beer", "beers")}" },
+        ),
+      favorites = SharedAppFavoritesStrings(empty = "No favorite beers yet", error = "Unable to load beers"),
+      search =
+        SharedAppSearchStrings(
+          hint = "Search beers",
+          styleFilter = "Styles",
+          allStyles = "All styles",
+          clearStyle = "Clear style",
+          clearFilters = "Clear filters",
+          prompt = "Type at least two characters to search",
+          noResults = { term -> "No beers found for \"$term\"" },
+          resultCount = { count -> formatCount(count, "result", "results") },
+          loadMoreFailed = "More beers could not be loaded",
+          retry = "Retry",
+          endOfList = { count ->
+            "End of results · ${formatCount(count, "beer", "beers")}"
+          },
+        ),
+      savedFilters =
+        SharedAppSavedFiltersStrings(
+          empty = "No saved filters yet",
+          loadFailed = "Could not load saved filters. Retrying.",
+          name = "Filter name",
+          rename = "Rename",
+          delete = "Delete",
+        ),
+      savedFilterActions =
+        SharedAppSavedFilterActionStrings(
+          saveFilter = "Save",
+          filterPresetLimitReached = "You can save up to 10 filters. Delete one before saving another.",
+          saveFilterFailed = "The filter could not be saved.",
+          mutateFilterFailed = "This saved filter could not be changed. Try again.",
+        ),
       browseStrings = BrowseStrings(
         back = "Back",
         title = "Browse",
@@ -169,38 +213,59 @@ internal object IosLocalizedStrings {
 
   private fun french() =
     SharedAppStrings(
-      appTitle = "Billion Beers",
-      back = "Retour",
-      list = "Catalogue",
-      favorites = "Favoris",
-      search = "Rechercher",
-      browse = "Explorer",
-      savedFilters = "Filtres enregistrés",
-      savedFiltersEmpty = "Aucun filtre enregistré",
-      savedFiltersLoadFailed = "Impossible de charger les filtres enregistrés. Nouvelle tentative.",
-      saveFilter = "Enregistrer",
-      filterPresetLimitReached = "Vous pouvez enregistrer jusqu'à 10 filtres. Supprimez-en un avant d'en ajouter un autre.",
-      saveFilterFailed = "Impossible d'enregistrer le filtre.",
-      mutateFilterFailed = "Impossible de modifier ce filtre enregistré. Réessayez.",
-      filterNameHint = "Nom du filtre",
-      renameFilter = "Renommer",
-      deleteFilter = "Supprimer",
-      retry = "Réessayer",
-      error = "Impossible de charger les bières",
-      listLoadMoreFailed = "Impossible de charger plus de bières",
-      listEndOfList = { count -> "Fin de la liste · ${formatCount(count, "bière", "bières")}" },
-      searchHint = "Rechercher des bières",
-      styleFilter = "Styles",
-      allStyles = "Tous les styles",
-      clearStyle = "Effacer le style",
-      clearFilters = "Effacer les filtres",
-      searchPrompt = "Saisissez au moins deux caractères",
-      searchNoResults = { term -> "Aucune bière pour « $term »" },
-      searchResultCount = { count -> formatCount(count, "résultat", "résultats") },
-      searchEndOfList = { count ->
-        "Fin des résultats · ${formatCount(count, "bière", "bières")}"
-      },
-      favoritesEmpty = "Aucune bière favorite",
+      chrome =
+        SharedAppChromeStrings(
+          appTitle = "Billion Beers",
+          back = "Retour",
+          list = "Catalogue",
+          favorites = "Favoris",
+          search = "Rechercher",
+          browse = "Explorer",
+          savedFilters = "Filtres enregistrés",
+          error = "Impossible de charger les bières",
+        ),
+      list =
+        SharedAppListStrings(
+          loadMoreFailed = "Impossible de charger plus de bières",
+          retry = "Réessayer",
+          endOfList = { count -> "Fin de la liste · ${formatCount(count, "bière", "bières")}" },
+        ),
+      favorites =
+        SharedAppFavoritesStrings(
+          empty = "Aucune bière favorite",
+          error = "Impossible de charger les bières",
+        ),
+      search =
+        SharedAppSearchStrings(
+          hint = "Rechercher des bières",
+          styleFilter = "Styles",
+          allStyles = "Tous les styles",
+          clearStyle = "Effacer le style",
+          clearFilters = "Effacer les filtres",
+          prompt = "Saisissez au moins deux caractères",
+          noResults = { term -> "Aucune bière pour « $term »" },
+          resultCount = { count -> formatCount(count, "résultat", "résultats") },
+          loadMoreFailed = "Impossible de charger plus de bières",
+          retry = "Réessayer",
+          endOfList = { count ->
+            "Fin des résultats · ${formatCount(count, "bière", "bières")}"
+          },
+        ),
+      savedFilters =
+        SharedAppSavedFiltersStrings(
+          empty = "Aucun filtre enregistré",
+          loadFailed = "Impossible de charger les filtres enregistrés. Nouvelle tentative.",
+          name = "Nom du filtre",
+          rename = "Renommer",
+          delete = "Supprimer",
+        ),
+      savedFilterActions =
+        SharedAppSavedFilterActionStrings(
+          saveFilter = "Enregistrer",
+          filterPresetLimitReached = "Vous pouvez enregistrer jusqu'à 10 filtres. Supprimez-en un avant d'en ajouter un autre.",
+          saveFilterFailed = "Impossible d'enregistrer le filtre.",
+          mutateFilterFailed = "Impossible de modifier ce filtre enregistré. Réessayez.",
+        ),
       browseStrings = BrowseStrings(
         back = "Retour",
         title = "Explorer",

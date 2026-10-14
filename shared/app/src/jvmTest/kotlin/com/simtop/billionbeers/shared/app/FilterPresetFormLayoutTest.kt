@@ -65,17 +65,24 @@ class FilterPresetFormLayoutTest {
       val backing = FakeBeersRepository()
       val repository = SavingRepository(backing, FakeSavedFilterPresetsRepository())
       val pagers = FakeBeersPagerFactory(backing)
+      val baseStrings = savedFilterStrings("Rename", "Delete")
       val strings =
-        savedFilterStrings("Rename", "Delete")
-          .copy(
-            filterNameHint = if (french) "Nom du filtre" else "Filter name",
-            saveFilter = if (french) "Enregistrer le filtre" else "Save",
-            searchHint = "Search beers",
-            list = "Catalog",
-            favorites = "Favorites",
-            browse = "Browse",
-            back = "Back",
-          )
+        baseStrings.copy(
+          savedFilters =
+            baseStrings.savedFilters.copy(name = if (french) "Nom du filtre" else "Filter name"),
+          savedFilterActions =
+            baseStrings.savedFilterActions.copy(
+              saveFilter = if (french) "Enregistrer le filtre" else "Save"
+            ),
+          search = baseStrings.search.copy(hint = "Search beers"),
+          chrome =
+            baseStrings.chrome.copy(
+              list = "Catalog",
+              favorites = "Favorites",
+              browse = "Browse",
+              back = "Back",
+            ),
+        )
       val route =
         when (screen) {
           "search" -> PortableRoute.BeersSearch
@@ -103,11 +110,11 @@ class FilterPresetFormLayoutTest {
         }
       }
       if (screen == "search") {
-        val inactiveName = onNode(hasSetTextAction() and hasText(strings.filterNameHint))
+        val inactiveName = onNode(hasSetTextAction() and hasText(strings.savedFilters.name))
         inactiveName.performTextReplacement("Inactive query")
-        onNodeWithText(strings.saveFilter).assertIsNotEnabled()
+        onNodeWithText(strings.savedFilterActions.saveFilter).assertIsNotEnabled()
         inactiveName.performTextReplacement("")
-        onNode(hasSetTextAction() and hasText(strings.searchHint)).performTextReplacement("ipa")
+        onNode(hasSetTextAction() and hasText(strings.search.hint)).performTextReplacement("ipa")
         waitUntil(timeoutMillis = 5_000) { pagers.createdQueries.lastOrNull()?.search == "ipa" }
       }
       System.getenv("FILTER_FORM_QA_DIR")?.let { directory ->
@@ -115,9 +122,9 @@ class FilterPresetFormLayoutTest {
         file.parentFile.mkdirs()
         ImageIO.write(onRoot().captureToImage().toAwtImage(), "png", file)
       }
-      val editor = onNode(hasSetTextAction() and hasText(strings.filterNameHint))
+      val editor = onNode(hasSetTextAction() and hasText(strings.savedFilters.name))
       editor.assertIsDisplayed().assertWidthIsAtLeast(240.dp)
-      val save = onNodeWithText(strings.saveFilter)
+      val save = onNodeWithText(strings.savedFilterActions.saveFilter)
       save.assertIsDisplayed().assertIsNotEnabled()
       editor.performTextReplacement("  ")
       save.assertIsNotEnabled()
@@ -135,7 +142,7 @@ class FilterPresetFormLayoutTest {
         "IPA françaises",
         editor.fetchSemanticsNode().config[SemanticsProperties.EditableText].text,
       )
-      onNodeWithText(strings.saveFilterFailed).assertIsDisplayed()
+      onNodeWithText(strings.savedFilterActions.saveFilterFailed).assertIsDisplayed()
       val feedbackBounds = onNodeWithTag("shell_message").fetchSemanticsNode().boundsInRoot
       assertFalse(
         save.fetchSemanticsNode().boundsInRoot.overlaps(feedbackBounds),

@@ -27,7 +27,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.billionbeers.shared.app.SharedAppChromeStrings
+import com.simtop.billionbeers.shared.app.SharedAppFavoritesStrings
 import com.simtop.billionbeers.shared.app.SharedAppHost
+import com.simtop.billionbeers.shared.app.SharedAppListStrings
+import com.simtop.billionbeers.shared.app.SharedAppSavedFilterActionStrings
+import com.simtop.billionbeers.shared.app.SharedAppSavedFiltersStrings
+import com.simtop.billionbeers.shared.app.SharedAppSearchStrings
 import com.simtop.billionbeers.shared.app.SharedAppShell
 import com.simtop.billionbeers.shared.app.SharedAppStrings
 import com.simtop.billionbeers.shared.app.formatCount
@@ -84,36 +90,55 @@ internal val desktopHost =
 
 internal val desktopStrings =
   SharedAppStrings(
-    appTitle = "Billion Beers",
-    back = "Back",
-    list = "Catalog",
-    favorites = "Favorites",
-    search = "Search",
-    browse = "Browse",
-    savedFilters = "Saved filters",
-    savedFiltersEmpty = "No saved filters yet",
-    savedFiltersLoadFailed = "Could not load saved filters. Retrying.",
-    saveFilter = "Save",
-    filterPresetLimitReached = "You can save up to 10 filters. Delete one before saving another.",
-    saveFilterFailed = "The filter could not be saved.",
-    mutateFilterFailed = "This saved filter could not be changed. Try again.",
-    filterNameHint = "Filter name",
-    renameFilter = "Rename",
-    deleteFilter = "Delete",
-    retry = "Retry",
-    error = "Unable to load beers",
-    listLoadMoreFailed = "More beers could not be loaded",
-    listEndOfList = { count -> "End of list · ${formatCount(count, "beer", "beers")}" },
-    searchHint = "Search beers",
-    styleFilter = "Styles",
-    allStyles = "All styles",
-    clearStyle = "Clear style",
-    clearFilters = "Clear filters",
-    searchPrompt = "Type at least two characters to search",
-    searchNoResults = { term -> "No beers found for \"$term\"" },
-    searchResultCount = { count -> formatCount(count, "result", "results") },
-    searchEndOfList = { count -> "End of results · ${formatCount(count, "beer", "beers")}" },
-    favoritesEmpty = "No favorite beers yet",
+    chrome =
+      SharedAppChromeStrings(
+        appTitle = "Billion Beers",
+        back = "Back",
+        list = "Catalog",
+        favorites = "Favorites",
+        search = "Search",
+        browse = "Browse",
+        savedFilters = "Saved filters",
+        error = "Unable to load beers",
+      ),
+    list =
+      SharedAppListStrings(
+        loadMoreFailed = "More beers could not be loaded",
+        retry = "Retry",
+        endOfList = { count -> "End of list · ${formatCount(count, "beer", "beers")}" },
+      ),
+    favorites =
+      SharedAppFavoritesStrings(empty = "No favorite beers yet", error = "Unable to load beers"),
+    search =
+      SharedAppSearchStrings(
+        hint = "Search beers",
+        styleFilter = "Styles",
+        allStyles = "All styles",
+        clearStyle = "Clear style",
+        clearFilters = "Clear filters",
+        prompt = "Type at least two characters to search",
+        noResults = { term -> "No beers found for \"$term\"" },
+        resultCount = { count -> formatCount(count, "result", "results") },
+        loadMoreFailed = "More beers could not be loaded",
+        retry = "Retry",
+        endOfList = { count -> "End of results · ${formatCount(count, "beer", "beers")}" },
+      ),
+    savedFilters =
+      SharedAppSavedFiltersStrings(
+        empty = "No saved filters yet",
+        loadFailed = "Could not load saved filters. Retrying.",
+        name = "Filter name",
+        rename = "Rename",
+        delete = "Delete",
+      ),
+    savedFilterActions =
+      SharedAppSavedFilterActionStrings(
+        saveFilter = "Save",
+        filterPresetLimitReached =
+          "You can save up to 10 filters. Delete one before saving another.",
+        saveFilterFailed = "The filter could not be saved.",
+        mutateFilterFailed = "This saved filter could not be changed. Try again.",
+      ),
     browseStrings =
       BrowseStrings(
         back = "Back",

@@ -64,9 +64,9 @@ class SavedFiltersLayoutTest {
       showContent(fixture, strings)
       val first = fixture.initialPresets.first()
       scrollTo(fixture, first)
-      action(first, strings.renameFilter).performClick()
+      action(first, strings.savedFilters.rename).performClick()
       editor(first).performTextReplacement("Unsaved draft")
-      action(first, strings.renameFilter).performClick()
+      action(first, strings.savedFilters.rename).performClick()
 
       scrollTo(fixture, fixture.initialPresets.last())
       editor(first).assertIsNotDisplayed()
@@ -91,9 +91,9 @@ class SavedFiltersLayoutTest {
       val first = fixture.initialPresets.first()
 
       scrollTo(fixture, first)
-      action(first, strings.renameFilter).performClick()
+      action(first, strings.savedFilters.rename).performClick()
       editor(first).performTextReplacement("Renamed while waiting")
-      action(first, strings.renameFilter).performClick()
+      action(first, strings.savedFilters.rename).performClick()
 
       waitUntil { fixture.renameStarted.isCompleted }
       onNode(
@@ -101,7 +101,7 @@ class SavedFiltersLayoutTest {
             hasAnyAncestor(hasTestTag("saved-filter-${first.id}"))
         )
         .assertIsNotEnabled()
-      action(first, strings.renameFilter).assertIsNotEnabled()
+      action(first, strings.savedFilters.rename).assertIsNotEnabled()
 
       fixture.renameRelease.complete(Unit)
       waitUntil { fixture.presets.value.first().name == "Renamed while waiting" }
@@ -119,7 +119,7 @@ class SavedFiltersLayoutTest {
       }
       fixture.initialPresets.forEach { preset ->
         scrollTo(fixture, preset)
-        action(preset, strings.renameFilter)
+        action(preset, strings.savedFilters.rename)
           .assertIsDisplayed()
           .assertHeightIsAtLeast(48.dp)
           .performClick()
@@ -127,9 +127,9 @@ class SavedFiltersLayoutTest {
           .assertIsDisplayed()
           .assertWidthIsAtLeast(240.dp)
           .performTextReplacement("Renamed ${preset.name}")
-        action(preset, strings.renameFilter).performClick()
+        action(preset, strings.savedFilters.rename).performClick()
         action(preset, "Renamed ${preset.name}").assertIsDisplayed()
-        action(preset, strings.deleteFilter)
+        action(preset, strings.savedFilters.delete)
           .assertIsDisplayed()
           .assertHeightIsAtLeast(48.dp)
           .performClick()
@@ -224,36 +224,48 @@ class SavedFiltersLayoutTest {
 // Only the saved-filter labels are rendered by this isolated destination fixture.
 internal fun savedFilterStrings(rename: String, delete: String) =
   SharedAppStrings(
-    appTitle = "Billion Beers",
-    back = "",
-    list = "List",
-    favorites = "",
-    search = "Search",
-    browse = "",
-    savedFilters = "Saved filters",
-    savedFiltersEmpty = "No saved filters",
-    savedFiltersLoadFailed = "Could not load saved filters. Retrying.",
-    saveFilter = "Save filter",
-    filterPresetLimitReached = "Ten filters already saved",
-    saveFilterFailed = "Could not save filter",
-    mutateFilterFailed = "Could not update saved filters",
-    filterNameHint = "Filter name",
-    renameFilter = rename,
-    deleteFilter = delete,
-    retry = "",
-    error = "",
-    listLoadMoreFailed = "",
-    listEndOfList = { "" },
-    searchHint = "",
-    styleFilter = "",
-    allStyles = "",
-    clearStyle = "",
-    clearFilters = "",
-    searchPrompt = "",
-    searchNoResults = { "" },
-    searchResultCount = { "" },
-    searchEndOfList = { "" },
-    favoritesEmpty = "",
+    chrome =
+      SharedAppChromeStrings(
+        appTitle = "Billion Beers",
+        back = "",
+        list = "List",
+        favorites = "",
+        search = "Search",
+        browse = "",
+        savedFilters = "Saved filters",
+        error = "",
+      ),
+    list = SharedAppListStrings(loadMoreFailed = "", retry = "", endOfList = { "" }),
+    favorites = SharedAppFavoritesStrings(empty = "", error = ""),
+    search =
+      SharedAppSearchStrings(
+        hint = "",
+        styleFilter = "",
+        allStyles = "",
+        clearStyle = "",
+        clearFilters = "",
+        prompt = "",
+        noResults = { "" },
+        resultCount = { "" },
+        loadMoreFailed = "",
+        retry = "",
+        endOfList = { "" },
+      ),
+    savedFilters =
+      SharedAppSavedFiltersStrings(
+        empty = "No saved filters",
+        loadFailed = "Could not load saved filters. Retrying.",
+        name = "Filter name",
+        rename = rename,
+        delete = delete,
+      ),
+    savedFilterActions =
+      SharedAppSavedFilterActionStrings(
+        saveFilter = "Save filter",
+        filterPresetLimitReached = "Ten filters already saved",
+        saveFilterFailed = "Could not save filter",
+        mutateFilterFailed = "Could not update saved filters",
+      ),
     browseStrings =
       BrowseStrings(
         back = "",

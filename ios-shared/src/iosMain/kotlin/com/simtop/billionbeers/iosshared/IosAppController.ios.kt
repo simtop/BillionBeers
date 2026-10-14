@@ -114,10 +114,10 @@ private fun IosShell(
         runtime = runtime,
         darkTheme = darkTheme,
         routeRequests = routeRequests,
-        retryText = strings.retry,
+        retryText = strings.list.retry,
         availableText = strings.detailStrings.available,
         unavailableText = strings.detailStrings.outOfStock,
-        errorText = strings.error,
+        errorText = strings.chrome.error,
         titleTextStyle = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
       ),
   )
