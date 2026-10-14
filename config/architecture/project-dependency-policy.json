@@ -62,7 +62,7 @@
     { "source": "network", "targets": ["core-common", "network-api"], "scopes": ["main"] },
     { "source": "network-fixture", "targets": ["network-api"], "scopes": ["main"] },
     { "source": "network-api", "targets": [], "scopes": ["main"] },
-    { "source": "core", "targets": ["core-common"], "scopes": ["main"] },
+    { "source": "core", "targets": ["domain-api", "core-common"], "scopes": ["main"] },
     { "source": "design-system", "targets": ["catalog-annotations", "snapshot-testing", "shared-design-system"], "scopes": ["main"] },
     { "source": "shared-design-system", "targets": [], "scopes": ["main"] },
     { "source": "shared-presentation", "targets": ["domain-api", "core-common", "shared-design-system"], "scopes": ["main"] },
@@ -81,6 +81,7 @@
     { "source": "shared-presentation", "target": "domain-api", "reason": "the shared paged-results API exposes portable beer and query models" },
     { "source": "shared-presentation", "target": "core-common", "reason": "the shared footer API exposes the portable paging UI model" },
     { "source": "design-system", "target": "shared-design-system", "reason": "the Android design-system facade exposes shared token types to existing consumers" },
+    { "source": "core", "target": "domain-api", "reason": "the dynamic-feature graph bridge exposes repository contracts to feature graph factories" },
     { "source": "core", "target": "core-common", "reason": "core is the Android facade that exposes the pure-JVM core contract" },
     { "source": "network-fixture", "target": "network-api", "reason": "the fixture module deliberately re-exports the transport-neutral service contract for tests" }
   ],

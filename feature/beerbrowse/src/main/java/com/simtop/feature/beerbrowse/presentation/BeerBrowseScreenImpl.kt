@@ -11,8 +11,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation3.runtime.NavKey
 import com.simtop.beerdomain.domain.models.BeersQuery
-import com.simtop.billionbeers.BillionBeersApplication
-import com.simtop.billionbeers.di.DynamicDependencies
+import com.simtop.core.di.DynamicDependencies
 import com.simtop.feature.beerbrowse.presentation.di.FeatureBrowseComponent
 import com.simtop.navigation.BeerDetail
 import dev.zacsweers.metro.createGraphFactory
@@ -60,9 +59,8 @@ fun BeerBrowseScreenImpl(
   val context = LocalContext.current
 
   val factory = remember {
-    val appGraph =
-      (context.applicationContext as BillionBeersApplication).appGraph as DynamicDependencies
-    val component = createGraphFactory<FeatureBrowseComponent.Factory>().create(appGraph)
+    val dependencies = context.applicationContext as DynamicDependencies
+    val component = createGraphFactory<FeatureBrowseComponent.Factory>().create(dependencies)
     component.metroViewModelFactory
   }
 

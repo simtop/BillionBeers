@@ -7,6 +7,7 @@ import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.FeatureFlagProvider
 import com.simtop.core.core.NetworkFaultController
 import com.simtop.core.core.ThemeController
+import com.simtop.core.di.DynamicDependencies
 import dev.zacsweers.metrox.viewmodel.MetroViewModelFactory
 import dev.zacsweers.metrox.viewmodel.MetroViewModelMultibindings
 

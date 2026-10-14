@@ -1,4 +1,4 @@
-package com.simtop.billionbeers.di
+package com.simtop.core.di
 
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository

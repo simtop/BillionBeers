@@ -18,11 +18,10 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.repeatOnLifecycle
 import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.billionbeers.BillionBeersApplication
 import com.simtop.billionbeers.core.designsystem.component.showToast
-import com.simtop.billionbeers.di.DynamicDependencies
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailEvent as SharedBeerDetailEvent
 import com.simtop.core.core.CommonUiState
+import com.simtop.core.di.DynamicDependencies
 import com.simtop.feature.beerdetail.presentation.di.FeatureDetailComponent
 import com.simtop.presentation_utils.R
 import dev.zacsweers.metro.createGraphFactory
@@ -39,9 +38,8 @@ fun BeerDetailScreenImpl(
   val context = LocalContext.current
 
   val factory = remember {
-    val appGraph =
-      (context.applicationContext as BillionBeersApplication).appGraph as DynamicDependencies
-    val component = createGraphFactory<FeatureDetailComponent.Factory>().create(appGraph)
+    val dependencies = context.applicationContext as DynamicDependencies
+    val component = createGraphFactory<FeatureDetailComponent.Factory>().create(dependencies)
     component.metroViewModelFactory
   }
 

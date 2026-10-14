@@ -1,7 +1,7 @@
 package com.simtop.feature.beerdetail.presentation.di
 
-import com.simtop.billionbeers.di.DynamicDependencies
 import com.simtop.core.di.DefaultMetroViewModelFactory
+import com.simtop.core.di.DynamicDependencies
 import dev.zacsweers.metro.DependencyGraph
 import dev.zacsweers.metro.Includes
 import dev.zacsweers.metrox.viewmodel.MetroViewModelMultibindings
