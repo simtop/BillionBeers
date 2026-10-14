@@ -136,8 +136,9 @@ occasionally checked and true beats a number that is continuously checked and me
 - `make build-budget` measures and checks; `make build-budget-check` re-checks the last measurement
   without re-measuring. Both are local-only.
 - `profile-out/` is gitignored, so the raw CSV does not survive. The table above is the record.
-- The check reports median, sample count and spread per scenario, and skips any scenario with no
-  budget line rather than failing. Adding a scenario therefore does not silently gate it.
+- The check fails if a scenario has no measured builds, because an empty sample cannot prove the
+  scenario ran. It reports median, sample count and spread when samples exist, then skips a scenario
+  with no budget line. Adding a scenario therefore does not silently budget it.
 - **There is deliberately no "you have headroom, tighten this" nudge**, unlike `coverage-check.sh`.
   Coverage should ratchet up; a build-time budget should not ratchet down, because headroom here is
   policy rather than reclaimable slack.

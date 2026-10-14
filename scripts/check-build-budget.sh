@@ -75,7 +75,8 @@ measured = {}
 for name in scenarios:
     values = samples[name]
     if not values:
-        print(f"warning: scenario '{name}' produced no measured builds - skipping", file=sys.stderr)
+        print(f"FAIL {name}: no measured builds were produced")
+        failed = True
         continue
     median = statistics.median(values)
     measured[name] = median
