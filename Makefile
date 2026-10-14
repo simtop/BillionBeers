@@ -268,14 +268,9 @@ ios-simulator-evidence: ## Create and independently verify unsigned iOS simulato
 clean: ## Clean all build outputs.
 	$(GRADLE_RUNNER) clean
 
-deep-clean: ## Stop daemon and deeply clean all gradle caches to fix corrupted states.
+deep-clean: ## Stop the daemon and remove checkout-local Gradle outputs.
 	$(GRADLE_RUNNER) --stop
-	rm -rf .gradle build build-logic/.gradle build-logic/build build-logic/convention/.gradle build-logic/convention/build
-	find . -name "build" -type d -prune -exec rm -rf '{}' +
-	rm -rf ~/.gradle/caches/build-cache-*
-	rm -rf ~/.gradle/caches/8.*
-	rm -rf ~/.gradle/caches/9.*
-	$(GRADLE_RUNNER) clean
+	find . -type d \( -name .git -o -name .claude -o -name rod -o -name node_modules -o -name gradle-user-home -o -name .temp_research -o -name worktrees \) -prune -o -type d \( -name .gradle -o -name build \) -prune -exec rm -rf '{}' +
 
 ##@ Unit tests and CI guards
 # Pure-JVM modules have no testDebugUnitTest task, so they are invisible to the Android-flavored
