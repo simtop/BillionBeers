@@ -28,6 +28,7 @@ import com.simtop.core.core.PagedListUiModel
 import com.simtop.feature.beersearch.BeersSearchContent
 import com.simtop.feature.beersearch.SEARCH_FIELD_TAG
 import com.simtop.feature.beerslist.BeersListContent
+import com.simtop.testing_utils_android.withFailureScreenshot
 import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -37,7 +38,8 @@ import org.junit.runners.Parameterized
 
 @RunWith(Parameterized::class)
 class FilterPresetFormLayoutTest(private val screen: String) {
-  @get:Rule val compose = createComposeRule()
+  private val compose = createComposeRule()
+  @get:Rule val failureScreenshots = withFailureScreenshot(compose)
 
   @Test
   fun frenchLargeTextNameFieldRemainsUsableAndSaveRetainsFailureDraft() {

@@ -12,13 +12,15 @@ import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.feature.beerdetail.presentation.ComposeBeerDetail
 import com.simtop.presentation_utils.R
 import com.simtop.testing_utils_android.BaseTestRobot
+import com.simtop.testing_utils_android.withFailureScreenshot
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
 class BeerDetailUiTest {
 
-  @get:Rule val composeTestRule = createComposeRule()
+  private val composeTestRule = createComposeRule()
+  @get:Rule val failureScreenshots = withFailureScreenshot(composeTestRule)
 
   private val beer =
     Beer.empty.copy(

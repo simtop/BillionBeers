@@ -19,13 +19,15 @@ import com.simtop.feature.beerbrowse.presentation.BrowseBeersContent
 import com.simtop.feature.beerbrowse.presentation.BrowseHomeContent
 import com.simtop.presentation_utils.R
 import com.simtop.testing_utils_android.BaseTestRobot
+import com.simtop.testing_utils_android.withFailureScreenshot
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
 class BeerBrowseUiTest {
 
-  @get:Rule val composeTestRule = createComposeRule()
+  private val composeTestRule = createComposeRule()
+  @get:Rule val failureScreenshots = withFailureScreenshot(composeTestRule)
 
   private val style = BeerStyle(id = "style-1", name = "IPA")
   private val brewery =

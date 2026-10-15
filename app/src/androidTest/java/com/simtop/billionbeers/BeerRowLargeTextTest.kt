@@ -19,12 +19,14 @@ import com.simtop.beerdomain.fakes.fakeBeerModel
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.presentation_utils.R as PresentationR
 import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
+import com.simtop.testing_utils_android.withFailureScreenshot
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
 class BeerRowLargeTextTest {
-  @get:Rule val compose = createComposeRule()
+  private val compose = createComposeRule()
+  @get:Rule val failureScreenshots = withFailureScreenshot(compose)
 
   @Test
   fun compactRowKeepsBothAvailabilityLabelsReadableAtDoubleTextSize() {

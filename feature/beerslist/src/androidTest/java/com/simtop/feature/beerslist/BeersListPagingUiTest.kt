@@ -9,6 +9,7 @@ import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.PagedListFooter
 import com.simtop.core.core.PagedListUiModel
+import com.simtop.testing_utils_android.withFailureScreenshot
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -23,7 +24,8 @@ import org.junit.Test
  */
 class BeersListPagingUiTest {
 
-  @get:Rule val composeTestRule = createComposeRule()
+  private val composeTestRule = createComposeRule()
+  @get:Rule val failureScreenshots = withFailureScreenshot(composeTestRule)
 
   /**
    * Long enough that the bottom is well off-screen on first layout - the tests assert the callback

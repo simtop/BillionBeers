@@ -36,9 +36,11 @@ import com.simtop.billionbeers.utils.detailScreen
 import com.simtop.billionbeers.utils.homeScreen
 import com.simtop.billionbeers.utils.runMainActivityTest
 import com.simtop.billionbeers.utils.searchScreen
+import com.simtop.billionbeers.utils.useWithFailureScreenshot
 import com.simtop.core.core.Either
 import com.simtop.feature.beersearch.SEARCH_FIELD_TAG
 import com.simtop.navigation.DynamicFeature
+import com.simtop.testing_utils_android.withFailureScreenshot
 import dev.zacsweers.metro.createGraphFactory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotSame
@@ -51,7 +53,8 @@ import org.junit.Test
 
 class MainActivityComposeTest {
 
-  @get:Rule val composeTestRule = createEmptyComposeRule()
+  private val composeTestRule = createEmptyComposeRule()
+  @get:Rule val failureScreenshots = withFailureScreenshot(composeTestRule)
   private lateinit var fakeSplitInstallManager: FakeSplitInstallManager
   private lateinit var fakePagerFactory: FakeBeersPagerFactory
 
@@ -138,7 +141,7 @@ class MainActivityComposeTest {
       InstrumentationRegistry.getArguments().getString("UI_TEST_CHECK_SCREEN_ROTATION").toBoolean(),
     )
 
-    ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+    ActivityScenario.launch(MainActivity::class.java).useWithFailureScreenshot { scenario ->
       lateinit var activityBeforeAction: MainActivity
       scenario.onActivity { activityBeforeAction = it }
 
@@ -211,7 +214,7 @@ class MainActivityComposeTest {
   @Test
   fun repeatedFavoritesDeepLinkReturnsToFavoritesInTheSameActivity() {
     val link = deepLinkIntent("billionbeers://favorites")
-    ActivityScenario.launch<MainActivity>(link).use { scenario ->
+    ActivityScenario.launch<MainActivity>(link).useWithFailureScreenshot { scenario ->
       lateinit var originalActivity: MainActivity
       scenario.onActivity { originalActivity = it }
       assertSelectedTab("favorites_tab")
@@ -228,7 +231,7 @@ class MainActivityComposeTest {
   @Test
   fun consumedDeepLinkDoesNotOverrideNavigationAfterRecreation() {
     val link = deepLinkIntent("billionbeers://favorites")
-    ActivityScenario.launch<MainActivity>(link).use { scenario ->
+    ActivityScenario.launch<MainActivity>(link).useWithFailureScreenshot { scenario ->
       assertSelectedTab("favorites_tab")
       composeTestRule.onNodeWithTag("home_tab").performClick()
       assertSelectedTab("home_tab")
@@ -246,7 +249,7 @@ class MainActivityComposeTest {
   @Test
   fun repeatedCachedBeerDeepLinkReopensDetailAfterBack() {
     val link = deepLinkIntent("billionbeers://beers/${fakeBeer.id}")
-    ActivityScenario.launch<MainActivity>(link).use { scenario ->
+    ActivityScenario.launch<MainActivity>(link).useWithFailureScreenshot { scenario ->
       composeTestRule.detailScreen {
         waitUntilNodeWithTextIsDisplayed(fakeBeer.description)
         navigateBack()
@@ -267,7 +270,7 @@ class MainActivityComposeTest {
   fun cachedBeerDeepLinkDoesNotBypassAMissingDetailSplit() {
     fakeSplitInstallManager.failInstallOf(DynamicFeature.BeerDetail.moduleName)
     val link = deepLinkIntent("billionbeers://beers/${fakeBeer.id}")
-    ActivityScenario.launch<MainActivity>(link).use {
+    ActivityScenario.launch<MainActivity>(link).useWithFailureScreenshot {
       val failureMessage =
         InstrumentationRegistry.getInstrumentation()
           .targetContext

@@ -13,5 +13,7 @@ dependencies {
   api(libs.androidx.ui.test.junit4)
   api(libs.espressoCore)
   api(libs.testRunner)
+  api(libs.testCoreKtx)
   api(libs.androidx.annotation)
+  api(libs.junit)
 }
