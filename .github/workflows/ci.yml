@@ -783,6 +783,10 @@ jobs:
           steps.release_smoke_tests.outcome == 'cancelled')
         run: python3 .github/scripts/summarize-test-failures.py managed-device --detail
 
+      - name: Extract failure screenshots from managed-device logcat
+        if: always()
+        run: python3 .github/scripts/extract_failure_screenshots.py .
+
       - name: Archive instrumented test reports
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

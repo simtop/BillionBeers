@@ -8,6 +8,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.core.core.CommonUiState
+import com.simtop.testing_utils_android.withFailureScreenshot
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -26,7 +27,8 @@ import org.junit.Test
  */
 class BeersSearchInputUiTest {
 
-  @get:Rule val composeTestRule = createComposeRule()
+  private val composeTestRule = createComposeRule()
+  @get:Rule val failureScreenshots = withFailureScreenshot(composeTestRule)
 
   /**
    * Mirrors the screen's real contract: the query is hoisted, so the field is only ever as correct

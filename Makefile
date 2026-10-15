@@ -54,7 +54,8 @@ SCREENSHOT_SCOPED = $(if $(MODULE_TRIMMED),--scoped,)
 UI_TEST_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,:app:)
 UI_TEST_CLASS ?=
 UI_TEST_CHECK_SCREEN_ROTATION ?= false
-UI_TEST_ARGS = $(if $(strip $(UI_TEST_CLASS)),-Pandroid.testInstrumentationRunnerArguments.class="$(strip $(UI_TEST_CLASS))",) $(if $(filter true,$(UI_TEST_CHECK_SCREEN_ROTATION)),-Pandroid.testInstrumentationRunnerArguments.UI_TEST_CHECK_SCREEN_ROTATION=true,)
+VERIFY_FAILURE_SCREENSHOT_ARTIFACT ?= false
+UI_TEST_ARGS = $(if $(strip $(UI_TEST_CLASS)),-Pandroid.testInstrumentationRunnerArguments.class="$(strip $(UI_TEST_CLASS))",) $(if $(filter true,$(UI_TEST_CHECK_SCREEN_ROTATION)),-Pandroid.testInstrumentationRunnerArguments.UI_TEST_CHECK_SCREEN_ROTATION=true,) $(if $(filter true,$(VERIFY_FAILURE_SCREENSHOT_ARTIFACT)),-Pandroid.testInstrumentationRunnerArguments.VERIFY_FAILURE_SCREENSHOT_ARTIFACT=true,)
 
 # One local output filter. Gateway sessions can export GRADLE_RUNNER=./gradlew.
 GRADLE_RUNNER ?= $(shell if command -v rtk >/dev/null 2>&1; then echo "rtk gradlew"; else echo "./gradlew"; fi)
@@ -294,6 +295,7 @@ test: ## Run JVM/Android/browser unit suites and build-logic, or the registered 
 ifeq ($(MODULE_TRIMMED),)
 	@$(MAKE) --no-print-directory new-feature-module-test
 	@python3 -I scripts/test_release_preflight.py
+	@python3 .github/scripts/test_extract_failure_screenshots.py
 	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) $(TEST_FLAGS) testDebugUnitTest $(addsuffix :test,$(JVM_TEST_MODULES)) kmpTest --continue
 	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) -p build-logic $(TEST_FLAGS) :convention:test --continue
 else

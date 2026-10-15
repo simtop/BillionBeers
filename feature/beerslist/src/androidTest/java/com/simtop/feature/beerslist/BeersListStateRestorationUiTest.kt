@@ -12,6 +12,7 @@ import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.PagedListFooter
 import com.simtop.core.core.PagedListUiModel
+import com.simtop.testing_utils_android.withFailureScreenshot
 import org.junit.Rule
 import org.junit.Test
 
@@ -33,7 +34,8 @@ import org.junit.Test
  */
 class BeersListStateRestorationUiTest {
 
-  @get:Rule val composeTestRule = createComposeRule()
+  private val composeTestRule = createComposeRule()
+  @get:Rule val failureScreenshots = withFailureScreenshot(composeTestRule)
 
   /**
    * Content goes through the tester, **not** through `composeTestRule.setContent`. The tester only

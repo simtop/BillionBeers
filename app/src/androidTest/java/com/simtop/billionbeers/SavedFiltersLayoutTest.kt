@@ -33,13 +33,15 @@ import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.core.core.CommonUiState
 import com.simtop.feature.savedfilters.R as SavedFiltersR
 import com.simtop.feature.savedfilters.SavedFiltersContent
+import com.simtop.testing_utils_android.withFailureScreenshot
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
 /** Runtime checks for the Android renderer, isolated from storage and host feedback. */
 class SavedFiltersLayoutTest {
-  @get:Rule val compose = createComposeRule()
+  private val compose = createComposeRule()
+  @get:Rule val failureScreenshots = withFailureScreenshot(compose)
 
   private val initialPresets =
     List(SavedFilterPreset.MAX_COUNT) { index ->

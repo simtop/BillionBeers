@@ -89,16 +89,19 @@ open class BaseTestRobot(private val composeTestRule: ComposeTestRule) {
   fun clickOnNodeWithTag(testTag: String) {
     composeTestRule.onNodeWithTag(testTag).performClick()
     recreateActivityIfRequested()
+    assertEveryClickableIsLabelled()
   }
 
   fun clickOnNodeWithText(text: String) {
     composeTestRule.onNodeWithText(text).performClick()
     recreateActivityIfRequested()
+    assertEveryClickableIsLabelled()
   }
 
   fun clickOnNodeWithContentDescription(label: String) {
     composeTestRule.onNodeWithContentDescription(label).performClick()
     recreateActivityIfRequested()
+    assertEveryClickableIsLabelled()
   }
 
   fun assertTextIsDisplayed(text: String) {
@@ -124,6 +127,7 @@ open class BaseTestRobot(private val composeTestRule: ComposeTestRule) {
   fun typeIntoNodeWithTag(testTag: String, text: String) {
     composeTestRule.onNodeWithTag(testTag).performTextInput(text)
     recreateActivityIfRequested()
+    assertEveryClickableIsLabelled()
   }
 
   fun assertNodeWithTagIsFocused(testTag: String) {
@@ -155,6 +159,7 @@ open class BaseTestRobot(private val composeTestRule: ComposeTestRule) {
   fun scrollToIndexInNodeWithTag(testTag: String, index: Int) {
     composeTestRule.onNodeWithTag(testTag).performScrollToIndex(index)
     recreateActivityIfRequested()
+    assertEveryClickableIsLabelled()
   }
 
   fun waitForIdle() {
@@ -185,6 +190,7 @@ open class BaseTestRobot(private val composeTestRule: ComposeTestRule) {
     Espresso.pressBack()
     composeTestRule.waitForIdle()
     recreateActivityIfRequested()
+    assertEveryClickableIsLabelled()
   }
 
   /**
