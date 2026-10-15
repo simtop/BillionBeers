@@ -41,6 +41,7 @@ import com.simtop.feature.beersearch.SEARCH_FIELD_TAG
 import com.simtop.navigation.DynamicFeature
 import dev.zacsweers.metro.createGraphFactory
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
@@ -129,6 +130,33 @@ class MainActivityComposeTest {
       pressKeyboardKey(KeyEvent.KEYCODE_SPACE)
       detailScreen { waitUntilNodeWithTextIsDisplayed(fakeBeer.description) }
     }
+
+  @Test
+  fun robotActionRecreatesActivityWhenScreenRotationChecksAreEnabled() {
+    assumeTrue(
+      "The monthly forward-compat lane enables this check",
+      InstrumentationRegistry.getArguments().getString("UI_TEST_CHECK_SCREEN_ROTATION").toBoolean(),
+    )
+
+    ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+      lateinit var activityBeforeAction: MainActivity
+      scenario.onActivity { activityBeforeAction = it }
+
+      composeTestRule.homeScreen {
+        waitUntilNodeWithTextIsDisplayed(fakeBeer.name)
+        clickOnSearch()
+      }
+
+      lateinit var activityAfterAction: MainActivity
+      scenario.onActivity { activityAfterAction = it }
+      assertNotSame(
+        "A robot action should recreate the Activity in the scheduled lane",
+        activityBeforeAction,
+        activityAfterAction,
+      )
+      composeTestRule.searchScreen { assertSearchFieldIsDisplayed() }
+    }
+  }
 
   private fun tabToSearchResult() {
     var reachedResult = false

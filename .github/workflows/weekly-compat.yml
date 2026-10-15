@@ -88,8 +88,9 @@ jobs:
       # ci.yml for the conditions a correct re-introduction must meet.
 
       - name: Run forward-compat instrumented tests
-        # The `compat` device group - defined in build-logic, not named here.
-        run: ./gradlew compatGroupDebugAndroidTest
+        # The `compat` device group - defined in build-logic, not named here. The runner argument
+        # recreates the Activity after each shared robot action to exercise state restoration.
+        run: ./gradlew compatGroupDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.UI_TEST_CHECK_SCREEN_ROTATION=true
 
       - name: Archive instrumented test reports
         if: always()

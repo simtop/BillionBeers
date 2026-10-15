@@ -23,6 +23,8 @@ import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTextInput
 import androidx.test.espresso.Espresso
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
+import androidx.test.runner.lifecycle.Stage
 
 open class BaseTestRobot(private val composeTestRule: ComposeTestRule) {
 
@@ -86,14 +88,17 @@ open class BaseTestRobot(private val composeTestRule: ComposeTestRule) {
 
   fun clickOnNodeWithTag(testTag: String) {
     composeTestRule.onNodeWithTag(testTag).performClick()
+    recreateActivityIfRequested()
   }
 
   fun clickOnNodeWithText(text: String) {
     composeTestRule.onNodeWithText(text).performClick()
+    recreateActivityIfRequested()
   }
 
   fun clickOnNodeWithContentDescription(label: String) {
     composeTestRule.onNodeWithContentDescription(label).performClick()
+    recreateActivityIfRequested()
   }
 
   fun assertTextIsDisplayed(text: String) {
@@ -118,6 +123,7 @@ open class BaseTestRobot(private val composeTestRule: ComposeTestRule) {
    */
   fun typeIntoNodeWithTag(testTag: String, text: String) {
     composeTestRule.onNodeWithTag(testTag).performTextInput(text)
+    recreateActivityIfRequested()
   }
 
   fun assertNodeWithTagIsFocused(testTag: String) {
@@ -148,6 +154,7 @@ open class BaseTestRobot(private val composeTestRule: ComposeTestRule) {
    */
   fun scrollToIndexInNodeWithTag(testTag: String, index: Int) {
     composeTestRule.onNodeWithTag(testTag).performScrollToIndex(index)
+    recreateActivityIfRequested()
   }
 
   fun waitForIdle() {
@@ -177,5 +184,47 @@ open class BaseTestRobot(private val composeTestRule: ComposeTestRule) {
   fun pressBack() {
     Espresso.pressBack()
     composeTestRule.waitForIdle()
+    recreateActivityIfRequested()
+  }
+
+  /**
+   * The monthly forward-compat lane sets this runner argument to make each robot action an Activity
+   * recreation test. Normal per-push UI tests keep their current cost and behavior.
+   */
+  private fun recreateActivityIfRequested() {
+    val instrumentation = InstrumentationRegistry.getInstrumentation()
+    if (
+      !InstrumentationRegistry.getArguments()
+        .getString(UI_TEST_CHECK_SCREEN_ROTATION_ARGUMENT)
+        .toBoolean()
+    ) {
+      return
+    }
+
+    composeTestRule.waitForIdle()
+    instrumentation.waitForIdleSync()
+    val activityMonitor = ActivityLifecycleMonitorRegistry.getInstance()
+    var activity: android.app.Activity? = null
+    instrumentation.runOnMainSync {
+      activity = activityMonitor.getActivitiesInStage(Stage.RESUMED).firstOrNull()
+    }
+    val activityToRecreate =
+      activity ?: error("UI_TEST_CHECK_SCREEN_ROTATION requires a resumed Activity")
+
+    instrumentation.runOnMainSync { activityToRecreate.recreate() }
+    var replacementResumed = false
+    composeTestRule.waitUntil(timeoutMillis = ACTIVITY_RECREATION_TIMEOUT_MILLIS) {
+      instrumentation.runOnMainSync {
+        replacementResumed =
+          activityMonitor.getActivitiesInStage(Stage.RESUMED).any { it !== activityToRecreate }
+      }
+      replacementResumed
+    }
+    composeTestRule.waitForIdle()
+  }
+
+  private companion object {
+    const val UI_TEST_CHECK_SCREEN_ROTATION_ARGUMENT = "UI_TEST_CHECK_SCREEN_ROTATION"
+    const val ACTIVITY_RECREATION_TIMEOUT_MILLIS = 10_000L
   }
 }
