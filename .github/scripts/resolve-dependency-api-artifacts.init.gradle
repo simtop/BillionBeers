@@ -1,0 +1,58 @@
+gradle.projectsEvaluated {
+    def app = gradle.rootProject.findProject(':app')
+    if (app == null) {
+        return
+    }
+    def runtime = app.configurations.getByName('releaseRuntimeClasspath')
+    def oldGraphFile = new File(gradle.startParameter.projectProperties.get('dependencyApiOldGraph'))
+    def newGraphFile = new File(gradle.startParameter.projectProperties.get('dependencyApiNewGraph'))
+    def outputDir = new File(gradle.startParameter.projectProperties.get('dependencyApiOutput'))
+    def makeGraphConfiguration = { String name, File graphFile ->
+        def coordinates = graphFile.readLines().findAll { it.trim() }.collect { it.trim() } as Set
+        def configuration = app.configurations.create(name) {
+            canBeConsumed = false
+            canBeResolved = true
+            transitive = false
+        }
+        runtime.attributes.keySet().each { key ->
+            def value = runtime.attributes.getAttribute(key)
+            if (value != null) {
+                configuration.attributes.attribute(key, value)
+            }
+        }
+        coordinates.each { coordinate ->
+            app.dependencies.add(configuration.name, coordinate)
+        }
+        [configuration: configuration, coordinates: coordinates]
+    }
+    def oldGraph = makeGraphConfiguration('dependencyApiOldGraph', oldGraphFile)
+    def newGraph = makeGraphConfiguration('dependencyApiNewGraph', newGraphFile)
+
+    app.tasks.register('resolveDependencyApiArtifacts') {
+        group = 'verification'
+        description = 'Exports the before and after release runtime artifacts for japicmp.'
+        doLast {
+            outputDir.mkdirs()
+            def manifest = new File(outputDir, 'artifacts.tsv')
+            manifest.withWriter('UTF-8') { writer ->
+                [[name: 'old', configuration: oldGraph.configuration, coordinates: oldGraph.coordinates],
+                 [name: 'new', configuration: newGraph.configuration, coordinates: newGraph.coordinates]].each { side ->
+                    side.configuration.resolvedConfiguration.resolvedArtifacts.each { artifact ->
+                        def module = artifact.moduleVersion.id
+                        String coordinate = "${module.group}:${module.name}:${module.version}".toString()
+                        if (side.coordinates.contains(coordinate)) {
+                            def targetDir = new File(outputDir, side.name)
+                            targetDir.mkdirs()
+                            def target = new File(targetDir, "${module.group}-${module.name}-${module.version}-${artifact.file.name}")
+                            if (artifact.file.isFile() && artifact.file.canonicalFile != target.canonicalFile) {
+                                java.nio.file.Files.copy(artifact.file.toPath(), target.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+                            }
+                            writer.write("${side.name}\t${coordinate}\t${target.absolutePath}\n")
+                        }
+                    }
+                }
+            }
+            println("Exported release artifacts to ${outputDir}")
+        }
+    }
+}
