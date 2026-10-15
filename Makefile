@@ -316,6 +316,7 @@ ci-report-test: ## Test CI diagnosis, evidence parsing, and incremental comment 
 	@python3 .github/scripts/test_validate_test_lane_reports.py
 	@python3 scripts/test_verify_ios_simulator_artifacts.py
 	@python3 .github/scripts/test_summarize_test_failures.py
+	@python3 .github/scripts/test_report_master_ci_failure.py
 	@python3 .github/scripts/test_dependabot_preparation.py
 	@python3 .github/scripts/test_run_dependabot_preparation.py
 	@python3 .github/scripts/test_dependency_graph_handoff.py

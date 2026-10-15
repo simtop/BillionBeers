@@ -30,6 +30,8 @@ class Failure:
     detail: str = field(default="", compare=False)
     location: str = field(default="", compare=False)
     report: str = field(default="", compare=False)
+    annotation_file: str = field(default="", compare=False)
+    annotation_line: int = field(default=0, compare=False)
 
 
 def local_name(tag: str) -> str:
@@ -44,15 +46,66 @@ def clean_detail(value: str) -> str:
     return value[:MAX_DETAIL_LENGTH] + ("…" if len(value) > MAX_DETAIL_LENGTH else "")
 
 
-def testcase_detail(testcase: ET.Element) -> tuple[str, str]:
+def annotation_location(text: str, root: Path, classname: str) -> tuple[str, int]:
+    location_match = LOCATION_RE.search(text)
+    if not location_match:
+        return "", 0
+    match = re.fullmatch(r"(.+?):(\d+)(?::\d+)?", location_match.group(1))
+    if not match:
+        return "", 0
+
+    source, line = match.groups()
+    path = Path(source)
+    root_path = root.resolve()
+    relative_path = None
+    if path.is_absolute():
+        try:
+            relative_path = path.resolve().relative_to(root_path)
+        except (OSError, ValueError):
+            # Hosted runners put the checkout under /home/runner/work/<repo>/<repo>.
+            parts = path.parts
+            root_indexes = [index for index, part in enumerate(parts) if part == root_path.name]
+            if root_indexes:
+                relative_path = Path(*parts[root_indexes[-1] + 1 :])
+    else:
+        relative_path = path
+
+    if relative_path and not relative_path.is_absolute() and ".." not in relative_path.parts:
+        if (root_path / relative_path).is_file():
+            return relative_path.as_posix(), int(line)
+
+    # Gradle's JUnit stack traces often retain only `SomeTest.kt:42`. Resolve that basename
+    # only when the source set and test package identify a single repository file.
+    basename = path.name
+    candidates = [
+        candidate
+        for candidate in root_path.rglob(basename)
+        if candidate.is_file() and "src" in candidate.parts
+    ]
+    package_path = classname.rsplit(".", 1)[0].replace(".", "/")
+    package_matches = [
+        candidate
+        for candidate in candidates
+        if candidate.as_posix().endswith(f"/{package_path}/{basename}")
+    ]
+    resolved = package_matches if len(package_matches) == 1 else candidates
+    if len(resolved) == 1:
+        return resolved[0].relative_to(root_path).as_posix(), int(line)
+    return "", 0
+
+
+def testcase_detail(testcase: ET.Element, root: Path) -> tuple[str, str, str, int]:
     for child in testcase:
         if local_name(child.tag) in {"failure", "error"}:
             text = " ".join(part.strip() for part in child.itertext() if part.strip())
             detail = clean_detail(text)
             location_match = LOCATION_RE.search(text)
             location = clean_detail(location_match.group(1)) if location_match else ""
-            return detail, location
-    return "", ""
+            source_file, source_line = annotation_location(
+                text, root, testcase.attrib.get("classname", "")
+            )
+            return detail, location, source_file, source_line
+    return "", "", "", 0
 
 
 def module_from_path(path: Path, root: Path) -> str | None:
@@ -121,9 +174,19 @@ def parse_report(path: Path, root: Path, mode: str) -> list[Failure]:
                 continue
             if mode == "unit" and classname.startswith(PAPARAZZI_PACKAGE):
                 continue
-            detail, location = testcase_detail(testcase)
+            detail, location, annotation_file, annotation_line = testcase_detail(testcase, root)
             failures.append(
-                Failure(module, classname, name, kind, detail, location, path.as_posix())
+                Failure(
+                    module,
+                    classname,
+                    name,
+                    kind,
+                    detail,
+                    location,
+                    path.as_posix(),
+                    annotation_file,
+                    annotation_line,
+                )
             )
     return failures
 
@@ -288,6 +351,30 @@ def publish(markdown: str, summary_path: Path | None) -> None:
         print(f"::warning::Could not write GitHub job summary: {error}", file=sys.stderr)
 
 
+def workflow_command_escape(value: str, *, property_value: bool = False) -> str:
+    value = value.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+    if property_value:
+        value = value.replace(":", "%3A").replace(",", "%2C")
+    return value
+
+
+def error_annotations(failures: list[Failure]) -> list[str]:
+    annotations = []
+    for failure in failures:
+        if not failure.annotation_file or failure.annotation_line < 1:
+            continue
+        file = workflow_command_escape(failure.annotation_file, property_value=True)
+        identifier = clean_detail(f"{failure.classname}#{failure.name}")
+        title = workflow_command_escape(
+            f"{failure.kind}: {identifier}", property_value=True
+        )
+        message = workflow_command_escape(f"{failure.kind}: {identifier}")
+        annotations.append(
+            f"::error file={file},line={failure.annotation_line},title={title}::{message}"
+        )
+    return annotations
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("mode", choices=("paparazzi", "managed-device", "unit"))
@@ -303,6 +390,9 @@ def main(argv: list[str] | None = None) -> int:
         args.json.parent.mkdir(parents=True, exist_ok=True)
         args.json.write_text(json.dumps(failures_json(args.root, args.mode), indent=2) + "\n", encoding="utf-8")
     markdown = generate(args.root, args.mode, args.branch, run_url=args.run_url, artifact_url=args.artifact_url, include_detail=args.detail)
+    failures, _, _ = collect(args.root, args.mode)
+    for annotation in error_annotations(failures):
+        print(annotation)
     publish(markdown, args.summary)
     return 0
 
