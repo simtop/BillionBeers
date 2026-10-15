@@ -31,7 +31,15 @@ class ScreenshotInventoryTest(unittest.TestCase):
 
     def run_checker(self, *extra):
         return subprocess.run(
-            [sys.executable, str(SCRIPT), str(self.inventory), str(self.baseline), *extra],
+            [
+                sys.executable,
+                str(SCRIPT),
+                str(self.inventory),
+                str(self.baseline),
+                "--root",
+                str(self.root),
+                *extra,
+            ],
             check=False,
             capture_output=True,
             text=True,
@@ -41,6 +49,7 @@ class ScreenshotInventoryTest(unittest.TestCase):
         result = self.run_checker()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("matches (2", result.stdout)
+        self.assertIn("no orphaned generated goldens", result.stdout)
 
     def test_dropped_preview_fails_and_names_the_missing_entry(self):
         inventory = self.inventory / "module.tsv"
@@ -99,6 +108,33 @@ class ScreenshotInventoryTest(unittest.TestCase):
         result = self.run_checker("--scoped")
         self.assertEqual(result.returncode, 1)
         self.assertIn("Missing x1: module / PreviewA", result.stderr)
+
+    def test_stale_golden_fails_even_after_preview_inventory_is_updated(self):
+        current = "module\tPreviewA\tLIGHT\t1.0\ten\tLTR\tcompact\tPreviewA\tgroup\tdevice\n"
+        (self.inventory / "module.tsv").write_text(current, encoding="utf-8")
+        self.baseline.write_text(current, encoding="utf-8")
+        module = self.root / "feature/example"
+        (module / "build.gradle.kts").parent.mkdir(parents=True)
+        (module / "build.gradle.kts").write_text(
+            'android { namespace = "module" }', encoding="utf-8"
+        )
+        image_dir = module / "src/test/snapshots/images"
+        image_dir.mkdir(parents=True)
+        for preview in ("PreviewA", "PreviewB"):
+            golden = image_dir / (
+                "com.simtop.billionbeers.screenshot_ModuleScreenshotTest_snapshot["
+                f"{preview}]_{preview.lower()}.png"
+            )
+            golden.touch()
+
+        result = self.run_checker()
+
+        self.assertEqual(result.returncode, 1)
+        self.assertIn(
+            "Orphan: module / feature/example/src/test/snapshots/images/",
+            result.stderr,
+        )
+        self.assertIn("snapshot[PreviewB]", result.stderr)
 
 
 if __name__ == "__main__":
