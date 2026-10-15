@@ -19,6 +19,8 @@ updates:
         patterns:
           - "org.jetbrains.kotlin*"
           - "com.google.devtools.ksp*"
+        exclude-patterns:
+          - "org.jetbrains.kotlinx*"
         update-types:
           - "minor"
           - "patch"
@@ -28,9 +30,11 @@ updates:
         update-types:
           - "minor"
           - "patch"
-      androidx:
+      android-platform:
         patterns:
           - "androidx.*"
+          - "com.google.android.material*"
+          - "com.google.android.play*"
         exclude-patterns:
           - "androidx.compose*"
           - "androidx.activity:activity-compose*"
@@ -63,10 +67,12 @@ updates:
         patterns:
           - "io.mockk*"
           - "org.junit*"
+          - "junit:junit"
           - "io.strikt*"
           - "org.amshove.kluent*"
           - "com.lemonappdev*"
           - "app.cash.paparazzi*"
+          - "app.cash.turbine*"
         update-types:
           - "minor"
           - "patch"
@@ -83,6 +89,16 @@ updates:
           - "io.gitlab.arturbosch.detekt*"
           - "com.squareup:kotlinpoet*"
           - "com.android.tools.build*"
+          - "de.mannodermaus*"
+          - "io.nlopez.compose.rules*"
+          - "com.dropbox.dependency-guard*"
+          - "org.webjars.npm*"
+        update-types:
+          - "minor"
+          - "patch"
+      other:
+        patterns:
+          - "javax.inject*"
         update-types:
           - "minor"
           - "patch"
