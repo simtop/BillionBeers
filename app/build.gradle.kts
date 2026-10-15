@@ -140,6 +140,7 @@ dependencies {
   implementation(libs.androidPlayCoreKtx)
   implementation(libs.androidx.navigation3.runtime)
   implementation(libs.androidx.navigation3.ui)
+  implementation(libs.lifecycle.runtime.compose)
   implementation(libs.androidx.compose.material3.adaptive.navigation3)
   implementation(libs.androidx.glance.appwidget)
   implementation(libs.coil3.view)

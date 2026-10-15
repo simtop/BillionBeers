@@ -20,11 +20,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.rememberLifecycleOwner
 import coil3.compose.AsyncImage
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.shared.app.SharedAppChromeStrings
@@ -49,14 +54,23 @@ fun DesktopShell(runtime: DesktopDataRuntime) {
   // for this runtime so an incidental host recomposition preserves SharedAppShell navigation.
   val pagerFactory = remember(runtime) { runtime.pagerFactory }
   val coroutineDispatcher = remember(runtime) { DefaultCoroutineDispatcherProvider() }
-  SharedAppShell(
-    repository = runtime.repository,
-    savedFilterPresetsRepository = runtime.savedFilterPresetsRepository,
-    pagerFactory = pagerFactory,
-    coroutineDispatcher = coroutineDispatcher,
-    strings = desktopStrings,
-    host = desktopHost,
-  )
+  val lifecycleOwner =
+    rememberLifecycleOwner(
+      parent = null,
+      maxLifecycle =
+        if (LocalWindowInfo.current.isWindowFocused) Lifecycle.State.RESUMED
+        else Lifecycle.State.CREATED,
+    )
+  CompositionLocalProvider(LocalLifecycleOwner provides lifecycleOwner) {
+    SharedAppShell(
+      repository = runtime.repository,
+      savedFilterPresetsRepository = runtime.savedFilterPresetsRepository,
+      pagerFactory = pagerFactory,
+      coroutineDispatcher = coroutineDispatcher,
+      strings = desktopStrings,
+      host = desktopHost,
+    )
+  }
 }
 
 internal val desktopHost =

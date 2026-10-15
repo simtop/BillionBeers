@@ -12,6 +12,7 @@ dependencies {
   implementation(this.project(":navigation"))
   implementation(this.project(":core:designsystem"))
   implementation(this.project(":shared:beerslist"))
+  implementation(libs.lifecycle.runtime.compose)
   implementation(libs.kotlinx.serialization.json)
   testImplementation(this.project(":beerdomain:fakes"))
   testImplementation(libs.striktCore)

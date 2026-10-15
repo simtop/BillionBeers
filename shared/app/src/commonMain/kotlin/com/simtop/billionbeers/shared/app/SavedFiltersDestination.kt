@@ -1,9 +1,9 @@
 package com.simtop.billionbeers.shared.app
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.billionbeers.shared.savedfilters.SharedSavedFiltersContent
 import com.simtop.core.core.CommonUiState
@@ -16,7 +16,7 @@ internal fun SavedFiltersDestination(
   onRename: suspend (SavedFilterPreset, String) -> Boolean,
   onDelete: suspend (SavedFilterPreset) -> Boolean,
 ) {
-  val viewState by entry.presets.collectAsState(CommonUiState.Loading)
+  val viewState by entry.presets.collectAsStateWithLifecycle(CommonUiState.Loading)
   SharedSavedFiltersContent(
     viewState = viewState,
     strings =
@@ -42,7 +42,7 @@ internal fun SavedFilterResultsDestination(
   onBack: () -> Unit,
   onBeerClick: (com.simtop.beerdomain.domain.models.Beer) -> Unit,
 ) {
-  val viewState by entry.viewModel.viewState.collectAsState()
+  val viewState by entry.viewModel.viewState.collectAsStateWithLifecycle()
   com.simtop.billionbeers.shared.beerbrowse.SharedBrowseBeersContent(
     strings = strings.browseStrings,
     title = entry.preset.name,

@@ -14,7 +14,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -25,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
@@ -52,7 +52,7 @@ fun SavedFiltersScreen(
   modifier: Modifier = Modifier,
   viewModel: SavedFiltersViewModel = metroViewModel(),
 ) {
-  val viewState by viewModel.presets.collectAsState()
+  val viewState by viewModel.presets.collectAsStateWithLifecycle()
   val mutationFailedMessage = stringResource(R.string.savedfilters_mutation_failed)
   val snackbarHostState = remember { SnackbarHostState() }
   LaunchedEffect(viewModel, mutationFailedMessage) {
@@ -126,7 +126,7 @@ fun SavedFilterResultsScreen(
       create(route.toQuery())
     },
 ) {
-  val viewState by viewModel.viewState.collectAsState()
+  val viewState by viewModel.viewState.collectAsStateWithLifecycle()
   SavedFilterResultsContent(
     title = route.name,
     viewState = viewState,

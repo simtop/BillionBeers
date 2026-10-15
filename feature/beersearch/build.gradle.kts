@@ -10,6 +10,7 @@ dependencies {
   implementation(this.project(":navigation"))
   implementation(this.project(":core:designsystem"))
   implementation(this.project(":shared:beersearch"))
+  implementation(libs.lifecycle.runtime.compose)
 
   testImplementation(this.project(":beerdomain:fakes"))
   testImplementation(libs.striktCore)
