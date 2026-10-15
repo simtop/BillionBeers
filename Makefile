@@ -50,6 +50,7 @@ EMULATOR_RUN = $(EMULATOR_SCRIPT_ENV) bash scripts/emulator.sh
 
 MODULE_TRIMMED := $(strip $(MODULE))
 MODULE_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,)
+SCREENSHOT_SCOPED = $(if $(MODULE_TRIMMED),--scoped,)
 UI_TEST_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,:app:)
 UI_TEST_CLASS ?=
 UI_TEST_ARGS = $(if $(strip $(UI_TEST_CLASS)),-Pandroid.testInstrumentationRunnerArguments.class="$(strip $(UI_TEST_CLASS))",)
@@ -390,10 +391,10 @@ screenshot-record: ## Record golden images for Paparazzi.
 	$(GRADLE_RUNNER) $(MODULE_PREFIX)recordPaparazziDebug
 
 screenshot-verify: screenshot-verify-run ## Verify screenshots and check the executed preview inventory against its reviewed baseline.
-	python3 .github/scripts/check-screenshot-inventory.py "$(SCREENSHOT_INVENTORY_DIR)" config/screenshot-inventory.tsv
+	python3 .github/scripts/check-screenshot-inventory.py "$(SCREENSHOT_INVENTORY_DIR)" config/screenshot-inventory.tsv $(SCREENSHOT_SCOPED)
 
 screenshot-inventory-record: screenshot-verify-run ## Update the reviewed preview inventory after an intentional preview change.
-	python3 .github/scripts/check-screenshot-inventory.py "$(SCREENSHOT_INVENTORY_DIR)" config/screenshot-inventory.tsv --update
+	python3 .github/scripts/check-screenshot-inventory.py "$(SCREENSHOT_INVENTORY_DIR)" config/screenshot-inventory.tsv --update $(SCREENSHOT_SCOPED)
 
 screenshot-verify-run:
 	rm -rf "$(SCREENSHOT_INVENTORY_DIR)"

@@ -69,6 +69,17 @@ with open(budget_path, encoding="utf-8") as f:
         else:
             sys.exit(f"❌ {budget_path}:{lineno}: expected '<scenario> <seconds>'.")
 
+required_scenarios = set(absolute)
+for slow, fast, _ in ratios:
+    required_scenarios.update((slow, fast))
+missing_scenarios = sorted(required_scenarios - set(scenarios))
+if missing_scenarios:
+    print(
+        "FAIL missing required scenario columns: " + ", ".join(missing_scenarios),
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
 failed = False
 measured = {}
 

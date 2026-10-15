@@ -40,22 +40,40 @@ def main() -> int:
     parser.add_argument("inventory", type=Path, help="directory written by make screenshot-verify")
     parser.add_argument("baseline", type=Path, help="reviewed TSV inventory baseline")
     parser.add_argument("--update", action="store_true", help="replace the baseline with this inventory")
+    parser.add_argument(
+        "--scoped",
+        action="store_true",
+        help="limit comparison/update to modules represented by inventory files",
+    )
     args = parser.parse_args()
 
     try:
         current = actual_rows(args.inventory)
+        expected = read_rows(args.baseline)
+        if args.scoped:
+            inventory_files = {path.name for path in args.inventory.glob("*.tsv")}
+            scoped_modules = {row[0] for row in current}
+            scoped_modules.update(
+                row[0] for row in expected
+                if f"{row[0].replace('.', '_')}.tsv" in inventory_files
+            )
+            current = [row for row in current if row[0] in scoped_modules]
+            expected_in_scope = [row for row in expected if row[0] in scoped_modules]
+        else:
+            expected_in_scope = expected
         if args.update:
+            updated = current
+            if args.scoped:
+                updated.extend(row for row in expected if row not in expected_in_scope)
             args.baseline.parent.mkdir(parents=True, exist_ok=True)
-            args.baseline.write_text(format_rows(current), encoding="utf-8")
+            args.baseline.write_text(format_rows(updated), encoding="utf-8")
             print(f"Updated {args.baseline} with {len(current)} executed preview configurations")
             return 0
-
-        expected = read_rows(args.baseline)
     except (OSError, ValueError) as error:
         print(f"screenshot inventory error: {error}", file=sys.stderr)
         return 2
 
-    expected_counts = collections.Counter(expected)
+    expected_counts = collections.Counter(expected_in_scope)
     current_counts = collections.Counter(current)
     missing = expected_counts - current_counts
     added = current_counts - expected_counts

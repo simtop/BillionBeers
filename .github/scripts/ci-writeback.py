@@ -74,9 +74,12 @@ def validate_artifact(artifacts: list[dict], run_id: int, attempt: int) -> str:
     size = artifact.get("size_in_bytes")
     if (artifact.get("expired") or type(size) is not int or not 1 <= size <= MAX_PATCH_BYTES):
         raise WritebackError("generated-output artifact is expired or exceeds the size limit")
+    # This is already the run-scoped artifact endpoint. GitHub's artifact metadata includes the
+    # workflow_run id, but does not include run_attempt; the attempt-qualified name is the
+    # available attempt binding.
     identity = artifact.get("workflow_run") or {}
-    if identity and (identity.get("id") != run_id or identity.get("run_attempt") != attempt):
-        raise WritebackError("generated-output artifact belongs to a different workflow attempt")
+    if identity and identity.get("id") != run_id:
+        raise WritebackError("generated-output artifact belongs to a different workflow run")
     return expected_name
 
 
