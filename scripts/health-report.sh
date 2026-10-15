@@ -373,6 +373,23 @@ PY
     "$status" "$status_label" "review growth against the previous health artifact; every production API edge needs policy approval"
 }
 
+# --- 8. Module stability and 90-day changed-line churn --------------------------------------
+module_stability_metrics() {
+  local graph="build/reports/module-graph/modules.json"
+  if [[ "$ARCHITECTURE_RUN_STATUS" == "failed" ]]; then
+    metric "module_stability_churn_90d_unavailable" "Module stability and 90-day churn" "n/a" "" "lines/90d" \
+      "unavailable" "⚪ not measured" "module graph generation or architecture verification failed"
+  elif [[ -f "$graph" ]]; then
+    if ! python3 scripts/module-stability-report.py --graph "$graph" --root . >> "$METRICS_FILE"; then
+      metric "module_stability_churn_90d_unavailable" "Module stability and 90-day churn" "n/a" "" "lines/90d" \
+        "unavailable" "⚪ not measured" "module stability report failed; inspect the health-report log"
+    fi
+  else
+    metric "module_stability_churn_90d_unavailable" "Module stability and 90-day churn" "n/a" "" "lines/90d" \
+      "unavailable" "⚪ not measured" "run with ${bt}--run${bt} (or ${bt}make module-graph${bt})"
+  fi
+}
+
 lint_metric
 detekt_metrics
 baseline_age_metric
@@ -380,6 +397,7 @@ compose_metric
 coverage_metric
 depguard_metric
 architecture_metrics
+module_stability_metrics
 
 GENERATED_AT=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
 SOURCE_REVISION=$(git rev-parse HEAD 2>/dev/null || printf 'unknown')

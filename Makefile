@@ -310,6 +310,7 @@ ci-report-test: ## Test CI diagnosis, evidence parsing, and incremental comment 
 	@$(MAKE) --no-print-directory make-help-test
 	@$(MAKE) --no-print-directory benchmark-budget-test
 	@$(MAKE) --no-print-directory build-time-budget-test
+	@python3 scripts/test_module_stability_report.py
 	@python3 -m unittest discover -s .github/scripts -p 'test_*ci*.py'
 	@python3 .github/scripts/test_detect_change_scope.py
 	@python3 .github/scripts/test_ios_framework_build.py
