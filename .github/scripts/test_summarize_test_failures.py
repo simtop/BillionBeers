@@ -158,6 +158,60 @@ class TestFailureSummaryTest(unittest.TestCase):
             self.assertIn("SearchScreen.kt:42", report)
             self.assertIn("Assertion failed", report)
 
+    def test_main_emits_repo_relative_github_error_annotation(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = "feature/beersearch/src/androidTest/java/com/example/SearchTest.kt"
+            write(root, source)
+            write(
+                root,
+                "feature/beersearch/build/outputs/androidTest-results/managedDevice/TEST-search.xml",
+                """<testsuite><testcase classname="com.example.SearchTest" name="typingWorks"><failure>Assertion at SearchTest.kt:42</failure></testcase></testsuite>""",
+            )
+            summary = root / "summary.md"
+            output = io.StringIO()
+
+            with redirect_stdout(output):
+                MODULE.main(
+                    ["managed-device", "--root", str(root), "--summary", str(summary)]
+                )
+
+            self.assertIn(f"::error file={source},line=42,title=", output.getvalue())
+            self.assertNotIn("::error", summary.read_text())
+
+    def test_annotation_normalizes_an_absolute_runner_checkout_path(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = "feature/beersearch/src/androidTest/java/com/example/SearchTest.kt"
+            source_path = write(root, source)
+            write(
+                root,
+                "feature/beersearch/build/outputs/androidTest-results/managedDevice/TEST-search.xml",
+                f"""<testsuite><testcase classname="com.example.SearchTest" name="typingWorks"><failure>Assertion at {source_path}:42</failure></testcase></testsuite>""",
+            )
+
+            failures, _, _ = MODULE.collect(root, "managed-device")
+
+            self.assertEqual(source, failures[0].annotation_file)
+            self.assertEqual(42, failures[0].annotation_line)
+
+    def test_error_annotations_escape_workflow_command_delimiters(self) -> None:
+        failure = MODULE.Failure(
+            ":feature:search",
+            "com.example.SearchTest",
+            "name,with:delimiters%",
+            "failure",
+            annotation_file="feature/src/test/kotlin/SearchTest.kt",
+            annotation_line=42,
+        )
+
+        annotation = MODULE.error_annotations([failure])[0]
+
+        self.assertIn("file=feature/src/test/kotlin/SearchTest.kt,line=42", annotation)
+        self.assertIn("%2C", annotation)
+        self.assertIn("%3A", annotation)
+        self.assertIn("%25", annotation)
+
     def test_failure_details_strip_terminal_controls_and_runner_paths(self) -> None:
         detail = MODULE.clean_detail("\x1b[31m/home/runner/work/BillionBeers/core/src/Test.kt:42\x1b[0m\x07")
         self.assertEqual("<runner-path>", detail)

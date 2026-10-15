@@ -1075,3 +1075,39 @@ jobs:
           path: build/verified-master-test-result/verified-master-test-result.json
           if-no-files-found: error
           retention-days: 30
+
+  master-failure-issue:
+    name: Track failed master CI run
+    if: >-
+      always() && github.event_name == 'push' && github.ref == 'refs/heads/master' &&
+      needs.ci-gate.result == 'failure'
+    concurrency:
+      group: master-ci-failure-issue
+      cancel-in-progress: false
+    permissions:
+      issues: write
+    needs:
+      - ci-gate
+      - format-check
+      - changes
+      - secret-scan
+      - lint
+      - android-lint
+      - dependency-guard
+      - unit-tests
+      - web-tests
+      - screenshot-tests
+      - instrumented-tests
+      - native-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Open or update the master CI failure issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          COMMIT_SHA: ${{ github.sha }}
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: python3 .github/scripts/report-master-ci-failure.py
