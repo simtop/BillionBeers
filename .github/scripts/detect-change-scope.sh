@@ -101,6 +101,8 @@ classify_path() {
     : # QA discovery contracts run in always-run format checks; no app test runner consumes them.
   elif [ "$f" = "scripts/verify-release-smoke-artifacts.sh" ]; then
     a_instrumented=true # the instrumented lane executes it (make release-smoke)
+  elif [ "$f" = "scripts/check_apk_size_budget.py" ] || [ "$f" = "config/apk-size-budget.txt" ]; then
+    a_instrumented=true # the instrumented lane checks the budget after release-smoke assembly
   elif [ "$f" = "scripts/verify_web_release_artifacts.py" ] || [ "$f" = "scripts/test_verify_web_release_artifacts.py" ]; then
     a_web=true # the Web lane executes the release verifier and its tests
   elif [ "$f" = "scripts/verify_web_static.py" ] || [ "$f" = "scripts/test_verify_web_static.py" ] || [ "$f" = "scripts/test_web_image_proxy.py" ] || [ "$f" = "scripts/smoke_web_distribution.cjs" ] || [ "$f" = "scripts/web_smoke_devtools.cjs" ] || [ "$f" = "scripts/test_web_smoke_devtools.cjs" ]; then

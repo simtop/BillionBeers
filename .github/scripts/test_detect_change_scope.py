@@ -107,6 +107,8 @@ with tempfile.TemporaryDirectory() as temporary:
         ("scripts/ios-framework-build.sh", ("native",)),
         (".github/scripts/test_ios_framework_build.py", ("native",)),
         ("scripts/verify-release-smoke-artifacts.sh", ("instrumented",)),
+        ("scripts/check_apk_size_budget.py", ("instrumented",)),
+        ("config/apk-size-budget.txt", ("instrumented",)),
         ("scripts/verify_web_release_artifacts.py", ("web",)),
         ("scripts/test_verify_web_release_artifacts.py", ("web",)),
         ("scripts/web_smoke_devtools.cjs", ("web",)),
