@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -39,6 +40,7 @@ fun ComposeBeerDetail(
   showBackButton: Boolean = true,
 ) {
   val context = LocalContext.current
+  val locale = LocalConfiguration.current.locales[0]
   val animationsDisabled =
     Settings.Global.getFloat(
       context.contentResolver,
@@ -73,7 +75,7 @@ fun ComposeBeerDetail(
         servingTemperature = stringResource(R.string.beer_detail_serving_temperature_label),
         servingTemperatureValue = { min, max -> formatServingTemperatureRange(min, max) },
         metricValue = { value ->
-          NumberFormat.getNumberInstance(context.resources.configuration.locales[0])
+          NumberFormat.getNumberInstance(locale)
             .apply {
               minimumFractionDigits = 0
               maximumFractionDigits = MAX_BEER_METRIC_FRACTION_DIGITS
