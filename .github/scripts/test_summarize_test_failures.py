@@ -9,6 +9,7 @@ import tempfile
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
+from unittest.mock import patch
 
 SCRIPT = Path(__file__).with_name("summarize-test-failures.py")
 SPEC = importlib.util.spec_from_file_location("test_failure_summary", SCRIPT)
@@ -194,6 +195,33 @@ class TestFailureSummaryTest(unittest.TestCase):
 
             self.assertEqual(source, failures[0].annotation_file)
             self.assertEqual(42, failures[0].annotation_line)
+
+    def test_retraces_minified_release_smoke_failures(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            sdk = root / "sdk"
+            retrace = write(
+                root,
+                "sdk/tools/proguard/bin/retrace.sh",
+                "#!/usr/bin/env python3\nprint('java.lang.IllegalStateException\\n  at com.example.BeerScreen.render(BeerScreen.kt:42)')\n",
+            )
+            retrace.chmod(0o755)
+            write(root, "app/build/outputs/mapping/releaseSmoke/mapping.txt")
+            write(root, "app/src/main/java/com/example/BeerScreen.kt")
+            write(
+                root,
+                "app-release-smoke/build/outputs/androidTest-results/managedDevice/TEST-smoke.xml",
+                """<testsuite><properties><property name="project" value=":app-release-smoke"/></properties><testcase classname="SmokeTest" name="launches"><failure>java.lang.IllegalStateException\n  at a.b.c(Unknown Source:12)</failure></testcase></testsuite>""",
+            )
+
+            with patch.dict("os.environ", {"ANDROID_HOME": str(sdk), "ANDROID_SDK_ROOT": ""}):
+                failures, _, _ = MODULE.collect(root, "managed-device")
+                report = MODULE.generate(root, "managed-device", include_detail=True)
+
+            self.assertTrue(failures[0].retraced)
+            self.assertEqual("BeerScreen.kt:42", failures[0].location)
+            self.assertIn("com.example.BeerScreen.render(BeerScreen.kt:42)", report)
+            self.assertIn("stack frames were retraced", report)
 
     def test_error_annotations_escape_workflow_command_delimiters(self) -> None:
         failure = MODULE.Failure(
