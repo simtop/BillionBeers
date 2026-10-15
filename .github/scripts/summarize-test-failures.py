@@ -8,7 +8,9 @@ import json
 import os
 import re
 import shlex
+import subprocess
 import sys
+import tempfile
 import xml.etree.ElementTree as ET
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -32,6 +34,7 @@ class Failure:
     report: str = field(default="", compare=False)
     annotation_file: str = field(default="", compare=False)
     annotation_line: int = field(default=0, compare=False)
+    retraced: bool = field(default=False, compare=False)
 
 
 def local_name(tag: str) -> str:
@@ -94,18 +97,66 @@ def annotation_location(text: str, root: Path, classname: str) -> tuple[str, int
     return "", 0
 
 
-def testcase_detail(testcase: ET.Element, root: Path) -> tuple[str, str, str, int]:
+def retrace_command() -> list[str] | None:
+    sdk_roots = [os.environ.get("ANDROID_HOME"), os.environ.get("ANDROID_SDK_ROOT")]
+    for sdk_root in filter(None, sdk_roots):
+        sdk = Path(sdk_root)
+        candidates = [sdk / "tools/proguard/bin/retrace.sh"]
+        build_tools = sdk / "build-tools"
+        if build_tools.is_dir():
+            candidates.extend(
+                path / "retrace"
+                for path in sorted(build_tools.iterdir(), reverse=True)
+                if path.is_dir()
+            )
+        for candidate in candidates:
+            if candidate.is_file() and os.access(candidate, os.X_OK):
+                return [str(candidate)]
+    return None
+
+
+def retrace_stacktrace(text: str, root: Path) -> tuple[str, bool]:
+    mapping = root / "app/build/outputs/mapping/releaseSmoke/mapping.txt"
+    command = retrace_command()
+    if not mapping.is_file() or not command:
+        return text, False
+
+    try:
+        with tempfile.TemporaryDirectory(prefix="bb-retrace-") as directory:
+            stacktrace = Path(directory) / "stacktrace.txt"
+            stacktrace.write_text(text, encoding="utf-8")
+            result = subprocess.run(
+                [*command, str(mapping), str(stacktrace)],
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+    except (OSError, subprocess.SubprocessError):
+        return text, False
+    if result.returncode != 0 or not result.stdout.strip():
+        return text, False
+    retraced = result.stdout.strip()
+    return retraced, retraced != text.strip()
+
+
+def testcase_detail(
+    testcase: ET.Element, root: Path, *, retrace: bool = False
+) -> tuple[str, str, str, int, bool]:
     for child in testcase:
         if local_name(child.tag) in {"failure", "error"}:
-            text = " ".join(part.strip() for part in child.itertext() if part.strip())
+            text = "".join(child.itertext()).strip()
+            was_retraced = False
+            if retrace:
+                text, was_retraced = retrace_stacktrace(text, root)
             detail = clean_detail(text)
             location_match = LOCATION_RE.search(text)
             location = clean_detail(location_match.group(1)) if location_match else ""
             source_file, source_line = annotation_location(
                 text, root, testcase.attrib.get("classname", "")
             )
-            return detail, location, source_file, source_line
-    return "", "", "", 0
+            return detail, location, source_file, source_line, was_retraced
+    return "", "", "", 0, False
 
 
 def module_from_path(path: Path, root: Path) -> str | None:
@@ -174,7 +225,9 @@ def parse_report(path: Path, root: Path, mode: str) -> list[Failure]:
                 continue
             if mode == "unit" and classname.startswith(PAPARAZZI_PACKAGE):
                 continue
-            detail, location, annotation_file, annotation_line = testcase_detail(testcase, root)
+            detail, location, annotation_file, annotation_line, retraced = testcase_detail(
+                testcase, root, retrace=mode == "managed-device" and module == ":app-release-smoke"
+            )
             failures.append(
                 Failure(
                     module,
@@ -186,6 +239,7 @@ def parse_report(path: Path, root: Path, mode: str) -> list[Failure]:
                     path.as_posix(),
                     annotation_file,
                     annotation_line,
+                    retraced,
                 )
             )
     return failures
@@ -301,6 +355,12 @@ def render_managed_device(
         lines.extend(["No failed JUnit testcase was found in the available reports. Inspect the failed step's log for compilation, device provisioning, installation, or test-runner errors.", ""])
     if unreadable:
         lines.extend([f"_Could not parse {len(unreadable)} JUnit report(s); remaining reports were still inspected._", ""])
+    smoke_failures = [failure for failure in failures if failure.module == ":app-release-smoke"]
+    if smoke_failures:
+        if all(failure.retraced for failure in smoke_failures):
+            lines.extend(["_Minified release-smoke stack frames were retraced with the release mapping._", ""])
+        else:
+            lines.extend(["_Could not retrace minified release-smoke stack frames; check that the R8 mapping and Android SDK retrace utility are available._", ""])
     if artifact_url:
         lines.append(f"[Open instrumented test artifact]({artifact_url})")
     if run_url:
