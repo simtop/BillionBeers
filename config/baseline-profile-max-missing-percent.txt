@@ -1,0 +1,2 @@
+# Fail release-smoke if more than this percentage of profiled classes are absent from R8 mapping.
+12.0

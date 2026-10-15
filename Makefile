@@ -140,6 +140,7 @@ release-smoke: ## Run black-box launch and behavior smoke against the debug-sign
 	$(GRADLE_RUNNER) :feature:beerdetail:assembleReleaseSmoke :feature:beerbrowse:assembleReleaseSmoke
 	@bash scripts/verify-release-smoke-artifacts.sh
 	@python3 scripts/check_apk_size_budget.py app/build/outputs/release-smoke/manifest.txt
+	@python3 scripts/check_baseline_profile_mapping.py
 
 ##@ Desktop
 desktop-test: ## Run deterministic real JVM data vertical-slice integration tests.
