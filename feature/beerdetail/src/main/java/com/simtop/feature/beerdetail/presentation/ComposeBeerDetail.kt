@@ -22,6 +22,7 @@ import com.simtop.billionbeers.core.designsystem.component.AccessibilityMatrixPr
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailStrings
+import com.simtop.billionbeers.shared.beerdetail.MAX_BEER_METRIC_FRACTION_DIGITS
 import com.simtop.billionbeers.shared.beerdetail.SharedBeerDetailContent
 import com.simtop.billionbeers.shared.beerdetail.formatServingTemperatureRange
 import com.simtop.presentation_utils.R
@@ -75,7 +76,7 @@ fun ComposeBeerDetail(
           NumberFormat.getNumberInstance(context.resources.configuration.locales[0])
             .apply {
               minimumFractionDigits = 0
-              maximumFractionDigits = 3
+              maximumFractionDigits = MAX_BEER_METRIC_FRACTION_DIGITS
             }
             .format(value)
         },

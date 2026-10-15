@@ -44,6 +44,7 @@ import com.simtop.billionbeers.shared.app.SharedAppStrings
 import com.simtop.billionbeers.shared.app.formatCount
 import com.simtop.billionbeers.shared.beerbrowse.BrowseStrings
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailStrings
+import com.simtop.billionbeers.shared.beerdetail.MAX_BEER_METRIC_FRACTION_DIGITS
 import com.simtop.billionbeers.shared.beerdetail.formatServingTemperatureRange
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.DefaultCoroutineDispatcherProvider
@@ -194,7 +195,7 @@ internal val desktopStrings =
           NumberFormat.getNumberInstance()
             .apply {
               minimumFractionDigits = 0
-              maximumFractionDigits = 3
+              maximumFractionDigits = MAX_BEER_METRIC_FRACTION_DIGITS
             }
             .format(value)
         },
