@@ -64,6 +64,13 @@ ADR 0008 owns CI lane selection (`classify_path` in `.github/scripts/detect-chan
 ADRs 0008/0009 preserve rejected sharding and cache experiments, including the coherent
 SDK/AVD cache: do not repeat them without changed inputs and a measurement hypothesis.
 
+Long-lived local observation flows must survive transient read failures: emit a caller-owned
+error state and resubscribe with `retryWithErrorState` from `:core-common`, rather than ending
+the stream with a terminal `catch`. Preserve coroutine cancellation. Every input to `combine`
+must emit an initial value (usually a `StateFlow`, or a cold flow with an explicit initial
+emission), so combined state can be produced on subscription. This policy is for ongoing local
+observations; ADR 0010 keeps remote read retries explicit and user-driven.
+
 ## Verification and tools
 
 Use Makefile wrappers; `make help` lists commands. Choose checks that can falsify the change,
