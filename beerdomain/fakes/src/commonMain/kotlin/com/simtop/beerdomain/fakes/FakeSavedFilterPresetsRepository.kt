@@ -33,7 +33,9 @@ class FakeSavedFilterPresetsRepository : SavedFilterPresetsRepository {
     saveException?.let { throw it }
     saveError?.let { return Either.Left(it) }
     val current = presetsFlow.value.toMutableList()
-    val index = current.indexOfFirst { it.id == preset.id }
+    val index = current.indexOfFirst {
+      it.id == preset.id || (it.name == preset.name && it.query == preset.query)
+    }
     if (index < 0 && current.size >= SavedFilterPreset.MAX_COUNT) {
       return Either.Left(SaveFilterPresetError.CapacityReached)
     }

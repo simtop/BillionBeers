@@ -9,6 +9,8 @@ import com.simtop.beer_storage.api.StoredFilterPreset
 import java.io.File
 import kotlin.io.path.createTempDirectory
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -53,6 +55,22 @@ class SavedFilterPersistenceJvmTest {
     val expected = (presets.drop(1).dropLast(1) + updated + added).sortedByDescending { it.updatedAt }
     assertEquals(expected, storage.observeSavedFilterPresets().first())
     assertEquals(expected, reopenStorage().observeSavedFilterPresets().first())
+  }
+
+  @Test
+  fun concurrentLogicalPresetSavesCoalesceAtomically() = runBlocking {
+    val storage = BeersLocalSourceImpl(db)
+    val first = initial.copy(id = "candidate-1", updatedAt = 2L)
+    val second = initial.copy(id = "candidate-2", updatedAt = 3L)
+
+    coroutineScope {
+      listOf(first, second).map { preset -> async { storage.saveFilterPreset(preset) } }.forEach { it.await() }
+    }
+
+    val saved = storage.observeSavedFilterPresets().first()
+    assertEquals(1, saved.size)
+    assertTrue(saved.single().id in setOf("candidate-1", "candidate-2"))
+    assertTrue(saved.single().updatedAt in setOf(2L, 3L))
   }
 
   @Test

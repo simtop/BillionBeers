@@ -11,6 +11,10 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 
@@ -102,6 +106,31 @@ class SaveFilterPresetUseCaseTest {
     val presets = repository.observeSavedFilterPresets().first()
     assertEquals(setOf("Aa", "BB"), presets.map { it.name }.toSet())
     assertEquals(2, presets.map { it.id }.toSet().size)
+  }
+
+  @Test
+  fun `concurrent saves of the same tuple converge on one preset`() = runTest {
+    val repository = FakeSavedFilterPresetsRepository()
+    val bothReadsStarted = CompletableDeferred<Unit>()
+    var observations = 0
+    repository.setObservationFlow(
+      flow {
+        observations++
+        if (observations == 2) bothReadsStarted.complete(Unit)
+        bothReadsStarted.await()
+        emit(emptyList())
+      }
+    )
+    val useCase = SaveFilterPresetUseCase(repository, RecordingClock(1L), RecordingIdProvider())
+
+    listOf(" IPA ", "IPA").map { name -> async { useCase(name, BeersQuery(search = "ipa")) } }
+      .awaitAll()
+
+    val presets = repository.getPresets()
+    assertEquals(1, presets.size)
+    assertEquals("IPA", presets.single().name)
+    assertEquals(BeersQuery(search = "ipa"), presets.single().query)
+    assertEquals(2, repository.saveRequests.size)
   }
 
   @Test

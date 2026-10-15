@@ -26,8 +26,12 @@ class BuildBudgetTest(unittest.TestCase):
         self.addCleanup(self.temporary.cleanup)
         self.csv_path = Path(self.temporary.name) / "benchmark.csv"
 
-    def run_checker(self, missing: str | None = None) -> subprocess.CompletedProcess[str]:
-        names = scenario_names()
+    def run_checker(
+        self,
+        missing: str | None = None,
+        omit_header: str | None = None,
+    ) -> subprocess.CompletedProcess[str]:
+        names = [name for name in scenario_names() if name != omit_header]
         with self.csv_path.open("w", newline="", encoding="utf-8") as output:
             writer = csv.writer(output)
             writer.writerow(["scenario", *names])
@@ -56,6 +60,13 @@ class BuildBudgetTest(unittest.TestCase):
         result = self.run_checker(missing)
         self.assertNotEqual(0, result.returncode, result.stdout + result.stderr)
         self.assertIn(f"FAIL {missing}: no measured builds were produced", result.stdout)
+        self.assertNotIn("All build-time budgets met.", result.stdout)
+
+    def test_required_scenario_without_a_header_column_fails_the_gate(self) -> None:
+        missing = "incremental_deep"
+        result = self.run_checker(omit_header=missing)
+        self.assertNotEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn(f"FAIL missing required scenario columns: {missing}", result.stderr)
         self.assertNotIn("All build-time budgets met.", result.stdout)
 
     def test_scenario_mutators_reference_existing_source_files(self) -> None:

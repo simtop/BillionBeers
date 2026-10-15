@@ -62,15 +62,17 @@ class CiWritebackTest(unittest.TestCase):
                     MODULE.validate_event(candidate, REPOSITORY, "master")
 
     def test_requires_one_bounded_artifact_from_the_current_attempt(self):
+        # Match the documented artifact API shape: workflow_run has an id, not run_attempt.
         expected = {"name": "generated-output-2", "expired": False, "size_in_bytes": 42,
-                    "workflow_run": {"id": 987, "run_attempt": 2}}
+                    "workflow_run": {"id": 987}}
         self.assertEqual("generated-output-2", MODULE.validate_artifact([expected], 987, 2))
         invalid = [
             [],
             [expected, dict(expected)],
             [dict(expected, expired=True)],
             [dict(expected, size_in_bytes=MODULE.MAX_PATCH_BYTES + 1)],
-            [dict(expected, workflow_run={"id": 987, "run_attempt": 1})],
+            [dict(expected, workflow_run={"id": 986})],
+            [dict(expected, name="generated-output-1")],
         ]
         for artifacts in invalid:
             with self.subTest(artifacts=artifacts):

@@ -58,6 +58,48 @@ class ScreenshotInventoryTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("PreviewC", self.baseline.read_text(encoding="utf-8"))
 
+    def test_scoped_verification_ignores_other_modules(self):
+        (self.inventory / "module.tsv").write_text(
+            "com.simtop.billionbeers.core.designsystem\tPreviewA\tLIGHT\t1.0\ten\tLTR\tcompact\tPreviewA\tgroup\tdevice\n",
+            encoding="utf-8",
+        )
+        self.baseline.write_text(
+            "com.simtop.billionbeers.core.designsystem\tPreviewA\tLIGHT\t1.0\ten\tLTR\tcompact\tPreviewA\tgroup\tdevice\n"
+            "com.simtop.billionbeers.feature.favorites\tPreviewB\tDARK\t1.0\ten\tLTR\tcompact\tPreviewB\tgroup\tdevice\n",
+            encoding="utf-8",
+        )
+        result = self.run_checker("--scoped")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("matches (1", result.stdout)
+
+    def test_scoped_update_preserves_other_module_baseline_rows(self):
+        (self.inventory / "module.tsv").write_text(
+            "com.simtop.billionbeers.core.designsystem\tPreviewC\tLIGHT\t1.0\ten\tLTR\tcompact\tPreviewC\tgroup\tdevice\n",
+            encoding="utf-8",
+        )
+        other = "com.simtop.billionbeers.feature.favorites\tPreviewB\tDARK\t1.0\ten\tLTR\tcompact\tPreviewB\tgroup\tdevice"
+        self.baseline.write_text(
+            "com.simtop.billionbeers.core.designsystem\tPreviewA\tLIGHT\t1.0\ten\tLTR\tcompact\tPreviewA\tgroup\tdevice\n"
+            + other + "\n",
+            encoding="utf-8",
+        )
+        result = self.run_checker("--update", "--scoped")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        contents = self.baseline.read_text(encoding="utf-8")
+        self.assertIn("PreviewC", contents)
+        self.assertIn(other, contents)
+        self.assertNotIn("PreviewA", contents)
+
+    def test_scoped_verification_detects_a_module_with_no_remaining_previews(self):
+        (self.inventory / "module.tsv").write_text("", encoding="utf-8")
+        self.baseline.write_text(
+            "module\tPreviewA\tLIGHT\t1.0\ten\tLTR\tcompact\tPreviewA\tgroup\tdevice\n",
+            encoding="utf-8",
+        )
+        result = self.run_checker("--scoped")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("Missing x1: module / PreviewA", result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -35,16 +35,36 @@ abstract class BeersDao {
   @Query("SELECT id FROM filter_presets WHERE id = :id")
   abstract suspend fun findFilterPresetId(id: String): String?
 
+  @Query(
+    """
+    SELECT id FROM filter_presets
+    WHERE name = :name AND search IS :search AND style_id IS :styleId AND brewery_id IS :breweryId
+    LIMIT 1
+    """
+  )
+  abstract suspend fun findFilterPresetIdByContents(
+    name: String,
+    search: String?,
+    styleId: String?,
+    breweryId: String?,
+  ): String?
+
   @Upsert abstract suspend fun upsertFilterPreset(preset: SavedFilterPresetDbModel)
 
   @Transaction
   open suspend fun saveFilterPreset(preset: SavedFilterPresetDbModel) {
-    if (findFilterPresetId(preset.id) == null) {
+    // Room serializes this lookup and write in one transaction. Concurrent saves of the same
+    // logical preset therefore converge on the existing row even if their callers generated
+    // different candidate ids.
+    val existingId = findFilterPresetIdByContents(
+      preset.name, preset.search, preset.styleId, preset.breweryId
+    ) ?: findFilterPresetId(preset.id)
+    if (existingId == null) {
       if (getFilterPresetCount() >= MAX_STORED_FILTER_PRESETS) {
         throw FilterPresetCapacityReachedException()
       }
     }
-    upsertFilterPreset(preset)
+    upsertFilterPreset(if (existingId == null) preset else preset.copy(id = existingId))
   }
 
   @Query("UPDATE filter_presets SET name = :name, updated_at = :updatedAt WHERE id = :id")
