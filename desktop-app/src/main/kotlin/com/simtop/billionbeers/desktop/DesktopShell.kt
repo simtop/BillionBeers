@@ -44,9 +44,11 @@ import com.simtop.billionbeers.shared.app.SharedAppStrings
 import com.simtop.billionbeers.shared.app.formatCount
 import com.simtop.billionbeers.shared.beerbrowse.BrowseStrings
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailStrings
+import com.simtop.billionbeers.shared.beerdetail.MAX_BEER_METRIC_FRACTION_DIGITS
 import com.simtop.billionbeers.shared.beerdetail.formatServingTemperatureRange
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.DefaultCoroutineDispatcherProvider
+import java.text.NumberFormat
 
 @Composable
 fun DesktopShell(runtime: DesktopDataRuntime) {
@@ -188,6 +190,14 @@ internal val desktopStrings =
         servingTemperature = "Serving temperature",
         servingTemperatureValue = { minTemperature, maxTemperature ->
           formatServingTemperatureRange(minTemperature, maxTemperature)
+        },
+        metricValue = { value ->
+          NumberFormat.getNumberInstance()
+            .apply {
+              minimumFractionDigits = 0
+              maximumFractionDigits = MAX_BEER_METRIC_FRACTION_DIGITS
+            }
+            .format(value)
         },
         fermentation = "Fermentation",
         ingredients = "Ingredients",

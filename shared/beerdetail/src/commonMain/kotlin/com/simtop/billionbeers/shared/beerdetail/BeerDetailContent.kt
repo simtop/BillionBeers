@@ -69,6 +69,7 @@ data class BeerDetailStrings(
   val released: String,
   val servingTemperature: String,
   val servingTemperatureValue: @Composable (minTemperature: Int, maxTemperature: Int) -> String,
+  val metricValue: (Double) -> String,
   val fermentation: String,
   val ingredients: String,
   val recommendedGlasses: String,
@@ -238,14 +239,14 @@ fun SharedBeerDetailContent(
           Column(verticalArrangement = Arrangement.spacedBy(BillionBeersTheme.spacing.medium)) {
             StatCard(
               label = strings.abv,
-              value = "${formatBeerMetric(beer.abv)}%",
+              value = "${strings.metricValue(beer.abv)}%",
               color = BillionBeersTheme.colors.abvContainer,
               textColor = BillionBeersTheme.colors.onAbvContainer,
               modifier = Modifier.fillMaxWidth(),
             )
             StatCard(
               label = strings.ibu,
-              value = formatBeerMetric(beer.ibu),
+              value = strings.metricValue(beer.ibu),
               color = BillionBeersTheme.colors.ibuContainer,
               textColor = BillionBeersTheme.colors.onIbuContainer,
               modifier = Modifier.fillMaxWidth(),
@@ -258,14 +259,14 @@ fun SharedBeerDetailContent(
           ) {
             StatCard(
               label = strings.abv,
-              value = "${formatBeerMetric(beer.abv)}%",
+              value = "${strings.metricValue(beer.abv)}%",
               color = BillionBeersTheme.colors.abvContainer,
               textColor = BillionBeersTheme.colors.onAbvContainer,
               modifier = Modifier.weight(1f),
             )
             StatCard(
               label = strings.ibu,
-              value = formatBeerMetric(beer.ibu),
+              value = strings.metricValue(beer.ibu),
               color = BillionBeersTheme.colors.ibuContainer,
               textColor = BillionBeersTheme.colors.onIbuContainer,
               modifier = Modifier.weight(1f),

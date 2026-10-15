@@ -14,6 +14,7 @@ import com.simtop.core.core.PagedListUiModel
 import com.simtop.core.core.PagingState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
@@ -54,7 +55,7 @@ class BeersSearchViewModelTest {
     runTest(mainDispatcher.testDispatcher) {
       val viewModel = buildViewModel()
 
-      viewModel.viewState.test {
+      viewModel.viewState().test {
         expectThat(awaitItem()).isEqualTo(CommonUiState.Empty) // pre-search prompt
 
         viewModel.onQueryChange("i")
@@ -69,11 +70,29 @@ class BeersSearchViewModelTest {
     }
 
   @Test
+  fun `active query follows results rather than the edited search text`() =
+    runTest(mainDispatcher.testDispatcher) {
+      val viewModel = buildViewModel()
+
+      viewModel.onQueryChange("ipa")
+      expectThat(viewModel.uiState.value.query).isEqualTo("ipa")
+      expectThat(viewModel.uiState.value.activeQuery).isEqualTo(BeersQuery())
+
+      advanceTimeBy(pastDebounce)
+      runCurrent()
+      expectThat(viewModel.uiState.value.activeQuery).isEqualTo(BeersQuery(search = "ipa"))
+
+      viewModel.onQueryChange("stout")
+      expectThat(viewModel.uiState.value.query).isEqualTo("stout")
+      expectThat(viewModel.uiState.value.activeQuery).isEqualTo(BeersQuery(search = "ipa"))
+    }
+
+  @Test
   fun `a query under two characters creates no pager`() =
     runTest(mainDispatcher.testDispatcher) {
       val viewModel = buildViewModel()
 
-      viewModel.viewState.test {
+      viewModel.viewState().test {
         expectThat(awaitItem()).isEqualTo(CommonUiState.Empty)
 
         viewModel.onQueryChange("i")
@@ -90,7 +109,7 @@ class BeersSearchViewModelTest {
     runTest(mainDispatcher.testDispatcher) {
       val viewModel = buildViewModel()
 
-      viewModel.viewState.test {
+      viewModel.viewState().test {
         expectThat(awaitItem()).isEqualTo(CommonUiState.Empty)
 
         viewModel.onQueryChange("ipa")
@@ -115,7 +134,7 @@ class BeersSearchViewModelTest {
       val viewModel = buildViewModel()
       val result = Beer.empty.copy(id = "1")
 
-      viewModel.viewState.test {
+      viewModel.viewState().test {
         expectThat(awaitItem()).isEqualTo(CommonUiState.Empty)
 
         viewModel.onQueryChange("ipa")
@@ -135,7 +154,7 @@ class BeersSearchViewModelTest {
       advanceTimeBy(5_001L)
       runCurrent()
 
-      viewModel.viewState.test {
+      viewModel.viewState().test {
         expectThat(awaitItem()).isA<CommonUiState.Success<PagedListUiModel<Beer>>>()
         advanceTimeBy(pastDebounce)
         runCurrent()
@@ -143,7 +162,7 @@ class BeersSearchViewModelTest {
         expectThat(fakeFactory.createdQueries.toList()).isEqualTo(listOf(BeersQuery("ipa")))
         expectThat(fakeFactory.searchPagers.toList()).isEqualTo(listOf(originalPager))
         expectThat(originalPager.loadFirstPageCallCount).isEqualTo(1)
-        val retained = viewModel.viewState.value as CommonUiState.Success
+        val retained = viewModel.uiState.value.viewState as CommonUiState.Success
         expectThat(retained.data.items.map { it.id }).isEqualTo(listOf("1"))
         expectThat(retained.data.totalCount).isEqualTo(159)
 
@@ -162,7 +181,7 @@ class BeersSearchViewModelTest {
     runTest(mainDispatcher.testDispatcher) {
       val viewModel = buildViewModel()
 
-      viewModel.viewState.test {
+      viewModel.viewState().test {
         expectThat(awaitItem()).isEqualTo(CommonUiState.Empty)
 
         viewModel.onQueryChange("zzz")
@@ -184,7 +203,7 @@ class BeersSearchViewModelTest {
     runTest(mainDispatcher.testDispatcher) {
       val viewModel = buildViewModel()
 
-      viewModel.viewState.test {
+      viewModel.viewState().test {
         expectThat(awaitItem()).isEqualTo(CommonUiState.Empty)
 
         viewModel.onQueryChange("ipa")
@@ -206,7 +225,7 @@ class BeersSearchViewModelTest {
     runTest(mainDispatcher.testDispatcher) {
       val viewModel = buildViewModel()
 
-      viewModel.viewState.test {
+      viewModel.viewState().test {
         expectThat(awaitItem()).isEqualTo(CommonUiState.Empty)
 
         viewModel.onQueryChange("ipa")
@@ -238,12 +257,12 @@ class BeersSearchViewModelTest {
     runTest(mainDispatcher.testDispatcher) {
       val viewModel = buildViewModel(initialQuery = "ipa")
 
-      viewModel.viewState.test {
+      viewModel.viewState().test {
         advanceTimeBy(pastDebounce)
         runCurrent()
 
         expectThat(fakeFactory.createdQueries.toList()).isEqualTo(listOf(BeersQuery("ipa")))
-        expectThat(viewModel.query.value).isEqualTo("ipa")
+        expectThat(viewModel.uiState.value.query).isEqualTo("ipa")
         cancelAndIgnoreRemainingEvents()
       }
     }
@@ -253,7 +272,7 @@ class BeersSearchViewModelTest {
     runTest(mainDispatcher.testDispatcher) {
       val viewModel = buildViewModel()
 
-      viewModel.viewState.test {
+      viewModel.viewState().test {
         expectThat(awaitItem()).isEqualTo(CommonUiState.Empty)
 
         viewModel.onQueryChange("ipa")
@@ -279,7 +298,7 @@ class BeersSearchViewModelTest {
       viewModel.onStyleSelected("style-1")
       runCurrent()
 
-      expectThat(viewModel.selectedStyle.value).isEqualTo(BeerStyle("style-1", "IPA"))
+      expectThat(viewModel.uiState.value.selectedStyle).isEqualTo(BeerStyle("style-1", "IPA"))
     }
 
   @Test
@@ -287,7 +306,7 @@ class BeersSearchViewModelTest {
     runTest(mainDispatcher.testDispatcher) {
       val viewModel = buildViewModel(initialStyleId = "style-1")
 
-      viewModel.viewState.test {
+      viewModel.viewState().test {
         expectThat(awaitItem()).isEqualTo(CommonUiState.Empty)
         advanceTimeBy(pastDebounce)
         runCurrent()
@@ -303,7 +322,7 @@ class BeersSearchViewModelTest {
     runTest(mainDispatcher.testDispatcher) {
       val viewModel = buildViewModel()
 
-      viewModel.viewState.test {
+      viewModel.viewState().test {
         expectThat(awaitItem()).isEqualTo(CommonUiState.Empty)
 
         viewModel.onStyleSelected("style-1")
@@ -320,7 +339,7 @@ class BeersSearchViewModelTest {
     runTest(mainDispatcher.testDispatcher) {
       val viewModel = buildViewModel()
 
-      viewModel.viewState.test {
+      viewModel.viewState().test {
         expectThat(awaitItem()).isEqualTo(CommonUiState.Empty)
 
         viewModel.onStyleSelected("style-1")
@@ -344,7 +363,7 @@ class BeersSearchViewModelTest {
     runTest(mainDispatcher.testDispatcher) {
       val viewModel = buildViewModel()
 
-      viewModel.viewState.test {
+      viewModel.viewState().test {
         expectThat(awaitItem()).isEqualTo(CommonUiState.Empty)
 
         viewModel.onStyleSelected("style-1")
@@ -360,7 +379,7 @@ class BeersSearchViewModelTest {
         viewModel.onClearStyle()
         advanceTimeBy(pastDebounce)
         runCurrent()
-        expectThat(viewModel.viewState.value).isEqualTo(CommonUiState.Empty)
+        expectThat(viewModel.uiState.value.viewState).isEqualTo(CommonUiState.Empty)
         cancelAndIgnoreRemainingEvents()
       }
     }
@@ -372,7 +391,9 @@ class BeersSearchViewModelTest {
       val viewModel = buildViewModel()
       runCurrent()
 
-      expectThat(viewModel.styles.value)
+      expectThat(viewModel.uiState.value.styles)
         .isEqualTo(CommonUiState.Success(listOf(BeerStyle("style-1", "IPA"))))
     }
 }
+
+private fun BeersSearchViewModel.viewState() = uiState.map { it.viewState }

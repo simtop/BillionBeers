@@ -17,6 +17,7 @@ import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metrox.viewmodel.ViewModelAssistedFactory
 import dev.zacsweers.metrox.viewmodel.ViewModelAssistedFactoryKey
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 
 @AssistedInject
@@ -45,8 +46,11 @@ class BeersSearchViewModel(
   }
 
   init {
-    query.onEach { savedStateHandle[KEY_QUERY] = it }.launchIn(viewModelScope)
-    styleId.onEach { savedStateHandle[KEY_STYLE_ID] = it }.launchIn(viewModelScope)
+    uiState.map { it.query }.onEach { savedStateHandle[KEY_QUERY] = it }.launchIn(viewModelScope)
+    uiState
+      .map { it.selectedStyleId }
+      .onEach { savedStateHandle[KEY_STYLE_ID] = it }
+      .launchIn(viewModelScope)
   }
 
   private companion object {

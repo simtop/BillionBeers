@@ -47,31 +47,25 @@ open class BeersSearchViewModel(
 ) : ViewModel() {
 
   private val queryText = MutableStateFlow(initialQuery)
-  val query: StateFlow<String> = queryText.asStateFlow()
 
   private val selectedStyleId = MutableStateFlow(initialStyleId)
-  val styleId: StateFlow<String?> = selectedStyleId.asStateFlow()
 
   private val _styles = MutableStateFlow<CommonUiState<List<BeerStyle>>>(CommonUiState.Loading)
-  val styles: StateFlow<CommonUiState<List<BeerStyle>>> = _styles.asStateFlow()
+  private val styles: StateFlow<CommonUiState<List<BeerStyle>>> = _styles.asStateFlow()
 
-  val selectedStyle: StateFlow<BeerStyle?> =
+  private val selectedStyle: StateFlow<BeerStyle?> =
     combine(selectedStyleId, styles) { id, state ->
         (state as? CommonUiState.Success)?.data?.firstOrNull { it.id == id }
       }
       .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-  val activeQuery: StateFlow<BeersQuery> =
-    combine(queryText, selectedStyleId) { text, styleId -> effectiveQuery(text, styleId) }
-      .stateIn(viewModelScope, SharingStarted.Eagerly, effectiveQuery(initialQuery, initialStyleId))
-
   private var currentPager: Pager<Beer, FetchBeersError>? = null
 
   private val _events = Channel<BeersSearchEvent>(Channel.BUFFERED)
-  val events: Flow<BeersSearchEvent> = _events.receiveAsFlow()
+  val uiEvents: Flow<BeersSearchEvent> = _events.receiveAsFlow()
 
   @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
-  val viewState: StateFlow<CommonUiState<PagedListUiModel<Beer>>> =
+  private val searchResults: StateFlow<SearchResults> =
     merge(
         queryText.map(String::trim).debounce(DEBOUNCE_MILLIS).distinctUntilChanged().map { term ->
           effectiveQuery(term, selectedStyleId.value)
@@ -82,12 +76,43 @@ open class BeersSearchViewModel(
       .transformLatest { query ->
         if (!query.isActive()) {
           currentPager = null
-          emit(CommonUiState.Empty)
+          emit(SearchResults(query, CommonUiState.Empty))
         } else {
-          emitAll(searchFlow(query))
+          emit(SearchResults(query, CommonUiState.Loading))
+          emitAll(searchFlow(query).map { SearchResults(query, it) })
         }
       }
-      .stateIn(viewModelScope, SharingStarted.Eagerly, CommonUiState.Empty)
+      .stateIn(
+        viewModelScope,
+        SharingStarted.Eagerly,
+        SearchResults(effectiveQuery(initialQuery, initialStyleId), CommonUiState.Empty),
+      )
+
+  val uiState: StateFlow<BeersSearchUiState> =
+    combine(queryText, styles, selectedStyleId, selectedStyle, searchResults) {
+        queryText,
+        styles,
+        selectedStyleId,
+        selectedStyle,
+        searchResults ->
+        BeersSearchUiState(
+          query = queryText,
+          styles = styles,
+          selectedStyle = selectedStyle,
+          selectedStyleId = selectedStyleId,
+          activeQuery = searchResults.query,
+          viewState = searchResults.state,
+        )
+      }
+      .stateIn(
+        viewModelScope,
+        SharingStarted.Eagerly,
+        BeersSearchUiState(
+          query = initialQuery,
+          selectedStyleId = initialStyleId,
+          activeQuery = effectiveQuery(initialQuery, initialStyleId),
+        ),
+      )
 
   init {
     retryStyles()
@@ -171,3 +196,17 @@ open class BeersSearchViewModel(
 sealed interface BeersSearchEvent {
   data object ShowLoadMoreError : BeersSearchEvent
 }
+
+data class BeersSearchUiState(
+  val query: String = "",
+  val styles: CommonUiState<List<BeerStyle>> = CommonUiState.Loading,
+  val selectedStyle: BeerStyle? = null,
+  val selectedStyleId: String? = null,
+  val activeQuery: BeersQuery = BeersQuery(),
+  val viewState: CommonUiState<PagedListUiModel<Beer>> = CommonUiState.Empty,
+)
+
+private data class SearchResults(
+  val query: BeersQuery,
+  val state: CommonUiState<PagedListUiModel<Beer>>,
+)

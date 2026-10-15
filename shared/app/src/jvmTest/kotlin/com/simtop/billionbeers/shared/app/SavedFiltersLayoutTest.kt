@@ -300,6 +300,7 @@ internal fun savedFilterStrings(rename: String, delete: String) =
         released = "",
         servingTemperature = "",
         servingTemperatureValue = { _, _ -> "" },
+        metricValue = { it.toString() },
         fermentation = "",
         ingredients = "",
         recommendedGlasses = "",

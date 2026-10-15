@@ -392,7 +392,9 @@ fun SharedAppShell(
                 strings = strings,
                 host = host,
                 onBeerClick = { navigate(PortableRoute.BeerDetail(it)) },
-                onSaveQuery = { name -> savePreset(name, entry.viewModel.activeQuery.value) },
+                onSaveQuery = { name ->
+                  savePreset(name, entry.viewModel.uiState.value.activeQuery)
+                },
               )
             is BrowseHomeEntry ->
               BrowseHomeDestination(
@@ -569,11 +571,12 @@ private fun SearchDestination(
   onBeerClick: (Beer) -> Unit,
   onSaveQuery: suspend (String) -> Boolean,
 ) {
-  val query by entry.viewModel.query.collectAsStateWithLifecycle()
-  val styles by entry.viewModel.styles.collectAsStateWithLifecycle()
-  val selectedStyle by entry.viewModel.selectedStyle.collectAsStateWithLifecycle()
-  val activeQuery by entry.viewModel.activeQuery.collectAsStateWithLifecycle()
-  val viewState by entry.viewModel.viewState.collectAsStateWithLifecycle()
+  val uiState by entry.viewModel.uiState.collectAsStateWithLifecycle()
+  val query = uiState.query
+  val styles = uiState.styles
+  val selectedStyle = uiState.selectedStyle
+  val activeQuery = uiState.activeQuery
+  val viewState = uiState.viewState
   val count = (viewState as? CommonUiState.Success)?.data?.items?.size ?: 0
   Column(Modifier.fillMaxSize()) {
     OutlinedTextField(

@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -22,9 +23,11 @@ import com.simtop.billionbeers.core.designsystem.component.AccessibilityMatrixPr
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailStrings
+import com.simtop.billionbeers.shared.beerdetail.MAX_BEER_METRIC_FRACTION_DIGITS
 import com.simtop.billionbeers.shared.beerdetail.SharedBeerDetailContent
 import com.simtop.billionbeers.shared.beerdetail.formatServingTemperatureRange
 import com.simtop.presentation_utils.R
+import java.text.NumberFormat
 
 @Composable
 @Suppress("LongParameterList")
@@ -37,6 +40,7 @@ fun ComposeBeerDetail(
   showBackButton: Boolean = true,
 ) {
   val context = LocalContext.current
+  val locale = LocalConfiguration.current.locales[0]
   val animationsDisabled =
     Settings.Global.getFloat(
       context.contentResolver,
@@ -70,6 +74,14 @@ fun ComposeBeerDetail(
         released = stringResource(R.string.beer_detail_released_year_label),
         servingTemperature = stringResource(R.string.beer_detail_serving_temperature_label),
         servingTemperatureValue = { min, max -> formatServingTemperatureRange(min, max) },
+        metricValue = { value ->
+          NumberFormat.getNumberInstance(locale)
+            .apply {
+              minimumFractionDigits = 0
+              maximumFractionDigits = MAX_BEER_METRIC_FRACTION_DIGITS
+            }
+            .format(value)
+        },
         fermentation = stringResource(R.string.beer_detail_fermentation_method_label),
         ingredients = stringResource(R.string.beer_detail_ingredients),
         recommendedGlasses = stringResource(R.string.beer_detail_recommended_glasses),
