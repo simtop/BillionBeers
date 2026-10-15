@@ -308,6 +308,8 @@ ci-report-test: ## Test CI diagnosis, evidence parsing, and incremental comment 
 	@$(MAKE) --no-print-directory make-help-test
 	@$(MAKE) --no-print-directory benchmark-budget-test
 	@$(MAKE) --no-print-directory build-time-budget-test
+	@python3 scripts/check_skill_format.py
+	@python3 scripts/test_check_skill_format.py
 	@python3 scripts/test_install_git_hooks.py
 	@python3 scripts/check_dependabot_catalog_coverage.py
 	@python3 scripts/test_check_dependabot_catalog_coverage.py

@@ -1,0 +1,40 @@
+{
+  "cases": [
+    {
+      "id": "folded-description",
+      "fixture": "folded-description.fixture",
+      "expected_name": "sample-skill",
+      "expected_errors": []
+    },
+    {
+      "id": "missing-description",
+      "fixture": "missing-description.fixture",
+      "expected_name": "sample-skill",
+      "expected_errors": ["frontmatter description is required"]
+    },
+    {
+      "id": "invalid-name",
+      "fixture": "invalid-name.fixture",
+      "expected_name": "sample-skill",
+      "expected_errors": ["name must be lowercase letters, numbers, and single hyphens (max 64 chars)"]
+    },
+    {
+      "id": "name-mismatch",
+      "fixture": "name-mismatch.fixture",
+      "expected_name": "sample-skill",
+      "expected_errors": ["name 'other-skill' must match directory 'sample-skill'"]
+    },
+    {
+      "id": "angle-brackets",
+      "fixture": "angle-brackets.fixture",
+      "expected_name": "sample-skill",
+      "expected_errors": ["description must not contain angle brackets"]
+    },
+    {
+      "id": "unclosed-frontmatter",
+      "fixture": "unclosed-frontmatter.fixture",
+      "expected_name": "sample-skill",
+      "expected_errors": ["frontmatter closing --- is missing"]
+    }
+  ]
+}
