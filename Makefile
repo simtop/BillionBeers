@@ -53,7 +53,8 @@ MODULE_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,)
 SCREENSHOT_SCOPED = $(if $(MODULE_TRIMMED),--scoped,)
 UI_TEST_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,:app:)
 UI_TEST_CLASS ?=
-UI_TEST_ARGS = $(if $(strip $(UI_TEST_CLASS)),-Pandroid.testInstrumentationRunnerArguments.class="$(strip $(UI_TEST_CLASS))",)
+UI_TEST_CHECK_SCREEN_ROTATION ?= false
+UI_TEST_ARGS = $(if $(strip $(UI_TEST_CLASS)),-Pandroid.testInstrumentationRunnerArguments.class="$(strip $(UI_TEST_CLASS))",) $(if $(filter true,$(UI_TEST_CHECK_SCREEN_ROTATION)),-Pandroid.testInstrumentationRunnerArguments.UI_TEST_CHECK_SCREEN_ROTATION=true,)
 
 # One local output filter. Gateway sessions can export GRADLE_RUNNER=./gradlew.
 GRADLE_RUNNER ?= $(shell if command -v rtk >/dev/null 2>&1; then echo "rtk gradlew"; else echo "./gradlew"; fi)
@@ -372,19 +373,19 @@ emulator-delete: ## Delete the local emulator (wipes data; CONFIRM=1 required).
 
 ##@ Android UI tests - managed
 ui-test-managed: ## Run instrumented tests on the ATD fast-lane managed device (boots/tears down its own emulator).
-	$(GRADLE_RUNNER) $(UI_TEST_PREFIX)atdApi35DebugAndroidTest
+	$(GRADLE_RUNNER) $(UI_TEST_PREFIX)atdApi35DebugAndroidTest $(UI_TEST_ARGS)
 
 ui-test-managed-newest: ## Run instrumented tests on the API 37 managed device (forward-compat lane).
-	$(GRADLE_RUNNER) $(UI_TEST_PREFIX)pixel9Api37DebugAndroidTest
+	$(GRADLE_RUNNER) $(UI_TEST_PREFIX)pixel9Api37DebugAndroidTest $(UI_TEST_ARGS)
 
 ui-test-managed-tablet: ## Run a selected app test on the API 35 Pixel Tablet (expanded-width coverage).
 	$(GRADLE_RUNNER) :app:pixelTabletApi35DebugAndroidTest $(UI_TEST_ARGS)
 
 ui-test-managed-ci: ## Run what CI runs per push: the ATD fast lane, every opted-in module.
-	$(GRADLE_RUNNER) ciGroupDebugAndroidTest
+	$(GRADLE_RUNNER) ciGroupDebugAndroidTest $(UI_TEST_ARGS)
 
 ui-test-managed-all: ## Run instrumented tests on both managed devices, every opted-in module.
-	$(GRADLE_RUNNER) allDevicesDebugAndroidTest
+	$(GRADLE_RUNNER) allDevicesDebugAndroidTest $(UI_TEST_ARGS)
 
 ##@ Screenshots
 screenshot-record: ## Record golden images for Paparazzi.
