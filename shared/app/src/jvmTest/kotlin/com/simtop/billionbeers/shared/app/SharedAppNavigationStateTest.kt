@@ -19,6 +19,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.extension.RegisterExtension
 
@@ -37,34 +38,36 @@ class SharedAppNavigationStateTest {
     )
 
   @Test
-  fun coveredSearchEntryRetainsIdentityAndPoppedDetailsClose() {
-    val navigation = navigation()
-    val list = navigation.current
+  fun coveredSearchEntryRetainsIdentityAndPoppedDetailsClose() =
+    runTest(mainDispatcher.testDispatcher) {
+      val navigation = navigation()
+      val list = navigation.current
 
-    navigation.navigate(PortableRoute.BeersSearch)
-    val search = navigation.current as SearchEntry
-    search.viewModel.onQueryChange("lager")
-    val retainedListState = search.listState
-    navigation.navigate(PortableRoute.BeerDetail(beer))
-    val firstDetail = navigation.current
-    navigation.navigate(PortableRoute.BeerDetail(beer))
-    val secondDetail = navigation.current
+      navigation.navigate(PortableRoute.BeersSearch)
+      val search = navigation.current as SearchEntry
+      search.viewModel.onQueryChange("lager")
+      runCurrent()
+      val retainedListState = search.listState
+      navigation.navigate(PortableRoute.BeerDetail(beer))
+      val firstDetail = navigation.current
+      navigation.navigate(PortableRoute.BeerDetail(beer))
+      val secondDetail = navigation.current
 
-    assertNotEquals(firstDetail.id, secondDetail.id)
-    assertSame(search, navigation.entries[1])
-    assertEquals("lager", search.viewModel.query.value)
-    assertSame(retainedListState, search.listState)
-    assertFalse(search.isClosed)
+      assertNotEquals(firstDetail.id, secondDetail.id)
+      assertSame(search, navigation.entries[1])
+      assertEquals("lager", search.viewModel.uiState.value.query)
+      assertSame(retainedListState, search.listState)
+      assertFalse(search.isClosed)
 
-    assertTrue(navigation.pop())
-    assertTrue(secondDetail.isClosed)
-    assertSame(firstDetail, navigation.current)
-    assertTrue(navigation.pop())
-    assertTrue(firstDetail.isClosed)
-    assertSame(search, navigation.current)
-    assertFalse(search.isClosed)
-    assertEquals(list.id, navigation.entries.first().id)
-  }
+      assertTrue(navigation.pop())
+      assertTrue(secondDetail.isClosed)
+      assertSame(firstDetail, navigation.current)
+      assertTrue(navigation.pop())
+      assertTrue(firstDetail.isClosed)
+      assertSame(search, navigation.current)
+      assertFalse(search.isClosed)
+      assertEquals(list.id, navigation.entries.first().id)
+    }
 
   @Test
   fun catalogEntryAndListStateSurviveDetailSelections() {

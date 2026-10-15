@@ -30,7 +30,7 @@ class BeersSearchViewModelAdapterTest {
           savedStateHandle = savedStateHandle,
         )
 
-      expectThat(viewModel.query.value).isEqualTo("ipa")
+      expectThat(viewModel.uiState.value.query).isEqualTo("ipa")
 
       viewModel.onQueryChange("stout")
       runCurrent()
@@ -51,7 +51,7 @@ class BeersSearchViewModelAdapterTest {
           savedStateHandle = savedStateHandle,
         )
 
-      expectThat(viewModel.styleId.value).isEqualTo("style-1")
+      expectThat(viewModel.uiState.value.selectedStyleId).isEqualTo("style-1")
 
       viewModel.onStyleSelected("style-2")
       runCurrent()

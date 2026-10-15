@@ -11,6 +11,7 @@ import com.simtop.billionbeers.shared.app.SharedAppStrings
 import com.simtop.billionbeers.shared.app.formatCount
 import com.simtop.billionbeers.shared.beerbrowse.BrowseStrings
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailStrings
+import com.simtop.billionbeers.shared.beerdetail.formatBeerMetric
 import com.simtop.billionbeers.shared.beerdetail.formatServingTemperatureRange
 
 internal object IosLocalizedStrings {
@@ -114,6 +115,7 @@ internal object IosLocalizedStrings {
         servingTemperatureValue = { minTemperature, maxTemperature ->
           formatServingTemperatureRange(minTemperature, maxTemperature)
         },
+        metricValue = { value -> formatLocalizedMetric(value, "es") },
         fermentation = "Fermentación",
         ingredients = "Ingredientes",
         recommendedGlasses = "Vasos recomendados",
@@ -205,6 +207,7 @@ internal object IosLocalizedStrings {
         servingTemperatureValue = { minTemperature, maxTemperature ->
           formatServingTemperatureRange(minTemperature, maxTemperature)
         },
+        metricValue = { value -> formatLocalizedMetric(value, "en") },
         fermentation = "Fermentation",
         ingredients = "Ingredients",
         recommendedGlasses = "Recommended glasses",
@@ -300,6 +303,7 @@ internal object IosLocalizedStrings {
         servingTemperatureValue = { minTemperature, maxTemperature ->
           formatServingTemperatureRange(minTemperature, maxTemperature)
         },
+        metricValue = { value -> formatLocalizedMetric(value, "fr") },
         fermentation = "Fermentation",
         ingredients = "Ingrédients",
         recommendedGlasses = "Verres recommandés",
@@ -325,6 +329,7 @@ internal object IosLocalizedStrings {
     released: String,
     servingTemperature: String,
     servingTemperatureValue: @Composable (Int, Int) -> String,
+    metricValue: (Double) -> String,
     fermentation: String,
     ingredients: String,
     recommendedGlasses: String,
@@ -348,8 +353,14 @@ internal object IosLocalizedStrings {
       released = released,
       servingTemperature = servingTemperature,
       servingTemperatureValue = servingTemperatureValue,
+      metricValue = metricValue,
       fermentation = fermentation,
       ingredients = ingredients,
       recommendedGlasses = recommendedGlasses,
     )
+
+  private fun formatLocalizedMetric(value: Double, language: String): String {
+    val decimalSeparator = if (language == "fr" || language == "es") ',' else '.'
+    return formatBeerMetric(value, decimalSeparator)
+  }
 }

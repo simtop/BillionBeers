@@ -25,6 +25,7 @@ import com.simtop.billionbeers.shared.beerdetail.BeerDetailStrings
 import com.simtop.billionbeers.shared.beerdetail.SharedBeerDetailContent
 import com.simtop.billionbeers.shared.beerdetail.formatServingTemperatureRange
 import com.simtop.presentation_utils.R
+import java.text.NumberFormat
 
 @Composable
 @Suppress("LongParameterList")
@@ -70,6 +71,14 @@ fun ComposeBeerDetail(
         released = stringResource(R.string.beer_detail_released_year_label),
         servingTemperature = stringResource(R.string.beer_detail_serving_temperature_label),
         servingTemperatureValue = { min, max -> formatServingTemperatureRange(min, max) },
+        metricValue = { value ->
+          NumberFormat.getNumberInstance(context.resources.configuration.locales[0])
+            .apply {
+              minimumFractionDigits = 0
+              maximumFractionDigits = 3
+            }
+            .format(value)
+        },
         fermentation = stringResource(R.string.beer_detail_fermentation_method_label),
         ingredients = stringResource(R.string.beer_detail_ingredients),
         recommendedGlasses = stringResource(R.string.beer_detail_recommended_glasses),

@@ -82,19 +82,14 @@ fun BeersSearchScreen(
   onSaveQuery: suspend (String, BeersQuery) -> Boolean,
   viewModel: BeersSearchViewModel = metroViewModel(),
 ) {
-  val viewState by viewModel.viewState.collectAsStateWithLifecycle()
-  // VM-owned (SavedStateHandle-backed) so process death restores the search and style selection.
-  val query by viewModel.query.collectAsStateWithLifecycle()
-  val styles by viewModel.styles.collectAsStateWithLifecycle()
-  val selectedStyle by viewModel.selectedStyle.collectAsStateWithLifecycle()
-  val activeQuery by viewModel.activeQuery.collectAsStateWithLifecycle()
+  val uiState by viewModel.uiState.collectAsStateWithLifecycle()
   val context = LocalContext.current
   val lifecycleOwner = LocalLifecycleOwner.current
   val loadMoreFailedMessage = stringResource(PresentationUtilsR.string.paged_list_load_more_failed)
 
   LaunchedEffect(viewModel, lifecycleOwner) {
     lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-      viewModel.events.collect { event ->
+      viewModel.uiEvents.collect { event ->
         when (event) {
           SharedBeersSearchEvent.ShowLoadMoreError -> showToast(context, loadMoreFailedMessage)
         }
@@ -103,12 +98,12 @@ fun BeersSearchScreen(
   }
 
   BeersSearchContent(
-    viewState = viewState,
-    query = query,
+    viewState = uiState.viewState,
+    query = uiState.query,
     onQueryChange = viewModel::onQueryChange,
-    styles = styles,
-    selectedStyle = selectedStyle,
-    activeQuery = activeQuery,
+    styles = uiState.styles,
+    selectedStyle = uiState.selectedStyle,
+    activeQuery = uiState.activeQuery,
     onStyleChange = viewModel::onStyleSelected,
     onRetryStyles = viewModel::retryStyles,
     onResetFilters = viewModel::onResetFilters,

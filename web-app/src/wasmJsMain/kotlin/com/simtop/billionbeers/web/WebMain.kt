@@ -53,6 +53,7 @@ import com.simtop.billionbeers.shared.app.SharedAppStrings
 import com.simtop.billionbeers.shared.app.formatCount
 import com.simtop.billionbeers.shared.beerbrowse.BrowseStrings
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailStrings
+import com.simtop.billionbeers.shared.beerdetail.formatBeerMetric
 import com.simtop.billionbeers.shared.beerdetail.formatServingTemperatureRange
 import com.simtop.billionbeers.shared.presentation.BeerListItemLabels
 import com.simtop.billionbeers.shared.presentation.SharedBackIcon
@@ -75,6 +76,13 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import org.jetbrains.skia.Image as SkiaImage
 import org.w3c.dom.events.Event
+
+private fun formatWebMetric(value: Double, languageTag: String): String {
+  val language = languageTag.substringBefore('-').substringBefore('_')
+  val commaDecimalLanguages = setOf("de", "es", "fr", "it", "nl", "pl", "pt", "ru", "tr", "uk")
+  val decimalSeparator = if (language in commaDecimalLanguages) ',' else '.'
+  return formatBeerMetric(value, decimalSeparator)
+}
 
 fun main() {
   ComposeViewport("root") { WebStartupHost() }
@@ -525,6 +533,7 @@ private val webStrings =
         servingTemperatureValue = { minTemperature, maxTemperature ->
           formatServingTemperatureRange(minTemperature, maxTemperature)
         },
+        metricValue = { value -> formatWebMetric(value, window.navigator.language) },
         fermentation = "Fermentation",
         ingredients = "Ingredients",
         recommendedGlasses = "Recommended glasses",

@@ -19,4 +19,9 @@ class BeerMetricFormatterTest {
   fun `formats zero without a trailing decimal`() {
     assertEquals("0", formatBeerMetric(0.0))
   }
+
+  @Test
+  fun `uses the supplied locale decimal separator`() {
+    assertEquals("41,5", formatBeerMetric(41.5, ','))
+  }
 }
