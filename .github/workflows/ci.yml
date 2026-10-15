@@ -85,6 +85,9 @@ jobs:
       - name: Test APK size budget guard
         run: python3 scripts/test_check_apk_size_budget.py
 
+      - name: Test baseline profile mapping guard
+        run: python3 scripts/test_check_baseline_profile_mapping.py
+
       - name: Check locale parity
         run: python3 .github/scripts/check-locale-parity.py
 
