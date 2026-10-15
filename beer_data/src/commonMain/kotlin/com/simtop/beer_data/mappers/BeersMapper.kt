@@ -16,6 +16,7 @@ import com.simtop.core.core.DiagnosticLevel
 import com.simtop.core.core.LanguageProvider
 import com.simtop.core.core.LogTag
 import com.simtop.core.core.Logger
+import com.simtop.core.core.logSafely
 import dev.zacsweers.metro.Inject
 
 class BeersMapper
@@ -27,9 +28,9 @@ constructor(private val languageProvider: LanguageProvider, private val logger: 
     val translation =
       response?.translations?.find { it.language.code == languageCode }
         ?: response?.translations?.find { it.language.code == BeersService.DEFAULT_LANGUAGE_CODE }
-    if (response?.id == null) logger.warn(LogTag.BEERS_MAPPER, MISSING_BEER_ID)
-    if (response?.name == null) logger.warn(LogTag.BEERS_MAPPER, MISSING_BEER_NAME)
-    if (translation == null) logger.warn(LogTag.BEERS_MAPPER, MISSING_BEER_TRANSLATION)
+    if (response?.id == null) logger.logSafely(LogTag.BEERS_MAPPER, MISSING_BEER_ID)
+    if (response?.name == null) logger.logSafely(LogTag.BEERS_MAPPER, MISSING_BEER_NAME)
+    if (translation == null) logger.logSafely(LogTag.BEERS_MAPPER, MISSING_BEER_TRANSLATION)
 
     return Beer(
       id = response?.id ?: "",
@@ -74,14 +75,14 @@ constructor(private val languageProvider: LanguageProvider, private val logger: 
 
   fun fromTypologyToBeerStyle(response: TypologyApiResponseItem): BeerStyle {
     if (response.id == null || response.name == null) {
-      logger.warn(LogTag.BEERS_MAPPER, MISSING_STYLE_ID_OR_NAME)
+      logger.logSafely(LogTag.BEERS_MAPPER, MISSING_STYLE_ID_OR_NAME)
     }
     return BeerStyle(id = response.id ?: "", name = response.name ?: "")
   }
 
   fun fromBreweryApiResponseItemToBrewery(response: BreweryApiResponseItem): Brewery {
     if (response.id == null || response.name == null) {
-      logger.warn(LogTag.BEERS_MAPPER, MISSING_BREWERY_ID_OR_NAME)
+      logger.logSafely(LogTag.BEERS_MAPPER, MISSING_BREWERY_ID_OR_NAME)
     }
     return Brewery(
       id = response.id ?: "",

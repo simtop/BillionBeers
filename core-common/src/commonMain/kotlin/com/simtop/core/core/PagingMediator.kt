@@ -127,9 +127,8 @@ interface PagingStorage<Key : Any, Value : Any> {
 }
 
 /** Network-only storage: pages accumulate in memory and vanish with the pager. */
-class InMemoryPagingStorage<Key : Any, Value : Any>(
-  private val keyOf: ((Value) -> Any)? = null,
-) : PagingStorage<Key, Value> {
+class InMemoryPagingStorage<Key : Any, Value : Any>(private val keyOf: ((Value) -> Any)? = null) :
+  PagingStorage<Key, Value> {
   private val pages = MutableStateFlow<List<Value>>(emptyList())
 
   override val data: Flow<List<Value>> = pages.asStateFlow()
@@ -142,8 +141,7 @@ class InMemoryPagingStorage<Key : Any, Value : Any>(
     pages.update { current -> distinct(current + page.items) }
   }
 
-  private fun distinct(items: List<Value>): List<Value> =
-    keyOf?.let(items::distinctBy) ?: items
+  private fun distinct(items: List<Value>): List<Value> = keyOf?.let(items::distinctBy) ?: items
 }
 
 /**
@@ -155,12 +153,11 @@ class InMemoryPagingStorage<Key : Any, Value : Any>(
  * a failed load-more re-requests the same page. A failed initial load can also be retried through
  * [loadNextPage]; with no stored position it resolves [initialKey] and stores it as a first page.
  *
- * [loadFirstPage] is also refresh: it hands the new first page to
- * [PagingStorage.storeFirstPage] and commits the refreshed position only after the fetch and store
- * succeed. A failed refresh therefore keeps both stored data and the last successful continuation
- * key; another [loadFirstPage] retries the refresh, while [loadNextPage] can continue after the
- * cached pages. Concurrent [loadNextPage] calls (e.g. scroll-spam) collapse into the single
- * in-flight load.
+ * [loadFirstPage] is also refresh: it hands the new first page to [PagingStorage.storeFirstPage]
+ * and commits the refreshed position only after the fetch and store succeed. A failed refresh
+ * therefore keeps both stored data and the last successful continuation key; another
+ * [loadFirstPage] retries the refresh, while [loadNextPage] can continue after the cached pages.
+ * Concurrent [loadNextPage] calls (e.g. scroll-spam) collapse into the single in-flight load.
  *
  * ```kotlin
  * val pager: Pager<Beer, FetchBeersError> = PagingMediator(

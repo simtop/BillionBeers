@@ -4,6 +4,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
+import kotlin.test.assertSame
+import kotlinx.coroutines.CancellationException
 
 class ObservabilityTest {
 
@@ -67,11 +69,53 @@ class ObservabilityTest {
         level = DiagnosticLevel.WARNING,
       )
 
-    logger.warn(LogTag.BEERS_MAPPER, diagnostic)
+    logger.logSafely(LogTag.BEERS_MAPPER, diagnostic)
 
-    assertEquals(LogPriority.WARN, logger.priority)
+    assertEquals(DiagnosticLevel.WARNING, logger.diagnostic?.level)
     assertEquals(LogTag.BEERS_MAPPER, logger.tag)
     assertEquals(diagnostic, logger.diagnostic)
+  }
+
+  @Test
+  fun `safe logging preserves every diagnostic severity`() {
+    val logger = RecordingLogger()
+    DiagnosticLevel.entries.forEach { level ->
+      val diagnostic = Diagnostic(DiagnosticArea.NETWORK, DiagnosticCode.UNKNOWN, level)
+      logger.logSafely(LogTag.BEERS_REMOTE_SOURCE, diagnostic)
+      assertEquals(diagnostic, logger.diagnostic)
+    }
+  }
+
+  @Test
+  fun `safe logging ignores ordinary adapter failures`() {
+    val logger = Logger { _, _ -> throw IllegalStateException("adapter") }
+    logger.logSafely(
+      LogTag.BEERS_REMOTE_SOURCE,
+      Diagnostic(DiagnosticArea.NETWORK, DiagnosticCode.UNKNOWN, DiagnosticLevel.ERROR),
+    )
+  }
+
+  @Test
+  fun `safe logging propagates cancellation and fatal failures`() {
+    val diagnostic =
+      Diagnostic(DiagnosticArea.NETWORK, DiagnosticCode.UNKNOWN, DiagnosticLevel.ERROR)
+    val cancellation = CancellationException("cancel")
+    val cancelledLogger = Logger { _, _ -> throw cancellation }
+    assertSame(
+      cancellation,
+      assertFailsWith<CancellationException> {
+        cancelledLogger.logSafely(LogTag.BEERS_REMOTE_SOURCE, diagnostic)
+      },
+    )
+
+    val fatalFailure = AssertionError("fatal")
+    val fatalLogger = Logger { _, _ -> throw fatalFailure }
+    assertSame(
+      fatalFailure,
+      assertFailsWith<AssertionError> {
+        fatalLogger.logSafely(LogTag.BEERS_REMOTE_SOURCE, diagnostic)
+      },
+    )
   }
 
   private class RecordingAnalyticsTracker : AnalyticsTracker {
@@ -101,12 +145,10 @@ class ObservabilityTest {
   }
 
   private class RecordingLogger : Logger {
-    var priority: LogPriority? = null
     var tag: LogTag? = null
     var diagnostic: Diagnostic? = null
 
-    override fun log(priority: LogPriority, tag: LogTag, diagnostic: Diagnostic) {
-      this.priority = priority
+    override fun log(tag: LogTag, diagnostic: Diagnostic) {
       this.tag = tag
       this.diagnostic = diagnostic
     }

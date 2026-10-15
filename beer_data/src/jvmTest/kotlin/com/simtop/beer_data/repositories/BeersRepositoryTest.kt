@@ -9,6 +9,7 @@ import com.simtop.beer_network.models.BreweryApiResponseItem
 import com.simtop.beer_network.models.EmbeddedCountry
 import com.simtop.beer_network.models.EmbeddedImage
 import com.simtop.beer_network.models.TypologyApiResponseItem
+import com.simtop.beer_network.network.BeersServiceHttpException
 import com.simtop.beer_network.network.BeersServiceNetworkException
 import com.simtop.beer_storage.api.MAX_STORED_FILTER_PRESETS
 import com.simtop.beer_storage.api.StoredBeer
@@ -21,16 +22,25 @@ import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.beerdomain.domain.models.CatalogCacheStatus
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
+import com.simtop.core.core.Diagnostic
+import com.simtop.core.core.DiagnosticArea
+import com.simtop.core.core.DiagnosticCode
+import com.simtop.core.core.DiagnosticLevel
 import com.simtop.core.core.Either
 import com.simtop.core.core.EpochTimeProvider
 import com.simtop.core.core.LanguageProvider
+import com.simtop.core.core.LogTag
+import com.simtop.core.core.Logger
 import com.simtop.core.core.NoOpLogger
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertSame
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.SerializationException
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
@@ -45,20 +55,187 @@ class BeersRepositoryTest {
   private val testDispatcher = UnconfinedTestDispatcher()
   private val now = 100_000_000L
 
+  private val diagnostics = mutableListOf<Pair<LogTag, Diagnostic>>()
+  private val recordingLogger = Logger { tag, diagnostic -> diagnostics += tag to diagnostic }
+
   @BeforeEach
   fun setUp() {
     beersRemoteSource = FakeBeersRemoteSource()
     beersLocalSource = FakeBeersLocalSource()
-    val beersMapper = BeersMapper(LanguageProvider { "en" }, NoOpLogger())
-    beersRepository =
-      BeersRepositoryImpl(
-        beersRemoteSource,
-        beersLocalSource,
-        beersMapper,
-        LanguageProvider { "en" },
-        EpochTimeProvider { now },
-      )
+    diagnostics.clear()
+    beersRepository = createRepository()
   }
+
+  private fun createRepository(
+    logger: Logger = recordingLogger,
+    mapper: BeersMapper = BeersMapper(LanguageProvider { "en" }, NoOpLogger()),
+  ) =
+    BeersRepositoryImpl(
+      beersRemoteSource,
+      beersLocalSource,
+      mapper,
+      LanguageProvider { "en" },
+      logger,
+      EpochTimeProvider { now },
+    )
+
+  @Test
+  fun `server and parse failures report exactly once for each fetch path`() =
+    runTest(testDispatcher) {
+      val cases =
+        listOf(
+          Triple(
+            BeersServiceHttpException(503),
+            FetchBeersError.Server,
+            Diagnostic(
+              DiagnosticArea.NETWORK,
+              DiagnosticCode.SERVER_FAILURE,
+              DiagnosticLevel.ERROR,
+            ),
+          ),
+          Triple(
+            SerializationException("private payload"),
+            FetchBeersError.Parse,
+            Diagnostic(
+              DiagnosticArea.DATA_MAPPING,
+              DiagnosticCode.PARSE_FAILURE,
+              DiagnosticLevel.ERROR,
+            ),
+          ),
+        )
+      cases.forEach { (failure, expectedError, expectedDiagnostic) ->
+        beersRemoteSource.setShouldThrowError(true, failure)
+        diagnostics.clear()
+        assertSame(failure, assertFailsWith<Exception> { beersRepository.getBeersPageFromApi(1) })
+        assertEquals(listOf(LogTag.BEERS_REMOTE_SOURCE to expectedDiagnostic), diagnostics)
+        diagnostics.clear()
+        assertEquals(Either.Left(expectedError), beersRepository.getBeerStyles())
+        assertEquals(listOf(LogTag.BEERS_REMOTE_SOURCE to expectedDiagnostic), diagnostics)
+        diagnostics.clear()
+        assertEquals(Either.Left(expectedError), beersRepository.getBreweries())
+        assertEquals(listOf(LogTag.BEERS_REMOTE_SOURCE to expectedDiagnostic), diagnostics)
+      }
+    }
+
+  @Test
+  fun `page mapper failures retain the cause and use data-mapping diagnostics`() =
+    runTest(testDispatcher) {
+      val failure = IllegalStateException("mapping")
+      val mapper = BeersMapper(LanguageProvider { throw failure }, NoOpLogger())
+      val repository = createRepository(mapper = mapper)
+      beersRemoteSource.setBeersResponse(listOf(BeersApiResponseItem(id = "1", name = "Beer")))
+
+      assertSame(
+        failure,
+        assertFailsWith<IllegalStateException> { repository.getBeersPageFromApi(1) },
+      )
+      assertEquals(
+        listOf(
+          LogTag.BEERS_MAPPER to
+            Diagnostic(
+              DiagnosticArea.DATA_MAPPING,
+              DiagnosticCode.UNKNOWN,
+              DiagnosticLevel.ERROR,
+            )
+        ),
+        diagnostics,
+      )
+    }
+
+  @Test
+  fun `unpaged mapping failures are not reported as remote failures`() =
+    runTest(testDispatcher) {
+      val failure = IllegalStateException("mapping")
+      fun <T> failingRows(): List<T> =
+        object : AbstractList<T>() {
+          override val size = 1
+
+          override fun get(index: Int): T = throw failure
+        }
+      beersRemoteSource.typologiesResponse = failingRows()
+      beersRemoteSource.breweriesResponse = failingRows()
+      val expected =
+        listOf(
+          LogTag.BEERS_MAPPER to
+            Diagnostic(
+              DiagnosticArea.DATA_MAPPING,
+              DiagnosticCode.UNKNOWN,
+              DiagnosticLevel.ERROR,
+            )
+        )
+
+      assertEquals(Either.Left(FetchBeersError.Unknown(failure)), beersRepository.getBeerStyles())
+      assertEquals(expected, diagnostics)
+      diagnostics.clear()
+      assertEquals(Either.Left(FetchBeersError.Unknown(failure)), beersRepository.getBreweries())
+      assertEquals(expected, diagnostics)
+    }
+
+  @Test
+  fun `page domain-to-storage mapping failures are reported before the database write`() =
+    runTest(testDispatcher) {
+      val failure = IllegalStateException("mapping")
+      val beers =
+        object : AbstractList<Beer>() {
+          override val size = 1
+
+          override fun get(index: Int): Beer = throw failure
+        }
+
+      assertSame(
+        failure,
+        assertFailsWith<IllegalStateException> {
+          beersRepository.insertPage(beers, "catalog:en", nextKey = 2, totalCount = 100)
+        },
+      )
+      assertEquals(
+        listOf(
+          LogTag.BEERS_MAPPER to
+            Diagnostic(
+              DiagnosticArea.DATA_MAPPING,
+              DiagnosticCode.UNKNOWN,
+              DiagnosticLevel.ERROR,
+            )
+        ),
+        diagnostics,
+      )
+      assertEquals(0, beersRepository.countDBEntries())
+    }
+
+  @Test
+  fun `fetch cancellation escapes without a failure diagnostic`() =
+    runTest(testDispatcher) {
+      val cancellation = CancellationException("cancel")
+      beersRemoteSource.setShouldThrowError(true, cancellation)
+      assertSame(
+        cancellation,
+        assertFailsWith<CancellationException> { beersRepository.getBeersPageFromApi(1) },
+      )
+      assertSame(
+        cancellation,
+        assertFailsWith<CancellationException> { beersRepository.getBeerStyles() },
+      )
+      assertSame(
+        cancellation,
+        assertFailsWith<CancellationException> { beersRepository.getBreweries() },
+      )
+      assertEquals(emptyList(), diagnostics)
+    }
+
+  @Test
+  fun `throwing logger cannot replace a typed fetch error or original cause`() =
+    runTest(testDispatcher) {
+      val repository =
+        createRepository(logger = Logger { _, _ -> throw IllegalArgumentException("adapter") })
+      val failure = IllegalStateException("original")
+      beersRemoteSource.setShouldThrowError(true, failure)
+      assertSame(
+        failure,
+        assertFailsWith<IllegalStateException> { repository.getBeersPageFromApi(1) },
+      )
+      assertEquals(Either.Left(FetchBeersError.Unknown(failure)), repository.getBeerStyles())
+      assertEquals(Either.Left(FetchBeersError.Unknown(failure)), repository.getBreweries())
+    }
 
   @Test
   fun `saved filter presets map through storage and support mutations`() =

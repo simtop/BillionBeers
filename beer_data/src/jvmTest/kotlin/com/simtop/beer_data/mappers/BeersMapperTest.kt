@@ -16,7 +16,6 @@ import com.simtop.core.core.DiagnosticArea
 import com.simtop.core.core.DiagnosticCode
 import com.simtop.core.core.DiagnosticLevel
 import com.simtop.core.core.LanguageProvider
-import com.simtop.core.core.LogPriority
 import com.simtop.core.core.LogTag
 import com.simtop.core.core.Logger
 import org.junit.jupiter.api.Test
@@ -28,6 +27,24 @@ class BeersMapperTest {
   private var languageCode = "en"
   private val recordingLogger = RecordingLogger()
   private val mapper = BeersMapper(LanguageProvider { languageCode }, recordingLogger)
+
+  @Test
+  fun `a failing logger does not turn missing-field warnings into mapping failures`() {
+    val throwingMapper =
+      BeersMapper(
+        LanguageProvider { "en" },
+        Logger { _, _ ->
+          throw IllegalStateException("adapter")
+        },
+      )
+
+    expectThat(throwingMapper.fromBeersApiResponseItemToBeer(null))
+      .isEqualTo(mapper.fromBeersApiResponseItemToBeer(null))
+    expectThat(throwingMapper.fromTypologyToBeerStyle(TypologyApiResponseItem()))
+      .isEqualTo(mapper.fromTypologyToBeerStyle(TypologyApiResponseItem()))
+    expectThat(throwingMapper.fromBreweryApiResponseItemToBrewery(BreweryApiResponseItem()))
+      .isEqualTo(mapper.fromBreweryApiResponseItemToBrewery(BreweryApiResponseItem()))
+  }
 
   private fun fullResponse() =
     BeersApiResponseItem(
@@ -407,8 +424,9 @@ class BeersMapperTest {
   private class RecordingLogger : Logger {
     val entries = mutableListOf<Diagnostic>()
 
-    override fun log(priority: LogPriority, tag: LogTag, diagnostic: Diagnostic) {
-      if (priority == LogPriority.WARN && tag == LogTag.BEERS_MAPPER) entries += diagnostic
+    override fun log(tag: LogTag, diagnostic: Diagnostic) {
+      if (diagnostic.level == DiagnosticLevel.WARNING && tag == LogTag.BEERS_MAPPER)
+        entries += diagnostic
     }
   }
 }

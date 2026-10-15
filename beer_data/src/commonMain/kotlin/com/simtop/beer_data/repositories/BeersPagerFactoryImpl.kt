@@ -9,6 +9,7 @@ import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.InMemoryPagingStorage
 import com.simtop.core.core.LanguageProvider
+import com.simtop.core.core.Logger
 import com.simtop.core.core.PageResult
 import com.simtop.core.core.Pager
 import com.simtop.core.core.PagingMediator
@@ -21,6 +22,7 @@ import kotlinx.coroutines.flow.combine
 class BeersPagerFactoryImpl(
   private val repository: BeersRepository,
   private val languageProvider: LanguageProvider,
+  private val logger: Logger,
 ) : BeersPagerFactory {
 
   override fun create(): Pager<Beer, FetchBeersError> {
@@ -39,12 +41,15 @@ class BeersPagerFactoryImpl(
       // - Otherwise (fresh install, or a legacy cache from before paging_state existed): the
       //   row-count estimate (N fully cached pages -> page N+1) keeps its original job.
       nextKeyFromStorage = {
-        repository.pagingNextKey(catalogSurface(languageProvider))
-          ?: when (repository.catalogCacheStatus()) {
-            CatalogCacheStatus.LanguageMismatch -> FIRST_PAGE
-            else ->
-              repository.countCatalogDBEntries() / BeersService.DEFAULT_ITEMS_PER_PAGE + FIRST_PAGE
-          }
+        withFetchDiagnostics(logger, FetchFailureOrigin.STORAGE) {
+          repository.pagingNextKey(catalogSurface(languageProvider))
+            ?: when (repository.catalogCacheStatus()) {
+              CatalogCacheStatus.LanguageMismatch -> FIRST_PAGE
+              else ->
+                repository.countCatalogDBEntries() / BeersService.DEFAULT_ITEMS_PER_PAGE +
+                  FIRST_PAGE
+            }
+        }
       },
     )
   }
