@@ -8,10 +8,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
@@ -28,7 +28,7 @@ fun FavoritesScreen(
   modifier: Modifier = Modifier,
   viewModel: FavoritesViewModel = metroViewModel(),
 ) {
-  val viewState by viewModel.viewState.collectAsState()
+  val viewState by viewModel.viewState.collectAsStateWithLifecycle()
   FavoritesContent(viewState = viewState, onBeerClick = onBeerClick, modifier = modifier)
 }
 

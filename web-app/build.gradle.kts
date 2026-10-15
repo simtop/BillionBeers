@@ -42,6 +42,7 @@ kotlin {
     }
     val wasmJsMain by getting {
       dependencies {
+        implementation(libs.lifecycle.runtime.compose)
         implementation("io.ktor:ktor-client-js:${libs.versions.io.ktor.get()}")
       }
     }

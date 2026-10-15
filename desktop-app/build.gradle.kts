@@ -40,6 +40,7 @@ dependencies {
   implementation(project(":core-common"))
   implementation(project(":shared:favorites"))
   implementation(catalog.billionBeersLibrary("lifecycle-viewmodel"))
+  implementation(catalog.billionBeersLibrary("lifecycle-runtime-compose"))
   implementation(libs.ktorClientContentNegotiation)
   implementation(libs.ktorClientOkhttp)
   implementation(libs.ktorSerializationKotlinxJson)

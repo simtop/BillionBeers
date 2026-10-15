@@ -9,12 +9,12 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.play.core.splitinstall.SplitInstallManager
 import com.simtop.billionbeers.BillionBeersApplication
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
@@ -89,7 +89,7 @@ class MainActivity : ComponentActivity() {
 // back to isSystemInDarkTheme(), so this changes nothing for release builds.
 @Composable
 private fun isDarkTheme(themeController: ThemeController): Boolean {
-  val mode by themeController.mode.collectAsState()
+  val mode by themeController.mode.collectAsStateWithLifecycle()
   return when (mode) {
     ThemeMode.LIGHT -> false
     ThemeMode.DARK -> true

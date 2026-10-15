@@ -13,9 +13,9 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,6 +34,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.ComposeViewport
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.rememberLifecycleOwner
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.shared.app.SharedAppChromeStrings
 import com.simtop.billionbeers.shared.app.SharedAppFavoritesStrings
@@ -57,6 +61,7 @@ import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.runSuspendCatching
 import com.simtop.navigation.contract.PortableRoute
 import kotlin.js.toJsString
+import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -85,6 +90,19 @@ private sealed interface WebStartupState {
 
 @Composable
 private fun WebStartupHost() {
+  val pageVisible = rememberDocumentVisible()
+  val lifecycleOwner =
+    rememberLifecycleOwner(
+      parent = null,
+      maxLifecycle = if (pageVisible) Lifecycle.State.RESUMED else Lifecycle.State.CREATED,
+    )
+  CompositionLocalProvider(LocalLifecycleOwner provides lifecycleOwner) {
+    WebStartupContent()
+  }
+}
+
+@Composable
+private fun WebStartupContent() {
   var attempt by remember { mutableStateOf(0) }
   var state by remember { mutableStateOf<WebStartupState>(WebStartupState.Loading) }
   val currentState by rememberUpdatedState(state)
@@ -122,6 +140,17 @@ private fun WebStartupHost() {
 }
 
 @Composable
+private fun rememberDocumentVisible(): Boolean {
+  var visible by remember { mutableStateOf(isWebDocumentVisible()) }
+  DisposableEffect(Unit) {
+    val onVisibilityChanged: (Event) -> Unit = { visible = isWebDocumentVisible() }
+    document.addEventListener("visibilitychange", onVisibilityChanged)
+    onDispose { document.removeEventListener("visibilitychange", onVisibilityChanged) }
+  }
+  return visible
+}
+
+@Composable
 private fun WebStartupLoading() {
   Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
     Text("Starting Billion Beers")
@@ -156,6 +185,9 @@ private fun webDataConfigForHost(): WebDataConfig =
   )
 
 @JsFun("() => crypto.randomUUID()") private external fun webHistorySessionId(): String
+
+@JsFun("() => document.visibilityState === 'visible'")
+private external fun isWebDocumentVisible(): Boolean
 
 @JsFun("() => typeof history.state === 'string' ? history.state : ''")
 private external fun webHistoryToken(): String
@@ -273,7 +305,7 @@ private class WebRouteSession(
 
 @Composable
 private fun WebShell(runtime: WebDataRuntime, session: WebRouteSession) {
-  val resolution by session.resolution.collectAsState()
+  val resolution by session.resolution.collectAsStateWithLifecycle()
   // The graph's unscoped pager-factory getter creates a new instance on every access.
   // Keep shell dependencies stable while external route resolution recomposes this host.
   val repository = remember(runtime) { runtime.repository }

@@ -5,7 +5,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -15,6 +14,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.billionbeers.core.designsystem.component.AccessibilityMatrixPreview
@@ -63,8 +63,8 @@ internal fun BrowseHomeScreen(
   onBreweryClick: (Brewery) -> Unit,
   viewModel: BrowseViewModel = metroViewModel(),
 ) {
-  val styles by viewModel.styles.collectAsState()
-  val breweries by viewModel.breweries.collectAsState()
+  val styles by viewModel.styles.collectAsStateWithLifecycle()
+  val breweries by viewModel.breweries.collectAsStateWithLifecycle()
   var selectedTab by rememberSaveable { mutableIntStateOf(TAB_STYLES) }
 
   LaunchedEffect(selectedTab) {

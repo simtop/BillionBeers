@@ -29,6 +29,7 @@ kotlin {
       implementation(project(":shared:beerdetail"))
       implementation(project(":shared:beerbrowse"))
       implementation(libs.billionBeersLibrary("lifecycle-viewmodel"))
+      implementation(libs.billionBeersLibrary("lifecycle-runtime-compose"))
     }
 
     jvmTest.dependencies {
@@ -42,6 +43,7 @@ kotlin {
 }
 
 dependencies {
+  jvmTestRuntimeOnly(libs.billionBeersLibrary("kotlinx-coroutines-swing"))
   jvmTestImplementation(libs.billionBeersLibrary("coroutinesTest"))
   jvmTestImplementation(libs.billionBeersLibrary("turbine"))
   jvmTestImplementation(libs.billionBeersLibrary("striktCore"))

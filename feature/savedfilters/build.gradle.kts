@@ -15,6 +15,7 @@ dependencies {
   implementation(project(":core:designsystem"))
   implementation(libs.kotlinx.serialization.json)
   implementation(libs.androidx.navigation3.runtime)
+  implementation(libs.lifecycle.runtime.compose)
 
   implementation(libs.androidx.material3.android)
   implementation(libs.androidx.ui.tooling.preview.android)

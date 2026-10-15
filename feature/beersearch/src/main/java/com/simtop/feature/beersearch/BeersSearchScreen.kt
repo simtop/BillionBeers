@@ -27,7 +27,6 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,6 +47,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeerStyle
@@ -82,12 +82,12 @@ fun BeersSearchScreen(
   onSaveQuery: suspend (String, BeersQuery) -> Boolean,
   viewModel: BeersSearchViewModel = metroViewModel(),
 ) {
-  val viewState by viewModel.viewState.collectAsState()
+  val viewState by viewModel.viewState.collectAsStateWithLifecycle()
   // VM-owned (SavedStateHandle-backed) so process death restores the search and style selection.
-  val query by viewModel.query.collectAsState()
-  val styles by viewModel.styles.collectAsState()
-  val selectedStyle by viewModel.selectedStyle.collectAsState()
-  val activeQuery by viewModel.activeQuery.collectAsState()
+  val query by viewModel.query.collectAsStateWithLifecycle()
+  val styles by viewModel.styles.collectAsStateWithLifecycle()
+  val selectedStyle by viewModel.selectedStyle.collectAsStateWithLifecycle()
+  val activeQuery by viewModel.activeQuery.collectAsStateWithLifecycle()
   val context = LocalContext.current
   val lifecycleOwner = LocalLifecycleOwner.current
   val loadMoreFailedMessage = stringResource(PresentationUtilsR.string.paged_list_load_more_failed)

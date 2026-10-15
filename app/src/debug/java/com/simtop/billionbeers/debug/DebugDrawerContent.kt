@@ -21,7 +21,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,6 +31,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.simtop.billionbeers.BillionBeersApplication
 import com.simtop.billionbeers.di.ApiEnvironment
 import com.simtop.billionbeers.di.ApiEnvironmentController
@@ -53,7 +53,7 @@ fun DebugDrawerContent(appGraph: BaseAppGraph, modifier: Modifier = Modifier) {
     Spacer(modifier = Modifier.padding(top = 12.dp))
     SectionTitle("API environment")
     val selectedEnvironment by
-      appGraph.apiEnvironmentController.selectedEnvironment.collectAsState()
+      appGraph.apiEnvironmentController.selectedEnvironment.collectAsStateWithLifecycle()
     ApiEnvironment.entries.forEach { environment ->
       RadioRow(
         label = "${environment.displayName} — ${environment.apiBaseUrl}",
@@ -70,7 +70,7 @@ fun DebugDrawerContent(appGraph: BaseAppGraph, modifier: Modifier = Modifier) {
 
     Spacer(modifier = Modifier.padding(top = 12.dp))
     SectionTitle("Network fault injection")
-    val faultMode by appGraph.networkFaultController.mode.collectAsState()
+    val faultMode by appGraph.networkFaultController.mode.collectAsStateWithLifecycle()
     NetworkFaultMode.entries.forEach { mode ->
       RadioRow(
         label = mode.name,
@@ -81,7 +81,7 @@ fun DebugDrawerContent(appGraph: BaseAppGraph, modifier: Modifier = Modifier) {
 
     Spacer(modifier = Modifier.padding(top = 12.dp))
     SectionTitle("Theme")
-    val themeMode by appGraph.themeController.mode.collectAsState()
+    val themeMode by appGraph.themeController.mode.collectAsStateWithLifecycle()
     ThemeMode.entries.forEach { mode ->
       RadioRow(
         label = mode.name,
@@ -92,7 +92,7 @@ fun DebugDrawerContent(appGraph: BaseAppGraph, modifier: Modifier = Modifier) {
 
     Spacer(modifier = Modifier.padding(top = 12.dp))
     SectionTitle("Feature flags")
-    val overrides by appGraph.featureFlagProvider.overrides.collectAsState()
+    val overrides by appGraph.featureFlagProvider.overrides.collectAsStateWithLifecycle()
     FeatureFlag.entries.forEach { flag ->
       SwitchRow(
         label = flag.displayName,

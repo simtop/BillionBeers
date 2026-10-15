@@ -28,7 +28,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,6 +42,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.simtop.beerdomain.domain.errors.MutateFilterPresetError
 import com.simtop.beerdomain.domain.errors.SaveFilterPresetError
 import com.simtop.beerdomain.domain.models.Beer
@@ -518,7 +518,7 @@ private fun ListDestination(
   onBrowse: () -> Unit,
   onSaveQuery: suspend (String) -> Boolean = { false },
 ) {
-  val viewState by entry.viewModel.beerListViewState.collectAsState()
+  val viewState by entry.viewModel.beerListViewState.collectAsStateWithLifecycle()
   Column(Modifier.fillMaxSize()) {
     Box(Modifier.weight(1f)) {
       SharedBeersListContent(
@@ -551,7 +551,7 @@ private fun FavoritesDestination(
   host: SharedAppHost,
   onBeerClick: (Beer) -> Unit,
 ) {
-  val viewState by entry.viewModel.viewState.collectAsState()
+  val viewState by entry.viewModel.viewState.collectAsStateWithLifecycle()
   SharedFavoritesContent(
     viewState = viewState,
     emptyText = strings.favorites.empty,
@@ -569,11 +569,11 @@ private fun SearchDestination(
   onBeerClick: (Beer) -> Unit,
   onSaveQuery: suspend (String) -> Boolean,
 ) {
-  val query by entry.viewModel.query.collectAsState()
-  val styles by entry.viewModel.styles.collectAsState()
-  val selectedStyle by entry.viewModel.selectedStyle.collectAsState()
-  val activeQuery by entry.viewModel.activeQuery.collectAsState()
-  val viewState by entry.viewModel.viewState.collectAsState()
+  val query by entry.viewModel.query.collectAsStateWithLifecycle()
+  val styles by entry.viewModel.styles.collectAsStateWithLifecycle()
+  val selectedStyle by entry.viewModel.selectedStyle.collectAsStateWithLifecycle()
+  val activeQuery by entry.viewModel.activeQuery.collectAsStateWithLifecycle()
+  val viewState by entry.viewModel.viewState.collectAsStateWithLifecycle()
   val count = (viewState as? CommonUiState.Success)?.data?.items?.size ?: 0
   Column(Modifier.fillMaxSize()) {
     OutlinedTextField(
@@ -640,8 +640,8 @@ private fun BrowseHomeDestination(
   onSelection: (BrowseSelection) -> Unit,
   onBack: () -> Unit,
 ) {
-  val styles by entry.viewModel.styles.collectAsState()
-  val breweries by entry.viewModel.breweries.collectAsState()
+  val styles by entry.viewModel.styles.collectAsStateWithLifecycle()
+  val breweries by entry.viewModel.breweries.collectAsStateWithLifecycle()
   SharedBrowseHomeContent(
     strings = strings.browseStrings,
     styles = styles,
@@ -670,7 +670,7 @@ private fun BrowseBeersDestination(
   onBeerClick: (Beer) -> Unit,
   onSaveQuery: suspend (String) -> Boolean,
 ) {
-  val viewState by entry.viewModel.viewState.collectAsState()
+  val viewState by entry.viewModel.viewState.collectAsStateWithLifecycle()
   Column(Modifier.fillMaxSize()) {
     SaveFilterForm(
       strings = strings,
@@ -706,7 +706,7 @@ private fun DetailDestination(
   animationsDisabled: Boolean,
   onMessage: (String) -> Unit,
 ) {
-  val state by entry.viewModel.beerDetailViewState.collectAsState()
+  val state by entry.viewModel.beerDetailViewState.collectAsStateWithLifecycle()
   LaunchedEffect(entry.viewModel) {
     entry.viewModel.events.collectLatest { event ->
       if (event is BeerDetailEvent.ShowError) {

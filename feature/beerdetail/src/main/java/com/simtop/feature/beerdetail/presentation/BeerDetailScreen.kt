@@ -6,7 +6,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -15,6 +14,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.repeatOnLifecycle
 import com.simtop.beerdomain.domain.models.Beer
@@ -51,7 +51,7 @@ fun BeerDetailScreenImpl(
         // instead of reverting to the (stale) nav-arg beer this composable was launched with.
         create(beer, extras.createSavedStateHandle())
       }
-    val viewState by viewModel.beerDetailViewState.collectAsState()
+    val viewState by viewModel.beerDetailViewState.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
     val favoriteUpdateFailedMessage = stringResource(R.string.favorite_update_failed)
     val availabilityUpdateFailedMessage = stringResource(R.string.error_failed_to_load_beers)
