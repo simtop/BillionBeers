@@ -64,6 +64,9 @@ jobs:
       - name: Test CI reporting
         run: make ci-report-test
 
+      - name: Test dependency API checker
+        run: python3 .github/scripts/test-check-dependency-api.py
+
       - name: Test feature scaffolding
         run: make new-feature-module-test
 
@@ -370,6 +373,93 @@ jobs:
       # cause) must be an intentional, re-baselined, reviewed change.
       - name: Run Dependency Guard
         run: make dependency-guard
+
+  dependency-api:
+    name: Dependency API Compatibility
+    needs: format-check
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      - name: Check dependency graph changes
+        id: graph
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin "$BASE_SHA"
+          if git diff --quiet "$BASE_SHA" HEAD -- \
+              gradle/libs.versions.toml app/dependencies/releaseRuntimeClasspath.txt \
+              gradle.properties settings.gradle.kts build.gradle.kts 'build-logic/**' '**/build.gradle.kts'; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No dependency inputs changed; API compatibility check is not applicable."
+            exit 0
+          fi
+          git show "$BASE_SHA:app/dependencies/releaseRuntimeClasspath.txt" > "$RUNNER_TEMP/releaseRuntimeClasspath.before.txt"
+          git show "HEAD:app/dependencies/releaseRuntimeClasspath.txt" > "$RUNNER_TEMP/releaseRuntimeClasspath.after.txt"
+          if cmp -s "$RUNNER_TEMP/releaseRuntimeClasspath.before.txt" "$RUNNER_TEMP/releaseRuntimeClasspath.after.txt"; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "The release runtime dependency graph is unchanged; API compatibility check is not applicable."
+            exit 0
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Set up JDK 23
+        if: steps.graph.outputs.changed == 'true'
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5
+        with:
+          java-version: '23'
+          distribution: temurin
+
+      - name: Setup Gradle
+        if: steps.graph.outputs.changed == 'true'
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6
+        with:
+          gradle-version: wrapper
+
+      - name: Make gradlew executable
+        if: steps.graph.outputs.changed == 'true'
+        run: chmod +x gradlew
+
+      - name: Resolve before and after release artifacts
+        if: steps.graph.outputs.changed == 'true'
+        env:
+          OLD_GRAPH: ${{ runner.temp }}/releaseRuntimeClasspath.before.txt
+          NEW_GRAPH: ${{ runner.temp }}/releaseRuntimeClasspath.after.txt
+          ARTIFACTS: ${{ runner.temp }}/dependency-api-artifacts
+        run: >-
+          ./gradlew --no-configuration-cache -I .github/scripts/resolve-dependency-api-artifacts.init.gradle
+          -PdependencyApiOldGraph="$OLD_GRAPH" -PdependencyApiNewGraph="$NEW_GRAPH" -PdependencyApiOutput="$ARTIFACTS"
+          :app:resolveDependencyApiArtifacts
+
+      - name: Download pinned japicmp
+        if: steps.graph.outputs.changed == 'true'
+        env:
+          # Digest published for this release asset by the japicmp GitHub release API.
+          JAPICMP_SHA256: 77df903fa3131828cdf9a3801688a9a2ddf6111e9bbbd99e06e1afc9b601b78e # gitleaks:allow
+        run: |
+          set -euo pipefail
+          curl -fsSL \
+            https://github.com/siom79/japicmp/releases/download/japicmp-base-0.26.3/japicmp-0.26.3-jar-with-dependencies.jar \
+            -o "$RUNNER_TEMP/japicmp.jar"
+          echo "$JAPICMP_SHA256  $RUNNER_TEMP/japicmp.jar" | sha256sum --check
+
+      - name: Compare changed dependency APIs
+        if: steps.graph.outputs.changed == 'true'
+        env:
+          OLD_GRAPH: ${{ runner.temp }}/releaseRuntimeClasspath.before.txt
+          NEW_GRAPH: ${{ runner.temp }}/releaseRuntimeClasspath.after.txt
+          ARTIFACTS: ${{ runner.temp }}/dependency-api-artifacts
+          JAPICMP: ${{ runner.temp }}/japicmp.jar
+        run: >-
+          python3 .github/scripts/check-dependency-api.py
+          --old-graph "$OLD_GRAPH" --new-graph "$NEW_GRAPH"
+          --artifacts "$ARTIFACTS" --japicmp "$JAPICMP"
 
   unit-tests:
     name: Unit Tests
@@ -988,6 +1078,7 @@ jobs:
       - screenshot-tests
       - instrumented-tests
       - native-tests
+      - dependency-api
     runs-on: ubuntu-latest
     steps:
       - name: Fail if any required job failed or was cancelled
@@ -1024,6 +1115,7 @@ jobs:
           needs.format-check.result == 'success' && needs.changes.result == 'success' &&
           needs.secret-scan.result == 'success' && needs.lint.result == 'success' &&
           needs.android-lint.result == 'success' && needs.dependency-guard.result == 'success' &&
+          (needs.dependency-api.result == 'success' || needs.dependency-api.result == 'skipped') &&
           needs.unit-tests.result == 'success' && needs.web-tests.result == 'success' &&
           needs.screenshot-tests.result == 'success' && needs.instrumented-tests.result == 'success' &&
           needs.native-tests.result == 'success'
@@ -1099,6 +1191,7 @@ jobs:
       - screenshot-tests
       - instrumented-tests
       - native-tests
+      - dependency-api
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
