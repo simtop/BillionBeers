@@ -29,7 +29,7 @@ class BeersPagerFactoryImpl(
     return PagingMediator(
       initialKey = FIRST_PAGE,
       fetchRemote = fetchPage(BeersQuery()),
-      classifyError = { it.toFetchBeersError(logger) },
+      classifyError = { it.toFetchBeersError() },
       // A long-lived pager can survive a language change; resolve its surface when each page is
       // written so the bookmark follows the language used to map that page's rows.
       storage = BeersPagingStorage(repository) { catalogSurface(languageProvider) },
@@ -41,12 +41,15 @@ class BeersPagerFactoryImpl(
       // - Otherwise (fresh install, or a legacy cache from before paging_state existed): the
       //   row-count estimate (N fully cached pages -> page N+1) keeps its original job.
       nextKeyFromStorage = {
-        repository.pagingNextKey(catalogSurface(languageProvider))
-          ?: when (repository.catalogCacheStatus()) {
-            CatalogCacheStatus.LanguageMismatch -> FIRST_PAGE
-            else ->
-              repository.countCatalogDBEntries() / BeersService.DEFAULT_ITEMS_PER_PAGE + FIRST_PAGE
-          }
+        withFetchDiagnostics(logger, FetchFailureOrigin.STORAGE) {
+          repository.pagingNextKey(catalogSurface(languageProvider))
+            ?: when (repository.catalogCacheStatus()) {
+              CatalogCacheStatus.LanguageMismatch -> FIRST_PAGE
+              else ->
+                repository.countCatalogDBEntries() / BeersService.DEFAULT_ITEMS_PER_PAGE +
+                  FIRST_PAGE
+            }
+        }
       },
     )
   }
@@ -60,7 +63,7 @@ class BeersPagerFactoryImpl(
     PagingMediator(
       initialKey = FIRST_PAGE,
       fetchRemote = fetchPage(query),
-      classifyError = { it.toFetchBeersError(logger) },
+      classifyError = { it.toFetchBeersError() },
       storage = AvailabilityOverlayStorage(InMemoryPagingStorage(keyOf = Beer::id), repository),
     )
 

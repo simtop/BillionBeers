@@ -16,6 +16,8 @@ class FetchBeersErrorMappingTest {
         FetchBeersError.NotFound to CommonUiErrorKey.NoBeersFound,
         FetchBeersError.Forbidden to CommonUiErrorKey.AccessDenied,
         FetchBeersError.RateLimited to CommonUiErrorKey.RateLimited,
+        FetchBeersError.Server to CommonUiErrorKey.FailedToLoadBeers,
+        FetchBeersError.Parse to CommonUiErrorKey.FailedToLoadBeers,
         FetchBeersError.Unknown(IllegalStateException("private failure")) to
           CommonUiErrorKey.FailedToLoadBeers,
       )

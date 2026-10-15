@@ -1,5 +1,6 @@
 package com.simtop.beer_data.repositories
 
+import app.cash.turbine.test
 import com.simtop.beer_data.fakes.FakeBeersLocalSource
 import com.simtop.beer_data.fakes.FakeBeersRemoteSource
 import com.simtop.beer_data.mappers.BeersMapper
@@ -8,18 +9,33 @@ import com.simtop.beer_network.models.Language
 import com.simtop.beer_network.models.Translation
 import com.simtop.beer_network.network.BeersServiceHttpException
 import com.simtop.beer_network.network.BeersServiceNetworkException
+import com.simtop.beer_storage.api.BeersStorage
+import com.simtop.beer_storage.api.StoredBeer
+import com.simtop.beer_storage.api.StoredPagingState
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.CatalogCacheStatus
 import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.core.core.Diagnostic
+import com.simtop.core.core.DiagnosticArea
+import com.simtop.core.core.DiagnosticCode
+import com.simtop.core.core.DiagnosticLevel
 import com.simtop.core.core.LanguageProvider
+import com.simtop.core.core.LogTag
+import com.simtop.core.core.Logger
 import com.simtop.core.core.NoOpLogger
+import com.simtop.core.core.PagingEvent
 import com.simtop.core.core.PagingState
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertSame
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.SerializationException
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
@@ -37,21 +53,256 @@ class BeersPagerFactoryImplTest {
   private var currentLanguage = "en"
   private val languageProvider = LanguageProvider { currentLanguage }
 
+  private val diagnostics = mutableListOf<Pair<LogTag, Diagnostic>>()
+  private val recordingLogger = Logger { tag, diagnostic -> diagnostics += tag to diagnostic }
+
   @BeforeEach
   fun setUp() {
     beersRemoteSource = FakeBeersRemoteSource()
     beersLocalSource = FakeBeersLocalSource()
     currentLanguage = "en"
-    val beersMapper = BeersMapper(languageProvider, NoOpLogger())
+    diagnostics.clear()
+    installStorage(beersLocalSource)
+  }
+
+  private fun installStorage(storage: BeersStorage, logger: Logger = recordingLogger) {
     repository =
       BeersRepositoryImpl(
         beersRemoteSource,
-        beersLocalSource,
-        beersMapper,
+        storage,
+        BeersMapper(languageProvider, NoOpLogger()),
         languageProvider,
-        NoOpLogger(),
+        logger,
       )
-    factory = BeersPagerFactoryImpl(repository, languageProvider, NoOpLogger())
+    factory = BeersPagerFactoryImpl(repository, languageProvider, logger)
+  }
+
+  @Test
+  fun `catalog and query fetch failures report exactly once`() =
+    runTest(testDispatcher) {
+      val cases =
+        listOf(
+          Triple(
+            BeersServiceHttpException(503),
+            FetchBeersError.Server,
+            Diagnostic(
+              DiagnosticArea.NETWORK,
+              DiagnosticCode.SERVER_FAILURE,
+              DiagnosticLevel.ERROR,
+            ),
+          ),
+          Triple(
+            SerializationException("private payload"),
+            FetchBeersError.Parse,
+            Diagnostic(
+              DiagnosticArea.DATA_MAPPING,
+              DiagnosticCode.PARSE_FAILURE,
+              DiagnosticLevel.ERROR,
+            ),
+          ),
+        )
+      cases.forEach { (failure, expectedError, expectedDiagnostic) ->
+        beersRemoteSource.setShouldThrowError(true, failure)
+        listOf(factory.create(), factory.create(BeersQuery(search = "ipa"))).forEach { pager ->
+          diagnostics.clear()
+          pager.loadFirstPage()
+          assertEquals(
+            PagingState.Error(expectedError, isFirstPage = true),
+            pager.pagingState.value,
+          )
+          assertEquals(listOf(LogTag.BEERS_REMOTE_SOURCE to expectedDiagnostic), diagnostics)
+        }
+      }
+    }
+
+  @Test
+  fun `failed first-page and append writes report database failures and retry the same page`() =
+    runTest(testDispatcher) {
+      val failure = IllegalStateException("storage")
+      var writeFailure: Exception? = failure
+      val storage =
+        object : BeersStorage by beersLocalSource {
+          override suspend fun insertPage(
+            beers: List<StoredBeer>,
+            surface: String,
+            nextKey: Int?,
+            totalCount: Int?,
+            pageKey: Int?,
+          ) {
+            writeFailure?.let { throw it }
+            beersLocalSource.insertPage(beers, surface, nextKey, totalCount, pageKey)
+          }
+        }
+      installStorage(storage)
+      beersRemoteSource.setBeersResponse(listOf(apiItem("1")), totalCount = 100)
+      val pager = factory.create()
+      pager.loadFirstPage()
+      assertEquals(
+        PagingState.Error(FetchBeersError.Unknown(failure), true),
+        pager.pagingState.value,
+      )
+      assertEquals(emptyList(), pager.data.first())
+      assertDatabaseFailure()
+
+      writeFailure = null
+      pager.loadNextPage()
+      assertEquals(PagingState.Success(100), pager.pagingState.value)
+      assertEquals(listOf("1"), pager.data.first().map { it.id })
+
+      diagnostics.clear()
+      writeFailure = failure
+      beersRemoteSource.setBeersResponse(listOf(apiItem("2")), totalCount = 100)
+      pager.events.test {
+        pager.loadNextPage()
+        assertEquals(PagingEvent.LoadMoreFailed(FetchBeersError.Unknown(failure)), awaitItem())
+        cancelAndIgnoreRemainingEvents()
+      }
+      assertEquals(
+        PagingState.Error(FetchBeersError.Unknown(failure), false),
+        pager.pagingState.value,
+      )
+      assertEquals(listOf("1"), pager.data.first().map { it.id })
+      assertDatabaseFailure()
+
+      writeFailure = null
+      pager.loadNextPage()
+      assertEquals(listOf(1, 1, 2, 2), beersRemoteSource.requestedPages)
+      assertEquals(listOf("1", "2"), pager.data.first().map { it.id })
+      assertEquals(PagingState.Success(100), pager.pagingState.value)
+    }
+
+  @Test
+  fun `initial and post-refresh bookmark failures report database origin without losing cached data`() =
+    runTest(testDispatcher) {
+      val failure = IllegalStateException("bookmark")
+      var readFailure: Exception? = failure
+      val storage =
+        object : BeersStorage by beersLocalSource {
+          override suspend fun getPagingState(surface: String): StoredPagingState? {
+            readFailure?.let { throw it }
+            return beersLocalSource.getPagingState(surface)
+          }
+        }
+      installStorage(storage)
+      beersRemoteSource.setBeersResponse(listOf(apiItem("1")), totalCount = 100)
+      val pager = factory.create()
+      pager.loadNextPage()
+      assertEquals(
+        PagingState.Error(FetchBeersError.Unknown(failure), false),
+        pager.pagingState.value,
+      )
+      assertEquals(emptyList(), beersRemoteSource.requestedPages)
+      assertDatabaseFailure()
+
+      readFailure = null
+      pager.loadFirstPage()
+      assertEquals(PagingState.Success(100), pager.pagingState.value)
+      diagnostics.clear()
+      readFailure = failure
+      pager.loadFirstPage()
+      assertEquals(
+        PagingState.Error(FetchBeersError.Unknown(failure), true),
+        pager.pagingState.value,
+      )
+      assertEquals(listOf("1"), pager.data.first().map { it.id })
+      assertDatabaseFailure()
+
+      readFailure = null
+      beersRemoteSource.setBeersResponse(listOf(apiItem("2")), totalCount = 100)
+      pager.loadNextPage()
+      assertEquals(listOf(1, 1, 2), beersRemoteSource.requestedPages)
+      assertEquals(PagingState.Success(100), pager.pagingState.value)
+    }
+
+  @Test
+  fun `continuation cache-status and count failures are reported as database failures`() =
+    runTest(testDispatcher) {
+      val failure = IllegalStateException("cache read")
+      listOf(true, false).forEach { failCacheStatus ->
+        val failingRepository =
+          object : BeersRepository by repository {
+            override suspend fun catalogCacheStatus(
+              policy: com.simtop.core.core.CachePolicy
+            ): CatalogCacheStatus {
+              if (failCacheStatus) throw failure
+              return CatalogCacheStatus.Empty
+            }
+
+            override suspend fun countCatalogDBEntries(): Int = throw failure
+          }
+        val pager =
+          BeersPagerFactoryImpl(failingRepository, languageProvider, recordingLogger).create()
+        diagnostics.clear()
+        pager.loadNextPage()
+        assertEquals(
+          PagingState.Error(FetchBeersError.Unknown(failure), false),
+          pager.pagingState.value,
+        )
+        assertDatabaseFailure()
+      }
+    }
+
+  @Test
+  fun `storage cancellation escapes without diagnostics and leaves paging retryable`() =
+    runTest(testDispatcher) {
+      val cancellation = CancellationException("cancel")
+      var cancelled = true
+      val storage =
+        object : BeersStorage by beersLocalSource {
+          override suspend fun insertPage(
+            beers: List<StoredBeer>,
+            surface: String,
+            nextKey: Int?,
+            totalCount: Int?,
+            pageKey: Int?,
+          ) {
+            if (cancelled) throw cancellation
+            beersLocalSource.insertPage(beers, surface, nextKey, totalCount, pageKey)
+          }
+
+          override suspend fun getPagingState(surface: String): StoredPagingState? {
+            if (cancelled) throw cancellation
+            return beersLocalSource.getPagingState(surface)
+          }
+        }
+      installStorage(storage)
+      beersRemoteSource.setBeersResponse(listOf(apiItem("1")), totalCount = 100)
+      val pager = factory.create()
+      assertSame(cancellation, assertFailsWith<CancellationException> { pager.loadNextPage() })
+      assertSame(cancellation, assertFailsWith<CancellationException> { pager.loadFirstPage() })
+      assertEquals(emptyList(), diagnostics)
+      cancelled = false
+      pager.loadFirstPage()
+      assertEquals(PagingState.Success(100), pager.pagingState.value)
+    }
+
+  @Test
+  fun `a failing logger does not leave pagers loading or replace the original cause`() =
+    runTest(testDispatcher) {
+      installStorage(beersLocalSource, Logger { _, _ -> throw IllegalArgumentException("adapter") })
+      val failure = IllegalStateException("original")
+      beersRemoteSource.setShouldThrowError(true, failure)
+      listOf(factory.create(), factory.create(BeersQuery(search = "ipa"))).forEach { pager ->
+        pager.loadFirstPage()
+        assertEquals(
+          PagingState.Error(FetchBeersError.Unknown(failure), true),
+          pager.pagingState.value,
+        )
+      }
+    }
+
+  private fun assertDatabaseFailure() {
+    assertEquals(
+      listOf(
+        LogTag.BEERS_LOCAL_SOURCE to
+          Diagnostic(
+            DiagnosticArea.DATABASE,
+            DiagnosticCode.LOCAL_STORAGE_FAILURE,
+            DiagnosticLevel.ERROR,
+          )
+      ),
+      diagnostics,
+    )
   }
 
   // Regression test: availability is treated as local-only (the server value only seeds first
@@ -380,8 +631,7 @@ class BeersPagerFactoryImplTest {
 
       repository.updateFavorite(beer.copy(isFavorite = true))
 
-      expectThat(pager.data.first().single())
-        .isEqualTo(beer.copy(isFavorite = true))
+      expectThat(pager.data.first().single()).isEqualTo(beer.copy(isFavorite = true))
       expectThat(repository.countDBEntries()).isEqualTo(1)
     }
 

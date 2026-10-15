@@ -45,19 +45,35 @@ class BeersRepositoryImpl(
 
   override suspend fun getBeersPageFromApi(page: Int, query: BeersQuery): BeerPage {
     val remotePage =
-      beersRemoteSource.getListOfBeers(page, query.search, query.styleId, query.breweryId)
-    return BeerPage(
-      items = remotePage.items.map { beersMapper.fromBeersApiResponseItemToBeer(it) },
-      totalCount = remotePage.totalCount,
-    )
+      withFetchDiagnostics(logger, FetchFailureOrigin.REMOTE) {
+        beersRemoteSource.getListOfBeers(page, query.search, query.styleId, query.breweryId)
+      }
+    return withFetchDiagnostics(logger, FetchFailureOrigin.MAPPING) {
+      BeerPage(
+        items = remotePage.items.map { beersMapper.fromBeersApiResponseItemToBeer(it) },
+        totalCount = remotePage.totalCount,
+      )
+    }
   }
 
   override suspend fun getBeerStyles(): Either<FetchBeersError, List<BeerStyle>> = fetchClassified {
-    beersRemoteSource.getTypologies().map { beersMapper.fromTypologyToBeerStyle(it) }
+    val styles =
+      withFetchDiagnostics(logger, FetchFailureOrigin.REMOTE) {
+        beersRemoteSource.getTypologies()
+      }
+    withFetchDiagnostics(logger, FetchFailureOrigin.MAPPING) {
+      styles.map { beersMapper.fromTypologyToBeerStyle(it) }
+    }
   }
 
   override suspend fun getBreweries(): Either<FetchBeersError, List<Brewery>> = fetchClassified {
-    beersRemoteSource.getBreweries().map { beersMapper.fromBreweryApiResponseItemToBrewery(it) }
+    val breweries =
+      withFetchDiagnostics(logger, FetchFailureOrigin.REMOTE) {
+        beersRemoteSource.getBreweries()
+      }
+    withFetchDiagnostics(logger, FetchFailureOrigin.MAPPING) {
+      breweries.map { beersMapper.fromBreweryApiResponseItemToBrewery(it) }
+    }
   }
 
   /**
@@ -71,7 +87,7 @@ class BeersRepositoryImpl(
     } catch (e: CancellationException) {
       throw e
     } catch (e: Exception) {
-      Either.Left(e.toFetchBeersError(logger))
+      Either.Left(e.toFetchBeersError())
     }
 
   @Suppress("TooGenericExceptionCaught")
@@ -109,14 +125,15 @@ class BeersRepositoryImpl(
     nextKey: Int?,
     totalCount: Int?,
     pageKey: Int?,
-  ) =
-    beersStorage.insertPage(
-      beers.map { beersMapper.fromBeerToStoredBeer(it) },
-      surface,
-      nextKey,
-      totalCount,
-      pageKey,
-    )
+  ) {
+    val storedBeers =
+      withFetchDiagnostics(logger, FetchFailureOrigin.MAPPING) {
+        beers.map { beersMapper.fromBeerToStoredBeer(it) }
+      }
+    withFetchDiagnostics(logger, FetchFailureOrigin.STORAGE) {
+      beersStorage.insertPage(storedBeers, surface, nextKey, totalCount, pageKey)
+    }
+  }
 
   override suspend fun pagingNextKey(surface: String): Int? =
     beersStorage.getPagingState(surface)?.nextKey
@@ -149,7 +166,9 @@ class BeersRepositoryImpl(
     }
 
   @Suppress("TooGenericExceptionCaught")
-  override suspend fun saveFilterPreset(preset: SavedFilterPreset): Either<SaveFilterPresetError, Unit> =
+  override suspend fun saveFilterPreset(
+    preset: SavedFilterPreset
+  ): Either<SaveFilterPresetError, Unit> =
     try {
       beersStorage.saveFilterPreset(
         com.simtop.beer_storage.api.StoredFilterPreset(
@@ -171,10 +190,13 @@ class BeersRepositoryImpl(
     }
 
   override suspend fun renameFilterPreset(id: String, name: String, updatedAt: Long) =
-    mutateFilterPreset { beersStorage.renameFilterPreset(id, name, updatedAt) }
+    mutateFilterPreset {
+      beersStorage.renameFilterPreset(id, name, updatedAt)
+    }
 
-  override suspend fun deleteFilterPreset(id: String) =
-    mutateFilterPreset { beersStorage.deleteFilterPreset(id) }
+  override suspend fun deleteFilterPreset(id: String) = mutateFilterPreset {
+    beersStorage.deleteFilterPreset(id)
+  }
 
   @Suppress("TooGenericExceptionCaught")
   private suspend inline fun mutateFilterPreset(

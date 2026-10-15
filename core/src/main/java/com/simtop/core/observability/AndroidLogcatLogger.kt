@@ -2,7 +2,7 @@ package com.simtop.core.observability
 
 import android.util.Log
 import com.simtop.core.core.Diagnostic
-import com.simtop.core.core.LogPriority
+import com.simtop.core.core.DiagnosticLevel
 import com.simtop.core.core.LogTag
 import com.simtop.core.core.Logger
 
@@ -11,13 +11,12 @@ import com.simtop.core.core.Logger
  * vocabulary; no caller-controlled message or throwable reaches Logcat.
  */
 class AndroidLogcatLogger : Logger {
-  override fun log(priority: LogPriority, tag: LogTag, diagnostic: Diagnostic) {
+  override fun log(tag: LogTag, diagnostic: Diagnostic) {
     val message = "${diagnostic.area}:${diagnostic.code}:${diagnostic.level}"
-    when (priority) {
-      LogPriority.DEBUG -> Log.d(tag.value, message)
-      LogPriority.INFO -> Log.i(tag.value, message)
-      LogPriority.WARN -> Log.w(tag.value, message)
-      LogPriority.ERROR -> Log.e(tag.value, message)
+    when (diagnostic.level) {
+      DiagnosticLevel.INFO -> Log.i(tag.value, message)
+      DiagnosticLevel.WARNING -> Log.w(tag.value, message)
+      DiagnosticLevel.ERROR -> Log.e(tag.value, message)
     }
   }
 }
