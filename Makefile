@@ -103,9 +103,7 @@ setup: ## Setup local development environment (Git hooks, Git LFS, etc.).
 		git lfs pull; \
 	fi
 	@echo "🪝 Installing Git hooks..."
-	@mkdir -p .git/hooks
-	@cp config/git-hooks/pre-commit .git/hooks/pre-commit
-	@chmod +x .git/hooks/pre-commit
+	@bash scripts/install-git-hooks.sh
 	@echo "🎉 Setup complete! You're ready to build and test BillionBeers."
 
 setup-ai-tools: ## Install RTK for local output compression (optional outside gateway sessions).
@@ -310,6 +308,7 @@ ci-report-test: ## Test CI diagnosis, evidence parsing, and incremental comment 
 	@$(MAKE) --no-print-directory make-help-test
 	@$(MAKE) --no-print-directory benchmark-budget-test
 	@$(MAKE) --no-print-directory build-time-budget-test
+	@python3 scripts/test_install_git_hooks.py
 	@python3 scripts/check_dependabot_catalog_coverage.py
 	@python3 scripts/test_check_dependabot_catalog_coverage.py
 	@python3 scripts/test_module_stability_report.py
