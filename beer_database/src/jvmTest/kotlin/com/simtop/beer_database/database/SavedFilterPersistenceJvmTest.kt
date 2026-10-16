@@ -6,6 +6,7 @@ import com.simtop.beer_database.localsources.BeersLocalSourceImpl
 import com.simtop.beer_storage.api.FilterPresetCapacityReachedException
 import com.simtop.beer_storage.api.MAX_STORED_FILTER_PRESETS
 import com.simtop.beer_storage.api.StoredFilterPreset
+import com.simtop.core.core.SystemEpochTimeProvider
 import java.io.File
 import kotlin.io.path.createTempDirectory
 import kotlinx.coroutines.flow.first
@@ -33,7 +34,7 @@ class SavedFilterPersistenceJvmTest {
 
   @Test
   fun capacityRejectionPreservesDurableRowsAndAllowsUpdateAndRetry() = runBlocking {
-    val storage = BeersLocalSourceImpl(db)
+    val storage = BeersLocalSourceImpl(db, SystemEpochTimeProvider())
     val presets = (0 until MAX_STORED_FILTER_PRESETS).map { index ->
       initial.copy(id = "preset-$index", name = "Preset $index", updatedAt = index.toLong())
     }
@@ -59,7 +60,7 @@ class SavedFilterPersistenceJvmTest {
 
   @Test
   fun concurrentLogicalPresetSavesCoalesceAtomically() = runBlocking {
-    val storage = BeersLocalSourceImpl(db)
+    val storage = BeersLocalSourceImpl(db, SystemEpochTimeProvider())
     val first = initial.copy(id = "candidate-1", updatedAt = 2L)
     val second = initial.copy(id = "candidate-2", updatedAt = 3L)
 
@@ -95,7 +96,7 @@ class SavedFilterPersistenceJvmTest {
     expected: List<StoredFilterPreset>,
     mutate: suspend (BeersLocalSourceImpl) -> Unit,
   ) {
-    val storage = BeersLocalSourceImpl(db)
+    val storage = BeersLocalSourceImpl(db, SystemEpochTimeProvider())
     storage.saveFilterPreset(initial)
     // Abort after the statement changes the row, exercising SQLite rollback rather than a fake.
     executeSql(
@@ -125,7 +126,10 @@ class SavedFilterPersistenceJvmTest {
   private suspend fun assertReopenedPresets(expected: List<StoredFilterPreset>) {
     val reopened = openDatabase()
     try {
-      assertEquals(expected, BeersLocalSourceImpl(reopened).observeSavedFilterPresets().first())
+      assertEquals(
+        expected,
+        BeersLocalSourceImpl(reopened, SystemEpochTimeProvider()).observeSavedFilterPresets().first(),
+      )
     } finally {
       reopened.close()
     }
@@ -134,7 +138,7 @@ class SavedFilterPersistenceJvmTest {
   private fun reopenStorage(): BeersLocalSourceImpl {
     db.close()
     db = openDatabase()
-    return BeersLocalSourceImpl(db)
+    return BeersLocalSourceImpl(db, SystemEpochTimeProvider())
   }
 
   private fun openDatabase(): BeersDatabase =

@@ -3,8 +3,11 @@ package com.simtop.beer_database.database
 import androidx.room.Room
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import com.simtop.beer_database.localsources.BeersLocalSourceImpl
 import com.simtop.beer_database.models.BeerDbModel
 import com.simtop.beer_database.models.SavedFilterPresetDbModel
+import com.simtop.beer_storage.api.StoredBeer
+import com.simtop.core.core.EpochTimeProvider
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -44,6 +47,33 @@ class BeersDatabaseJvmTest {
     assertEquals(1, db.beersDao().getCount())
     assertEquals(2, db.beersDao().getPagingState("catalog:en")?.nextKey)
     assertEquals(206, db.beersDao().getPagingState("catalog:en")?.totalCount)
+  }
+
+  @Test
+  fun localSourceUsesInjectedClockForCatalogRefreshTimestamp() = runBlocking {
+    val storage = BeersLocalSourceImpl(db, EpochTimeProvider { 123L })
+
+    storage.insertPage(
+      beers =
+        listOf(
+          StoredBeer(
+            id = "1",
+            name = "Beer",
+            tagline = "",
+            description = "",
+            imageUrl = "",
+            abv = 0.0,
+            ibu = 0.0,
+            foodPairing = emptyList(),
+          )
+        ),
+      surface = "catalog:en",
+      nextKey = 2,
+      totalCount = 1,
+      pageKey = 1,
+    )
+
+    assertEquals(123L, db.beersDao().getPagingState("catalog:en")?.refreshedAt)
   }
 
   @Test
