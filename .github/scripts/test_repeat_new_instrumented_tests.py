@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import importlib.util
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 import time
@@ -12,6 +13,7 @@ import unittest
 from unittest.mock import patch
 
 SCRIPT = Path(__file__).with_name("repeat-new-instrumented-tests.py")
+ROOT = SCRIPT.parents[2]
 SPEC = importlib.util.spec_from_file_location("repeat_new_instrumented_tests", SCRIPT)
 assert SPEC and SPEC.loader
 repeat_tests = importlib.util.module_from_spec(SPEC)
@@ -121,7 +123,146 @@ class RepeatNewInstrumentedTestsTest(unittest.TestCase):
 
         self.assertEqual(2, run.call_count)
         self.assertIn("UI_TEST_CLASS=com.example.AppUiTest", run.call_args_list[0].args[0])
-        self.assertEqual("./gradlew --rerun-tasks", run.call_args_list[0].kwargs["env"]["GRADLE_RUNNER"])
+        self.assertIn("UI_TEST_RERUN=true", run.call_args_list[0].args[0])
+        self.assertNotIn("--rerun-tasks", run.call_args_list[0].kwargs["env"].get("GRADLE_RUNNER", ""))
+
+    def test_groups_classes_by_module_for_each_repeat_and_checks_each_class(self):
+        targets = [
+            repeat_tests.TestTarget("feature/beerslist", "com.example.SecondTest"),
+            repeat_tests.TestTarget("app", "com.example.ZebraTest"),
+            repeat_tests.TestTarget("app", "com.example.AlphaTest"),
+        ]
+        with (
+            patch.dict("os.environ", {"GRADLE_RUNNER": "./gradlew --profile"}),
+            patch.object(repeat_tests.subprocess, "run") as run,
+            patch.object(repeat_tests, "validate_fresh_report") as validate,
+        ):
+            repeat_tests.repeat_targets(self.root, targets, repetitions=2)
+
+        self.assertEqual(4, run.call_count)
+        expected_calls = [
+            (":app", "com.example.AlphaTest,com.example.ZebraTest"),
+            (":app", "com.example.AlphaTest,com.example.ZebraTest"),
+            (":feature:beerslist", "com.example.SecondTest"),
+            (":feature:beerslist", "com.example.SecondTest"),
+        ]
+        for call, (module, selector) in zip(run.call_args_list, expected_calls):
+            command = call.args[0]
+            self.assertIn(f"MODULE={module}", command)
+            self.assertIn(f"UI_TEST_CLASS={selector}", command)
+            self.assertIn("UI_TEST_RERUN=true", command)
+            self.assertEqual("./gradlew --profile", call.kwargs["env"]["GRADLE_RUNNER"])
+        self.assertEqual(
+            [
+                "com.example.AlphaTest",
+                "com.example.ZebraTest",
+                "com.example.AlphaTest",
+                "com.example.ZebraTest",
+                "com.example.SecondTest",
+                "com.example.SecondTest",
+            ],
+            [call.args[1] for call in validate.call_args_list],
+        )
+
+    def test_grouped_repeat_rejects_a_skipped_selected_class(self):
+        report_root = self.root / "app/build/outputs/androidTest-results/managedDevice/atdApi35"
+        report = report_root / "TEST-example.xml"
+
+        def run_and_write_report(*args, **kwargs):
+            report_root.mkdir(parents=True, exist_ok=True)
+            report.write_text(
+                '<testsuites><testsuite>'
+                '<testcase classname="com.example.FirstTest" name="runs"/>'
+                '<testcase classname="com.example.SecondTest" name="skips"><skipped/></testcase>'
+                '</testsuite></testsuites>',
+                encoding="utf-8",
+            )
+            return subprocess.CompletedProcess(args[0], 0)
+
+        targets = [
+            repeat_tests.TestTarget("app", "com.example.FirstTest"),
+            repeat_tests.TestTarget("app", "com.example.SecondTest"),
+        ]
+        with patch.object(repeat_tests.subprocess, "run", side_effect=run_and_write_report):
+            with self.assertRaisesRegex(RuntimeError, "com.example.SecondTest"):
+                repeat_tests.repeat_targets(self.root, targets, repetitions=1)
+
+    def test_grouped_repeat_rejects_a_missing_selected_class(self):
+        report_root = self.root / "app/build/outputs/androidTest-results/managedDevice/atdApi35"
+        report = report_root / "TEST-example.xml"
+
+        def run_and_write_report(*args, **kwargs):
+            report_root.mkdir(parents=True, exist_ok=True)
+            report.write_text(
+                '<testsuites><testsuite>'
+                '<testcase classname="com.example.FirstTest" name="runs"/>'
+                '</testsuite></testsuites>',
+                encoding="utf-8",
+            )
+            return subprocess.CompletedProcess(args[0], 0)
+
+        targets = [
+            repeat_tests.TestTarget("app", "com.example.FirstTest"),
+            repeat_tests.TestTarget("app", "com.example.SecondTest"),
+        ]
+        with patch.object(repeat_tests.subprocess, "run", side_effect=run_and_write_report):
+            with self.assertRaisesRegex(RuntimeError, "com.example.SecondTest"):
+                repeat_tests.repeat_targets(self.root, targets, repetitions=1)
+
+    def test_make_places_task_scoped_rerun_after_android_test_task(self):
+        result = subprocess.run(
+            [
+                "make",
+                "--no-print-directory",
+                "-n",
+                "ui-test-managed",
+                "MODULE=:app",
+                "UI_TEST_CLASS=com.example.FirstTest,com.example.SecondTest",
+                "UI_TEST_RERUN=true",
+                "GRADLE_RUNNER=./gradlew",
+            ],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=True,
+            timeout=10,
+        )
+        command = result.stdout.strip()
+        self.assertIn(":app:atdApi35DebugAndroidTest --rerun", command)
+        self.assertIn(
+            '-Pandroid.testInstrumentationRunnerArguments.class="com.example.FirstTest,com.example.SecondTest"',
+            command,
+        )
+        self.assertNotIn("--rerun-tasks", command)
+
+        default = subprocess.run(
+            [
+                "make",
+                "--no-print-directory",
+                "-n",
+                "ui-test-managed",
+                "MODULE=:app",
+                "GRADLE_RUNNER=./gradlew",
+            ],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=True,
+            timeout=10,
+        )
+        self.assertNotIn("--rerun", default.stdout)
+
+    def test_propagates_managed_test_failure_without_validating_report(self):
+        failure = subprocess.CalledProcessError(1, ["make", "ui-test-managed"])
+        targets = [repeat_tests.TestTarget("app", "com.example.AppUiTest")]
+        with (
+            patch.object(repeat_tests.subprocess, "run", side_effect=failure),
+            patch.object(repeat_tests, "validate_fresh_report") as validate,
+        ):
+            with self.assertRaises(subprocess.CalledProcessError):
+                repeat_tests.repeat_targets(self.root, targets, repetitions=1)
+
+        validate.assert_not_called()
 
 
 if __name__ == "__main__":
