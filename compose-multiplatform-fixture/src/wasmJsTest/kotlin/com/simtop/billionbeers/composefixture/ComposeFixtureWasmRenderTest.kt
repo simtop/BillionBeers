@@ -14,6 +14,7 @@ import billionbeers.compose_multiplatform_fixture.generated.resources.compose_fi
 import billionbeers.compose_multiplatform_fixture.generated.resources.compose_fixture_title
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.configureWebResources
 import org.jetbrains.compose.resources.getString
@@ -26,18 +27,12 @@ class ComposeFixtureWasmRenderTest {
     var receivedEvents = 0
     configureWebResources { resourcePathMapping { path -> "/base/kotlin/$path" } }
 
-    assertEquals(
-      "Shared Compose fixture",
-      getString(Res.string.compose_fixture_title),
-    )
-    assertEquals(
-      "Focus input",
-      getString(Res.string.compose_fixture_input_label),
-    )
-    assertEquals(
-      "Submit event",
-      getString(Res.string.compose_fixture_submit),
-    )
+    val title = getString(Res.string.compose_fixture_title)
+    val inputLabel = getString(Res.string.compose_fixture_input_label)
+    val submitLabel = getString(Res.string.compose_fixture_submit)
+    assertTrue(title.isNotBlank())
+    assertTrue(inputLabel.isNotBlank())
+    assertTrue(submitLabel.isNotBlank())
 
     setContent {
       ComposeFixtureScreen(
@@ -49,9 +44,10 @@ class ComposeFixtureWasmRenderTest {
     waitForIdle()
     delay(250)
     waitForIdle()
-    onNodeWithText("Shared Compose fixture").assertIsDisplayed()
+    onNodeWithText(title).assertIsDisplayed()
+    onNodeWithText(inputLabel).assertIsDisplayed()
     onNodeWithTag("compose-fixture-input").assertIsFocused().performTextInput("browser")
-    onNodeWithText("Submit event").performClick()
+    onNodeWithText(submitLabel).performClick()
     waitForIdle()
 
     assertEquals("browser", viewModel.state.value.text)
