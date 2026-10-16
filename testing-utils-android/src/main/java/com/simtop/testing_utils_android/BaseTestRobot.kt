@@ -86,22 +86,66 @@ open class BaseTestRobot(private val composeTestRule: ComposeTestRule) {
     }
   }
 
+  /** Fails when a displayed clickable target is smaller than the design-system minimum. */
+  fun assertEveryClickableMeetsMinimumTouchTarget() {
+    val candidates =
+      composeTestRule.onAllNodes(
+        SemanticsMatcher("clickable node smaller than the minimum touch target") { node ->
+          node.config.contains(SemanticsActions.OnClick)
+        }
+      )
+    val minimumSizePx = MIN_INTERACTIVE_TARGET_DP * composeTestRule.density.density
+    val undersized =
+      (0 until candidates.fetchSemanticsNodes().size)
+        .map { candidates[it] }
+        .filter { it.isDisplayed() }
+        .mapNotNull { interaction ->
+          val node = interaction.fetchSemanticsNode()
+          val bounds = node.touchBoundsInRoot
+          if (bounds.width < minimumSizePx || bounds.height < minimumSizePx) {
+            Triple(node.id, node.config.getOrNull(SemanticsProperties.TestTag), bounds)
+          } else {
+            null
+          }
+        }
+
+    if (undersized.isNotEmpty()) {
+      val detail =
+        undersized.joinToString("\n") { (id, testTag, bounds) ->
+          val widthDp = bounds.width / composeTestRule.density.density
+          val heightDp = bounds.height / composeTestRule.density.density
+          "  - node $id, testTag=${testTag ?: "(none)"}, " +
+            "touch target=${widthDp}dp × ${heightDp}dp"
+        }
+      throw AssertionError(
+        "${undersized.size} displayed clickable node(s) are below " +
+          "${MIN_INTERACTIVE_TARGET_DP}dp in width or height:\n$detail"
+      )
+    }
+  }
+
+  /** Checks labels and minimum target size for every displayed clickable node. */
+  fun assertInteractiveNodesAreAccessible() {
+    assertEveryClickableIsLabelled()
+    assertEveryClickableMeetsMinimumTouchTarget()
+  }
+
   fun clickOnNodeWithTag(testTag: String) {
     composeTestRule.onNodeWithTag(testTag).performClick()
     recreateActivityIfRequested()
-    assertEveryClickableIsLabelled()
+    assertInteractiveNodesAreAccessible()
   }
 
   fun clickOnNodeWithText(text: String) {
     composeTestRule.onNodeWithText(text).performClick()
     recreateActivityIfRequested()
-    assertEveryClickableIsLabelled()
+    assertInteractiveNodesAreAccessible()
   }
 
   fun clickOnNodeWithContentDescription(label: String) {
     composeTestRule.onNodeWithContentDescription(label).performClick()
     recreateActivityIfRequested()
-    assertEveryClickableIsLabelled()
+    assertInteractiveNodesAreAccessible()
   }
 
   fun assertTextIsDisplayed(text: String) {
@@ -127,7 +171,7 @@ open class BaseTestRobot(private val composeTestRule: ComposeTestRule) {
   fun typeIntoNodeWithTag(testTag: String, text: String) {
     composeTestRule.onNodeWithTag(testTag).performTextInput(text)
     recreateActivityIfRequested()
-    assertEveryClickableIsLabelled()
+    assertInteractiveNodesAreAccessible()
   }
 
   fun assertNodeWithTagIsFocused(testTag: String) {
@@ -159,7 +203,7 @@ open class BaseTestRobot(private val composeTestRule: ComposeTestRule) {
   fun scrollToIndexInNodeWithTag(testTag: String, index: Int) {
     composeTestRule.onNodeWithTag(testTag).performScrollToIndex(index)
     recreateActivityIfRequested()
-    assertEveryClickableIsLabelled()
+    assertInteractiveNodesAreAccessible()
   }
 
   fun waitForIdle() {
@@ -190,7 +234,7 @@ open class BaseTestRobot(private val composeTestRule: ComposeTestRule) {
     Espresso.pressBack()
     composeTestRule.waitForIdle()
     recreateActivityIfRequested()
-    assertEveryClickableIsLabelled()
+    assertInteractiveNodesAreAccessible()
   }
 
   /**
@@ -230,6 +274,7 @@ open class BaseTestRobot(private val composeTestRule: ComposeTestRule) {
   }
 
   private companion object {
+    const val MIN_INTERACTIVE_TARGET_DP = 48f
     const val UI_TEST_CHECK_SCREEN_ROTATION_ARGUMENT = "UI_TEST_CHECK_SCREEN_ROTATION"
     const val ACTIVITY_RECREATION_TIMEOUT_MILLIS = 10_000L
   }

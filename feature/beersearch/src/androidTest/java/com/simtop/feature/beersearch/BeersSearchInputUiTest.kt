@@ -81,11 +81,11 @@ class BeersSearchInputUiTest {
     setContent()
 
     searchScreen(composeTestRule) {
-      assertEveryClickableIsLabelled()
+      assertInteractiveNodesAreAccessible()
 
       typeQuery("stout")
       assertClearActionIsPresent()
-      assertEveryClickableIsLabelled()
+      assertInteractiveNodesAreAccessible()
     }
   }
 
