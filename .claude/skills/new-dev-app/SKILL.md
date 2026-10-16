@@ -1,11 +1,10 @@
 ---
 name: new-dev-app
-description: Scaffold AND finish a standalone app-dev-<feature> module for BillionBeers -
-  runs scripts/new-dev-app.sh, then investigates the target feature module and fills in
+description: Scaffold AND finish a standalone app-dev feature module for BillionBeers -
+  runs scripts/new-dev-app.sh, then investigates the selected feature module and fills in
   the generated TODOs (fake repository bindings, real screen wiring) so the result is a
   working, installable dev-app rather than a stub. Use when asked to create, generate, or
-  finish a dev-app / dev sandbox for a specific feature module (e.g. "make a dev app for
-  beerdetail").
+  finish a dev-app or dev sandbox for a specific feature module (for example, beerdetail).
 metadata:
   keywords:
     - android
