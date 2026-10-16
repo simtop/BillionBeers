@@ -317,6 +317,7 @@ private fun WebShell(runtime: WebDataRuntime, session: WebRouteSession) {
   // The graph's unscoped pager-factory getter creates a new instance on every access.
   // Keep shell dependencies stable while external route resolution recomposes this host.
   val repository = remember(runtime) { runtime.repository }
+  val catalogMetadataRepository = remember(runtime) { runtime.catalogMetadataRepository }
   val pagerFactory = remember(runtime) { runtime.pagerFactory }
   val coroutineDispatcher = remember { com.simtop.core.core.DefaultCoroutineDispatcherProvider() }
   LaunchedEffect(session) { session.start() }
@@ -326,6 +327,7 @@ private fun WebShell(runtime: WebDataRuntime, session: WebRouteSession) {
     is WebRouteResolution.Ready ->
       SharedAppShell(
         repository = repository,
+        catalogMetadataRepository = catalogMetadataRepository,
         savedFilterPresetsRepository = runtime.savedFilterPresetsRepository,
         pagerFactory = pagerFactory,
         coroutineDispatcher = coroutineDispatcher,

@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.Flow
  * [BeersPagerFactory]): this interface is bound as an app-scoped singleton, and a process-lifetime
  * instance must not own screen-lifetime state like a page counter.
  */
-interface BeersRepository : BeerCatalogMetadataRepository {
+interface BeersRepository {
   suspend fun countDBEntries(): Int
 
   fun observeBeers(): Flow<List<Beer>>

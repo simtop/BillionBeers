@@ -48,6 +48,7 @@ import com.simtop.beerdomain.domain.errors.SaveFilterPresetError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
+import com.simtop.beerdomain.domain.repositories.BeerCatalogMetadataRepository
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.beerdomain.domain.repositories.SavedFilterPresetsRepository
@@ -189,6 +190,7 @@ data class SharedAppHost(
 @Composable
 fun SharedAppShell(
   repository: BeersRepository,
+  catalogMetadataRepository: BeerCatalogMetadataRepository,
   savedFilterPresetsRepository: SavedFilterPresetsRepository,
   pagerFactory: BeersPagerFactory,
   coroutineDispatcher: CoroutineDispatcherProvider,
@@ -200,9 +202,16 @@ fun SharedAppShell(
 ) {
   val onNavigationEvent by rememberUpdatedState(host.onNavigationEvent)
   val navigation =
-    remember(repository, savedFilterPresetsRepository, pagerFactory, coroutineDispatcher) {
+    remember(
+      repository,
+      catalogMetadataRepository,
+      savedFilterPresetsRepository,
+      pagerFactory,
+      coroutineDispatcher,
+    ) {
       SharedAppNavigationState(
         repository,
+        catalogMetadataRepository,
         savedFilterPresetsRepository,
         pagerFactory,
         coroutineDispatcher,

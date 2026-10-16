@@ -41,6 +41,7 @@ class SharedAppLayoutPolicyTest {
     val repository = FakeBeersRepository()
     return SharedAppNavigationState(
       repository = repository,
+      catalogMetadataRepository = repository,
       savedFilterPresetsRepository = FakeSavedFilterPresetsRepository(),
       pagerFactory = FakeBeersPagerFactory(repository),
       coroutineDispatcher = DefaultCoroutineDispatcherProvider(),
