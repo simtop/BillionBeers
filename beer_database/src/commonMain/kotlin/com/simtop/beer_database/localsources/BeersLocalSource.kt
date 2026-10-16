@@ -10,6 +10,7 @@ import com.simtop.beer_storage.api.StoredBeer
 import com.simtop.beer_storage.api.StoredFilterPreset
 import com.simtop.beer_storage.api.StoredPagingState
 import com.simtop.core.core.EpochTimeProvider
+import com.simtop.core.core.SystemEpochTimeProvider
 import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -19,7 +20,7 @@ private const val MAX_PRESET_NAME_LENGTH = 64
 @Inject
 class BeersLocalSourceImpl(
   private val db: BeersDatabase,
-  private val epochTimeProvider: EpochTimeProvider,
+  private val epochTimeProvider: EpochTimeProvider = SystemEpochTimeProvider(),
 ) : BeersStorage {
 
   override fun observeBeers(): Flow<List<StoredBeer>> =
