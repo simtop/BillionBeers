@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -11,6 +12,7 @@ import unittest
 from pathlib import Path
 
 SCRIPT = Path(__file__).with_name("report-master-ci-failure.py")
+ROOT = SCRIPT.parents[2]
 SPEC = importlib.util.spec_from_file_location("master_ci_failure_report", SCRIPT)
 assert SPEC and SPEC.loader
 MODULE = importlib.util.module_from_spec(SPEC)
@@ -34,6 +36,36 @@ class FakeGh:
 
 
 class MasterCiFailureReportTest(unittest.TestCase):
+    def test_workflow_checks_out_the_failed_commit_with_minimal_permissions(self) -> None:
+        workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+        job_match = re.search(
+            r"(?ms)^  master-failure-issue:\n(?P<job>.*?)(?=^  [\w-]+:|\Z)",
+            workflow,
+        )
+        self.assertIsNotNone(job_match, "master-failure-issue job is missing")
+        assert job_match is not None
+        job = job_match.group("job")
+
+        permissions_match = re.search(r"(?ms)^    permissions:\n(?P<permissions>.*?)(?=^    \w|\Z)", job)
+        self.assertIsNotNone(permissions_match, "job permissions are missing")
+        assert permissions_match is not None
+        self.assertRegex(permissions_match.group("permissions"), r"(?m)^      contents: read$")
+        self.assertRegex(permissions_match.group("permissions"), r"(?m)^      issues: write$")
+
+        checkout = re.search(
+            r"(?ms)^      - name: Checkout code\n"
+            r"        uses: actions/checkout@([0-9a-f]{40})(?:\s+# .*?)?\n"
+            r"        with:\n"
+            r"          ref: \$\{\{ github\.sha \}\}\n"
+            r"          persist-credentials: false\n",
+            job,
+        )
+        self.assertIsNotNone(checkout, "failure reporter must check out the triggering commit safely")
+        self.assertLess(
+            job.index("- name: Checkout code"),
+            job.index("run: python3 .github/scripts/report-master-ci-failure.py"),
+        )
+
     def test_body_lists_failed_and_cancelled_lanes_with_latest_run(self) -> None:
         body = MODULE.render_body(
             "simtop/BillionBeers",
