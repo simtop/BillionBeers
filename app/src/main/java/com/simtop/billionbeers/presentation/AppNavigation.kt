@@ -29,10 +29,8 @@ import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.billionbeers.R
 import com.simtop.core.core.Either
-import com.simtop.feature.beersearch.beerSearchNavigationContribution
 import com.simtop.feature.beerslist.BeersListScreen
-import com.simtop.feature.favorites.favoritesNavigationContribution
-import com.simtop.feature.savedfilters.savedFiltersNavigationContribution
+import com.simtop.navigation.AndroidNavigationActions
 import com.simtop.navigation.BeerBrowse
 import com.simtop.navigation.BeerDetail
 import com.simtop.navigation.BeersList
@@ -92,6 +90,13 @@ fun AppNavigation(
       presetLimitMessage = presetLimitMessage,
       presetSaveFailedMessage = presetSaveFailedMessage,
     )
+  val navigationActions =
+    AndroidNavigationActions(
+      navigate = navigate,
+      onBeerClick = ::navigateToBeerDetail,
+      onBack = { backStack.removeLastOrNull() },
+      onSaveQuery = ::savePreset,
+    )
 
   Scaffold(
     modifier = modifier,
@@ -137,19 +142,9 @@ fun AppNavigation(
             )
           }
 
-          favoritesNavigationContribution(onBeerClick = ::navigateToBeerDetail)
-
-          savedFiltersNavigationContribution(
-            onApply = { navigate(it) },
-            onBack = { backStack.removeLastOrNull() },
-            onBeerClick = ::navigateToBeerDetail,
-          )
-
-          beerSearchNavigationContribution(
-            onBeerClick = ::navigateToBeerDetail,
-            onBack = { backStack.removeLastOrNull() },
-            onSaveQuery = ::savePreset,
-          )
+          viewModel.navigationContributions.forEach { contribution ->
+            contribution.contribute(this, navigationActions)
+          }
 
           entry<BeerDetail>(metadata = ListDetailSceneStrategy.detailPane()) { key ->
             DynamicFeatureContent(

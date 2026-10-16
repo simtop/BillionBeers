@@ -2,10 +2,22 @@ package com.simtop.feature.favorites
 
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
-import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.navigation.AndroidNavigationActions
+import com.simtop.navigation.AndroidNavigationContribution
 import com.simtop.navigation.Favorites
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesIntoSet
+import dev.zacsweers.metro.Inject
 
-/** Registers the favorites destination owned by this feature. */
-fun EntryProviderScope<NavKey>.favoritesNavigationContribution(onBeerClick: (Beer) -> Unit) {
-  entry<Favorites> { FavoritesScreen(onBeerClick = onBeerClick) }
+@ContributesIntoSet(AppScope::class)
+@Inject
+class FavoritesNavigationContribution : AndroidNavigationContribution {
+  override fun contribute(
+    scope: EntryProviderScope<NavKey>,
+    actions: AndroidNavigationActions,
+  ) {
+    with(scope) {
+      entry<Favorites> { FavoritesScreen(onBeerClick = actions.onBeerClick) }
+    }
+  }
 }
