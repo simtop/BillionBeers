@@ -26,7 +26,7 @@ class BeersSearchViewModelAdapterTest {
         BeersSearchViewModel(
           coroutineDispatcher = mainDispatcher.dispatcherProvider,
           beersPagerFactory = FakeBeersPagerFactory(repository),
-          beersRepository = repository,
+          catalogMetadataRepository = repository,
           savedStateHandle = savedStateHandle,
         )
 
@@ -47,7 +47,7 @@ class BeersSearchViewModelAdapterTest {
         BeersSearchViewModel(
           coroutineDispatcher = mainDispatcher.dispatcherProvider,
           beersPagerFactory = FakeBeersPagerFactory(repository),
-          beersRepository = repository,
+          catalogMetadataRepository = repository,
           savedStateHandle = savedStateHandle,
         )
 

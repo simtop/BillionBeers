@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
+import com.simtop.beerdomain.domain.repositories.BeerCatalogMetadataRepository
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.beerdomain.domain.repositories.SavedFilterPresetsRepository
@@ -108,14 +109,14 @@ internal class FavoritesEntry(
 
 internal class SearchEntry(
   id: Long,
-  repository: BeersRepository,
+  catalogMetadataRepository: BeerCatalogMetadataRepository,
   pagerFactory: BeersPagerFactory,
   coroutineDispatcher: CoroutineDispatcherProvider,
 ) :
   ViewModelSharedAppEntry<BeersSearchViewModel>(
     id = id,
     route = PortableRoute.BeersSearch,
-    viewModel = BeersSearchViewModel(coroutineDispatcher, pagerFactory, repository),
+    viewModel = BeersSearchViewModel(coroutineDispatcher, pagerFactory, catalogMetadataRepository),
   ) {
   val listState = LazyListState()
 }
@@ -148,12 +149,12 @@ internal class SavedFilterResultsEntry(
 
 internal class BrowseHomeEntry(
   id: Long,
-  repository: BeersRepository,
+  catalogMetadataRepository: BeerCatalogMetadataRepository,
 ) :
   ViewModelSharedAppEntry<BrowseViewModel>(
     id = id,
     route = PortableRoute.BeerBrowse,
-    viewModel = BrowseViewModel(repository),
+    viewModel = BrowseViewModel(catalogMetadataRepository),
   ) {
   var selectedTab by mutableStateOf(0)
 }
