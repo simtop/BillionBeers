@@ -3,38 +3,24 @@ package com.simtop.feature.beerdetail
 import androidx.lifecycle.SavedStateHandle
 import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.beerdomain.fakes.fakeBeerModel
+import com.simtop.billionbeers.testing_utils.MainDispatcherExtension
 import com.simtop.core.core.CommonUiState
 import com.simtop.feature.beerdetail.presentation.BeerDetailViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 
 @OptIn(ExperimentalCoroutinesApi::class)
 internal class BeerDetailViewModelAdapterTest {
-  private val dispatcher = StandardTestDispatcher()
-
-  @BeforeEach
-  fun setUp() {
-    Dispatchers.setMain(dispatcher)
-  }
-
-  @AfterEach
-  fun tearDown() {
-    Dispatchers.resetMain()
-  }
+  @JvmField @RegisterExtension val mainDispatcher = MainDispatcherExtension()
 
   @Test
   fun `restored beer takes precedence over navigation beer`() =
-    runTest(dispatcher) {
+    runTest(mainDispatcher.testDispatcher) {
       val restoredBeer = fakeBeerModel.copy(isFavorite = true)
       val savedStateHandle = SavedStateHandle()
       val firstViewModel =
@@ -57,7 +43,7 @@ internal class BeerDetailViewModelAdapterTest {
 
   @Test
   fun `optimistic update persists latest beer in saved state`() =
-    runTest(dispatcher) {
+    runTest(mainDispatcher.testDispatcher) {
       val savedStateHandle = SavedStateHandle()
       val viewModel = BeerDetailViewModel(FakeBeersRepository(), fakeBeerModel, savedStateHandle)
 

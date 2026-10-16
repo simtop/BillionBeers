@@ -4,19 +4,15 @@ import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.beerdomain.fakes.FakeBeersRepository
+import com.simtop.billionbeers.testing_utils.MainDispatcherExtension
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.Either
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 import strikt.api.expectThat
 import strikt.assertions.isA
 import strikt.assertions.isEqualTo
@@ -25,16 +21,11 @@ import strikt.assertions.isEqualTo
 class BrowseViewModelTest {
 
   private val fakeRepository = FakeBeersRepository()
-
-  private lateinit var testDispatcher: TestDispatcher
-
-  @BeforeEach
-  fun setUp() {
-    testDispatcher = UnconfinedTestDispatcher()
-    Dispatchers.setMain(testDispatcher)
-  }
-
-  @AfterEach fun tearDown() = Dispatchers.resetMain()
+  @JvmField
+  @RegisterExtension
+  val mainDispatcher = MainDispatcherExtension(UnconfinedTestDispatcher())
+  private val testDispatcher
+    get() = mainDispatcher.testDispatcher
 
   private fun buildViewModel() = BrowseViewModel(fakeRepository)
 
