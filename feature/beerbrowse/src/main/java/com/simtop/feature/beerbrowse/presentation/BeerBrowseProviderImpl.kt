@@ -4,15 +4,15 @@ import androidx.annotation.Keep
 import androidx.compose.runtime.Composable
 import androidx.navigation3.runtime.NavKey
 import com.simtop.beerdomain.domain.models.BeersQuery
-import com.simtop.navigation.BeerBrowse
 import com.simtop.navigation.DynamicFeatureContentProvider
+import com.simtop.navigation.contract.PortableRoute
 
 @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
 @Keep
-class BeerBrowseProviderImpl : DynamicFeatureContentProvider<BeerBrowse> {
+class BeerBrowseProviderImpl : DynamicFeatureContentProvider<PortableRoute.BeerBrowse> {
   @Composable
   override fun Content(
-    key: BeerBrowse,
+    key: PortableRoute.BeerBrowse,
     onBack: () -> Unit,
     onNavigate: (NavKey) -> Unit,
     onSaveQuery: (suspend (String, BeersQuery) -> Boolean)?,

@@ -1,6 +1,7 @@
 package com.simtop.navigation
 
 import androidx.navigation3.runtime.NavKey
+import com.simtop.navigation.contract.PortableRoute
 
 /**
  * A dynamic feature module paired with the [DynamicFeatureContentProvider] implementation it
@@ -14,15 +15,10 @@ enum class DynamicFeature(val moduleName: String, val providerClass: String) {
   BeerBrowse("beerbrowse", "com.simtop.feature.beerbrowse.presentation.BeerBrowseProviderImpl"),
 }
 
-/**
- * A destination whose screen lives in a dynamic feature module, and so cannot be shown until
- * [feature] is installed.
- *
- * Declaring the requirement on the key itself is what lets the app gate every such destination in
- * one place: the navigator checks for this interface rather than knowing which features exist. A
- * new dynamic-feature destination is gated the moment it implements this - there is no second step
- * to forget.
- */
-interface DynamicFeatureKey : NavKey {
-  val feature: DynamicFeature
-}
+/** Returns Android split metadata when this navigation key belongs to an on-demand feature. */
+fun NavKey.dynamicFeatureOrNull(): DynamicFeature? =
+  when (this) {
+    PortableRoute.BeerBrowse -> DynamicFeature.BeerBrowse
+    is PortableRoute.BeerDetail -> DynamicFeature.BeerDetail
+    else -> null
+  }

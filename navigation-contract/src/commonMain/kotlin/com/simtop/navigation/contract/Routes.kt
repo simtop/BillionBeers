@@ -1,28 +1,29 @@
 package com.simtop.navigation.contract
 
+import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed interface PortableRoute {
+sealed interface PortableRoute : NavKey {
   @Serializable
-  @SerialName("beers_list")
+  @SerialName("com.simtop.navigation.BeersList")
   data object BeersList : PortableRoute
 
   @Serializable
-  @SerialName("favorites")
+  @SerialName("com.simtop.navigation.Favorites")
   data object Favorites : PortableRoute
 
   @Serializable
-  @SerialName("beers_search")
+  @SerialName("com.simtop.navigation.BeersSearch")
   data object BeersSearch : PortableRoute
 
   @Serializable
-  @SerialName("saved_filter_presets")
+  @SerialName("com.simtop.navigation.SavedFilterPresets")
   data object SavedFilterPresets : PortableRoute
 
   @Serializable
-  @SerialName("beer_browse")
+  @SerialName("com.simtop.navigation.BeerBrowse")
   data object BeerBrowse : PortableRoute
 
   @Serializable
@@ -30,7 +31,7 @@ sealed interface PortableRoute {
   data class BeerBrowseSelection(val category: BrowseCategory) : PortableRoute
 
   @Serializable(with = BeerDetailRouteSerializer::class)
-  @SerialName("beer_detail")
+  @SerialName("com.simtop.navigation.BeerDetail")
   data class BeerDetail(val beerId: String) : PortableRoute
 }
 

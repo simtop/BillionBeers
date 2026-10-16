@@ -14,14 +14,14 @@ import androidx.navigation3.runtime.NavKey
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.core.di.DynamicDependencies
 import com.simtop.feature.beerbrowse.presentation.di.FeatureBrowseComponent
-import com.simtop.navigation.BeerDetail
+import com.simtop.navigation.contract.PortableRoute
 import dev.zacsweers.metro.createGraphFactory
 import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 
 /**
  * One browse drill-in: the beers of a single style or brewery. Exactly one id is set; [name] is the
- * results screen title. Kept as plain saveable state *inside* the module - only [BeerDetail]
- * crosses the module boundary onto the app back stack.
+ * results screen title. Kept as plain saveable state *inside* the module - only
+ * [PortableRoute.BeerDetail] crosses the module boundary onto the app back stack.
  */
 internal data class BrowseSelection(
   val styleId: String? = null,
@@ -87,7 +87,7 @@ fun BeerBrowseScreenImpl(
           selection = current,
           onBack = { selection = null },
           // The host gates the beerdetail install before pushing this key.
-          onBeerClick = { beer -> onNavigate(BeerDetail(beer.id)) },
+          onBeerClick = { beer -> onNavigate(PortableRoute.BeerDetail(beer.id)) },
           onSaveQuery = { name -> onSaveQuery?.invoke(name, current.toQuery()) ?: false },
         )
     }
