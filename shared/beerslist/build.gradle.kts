@@ -7,6 +7,7 @@ val libs = billionBeersCatalog()
 kotlin {
   sourceSets {
     commonMain.dependencies { implementation(project(":shared:presentation")) }
+    jvmTest.dependencies { implementation(project(":testing-utils")) }
   }
 }
 

@@ -3,30 +3,24 @@ package com.simtop.billionbeers.shared.favorites
 import app.cash.turbine.test
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.fakes.FakeBeersRepository
+import com.simtop.billionbeers.testing_utils.MainDispatcherExtension
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.FLOW_RETRY_DELAY_MILLIS
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class FavoritesViewModelTest {
-  private val dispatcher = StandardTestDispatcher()
-
-  @BeforeEach fun setUp() = Dispatchers.setMain(dispatcher)
-
-  @AfterEach fun tearDown() = Dispatchers.resetMain()
+  @JvmField @RegisterExtension val mainDispatcher = MainDispatcherExtension()
+  private val dispatcher
+    get() = mainDispatcher.testDispatcher
 
   @Test
   fun `view state starts loading and maps empty and favorite emissions`() =

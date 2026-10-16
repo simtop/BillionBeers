@@ -8,20 +8,16 @@ import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.beerdomain.fakes.fakeBeerModel
 import com.simtop.beerdomain.fakes.fakeException
+import com.simtop.billionbeers.testing_utils.MainDispatcherExtension
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.Either
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 import strikt.api.expectThat
 import strikt.assertions.isA
 import strikt.assertions.isEqualTo
@@ -30,17 +26,9 @@ import strikt.assertions.isEqualTo
 internal class BeerDetailViewModelTest {
 
   private val fakeBeersRepository = FakeBeersRepository()
-  private val testDispatcher = StandardTestDispatcher()
-
-  @BeforeEach
-  fun setUp() {
-    Dispatchers.setMain(testDispatcher)
-  }
-
-  @AfterEach
-  fun tearDown() {
-    Dispatchers.resetMain()
-  }
+  @JvmField @RegisterExtension val mainDispatcher = MainDispatcherExtension()
+  private val testDispatcher
+    get() = mainDispatcher.testDispatcher
 
   @Test
   fun `when creating viewmodel we get success state`() =

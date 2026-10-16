@@ -12,15 +12,12 @@ import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.Either
 import com.simtop.core.core.PagedListUiModel
 import com.simtop.core.core.PagingState
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 import strikt.api.expectThat
@@ -38,8 +35,6 @@ class BeersSearchViewModelTest {
   private val fakeFactory = FakeBeersPagerFactory(fakeRepository)
 
   private val pastDebounce = 701L // just over the 700ms debounce
-
-  @AfterEach fun tearDown() = Dispatchers.resetMain()
 
   private fun buildViewModel(initialQuery: String = "", initialStyleId: String? = null) =
     BeersSearchViewModel(
