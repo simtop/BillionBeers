@@ -347,7 +347,7 @@ jobs:
 
       - name: Archive Lint Reports
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: android-lint-reports
           path: '**/build/reports/lint-results-*.html'
@@ -582,7 +582,7 @@ jobs:
 
       - name: Archive Test Reports
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: unit-test-reports
           # test-results holds the JUnit XML, reports/tests the HTML. Screenshot-enabled modules
@@ -599,7 +599,7 @@ jobs:
 
       - name: Archive compiler memory evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: unit-compiler-memory
           path: /tmp/unit-kotlin-gc-*.log
@@ -608,7 +608,7 @@ jobs:
 
       - name: Archive Unit Coverage Reports
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: unit-coverage-reports
           path: '**/build/reports/jacoco/'
@@ -661,7 +661,7 @@ jobs:
 
       - name: Archive Web release confidence
         if: steps.web_verify.outcome == 'success'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: web-release-confidence
           path: web-app/build/web-release-confidence/
@@ -670,7 +670,7 @@ jobs:
 
       - name: Archive verified Web distribution
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: web-static-distribution
           path: |
@@ -681,7 +681,7 @@ jobs:
 
       - name: Archive Web smoke failure evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: web-smoke-evidence
           path: web-app/build/web-smoke-evidence/
@@ -741,7 +741,7 @@ jobs:
 
       - name: Upload Screenshot Failures
         if: always() && steps.verify-paparazzi.outcome == 'failure'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: screenshot-failures
           path: '**/build/paparazzi/failures/'
@@ -749,7 +749,7 @@ jobs:
 
       - name: Archive screenshot test results
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: screenshot-test-results
           # Paparazzi's HTML reporter is disabled for Gradle 9 compatibility; JUnit XML is the
@@ -860,7 +860,7 @@ jobs:
 
       - name: Archive release confidence artifacts
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: release-confidence-artifacts
           path: app/build/outputs/release-smoke/
@@ -897,7 +897,7 @@ jobs:
 
       - name: Archive instrumented test reports
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: instrumented-test-reports
           path: |
@@ -909,7 +909,7 @@ jobs:
 
       - name: Archive managed-device Gradle profiles
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: managed-device-gradle-profiles
           path: build/reports/profile/
@@ -1015,7 +1015,7 @@ jobs:
 
       - name: Archive iOS simulator evidence
         if: steps.ios_simulator_evidence.outcome == 'success'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: ios-simulator-confidence
           path: iosApp/build/ios-simulator-confidence/
@@ -1045,7 +1045,7 @@ jobs:
 
       - name: Archive iOS host build
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: ios-host-build
           path: |
@@ -1056,7 +1056,7 @@ jobs:
 
       - name: Archive native test reports
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: native-test-reports
           path: |
@@ -1179,7 +1179,7 @@ jobs:
       - name: Upload verified test result
         if: steps.record-result.outcome == 'success'
         continue-on-error: true
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: verified-master-test-result-${{ github.run_id }}-${{ github.run_attempt }}
           path: build/verified-master-test-result/verified-master-test-result.json
