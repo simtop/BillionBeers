@@ -180,8 +180,8 @@ Reinforced by:
   a deliberate absence never has to be mistaken for an oversight.
 - **A budget on the build itself, not just the app** — `make build-budget` measures clean,
   incremental and test builds with gradle-profiler and checks them against
-  `config/build-time-budget.txt`. Clean build is 37s cold and 4s warm; a deep ABI change costs
-  1.11x a leaf one, which says per-build overhead dominates and further module splitting would not
+  `config/build-time-budget.txt`. Clean build is 27s cold and 9s warm; a deep ABI change costs
+  0.95x a leaf one, which says per-build overhead dominates and further module splitting would not
   make builds faster. It runs locally, never in CI, because a CI wall-clock number mostly measures
   which runner the job drew. See [ADR 0011](docs/adr/0011-build-time-budget.md).
 - **CI that runs only what a change can break** — a push to a PR reruns the test lanes its diff can
