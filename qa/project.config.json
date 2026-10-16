@@ -209,8 +209,8 @@
         ],
         "evidence": [
           {
-            "path": "app/src/main/java/com/simtop/billionbeers/presentation/AppNavigation.kt",
-            "needle": "entry<Favorites>"
+            "path": "feature/favorites/src/main/java/com/simtop/feature/favorites/FavoritesNavigationContribution.kt",
+            "needle": "fun EntryProviderScope<NavKey>.favoritesNavigationContribution"
           },
           {
             "path": "shared/app/src/commonMain/kotlin/com/simtop/billionbeers/shared/app/SharedAppNavigationState.kt",
@@ -329,8 +329,8 @@
         ],
         "evidence": [
           {
-            "path": "app/src/main/java/com/simtop/billionbeers/presentation/AppNavigation.kt",
-            "needle": "entry<BeersSearch>"
+            "path": "feature/beersearch/src/main/java/com/simtop/feature/beersearch/BeerSearchNavigationContribution.kt",
+            "needle": "fun EntryProviderScope<NavKey>.beerSearchNavigationContribution"
           },
           {
             "path": "shared/app/src/commonMain/kotlin/com/simtop/billionbeers/shared/app/SharedAppNavigationState.kt",
@@ -663,8 +663,8 @@
         ],
         "evidence": [
           {
-            "path": "app/src/main/java/com/simtop/billionbeers/presentation/AppNavigation.kt",
-            "needle": "entry<SavedFilterPresets>"
+            "path": "feature/savedfilters/src/main/java/com/simtop/feature/savedfilters/SavedFiltersNavigationContribution.kt",
+            "needle": "fun EntryProviderScope<NavKey>.savedFiltersNavigationContribution"
           },
           {
             "path": "shared/app/src/commonMain/kotlin/com/simtop/billionbeers/shared/app/SharedAppNavigationState.kt",
@@ -832,8 +832,8 @@
         ],
         "evidence": [
           {
-            "path": "app/src/main/java/com/simtop/billionbeers/presentation/AppNavigation.kt",
-            "needle": "entry<SavedFilterResults>"
+            "path": "feature/savedfilters/src/main/java/com/simtop/feature/savedfilters/SavedFiltersNavigationContribution.kt",
+            "needle": "fun EntryProviderScope<NavKey>.savedFiltersNavigationContribution"
           },
           {
             "path": "shared/app/src/commonMain/kotlin/com/simtop/billionbeers/shared/app/SharedAppNavigationState.kt",
