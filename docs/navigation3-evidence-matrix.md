@@ -1,7 +1,7 @@
 # Navigation 3 evidence matrix
 
 This matrix records the evidence behind the Navigation 3 decision in
-[ADR 0017](adr/0017-common-navigation-3-evaluation.md). It separates portable runtime proofs from
+[ADR 0018](adr/0018-common-navigation-3-evaluation.md). It separates portable runtime proofs from
 host-level product behavior. A fixture or compile result does not prove an equivalent production
 host journey.
 

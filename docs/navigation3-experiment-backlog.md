@@ -1,7 +1,7 @@
 # Navigation 3 experiment backlog
 
 This document records bounded follow-up experiments after the common Navigation 3 evaluation in
-[ADR 0017](adr/0017-common-navigation-3-evaluation.md). It is a queue of falsifiable engineering
+[ADR 0018](adr/0018-common-navigation-3-evaluation.md). It is a queue of falsifiable engineering
 questions, not authorization to migrate the application or replace host-specific navigation.
 
 ## Current decision
@@ -15,7 +15,7 @@ The evaluation established a **shared foundation, platform-owned hosts** boundar
 - Production destinations are not migrated merely because the Navigation 3 runtime resolves from
   common source.
 
-The completed proofs are recorded in ADR 0017 and the
+The completed proofs are recorded in ADR 0018 and the
 [Navigation 3 evidence matrix](navigation3-evidence-matrix.md). They include common runtime
 resolution, portable route state restoration, Web hash history behavior, root retention, and
 independent tab back stacks. The matrix also distinguishes production host behavior that remains
