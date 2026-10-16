@@ -36,6 +36,24 @@ class KmpLibraryFunctionalTest {
   }
 
   @Test
+  fun `KMP Android namespaces are derived from distinct project paths`() {
+    writeSettings("include(\":beer_network:api\")")
+    copyRepositoryCatalog()
+    writeNamespaceFixture(
+      path = ".",
+      expectedNamespace = "com.simtop.billionbeers.kmp.kmp_convention_test",
+    )
+    writeNamespaceFixture(
+      path = "beer_network/api",
+      expectedNamespace = "com.simtop.billionbeers.kmp.beer_network.api",
+    )
+
+    val result = runner().withArguments("help", "--stacktrace").build()
+
+    assertTrue(result.output.contains("BUILD SUCCESSFUL"), result.output)
+  }
+
+  @Test
   fun `KMP fixture compiles common metadata explicitly`() {
     writeKmpFixture()
     val result = runner().withArguments("allMetadataJar", "--stacktrace").build()
@@ -248,6 +266,26 @@ class KmpLibraryFunctionalTest {
         """.trimIndent(),
       )
     }
+  }
+
+  private fun writeNamespaceFixture(path: String, expectedNamespace: String) {
+    val buildFile = if (path == ".") "build.gradle.kts" else "$path/build.gradle.kts"
+    writeFile(
+      buildFile,
+      """
+      plugins {
+        id("billionbeers.kmp.library")
+      }
+
+      kotlin {
+        android {
+          check(namespace == "$expectedNamespace") {
+            "Unexpected KMP Android namespace: ${'$'}namespace"
+          }
+        }
+      }
+      """.trimIndent(),
+    )
   }
 
   private fun discoverTask(output: String, vararg candidates: String): String? =

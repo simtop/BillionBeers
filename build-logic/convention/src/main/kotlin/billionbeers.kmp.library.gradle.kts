@@ -26,6 +26,16 @@ afterEvaluate {
 apply(plugin = "billionbeers.jacoco")
 
 val libs = billionBeersCatalog()
+val namespaceSuffix =
+  (project.path.split(':').filter(String::isNotEmpty).ifEmpty { listOf(project.name) })
+    .joinToString(".") { segment ->
+      segment
+        .lowercase()
+        .replace(Regex("[^a-z0-9_]"), "_")
+        .let { normalized ->
+          if (normalized.firstOrNull()?.isDigit() == true) "_$normalized" else normalized
+        }
+    }
 
 kotlin {
   sourceSets.commonMain.dependencies {
@@ -42,7 +52,7 @@ kotlin {
 
   android {
     compilerOptions.jvmTarget.set(JvmTarget.JVM_23)
-    namespace = "com.simtop.billionbeers.kmp.fixture"
+    namespace = "com.simtop.billionbeers.kmp.$namespaceSuffix"
     compileSdk = 37
     minSdk = 28
     withHostTest {}
