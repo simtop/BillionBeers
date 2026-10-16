@@ -2,23 +2,31 @@ package com.simtop.feature.savedfilters
 
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
-import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.navigation.AndroidNavigationActions
+import com.simtop.navigation.AndroidNavigationContribution
 import com.simtop.navigation.SavedFilterPresets
 import com.simtop.navigation.SavedFilterResults
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesIntoSet
+import dev.zacsweers.metro.Inject
 
-/** Registers the saved-filter destinations owned by this feature. */
-fun EntryProviderScope<NavKey>.savedFiltersNavigationContribution(
-  onApply: (SavedFilterResults) -> Unit,
-  onBack: () -> Unit,
-  onBeerClick: (Beer) -> Unit,
-) {
-  entry<SavedFilterPresets> { SavedFiltersScreen(onApply = onApply) }
+@ContributesIntoSet(AppScope::class)
+@Inject
+class SavedFiltersNavigationContribution : AndroidNavigationContribution {
+  override fun contribute(
+    scope: EntryProviderScope<NavKey>,
+    actions: AndroidNavigationActions,
+  ) {
+    with(scope) {
+      entry<SavedFilterPresets> { SavedFiltersScreen(onApply = actions.navigate) }
 
-  entry<SavedFilterResults> { route ->
-    SavedFilterResultsScreen(
-      route = route,
-      onBack = onBack,
-      onBeerClick = onBeerClick,
-    )
+      entry<SavedFilterResults> { route ->
+        SavedFilterResultsScreen(
+          route = route,
+          onBack = actions.onBack,
+          onBeerClick = actions.onBeerClick,
+        )
+      }
+    }
   }
 }
