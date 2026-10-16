@@ -186,6 +186,7 @@ internal class DetailEntry(
 
 internal class SharedAppNavigationState(
   private val repository: BeersRepository,
+  private val catalogMetadataRepository: BeerCatalogMetadataRepository,
   private val savedFilterPresetsRepository: SavedFilterPresetsRepository,
   private val pagerFactory: BeersPagerFactory,
   private val coroutineDispatcher: CoroutineDispatcherProvider,
@@ -285,9 +286,9 @@ internal class SharedAppNavigationState(
       PortableRoute.BeersList -> ListEntry(nextId(), repository, pagerFactory)
       PortableRoute.Favorites -> FavoritesEntry(nextId(), repository)
       PortableRoute.BeersSearch ->
-        SearchEntry(nextId(), repository, pagerFactory, coroutineDispatcher)
+        SearchEntry(nextId(), catalogMetadataRepository, pagerFactory, coroutineDispatcher)
       PortableRoute.SavedFilterPresets -> SavedFiltersEntry(nextId(), savedFilterPresetsRepository)
-      PortableRoute.BeerBrowse -> BrowseHomeEntry(nextId(), repository)
+      PortableRoute.BeerBrowse -> BrowseHomeEntry(nextId(), catalogMetadataRepository)
       is PortableRoute.BeerBrowseSelection ->
         BrowseBeersEntry(
           nextId(),

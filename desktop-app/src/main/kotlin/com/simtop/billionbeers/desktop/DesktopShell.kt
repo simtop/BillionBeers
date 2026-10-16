@@ -66,6 +66,7 @@ fun DesktopShell(runtime: DesktopDataRuntime) {
   CompositionLocalProvider(LocalLifecycleOwner provides lifecycleOwner) {
     SharedAppShell(
       repository = runtime.repository,
+      catalogMetadataRepository = runtime.catalogMetadataRepository,
       savedFilterPresetsRepository = runtime.savedFilterPresetsRepository,
       pagerFactory = pagerFactory,
       coroutineDispatcher = coroutineDispatcher,

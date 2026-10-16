@@ -263,6 +263,7 @@ class SharedAppNavigationStateTest {
         val navigation =
           SharedAppNavigationState(
             repository = repository,
+            catalogMetadataRepository = repository,
             savedFilterPresetsRepository = FakeSavedFilterPresetsRepository(),
             pagerFactory = pagerFactory,
             coroutineDispatcher = mainDispatcher.dispatcherProvider,
@@ -291,6 +292,7 @@ class SharedAppNavigationStateTest {
         val navigation =
           SharedAppNavigationState(
             repository = repository,
+            catalogMetadataRepository = repository,
             savedFilterPresetsRepository = FakeSavedFilterPresetsRepository(),
             pagerFactory = pagerFactory,
             coroutineDispatcher = mainDispatcher.dispatcherProvider,
@@ -327,6 +329,7 @@ class SharedAppNavigationStateTest {
     val navigation =
       SharedAppNavigationState(
         repository = repository,
+        catalogMetadataRepository = repository,
         savedFilterPresetsRepository = FakeSavedFilterPresetsRepository(),
         pagerFactory = pagerFactory,
         coroutineDispatcher = DefaultCoroutineDispatcherProvider(),
@@ -444,6 +447,7 @@ class SharedAppNavigationStateTest {
     val repository = FakeBeersRepository()
     return SharedAppNavigationState(
       repository = repository,
+      catalogMetadataRepository = repository,
       savedFilterPresetsRepository = FakeSavedFilterPresetsRepository(),
       pagerFactory = FakeBeersPagerFactory(repository),
       coroutineDispatcher = DefaultCoroutineDispatcherProvider(),
