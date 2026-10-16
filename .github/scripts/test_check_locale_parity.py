@@ -49,7 +49,52 @@ class LocaleParityTest(unittest.TestCase):
         self.paths[locale].write_text(content, encoding="utf-8")
 
     def check(self):
-        return CHECKER.check_locale_files(list(self.paths.values()))
+        return CHECKER.check_locale_files(
+            [path for path in self.paths.values() if path.is_file()]
+        )
+
+    def test_default_only_android_and_compose_resources_require_both_locales(self):
+        compose_default = (
+            self.root
+            / "web"
+            / "src"
+            / "commonMain"
+            / "composeResources"
+            / "values"
+            / "strings.xml"
+        )
+        compose_default.parent.mkdir(parents=True)
+        compose_default.write_text(
+            '<resources><string name="compose_title">Catalog</string></resources>',
+            encoding="utf-8",
+        )
+
+        errors = CHECKER.check_locale_files([self.paths["default"], compose_default])
+
+        for resource_dir in (self.resource_dir, compose_default.parent.parent):
+            for locale in ("fr", "es"):
+                self.assertIn(
+                    f"{resource_dir}: missing values-{locale}/strings.xml", errors
+                )
+
+    def test_deleting_both_locales_is_detected(self):
+        self.paths["-fr"].unlink()
+        self.paths["-es"].unlink()
+
+        errors = self.check()
+
+        for locale in ("fr", "es"):
+            self.assertIn(
+                f"{self.resource_dir}: missing values-{locale}/strings.xml", errors
+            )
+
+    def test_default_with_only_nontranslatable_entries_needs_no_locales(self):
+        self.write(
+            "default",
+            '<resources><string name="internal" translatable="false">Internal</string></resources>',
+        )
+
+        self.assertEqual(CHECKER.check_locale_files([self.paths["default"]]), [])
 
     def test_matching_locales_allow_reordered_arguments_and_plural_categories(self):
         self.assertEqual(self.check(), [])
@@ -83,6 +128,13 @@ class LocaleParityTest(unittest.TestCase):
         )
 
         self.assertTrue(any("missing values-es/strings.xml" in error for error in errors))
+
+    def test_orphan_locale_tables_without_default_fail(self):
+        errors = CHECKER.check_locale_files(
+            [self.paths["-fr"], self.paths["-es"]]
+        )
+
+        self.assertIn(f"{self.resource_dir}: missing values/strings.xml", errors)
 
 
 if __name__ == "__main__":

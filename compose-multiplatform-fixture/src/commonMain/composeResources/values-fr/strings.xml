@@ -1,0 +1,5 @@
+<resources>
+    <string name="compose_fixture_title">Exemple Compose partagé</string>
+    <string name="compose_fixture_input_label">Champ de saisie</string>
+    <string name="compose_fixture_submit">Envoyer l’événement</string>
+</resources>

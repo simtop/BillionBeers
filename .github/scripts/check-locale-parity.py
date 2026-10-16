@@ -88,23 +88,32 @@ def read_resources(
 def check_locale_files(files: list[Path]) -> list[str]:
     grouped: dict[Path, dict[str, Path]] = {}
     for path in files:
+        if path.name != "strings.xml":
+            continue
+        if path.parent.name == "values":
+            grouped.setdefault(path.parent.parent, {})["default"] = path
+            continue
         match = LOCALE_DIR.fullmatch(path.parent.name)
-        if match and path.name == "strings.xml":
+        if match:
             grouped.setdefault(path.parent.parent, {})[match.group(1)] = path
 
     errors = []
-    for resource_dir, locales in sorted(grouped.items(), key=lambda item: str(item[0])):
-        default_path = resource_dir / "values" / "strings.xml"
-        missing_locales = {"fr", "es"} - locales.keys()
-        for locale in sorted(missing_locales):
-            errors.append(f"{resource_dir}: missing values-{locale}/strings.xml")
-        if not default_path.is_file():
+    for resource_dir, tables in sorted(grouped.items(), key=lambda item: str(item[0])):
+        default_path = tables.get("default", resource_dir / "values" / "strings.xml")
+        if "default" not in tables:
             errors.append(f"{resource_dir}: missing values/strings.xml")
             continue
 
         defaults, parse_errors = read_resources(default_path, default_table=True)
         errors.extend(parse_errors)
-        for locale, localized_path in sorted(locales.items()):
+        if defaults:
+            missing_locales = {"fr", "es"} - tables.keys()
+            for locale in sorted(missing_locales):
+                errors.append(f"{resource_dir}: missing values-{locale}/strings.xml")
+
+        for locale, localized_path in sorted(tables.items()):
+            if locale == "default":
+                continue
             localized, parse_errors = read_resources(localized_path, default_table=False)
             errors.extend(parse_errors)
             missing = sorted(defaults.keys() - localized.keys())
