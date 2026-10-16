@@ -1,5 +1,6 @@
 package com.simtop.billionbeers.shared.app
 
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
@@ -144,6 +145,18 @@ class SharedAppNavigationStateTest {
     list.close()
     assertFalse(scopeJob.isActive)
     navigation.disposeAll()
+  }
+
+  @Test
+  fun closingViewModelEntryRunsLifecycleCleanup() {
+    val viewModel = LifecycleTrackingViewModel()
+    val entry = LifecycleTrackingEntry(viewModel)
+
+    entry.close()
+    entry.close()
+
+    assertTrue(entry.isClosed)
+    assertTrue(viewModel.wasCleared)
   }
 
   @Test
@@ -455,4 +468,20 @@ class SharedAppNavigationStateTest {
       onNavigationEvent = onNavigationEvent,
     )
   }
+
+  private class LifecycleTrackingViewModel : ViewModel() {
+    var wasCleared = false
+      private set
+
+    override fun onCleared() {
+      wasCleared = true
+    }
+  }
+
+  private class LifecycleTrackingEntry(viewModel: LifecycleTrackingViewModel) :
+    ViewModelSharedAppEntry<LifecycleTrackingViewModel>(
+      id = -1,
+      route = PortableRoute.BeersList,
+      viewModel = viewModel,
+    )
 }
