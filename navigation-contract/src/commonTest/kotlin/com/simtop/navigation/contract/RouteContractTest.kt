@@ -3,7 +3,9 @@ package com.simtop.navigation.contract
 import com.simtop.beerdomain.domain.models.Beer
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class RouteContractTest {
 
@@ -41,14 +43,14 @@ class RouteContractTest {
         PortableRoute.BeerBrowse,
         PortableRoute.BeerBrowseSelection(BrowseCategory.Style("ipa", "IPA")),
         PortableRoute.BeerBrowseSelection(BrowseCategory.Brewery("brewery-1", "Brewery")),
-        PortableRoute.BeerDetail(beer),
+        PortableRoute.BeerDetail(beer.id),
       )
 
     routes.forEach { route -> assertEquals(route, decodeRoute(encodeRoute(route))) }
   }
 
   @Test
-  fun `older detail payload receives current default fields`() {
+  fun `older detail route payload migrates to its beer id`() {
     val oldPayload =
       """
       {"type":"beer_detail","beer":{"id":"42","name":"Punk IPA","tagline":"Classic","description":"Hoppy","imageUrl":"","abv":5.6,"ibu":41.0,"foodPairing":[]}}
@@ -57,44 +59,30 @@ class RouteContractTest {
     val restored = decodeRoute(oldPayload)
 
     assertEquals(
-      PortableRoute.BeerDetail(
-        Beer(
-          id = "42",
-          name = "Punk IPA",
-          tagline = "Classic",
-          description = "Hoppy",
-          imageUrl = "",
-          abv = 5.6,
-          ibu = 41.0,
-          foodPairing = emptyList(),
-        )
-      ),
+      PortableRoute.BeerDetail("42"),
       restored,
     )
   }
 
   @Test
-  fun `decoder ignores fields added by newer clients`() {
+  fun `legacy detail payload ignores fields beyond its beer id`() {
     val payload =
       """
       {"type":"beer_detail","futureRouteField":true,"beer":{"id":"42","name":"Punk IPA","tagline":"Classic","description":"Hoppy","imageUrl":"","abv":5.6,"ibu":41.0,"foodPairing":[],"futureBeerField":"ignored"}}
       """.trimIndent()
 
     assertEquals(
-      PortableRoute.BeerDetail(
-        Beer(
-          id = "42",
-          name = "Punk IPA",
-          tagline = "Classic",
-          description = "Hoppy",
-          imageUrl = "",
-          abv = 5.6,
-          ibu = 41.0,
-          foodPairing = emptyList(),
-        )
-      ),
+      PortableRoute.BeerDetail("42"),
       decodeRoute(payload),
     )
+  }
+
+  @Test
+  fun `serialized detail route contains only its stable id`() {
+    val encoded = encodeRoute(PortableRoute.BeerDetail(beer.id))
+
+    assertTrue(encoded.contains("\"beerId\":\"42\""))
+    assertFalse(encoded.contains("Punk IPA"))
   }
 
   @Test

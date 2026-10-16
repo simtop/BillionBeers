@@ -6,7 +6,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
@@ -175,13 +174,13 @@ internal class BrowseBeersEntry(
 
 internal class DetailEntry(
   id: Long,
-  val beer: Beer,
+  val beerId: String,
   repository: BeersRepository,
 ) :
   ViewModelSharedAppEntry<BeerDetailViewModel>(
     id = id,
-    route = PortableRoute.BeerDetail(beer),
-    viewModel = BeerDetailViewModel(repository, beer),
+    route = PortableRoute.BeerDetail(beerId),
+    viewModel = BeerDetailViewModel(repository, beerId),
   )
 
 internal class SharedAppNavigationState(
@@ -295,7 +294,7 @@ internal class SharedAppNavigationState(
           pagerFactory,
           coroutineDispatcher,
         )
-      is PortableRoute.BeerDetail -> DetailEntry(nextId(), route.beer, repository)
+      is PortableRoute.BeerDetail -> DetailEntry(nextId(), route.beerId, repository)
     }
 
   private fun nextId(): Long = ++nextId

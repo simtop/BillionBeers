@@ -20,13 +20,21 @@ import kotlinx.coroutines.sync.withLock
 
 open class BeerDetailViewModel(
   private val beersRepository: BeersRepository,
-  initialBeer: Beer,
+  private val beerId: String,
+  initialBeer: Beer? = null,
 ) : ViewModel() {
+
+  constructor(
+    beersRepository: BeersRepository,
+    initialBeer: Beer,
+  ) : this(beersRepository, initialBeer.id, initialBeer)
 
   private var lastKnownBeer = initialBeer
 
   private val _beerDetailViewState =
-    MutableStateFlow<CommonUiState<Beer>>(CommonUiState.Success(initialBeer))
+    MutableStateFlow<CommonUiState<Beer>>(
+      initialBeer?.let { CommonUiState.Success(it) } ?: CommonUiState.Loading
+    )
   val beerDetailViewState: StateFlow<CommonUiState<Beer>> = _beerDetailViewState.asStateFlow()
 
   private val _events = Channel<BeerDetailEvent>(Channel.BUFFERED)
@@ -36,6 +44,21 @@ open class BeerDetailViewModel(
   private val favoriteUpdateMutex = Mutex()
   private var availabilityUpdateVersion = 0L
   private var favoriteUpdateVersion = 0L
+
+  init {
+    if (initialBeer == null) {
+      viewModelScope.launch {
+        try {
+          val beer = beersRepository.getBeerById(beerId)
+          if (beer == null) _beerDetailViewState.value = CommonUiState.Error() else setBeer(beer)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+          throw e
+        } catch (_: Exception) {
+          _beerDetailViewState.value = CommonUiState.Error()
+        }
+      }
+    }
+  }
 
   fun updateAvailability(beer: Beer) {
     viewModelScope.launch {
@@ -78,7 +101,7 @@ open class BeerDetailViewModel(
   private fun currentBeer(): Beer =
     when (val state = _beerDetailViewState.value) {
       is CommonUiState.Success -> state.data
-      else -> lastKnownBeer
+      else -> checkNotNull(lastKnownBeer) { "Beer $beerId has not loaded" }
     }
 
   private fun setBeer(beer: Beer) {

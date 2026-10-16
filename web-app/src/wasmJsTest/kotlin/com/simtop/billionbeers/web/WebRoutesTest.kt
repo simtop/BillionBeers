@@ -29,7 +29,7 @@ class WebRoutesTest {
     val beer = Beer.empty.copy(id = "beer-42", name = "Cached beer")
     val resolution = resolveWebHash("#beer/beer-42") { beer }
 
-    assertEquals(WebRouteResolution.Ready(PortableRoute.BeerDetail(beer)), resolution)
+    assertEquals(WebRouteResolution.Ready(PortableRoute.BeerDetail(beer.id)), resolution)
   }
 
   @Test
@@ -140,6 +140,6 @@ class WebRoutesTest {
       )
     assertEquals("#catalog", PortableRoute.BeersList.toWebHash())
     assertEquals("#favorites", PortableRoute.Favorites.toWebHash())
-    assertEquals("#beer/beer-42", PortableRoute.BeerDetail(beer).toWebHash())
+    assertEquals("#beer/beer-42", PortableRoute.BeerDetail(beer.id).toWebHash())
   }
 }

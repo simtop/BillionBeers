@@ -285,7 +285,7 @@ fun SharedAppShell(
                   (entry as? SavedFilterResultsEntry)?.preset?.name ?: strings.chrome.savedFilters
                 PortableRoute.BeerBrowse -> strings.chrome.browse
                 is PortableRoute.BeerBrowseSelection -> route.category.name
-                is PortableRoute.BeerDetail -> route.beer.name
+                is PortableRoute.BeerDetail -> route.beerId
               },
             showBack = canGoBack,
             back = strings.chrome.back,
@@ -337,7 +337,7 @@ fun SharedAppShell(
             detail = entry as DetailEntry,
             strings = strings,
             host = host,
-            onBeerClick = { navigate(PortableRoute.BeerDetail(it)) },
+            onBeerClick = { navigate(PortableRoute.BeerDetail(it.id)) },
             onSearch = { navigate(PortableRoute.BeersSearch) },
             onBrowse = { navigate(PortableRoute.BeerBrowse) },
             onSaveQuery = { name -> savePreset(name, BeersQuery()) },
@@ -352,7 +352,7 @@ fun SharedAppShell(
                 entry = entry,
                 strings = strings,
                 host = host,
-                onBeerClick = { navigate(PortableRoute.BeerDetail(it)) },
+                onBeerClick = { navigate(PortableRoute.BeerDetail(it.id)) },
                 onSearch = { navigate(PortableRoute.BeersSearch) },
                 onBrowse = { navigate(PortableRoute.BeerBrowse) },
                 onSaveQuery = { name -> savePreset(name, BeersQuery()) },
@@ -362,7 +362,7 @@ fun SharedAppShell(
                 entry = entry,
                 strings = strings,
                 host = host,
-                onBeerClick = { navigate(PortableRoute.BeerDetail(it)) },
+                onBeerClick = { navigate(PortableRoute.BeerDetail(it.id)) },
               )
             is SavedFiltersEntry ->
               SavedFiltersDestination(
@@ -391,7 +391,7 @@ fun SharedAppShell(
                 entry = entry,
                 strings = strings,
                 host = host,
-                onBeerClick = { navigate(PortableRoute.BeerDetail(it)) },
+                onBeerClick = { navigate(PortableRoute.BeerDetail(it.id)) },
                 onSaveQuery = { name ->
                   savePreset(name, entry.viewModel.uiState.value.activeQuery)
                 },
@@ -410,7 +410,7 @@ fun SharedAppShell(
                 strings = strings,
                 host = host,
                 onBack = ::pop,
-                onBeerClick = { navigate(PortableRoute.BeerDetail(it)) },
+                onBeerClick = { navigate(PortableRoute.BeerDetail(it.id)) },
                 onSaveQuery = { name -> savePreset(name, entry.selection.toQuery()) },
               )
             is SavedFilterResultsEntry ->
@@ -419,7 +419,7 @@ fun SharedAppShell(
                 strings = strings,
                 host = host,
                 onBack = ::pop,
-                onBeerClick = { navigate(PortableRoute.BeerDetail(it)) },
+                onBeerClick = { navigate(PortableRoute.BeerDetail(it.id)) },
               )
             is DetailEntry ->
               DetailDestination(
