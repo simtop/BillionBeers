@@ -1,7 +1,6 @@
 package com.simtop.billionbeers.iosshared
 
 import com.simtop.beerdomain.domain.repositories.BeersRepository
-import com.simtop.navigation.contract.DeepLinkDestination
 import com.simtop.navigation.contract.DeepLinkParser
 import com.simtop.navigation.contract.PortableRoute
 
@@ -10,11 +9,10 @@ internal suspend fun resolveIosDeepLink(
   host: String?,
   pathSegments: List<String>,
   repository: BeersRepository,
-): PortableRoute? =
-  when (val destination = DeepLinkParser.parse(scheme, host, pathSegments)) {
-    DeepLinkDestination.BeersList -> PortableRoute.BeersList
-    DeepLinkDestination.Favorites -> PortableRoute.Favorites
-    is DeepLinkDestination.BeerDetail ->
-      repository.getBeerById(destination.beerId)?.let { PortableRoute.BeerDetail(it.id) }
-    null -> null
+): PortableRoute? {
+  val route = DeepLinkParser.parse(scheme, host, pathSegments) ?: return null
+  return when (route) {
+    is PortableRoute.BeerDetail -> repository.getBeerById(route.beerId)?.let { route }
+    else -> route
   }
+}

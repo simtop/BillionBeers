@@ -42,8 +42,8 @@ import com.simtop.navigation.DynamicFeatureContent
 import com.simtop.navigation.Favorites
 import com.simtop.navigation.SavedFilterPresets
 import com.simtop.navigation.SavedFilterResults
-import com.simtop.navigation.contract.DeepLinkDestination
-import com.simtop.navigation.toDeepLinkDestination
+import com.simtop.navigation.contract.PortableRoute
+import com.simtop.navigation.toPortableRoute
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
@@ -198,19 +198,20 @@ private suspend fun handleDeepLink(
   viewModel: AppNavigationViewModel,
   navigateToBeerDetail: (Beer) -> Unit,
 ) {
-  when (val destination = uri.toDeepLinkDestination()) {
+  when (val destination = uri.toPortableRoute()) {
     null -> Unit
-    DeepLinkDestination.BeersList -> {
+    PortableRoute.BeersList -> {
       backStack.clear()
       backStack.add(BeersList)
     }
-    DeepLinkDestination.Favorites -> {
+    PortableRoute.Favorites -> {
       backStack.clear()
       backStack.add(Favorites)
     }
     // An unresolvable beer id stays on the current screen.
-    is DeepLinkDestination.BeerDetail ->
+    is PortableRoute.BeerDetail ->
       viewModel.resolveBeer(destination.beerId)?.let(navigateToBeerDetail)
+    else -> Unit
   }
 }
 

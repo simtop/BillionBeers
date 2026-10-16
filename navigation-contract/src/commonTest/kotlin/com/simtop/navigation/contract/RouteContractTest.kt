@@ -86,21 +86,21 @@ class RouteContractTest {
   }
 
   @Test
-  fun `parser accepts list favorites and detail destinations`() {
+  fun `deep link parser returns canonical portable routes`() {
     assertEquals(
-      DeepLinkDestination.BeersList,
+      PortableRoute.BeersList,
       DeepLinkParser.parse(DeepLinkParser.SCHEME, DeepLinkParser.HOST_BEERS, emptyList()),
     )
     assertEquals(
-      DeepLinkDestination.Favorites,
+      PortableRoute.Favorites,
       DeepLinkParser.parse(DeepLinkParser.SCHEME, DeepLinkParser.HOST_FAVORITES, emptyList()),
     )
     assertEquals(
-      DeepLinkDestination.Favorites,
+      PortableRoute.Favorites,
       DeepLinkParser.parse(DeepLinkParser.SCHEME, DeepLinkParser.HOST_FAVORITES, listOf("")),
     )
     assertEquals(
-      DeepLinkDestination.BeerDetail("42"),
+      PortableRoute.BeerDetail("42"),
       DeepLinkParser.parse(DeepLinkParser.SCHEME, DeepLinkParser.HOST_BEERS, listOf("42")),
     )
   }
@@ -113,7 +113,7 @@ class RouteContractTest {
       DeepLinkParser.parse(DeepLinkParser.SCHEME, DeepLinkParser.HOST_FAVORITES, listOf("extra"))
     )
     assertEquals(
-      DeepLinkDestination.BeersList,
+      PortableRoute.BeersList,
       DeepLinkParser.parse(DeepLinkParser.SCHEME, DeepLinkParser.HOST_BEERS, listOf("")),
     )
   }
