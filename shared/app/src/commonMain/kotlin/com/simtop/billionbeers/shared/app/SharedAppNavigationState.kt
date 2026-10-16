@@ -5,7 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.ViewModelStore
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.beerdomain.domain.repositories.BeerCatalogMetadataRepository
@@ -22,7 +22,6 @@ import com.simtop.billionbeers.shared.savedfilters.SavedFiltersModel
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.navigation.contract.BrowseCategory
 import com.simtop.navigation.contract.PortableRoute
-import kotlinx.coroutines.cancel
 
 internal data class BrowseSelection(
   val styleId: String? = null,
@@ -77,8 +76,10 @@ internal abstract class ViewModelSharedAppEntry<VM : ViewModel>(
   route: PortableRoute,
   val viewModel: VM,
 ) : ManagedSharedAppEntry(id, route) {
+  private val viewModelStore = ViewModelStore().apply { put("entry", viewModel) }
+
   override fun onClose() {
-    viewModel.viewModelScope.cancel()
+    viewModelStore.clear()
   }
 }
 
