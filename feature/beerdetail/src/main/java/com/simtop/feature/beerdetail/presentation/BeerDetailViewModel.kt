@@ -1,8 +1,5 @@
 package com.simtop.feature.beerdetail.presentation
 
-import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.serialization.saved
-import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailEvent as SharedBeerDetailEvent
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailViewModel as SharedBeerDetailViewModel
@@ -18,32 +15,18 @@ class BeerDetailViewModel
 @AssistedInject
 constructor(
   beersRepository: BeersRepository,
-  @Assisted beer: Beer,
-  @Assisted savedStateHandle: SavedStateHandle,
+  @Assisted beerId: String,
 ) :
   SharedBeerDetailViewModel(
     beersRepository = beersRepository,
-    initialBeer = beer,
+    beerId = beerId,
   ) {
 
   @AssistedFactory
   @ManualViewModelAssistedFactoryKey(Factory::class)
   @ContributesIntoMap(FeatureDetailScope::class)
   interface Factory : ManualViewModelAssistedFactory {
-    fun create(
-      @Assisted beer: Beer,
-      @Assisted savedStateHandle: SavedStateHandle,
-    ): BeerDetailViewModel
-  }
-
-  private var lastKnownBeer: Beer by savedStateHandle.saved(serializer = Beer.serializer()) { beer }
-
-  init {
-    restoreBeer(lastKnownBeer)
-  }
-
-  override fun persistBeer(beer: Beer) {
-    lastKnownBeer = beer
+    fun create(@Assisted beerId: String): BeerDetailViewModel
   }
 }
 

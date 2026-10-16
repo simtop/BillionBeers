@@ -1,6 +1,5 @@
 package com.simtop.feature.beerdetail
 
-import androidx.lifecycle.SavedStateHandle
 import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.beerdomain.fakes.fakeBeerModel
 import com.simtop.billionbeers.testing_utils.MainDispatcherExtension
@@ -19,43 +18,35 @@ internal class BeerDetailViewModelAdapterTest {
   @JvmField @RegisterExtension val mainDispatcher = MainDispatcherExtension()
 
   @Test
-  fun `restored beer takes precedence over navigation beer`() =
+  fun `loads beer by route ID and reflects repository state after recreation`() =
     runTest(mainDispatcher.testDispatcher) {
       val restoredBeer = fakeBeerModel.copy(isFavorite = true)
-      val savedStateHandle = SavedStateHandle()
-      val firstViewModel =
-        BeerDetailViewModel(FakeBeersRepository(), fakeBeerModel, savedStateHandle)
+      val repository = FakeBeersRepository(listOf(fakeBeerModel))
+      val firstViewModel = BeerDetailViewModel(repository, fakeBeerModel.id)
+      advanceUntilIdle()
       firstViewModel.updateFavorite(fakeBeerModel)
       advanceUntilIdle()
       expectThat((firstViewModel.beerDetailViewState.value as CommonUiState.Success).data)
         .isEqualTo(restoredBeer)
 
-      val recreated =
-        BeerDetailViewModel(
-          FakeBeersRepository(),
-          fakeBeerModel.copy(isFavorite = false),
-          SavedStateHandle.createHandle(savedStateHandle.savedStateProvider().saveState(), null),
-        )
+      val recreated = BeerDetailViewModel(repository, fakeBeerModel.id)
+      advanceUntilIdle()
 
       expectThat((recreated.beerDetailViewState.value as CommonUiState.Success).data)
         .isEqualTo(restoredBeer)
     }
 
   @Test
-  fun `optimistic update persists latest beer in saved state`() =
+  fun `optimistic update persists latest beer in repository`() =
     runTest(mainDispatcher.testDispatcher) {
-      val savedStateHandle = SavedStateHandle()
-      val viewModel = BeerDetailViewModel(FakeBeersRepository(), fakeBeerModel, savedStateHandle)
+      val repository = FakeBeersRepository(listOf(fakeBeerModel))
+      val viewModel = BeerDetailViewModel(repository, fakeBeerModel.id)
 
       viewModel.updateAvailability(fakeBeerModel)
       advanceUntilIdle()
 
-      val recreated =
-        BeerDetailViewModel(
-          FakeBeersRepository(),
-          fakeBeerModel,
-          SavedStateHandle.createHandle(savedStateHandle.savedStateProvider().saveState(), null),
-        )
+      val recreated = BeerDetailViewModel(repository, fakeBeerModel.id)
+      advanceUntilIdle()
       expectThat((recreated.beerDetailViewState.value as CommonUiState.Success).data.availability)
         .isEqualTo(!fakeBeerModel.availability)
     }

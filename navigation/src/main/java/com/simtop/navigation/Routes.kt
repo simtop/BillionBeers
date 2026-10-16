@@ -1,7 +1,6 @@
 package com.simtop.navigation
 
 import androidx.navigation3.runtime.NavKey
-import com.simtop.beerdomain.domain.models.Beer
 import kotlinx.serialization.Serializable
 
 @Serializable object BeersList : NavKey
@@ -32,7 +31,7 @@ object BeerBrowse : DynamicFeatureKey {
 }
 
 @Serializable
-data class BeerDetail(val beer: Beer) : DynamicFeatureKey {
+data class BeerDetail(val beerId: String) : DynamicFeatureKey {
   override val feature: DynamicFeature
     get() = DynamicFeature.BeerDetail
 }
