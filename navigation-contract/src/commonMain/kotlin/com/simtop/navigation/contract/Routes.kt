@@ -1,6 +1,5 @@
 package com.simtop.navigation.contract
 
-import com.simtop.beerdomain.domain.models.Beer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -30,9 +29,9 @@ sealed interface PortableRoute {
   @SerialName("beer_browse_selection")
   data class BeerBrowseSelection(val category: BrowseCategory) : PortableRoute
 
-  @Serializable
+  @Serializable(with = BeerDetailRouteSerializer::class)
   @SerialName("beer_detail")
-  data class BeerDetail(val beer: Beer) : PortableRoute
+  data class BeerDetail(val beerId: String) : PortableRoute
 }
 
 @Serializable

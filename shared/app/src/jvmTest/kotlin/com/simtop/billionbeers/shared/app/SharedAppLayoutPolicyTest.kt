@@ -1,7 +1,6 @@
 package com.simtop.billionbeers.shared.app
 
 import androidx.compose.ui.unit.dp
-import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
 import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.beerdomain.fakes.FakeSavedFilterPresetsRepository
@@ -29,7 +28,7 @@ class SharedAppLayoutPolicyTest {
 
     assertFalse(shouldShowExpandedCatalogDetail(1000.dp, navigation.entries))
 
-    navigation.navigate(PortableRoute.BeerDetail(Beer.empty.copy(id = "beer-1")))
+    navigation.navigate(PortableRoute.BeerDetail("beer-1"))
     assertTrue(shouldShowExpandedCatalogDetail(1000.dp, navigation.entries))
     assertFalse(shouldShowExpandedCatalogDetail(700.dp, navigation.entries))
 
