@@ -14,7 +14,7 @@ it disagrees with them. Read the relevant ADR or enforcement test for rationale.
 | Assembly | `:app`: graph, adaptive navigation host, dynamic feature declarations and Room-backed Favorites Glance widget |
 | Core | `:core`: Android DI/logger; `:core-common`: pure-JVM paging, errors and shared interfaces |
 | Domain | `:beerdomain:api`: immutable models/repository interfaces; `:beerdomain:fakes`: test fakes |
-| Data | `:beer_network`: Retrofit/DTOs; `:beer_database`: Room; `:beer_data`: repositories/mappers/pager factory |
+| Data | `:beer_network`: Ktor/DTOs; `:beer_database`: Room; `:beer_data`: repositories/mappers/pager factory |
 | Features | `:feature:beerslist`, `:feature:favorites`, `:feature:beersearch`; on-demand `:feature:beerdetail`, `:feature:beerbrowse` |
 | Shared UI | `:presentation_utils`: paging UI, split installation and dynamic-feature strings; `:navigation`: routes; `:core:designsystem`: theme/tokens/previews |
 | Catalog | `:catalog*`: component catalog/generator |
