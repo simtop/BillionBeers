@@ -4,16 +4,16 @@ import androidx.annotation.Keep
 import androidx.compose.runtime.Composable
 import androidx.navigation3.runtime.NavKey
 import com.simtop.beerdomain.domain.models.BeersQuery
-import com.simtop.navigation.BeerDetail
 import com.simtop.navigation.DynamicFeatureContentProvider
+import com.simtop.navigation.contract.PortableRoute
 
 @Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
 @Keep
-class BeerDetailProviderImpl : DynamicFeatureContentProvider<BeerDetail> {
+class BeerDetailProviderImpl : DynamicFeatureContentProvider<PortableRoute.BeerDetail> {
   // Detail is a leaf screen: it never navigates forward, so onNavigate is unused.
   @Composable
   override fun Content(
-    key: BeerDetail,
+    key: PortableRoute.BeerDetail,
     onBack: () -> Unit,
     onNavigate: (NavKey) -> Unit,
     onSaveQuery: (suspend (String, BeersQuery) -> Boolean)?,

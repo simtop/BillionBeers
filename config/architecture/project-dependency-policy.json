@@ -69,7 +69,6 @@
     { "source": "shared-feature", "targets": ["domain-api", "core-common", "shared-design-system", "shared-presentation"], "scopes": ["main"] },
     { "source": "shared-app", "targets": ["domain-api", "domain-impl", "core-common", "navigation-contract", "shared-design-system", "shared-presentation", "shared-feature", "shared-savedfilters"], "scopes": ["main"] },
     { "source": "shared-savedfilters", "targets": ["domain-api", "domain-impl", "core-common", "shared-design-system"], "scopes": ["main"] },
-    { "source": "navigation-contract", "targets": ["domain-api"], "scopes": ["main"] },
     { "source": "navigation", "targets": ["domain-api", "navigation-contract"], "scopes": ["main"] },
     { "source": "presentation", "targets": ["domain-api", "catalog-annotations", "core", "design-system", "shared-presentation", "snapshot-testing"], "scopes": ["main"] },
     { "source": "test-support", "targets": ["core-common"], "scopes": ["main"] },
@@ -79,6 +78,7 @@
   ],
   "allowedApiEdges": [
     { "source": "navigation", "target": "domain-api", "reason": "Android navigation contributions accept beer and query models" },
+    { "source": "navigation", "target": "navigation-contract", "reason": "navigation exposes portable NavKey route types to Android features" },
     { "source": "shared-presentation", "target": "domain-api", "reason": "the shared paged-results API exposes portable beer and query models" },
     { "source": "shared-presentation", "target": "core-common", "reason": "the shared footer API exposes the portable paging UI model" },
     { "source": "design-system", "target": "shared-design-system", "reason": "the Android design-system facade exposes shared token types to existing consumers" },

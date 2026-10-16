@@ -15,7 +15,7 @@ import kotlinx.serialization.json.jsonPrimitive
 /** Encodes detail identity only and reads the former whole-beer payload during route migration. */
 internal object BeerDetailRouteSerializer : KSerializer<PortableRoute.BeerDetail> {
   override val descriptor: SerialDescriptor =
-    buildClassSerialDescriptor("beer_detail") {
+    buildClassSerialDescriptor("com.simtop.navigation.BeerDetail") {
       element<String>("beerId")
     }
 

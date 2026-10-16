@@ -30,13 +30,7 @@ import com.simtop.billionbeers.R
 import com.simtop.core.core.Either
 import com.simtop.feature.beerslist.BeersListScreen
 import com.simtop.navigation.AndroidNavigationActions
-import com.simtop.navigation.BeerBrowse
-import com.simtop.navigation.BeerDetail
-import com.simtop.navigation.BeersList
-import com.simtop.navigation.BeersSearch
 import com.simtop.navigation.DynamicFeatureContent
-import com.simtop.navigation.Favorites
-import com.simtop.navigation.SavedFilterPresets
 import com.simtop.navigation.contract.PortableRoute
 import com.simtop.navigation.toPortableRoute
 import dev.zacsweers.metrox.viewmodel.metroViewModel
@@ -50,13 +44,14 @@ fun AppNavigation(
   onDeepLinkConsumed: (Long) -> Unit = {},
   viewModel: AppNavigationViewModel = metroViewModel(),
 ) {
-  val backStack = rememberNavBackStack(BeersList)
+  val backStack = rememberNavBackStack(PortableRoute.BeersList)
   val navigate = rememberDynamicFeatureNavigator(backStack)
   val listDetailStrategy = rememberListDetailSceneStrategy<NavKey>()
   val isListDetailStack =
     backStack.size > 1 &&
-      backStack.firstOrNull() in setOf(BeersList, Favorites, SavedFilterPresets) &&
-      backStack.drop(1).all { it is BeerDetail }
+      backStack.firstOrNull() in
+        setOf(PortableRoute.BeersList, PortableRoute.Favorites, PortableRoute.SavedFilterPresets) &&
+      backStack.drop(1).all { it is PortableRoute.BeerDetail }
   val isExpandedWindow =
     currentWindowAdaptiveInfoV2()
       .windowSizeClass
@@ -64,8 +59,8 @@ fun AppNavigation(
   val showDetailBackButton = !(isListDetailStack && isExpandedWindow)
 
   fun navigateToBeerDetail(beerId: String) {
-    backStack.removeAll { it is BeerDetail }
-    navigate(BeerDetail(beerId))
+    backStack.removeAll { it is PortableRoute.BeerDetail }
+    navigate(PortableRoute.BeerDetail(beerId))
   }
 
   LaunchedEffect(deepLinkUri, deepLinkDeliveryId) {
@@ -77,7 +72,9 @@ fun AppNavigation(
 
   val selectedTab = backStack.firstOrNull()
   val showBottomBar =
-    selectedTab == BeersList || selectedTab == Favorites || selectedTab == SavedFilterPresets
+    selectedTab == PortableRoute.BeersList ||
+      selectedTab == PortableRoute.Favorites ||
+      selectedTab == PortableRoute.SavedFilterPresets
   val snackbarHostState = remember { SnackbarHostState() }
   val presetLimitMessage = stringResource(R.string.filter_preset_limit_reached)
   val presetSaveFailedMessage = stringResource(R.string.filter_preset_save_failed)
@@ -123,7 +120,7 @@ fun AppNavigation(
       sceneStrategies = listOf(listDetailStrategy),
       entryProvider =
         entryProvider {
-          entry<BeersList>(
+          entry<PortableRoute.BeersList>(
             metadata =
               ListDetailSceneStrategy.listPane(
                 detailPlaceholder = {
@@ -133,8 +130,8 @@ fun AppNavigation(
           ) {
             BeersListScreen(
               onBeerClick = { beer -> navigateToBeerDetail(beer.id) },
-              onSearchClick = { navigate(BeersSearch) },
-              onBrowseClick = { navigate(BeerBrowse) },
+              onSearchClick = { navigate(PortableRoute.BeersSearch) },
+              onBrowseClick = { navigate(PortableRoute.BeerBrowse) },
               onSaveQuery = { name ->
                 savePreset(name, BeersQuery())
               },
@@ -145,7 +142,7 @@ fun AppNavigation(
             contribution.contribute(this, navigationActions)
           }
 
-          entry<BeerDetail>(metadata = ListDetailSceneStrategy.detailPane()) { key ->
+          entry<PortableRoute.BeerDetail>(metadata = ListDetailSceneStrategy.detailPane()) { key ->
             DynamicFeatureContent(
               key = key,
               onBack = { backStack.removeLastOrNull() },
@@ -155,12 +152,12 @@ fun AppNavigation(
 
           // onNavigate lets browse push a beer's detail from inside the module - routed through
           // `navigate`, so it is gated like every other caller.
-          entry<BeerBrowse> { key ->
+          entry<PortableRoute.BeerBrowse> { key ->
             DynamicFeatureContent(
               key = key,
               onBack = { backStack.removeLastOrNull() },
               onNavigate = { destination ->
-                if (destination is BeerDetail) {
+                if (destination is PortableRoute.BeerDetail) {
                   navigateToBeerDetail(destination.beerId)
                 } else {
                   navigate(destination)
@@ -184,11 +181,11 @@ private suspend fun handleDeepLink(
     null -> Unit
     PortableRoute.BeersList -> {
       backStack.clear()
-      backStack.add(BeersList)
+      backStack.add(PortableRoute.BeersList)
     }
     PortableRoute.Favorites -> {
       backStack.clear()
-      backStack.add(Favorites)
+      backStack.add(PortableRoute.Favorites)
     }
     // An unresolvable beer id stays on the current screen.
     is PortableRoute.BeerDetail ->

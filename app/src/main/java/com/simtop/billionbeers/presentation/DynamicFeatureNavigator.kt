@@ -8,17 +8,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.retain.retain
 import androidx.compose.runtime.setValue
 import androidx.navigation3.runtime.NavKey
-import com.simtop.navigation.DynamicFeatureKey
+import com.simtop.navigation.DynamicFeature
+import com.simtop.navigation.dynamicFeatureOrNull
 import com.simtop.presentation_utils.core.DynamicFeatureLoader
+
+private data class PendingDynamicFeature(val key: NavKey, val feature: DynamicFeature)
 
 /**
  * The app's single navigation entry point: returns a `navigate(key)` that installs the key's
  * dynamic feature module first, when it needs one.
  *
- * Because every destination is pushed through this, a [DynamicFeatureKey] cannot reach the back
- * stack - and from there a reflective provider lookup - before its module is on device. Screens
- * stay ignorant of split installs: they just navigate, and the install UI renders here, over
- * whichever screen is currently showing.
+ * Because every destination is pushed through this, a route with a dynamic feature requirement
+ * cannot reach the back stack - and from there a reflective provider lookup - before its module is
+ * on device. Screens stay ignorant of split installs: they just navigate, and the install UI
+ * renders here, over whichever screen is currently showing.
  *
  * The pending key is [retain]ed, matching the installer it drives: rotating mid-download keeps the
  * same install and the same dialog. It is deliberately not saved across process death - restoring
@@ -27,18 +30,28 @@ import com.simtop.presentation_utils.core.DynamicFeatureLoader
  */
 @Composable
 fun rememberDynamicFeatureNavigator(backStack: MutableList<NavKey>): (NavKey) -> Unit {
-  var pending by retain { mutableStateOf<DynamicFeatureKey?>(null) }
+  var pending by retain { mutableStateOf<PendingDynamicFeature?>(null) }
 
   pending?.let { key ->
-    DynamicFeatureLoader(featureName = key.feature.moduleName, onCancelled = { pending = null }) {
+    DynamicFeatureLoader(
+      featureName = key.feature.moduleName,
+      onCancelled = { pending = null },
+    ) {
       LaunchedEffect(key) {
-        backStack.add(key)
+        backStack.add(key.key)
         pending = null
       }
     }
   }
 
   return remember(backStack) {
-    { key -> if (key is DynamicFeatureKey) pending = key else backStack.add(key) }
+    { key ->
+      val feature = key.dynamicFeatureOrNull()
+      if (feature != null) {
+        pending = PendingDynamicFeature(key, feature)
+      } else {
+        backStack.add(key)
+      }
+    }
   }
 }
