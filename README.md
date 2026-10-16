@@ -262,7 +262,7 @@ the Konsist rule set, Gradle dependency verification, and per-lane CI test selec
 <!-- START_VERSIONS -->
 | Tech | Version |
 | :--- | :--- |
-| **Kotlin** | 2.4.20 |
+| **Kotlin** | 2.4.21 |
 | **Gradle** | 9.8.1 |
 | **Compose BOM** | 2026.09.00 |
 | **Metro DI** | 1.4.5 |
