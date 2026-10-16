@@ -138,31 +138,37 @@ def repeat_targets(root: Path, targets: list[TestTarget], repetitions: int) -> N
         f"Repeating {len(targets)} changed instrumented test class(es) "
         f"{repetitions} additional time(s)."
     )
+    modules: dict[str, set[str]] = {}
     for target in targets:
-        module_dir = root / target.module
-        gradle_module = ":" + target.module.replace("/", ":")
+        modules.setdefault(target.module, set()).add(target.class_name)
+
+    for module, classes in sorted(modules.items()):
+        module_dir = root / module
+        gradle_module = ":" + module.replace("/", ":")
+        selected_classes = sorted(classes)
+        class_selector = ",".join(selected_classes)
         for repetition in range(1, repetitions + 1):
             print(
                 f"### Repeat {repetition}/{repetitions}: "
-                f"{target.module} {target.class_name}",
+                f"{module} {len(selected_classes)} selected class(es)",
                 flush=True,
             )
             environment = os.environ.copy()
-            # Re-run the AndroidTest task even if Gradle considers its previous output current.
-            environment["GRADLE_RUNNER"] = "./gradlew --rerun-tasks"
             started_at = time.time()
             subprocess.run(
                 [
                     "make",
                     "ui-test-managed",
                     f"MODULE={gradle_module}",
-                    f"UI_TEST_CLASS={target.class_name}",
+                    f"UI_TEST_CLASS={class_selector}",
+                    "UI_TEST_RERUN=true",
                 ],
                 cwd=root,
                 env=environment,
                 check=True,
             )
-            validate_fresh_report(module_dir, target.class_name, started_at)
+            for class_name in selected_classes:
+                validate_fresh_report(module_dir, class_name, started_at)
 
 
 def main() -> int:
@@ -173,7 +179,10 @@ def main() -> int:
         "--repetitions",
         type=int,
         default=2,
-        help="Additional runs per changed test class (default: 2; CI already ran each once)",
+        help=(
+            "Additional runs per selected module; each selected class must execute "
+            "(default: 2; CI already ran each once)"
+        ),
     )
     parser.add_argument("--root", type=Path, default=Path.cwd())
     args = parser.parse_args()
