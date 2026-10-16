@@ -6,16 +6,12 @@ import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.beerdomain.fakes.FakeSavedFilterPresetsRepository
+import com.simtop.billionbeers.testing_utils.MainDispatcherExtension
 import com.simtop.core.core.Either
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
-import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
@@ -24,17 +20,9 @@ import strikt.assertions.isTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class AppNavigationViewModelTest {
 
-  private val testDispatcher = StandardTestDispatcher()
-
-  @Before
-  fun setUp() {
-    Dispatchers.setMain(testDispatcher)
-  }
-
-  @After
-  fun tearDown() {
-    Dispatchers.resetMain()
-  }
+  @JvmField @Rule val mainDispatcher = MainDispatcherExtension()
+  private val testDispatcher
+    get() = mainDispatcher.testDispatcher
 
   @Test
   fun `cached deep link beer resolves from local repository`() =

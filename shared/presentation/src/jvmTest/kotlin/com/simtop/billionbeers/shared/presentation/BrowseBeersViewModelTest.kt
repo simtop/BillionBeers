@@ -12,13 +12,10 @@ import com.simtop.core.core.PagedListFooter
 import com.simtop.core.core.PagedListUiModel
 import com.simtop.core.core.PagingEvent
 import com.simtop.core.core.PagingState
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 import strikt.api.expectThat
@@ -37,8 +34,6 @@ class BrowseBeersViewModelTest {
   private val fakeFactory = FakeBeersPagerFactory(fakeRepository)
 
   private val styleQuery = BeersQuery(styleId = "style-1")
-
-  @AfterEach fun tearDown() = Dispatchers.resetMain()
 
   private fun buildViewModel(query: BeersQuery = styleQuery) =
     BrowseBeersViewModel(mainDispatcher.dispatcherProvider, fakeFactory, query)

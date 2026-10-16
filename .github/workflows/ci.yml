@@ -88,6 +88,9 @@ jobs:
       - name: Test baseline profile mapping guard
         run: python3 scripts/test_check_baseline_profile_mapping.py
 
+      - name: Test instrumented test repeat selector
+        run: python3 -I .github/scripts/test_repeat_new_instrumented_tests.py
+
       - name: Check locale parity
         run: python3 .github/scripts/check-locale-parity.py
 
@@ -817,6 +820,15 @@ jobs:
         run: >-
           bash .github/scripts/run-timed-command.sh
           ./gradlew ciGroupDebugAndroidTest --profile
+
+      - name: Repeat changed instrumented test classes
+        if: github.event_name == 'pull_request'
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: >-
+          python3 -I .github/scripts/repeat-new-instrumented-tests.py
+          --base "$PR_BASE_SHA" --head "$PR_HEAD_SHA" --repetitions 2
 
       - name: Verify Room schemas are current
         env:

@@ -11,6 +11,9 @@ import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.extension.AfterEachCallback
 import org.junit.jupiter.api.extension.BeforeEachCallback
 import org.junit.jupiter.api.extension.ExtensionContext
+import org.junit.rules.TestRule
+import org.junit.runner.Description
+import org.junit.runners.model.Statement
 
 /**
  * Installs a [TestDispatcher] as `Dispatchers.Main` for the duration of a test.
@@ -41,7 +44,7 @@ import org.junit.jupiter.api.extension.ExtensionContext
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class MainDispatcherExtension(val testDispatcher: TestDispatcher = StandardTestDispatcher()) :
-  BeforeEachCallback, AfterEachCallback {
+  BeforeEachCallback, AfterEachCallback, TestRule {
 
   /**
    * A real fake rather than a mock, for the few places that still inject a dispatcher provider - a
@@ -60,10 +63,30 @@ class MainDispatcherExtension(val testDispatcher: TestDispatcher = StandardTestD
     }
 
   override fun beforeEach(context: ExtensionContext) {
-    Dispatchers.setMain(testDispatcher)
+    installMainDispatcher()
   }
 
   override fun afterEach(context: ExtensionContext) {
+    resetMainDispatcher()
+  }
+
+  override fun apply(base: Statement, description: Description): Statement =
+    object : Statement() {
+      override fun evaluate() {
+        installMainDispatcher()
+        try {
+          base.evaluate()
+        } finally {
+          resetMainDispatcher()
+        }
+      }
+    }
+
+  private fun installMainDispatcher() {
+    Dispatchers.setMain(testDispatcher)
+  }
+
+  private fun resetMainDispatcher() {
     Dispatchers.resetMain()
   }
 }
