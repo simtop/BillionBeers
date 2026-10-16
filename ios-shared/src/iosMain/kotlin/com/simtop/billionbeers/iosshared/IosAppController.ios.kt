@@ -105,6 +105,7 @@ private fun IosShell(
   val coroutineDispatcher = remember(runtime) { runtime.coroutineDispatcherProvider }
   SharedAppShell(
     repository = runtime.repository,
+    catalogMetadataRepository = runtime.catalogMetadataRepository,
     savedFilterPresetsRepository = runtime.savedFilterPresetsRepository,
     pagerFactory = pagerFactory,
     coroutineDispatcher = coroutineDispatcher,

@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.simtop.beerdomain.domain.errors.SaveFilterPresetError
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
+import com.simtop.beerdomain.domain.repositories.BeerCatalogMetadataRepository
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.beerdomain.domain.repositories.SavedFilterPresetsRepository
 import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
@@ -93,6 +94,7 @@ class FilterPresetFormLayoutTest {
         CompositionLocalProvider(LocalLayoutDirection provides direction) {
           SharedAppShell(
             repository = repository,
+            catalogMetadataRepository = repository,
             savedFilterPresetsRepository = repository,
             pagerFactory = pagers,
             coroutineDispatcher = DefaultCoroutineDispatcherProvider(),
@@ -174,7 +176,10 @@ class FilterPresetFormLayoutTest {
   private class SavingRepository(
     private val backing: FakeBeersRepository,
     private val backingSavedFilters: FakeSavedFilterPresetsRepository,
-  ) : BeersRepository by backing, SavedFilterPresetsRepository by backingSavedFilters {
+  ) :
+    BeersRepository by backing,
+    BeerCatalogMetadataRepository by backing,
+    SavedFilterPresetsRepository by backingSavedFilters {
     var succeeds = false
     val attempts = mutableListOf<SavedFilterPreset>()
 
