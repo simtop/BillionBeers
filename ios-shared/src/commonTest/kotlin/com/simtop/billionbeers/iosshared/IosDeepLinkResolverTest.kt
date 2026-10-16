@@ -32,7 +32,7 @@ class IosDeepLinkResolverTest {
   }
 
   @Test
-  fun detailLinkRetainsTheCompleteLocallyCachedBeer() = runTest {
+  fun detailLinkResolvesOnlyWhenTheBeerIsLocallyCached() = runTest {
     val beer = Beer.empty.copy(id = "42", name = "Cached IPA", isFavorite = true)
     val fake = FakeBeersRepository(listOf(Beer.empty.copy(id = "other"), beer))
     val lookups = mutableListOf<String>()
