@@ -1195,6 +1195,7 @@ jobs:
       group: master-ci-failure-issue
       cancel-in-progress: false
     permissions:
+      contents: read
       issues: write
     needs:
       - ci-gate
@@ -1213,6 +1214,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
       - name: Open or update the master CI failure issue
         env:
           GH_TOKEN: ${{ github.token }}
