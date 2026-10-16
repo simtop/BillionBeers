@@ -5,11 +5,11 @@ import com.simtop.beer_database.models.BeerDbModel
 import com.simtop.beer_database.models.PagingStateDbModel
 import com.simtop.beer_database.models.SavedFilterPresetDbModel
 import com.simtop.beer_database.utils.Converters
-import com.simtop.beer_database.utils.currentTimeMillis
 import com.simtop.beer_storage.api.BeersStorage
 import com.simtop.beer_storage.api.StoredBeer
 import com.simtop.beer_storage.api.StoredFilterPreset
 import com.simtop.beer_storage.api.StoredPagingState
+import com.simtop.core.core.EpochTimeProvider
 import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -17,7 +17,10 @@ import kotlinx.coroutines.flow.map
 private const val MAX_PRESET_NAME_LENGTH = 64
 
 @Inject
-class BeersLocalSourceImpl(private val db: BeersDatabase) : BeersStorage {
+class BeersLocalSourceImpl(
+  private val db: BeersDatabase,
+  private val epochTimeProvider: EpochTimeProvider,
+) : BeersStorage {
 
   override fun observeBeers(): Flow<List<StoredBeer>> =
     db.beersDao().getAllBeers().map { beers -> beers.map { it.toStoredBeer() } }
@@ -68,7 +71,7 @@ class BeersLocalSourceImpl(private val db: BeersDatabase) : BeersStorage {
     surface,
     nextKey,
     totalCount,
-    currentTimeMillis(),
+    epochTimeProvider.epochMillis(),
   )
 
   override suspend fun getPagingState(surface: String): StoredPagingState? =

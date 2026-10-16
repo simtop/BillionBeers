@@ -7,6 +7,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.simtop.beer_database.database.BeersDatabase
 import com.simtop.beer_storage.api.BeersStorage
 import com.simtop.beer_storage.api.StoredBeer
+import com.simtop.core.core.SystemEpochTimeProvider
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -30,7 +31,7 @@ class BeersLocalSourceTest {
           BeersDatabase::class.java,
         )
         .build()
-    localSource = BeersLocalSourceImpl(db)
+    localSource = BeersLocalSourceImpl(db, SystemEpochTimeProvider())
   }
 
   @After fun tearDown() = db.close()
