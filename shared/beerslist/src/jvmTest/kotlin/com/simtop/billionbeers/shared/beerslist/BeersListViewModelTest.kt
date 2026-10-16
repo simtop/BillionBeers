@@ -9,6 +9,7 @@ import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
 import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.beerdomain.fakes.FakePager
+import com.simtop.billionbeers.testing_utils.MainDispatcherExtension
 import com.simtop.core.core.CommonUiErrorKey
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.FLOW_RETRY_DELAY_MILLIS
@@ -17,19 +18,14 @@ import com.simtop.core.core.PagedListUiModel
 import com.simtop.core.core.Pager
 import com.simtop.core.core.PagingEvent
 import com.simtop.core.core.PagingState
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 import strikt.api.expectThat
 import strikt.assertions.isA
 import strikt.assertions.isEqualTo
@@ -41,19 +37,11 @@ class BeersListViewModelTest {
 
   private val fakeBeersRepository = FakeBeersRepository()
   private val fakeBeersPagerFactory = FakeBeersPagerFactory(fakeBeersRepository)
-
-  private lateinit var testDispatcher: TestDispatcher
-
-  @BeforeEach
-  fun setUp() {
-    testDispatcher = UnconfinedTestDispatcher()
-    Dispatchers.setMain(testDispatcher)
-  }
-
-  @AfterEach
-  fun tearDown() {
-    Dispatchers.resetMain()
-  }
+  @JvmField
+  @RegisterExtension
+  val mainDispatcher = MainDispatcherExtension(UnconfinedTestDispatcher())
+  private val testDispatcher
+    get() = mainDispatcher.testDispatcher
 
   private fun buildViewModel() = BeersListViewModel(fakeBeersRepository, fakeBeersPagerFactory)
 
