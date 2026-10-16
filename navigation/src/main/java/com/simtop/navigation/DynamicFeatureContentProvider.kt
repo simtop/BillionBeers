@@ -30,21 +30,22 @@ fun interface DynamicFeatureContentProvider<T : NavKey> {
 /**
  * Loads and renders the [DynamicFeatureContentProvider] that [key]'s [DynamicFeature] exposes.
  *
- * Precondition: the module is installed. A [DynamicFeatureKey] only reaches the back stack through
- * the app's navigator, which installs the module first.
+ * Precondition: the module is installed. A route with a dynamic feature requirement only reaches
+ * the back stack through the app's navigator, which installs the module first.
  *
  * The reflective lookup is [remember]ed, so `Class.forName` + `newInstance()` runs once per entry
  * rather than on every recomposition.
  */
 @Composable
-fun <T : DynamicFeatureKey> DynamicFeatureContent(
+fun <T : NavKey> DynamicFeatureContent(
   key: T,
   onBack: () -> Unit,
   onNavigate: (NavKey) -> Unit = {},
   onSaveQuery: (suspend (String, BeersQuery) -> Boolean)? = null,
   showBackButton: Boolean = true,
 ) {
-  val className = key.feature.providerClass
+  val feature = checkNotNull(key.dynamicFeatureOrNull()) { "Route $key is not a dynamic feature" }
+  val className = feature.providerClass
   val provider =
     remember(className) {
       @Suppress("UNCHECKED_CAST")

@@ -15,9 +15,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
-import com.simtop.navigation.BeersList
-import com.simtop.navigation.Favorites
-import com.simtop.navigation.SavedFilterPresets
+import com.simtop.navigation.contract.PortableRoute
 import com.simtop.presentation_utils.R
 
 @Composable
@@ -42,16 +40,16 @@ fun AppBottomNavigation(
   ) {
     NavigationBarItem(
       modifier = Modifier.testTag("home_tab"),
-      selected = selectedTab == BeersList,
-      onClick = { onTabSelect(BeersList) },
+      selected = selectedTab == PortableRoute.BeersList,
+      onClick = { onTabSelect(PortableRoute.BeersList) },
       icon = { Icon(Icons.Filled.Home, contentDescription = stringResource(R.string.home_tab)) },
       label = { Text(stringResource(R.string.home_tab)) },
       colors = itemColors,
     )
     NavigationBarItem(
       modifier = Modifier.testTag("favorites_tab"),
-      selected = selectedTab == Favorites,
-      onClick = { onTabSelect(Favorites) },
+      selected = selectedTab == PortableRoute.Favorites,
+      onClick = { onTabSelect(PortableRoute.Favorites) },
       icon = {
         Icon(
           Icons.Filled.Favorite,
@@ -63,8 +61,8 @@ fun AppBottomNavigation(
     )
     NavigationBarItem(
       modifier = Modifier.testTag("saved_filters_tab"),
-      selected = selectedTab == SavedFilterPresets,
-      onClick = { onTabSelect(SavedFilterPresets) },
+      selected = selectedTab == PortableRoute.SavedFilterPresets,
+      onClick = { onTabSelect(PortableRoute.SavedFilterPresets) },
       icon = {
         Icon(
           Icons.AutoMirrored.Filled.List,

@@ -139,7 +139,7 @@
         "evidence": [
           {
             "path": "app/src/main/java/com/simtop/billionbeers/presentation/AppNavigation.kt",
-            "needle": "entry<BeersList>"
+            "needle": "entry<PortableRoute.BeersList>"
           },
           {
             "path": "shared/app/src/commonMain/kotlin/com/simtop/billionbeers/shared/app/SharedAppNavigationState.kt",
@@ -210,7 +210,7 @@
         "evidence": [
           {
             "path": "feature/favorites/src/main/java/com/simtop/feature/favorites/FavoritesNavigationContribution.kt",
-            "needle": "entry<Favorites>"
+            "needle": "entry<PortableRoute.Favorites>"
           },
           {
             "path": "shared/app/src/commonMain/kotlin/com/simtop/billionbeers/shared/app/SharedAppNavigationState.kt",
@@ -330,7 +330,7 @@
         "evidence": [
           {
             "path": "feature/beersearch/src/main/java/com/simtop/feature/beersearch/BeerSearchNavigationContribution.kt",
-            "needle": "entry<BeersSearch>"
+            "needle": "entry<PortableRoute.BeersSearch>"
           },
           {
             "path": "shared/app/src/commonMain/kotlin/com/simtop/billionbeers/shared/app/SharedAppNavigationState.kt",
@@ -517,7 +517,7 @@
         "evidence": [
           {
             "path": "app/src/main/java/com/simtop/billionbeers/presentation/AppNavigation.kt",
-            "needle": "entry<BeerBrowse>"
+            "needle": "entry<PortableRoute.BeerBrowse>"
           },
           {
             "path": "shared/app/src/commonMain/kotlin/com/simtop/billionbeers/shared/app/SharedAppNavigationState.kt",
@@ -606,7 +606,7 @@
         "evidence": [
           {
             "path": "app/src/main/java/com/simtop/billionbeers/presentation/AppNavigation.kt",
-            "needle": "entry<BeerBrowse>"
+            "needle": "entry<PortableRoute.BeerBrowse>"
           },
           {
             "path": "shared/app/src/commonMain/kotlin/com/simtop/billionbeers/shared/app/SharedAppNavigationState.kt",
@@ -664,7 +664,7 @@
         "evidence": [
           {
             "path": "feature/savedfilters/src/main/java/com/simtop/feature/savedfilters/SavedFiltersNavigationContribution.kt",
-            "needle": "entry<SavedFilterPresets>"
+            "needle": "entry<PortableRoute.SavedFilterPresets>"
           },
           {
             "path": "shared/app/src/commonMain/kotlin/com/simtop/billionbeers/shared/app/SharedAppNavigationState.kt",
@@ -919,7 +919,7 @@
         "evidence": [
           {
             "path": "app/src/main/java/com/simtop/billionbeers/presentation/AppNavigation.kt",
-            "needle": "entry<BeerDetail>"
+            "needle": "entry<PortableRoute.BeerDetail>"
           },
           {
             "path": "shared/app/src/commonMain/kotlin/com/simtop/billionbeers/shared/app/SharedAppNavigationState.kt",

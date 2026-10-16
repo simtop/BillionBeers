@@ -1,6 +1,5 @@
 package com.simtop.navigation.contract
 
-import com.simtop.beerdomain.domain.models.Beer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -8,29 +7,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class RouteContractTest {
-
-  private val beer =
-    Beer(
-      id = "42",
-      name = "Punk IPA",
-      tagline = "Post Modern Classic.",
-      description = "A bright, hoppy beer.",
-      imageUrl = "https://example.test/punk.png",
-      abv = 5.6,
-      ibu = 41.0,
-      foodPairing = listOf("Spicy food"),
-      availability = true,
-      isFavorite = true,
-      styleName = "IPA",
-      breweryName = "Brewdog",
-      srm = 8,
-      releasedYear = 2007,
-      minServingTemperature = 8,
-      maxServingTemperature = 12,
-      fermentationMethod = "Top",
-      ingredients = listOf("Malt"),
-      recommendedGlasses = listOf("Tulip"),
-    )
 
   @Test
   fun `all route values round trip through json`() {
@@ -43,10 +19,23 @@ class RouteContractTest {
         PortableRoute.BeerBrowse,
         PortableRoute.BeerBrowseSelection(BrowseCategory.Style("ipa", "IPA")),
         PortableRoute.BeerBrowseSelection(BrowseCategory.Brewery("brewery-1", "Brewery")),
-        PortableRoute.BeerDetail(beer.id),
+        PortableRoute.BeerDetail("42"),
       )
 
     routes.forEach { route -> assertEquals(route, decodeRoute(encodeRoute(route))) }
+  }
+
+  @Test
+  fun `route serializer identities remain compatible with saved Android back stacks`() {
+    assertEquals("com.simtop.navigation.BeersList", PortableRoute.BeersList.serializer().descriptor.serialName)
+    assertEquals("com.simtop.navigation.Favorites", PortableRoute.Favorites.serializer().descriptor.serialName)
+    assertEquals("com.simtop.navigation.BeersSearch", PortableRoute.BeersSearch.serializer().descriptor.serialName)
+    assertEquals(
+      "com.simtop.navigation.SavedFilterPresets",
+      PortableRoute.SavedFilterPresets.serializer().descriptor.serialName,
+    )
+    assertEquals("com.simtop.navigation.BeerBrowse", PortableRoute.BeerBrowse.serializer().descriptor.serialName)
+    assertEquals("com.simtop.navigation.BeerDetail", PortableRoute.BeerDetail.serializer().descriptor.serialName)
   }
 
   @Test
@@ -79,7 +68,7 @@ class RouteContractTest {
 
   @Test
   fun `serialized detail route contains only its stable id`() {
-    val encoded = encodeRoute(PortableRoute.BeerDetail(beer.id))
+    val encoded = encodeRoute(PortableRoute.BeerDetail("42"))
 
     assertTrue(encoded.contains("\"beerId\":\"42\""))
     assertFalse(encoded.contains("Punk IPA"))

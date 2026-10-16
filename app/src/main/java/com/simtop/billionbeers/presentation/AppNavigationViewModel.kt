@@ -24,8 +24,7 @@ class AppNavigationViewModel(
 ) : ViewModel() {
   private val saveFilterPreset = SaveFilterPresetUseCase(savedFilterPresetsRepository)
 
-  // Resolves a deep-linked beer id against the local cache - deep links only carry an id,
-  // never the full Beer payload the BeerDetail nav key needs.
+  // Resolves a deep-linked beer id against the local cache - portable routes only carry the id.
   suspend fun resolveBeer(beerId: String): Beer? = beersRepository.getBeerById(beerId)
 
   suspend fun savePreset(

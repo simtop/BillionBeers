@@ -4,8 +4,8 @@ import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import com.simtop.navigation.AndroidNavigationActions
 import com.simtop.navigation.AndroidNavigationContribution
-import com.simtop.navigation.SavedFilterPresets
 import com.simtop.navigation.SavedFilterResults
+import com.simtop.navigation.contract.PortableRoute
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoSet
 import dev.zacsweers.metro.Inject
@@ -18,7 +18,7 @@ class SavedFiltersNavigationContribution : AndroidNavigationContribution {
     actions: AndroidNavigationActions,
   ) {
     with(scope) {
-      entry<SavedFilterPresets> { SavedFiltersScreen(onApply = actions.navigate) }
+      entry<PortableRoute.SavedFilterPresets> { SavedFiltersScreen(onApply = actions.navigate) }
 
       entry<SavedFilterResults> { route ->
         SavedFilterResultsScreen(

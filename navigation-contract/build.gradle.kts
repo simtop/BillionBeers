@@ -16,6 +16,6 @@ kotlin {
 }
 
 dependencies {
-  commonMainImplementation(this.project(":beerdomain:api"))
+  commonMainApi(libs.androidx.navigation3.runtime)
   commonMainImplementation(libs.kotlinx.serialization.json)
 }
