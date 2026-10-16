@@ -20,7 +20,7 @@ class BeerDetailProviderImpl : DynamicFeatureContentProvider<BeerDetail> {
     showBackButton: Boolean,
   ) {
     BeerDetailScreenImpl(
-      beer = key.beer,
+      beerId = key.beerId,
       onBackClick = onBack,
       showBackButton = showBackButton,
     )

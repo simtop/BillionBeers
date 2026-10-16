@@ -87,7 +87,7 @@ fun BeerBrowseScreenImpl(
           selection = current,
           onBack = { selection = null },
           // The host gates the beerdetail install before pushing this key.
-          onBeerClick = { beer -> onNavigate(BeerDetail(beer)) },
+          onBeerClick = { beer -> onNavigate(BeerDetail(beer.id)) },
           onSaveQuery = { name -> onSaveQuery?.invoke(name, current.toQuery()) ?: false },
         )
     }
