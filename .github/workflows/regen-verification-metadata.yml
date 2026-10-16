@@ -326,7 +326,7 @@ jobs:
 
       - name: Archive lane ledger and resource evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: dependency-preparation-${{ github.run_id }}-${{ github.run_attempt }}-${{ steps.mode.outputs.graph }}-${{ matrix.lane }}
           path: ${{ runner.temp }}/lane-evidence/${{ matrix.lane }}/
@@ -335,7 +335,7 @@ jobs:
 
       - name: Archive resource and resolver logs
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: dependency-preparation-resources-${{ github.run_id }}-${{ github.run_attempt }}-${{ steps.mode.outputs.graph }}-${{ matrix.lane }}
           path: |
@@ -347,7 +347,7 @@ jobs:
 
       - name: Archive diagnostic preparation evidence
         if: always() && matrix.lane == 'linux' && steps.mode.outputs.value == 'write'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: dependency-preparation-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
@@ -400,25 +400,25 @@ jobs:
 
       - name: Download Linux ledger and prepared patch
         if: steps.reuse.outputs.reuse != 'true'
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: dependency-preparation-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.mode == 'reference' && 'reference' || 'candidate' }}-linux
           path: .platform-evidence/linux
       - name: Download Web ledger and prepared patch
         if: steps.reuse.outputs.reuse != 'true'
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: dependency-preparation-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.mode == 'reference' && 'reference' || 'candidate' }}-web
           path: .platform-evidence/web
       - name: Download managed-device ledger and prepared patch
         if: steps.reuse.outputs.reuse != 'true'
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: dependency-preparation-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.mode == 'reference' && 'reference' || 'candidate' }}-managed
           path: .platform-evidence/managed
       - name: Download Apple ledger and prepared patch
         if: steps.reuse.outputs.reuse != 'true'
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: dependency-preparation-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.mode == 'reference' && 'reference' || 'candidate' }}-apple
           path: .platform-evidence/apple
@@ -452,7 +452,7 @@ jobs:
 
       - name: Upload comparison ledger
         if: success() && inputs.mode != 'write' && inputs.mode != ''
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: verification-metadata-${{ inputs.mode }}-${{ github.sha }}
           path: |
@@ -515,7 +515,7 @@ jobs:
 
       - name: Upload authoritative result before push
         if: success() && (inputs.mode || 'write') == 'write' && steps.result.outcome == 'success' && steps.result.outputs.pr_number != '' && steps.result.outputs.pr_number != '0'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: authoritative-preparation-result-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/authoritative-preparation.json

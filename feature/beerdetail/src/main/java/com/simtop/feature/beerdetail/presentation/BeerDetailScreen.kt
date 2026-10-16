@@ -15,9 +15,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.repeatOnLifecycle
-import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.core.designsystem.component.showToast
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailEvent as SharedBeerDetailEvent
 import com.simtop.core.core.CommonUiState
@@ -30,7 +28,7 @@ import dev.zacsweers.metrox.viewmodel.assistedMetroViewModel
 
 @Composable
 fun BeerDetailScreenImpl(
-  beer: Beer,
+  beerId: String,
   onBackClick: () -> Unit,
   modifier: Modifier = Modifier,
   showBackButton: Boolean = true,
@@ -45,11 +43,8 @@ fun BeerDetailScreenImpl(
 
   CompositionLocalProvider(LocalMetroViewModelFactory provides factory) {
     val viewModel: BeerDetailViewModel =
-      assistedMetroViewModel<BeerDetailViewModel, BeerDetailViewModel.Factory>(key = beer.id) {
-        extras ->
-        // The SavedStateHandle lets the ViewModel restore a toggled beer across process death
-        // instead of reverting to the (stale) nav-arg beer this composable was launched with.
-        create(beer, extras.createSavedStateHandle())
+      assistedMetroViewModel<BeerDetailViewModel, BeerDetailViewModel.Factory>(key = beerId) {
+        create(beerId)
       }
     val viewState by viewModel.beerDetailViewState.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current

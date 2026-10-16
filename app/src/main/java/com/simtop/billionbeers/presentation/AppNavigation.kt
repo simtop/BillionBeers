@@ -25,7 +25,6 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_EXPANDED_LOWER_BOUND
 import com.simtop.beerdomain.domain.errors.SaveFilterPresetError
-import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.billionbeers.R
 import com.simtop.core.core.Either
@@ -64,9 +63,9 @@ fun AppNavigation(
       .isWidthAtLeastBreakpoint(WIDTH_DP_EXPANDED_LOWER_BOUND)
   val showDetailBackButton = !(isListDetailStack && isExpandedWindow)
 
-  fun navigateToBeerDetail(beer: Beer) {
+  fun navigateToBeerDetail(beerId: String) {
     backStack.removeAll { it is BeerDetail }
-    navigate(BeerDetail(beer))
+    navigate(BeerDetail(beerId))
   }
 
   LaunchedEffect(deepLinkUri, deepLinkDeliveryId) {
@@ -93,7 +92,7 @@ fun AppNavigation(
   val navigationActions =
     AndroidNavigationActions(
       navigate = navigate,
-      onBeerClick = ::navigateToBeerDetail,
+      onBeerClick = { beer -> navigateToBeerDetail(beer.id) },
       onBack = { backStack.removeLastOrNull() },
       onSaveQuery = ::savePreset,
     )
@@ -133,7 +132,7 @@ fun AppNavigation(
               )
           ) {
             BeersListScreen(
-              onBeerClick = ::navigateToBeerDetail,
+              onBeerClick = { beer -> navigateToBeerDetail(beer.id) },
               onSearchClick = { navigate(BeersSearch) },
               onBrowseClick = { navigate(BeerBrowse) },
               onSaveQuery = { name ->
@@ -162,7 +161,7 @@ fun AppNavigation(
               onBack = { backStack.removeLastOrNull() },
               onNavigate = { destination ->
                 if (destination is BeerDetail) {
-                  navigateToBeerDetail(destination.beer)
+                  navigateToBeerDetail(destination.beerId)
                 } else {
                   navigate(destination)
                 }
@@ -179,7 +178,7 @@ private suspend fun handleDeepLink(
   uri: Uri,
   backStack: MutableList<NavKey>,
   viewModel: AppNavigationViewModel,
-  navigateToBeerDetail: (Beer) -> Unit,
+  navigateToBeerDetail: (String) -> Unit,
 ) {
   when (val destination = uri.toPortableRoute()) {
     null -> Unit
@@ -193,7 +192,7 @@ private suspend fun handleDeepLink(
     }
     // An unresolvable beer id stays on the current screen.
     is PortableRoute.BeerDetail ->
-      viewModel.resolveBeer(destination.beerId)?.let(navigateToBeerDetail)
+      viewModel.resolveBeer(destination.beerId)?.let { navigateToBeerDetail(destination.beerId) }
     else -> Unit
   }
 }
