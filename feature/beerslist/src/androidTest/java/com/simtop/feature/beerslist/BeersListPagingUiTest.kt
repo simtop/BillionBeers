@@ -74,7 +74,7 @@ class BeersListPagingUiTest {
         loadMoreCount,
       )
       // The list's own controls, checked while the screen is up rather than in a test of their own.
-      assertEveryClickableIsLabelled()
+      assertInteractiveNodesAreAccessible()
 
       scrollToBeerAt(lastBeerIndex)
 
@@ -111,7 +111,7 @@ class BeersListPagingUiTest {
       waitForIdle()
 
       assertLoadMoreFailedFooterIsDisplayed()
-      assertEveryClickableIsLabelled()
+      assertInteractiveNodesAreAccessible()
     }
 
     assertEquals(
@@ -143,7 +143,7 @@ class BeersListPagingUiTest {
     beersList(composeTestRule) {
       assertTextIsDisplayed(message)
       assertTextHasLiveRegion(message, LiveRegionMode.Polite)
-      assertEveryClickableIsLabelled()
+      assertInteractiveNodesAreAccessible()
     }
   }
 

@@ -60,14 +60,14 @@ class BeerDetailUiTest {
       "toggle_availability",
       string(R.string.beer_available),
     )
-    robot.assertEveryClickableIsLabelled()
+    robot.assertInteractiveNodesAreAccessible()
 
     robot.clickOnNodeWithTag("toggle_availability")
     robot.assertNodeWithTagHasStateDescription(
       "toggle_availability",
       string(R.string.beer_out_of_stock),
     )
-    robot.assertEveryClickableIsLabelled()
+    robot.assertInteractiveNodesAreAccessible()
 
     composeTestRule.onNodeWithContentDescription(string(R.string.beer_detail_back)).performClick()
     assertEquals(1, backCount)

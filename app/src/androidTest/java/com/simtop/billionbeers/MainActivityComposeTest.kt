@@ -308,14 +308,14 @@ class MainActivityComposeTest {
         // Both real screens, checked where they are already composed - the catalog list and the
         // detail screen behind it. Cheaper here than a dedicated test per feature module, which
         // ADR 0009 prices at ~49s of module overhead against ~2s of test.
-        assertEveryClickableIsLabelled()
+        assertInteractiveNodesAreAccessible()
         clickOnBeer(fakeBeer.name)
       }
 
       detailScreen {
         waitUntilNodeWithTextIsDisplayed(fakeBeer.description)
         assertBeerDetailIsDisplayed(fakeBeer.name, fakeBeer.description)
-        assertEveryClickableIsLabelled()
+        assertInteractiveNodesAreAccessible()
       }
     }
 
@@ -407,13 +407,13 @@ class MainActivityComposeTest {
     runMainActivityTest(composeTestRule) {
       homeScreen {
         waitUntilNodeWithTextIsDisplayed(fakeBeer.name)
-        assertEveryClickableIsLabelled()
+        assertInteractiveNodesAreAccessible()
         clickOnBeer(fakeBeer.name)
       }
 
       detailScreen {
         waitUntilNodeWithTextIsDisplayed(fakeBeer.description)
-        assertEveryClickableIsLabelled()
+        assertInteractiveNodesAreAccessible()
         navigateBack()
       }
 
@@ -424,7 +424,7 @@ class MainActivityComposeTest {
 
       browseScreen {
         waitUntilNodeWithTextIsDisplayed(fakeStyle.name)
-        assertEveryClickableIsLabelled()
+        assertInteractiveNodesAreAccessible()
         pressBack()
       }
 
@@ -436,7 +436,7 @@ class MainActivityComposeTest {
       searchScreen {
         assertSearchFieldIsDisplayed()
         assertBackButtonIsDisplayed()
-        assertEveryClickableIsLabelled()
+        assertInteractiveNodesAreAccessible()
       }
     }
 
@@ -457,7 +457,7 @@ class MainActivityComposeTest {
         assertStyleIsDisplayed(fakeStyle.name)
         // The only a11y coverage the browse dynamic feature gets - and its tabs are exactly the
         // kind of icon-adjacent control where an unlabelled clickable hides.
-        assertEveryClickableIsLabelled()
+        assertInteractiveNodesAreAccessible()
 
         clickOnBreweriesTab()
         assertBreweriesTabIsSelected()

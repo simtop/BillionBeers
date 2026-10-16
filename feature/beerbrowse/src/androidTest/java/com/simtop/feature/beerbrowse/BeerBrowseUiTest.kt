@@ -64,14 +64,14 @@ class BeerBrowseUiTest {
 
     val robot = BaseTestRobot(composeTestRule)
     robot.assertTextIsDisplayed(style.name)
-    robot.assertEveryClickableIsLabelled()
+    robot.assertInteractiveNodesAreAccessible()
     composeTestRule.onNodeWithText(style.name).performClick()
     assertEquals(style, clickedStyle)
 
     composeTestRule.onNodeWithText(string(R.string.browse_tab_breweries)).performClick()
     composeTestRule.onNodeWithText(brewery.name).performClick()
     assertEquals(brewery, clickedBrewery)
-    robot.assertEveryClickableIsLabelled()
+    robot.assertInteractiveNodesAreAccessible()
   }
 
   @Test
@@ -103,7 +103,7 @@ class BeerBrowseUiTest {
 
     val robot = BaseTestRobot(composeTestRule)
     robot.assertTextIsDisplayed(beer.name)
-    robot.assertEveryClickableIsLabelled()
+    robot.assertInteractiveNodesAreAccessible()
     composeTestRule.onNodeWithText(beer.name).performClick()
     assertEquals(beer, clickedBeer)
 
