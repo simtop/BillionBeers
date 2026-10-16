@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.beerdomain.domain.models.Brewery
-import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.beerdomain.domain.repositories.BeerCatalogMetadataRepository
 import com.simtop.billionbeers.shared.presentation.toCommonUiErrorState
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.Either
@@ -14,7 +14,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-open class BrowseViewModel(private val beersRepository: BeersRepository) : ViewModel() {
+open class BrowseViewModel(private val catalogMetadataRepository: BeerCatalogMetadataRepository) :
+  ViewModel() {
 
   private val _styles = MutableStateFlow<CommonUiState<List<BeerStyle>>>(CommonUiState.Loading)
   val styles: StateFlow<CommonUiState<List<BeerStyle>>> = _styles.asStateFlow()
@@ -37,14 +38,14 @@ open class BrowseViewModel(private val beersRepository: BeersRepository) : ViewM
   fun retryStyles() {
     viewModelScope.launch {
       _styles.value = CommonUiState.Loading
-      _styles.value = beersRepository.getBeerStyles().toUiState()
+      _styles.value = catalogMetadataRepository.getBeerStyles().toUiState()
     }
   }
 
   fun retryBreweries() {
     viewModelScope.launch {
       _breweries.value = CommonUiState.Loading
-      _breweries.value = beersRepository.getBreweries().toUiState()
+      _breweries.value = catalogMetadataRepository.getBreweries().toUiState()
     }
   }
 

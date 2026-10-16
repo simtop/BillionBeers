@@ -40,7 +40,7 @@ class BeersSearchViewModelTest {
     BeersSearchViewModel(
       coroutineDispatcher = mainDispatcher.dispatcherProvider,
       beersPagerFactory = fakeFactory,
-      beersRepository = fakeRepository,
+      catalogMetadataRepository = fakeRepository,
       initialQuery = initialQuery,
       initialStyleId = initialStyleId,
     )
