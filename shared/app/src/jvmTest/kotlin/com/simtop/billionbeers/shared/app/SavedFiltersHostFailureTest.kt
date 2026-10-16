@@ -154,6 +154,7 @@ class SavedFiltersHostFailureTest {
     setContent {
       SharedAppShell(
         repository = fixture.repository,
+        catalogMetadataRepository = fixture.backingRepository,
         savedFilterPresetsRepository = fixture.savedFilterPresetsRepository,
         pagerFactory = FakeBeersPagerFactory(fixture.backingRepository),
         coroutineDispatcher = DefaultCoroutineDispatcherProvider(),

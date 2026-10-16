@@ -8,6 +8,7 @@ android { namespace = "com.simtop.feature.favorites" }
 
 dependencies {
   implementation(this.project(":navigation"))
+  implementation(libs.androidx.navigation3.runtime)
   implementation(this.project(":core:designsystem"))
   implementation(this.project(":shared:favorites"))
   implementation(libs.lifecycle.runtime.compose)

@@ -10,13 +10,16 @@ import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.beerdomain.domain.models.CatalogCacheStatus
 import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.beerdomain.domain.repositories.BeerCatalogMetadataRepository
 import com.simtop.core.core.CachePolicy
 import com.simtop.core.core.Either
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 
-class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) : BeersRepository {
+class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) :
+  BeersRepository,
+  BeerCatalogMetadataRepository {
 
   private val beersFlow = MutableStateFlow<List<Beer>>(initialBeers)
   private var beersObservationFlow: Flow<List<Beer>>? = null

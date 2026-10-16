@@ -1,6 +1,7 @@
 package com.simtop.billionbeers.di
 
 import com.simtop.beer_data.di.BeersRepositoryModule
+import com.simtop.beerdomain.domain.repositories.BeerCatalogMetadataRepository
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.beerdomain.domain.repositories.SavedFilterPresetsRepository
@@ -22,6 +23,10 @@ object FakeBeersRepositoryModule {
   @Provides
   @SingleIn(AppScope::class)
   fun provideBeersRepository(): BeersRepository = fakeBeersRepository
+
+  @Provides
+  @SingleIn(AppScope::class)
+  fun provideBeerCatalogMetadataRepository(): BeerCatalogMetadataRepository = fakeBeersRepository
 
   @Provides
   @SingleIn(AppScope::class)

@@ -78,6 +78,7 @@
     { "source": "android-screenshot-fixture", "targets": ["shared-ui-fixture", "design-system", "snapshot-testing"], "scopes": ["main"] }
   ],
   "allowedApiEdges": [
+    { "source": "navigation", "target": "domain-api", "reason": "Android navigation contributions accept beer and query models" },
     { "source": "shared-presentation", "target": "domain-api", "reason": "the shared paged-results API exposes portable beer and query models" },
     { "source": "shared-presentation", "target": "core-common", "reason": "the shared footer API exposes the portable paging UI model" },
     { "source": "design-system", "target": "shared-design-system", "reason": "the Android design-system facade exposes shared token types to existing consumers" },

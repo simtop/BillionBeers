@@ -31,6 +31,9 @@ class BillionBeersApplication : SplitCompatApplication(), GraphProvider, Dynamic
   override val beersRepository
     get() = appGraph.beersRepository
 
+  override val beerCatalogMetadataRepository
+    get() = appGraph.beerCatalogMetadataRepository
+
   override val beersPagerFactory
     get() = appGraph.beersPagerFactory
 

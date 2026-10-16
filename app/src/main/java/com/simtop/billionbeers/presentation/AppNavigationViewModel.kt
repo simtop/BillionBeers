@@ -8,6 +8,7 @@ import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.beerdomain.domain.repositories.SavedFilterPresetsRepository
 import com.simtop.beerdomain.domain.usecases.SaveFilterPresetUseCase
 import com.simtop.core.core.Either
+import com.simtop.navigation.AndroidNavigationContribution
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metro.Inject
@@ -19,6 +20,7 @@ import dev.zacsweers.metrox.viewmodel.ViewModelKey
 class AppNavigationViewModel(
   private val beersRepository: BeersRepository,
   savedFilterPresetsRepository: SavedFilterPresetsRepository,
+  val navigationContributions: Set<AndroidNavigationContribution> = emptySet(),
 ) : ViewModel() {
   private val saveFilterPreset = SaveFilterPresetUseCase(savedFilterPresetsRepository)
 

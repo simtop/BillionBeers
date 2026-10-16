@@ -6,6 +6,7 @@ import com.simtop.beer_database.database.ALL_MIGRATIONS
 import com.simtop.beer_database.database.BeersDatabase
 import com.simtop.beer_database.database.BeersDatabaseConstructor
 import com.simtop.beer_network.network.configureBeersApi
+import com.simtop.beerdomain.domain.repositories.BeerCatalogMetadataRepository
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.beerdomain.domain.repositories.SavedFilterPresetsRepository
@@ -44,6 +45,9 @@ class DesktopDataRuntime private constructor(private val graph: DesktopGraph) : 
   val repository: BeersRepository
     get() = graph.repository
 
+  val catalogMetadataRepository: BeerCatalogMetadataRepository
+    get() = graph.catalogMetadataRepository
+
   val savedFilterPresetsRepository: SavedFilterPresetsRepository
     get() = graph.savedFilterPresetsRepository
 
@@ -68,6 +72,7 @@ class DesktopDataRuntime private constructor(private val graph: DesktopGraph) : 
 @DependencyGraph(AppScope::class)
 interface DesktopGraph {
   val repository: BeersRepository
+  val catalogMetadataRepository: BeerCatalogMetadataRepository
   val savedFilterPresetsRepository: SavedFilterPresetsRepository
   val pagerFactory: BeersPagerFactory
   val httpClient: HttpClient

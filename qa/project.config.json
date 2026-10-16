@@ -209,7 +209,7 @@
         ],
         "evidence": [
           {
-            "path": "app/src/main/java/com/simtop/billionbeers/presentation/AppNavigation.kt",
+            "path": "feature/favorites/src/main/java/com/simtop/feature/favorites/FavoritesNavigationContribution.kt",
             "needle": "entry<Favorites>"
           },
           {
@@ -329,7 +329,7 @@
         ],
         "evidence": [
           {
-            "path": "app/src/main/java/com/simtop/billionbeers/presentation/AppNavigation.kt",
+            "path": "feature/beersearch/src/main/java/com/simtop/feature/beersearch/BeerSearchNavigationContribution.kt",
             "needle": "entry<BeersSearch>"
           },
           {
@@ -663,7 +663,7 @@
         ],
         "evidence": [
           {
-            "path": "app/src/main/java/com/simtop/billionbeers/presentation/AppNavigation.kt",
+            "path": "feature/savedfilters/src/main/java/com/simtop/feature/savedfilters/SavedFiltersNavigationContribution.kt",
             "needle": "entry<SavedFilterPresets>"
           },
           {
@@ -832,7 +832,7 @@
         ],
         "evidence": [
           {
-            "path": "app/src/main/java/com/simtop/billionbeers/presentation/AppNavigation.kt",
+            "path": "feature/savedfilters/src/main/java/com/simtop/feature/savedfilters/SavedFiltersNavigationContribution.kt",
             "needle": "entry<SavedFilterResults>"
           },
           {

@@ -29,11 +29,8 @@ import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.billionbeers.R
 import com.simtop.core.core.Either
-import com.simtop.feature.beersearch.BeersSearchScreen
 import com.simtop.feature.beerslist.BeersListScreen
-import com.simtop.feature.favorites.FavoritesScreen
-import com.simtop.feature.savedfilters.SavedFilterResultsScreen
-import com.simtop.feature.savedfilters.SavedFiltersScreen
+import com.simtop.navigation.AndroidNavigationActions
 import com.simtop.navigation.BeerBrowse
 import com.simtop.navigation.BeerDetail
 import com.simtop.navigation.BeersList
@@ -41,9 +38,8 @@ import com.simtop.navigation.BeersSearch
 import com.simtop.navigation.DynamicFeatureContent
 import com.simtop.navigation.Favorites
 import com.simtop.navigation.SavedFilterPresets
-import com.simtop.navigation.SavedFilterResults
-import com.simtop.navigation.contract.DeepLinkDestination
-import com.simtop.navigation.toDeepLinkDestination
+import com.simtop.navigation.contract.PortableRoute
+import com.simtop.navigation.toPortableRoute
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
@@ -94,6 +90,13 @@ fun AppNavigation(
       presetLimitMessage = presetLimitMessage,
       presetSaveFailedMessage = presetSaveFailedMessage,
     )
+  val navigationActions =
+    AndroidNavigationActions(
+      navigate = navigate,
+      onBeerClick = ::navigateToBeerDetail,
+      onBack = { backStack.removeLastOrNull() },
+      onSaveQuery = ::savePreset,
+    )
 
   Scaffold(
     modifier = modifier,
@@ -139,28 +142,8 @@ fun AppNavigation(
             )
           }
 
-          entry<Favorites> {
-            FavoritesScreen(onBeerClick = ::navigateToBeerDetail)
-          }
-
-          entry<SavedFilterPresets> {
-            SavedFiltersScreen(onApply = { navigate(it) })
-          }
-
-          entry<SavedFilterResults> { key ->
-            SavedFilterResultsScreen(
-              route = key,
-              onBack = { backStack.removeLastOrNull() },
-              onBeerClick = ::navigateToBeerDetail,
-            )
-          }
-
-          entry<BeersSearch> {
-            BeersSearchScreen(
-              onBeerClick = ::navigateToBeerDetail,
-              onBack = { backStack.removeLastOrNull() },
-              onSaveQuery = ::savePreset,
-            )
+          viewModel.navigationContributions.forEach { contribution ->
+            contribution.contribute(this, navigationActions)
           }
 
           entry<BeerDetail>(metadata = ListDetailSceneStrategy.detailPane()) { key ->
@@ -198,19 +181,20 @@ private suspend fun handleDeepLink(
   viewModel: AppNavigationViewModel,
   navigateToBeerDetail: (Beer) -> Unit,
 ) {
-  when (val destination = uri.toDeepLinkDestination()) {
+  when (val destination = uri.toPortableRoute()) {
     null -> Unit
-    DeepLinkDestination.BeersList -> {
+    PortableRoute.BeersList -> {
       backStack.clear()
       backStack.add(BeersList)
     }
-    DeepLinkDestination.Favorites -> {
+    PortableRoute.Favorites -> {
       backStack.clear()
       backStack.add(Favorites)
     }
     // An unresolvable beer id stays on the current screen.
-    is DeepLinkDestination.BeerDetail ->
+    is PortableRoute.BeerDetail ->
       viewModel.resolveBeer(destination.beerId)?.let(navigateToBeerDetail)
+    else -> Unit
   }
 }
 

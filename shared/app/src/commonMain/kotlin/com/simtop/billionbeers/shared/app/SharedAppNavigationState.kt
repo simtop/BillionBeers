@@ -5,10 +5,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.simtop.beerdomain.domain.models.Beer
+import androidx.lifecycle.ViewModelStore
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
+import com.simtop.beerdomain.domain.repositories.BeerCatalogMetadataRepository
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.beerdomain.domain.repositories.SavedFilterPresetsRepository
@@ -22,7 +22,6 @@ import com.simtop.billionbeers.shared.savedfilters.SavedFiltersModel
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.navigation.contract.BrowseCategory
 import com.simtop.navigation.contract.PortableRoute
-import kotlinx.coroutines.cancel
 
 internal data class BrowseSelection(
   val styleId: String? = null,
@@ -77,8 +76,10 @@ internal abstract class ViewModelSharedAppEntry<VM : ViewModel>(
   route: PortableRoute,
   val viewModel: VM,
 ) : ManagedSharedAppEntry(id, route) {
+  private val viewModelStore = ViewModelStore().apply { put("entry", viewModel) }
+
   override fun onClose() {
-    viewModel.viewModelScope.cancel()
+    viewModelStore.clear()
   }
 }
 
@@ -109,14 +110,14 @@ internal class FavoritesEntry(
 
 internal class SearchEntry(
   id: Long,
-  repository: BeersRepository,
+  catalogMetadataRepository: BeerCatalogMetadataRepository,
   pagerFactory: BeersPagerFactory,
   coroutineDispatcher: CoroutineDispatcherProvider,
 ) :
   ViewModelSharedAppEntry<BeersSearchViewModel>(
     id = id,
     route = PortableRoute.BeersSearch,
-    viewModel = BeersSearchViewModel(coroutineDispatcher, pagerFactory, repository),
+    viewModel = BeersSearchViewModel(coroutineDispatcher, pagerFactory, catalogMetadataRepository),
   ) {
   val listState = LazyListState()
 }
@@ -149,12 +150,12 @@ internal class SavedFilterResultsEntry(
 
 internal class BrowseHomeEntry(
   id: Long,
-  repository: BeersRepository,
+  catalogMetadataRepository: BeerCatalogMetadataRepository,
 ) :
   ViewModelSharedAppEntry<BrowseViewModel>(
     id = id,
     route = PortableRoute.BeerBrowse,
-    viewModel = BrowseViewModel(repository),
+    viewModel = BrowseViewModel(catalogMetadataRepository),
   ) {
   var selectedTab by mutableStateOf(0)
 }
@@ -175,17 +176,18 @@ internal class BrowseBeersEntry(
 
 internal class DetailEntry(
   id: Long,
-  val beer: Beer,
+  val beerId: String,
   repository: BeersRepository,
 ) :
   ViewModelSharedAppEntry<BeerDetailViewModel>(
     id = id,
-    route = PortableRoute.BeerDetail(beer),
-    viewModel = BeerDetailViewModel(repository, beer),
+    route = PortableRoute.BeerDetail(beerId),
+    viewModel = BeerDetailViewModel(repository, beerId),
   )
 
 internal class SharedAppNavigationState(
   private val repository: BeersRepository,
+  private val catalogMetadataRepository: BeerCatalogMetadataRepository,
   private val savedFilterPresetsRepository: SavedFilterPresetsRepository,
   private val pagerFactory: BeersPagerFactory,
   private val coroutineDispatcher: CoroutineDispatcherProvider,
@@ -285,9 +287,9 @@ internal class SharedAppNavigationState(
       PortableRoute.BeersList -> ListEntry(nextId(), repository, pagerFactory)
       PortableRoute.Favorites -> FavoritesEntry(nextId(), repository)
       PortableRoute.BeersSearch ->
-        SearchEntry(nextId(), repository, pagerFactory, coroutineDispatcher)
+        SearchEntry(nextId(), catalogMetadataRepository, pagerFactory, coroutineDispatcher)
       PortableRoute.SavedFilterPresets -> SavedFiltersEntry(nextId(), savedFilterPresetsRepository)
-      PortableRoute.BeerBrowse -> BrowseHomeEntry(nextId(), repository)
+      PortableRoute.BeerBrowse -> BrowseHomeEntry(nextId(), catalogMetadataRepository)
       is PortableRoute.BeerBrowseSelection ->
         BrowseBeersEntry(
           nextId(),
@@ -295,7 +297,7 @@ internal class SharedAppNavigationState(
           pagerFactory,
           coroutineDispatcher,
         )
-      is PortableRoute.BeerDetail -> DetailEntry(nextId(), route.beer, repository)
+      is PortableRoute.BeerDetail -> DetailEntry(nextId(), route.beerId, repository)
     }
 
   private fun nextId(): Long = ++nextId
