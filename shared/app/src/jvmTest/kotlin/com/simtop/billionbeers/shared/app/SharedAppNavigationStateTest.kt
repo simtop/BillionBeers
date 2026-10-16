@@ -48,9 +48,9 @@ class SharedAppNavigationStateTest {
       search.viewModel.onQueryChange("lager")
       runCurrent()
       val retainedListState = search.listState
-      navigation.navigate(PortableRoute.BeerDetail(beer))
+      navigation.navigate(PortableRoute.BeerDetail(beer.id))
       val firstDetail = navigation.current
-      navigation.navigate(PortableRoute.BeerDetail(beer))
+      navigation.navigate(PortableRoute.BeerDetail(beer.id))
       val secondDetail = navigation.current
 
       assertNotEquals(firstDetail.id, secondDetail.id)
@@ -75,9 +75,9 @@ class SharedAppNavigationStateTest {
     val catalog = navigation.current as ListEntry
     val listState = catalog.listState
 
-    navigation.navigate(PortableRoute.BeerDetail(beer))
+    navigation.navigate(PortableRoute.BeerDetail(beer.id))
     val firstDetail = navigation.current
-    navigation.navigate(PortableRoute.BeerDetail(beer.copy(id = "beer-2")))
+    navigation.navigate(PortableRoute.BeerDetail("beer-2"))
     val secondDetail = navigation.current
 
     assertSame(catalog, navigation.entries.first())
@@ -102,7 +102,7 @@ class SharedAppNavigationStateTest {
     home.selectedTab = 1
     navigation.selectBrowse(BrowseSelection(styleId = "style", name = "Lager"))
     val category = navigation.current as BrowseBeersEntry
-    navigation.navigate(PortableRoute.BeerDetail(beer))
+    navigation.navigate(PortableRoute.BeerDetail(beer.id))
     val detail = navigation.current
 
     assertTrue(navigation.pop())
@@ -167,7 +167,7 @@ class SharedAppNavigationStateTest {
           assertTrue(events.isEmpty())
           state.navigate(PortableRoute.BeerBrowse)
           state.selectBrowse(BrowseSelection.fromCategory(categoryRoute.category))
-          state.navigate(PortableRoute.BeerDetail(beer))
+          state.navigate(PortableRoute.BeerDetail(beer.id))
           assertTrue(state.pop())
           assertTrue(state.pop())
           assertTrue(state.pop())
@@ -177,7 +177,7 @@ class SharedAppNavigationStateTest {
             listOf(
               SharedAppNavigationEvent.Push(PortableRoute.BeerBrowse),
               SharedAppNavigationEvent.Push(categoryRoute),
-              SharedAppNavigationEvent.Push(PortableRoute.BeerDetail(beer)),
+              SharedAppNavigationEvent.Push(PortableRoute.BeerDetail(beer.id)),
               SharedAppNavigationEvent.Pop(categoryRoute),
               SharedAppNavigationEvent.Pop(PortableRoute.BeerBrowse),
               SharedAppNavigationEvent.Pop(PortableRoute.BeersList),
@@ -217,7 +217,7 @@ class SharedAppNavigationStateTest {
 
       navigation.replaceFromRoute(PortableRoute.BeerBrowse)
       navigation.replaceFromRoute(categoryRoutesAndQueries.first().first)
-      navigation.replaceFromRoute(PortableRoute.BeerDetail(beer))
+      navigation.replaceFromRoute(PortableRoute.BeerDetail(beer.id))
       navigation.replaceFromRoute(categoryRoutesAndQueries.first().first)
       navigation.replaceFromRoute(PortableRoute.BeersList)
       assertTrue(events.isEmpty())
@@ -234,7 +234,7 @@ class SharedAppNavigationStateTest {
     val browseHome = navigation.current as BrowseHomeEntry
     navigation.selectBrowse(BrowseSelection(styleId = "style", name = "Lager"))
     val category = navigation.current
-    navigation.navigate(PortableRoute.BeerDetail(beer))
+    navigation.navigate(PortableRoute.BeerDetail(beer.id))
 
     navigation.replaceFromRoute(
       PortableRoute.BeerBrowseSelection(BrowseCategory.Style("style", "style"))
@@ -299,7 +299,7 @@ class SharedAppNavigationStateTest {
 
         try {
           val root = navigation.current
-          navigation.navigate(PortableRoute.BeerDetail(beer))
+          navigation.navigate(PortableRoute.BeerDetail(beer.id))
           val detail = navigation.current
 
           navigation.replaceFromRoute(route)
@@ -363,7 +363,7 @@ class SharedAppNavigationStateTest {
       val root = navigation.current
       navigation.selectSavedFilter(preset)
       val results = navigation.current
-      navigation.navigate(PortableRoute.BeerDetail(beer))
+      navigation.navigate(PortableRoute.BeerDetail(beer.id))
       val detail = navigation.current
       events.clear()
 

@@ -1,13 +1,10 @@
 package com.simtop.beerdomain.domain.repositories
 
-import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
 import com.simtop.beerdomain.domain.errors.UpdateFavoriteError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeerPage
-import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.beerdomain.domain.models.BeersQuery
-import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.beerdomain.domain.models.CatalogCacheStatus
 import com.simtop.core.core.CachePolicy
 import com.simtop.core.core.Either
@@ -18,7 +15,7 @@ import kotlinx.coroutines.flow.Flow
  * [BeersPagerFactory]): this interface is bound as an app-scoped singleton, and a process-lifetime
  * instance must not own screen-lifetime state like a page counter.
  */
-interface BeersRepository {
+interface BeersRepository : BeerCatalogMetadataRepository {
   suspend fun countDBEntries(): Int
 
   fun observeBeers(): Flow<List<Beer>>
@@ -82,9 +79,4 @@ interface BeersRepository {
    */
   suspend fun getBeersPageFromApi(page: Int, query: BeersQuery = BeersQuery()): BeerPage
 
-  /** All 17 beer styles, unpaged - a list this small never needs a pager. */
-  suspend fun getBeerStyles(): Either<FetchBeersError, List<BeerStyle>>
-
-  /** All 38 breweries, unpaged - same reasoning as [getBeerStyles]. */
-  suspend fun getBreweries(): Either<FetchBeersError, List<Brewery>>
 }

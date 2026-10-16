@@ -4,8 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
+import com.simtop.beerdomain.domain.repositories.BeerCatalogMetadataRepository
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
-import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.billionbeers.shared.beersearch.BeersSearchEvent as SharedBeersSearchEvent
 import com.simtop.billionbeers.shared.beersearch.BeersSearchViewModel as SharedBeersSearchViewModel
 import com.simtop.core.core.CoroutineDispatcherProvider
@@ -24,13 +24,13 @@ import kotlinx.coroutines.flow.onEach
 class BeersSearchViewModel(
   coroutineDispatcher: CoroutineDispatcherProvider,
   beersPagerFactory: BeersPagerFactory,
-  beersRepository: BeersRepository,
+  catalogMetadataRepository: BeerCatalogMetadataRepository,
   @Assisted private val savedStateHandle: SavedStateHandle,
 ) :
   SharedBeersSearchViewModel(
     coroutineDispatcher = coroutineDispatcher,
     beersPagerFactory = beersPagerFactory,
-    beersRepository = beersRepository,
+    catalogMetadataRepository = catalogMetadataRepository,
     initialQuery = savedStateHandle.get<String>(KEY_QUERY).orEmpty(),
     initialStyleId = savedStateHandle.get<String>(KEY_STYLE_ID),
   ) {

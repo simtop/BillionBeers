@@ -50,6 +50,20 @@ internal class BeerDetailViewModelTest {
     }
 
   @Test
+  fun `detail route resolves its beer from the repository by id`() =
+    runTest(testDispatcher) {
+      fakeBeersRepository.setBeers(listOf(fakeBeerModel))
+      val viewModel = BeerDetailViewModel(fakeBeersRepository, fakeBeerModel.id)
+
+      viewModel.beerDetailViewState.test {
+        expectThat(awaitItem()).isEqualTo(CommonUiState.Loading)
+        testDispatcher.scheduler.advanceUntilIdle()
+        expectThat(awaitItem()).isEqualTo(CommonUiState.Success(fakeBeerModel))
+        cancelAndIgnoreRemainingEvents()
+      }
+    }
+
+  @Test
   fun `when usecase fails we rollback and emit error event`() =
     runTest(testDispatcher) {
       // Arrange

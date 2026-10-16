@@ -1,6 +1,5 @@
 package com.simtop.billionbeers.iosshared
 
-import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.navigation.contract.DeepLinkDestination
 import com.simtop.navigation.contract.DeepLinkParser
@@ -16,8 +15,6 @@ internal suspend fun resolveIosDeepLink(
     DeepLinkDestination.BeersList -> PortableRoute.BeersList
     DeepLinkDestination.Favorites -> PortableRoute.Favorites
     is DeepLinkDestination.BeerDetail ->
-      repository.getBeerById(destination.beerId)?.let(Beer::toPortableDetail)
+      repository.getBeerById(destination.beerId)?.let { PortableRoute.BeerDetail(it.id) }
     null -> null
   }
-
-private fun Beer.toPortableDetail(): PortableRoute = PortableRoute.BeerDetail(this)

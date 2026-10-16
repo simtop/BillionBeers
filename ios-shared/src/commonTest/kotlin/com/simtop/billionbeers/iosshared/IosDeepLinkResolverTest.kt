@@ -38,7 +38,7 @@ class IosDeepLinkResolverTest {
     val lookups = mutableListOf<String>()
 
     assertEquals(
-      PortableRoute.BeerDetail(beer),
+      PortableRoute.BeerDetail(beer.id),
       resolveIosDeepLink(
         DeepLinkParser.SCHEME,
         DeepLinkParser.HOST_BEERS,

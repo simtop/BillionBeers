@@ -1,6 +1,7 @@
 package com.simtop.billionbeers.di
 
 import com.google.android.play.core.splitinstall.SplitInstallManager
+import com.simtop.beerdomain.domain.repositories.BeerCatalogMetadataRepository
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.CoroutineDispatcherProvider
@@ -13,6 +14,7 @@ import dev.zacsweers.metrox.viewmodel.MetroViewModelMultibindings
 
 interface BaseAppGraph : DynamicDependencies, MetroViewModelMultibindings {
   override val beersRepository: BeersRepository
+  override val beerCatalogMetadataRepository: BeerCatalogMetadataRepository
   override val beersPagerFactory: BeersPagerFactory
   override val coroutineDispatcher: CoroutineDispatcherProvider
   val splitInstallManager: SplitInstallManager

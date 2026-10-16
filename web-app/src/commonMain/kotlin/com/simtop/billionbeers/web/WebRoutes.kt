@@ -35,8 +35,9 @@ internal suspend fun resolveWebHash(
         )
       )
     is WebRouteDestination.BeerDetail ->
-      findLocalBeer(destination.id)?.let { WebRouteResolution.Ready(PortableRoute.BeerDetail(it)) }
-        ?: WebRouteResolution.MissingBeer(destination.id)
+      findLocalBeer(destination.id)?.let {
+        WebRouteResolution.Ready(PortableRoute.BeerDetail(it.id))
+      } ?: WebRouteResolution.MissingBeer(destination.id)
   }
 
 internal sealed interface WebRouteDestination {
@@ -100,5 +101,5 @@ internal fun PortableRoute.toWebHash(): String =
         is com.simtop.navigation.contract.BrowseCategory.Style -> "#browse/style/${category.id}"
         is com.simtop.navigation.contract.BrowseCategory.Brewery -> "#browse/brewery/${category.id}"
       }
-    is PortableRoute.BeerDetail -> "#beer/${beer.id}"
+    is PortableRoute.BeerDetail -> "#beer/$beerId"
   }
