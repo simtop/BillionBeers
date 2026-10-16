@@ -1,6 +1,6 @@
 package com.simtop.core.di
 
-import com.simtop.core.core.DefaultLanguageProvider
+import com.simtop.core.core.AndroidLanguageProvider
 import com.simtop.core.core.LanguageProvider
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesTo
@@ -12,5 +12,5 @@ interface LanguageModule {
 
   @Provides
   @SingleIn(AppScope::class)
-  fun providesLanguageProvider(): LanguageProvider = DefaultLanguageProvider()
+  fun providesLanguageProvider(): LanguageProvider = AndroidLanguageProvider()
 }
