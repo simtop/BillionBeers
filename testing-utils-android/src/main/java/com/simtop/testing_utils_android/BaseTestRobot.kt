@@ -26,7 +26,14 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
 import androidx.test.runner.lifecycle.Stage
 
-open class BaseTestRobot(private val composeTestRule: ComposeTestRule) {
+/**
+ * Shared Compose test actions. Set [supportsActivityRecreation] only when the host Activity
+ * reinstalls its screen content from `onCreate` during Activity recreation.
+ */
+open class BaseTestRobot(
+  private val composeTestRule: ComposeTestRule,
+  private val supportsActivityRecreation: Boolean = false,
+) {
 
   /**
    * Fails if any node a user can activate reaches a screen reader unlabelled - no
@@ -238,10 +245,14 @@ open class BaseTestRobot(private val composeTestRule: ComposeTestRule) {
   }
 
   /**
-   * The monthly forward-compat lane sets this runner argument to make each robot action an Activity
-   * recreation test. Normal per-push UI tests keep their current cost and behavior.
+   * The monthly forward-compat lane sets this runner argument to make each robot action on a
+   * recreation-capable app host an Activity recreation test. Component-test content is hosted by a
+   * generic test Activity and cannot be reconstructed after recreation, so those robots are
+   * excluded.
    */
   private fun recreateActivityIfRequested() {
+    if (!supportsActivityRecreation) return
+
     val instrumentation = InstrumentationRegistry.getInstrumentation()
     if (
       !InstrumentationRegistry.getArguments()

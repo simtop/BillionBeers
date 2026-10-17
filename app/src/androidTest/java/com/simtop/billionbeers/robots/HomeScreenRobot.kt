@@ -8,7 +8,8 @@ import com.simtop.testing_utils_android.BaseTestRobot
 fun homeScreen(composeTestRule: ComposeTestRule, func: HomeScreenRobot.() -> Unit) =
   HomeScreenRobot(composeTestRule).apply { func() }
 
-class HomeScreenRobot(composeTestRule: ComposeTestRule) : BaseTestRobot(composeTestRule) {
+class HomeScreenRobot(composeTestRule: ComposeTestRule) :
+  BaseTestRobot(composeTestRule, supportsActivityRecreation = true) {
 
   fun clickOnBrowse() {
     clickOnNodeWithContentDescription(string(BeersListR.string.beers_browse))
