@@ -16,9 +16,8 @@ dependencies {
   // activity-compose, foundation, material3 and ui-tooling-preview come from
   // billionbeers.android.compose.
   implementation(libs.androidx.runtime.retain)
-  // TODO: think on how could I do it impl
+  // Public installer APIs expose Play Core types such as SplitInstallManager and session state.
   api(libs.androidPlayCore)
-  api(libs.androidPlayCoreKtx)
 
   implementation(libs.coil3)
   implementation(libs.coil3.view)

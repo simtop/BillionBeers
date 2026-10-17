@@ -225,6 +225,13 @@ instrumentedTest = [
     "coreTesting",
 ]
 
+# Dependencies used inside the shared Android test robot fixture. Consumers receive these through
+# the instrumentedTest bundle supplied by the Android conventions, not through fixture api exports.
+androidTestHelperInternals = ["espressoCore", "testRunner", "testCoreKtx"]
+
+# Code-generation libraries used by KSP processors, but not part of their provider API.
+kotlinPoetProcessor = ["kotlinpoet", "kotlinpoet-ksp"]
+
 [plugins]
 compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "org-jetbrains-kotlin" }
