@@ -8,7 +8,8 @@ import com.simtop.testing_utils_android.BaseTestRobot
 fun searchScreen(composeTestRule: ComposeTestRule, func: SearchScreenRobot.() -> Unit) =
   SearchScreenRobot(composeTestRule).apply { func() }
 
-class SearchScreenRobot(composeTestRule: ComposeTestRule) : BaseTestRobot(composeTestRule) {
+class SearchScreenRobot(composeTestRule: ComposeTestRule) :
+  BaseTestRobot(composeTestRule, supportsActivityRecreation = true) {
 
   fun assertSearchFieldIsDisplayed() {
     assertNodeWithTagIsDisplayed(SEARCH_FIELD_TAG)

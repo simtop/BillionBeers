@@ -8,7 +8,8 @@ import com.simtop.testing_utils_android.BaseTestRobot
 fun detailScreen(composeTestRule: ComposeTestRule, func: DetailScreenRobot.() -> Unit) =
   DetailScreenRobot(composeTestRule).apply { func() }
 
-class DetailScreenRobot(composeTestRule: ComposeTestRule) : BaseTestRobot(composeTestRule) {
+class DetailScreenRobot(composeTestRule: ComposeTestRule) :
+  BaseTestRobot(composeTestRule, supportsActivityRecreation = true) {
 
   fun assertBeerDetailIsDisplayed(beerName: String, beerDescription: String) {
     assertTextIsDisplayed(beerName)
