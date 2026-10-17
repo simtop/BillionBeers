@@ -114,25 +114,26 @@ import kotlinx.serialization.json.Json
         request.onerror = () => fail(request.error);
       } else if (operation === 'savePreset') {
         const input = JSON.parse(payload);
-        const existingRequest = presets.get(input.id);
-        existingRequest.onsuccess = () => {
-          if (!existingRequest.result) {
-            const countRequest = presets.count();
-            countRequest.onsuccess = () => {
-              if (countRequest.result >= 10) {
-                finishMutation([], null, false, true);
-                return;
-              }
-              presets.put(input);
-              finishMutation();
-            };
-            countRequest.onerror = () => fail(countRequest.error);
-          } else {
-            presets.put(input);
-            finishMutation();
+        // Keep tuple lookup and write in this transaction so concurrent saves serialize here.
+        const existingPresetsRequest = presets.getAll();
+        existingPresetsRequest.onsuccess = () => {
+          const existingPresets = existingPresetsRequest.result;
+          const existingByContents = existingPresets.find(preset =>
+            preset.name === input.name &&
+            preset.search === input.search &&
+            preset.styleId === input.styleId &&
+            preset.breweryId === input.breweryId
+          );
+          const existingById = existingPresets.find(preset => preset.id === input.id);
+          const existing = existingByContents || existingById;
+          if (!existing && existingPresets.length >= 10) {
+            finishMutation([], null, false, true);
+            return;
           }
+          presets.put({...input, id: existing ? existing.id : input.id});
+          finishMutation();
         };
-        existingRequest.onerror = () => fail(existingRequest.error);
+        existingPresetsRequest.onerror = () => fail(existingPresetsRequest.error);
       } else if (operation === 'renamePreset') {
         const input = JSON.parse(payload);
         const request = presets.get(input.id);
