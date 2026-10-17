@@ -99,3 +99,8 @@ forbidden direct or transitive project edges. Role rules match architectural pat
 adding `:feature:new-screen` does not require editing a feature/package list. Every production
 project `api(...)` edge also needs an explicit entry in `allowedApiEdges`, which makes API exposure
 growth visible in review.
+
+Library `api` exports are checked separately by `ApiDependencyBoundaryTest` through
+`make konsist`. Each export needs an exact reviewed declaration and a reason tied to the
+module's public contract; stale entries fail the check. Use `implementation` for internal
+dependencies, with version-catalog bundles to group related libraries.

@@ -17,8 +17,7 @@ java {
 
 dependencies {
   api(libs.ksp.api)
-  api(libs.kotlinpoet)
-  api(libs.kotlinpoet.ksp)
+  implementation(libs.bundles.kotlinPoetProcessor)
   implementation(kotlin("stdlib"))
   testImplementation(libs.junit.jupiter.api)
   testRuntimeOnly(libs.junit.jupiter.engine)
