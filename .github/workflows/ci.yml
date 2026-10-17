@@ -819,7 +819,7 @@ jobs:
         # optimization is chosen from the actual critical path rather than module counts.
         run: >-
           bash .github/scripts/run-timed-command.sh
-          ./gradlew ciGroupDebugAndroidTest --profile
+          ./gradlew ciGroupDebugAndroidTest ciGroupAndroidDeviceTest --profile
 
       - name: Repeat changed instrumented test classes
         if: github.event_name == 'pull_request'

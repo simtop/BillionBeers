@@ -91,7 +91,7 @@ jobs:
         # The `compat` device group - defined in build-logic, not named here. The runner argument
         # recreates Activity hosts after each action for robots used by app-level compat tests;
         # component-test setContent runs in the test body and is not repeated after recreation.
-        run: ./gradlew compatGroupDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.UI_TEST_CHECK_SCREEN_ROTATION=true
+        run: ./gradlew compatGroupDebugAndroidTest compatGroupAndroidDeviceTest -Pandroid.testInstrumentationRunnerArguments.UI_TEST_CHECK_SCREEN_ROTATION=true
 
       - name: Archive instrumented test reports
         if: always()

@@ -51,7 +51,7 @@ EMULATOR_RUN = $(EMULATOR_SCRIPT_ENV) bash scripts/emulator.sh
 MODULE_TRIMMED := $(strip $(MODULE))
 MODULE_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,)
 SCREENSHOT_SCOPED = $(if $(MODULE_TRIMMED),--scoped,)
-UI_TEST_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,:app:)
+UI_TEST_MODULE = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED),:app)
 UI_TEST_CLASS ?=
 UI_TEST_CHECK_SCREEN_ROTATION ?= false
 UI_TEST_RERUN ?= false
@@ -309,6 +309,7 @@ endif
 ci-report-test: ## Test CI diagnosis, evidence parsing, and incremental comment lifecycle.
 	@$(MAKE) --no-print-directory qa-test qa-validate
 	@$(MAKE) --no-print-directory make-help-test
+	@python3 scripts/test_android_test_task.py
 	@$(MAKE) --no-print-directory benchmark-budget-test
 	@$(MAKE) --no-print-directory build-time-budget-test
 	@python3 scripts/check_skill_format.py
@@ -358,10 +359,12 @@ compose-metrics: ## Regenerate Compose compiler stability/skippability reports i
 
 ##@ Android UI tests - connected
 ui-test: ## Run connected Android tests (UI tests) on an already-running device/emulator.
-	$(GRADLE_RUNNER) $(UI_TEST_PREFIX)connectedDebugAndroidTest $(UI_TEST_ARGS)
+	@android_test_task=$$(python3 scripts/android_test_task.py "$(UI_TEST_MODULE)" connected) && \
+		$(GRADLE_RUNNER) "$$android_test_task" $(UI_TEST_ARGS)
 
 ui-test-local: emulator-start ## Start/reuse the local resizable emulator, then run connected UI tests.
-	$(GRADLE_RUNNER) $(UI_TEST_PREFIX)connectedDebugAndroidTest $(UI_TEST_ARGS)
+	@android_test_task=$$(python3 scripts/android_test_task.py "$(UI_TEST_MODULE)" connected) && \
+		$(GRADLE_RUNNER) "$$android_test_task" $(UI_TEST_ARGS)
 
 ##@ Android emulators
 # Local emulator lifecycle. Settings are explicit above and can be overridden with EMULATOR_*.
@@ -385,19 +388,21 @@ emulator-delete: ## Delete the local emulator (wipes data; CONFIRM=1 required).
 
 ##@ Android UI tests - managed
 ui-test-managed: ## Run instrumented tests on the ATD fast-lane managed device (boots/tears down its own emulator).
-	$(GRADLE_RUNNER) $(UI_TEST_PREFIX)atdApi35DebugAndroidTest $(UI_TEST_RERUN_ARG) $(UI_TEST_ARGS)
+	@android_test_task=$$(python3 scripts/android_test_task.py "$(UI_TEST_MODULE)" atdApi35) && \
+		$(GRADLE_RUNNER) "$$android_test_task" $(UI_TEST_RERUN_ARG) $(UI_TEST_ARGS)
 
 ui-test-managed-newest: ## Run instrumented tests on the API 37 managed device (forward-compat lane).
-	$(GRADLE_RUNNER) $(UI_TEST_PREFIX)pixel9Api37DebugAndroidTest $(UI_TEST_RERUN_ARG) $(UI_TEST_ARGS)
+	@android_test_task=$$(python3 scripts/android_test_task.py "$(UI_TEST_MODULE)" pixel9Api37) && \
+		$(GRADLE_RUNNER) "$$android_test_task" $(UI_TEST_RERUN_ARG) $(UI_TEST_ARGS)
 
 ui-test-managed-tablet: ## Run a selected app test on the API 35 Pixel Tablet (expanded-width coverage).
 	$(GRADLE_RUNNER) :app:pixelTabletApi35DebugAndroidTest $(UI_TEST_RERUN_ARG) $(UI_TEST_ARGS)
 
 ui-test-managed-ci: ## Run what CI runs per push: the ATD fast lane, every opted-in module.
-	$(GRADLE_RUNNER) ciGroupDebugAndroidTest $(UI_TEST_ARGS)
+	$(GRADLE_RUNNER) ciGroupDebugAndroidTest ciGroupAndroidDeviceTest $(UI_TEST_ARGS)
 
 ui-test-managed-all: ## Run instrumented tests on both managed devices, every opted-in module.
-	$(GRADLE_RUNNER) allDevicesDebugAndroidTest $(UI_TEST_ARGS)
+	$(GRADLE_RUNNER) allDevicesDebugAndroidTest allDevicesAndroidDeviceTest $(UI_TEST_ARGS)
 
 ##@ Screenshots
 screenshot-record: ## Record golden images for Paparazzi.
@@ -491,7 +496,7 @@ VERIFICATION_METADATA_PASS_TWO := \
 	assembleDebug testDebugUnitTest :konsist:test :core-common:jvmTest :core-common:allMetadataJar :core-common:testAndroidHostTest :beerdomain:fakes:jvmTest :beerdomain:fakes:allMetadataJar :beerdomain:fakes:testAndroidHostTest :beer_network:api:jvmTest :beer_network:api:allMetadataJar :beer_network:api:testAndroidHostTest :testing-utils:test \
 	:snapshot-processor:test checkDataLayerClasspathBoundary verifyArchitectureGraph \
 	verifyPaparazziDebug jacocoRootReport
-VERIFICATION_METADATA_REFERENCE_DEBUG_DEVICE_TASKS := ciGroupDebugAndroidTest
+VERIFICATION_METADATA_REFERENCE_DEBUG_DEVICE_TASKS := ciGroupDebugAndroidTest ciGroupAndroidDeviceTest
 VERIFICATION_METADATA_REFERENCE_SMOKE_DEVICE_TASKS := \
 	:app-release-smoke:atdApi35ReleaseSmokeAndroidTest \
 	:app:atdApi35ReleaseSmokeAndroidTest
@@ -519,6 +524,7 @@ VERIFICATION_METADATA_NATIVE_TASKS :=
 endif
 VERIFICATION_METADATA_CANDIDATE_DEBUG_DEVICE_TASKS := \
 	:app:assembleDebugAndroidTest \
+	:beer_database:assembleAndroidDeviceTest \
 	:feature:beerbrowse:assembleDebugAndroidTest \
 	:feature:beerdetail:assembleDebugAndroidTest \
 	:feature:beerslist:assembleDebugAndroidTest \
@@ -575,7 +581,7 @@ ifeq ($(MODE),candidate)
 	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) $(VERIFICATION_METADATA_CANDIDATE_DEBUG_DEVICE_TASKS)
 	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) -PappTestBuildType=releaseSmoke $(VERIFICATION_METADATA_CANDIDATE_SMOKE_DEVICE_TASKS)
 else
-	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) ciGroupDebugAndroidTest
+	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) $(VERIFICATION_METADATA_REFERENCE_DEBUG_DEVICE_TASKS)
 	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) :app-release-smoke:atdApi35ReleaseSmokeAndroidTest
 	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) -PappTestBuildType=releaseSmoke \
 		-Pandroid.testInstrumentationRunnerArguments.class=com.simtop.billionbeers.ReleaseConfidenceSmokeTest \

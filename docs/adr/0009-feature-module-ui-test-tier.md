@@ -85,8 +85,9 @@ production behaviour fails exactly one test.
 
 ## Consequences
 
-**The instrumented lane gets slower, not faster.** CI runs `ciGroupDebugAndroidTest` across every
-opted-in module, so each addition costs another APK build and install. This tier is not a CI
+**The instrumented lane gets slower, not faster.** CI runs `ciGroupDebugAndroidTest` and
+`ciGroupAndroidDeviceTest` across the opted-in Android and KMP modules, so each addition costs
+another APK build and install. This tier is not a CI
 speedup and should never be sold as one. It buys correct placement, fast local iteration, isolation
 from app assembly, and shardability.
 
@@ -129,8 +130,8 @@ Stable aggregate semantics and report coverage worked, but performance did not:
 Against the ten-run `master` median of 9m36s, the candidate median was about 17.8% slower and used
 about 85.5% more runner time. Reassigning modules cannot remove the duplicated fixed costs; moving a
 dynamic feature would also duplicate more app assembly, while moving release smoke trades shared
-build outputs for nominal balance. Keep one job running `ciGroupDebugAndroidTest` followed by release
-smoke.
+build outputs for nominal balance. Keep one job running the Android and KMP managed-device groups
+followed by release smoke.
 
 The single instrumented artifact includes both the HTML report and raw managed-device JUnit/logcat
 outputs. Those paths preserve the owning module, and failed test cases retain their class and method,
@@ -199,7 +200,9 @@ archive.
   setup work, or if a new profile shows at least a 20% whole-job ceiling after archive restore;
   never restore `system-images` alone.
 - If another module joins the tier, its managed-device convention opt-in automatically adds it to
-  `ciGroupDebugAndroidTest`; no CI task list should duplicate that ownership.
+  `ciGroupDebugAndroidTest` (Android) or `ciGroupAndroidDeviceTest` (KMP); no CI module list should
+  duplicate that ownership. Scoped Makefile commands select the actual task family so task-scoped
+  `--rerun` reaches the test itself.
 
 ## Note on measuring any of this
 
