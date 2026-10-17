@@ -146,10 +146,12 @@ and conclusion. Linux follows the CI test inventories in the Makefile, including
 metadata and Android-host tasks, plain JVM tests, Android assembly, Paparazzi, architecture checks,
 and coverage. Web runs every `KMP_BROWSER_TEST_MODULES` browser task and the production Wasm
 distribution task, which resolves the Binaryen distribution and Compose resources used by the
-browser build. Candidate write mode assembles the six supported debug AndroidTest APKs, the
+browser build. Candidate write mode assembles the supported debug AndroidTest APKs, the KMP
+database device-test APK, the
 minified `:app` releaseSmoke APK and its AndroidTest APK, and the separate
 `:app-release-smoke:assembleReleaseSmoke` APK without booting managed devices. Reference mode
-remains available for diagnostics and runs `ciGroupDebugAndroidTest` plus the release-smoke
+remains available for diagnostics and runs `ciGroupDebugAndroidTest` and
+`ciGroupAndroidDeviceTest` plus the release-smoke
 managed-device test path. The
 normal CI workflow still executes the managed-device suite; only candidate ledger preparation
 replaces those executions with APK assembly. Apple compiles device and simulator targets, links both

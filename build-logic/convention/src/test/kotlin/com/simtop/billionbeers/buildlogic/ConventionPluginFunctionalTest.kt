@@ -207,6 +207,38 @@ class ConventionPluginFunctionalTest {
   }
 
   @Test
+  fun `managed device convention configures the KMP Android device test compilation`() {
+    writeAndroidFixture()
+    writeBuildFile(
+      """
+      plugins {
+        id("org.jetbrains.kotlin.multiplatform") version "2.4.21"
+        id("com.android.kotlin.multiplatform.library") version "9.2.1"
+        id("billionbeers.android.managed.device")
+      }
+
+      kotlin {
+        android {
+          namespace = "com.simtop.conventiontest.kmp"
+          compileSdk = 37
+          minSdk = 28
+        }
+      }
+      """.trimIndent(),
+    )
+
+    val result = runner().withArguments("tasks", "--all", "--stacktrace").build()
+
+    // This only appears when the convention calls withDeviceTest and attaches the managed devices
+    // to that compilation. Testing task names makes the fixture exercise AGP's real KMP plugin.
+    assertTrue(result.output.contains("atdApi35AndroidDeviceTest"), result.output)
+    assertTrue(result.output.contains("pixel9Api37AndroidDeviceTest"), result.output)
+    assertTrue(result.output.contains("ciGroupAndroidDeviceTest"), result.output)
+    assertTrue(result.output.contains("compatGroupAndroidDeviceTest"), result.output)
+    assertTrue(result.output.contains("connectedAndroidDeviceTest"), result.output)
+  }
+
+  @Test
   fun `application convention exposes debug quality and coverage tasks`() {
     writeAndroidFixture()
     writeBuildFile(

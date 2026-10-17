@@ -83,12 +83,12 @@ class QaIntegrationTest(unittest.TestCase):
         for command in commands:
             selected = re.search(r"UI_TEST_CLASS=([^ ]+)", command)[1]
             result = subprocess.run(
-                ["make", "--no-print-directory", "-n", "ui-test", "MODULE=:app",
-                 "UI_TEST_CLASS=" + selected, "GRADLE_RUNNER=custom-gradle"],
+                ["make", "--no-print-directory", "ui-test", "MODULE=:app",
+                 "UI_TEST_CLASS=" + selected, "GRADLE_RUNNER=echo custom-gradle"],
                 cwd=ROOT, text=True, capture_output=True, check=True, timeout=10,
             )
             self.assertIn("custom-gradle :app:connectedDebugAndroidTest", result.stdout)
-            self.assertIn('-Pandroid.testInstrumentationRunnerArguments.class="' + selected + '"', result.stdout)
+            self.assertIn('-Pandroid.testInstrumentationRunnerArguments.class=' + selected, result.stdout)
 
     def test_make_search_and_screen_lookup_do_not_build(self):
         env = os.environ.copy()

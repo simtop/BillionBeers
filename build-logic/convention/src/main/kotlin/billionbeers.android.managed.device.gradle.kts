@@ -4,6 +4,8 @@ import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.dsl.ManagedDevices
 import com.android.build.api.dsl.TestExtension
 import com.android.build.api.dsl.ManagedVirtualDevice
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 /**
  * Gradle Managed Devices: the test emulator is declared in the build, so Gradle provisions, boots,
@@ -108,5 +110,18 @@ pluginManager.withPlugin("com.android.dynamic-feature") {
 pluginManager.withPlugin("com.android.test") {
     extensions.configure<TestExtension> {
         testOptions.managedDevices.configureBillionBeersDevices(testedAbiForHost)
+    }
+}
+pluginManager.withPlugin("com.android.kotlin.multiplatform.library") {
+    extensions.configure<KotlinMultiplatformExtension> {
+        targets.withType<KotlinMultiplatformAndroidLibraryTarget>().configureEach {
+            // KMP device tests are opt-in per module, just like the Android plugin variants above.
+            // They have their own managed-device DSL and task names (for example,
+            // `atdApi35AndroidDeviceTest`).
+            withDeviceTest {
+                instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+                managedDevices.configureBillionBeersDevices(testedAbiForHost)
+            }
+        }
     }
 }

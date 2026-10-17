@@ -210,39 +210,42 @@ class RepeatNewInstrumentedTestsTest(unittest.TestCase):
                 repeat_tests.repeat_targets(self.root, targets, repetitions=1)
 
     def test_make_places_task_scoped_rerun_after_android_test_task(self):
-        result = subprocess.run(
-            [
-                "make",
-                "--no-print-directory",
-                "-n",
-                "ui-test-managed",
-                "MODULE=:app",
-                "UI_TEST_CLASS=com.example.FirstTest,com.example.SecondTest",
-                "UI_TEST_RERUN=true",
-                "GRADLE_RUNNER=./gradlew",
-            ],
-            cwd=ROOT,
-            text=True,
-            capture_output=True,
-            check=True,
-            timeout=10,
-        )
-        command = result.stdout.strip()
-        self.assertIn(":app:atdApi35DebugAndroidTest --rerun", command)
-        self.assertIn(
-            '-Pandroid.testInstrumentationRunnerArguments.class="com.example.FirstTest,com.example.SecondTest"',
-            command,
-        )
-        self.assertNotIn("--rerun-tasks", command)
+        for module, expected_task in (
+            (":app", ":app:atdApi35DebugAndroidTest"),
+            (":beer_database", ":beer_database:atdApi35AndroidDeviceTest"),
+        ):
+            with self.subTest(module=module):
+                result = subprocess.run(
+                    [
+                        "make",
+                        "--no-print-directory",
+                        "ui-test-managed",
+                        f"MODULE={module}",
+                        "UI_TEST_CLASS=com.example.FirstTest,com.example.SecondTest",
+                        "UI_TEST_RERUN=true",
+                        "GRADLE_RUNNER=echo",
+                    ],
+                    cwd=ROOT,
+                    text=True,
+                    capture_output=True,
+                    check=True,
+                    timeout=10,
+                )
+                command = result.stdout.strip()
+                self.assertIn(f"{expected_task} --rerun", command)
+                self.assertIn(
+                    "-Pandroid.testInstrumentationRunnerArguments.class=com.example.FirstTest,com.example.SecondTest",
+                    command,
+                )
+                self.assertNotIn("--rerun-tasks", command)
 
         default = subprocess.run(
             [
                 "make",
                 "--no-print-directory",
-                "-n",
                 "ui-test-managed",
                 "MODULE=:app",
-                "GRADLE_RUNNER=./gradlew",
+                "GRADLE_RUNNER=echo",
             ],
             cwd=ROOT,
             text=True,
