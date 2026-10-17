@@ -135,7 +135,14 @@ class KmpVerificationFunctionalTest {
       "settings.gradle.kts",
       """
       rootProject.name = "kmp-verification-test"
-      include(":kmp-all", ":browser-only", ":android", ":plain-jvm")
+      include(
+        ":kmp-all",
+        ":browser-with-metadata",
+        ":host-with-metadata",
+        ":android",
+        ":metadata-only",
+        ":plain-jvm",
+      )
       """.trimIndent(),
     )
     writeFile(
@@ -150,14 +157,37 @@ class KmpVerificationFunctionalTest {
         .joinToString("\n") { taskName -> "tasks.register(\"$taskName\") { doLast {} }" },
     )
     writeFile(
-      "browser-only/build.gradle.kts",
-      "tasks.register(\"wasmJsBrowserTest\") { doLast {} }",
+      "browser-with-metadata/build.gradle.kts",
+      """
+      tasks.register("allMetadataJar") { doLast { println("METADATA_TIER_RAN") } }
+      tasks.register("wasmJsBrowserTest") { doLast { println("BROWSER_TIER_RAN") } }
+      """.trimIndent(),
+    )
+    writeFile(
+      "host-with-metadata/build.gradle.kts",
+      """
+      tasks.register("allMetadataJar") { doLast { println("HOST_METADATA_TIER_RAN") } }
+      tasks.register("testAndroidHostTest") { doLast { println("ANDROID_HOST_TIER_RAN") } }
+      """.trimIndent(),
     )
     writeFile(
       "android/build.gradle.kts",
-      "tasks.register(\"testDebugUnitTest\") { doLast {} }",
+      """
+      tasks.register("allMetadataJar") { doLast { println("ANDROID_METADATA_TIER_RAN") } }
+      tasks.register("testDebugUnitTest") { doLast { println("ANDROID_UNIT_TIER_RAN") } }
+      """.trimIndent(),
     )
-    writeFile("plain-jvm/build.gradle.kts", "tasks.register(\"test\") { doLast {} }")
+    writeFile(
+      "metadata-only/build.gradle.kts",
+      "tasks.register(\"allMetadataJar\") { doLast { println(\"METADATA_ONLY_TIER_RAN\") } }",
+    )
+    writeFile(
+      "plain-jvm/build.gradle.kts",
+      """
+      tasks.register("allMetadataJar") { doLast { println("JVM_METADATA_TIER_RAN") } }
+      tasks.register("test") { doLast { println("JVM_TEST_TIER_RAN") } }
+      """.trimIndent(),
+    )
 
     val kmpResult =
       runner().withArguments("-PtestModule=:kmp-all", "testModule", "--stacktrace").build()
@@ -165,12 +195,28 @@ class KmpVerificationFunctionalTest {
     assertNull(kmpResult.task(":kmp-all:allMetadataJar"), kmpResult.output)
 
     val browserResult =
-      runner().withArguments("-PtestModule=:browser-only", "testModule", "--stacktrace").build()
+      runner()
+        .withArguments("-PtestModule=:browser-with-metadata", "testModule", "--stacktrace")
+        .build()
     assertEquals(
       TaskOutcome.SUCCESS,
-      browserResult.task(":browser-only:wasmJsBrowserTest")?.outcome,
+      browserResult.task(":browser-with-metadata:wasmJsBrowserTest")?.outcome,
       browserResult.output,
     )
+    assertNull(browserResult.task(":browser-with-metadata:allMetadataJar"), browserResult.output)
+    assertTrue(browserResult.output.contains("BROWSER_TIER_RAN"), browserResult.output)
+
+    val hostResult =
+      runner()
+        .withArguments("-PtestModule=:host-with-metadata", "testModule", "--stacktrace")
+        .build()
+    assertEquals(
+      TaskOutcome.SUCCESS,
+      hostResult.task(":host-with-metadata:testAndroidHostTest")?.outcome,
+      hostResult.output,
+    )
+    assertNull(hostResult.task(":host-with-metadata:allMetadataJar"), hostResult.output)
+    assertTrue(hostResult.output.contains("ANDROID_HOST_TIER_RAN"), hostResult.output)
 
     val androidResult =
       runner().withArguments("-PtestModule=:android", "testModule", "--stacktrace").build()
@@ -179,10 +225,22 @@ class KmpVerificationFunctionalTest {
       androidResult.task(":android:testDebugUnitTest")?.outcome,
       androidResult.output,
     )
+    assertNull(androidResult.task(":android:allMetadataJar"), androidResult.output)
 
     val jvmResult =
       runner().withArguments("-PtestModule=:plain-jvm", "testModule", "--stacktrace").build()
     assertEquals(TaskOutcome.SUCCESS, jvmResult.task(":plain-jvm:test")?.outcome, jvmResult.output)
+    assertNull(jvmResult.task(":plain-jvm:allMetadataJar"), jvmResult.output)
+
+    val metadataResult =
+      runner()
+        .withArguments("-PtestModule=:metadata-only", "testModule", "--stacktrace")
+        .build()
+    assertEquals(
+      TaskOutcome.SUCCESS,
+      metadataResult.task(":metadata-only:allMetadataJar")?.outcome,
+      metadataResult.output,
+    )
   }
 
   private fun runner(): GradleRunner =
