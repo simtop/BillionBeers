@@ -59,10 +59,15 @@ gradle.projectsEvaluated {
       findProject(projectPath)
         ?: error("No Gradle project exists at -PtestModule=$projectPath")
     val selectedTaskNames =
-      listOf("jvmTest", "allMetadataJar", "testAndroidHostTest", "wasmJsBrowserTest")
+      listOf(
+          "jvmTest",
+          "testAndroidHostTest",
+          "wasmJsBrowserTest",
+          "testDebugUnitTest",
+          "test",
+          "allMetadataJar",
+        )
         .firstOrNull { taskName -> selectedProject.tasks.names.contains(taskName) }
-        ?.let(::listOf)
-        ?: listOf("testDebugUnitTest", "test").firstOrNull(selectedProject.tasks.names::contains)
         ?.let(::listOf)
         ?: error("Project $projectPath does not expose a supported test task")
 
