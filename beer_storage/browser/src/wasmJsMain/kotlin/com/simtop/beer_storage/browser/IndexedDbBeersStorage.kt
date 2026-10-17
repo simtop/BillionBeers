@@ -57,6 +57,7 @@ import kotlinx.serialization.json.Json
     const stores = operation === 'readPaging' || operation === 'countPaging' ? ['paging_state'] :
       operation === 'readPresets' || operation === 'savePreset' || operation === 'renamePreset' || operation === 'deletePreset' ? ['filter_presets'] :
       operation === 'count' || operation === 'readBeers' || operation === 'readBeerById' || operation === 'readFavorites' ? ['beers'] :
+      operation === 'cacheBeersForDetail' ? ['beers'] :
       operation === 'deleteAll' ? ['beers', 'paging_state'] : ['beers', 'paging_state'];
     let tx = null;
     let beers = null;
@@ -178,6 +179,43 @@ import kotlinx.serialization.json.Json
               isInCatalog: existing.id == null
                 ? row.isInCatalog
                 : (existing.isInCatalog !== false || row.isInCatalog),
+            };
+            beers.put(merged);
+            existingById[row.id] = merged;
+            committedRows.push(merged);
+          });
+          finishMutation(committedRows);
+        };
+        if (remaining === 0) {
+          mergeRows();
+        } else {
+          ids.forEach(id => {
+            const request = beers.get(id);
+            request.onsuccess = () => {
+              existingById[id] = request.result || null;
+              remaining -= 1;
+              if (remaining === 0) mergeRows();
+            };
+            request.onerror = () => fail(request.error);
+          });
+        }
+      } else if (operation === 'cacheBeersForDetail') {
+        const rows = JSON.parse(payload);
+        const ids = [...new Set(rows.map(row => row.id))];
+        const existingById = {};
+        const committedRows = [];
+        let remaining = ids.length;
+        const mergeRows = () => {
+          rows.forEach(row => {
+            const existing = existingById[row.id] || {};
+            const merged = {
+              ...existing,
+              ...row,
+              availability: existing.id == null ? row.availability : existing.availability,
+              isFavorite: existing.id == null ? row.isFavorite : existing.isFavorite,
+              isInCatalog: existing.id == null ? false : existing.isInCatalog !== false,
+              catalogPage: existing.catalogPage ?? null,
+              catalogIndex: existing.catalogIndex ?? null,
             };
             beers.put(merged);
             existingById[row.id] = merged;
@@ -507,6 +545,10 @@ class IndexedDbBeersStorage(
 
   override suspend fun insertAll(beers: List<StoredBeer>) {
     mutate("insertAll", json.encodeToString(beers.map(::toRecord)))
+  }
+
+  override suspend fun cacheBeersForDetail(beers: List<StoredBeer>) {
+    mutate("cacheBeersForDetail", json.encodeToString(beers.map(::toRecord)))
   }
 
   override suspend fun insertPage(

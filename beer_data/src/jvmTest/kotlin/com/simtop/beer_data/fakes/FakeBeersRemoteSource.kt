@@ -10,6 +10,7 @@ class FakeBeersRemoteSource : BeersRemoteSource {
 
   private var beersResponse: List<BeersApiResponseItem> = emptyList()
   private var totalCount: Int? = null
+  private val pageResponses = mutableMapOf<Int, BeersPage>()
   private var shouldThrowError = false
   private var exceptionToThrow: Exception = Exception("Fake Remote Error")
 
@@ -24,6 +25,10 @@ class FakeBeersRemoteSource : BeersRemoteSource {
   fun setBeersResponse(beers: List<BeersApiResponseItem>, totalCount: Int? = null) {
     beersResponse = beers
     this.totalCount = totalCount
+  }
+
+  fun setBeersResponse(page: Int, beers: List<BeersApiResponseItem>, totalCount: Int? = null) {
+    pageResponses[page] = BeersPage(items = beers, totalCount = totalCount)
   }
 
   fun setShouldThrowError(
@@ -47,7 +52,7 @@ class FakeBeersRemoteSource : BeersRemoteSource {
     if (shouldThrowError) {
       throw exceptionToThrow
     }
-    return BeersPage(items = beersResponse, totalCount = totalCount)
+    return pageResponses[page] ?: BeersPage(items = beersResponse, totalCount = totalCount)
   }
 
   override suspend fun getTypologies(): List<TypologyApiResponseItem> {

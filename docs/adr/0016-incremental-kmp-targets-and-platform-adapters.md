@@ -156,9 +156,21 @@ images block the browser, record the limitation; adding a proxy changes operatio
 requires a separate decision. A development proxy alone does not establish production parity.
 
 Browser history, URLs, reload restoration, visibility/disposal and asynchronous initialization are
-host responsibilities. In-app detail still uses a serialized Beer; external ID links remain
-local-cache-only. Public URLs must not contain whole domain payloads. Keep an explicit missing-cache
-outcome on a cold deep link rather than introducing a remote detail endpoint.
+host responsibilities. In-app detail routes carry beer IDs. Before a query pager exposes fetched
+beers, it commits their records to local lookup storage. Query membership and continuation remain
+screen-owned in memory. Lookup writes preserve local flags and existing catalog membership and
+positions; new lookup records stay outside the catalog and do not change paging bookmarks.
+
+Lookup records share the existing keyed beer storage, with one record per beer ID. They survive
+ordinary process restart or browser reload with the local cache. This retains queried beers even
+when the user never opens them. Saving only clicked beers would use less storage but require every
+navigation adapter to coordinate a durable write before discarding the Beer snapshot. Persisting
+before display keeps that guarantee in the shared paging implementation and makes restored ID
+routes resolvable without retaining whole Beer payloads in route state.
+
+External ID links remain local-cache-only. Public URLs must not contain whole domain payloads.
+Keep an explicit missing-cache outcome on a cold deep link rather than introducing a remote detail
+endpoint. Clearing or evicting local storage can still make a previously valid ID unresolvable.
 
 Static distribution output must include verified MIME types, resources, base-path behavior and
 cache/version policy. If a selected runtime needs workers or cross-origin isolation, test the exact

@@ -33,6 +33,41 @@ class IndexedDbBeersStorageBrowserTest {
   }
 
   @Test
+  fun cacheBeersForDetailPreservesFlagsMembershipPositionsAndBookmarkAcrossReopen() = runTest {
+    val databaseName = "billionbeers-detail-cache-${hashCode()}"
+    var storage = IndexedDbBeersStorage(databaseName)
+    try {
+      storage.awaitReady()
+      val first = storedBeer("catalog-first").copy(name = "First", availability = false, isFavorite = true)
+      val second = storedBeer("catalog-second").copy(name = "Second")
+      storage.insertPage(listOf(first, second), "catalog:en", nextKey = 3, totalCount = 50, pageKey = 2)
+      val bookmark = storage.getPagingState("catalog:en")
+
+      storage.cacheBeersForDetail(
+        listOf(
+          first.copy(name = "Updated", availability = true, isFavorite = false),
+          storedBeer("query-only"),
+        )
+      )
+
+      assertEquals(first.copy(name = "Updated"), storage.getBeerById("catalog-first"))
+      assertEquals(listOf("catalog-first", "catalog-second"), storage.observeCatalogBeers().first().map(StoredBeer::id))
+      assertEquals(bookmark, storage.getPagingState("catalog:en"))
+      assertEquals("query-only", storage.getBeerById("query-only")?.id)
+
+      storage.close()
+      storage = IndexedDbBeersStorage(databaseName)
+      storage.awaitReady()
+      assertEquals("query-only", storage.getBeerById("query-only")?.id)
+      assertEquals(listOf("catalog-first", "catalog-second"), storage.observeCatalogBeers().first().map(StoredBeer::id))
+      assertEquals(bookmark, storage.getPagingState("catalog:en"))
+    } finally {
+      storage.deleteAll()
+      storage.close()
+    }
+  }
+
+  @Test
   fun capacityRejectionPreservesDurablePresetsAndAllowsUpdateAndRetry() = runTest {
     val databaseName = "billionbeers-presets-capacity-${hashCode()}"
     var writer = IndexedDbBeersStorage(databaseName)

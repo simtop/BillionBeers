@@ -39,6 +39,9 @@ interface BeersRepository {
    */
   suspend fun insertAllToDB(beers: List<Beer>)
 
+  /** Caches query results for detail lookup while preserving flags and catalog state. */
+  suspend fun cacheBeersForDetail(beers: List<Beer>)
+
   /**
    * Same keyed upsert as [insertAllToDB], but also records the paging bookmark for [surface] (the
    * resume [nextKey] and [totalCount]) in the *same* transaction, so the pager's position can never

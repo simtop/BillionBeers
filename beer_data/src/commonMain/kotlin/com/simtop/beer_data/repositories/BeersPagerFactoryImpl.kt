@@ -55,16 +55,15 @@ class BeersPagerFactoryImpl(
   }
 
   override fun create(query: BeersQuery): Pager<Beer, FetchBeersError> =
-    // A query surface (search, beers-by-style, beers-by-brewery) is its own pager: results live
-    // only in memory (they die with the screen and a new query instantly invalidates them) and
-    // its fetches never write into the beers table, so the catalog's SELECT * view is untouched.
-    // No nextKeyFromStorage - there's no warm cache to resume from. The overlay keeps the
-    // in-memory snapshot's availability in sync with the table, where edits live.
+    // A query surface keeps its own in-memory membership while fetched rows are cached by ID for
+    // later detail lookup. Durable catalog membership and paging state stay catalog-only. No
+    // nextKeyFromStorage - a query has no bookmark to resume from. The overlay keeps local flags
+    // current after detail edits.
     PagingMediator(
       initialKey = FIRST_PAGE,
       fetchRemote = fetchPage(query),
       classifyError = { it.toFetchBeersError() },
-      storage = AvailabilityOverlayStorage(InMemoryPagingStorage(keyOf = Beer::id), repository),
+      storage = QueryPagingStorage(InMemoryPagingStorage(keyOf = Beer::id), repository),
     )
 
   /**
@@ -85,16 +84,13 @@ class BeersPagerFactoryImpl(
 }
 
 /**
- * Wraps a query surface's in-memory storage so its rows reflect availability edits made after the
- * fetch. Availability's single source of truth is the beers table - the detail screen's toggle is
- * written there even for beers the catalog hasn't paged in (see `BeersDao.upsertAvailability`) -
- * while the fetched items are a snapshot from the API. [data] therefore overlays the table's
- * current availability by id; beers absent from the table pass through unchanged. Writes still go
- * only to the in-memory delegate - the table is read, never written, by a query surface.
+ * Owns a query's in-memory membership, persists each fetched page for later detail lookup before
+ * exposing it, and overlays the current local flags from the durable store. The durable cache
+ * operation does not change catalog membership, catalog positions, or paging bookmarks.
  */
-private class AvailabilityOverlayStorage(
+private class QueryPagingStorage(
   private val delegate: PagingStorage<Int, Beer>,
-  repository: BeersRepository,
+  private val repository: BeersRepository,
 ) : PagingStorage<Int, Beer> by delegate {
 
   override val data: Flow<List<Beer>> =
@@ -106,22 +102,31 @@ private class AvailabilityOverlayStorage(
         } ?: beer
       }
     }
+
+  override suspend fun storeFirstPage(page: PageResult<Int, Beer>) {
+    repository.cacheBeersForDetail(page.items)
+    delegate.storeFirstPage(page)
+  }
+
+  override suspend fun append(page: PageResult<Int, Beer>) {
+    repository.cacheBeersForDetail(page.items)
+    delegate.append(page)
+  }
 }
 
 /**
- * Room-backed SSOT storage for the single full-catalog beers surface. Availability is treated as a
+ * Persistent SSOT storage for the single full-catalog beers surface. Availability is treated as a
  * local-only field: the server's `available` only seeds a row on first insert, so every write -
- * refresh included - goes through the keyed upsert that updates all columns *except* availability.
+ * refresh included - goes through the keyed upsert that preserves both local flags.
  * Refresh deliberately never deletes rows: a delete-and-reinsert would reset every locally edited
  * (or seeded) availability back to the default. The accepted trade-off is that beers removed
  * server-side linger in the cache until the next reinstall/clear-data. Because [storeFirstPage]
  * merges instead of replacing, the factory pairs this storage with a `nextKeyFromStorage` so the
  * pager's position tracks the cache, not the session.
  *
- * Scoping: this storage owns the whole beers table only because the catalog list is the app's one
- * paged surface. A second, differently-filtered paged surface (search, favorites) must get its own
- * storage whose observe/write/count queries are keyed by that surface's parameters - it must not
- * reuse this one, or the two screens' data and resume positions would bleed into each other.
+ * Scoping: this storage reads catalog membership and owns its paging bookmarks. Query pagers keep
+ * their own in-memory membership and use shared beer records for detail lookup and local flags.
+ * They must not reuse this catalog storage or its continuation state.
  */
 private class BeersPagingStorage(
   private val repository: BeersRepository,

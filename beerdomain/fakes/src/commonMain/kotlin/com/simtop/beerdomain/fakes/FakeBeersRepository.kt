@@ -22,6 +22,7 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) :
   BeerCatalogMetadataRepository {
 
   private val beersFlow = MutableStateFlow<List<Beer>>(initialBeers)
+  private val catalogBeerIds = initialBeers.mapTo(mutableSetOf(), Beer::id)
   private var beersObservationFlow: Flow<List<Beer>>? = null
 
   fun setBeersObservationFlow(flow: Flow<List<Beer>>?) {
@@ -32,6 +33,8 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) :
   fun getBeers(): List<Beer> = beersFlow.value
 
   fun setBeers(beers: List<Beer>) {
+    catalogBeerIds.clear()
+    catalogBeerIds += beers.map(Beer::id)
     beersFlow.value = beers
   }
 
@@ -54,6 +57,11 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) :
   override fun observeBeers(): Flow<List<Beer>> {
     return beersObservationFlow ?: beersFlow
   }
+
+  override fun observeCatalogBeers(): Flow<List<Beer>> =
+    observeBeers().map { beers -> beers.filter { it.id in catalogBeerIds } }
+
+  override suspend fun countCatalogDBEntries(): Int = catalogBeerIds.size
 
   override fun observeFavoriteBeers(): Flow<List<Beer>> =
     favoriteBeersFlowOverride
@@ -80,6 +88,23 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) :
             availability = current[index].availability,
             isFavorite = current[index].isFavorite,
           )
+      } else {
+        current.add(newBeer)
+      }
+    }
+    catalogBeerIds += beers.map(Beer::id)
+    beersFlow.value = current
+  }
+
+  override suspend fun cacheBeersForDetail(beers: List<Beer>) {
+    val current = beersFlow.value.toMutableList()
+    beers.forEach { newBeer ->
+      val index = current.indexOfFirst { it.id == newBeer.id }
+      if (index != -1) {
+        current[index] = newBeer.copy(
+          availability = current[index].availability,
+          isFavorite = current[index].isFavorite,
+        )
       } else {
         current.add(newBeer)
       }
@@ -117,7 +142,7 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) :
 
   override suspend fun catalogCacheStatus(policy: CachePolicy): CatalogCacheStatus =
     catalogCacheStatus
-      ?: if (beersFlow.value.isEmpty()) CatalogCacheStatus.Empty else CatalogCacheStatus.Fresh
+      ?: if (catalogBeerIds.isEmpty()) CatalogCacheStatus.Empty else CatalogCacheStatus.Fresh
 
   override suspend fun updateAvailability(beer: Beer): Either<UpdateAvailabilityError, Unit> {
     exceptionToThrow?.let {

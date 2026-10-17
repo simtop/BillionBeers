@@ -120,6 +120,17 @@ class BeersRepositoryImpl(
   override suspend fun insertAllToDB(beers: List<Beer>) =
     beersStorage.insertAll(beers.map { beersMapper.fromBeerToStoredBeer(it) })
 
+  override suspend fun cacheBeersForDetail(beers: List<Beer>) {
+    if (beers.isEmpty()) return
+    val storedBeers =
+      withFetchDiagnostics(logger, FetchFailureOrigin.MAPPING) {
+        beers.map { beersMapper.fromBeerToStoredBeer(it) }
+      }
+    withFetchDiagnostics(logger, FetchFailureOrigin.STORAGE) {
+      beersStorage.cacheBeersForDetail(storedBeers)
+    }
+  }
+
   override suspend fun insertPage(
     beers: List<Beer>,
     surface: String,

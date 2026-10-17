@@ -61,6 +61,9 @@ class BeersLocalSourceImpl(
   override suspend fun insertAll(beers: List<StoredBeer>) =
     db.beersDao().insertAll(beers.map { it.toDbModel() })
 
+  override suspend fun cacheBeersForDetail(beers: List<StoredBeer>) =
+    db.beersDao().cacheBeersForDetail(beers.map { it.toDbModel() })
+
   override suspend fun insertPage(
     beers: List<StoredBeer>,
     surface: String,

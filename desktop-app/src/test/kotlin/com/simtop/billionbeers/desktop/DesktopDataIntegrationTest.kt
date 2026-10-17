@@ -2,9 +2,13 @@ package com.simtop.billionbeers.desktop
 
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
+import com.simtop.billionbeers.shared.beerdetail.BeerDetailViewModel
+import com.simtop.core.core.CommonUiState
 import java.nio.file.Files
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
@@ -97,25 +101,50 @@ class DesktopDataIntegrationTest {
   }
 
   @Test
-  fun `real query pagers stay independent and do not persist catalog state`() = runBlocking {
-    enqueueQueryPage("search-a", "10")
-    enqueueQueryPage("search-b", "20")
-    val runtime = openRuntime(databaseDirectory.resolve("queries.db").toString())
+  fun `real query rows remain detail reachable after recreation without catalog paging state`() =
+    runBlocking {
+      enqueueQueryPage("search-a", "10")
+      enqueueQueryPage("search-b", "20")
+      val databasePath = databaseDirectory.resolve("queries.db").toString()
+      val runtime = openRuntime(databasePath)
 
-    try {
-      val first = runtime.pagerFactory.create(BeersQuery(search = "search-a"))
-      val second = runtime.pagerFactory.create(BeersQuery(search = "search-b"))
-      first.loadFirstPage()
-      second.loadFirstPage()
+      try {
+        val first = runtime.pagerFactory.create(BeersQuery(search = "search-a"))
+        val second = runtime.pagerFactory.create(BeersQuery(search = "search-b"))
+        first.loadFirstPage()
+        second.loadFirstPage()
 
-      assertEquals(listOf("10"), first.data.first().map(Beer::id))
-      assertEquals(listOf("20"), second.data.first().map(Beer::id))
-      assertEquals(0, runtime.repository.countDBEntries())
-      assertEquals(null, runtime.repository.pagingNextKey("catalog:en"))
-    } finally {
-      runtime.close()
+        assertEquals(listOf("10"), first.data.first().map(Beer::id))
+        assertEquals(listOf("20"), second.data.first().map(Beer::id))
+        // The results can now back a detail screen, while remaining outside the catalog list.
+        assertEquals(2, runtime.repository.countDBEntries())
+        assertEquals(
+          emptyList<String>(),
+          runtime.repository.observeCatalogBeers().first().map(Beer::id),
+        )
+        assertEquals("search-a", runtime.repository.getBeerById("10")?.name)
+        assertEquals("search-a", awaitDetail(runtime, "10").name)
+        assertEquals(null, runtime.repository.pagingNextKey("catalog:en"))
+      } finally {
+        runtime.close()
+      }
+
+      val recreatedRuntime = openRuntime(databasePath, "http://127.0.0.1:1/")
+      try {
+        // This is the detail route's ID lookup after the query screen and process graph are gone.
+        assertEquals("search-b", recreatedRuntime.repository.getBeerById("20")?.name)
+        assertEquals("search-b", awaitDetail(recreatedRuntime, "20").name)
+        assertEquals(2, recreatedRuntime.repository.countDBEntries())
+        assertEquals(
+          emptyList<String>(),
+          recreatedRuntime.repository.observeCatalogBeers().first().map(Beer::id),
+        )
+        assertEquals(null, recreatedRuntime.repository.pagingNextKey("catalog:en"))
+      } finally {
+        recreatedRuntime.close()
+      }
+      assertEquals(2, server.requestCount)
     }
-  }
 
   private fun openRuntime(databasePath: String, baseUrl: String = server.url("/").toString()) =
     DesktopDataRuntime.open(
@@ -124,6 +153,15 @@ class DesktopDataIntegrationTest {
         apiBaseUrl = baseUrl,
       )
     )
+
+  private suspend fun awaitDetail(runtime: DesktopDataRuntime, id: String): Beer {
+    val viewModel = BeerDetailViewModel(runtime.repository, id)
+    val state =
+      withTimeout(5.seconds) {
+        viewModel.beerDetailViewState.first { it is CommonUiState.Success }
+      }
+    return (state as CommonUiState.Success).data
+  }
 
   private fun enqueueCatalogPage(
     firstId: String,
