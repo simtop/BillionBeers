@@ -67,6 +67,65 @@ class IndexedDbBeersStorageBrowserTest {
   }
 
   @Test
+  fun concurrentLogicalPresetSavesFromSeparateInstancesCoalesceAtomically() = runTest {
+    val databaseName = "billionbeers-presets-concurrent-${hashCode()}"
+    val firstWriter = IndexedDbBeersStorage(databaseName)
+    val secondWriter = IndexedDbBeersStorage(databaseName)
+    val first = StoredFilterPreset("candidate-1", "IPAs", "ipa", "style-1", null, 2L)
+    val second = first.copy(id = "candidate-2", updatedAt = 3L)
+    try {
+      firstWriter.awaitReady()
+      secondWriter.awaitReady()
+      listOf(
+        async { firstWriter.saveFilterPreset(first) },
+        async { secondWriter.saveFilterPreset(second) },
+      ).awaitAll()
+      val sameNameDifferentQuery = first.copy(id = "candidate-3", styleId = "style-2")
+      firstWriter.saveFilterPreset(sameNameDifferentQuery)
+
+      val reopened = IndexedDbBeersStorage(databaseName)
+      try {
+        reopened.awaitReady()
+        val saved = reopened.observeSavedFilterPresets().first()
+        assertEquals(2, saved.size)
+        val coalesced = saved.single { it.styleId == first.styleId }
+        assertEquals("IPAs", coalesced.name)
+        assertEquals("ipa", coalesced.search)
+        assertEquals(null, coalesced.breweryId)
+        assertTrue(coalesced.id in setOf(first.id, second.id))
+        assertTrue(coalesced.updatedAt in setOf(first.updatedAt, second.updatedAt))
+        assertEquals(sameNameDifferentQuery, saved.single { it.styleId == "style-2" })
+      } finally {
+        reopened.close()
+      }
+    } finally {
+      clearPresetsAndClose(firstWriter, secondWriter)
+    }
+  }
+
+  @Test
+  fun logicalDuplicateAtCapacityKeepsExistingIdAndDoesNotConsumeAnotherSlot() = runTest {
+    val databaseName = "billionbeers-presets-duplicate-capacity-${hashCode()}"
+    val writer = IndexedDbBeersStorage(databaseName)
+    val peer = IndexedDbBeersStorage(databaseName)
+    val presets = (0 until MAX_STORED_FILTER_PRESETS).map { index ->
+      StoredFilterPreset("preset-$index", "Preset $index", "beer $index", null, null, index.toLong())
+    }
+    val duplicate = presets.first().copy(id = "new-candidate", updatedAt = 20L)
+    try {
+      presets.forEach { writer.saveFilterPreset(it) }
+      writer.saveFilterPreset(duplicate)
+
+      val saved = writer.observeSavedFilterPresets().first()
+      assertEquals(MAX_STORED_FILTER_PRESETS, saved.size)
+      assertTrue(saved.none { it.id == duplicate.id })
+      assertEquals(duplicate.copy(id = presets.first().id), saved.single { it.id == presets.first().id })
+    } finally {
+      clearPresetsAndClose(writer, peer)
+    }
+  }
+
+  @Test
   fun abortedPresetSavePreservesDurableRowsAndAllowsRetry() = runTest {
     val added = StoredFilterPreset("added", "Lagers", "lager", null, "brewery-1", 2L)
     assertPresetAbortRecovery("save", { listOf(added, it) }) { it.saveFilterPreset(added) }
