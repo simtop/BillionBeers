@@ -98,6 +98,30 @@ class BeersDatabaseJvmTest {
   }
 
   @Test
+  fun cacheBeersForDetailPreservesFlagsCatalogMembershipAndBookmark() = runBlocking {
+    val dao = db.beersDao()
+    val catalog = beer("catalog", availability = false, isFavorite = true)
+    dao.insertPage(listOf(catalog), "catalog:en", 4, 100, 10L)
+    val bookmark = dao.getPagingState("catalog:en")
+
+    dao.cacheBeersForDetail(
+      listOf(
+        catalog.copy(name = "Updated", availability = true, isFavorite = false),
+        beer("query"),
+      )
+    )
+
+    assertEquals(2, dao.getCount())
+    assertEquals(listOf("catalog"), dao.getCatalogBeers().first().map(BeerDbModel::id))
+    assertEquals(
+      beer("catalog", name = "Updated", availability = false, isFavorite = true),
+      dao.getBeerById("catalog"),
+    )
+    assertEquals(false, dao.getBeerById("query")?.isInCatalog)
+    assertEquals(bookmark, dao.getPagingState("catalog:en"))
+  }
+
+  @Test
   fun insertPageInvalidatesOtherLanguageCatalogBookmarks() = runBlocking {
     val dao = db.beersDao()
     dao.insertPage(listOf(beer("1")), "catalog:en", 2, 206, 10L)

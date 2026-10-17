@@ -133,6 +133,11 @@ abstract class BeersDao {
     upsertBeers(beers, isInCatalog = true)
   }
 
+  @Transaction
+  open suspend fun cacheBeersForDetail(beers: List<BeerDbModel>) {
+    upsertBeers(beers, isInCatalog = false)
+  }
+
   private suspend fun upsertBeers(beers: List<BeerDbModel>, isInCatalog: Boolean) {
     val catalogBeers = beers.map { it.copy(isInCatalog = isInCatalog) }
     val results = insertIgnoringConflicts(catalogBeers)

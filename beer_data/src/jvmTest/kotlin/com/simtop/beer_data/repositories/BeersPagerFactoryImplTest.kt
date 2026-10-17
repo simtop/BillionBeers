@@ -534,7 +534,7 @@ class BeersPagerFactoryImplTest {
     }
 
   @Test
-  fun `a search pager fetches with the query term and keeps results in memory`() =
+  fun `a search pager caches detail rows without adding them to the catalog`() =
     runTest(testDispatcher) {
       beersRemoteSource.setBeersResponse(listOf(apiItem(id = "1")), totalCount = 1)
       val pager = factory.create(BeersQuery(search = "ipa"))
@@ -543,8 +543,75 @@ class BeersPagerFactoryImplTest {
 
       expectThat(pager.data.first().map { it.id }).isEqualTo(listOf("1"))
       expectThat(beersRemoteSource.requestedSearches.toList()).isEqualTo(listOf("ipa"))
-      // Pure in-memory surface: a search must never write into the catalog's beers table.
-      expectThat(repository.countDBEntries()).isEqualTo(0)
+      expectThat(repository.getBeerById("1")?.id).isEqualTo("1")
+      expectThat(repository.countCatalogDBEntries()).isEqualTo(0)
+    }
+
+  @Test
+  fun `an explicit empty query also caches rows for detail lookup without a catalog bookmark`() =
+    runTest(testDispatcher) {
+      beersRemoteSource.setBeersResponse(listOf(apiItem(id = "1")), totalCount = 1)
+      val pager = factory.create(BeersQuery())
+
+      pager.loadFirstPage()
+
+      expectThat(repository.getBeerById("1")?.id).isEqualTo("1")
+      expectThat(repository.countCatalogDBEntries()).isEqualTo(0)
+      expectThat(repository.pagingNextKey("catalog:en")).isEqualTo(null)
+    }
+
+  @Test
+  fun `query append caches every page and refresh keeps earlier detail rows reachable`() =
+    runTest(testDispatcher) {
+      beersRemoteSource.setBeersResponse(page = 1, beers = listOf(apiItem(id = "1")), totalCount = 50)
+      beersRemoteSource.setBeersResponse(page = 2, beers = listOf(apiItem(id = "2")), totalCount = 50)
+      val pager = factory.create(BeersQuery(search = "ipa"))
+
+      pager.loadFirstPage()
+      pager.loadNextPage()
+      assertEquals(listOf("1", "2"), pager.data.first().map(Beer::id))
+      assertEquals(listOf("1", "2"), listOfNotNull(repository.getBeerById("1"), repository.getBeerById("2")).map(Beer::id))
+
+      beersRemoteSource.setBeersResponse(page = 1, beers = listOf(apiItem(id = "3")), totalCount = 50)
+      pager.loadFirstPage()
+
+      assertEquals(listOf("3"), pager.data.first().map(Beer::id))
+      assertEquals(
+        listOf("1", "2", "3"),
+        listOfNotNull(repository.getBeerById("1"), repository.getBeerById("2"), repository.getBeerById("3"))
+          .map(Beer::id),
+      )
+      assertEquals(emptyList(), repository.observeCatalogBeers().first())
+      assertEquals(listOf(1, 2, 1), beersRemoteSource.requestedPages)
+    }
+
+  @Test
+  fun `query cache write failure keeps the page hidden and retry refetches the same key`() =
+    runTest(testDispatcher) {
+      val failure = IllegalStateException("detail cache")
+      var writeFailure: Exception? = failure
+      val storage =
+        object : BeersStorage by beersLocalSource {
+          override suspend fun cacheBeersForDetail(beers: List<StoredBeer>) {
+            writeFailure?.let { throw it }
+            beersLocalSource.cacheBeersForDetail(beers)
+          }
+        }
+      installStorage(storage)
+      beersRemoteSource.setBeersResponse(listOf(apiItem(id = "1")), totalCount = 10)
+      val pager = factory.create(BeersQuery(search = "ipa"))
+
+      pager.loadFirstPage()
+      assertEquals(PagingState.Error(FetchBeersError.Unknown(failure), true), pager.pagingState.value)
+      assertEquals(emptyList(), pager.data.first())
+      assertEquals(null, repository.getBeerById("1"))
+      assertDatabaseFailure()
+
+      writeFailure = null
+      pager.loadFirstPage()
+      assertEquals(listOf(1, 1), beersRemoteSource.requestedPages)
+      assertEquals(listOf("1"), pager.data.first().map(Beer::id))
+      assertEquals("1", repository.getBeerById("1")?.id)
     }
 
   @Test
@@ -564,7 +631,7 @@ class BeersPagerFactoryImplTest {
     }
 
   @Test
-  fun `a style-filtered pager fetches with the typology id and keeps results in memory`() =
+  fun `a style-filtered pager fetches with the typology id and keeps results outside catalog`() =
     runTest(testDispatcher) {
       beersRemoteSource.setBeersResponse(listOf(apiItem(id = "1")), totalCount = 1)
       val pager = factory.create(BeersQuery(styleId = "style-1"))
@@ -575,7 +642,7 @@ class BeersPagerFactoryImplTest {
       expectThat(beersRemoteSource.requestedTypologyIds.toList()).isEqualTo(listOf("style-1"))
       // One page load = exactly one /beers request (the browse analogue of the N+1 guard).
       expectThat(beersRemoteSource.requestedPages.toList()).isEqualTo(listOf(1))
-      expectThat(repository.countDBEntries()).isEqualTo(0)
+      expectThat(repository.countCatalogDBEntries()).isEqualTo(0)
     }
 
   @Test
@@ -600,7 +667,7 @@ class BeersPagerFactoryImplTest {
       pager.loadFirstPage()
 
       expectThat(beersRemoteSource.requestedBreweryIds.toList()).isEqualTo(listOf("brew-1"))
-      expectThat(repository.countDBEntries()).isEqualTo(0)
+      expectThat(repository.countCatalogDBEntries()).isEqualTo(0)
     }
 
   // Regression test: search/browse results are an in-memory snapshot, so a detail-screen

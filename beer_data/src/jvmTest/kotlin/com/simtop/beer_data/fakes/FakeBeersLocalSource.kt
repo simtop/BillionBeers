@@ -61,6 +61,9 @@ class FakeBeersLocalSource : BeersStorage {
   // Mirrors the real DAO's upsert: existing rows keep their local-only availability.
   override suspend fun insertAll(beers: List<StoredBeer>) = upsertBeers(beers, isCatalog = true)
 
+  override suspend fun cacheBeersForDetail(beers: List<StoredBeer>) =
+    upsertBeers(beers, isCatalog = false)
+
   private fun upsertBeers(beers: List<StoredBeer>, isCatalog: Boolean) {
     val current = beersFlow.value.toMutableList()
     beers.forEach { newBeer ->

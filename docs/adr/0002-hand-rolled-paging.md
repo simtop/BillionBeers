@@ -83,7 +83,9 @@ from its AndroidX name; verify the artifacts and test APIs available when a migr
   surface-scoped bookmark from `paging_state`, written transactionally with the page. The bookmark
   is authoritative when present. On a miss, `BeersPagerFactoryImpl` restarts at page 1 for a
   language mismatch and retains the row-count estimate for a fresh/legacy cache; the heuristic
-  has not been removed entirely. Search and browse use per-query in-memory storage instead.
+  has not been removed entirely. Search and browse keep query membership and continuation in
+  memory. Before exposing each page, they persist beer records for ID-based detail lookup without
+  adding catalog membership or changing paging bookmarks, as described in ADR 0016.
 - (Update, July 2026) The repository's per-beer image fetch (a `GET
   /images/{id}` for every item in a page — an N+1, one list request plus 25 image requests) is
   removed. A live audit showed the `brewbuddy.dev` list response embeds `image.url` directly

@@ -34,6 +34,13 @@ interface BeersStorage {
 
   suspend fun insertAll(beers: List<StoredBeer>)
 
+  /**
+   * Persists fetched query rows for detail lookup. Implementations preserve local flags and existing
+   * catalog membership/positions, give new rows no catalog membership, and leave paging bookmarks
+   * unchanged.
+   */
+  suspend fun cacheBeersForDetail(beers: List<StoredBeer>)
+
   suspend fun insertPage(
     beers: List<StoredBeer>,
     surface: String,
