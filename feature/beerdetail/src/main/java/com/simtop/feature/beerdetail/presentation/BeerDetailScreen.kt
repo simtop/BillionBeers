@@ -82,8 +82,8 @@ fun BeerDetailScreenImpl(
         ComposeBeerDetail(
           beer = state.data,
           onBackClick = onBackClick,
-          onToggleAvailability = { viewModel.updateAvailability(state.data) },
-          onToggleFavorite = { viewModel.updateFavorite(state.data) },
+          onToggleAvailability = viewModel::updateAvailability,
+          onToggleFavorite = viewModel::updateFavorite,
           modifier = modifier,
           showBackButton = showBackButton,
         )

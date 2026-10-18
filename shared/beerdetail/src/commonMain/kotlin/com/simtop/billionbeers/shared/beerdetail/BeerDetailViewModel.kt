@@ -60,15 +60,17 @@ open class BeerDetailViewModel(
     }
   }
 
-  fun updateAvailability(beer: Beer) {
+  fun updateAvailability() {
     viewModelScope.launch {
+      val version = ++availabilityUpdateVersion
       availabilityUpdateMutex.withLock {
-        val originalAvailability = beer.availability
+        val current = currentBeer()
+        val originalAvailability = current.availability
         val newAvailability = !originalAvailability
-        val version = ++availabilityUpdateVersion
-        setBeer(currentBeer().copy(availability = newAvailability))
+        val updated = current.copy(availability = newAvailability)
+        setBeer(updated)
         treatResponse(
-          result = beersRepository.updateAvailability(beer.copy(availability = newAvailability)),
+          result = beersRepository.updateAvailability(updated),
           originalAvailability = originalAvailability,
           optimisticAvailability = newAvailability,
           version = version,
@@ -77,15 +79,17 @@ open class BeerDetailViewModel(
     }
   }
 
-  fun updateFavorite(beer: Beer) {
+  fun updateFavorite() {
     viewModelScope.launch {
+      val version = ++favoriteUpdateVersion
       favoriteUpdateMutex.withLock {
-        val originalFavorite = beer.isFavorite
+        val current = currentBeer()
+        val originalFavorite = current.isFavorite
         val newFavorite = !originalFavorite
-        val version = ++favoriteUpdateVersion
-        setBeer(currentBeer().copy(isFavorite = newFavorite))
+        val updated = current.copy(isFavorite = newFavorite)
+        setBeer(updated)
         treatFavoriteResponse(
-          result = beersRepository.updateFavorite(beer.copy(isFavorite = newFavorite)),
+          result = beersRepository.updateFavorite(updated),
           originalFavorite = originalFavorite,
           optimisticFavorite = newFavorite,
           version = version,

@@ -81,7 +81,7 @@ internal class BeerDetailViewModelTest {
           // Initial success state
           expectThat(awaitItem()).isA<CommonUiState.Success<Beer>>()
 
-          beerDetailViewModel.updateAvailability(fakeBeerModel)
+          beerDetailViewModel.updateAvailability()
           testDispatcher.scheduler.advanceUntilIdle()
 
           // Optimistic update
@@ -122,7 +122,7 @@ internal class BeerDetailViewModelTest {
           // Initial success state
           expectThat(awaitItem()).isA<CommonUiState.Success<Beer>>()
 
-          beerDetailViewModel.updateAvailability(fakeBeerModel)
+          beerDetailViewModel.updateAvailability()
 
           // Optimistic update (toggled availability)
           val updatedItem = awaitItem()
@@ -150,7 +150,7 @@ internal class BeerDetailViewModelTest {
       viewModel.events.test {
         viewModel.beerDetailViewState.test {
           expectThat(awaitItem()).isA<CommonUiState.Success<Beer>>()
-          viewModel.updateFavorite(fakeBeerModel)
+          viewModel.updateFavorite()
           val updated = awaitItem()
           expectThat((updated as CommonUiState.Success).data).isEqualTo(toggledBeer)
           cancelAndIgnoreRemainingEvents()
@@ -173,7 +173,7 @@ internal class BeerDetailViewModelTest {
       viewModel.events.test {
         viewModel.beerDetailViewState.test {
           expectThat(awaitItem()).isA<CommonUiState.Success<Beer>>()
-          viewModel.updateFavorite(fakeBeerModel)
+          viewModel.updateFavorite()
           expectThat((awaitItem() as CommonUiState.Success).data).isEqualTo(toggledBeer)
           expectThat((awaitItem() as CommonUiState.Success).data).isEqualTo(fakeBeerModel)
           cancelAndIgnoreRemainingEvents()
@@ -201,10 +201,10 @@ internal class BeerDetailViewModelTest {
       coEvery { repository.updateFavorite(secondBeer) } returns Either.Right(Unit)
       val viewModel = BeerDetailViewModel(repository, fakeBeerModel)
 
-      viewModel.updateFavorite(fakeBeerModel)
+      viewModel.updateFavorite()
       testDispatcher.scheduler.runCurrent()
       firstStarted.await()
-      viewModel.updateFavorite(firstBeer)
+      viewModel.updateFavorite()
       testDispatcher.scheduler.runCurrent()
       expectThat(viewModel.beerDetailViewState.value).isEqualTo(CommonUiState.Success(firstBeer))
 
@@ -221,7 +221,11 @@ internal class BeerDetailViewModelTest {
       val release = CompletableDeferred<Unit>()
       val repository = mockk<BeersRepository>()
       val availabilityBeer = fakeBeerModel.copy(availability = !fakeBeerModel.availability)
-      val favoriteBeer = fakeBeerModel.copy(isFavorite = !fakeBeerModel.isFavorite)
+      val favoriteBeer =
+        fakeBeerModel.copy(
+          availability = !fakeBeerModel.availability,
+          isFavorite = !fakeBeerModel.isFavorite,
+        )
       coEvery { repository.updateAvailability(availabilityBeer) } coAnswers
         {
           availabilityStarted.complete(Unit)
@@ -236,8 +240,8 @@ internal class BeerDetailViewModelTest {
         }
       val viewModel = BeerDetailViewModel(repository, fakeBeerModel)
 
-      viewModel.updateAvailability(fakeBeerModel)
-      viewModel.updateFavorite(fakeBeerModel)
+      viewModel.updateAvailability()
+      viewModel.updateFavorite()
       testDispatcher.scheduler.runCurrent()
       availabilityStarted.await()
       favoriteStarted.await()
@@ -267,11 +271,11 @@ internal class BeerDetailViewModelTest {
         }
       val viewModel = BeerDetailViewModel(repository, fakeBeerModel)
 
-      viewModel.updateAvailability(fakeBeerModel)
+      viewModel.updateAvailability()
       testDispatcher.scheduler.runCurrent()
       firstUpdateStarted.await()
 
-      viewModel.updateAvailability(firstUpdatedBeer)
+      viewModel.updateAvailability()
       testDispatcher.scheduler.runCurrent()
       expectThat(secondUpdateStarted.isCompleted).isEqualTo(false)
 
