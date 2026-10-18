@@ -1,12 +1,12 @@
 package com.simtop.core.core
 
 import app.cash.turbine.test
+import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.runTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
 
 /**
  * The behaviour every [PagingStorage] must satisfy, regardless of where it stores pages. Concrete

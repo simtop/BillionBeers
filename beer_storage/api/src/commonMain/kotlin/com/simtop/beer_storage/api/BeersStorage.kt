@@ -26,7 +26,8 @@ interface BeersStorage {
     if (ids.isEmpty()) flowOf(emptyList())
     else {
       observeBeers().map { beers ->
-        beers.asSequence()
+        beers
+          .asSequence()
           .filter { it.id in ids }
           .map { StoredBeerLocalFlags(it.id, it.availability, it.isFavorite) }
           .toList()
@@ -52,9 +53,9 @@ interface BeersStorage {
   suspend fun insertAll(beers: List<StoredBeer>)
 
   /**
-   * Persists fetched query rows for detail lookup. Implementations preserve local flags and existing
-   * catalog membership/positions, give new rows no catalog membership, and leave paging bookmarks
-   * unchanged.
+   * Persists fetched query rows for detail lookup. Implementations preserve local flags and
+   * existing catalog membership/positions, give new rows no catalog membership, and leave paging
+   * bookmarks unchanged.
    */
   suspend fun cacheBeersForDetail(beers: List<StoredBeer>)
 

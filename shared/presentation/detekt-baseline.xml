@@ -1,0 +1,24 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>LongMethod:BeerListItemLayoutTest.kt$BeerListItemLayoutTest$private fun checkRow( dark: Boolean, fontScale: Float, direction: LayoutDirection, titleMaxLines: Int = 1, )</ID>
+    <ID>LongParameterList:SharedBeerListItem.kt$( beer: Beer, labels: BeerListItemLabels, onClick: () -&gt; Unit, imageContent: @Composable (Modifier) -&gt; Unit, modifier: Modifier = Modifier, titleMaxLines: Int = 1, )</ID>
+    <ID>LongParameterList:SharedFilterPresetForm.kt$( name: String, onNameChange: (String) -&gt; Unit, onSave: () -&gt; Unit, labels: FilterPresetFormLabels, modifier: Modifier = Modifier, enabled: Boolean = true, )</ID>
+    <ID>LongParameterList:SharedPagedBeersContent.kt$( strings: SharedPagedBeersStrings, model: PagedListUiModel&lt;Beer&gt;, contentPadding: PaddingValues, beerRow: @Composable (Beer, () -&gt; Unit) -&gt; Unit, onBeerClick: (Beer) -&gt; Unit, onScrollToBottom: () -&gt; Unit, onRefresh: () -&gt; Unit, onRetryLoadMore: () -&gt; Unit, listState: LazyListState?, )</ID>
+    <ID>LongParameterList:SharedPagedBeersContent.kt$( strings: SharedPagedBeersStrings, title: String, viewState: CommonUiState&lt;PagedListUiModel&lt;Beer&gt;&gt;, onBack: () -&gt; Unit, backIcon: @Composable (String) -&gt; Unit, onBeerClick: (Beer) -&gt; Unit, onScrollToBottom: () -&gt; Unit, onRetryLoadMore: () -&gt; Unit, onRetryFirstPage: () -&gt; Unit, errorContent: @Composable (CommonUiState.Error, () -&gt; Unit) -&gt; Unit, beerRow: @Composable (Beer, () -&gt; Unit) -&gt; Unit, listState: LazyListState? = null, modifier: Modifier = Modifier, )</ID>
+    <ID>MagicNumber:SharedBackIcon.kt$11f</ID>
+    <ID>MagicNumber:SharedBackIcon.kt$12f</ID>
+    <ID>MagicNumber:SharedBackIcon.kt$13.42f</ID>
+    <ID>MagicNumber:SharedBackIcon.kt$13f</ID>
+    <ID>MagicNumber:SharedBackIcon.kt$18.59f</ID>
+    <ID>MagicNumber:SharedBackIcon.kt$20f</ID>
+    <ID>MagicNumber:SharedBackIcon.kt$4f</ID>
+    <ID>MagicNumber:SharedBackIcon.kt$5.41f</ID>
+    <ID>MagicNumber:SharedBackIcon.kt$7.83f</ID>
+    <ID>MatchingDeclarationName:InfiniteListHandler.kt$ListPosition</ID>
+    <ID>MatchingDeclarationName:SharedBeerListItem.kt$BeerListItemLabels</ID>
+    <ID>MatchingDeclarationName:SharedFilterPresetForm.kt$FilterPresetFormLabels</ID>
+    <ID>MatchingDeclarationName:SharedPagedBeersContent.kt$SharedPagedBeersStrings</ID>
+  </CurrentIssues>
+</SmellBaseline>

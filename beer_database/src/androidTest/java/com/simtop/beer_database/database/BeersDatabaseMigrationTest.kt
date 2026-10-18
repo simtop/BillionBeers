@@ -33,16 +33,18 @@ class BeersDatabaseMigrationTest {
     }
 
     val db = helper.runMigrationsAndValidate(dbName, 7, true, MIGRATION_6_7)
-    db.query(
-      "SELECT next_key, total_count, refreshed_at, is_complete " +
-        "FROM paging_state WHERE surface = 'catalog:en'"
-    ).use { cursor ->
-      assertTrue(cursor.moveToFirst())
-      assertEquals(7, cursor.getInt(0))
-      assertEquals(206, cursor.getInt(1))
-      assertEquals(5678L, cursor.getLong(2))
-      assertEquals(0, cursor.getInt(3))
-    }
+    db
+      .query(
+        "SELECT next_key, total_count, refreshed_at, is_complete " +
+          "FROM paging_state WHERE surface = 'catalog:en'"
+      )
+      .use { cursor ->
+        assertTrue(cursor.moveToFirst())
+        assertEquals(7, cursor.getInt(0))
+        assertEquals(206, cursor.getInt(1))
+        assertEquals(5678L, cursor.getLong(2))
+        assertEquals(0, cursor.getInt(3))
+      }
     db.close()
   }
 
@@ -235,13 +237,16 @@ class BeersDatabaseMigrationTest {
       "INSERT INTO paging_state (surface, next_key, total_count, refreshed_at) " +
         "VALUES ('catalog:en', 2, 206, 5678)"
     )
-    db.query("SELECT next_key, total_count, is_complete FROM paging_state WHERE surface = 'catalog:en'").use {
-      cursor ->
-      assertTrue(cursor.moveToFirst())
-      assertEquals(2, cursor.getInt(0))
-      assertEquals(206, cursor.getInt(1))
-      assertEquals(0, cursor.getInt(2))
-    }
+    db
+      .query(
+        "SELECT next_key, total_count, is_complete FROM paging_state WHERE surface = 'catalog:en'"
+      )
+      .use { cursor ->
+        assertTrue(cursor.moveToFirst())
+        assertEquals(2, cursor.getInt(0))
+        assertEquals(206, cursor.getInt(1))
+        assertEquals(0, cursor.getInt(2))
+      }
     db.execSQL(
       "INSERT INTO filter_presets (id, name, search, style_id, brewery_id, updated_at) " +
         "VALUES ('preset', 'Saved', 'ipa', NULL, NULL, 10)"

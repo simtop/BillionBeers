@@ -8,11 +8,11 @@ import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.CatalogCacheStatus
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.core.core.Either
-import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
+import kotlinx.coroutines.test.runTest
 
 class FakeBeersRepositoryTest {
 
@@ -42,13 +42,14 @@ class FakeBeersRepositoryTest {
 
   @Test
   fun `favorite observation sorts favorite beers`() = runTest {
-    val repository = FakeBeersRepository(
-      listOf(
-        beer(id = "2", name = "Same", favorite = true),
-        beer(id = "1", name = "Same", favorite = true),
-        beer(id = "3", name = "Other"),
-      ),
-    )
+    val repository =
+      FakeBeersRepository(
+        listOf(
+          beer(id = "2", name = "Same", favorite = true),
+          beer(id = "1", name = "Same", favorite = true),
+          beer(id = "3", name = "Other"),
+        )
+      )
 
     repository.observeFavoriteBeers().test {
       assertEquals(listOf("Same" to "1", "Same" to "2"), awaitItem().map { it.name to it.id })
@@ -80,7 +81,7 @@ class FakeBeersRepositoryTest {
       assertEquals(existing.copy(availability = true), repository.getBeerById("1"))
 
       repository.insertAllToDB(
-        listOf(existing.copy(name = "Updated", availability = false, isFavorite = false)),
+        listOf(existing.copy(name = "Updated", availability = false, isFavorite = false))
       )
       assertEquals(
         existing.copy(name = "Updated", availability = true),
@@ -130,16 +131,17 @@ class FakeBeersRepositoryTest {
     name: String = "Beer $id",
     availability: Boolean = true,
     favorite: Boolean = false,
-  ) = Beer(
-    id = id,
-    name = name,
-    tagline = "",
-    description = "",
-    imageUrl = "",
-    abv = 0.0,
-    ibu = 0.0,
-    foodPairing = emptyList(),
-    availability = availability,
-    isFavorite = favorite,
-  )
+  ) =
+    Beer(
+      id = id,
+      name = name,
+      tagline = "",
+      description = "",
+      imageUrl = "",
+      abv = 0.0,
+      ibu = 0.0,
+      foodPairing = emptyList(),
+      availability = availability,
+      isFavorite = favorite,
+    )
 }

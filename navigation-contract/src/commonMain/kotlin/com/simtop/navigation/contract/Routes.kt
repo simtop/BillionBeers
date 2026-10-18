@@ -6,13 +6,9 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 sealed interface PortableRoute : NavKey {
-  @Serializable
-  @SerialName("com.simtop.navigation.BeersList")
-  data object BeersList : PortableRoute
+  @Serializable @SerialName("com.simtop.navigation.BeersList") data object BeersList : PortableRoute
 
-  @Serializable
-  @SerialName("com.simtop.navigation.Favorites")
-  data object Favorites : PortableRoute
+  @Serializable @SerialName("com.simtop.navigation.Favorites") data object Favorites : PortableRoute
 
   @Serializable
   @SerialName("com.simtop.navigation.BeersSearch")

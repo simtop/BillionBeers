@@ -11,10 +11,7 @@ import kotlinx.serialization.json.Json
 class Navigation3BackStackFixture(initialRoute: PortableRoute) {
   private var nextEntryId = INITIAL_ENTRY_ID + 1
 
-  private val mutableEntries =
-    mutableListOf(
-      Entry(id = INITIAL_ENTRY_ID, route = initialRoute),
-    )
+  private val mutableEntries = mutableListOf(Entry(id = INITIAL_ENTRY_ID, route = initialRoute))
 
   val entries: List<Entry>
     get() = mutableEntries.toList()
@@ -55,11 +52,9 @@ class Navigation3BackStackFixture(initialRoute: PortableRoute) {
     }
   }
 
-  @Serializable
-  data class Entry(val id: Long, val route: PortableRoute)
+  @Serializable data class Entry(val id: Long, val route: PortableRoute)
 
-  @Serializable
-  private data class SavedState(val entries: List<Entry>)
+  @Serializable private data class SavedState(val entries: List<Entry>)
 
   private constructor(restoredEntries: List<Entry>) : this(restoredEntries.first().route) {
     mutableEntries.clear()

@@ -3,6 +3,7 @@
   <ManuallySuppressedIssues/>
   <CurrentIssues>
     <ID>CyclomaticComplexMethod:BeersMapper.kt$BeersMapper$fun fromBeersApiResponseItemToBeer(response: BeersApiResponseItem?): Beer</ID>
-    <ID>TooManyFunctions:BeersRepositoryImpl.kt$BeersRepositoryImpl : BeersRepository</ID>
+    <ID>TooManyFunctions:BeersRepositoryImpl.kt$BeersRepositoryImpl : BeersRepositoryBeerCatalogMetadataRepositorySavedFilterPresetsRepository</ID>
+    <ID>UseCheckOrError:BeersPagerFactoryImplTest.kt$BeersPagerFactoryImplTest.&lt;no name provided&gt;$throw IllegalStateException("transient flag read")</ID>
   </CurrentIssues>
 </SmellBaseline>

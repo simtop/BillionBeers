@@ -16,6 +16,28 @@ class KmpLibraryFunctionalTest {
   @TempDir lateinit var testProjectDir: Path
 
   @Test
+  fun `KMP library convention exposes formatting and static analysis tasks`() {
+    writeKmpFixture()
+    writeBuildFile(
+      testProjectDir.resolve("build.gradle.kts").toFile().readText() +
+        """
+
+        tasks.register("assertKmpQualityTasks") {
+          doLast {
+            check(tasks.findByName("spotlessCheck") != null) { "Spotless check task is missing" }
+            check(tasks.findByName("detekt") != null) { "Detekt task is missing" }
+            println("KMP_QUALITY_TASKS_OK")
+          }
+        }
+        """.trimIndent(),
+    )
+
+    val result = runner().withArguments("assertKmpQualityTasks", "--stacktrace").build()
+
+    assertTrue(result.output.contains("KMP_QUALITY_TASKS_OK"), result.output)
+  }
+
+  @Test
   fun `KMP fixture compiles common and JVM tests`() {
     writeKmpFixture()
 

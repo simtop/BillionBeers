@@ -15,8 +15,7 @@ interface BeersNetworkWasmModule {
 
   @Provides
   @SingleIn(AppScope::class)
-  fun provideBeersService(httpClient: HttpClient): BeersService =
-    createKtorBeersService(httpClient)
+  fun provideBeersService(httpClient: HttpClient): BeersService = createKtorBeersService(httpClient)
 
   @Provides
   fun provideBeersRemoteSource(beersRemoteSourceImpl: BeersRemoteSourceImpl): BeersRemoteSource =

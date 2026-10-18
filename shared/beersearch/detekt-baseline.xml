@@ -1,0 +1,10 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>LongParameterList:BeersSearchContent.kt$( model: PagedListUiModel&lt;Beer&gt;, beerRow: @Composable (Beer) -&gt; Unit, resultCountContent: @Composable (Int) -&gt; Unit, loadMoreFailedText: String, retryText: String, endOfListText: String, onScrollToBottom: () -&gt; Unit, onRetryLoadMore: () -&gt; Unit, contentPadding: PaddingValues, listState: LazyListState?, modifier: Modifier, )</ID>
+    <ID>LongParameterList:BeersSearchContent.kt$( styles: CommonUiState&lt;List&lt;BeerStyle&gt;&gt;, selectedStyle: BeerStyle?, styleLabel: String, allStylesLabel: String, clearStyleLabel: String, retryLabel: String, onStyleChange: (String?) -&gt; Unit, onRetryStyles: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>LongParameterList:BeersSearchContent.kt$( viewState: CommonUiState&lt;PagedListUiModel&lt;Beer&gt;&gt;, query: String, beerRow: @Composable (Beer) -&gt; Unit, loadingContent: @Composable () -&gt; Unit, emptyContent: @Composable () -&gt; Unit, noResultsContent: @Composable (String) -&gt; Unit, errorContent: @Composable (CommonUiState.Error, onRetry: () -&gt; Unit) -&gt; Unit, resultCountContent: @Composable (Int) -&gt; Unit, loadMoreFailedText: String, retryText: String, endOfListText: String, onScrollToBottom: () -&gt; Unit, onRetryLoadMore: () -&gt; Unit, onRetrySearch: () -&gt; Unit, contentPadding: PaddingValues, listState: LazyListState? = null, modifier: Modifier = Modifier, )</ID>
+    <ID>TooManyFunctions:BeersSearchViewModel.kt$BeersSearchViewModel : ViewModel</ID>
+  </CurrentIssues>
+</SmellBaseline>

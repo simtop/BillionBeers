@@ -13,6 +13,5 @@ interface BeersNetworkIosModule {
 
   @Provides
   @SingleIn(AppScope::class)
-  fun provideBeersService(httpClient: HttpClient): BeersService =
-    createKtorBeersService(httpClient)
+  fun provideBeersService(httpClient: HttpClient): BeersService = createKtorBeersService(httpClient)
 }

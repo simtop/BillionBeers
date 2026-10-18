@@ -31,7 +31,9 @@ class FakeSavedFilterPresetsRepository : SavedFilterPresetsRepository {
   ): Either<SaveFilterPresetError, Unit> {
     saveRequests += preset
     saveException?.let { throw it }
-    saveError?.let { return Either.Left(it) }
+    saveError?.let {
+      return Either.Left(it)
+    }
     val current = presetsFlow.value.toMutableList()
     val index = current.indexOfFirst {
       it.id == preset.id || (it.name == preset.name && it.query == preset.query)
@@ -58,7 +60,9 @@ class FakeSavedFilterPresetsRepository : SavedFilterPresetsRepository {
   ): Either<MutateFilterPresetError, Unit> {
     renameRequests += Triple(id, name, updatedAt)
     mutateException?.let { throw it }
-    mutateError?.let { return Either.Left(it) }
+    mutateError?.let {
+      return Either.Left(it)
+    }
     presetsFlow.value =
       presetsFlow.value.map { if (it.id == id) it.copy(name = name, updatedAt = updatedAt) else it }
     return Either.Right(Unit)
@@ -66,7 +70,9 @@ class FakeSavedFilterPresetsRepository : SavedFilterPresetsRepository {
 
   override suspend fun deleteFilterPreset(id: String): Either<MutateFilterPresetError, Unit> {
     mutateException?.let { throw it }
-    mutateError?.let { return Either.Left(it) }
+    mutateError?.let {
+      return Either.Left(it)
+    }
     presetsFlow.value = presetsFlow.value.filterNot { it.id == id }
     return Either.Right(Unit)
   }

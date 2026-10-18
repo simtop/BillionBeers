@@ -61,8 +61,9 @@ class BeersPagerFactoryImpl(
       },
       completionFromStorage = {
         withFetchDiagnostics(logger, FetchFailureOrigin.STORAGE) {
-          repository.pagingCompletionTotal(catalogSurface(languageProvider))
-            ?.let { StoredPagingCompletion(it.totalCount) }
+          repository.pagingCompletionTotal(catalogSurface(languageProvider))?.let {
+            StoredPagingCompletion(it.totalCount)
+          }
         }
       },
     )
@@ -121,17 +122,18 @@ private class QueryPagingStorage(
       }
     }
 
-  /** Keeps the last good overlay during an error, then resubscribes after the shared retry delay. */
-  private fun observeLocalFlagsWithRetry(ids: Set<String>): Flow<List<BeerLocalFlags>> =
-    flow {
-      var lastGoodFlags = emptyList<BeerLocalFlags>()
-      emitAll(
-        repository
-          .observeLocalFlags(ids)
-          .onEach { lastGoodFlags = it }
-          .retryWithErrorState { lastGoodFlags }
-      )
-    }
+  /**
+   * Keeps the last good overlay during an error, then resubscribes after the shared retry delay.
+   */
+  private fun observeLocalFlagsWithRetry(ids: Set<String>): Flow<List<BeerLocalFlags>> = flow {
+    var lastGoodFlags = emptyList<BeerLocalFlags>()
+    emitAll(
+      repository
+        .observeLocalFlags(ids)
+        .onEach { lastGoodFlags = it }
+        .retryWithErrorState { lastGoodFlags }
+    )
+  }
 
   override suspend fun storeFirstPage(page: PageResult<Int, Beer>) {
     repository.cacheBeersForDetail(page.items)
@@ -147,9 +149,9 @@ private class QueryPagingStorage(
 /**
  * Persistent SSOT storage for the single full-catalog beers surface. Availability is treated as a
  * local-only field: the server's `available` only seeds a row on first insert, so every write -
- * refresh included - goes through the keyed upsert that preserves both local flags.
- * Refresh deliberately never deletes rows: a delete-and-reinsert would reset every locally edited
- * (or seeded) availability back to the default. The accepted trade-off is that beers removed
+ * refresh included - goes through the keyed upsert that preserves both local flags. Refresh
+ * deliberately never deletes rows: a delete-and-reinsert would reset every locally edited (or
+ * seeded) availability back to the default. The accepted trade-off is that beers removed
  * server-side linger in the cache until the next reinstall/clear-data. Because [storeFirstPage]
  * merges instead of replacing, the factory pairs this storage with a `nextKeyFromStorage` so the
  * pager's position tracks the cache, not the session.

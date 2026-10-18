@@ -2,6 +2,13 @@ plugins {
     `kotlin-dsl`
 }
 
+// TestKit needs the precompiled script plugin classes on its injected classpath. The jar is a
+// stable output for those classes even when the Kotlin DSL compiler leaves the classes directory
+// empty after packaging.
+tasks.named<org.gradle.plugin.devel.tasks.PluginUnderTestMetadata>("pluginUnderTestMetadata") {
+    pluginClasspath.from(tasks.named("jar"))
+}
+
 group = "com.simtop.billionbeers.buildlogic"
 
 dependencies {

@@ -9,9 +9,9 @@ import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.beerdomain.domain.models.CatalogCacheStatus
+import com.simtop.beerdomain.domain.repositories.BeerCatalogMetadataRepository
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.beerdomain.domain.repositories.PagingCompletion
-import com.simtop.beerdomain.domain.repositories.BeerCatalogMetadataRepository
 import com.simtop.core.core.CachePolicy
 import com.simtop.core.core.Either
 import kotlinx.coroutines.flow.Flow
@@ -19,8 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 
 class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) :
-  BeersRepository,
-  BeerCatalogMetadataRepository {
+  BeersRepository, BeerCatalogMetadataRepository {
 
   private val beersFlow = MutableStateFlow<List<Beer>>(initialBeers)
   private val catalogBeerIds = initialBeers.mapTo(mutableSetOf(), Beer::id)
@@ -102,10 +101,11 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) :
     beers.forEach { newBeer ->
       val index = current.indexOfFirst { it.id == newBeer.id }
       if (index != -1) {
-        current[index] = newBeer.copy(
-          availability = current[index].availability,
-          isFavorite = current[index].isFavorite,
-        )
+        current[index] =
+          newBeer.copy(
+            availability = current[index].availability,
+            isFavorite = current[index].isFavorite,
+          )
       } else {
         current.add(newBeer)
       }

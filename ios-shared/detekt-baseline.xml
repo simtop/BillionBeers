@@ -1,0 +1,13 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>LongMethod:IosLocalizedStrings.ios.kt$IosLocalizedStrings$private fun english()</ID>
+    <ID>LongMethod:IosLocalizedStrings.ios.kt$IosLocalizedStrings$private fun french()</ID>
+    <ID>LongMethod:IosLocalizedStrings.ios.kt$IosLocalizedStrings$private fun spanish()</ID>
+    <ID>LongParameterList:IosAppController.ios.kt$( runtime: IosDataRuntime, darkTheme: Boolean, routeRequests: kotlinx.coroutines.flow.Flow&lt;PortableRoute&gt;, retryText: String, availableText: String, unavailableText: String, errorText: String, titleTextStyle: androidx.compose.ui.text.TextStyle, )</ID>
+    <ID>LongParameterList:IosLocalizedStrings.ios.kt$IosLocalizedStrings$( back: String, imageDescription: @Composable (String) -&gt; String, addToFavorites: String, removeFromFavorites: String, available: String, outOfStock: String, markAsEmpty: String, refillBarrels: String, styleAndBrewery: @Composable (String, String) -&gt; String, description: String, foodPairing: String, abv: String, ibu: String, details: String, srm: String, released: String, servingTemperature: String, servingTemperatureValue: @Composable (Int, Int) -&gt; String, metricValue: (Double) -&gt; String, fermentation: String, ingredients: String, recommendedGlasses: String, )</ID>
+    <ID>SpreadOperator:IosPlatformModule.ios.kt$(*ALL_MIGRATIONS.toTypedArray())</ID>
+    <ID>SpreadOperator:IosPlatformModule.jvm.kt$(*ALL_MIGRATIONS.toTypedArray())</ID>
+  </CurrentIssues>
+</SmellBaseline>

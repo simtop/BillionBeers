@@ -266,8 +266,7 @@ class PagingMediator<Key : Any, Value : Any, E : Any>(
 
       val result = fetchRemote(key)
       val items = result.items
-      if (storeAsFirstPage) storage.storeFirstPage(result)
-      else storage.append(result)
+      if (storeAsFirstPage) storage.storeFirstPage(result) else storage.append(result)
 
       // Empty-page probe: the fallback end signal when the server reports no total (nextKey stays
       // non-null) - preserves the pre-2.0 behaviour for a header-less backend.

@@ -14,13 +14,13 @@ import io.ktor.client.request.url
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.test.runTest
-import kotlin.time.Duration.Companion.seconds
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.test.runTest
 
 class KtorBeersServiceTest {
 
@@ -36,12 +36,13 @@ class KtorBeersServiceTest {
       )
     }
 
-    KtorBeersService(client).getListOfBeers(
-      page = 2,
-      search = "ipa-._~ & stout",
-      typologyId = "style/1",
-      breweryId = "brewery 1",
-    )
+    KtorBeersService(client)
+      .getListOfBeers(
+        page = 2,
+        search = "ipa-._~ & stout",
+        typologyId = "style/1",
+        breweryId = "brewery 1",
+      )
 
     assertEquals(
       "/beers?_page=2&_limit=25&translations.language.code=en" +
@@ -55,8 +56,9 @@ class KtorBeersServiceTest {
   fun `successful response exposes body status and headers`() = runTest {
     val client = mockClient {
       respond(
-        content = "[{\"id\":\"1\",\"name\":\"Buzz\",\"abv\":0.0,\"ibu\":0.0," +
-          "\"translations\":[],\"foodPairing\":[]}]",
+        content =
+          "[{\"id\":\"1\",\"name\":\"Buzz\",\"abv\":0.0,\"ibu\":0.0," +
+            "\"translations\":[],\"foodPairing\":[]}]",
         status = HttpStatusCode.OK,
         headers =
           headersOf(
@@ -96,9 +98,10 @@ class KtorBeersServiceTest {
     val failure = IllegalStateException("offline")
     val client = mockClient { throw failure }
 
-    val exception = assertFailsWith<BeersServiceNetworkException> {
-      KtorBeersService(client).getListOfBeers(1)
-    }
+    val exception =
+      assertFailsWith<BeersServiceNetworkException> {
+        KtorBeersService(client).getListOfBeers(1)
+      }
 
     assertEquals(IllegalStateException::class, exception.cause!!::class)
     assertEquals(failure.message, exception.cause?.message)
@@ -110,9 +113,10 @@ class KtorBeersServiceTest {
     val cancellation = CancellationException("cancelled")
     val client = mockClient { throw cancellation }
 
-    val exception = assertFailsWith<CancellationException> {
-      KtorBeersService(client).getListOfBeers(1)
-    }
+    val exception =
+      assertFailsWith<CancellationException> {
+        KtorBeersService(client).getListOfBeers(1)
+      }
 
     assertEquals(cancellation.message, exception.message)
     client.close()
@@ -129,7 +133,7 @@ class KtorBeersServiceTest {
           connectTimeout = 3.seconds,
           readTimeout = 7.seconds,
           requestTimeout = 19.seconds,
-        ),
+        )
       ) { request ->
         requestHost = request.url.host
         requestPath = request.url.encodedPath

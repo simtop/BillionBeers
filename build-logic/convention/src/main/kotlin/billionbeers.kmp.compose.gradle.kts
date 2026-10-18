@@ -8,8 +8,6 @@ plugins {
   id("org.jetbrains.kotlin.plugin.compose")
 }
 
-apply(plugin = "billionbeers.spotless")
-
 val libs = billionBeersCatalog()
 
 kotlin {

@@ -14,9 +14,9 @@ internal actual fun createBridgeHttpClient(environment: EnvironmentConfig): Http
   HttpClient(OkHttp) { configureBeersApi(environment) }
 
 internal actual fun createBridgeDatabase(): BeersDatabase =
-  Room.databaseBuilder(
-    "${System.getProperty("java.io.tmpdir")}billionbeers-ios-shared-jvm.db"
-  ) { BeersDatabaseConstructor.initialize() }
+  Room.databaseBuilder("${System.getProperty("java.io.tmpdir")}billionbeers-ios-shared-jvm.db") {
+      BeersDatabaseConstructor.initialize()
+    }
     .setDriver(BundledSQLiteDriver())
     .addMigrations(*ALL_MIGRATIONS.toTypedArray())
     .build()

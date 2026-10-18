@@ -9,9 +9,9 @@ import com.simtop.beer_storage.api.StoredFilterPreset
 import com.simtop.core.core.SystemEpochTimeProvider
 import java.io.File
 import kotlin.io.path.createTempDirectory
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -35,9 +35,10 @@ class SavedFilterPersistenceJvmTest {
   @Test
   fun capacityRejectionPreservesDurableRowsAndAllowsUpdateAndRetry() = runBlocking {
     val storage = BeersLocalSourceImpl(db, SystemEpochTimeProvider())
-    val presets = (0 until MAX_STORED_FILTER_PRESETS).map { index ->
-      initial.copy(id = "preset-$index", name = "Preset $index", updatedAt = index.toLong())
-    }
+    val presets =
+      (0 until MAX_STORED_FILTER_PRESETS).map { index ->
+        initial.copy(id = "preset-$index", name = "Preset $index", updatedAt = index.toLong())
+      }
     presets.forEach { storage.saveFilterPreset(it) }
     val before = storage.observeSavedFilterPresets().first()
 
@@ -53,7 +54,8 @@ class SavedFilterPersistenceJvmTest {
     storage.saveFilterPreset(updated)
     storage.deleteFilterPreset(presets.last().id)
     storage.saveFilterPreset(added)
-    val expected = (presets.drop(1).dropLast(1) + updated + added).sortedByDescending { it.updatedAt }
+    val expected =
+      (presets.drop(1).dropLast(1) + updated + added).sortedByDescending { it.updatedAt }
     assertEquals(expected, storage.observeSavedFilterPresets().first())
     assertEquals(expected, reopenStorage().observeSavedFilterPresets().first())
   }
@@ -65,7 +67,9 @@ class SavedFilterPersistenceJvmTest {
     val second = initial.copy(id = "candidate-2", updatedAt = 3L)
 
     coroutineScope {
-      listOf(first, second).map { preset -> async { storage.saveFilterPreset(preset) } }.forEach { it.await() }
+      listOf(first, second)
+        .map { preset -> async { storage.saveFilterPreset(preset) } }
+        .forEach { it.await() }
     }
 
     val saved = storage.observeSavedFilterPresets().first()
@@ -128,7 +132,9 @@ class SavedFilterPersistenceJvmTest {
     try {
       assertEquals(
         expected,
-        BeersLocalSourceImpl(reopened, SystemEpochTimeProvider()).observeSavedFilterPresets().first(),
+        BeersLocalSourceImpl(reopened, SystemEpochTimeProvider())
+          .observeSavedFilterPresets()
+          .first(),
       )
     } finally {
       reopened.close()

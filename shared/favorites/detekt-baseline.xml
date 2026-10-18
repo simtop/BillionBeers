@@ -1,0 +1,7 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>LongParameterList:FavoritesContent.kt$( viewState: CommonUiState&lt;List&lt;Beer&gt;&gt;, emptyText: String, errorText: String, beerRow: @Composable (Beer) -&gt; Unit, listState: LazyListState? = null, modifier: Modifier = Modifier, )</ID>
+  </CurrentIssues>
+</SmellBaseline>

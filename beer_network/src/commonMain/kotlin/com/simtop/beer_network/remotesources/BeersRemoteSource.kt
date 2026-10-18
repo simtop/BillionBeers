@@ -31,8 +31,7 @@ interface BeersRemoteSource {
 class BeersRemoteSourceImpl(
   private val service: BeersService,
   private val languageProvider: LanguageProvider,
-) :
-  BeersRemoteSource {
+) : BeersRemoteSource {
 
   override suspend fun getListOfBeers(
     page: Int,

@@ -25,7 +25,12 @@ class IosDeepLinkResolverTest {
     )
     assertEquals(
       PortableRoute.Favorites,
-      resolveIosDeepLink(DeepLinkParser.SCHEME, DeepLinkParser.HOST_FAVORITES, emptyList(), repository),
+      resolveIosDeepLink(
+        DeepLinkParser.SCHEME,
+        DeepLinkParser.HOST_FAVORITES,
+        emptyList(),
+        repository,
+      ),
     )
     assertEquals(emptyList(), lookups)
     assertEquals(emptyList(), fake.apiRequests)

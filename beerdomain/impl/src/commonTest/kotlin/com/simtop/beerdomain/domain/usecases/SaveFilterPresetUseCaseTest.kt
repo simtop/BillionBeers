@@ -14,8 +14,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.runTest
 
 class SaveFilterPresetUseCaseTest {
@@ -78,8 +78,7 @@ class SaveFilterPresetUseCaseTest {
   fun `exact name and query update while a different query creates a preset`() = runTest {
     val repository = FakeSavedFilterPresetsRepository()
     val idProvider = RecordingIdProvider()
-    val useCase =
-      SaveFilterPresetUseCase(repository, RecordingClock(1L), idProvider)
+    val useCase = SaveFilterPresetUseCase(repository, RecordingClock(1L), idProvider)
     val firstQuery = BeersQuery(styleId = "style-1")
     val secondQuery = BeersQuery(breweryId = "brewery-1")
 
@@ -123,7 +122,8 @@ class SaveFilterPresetUseCaseTest {
     )
     val useCase = SaveFilterPresetUseCase(repository, RecordingClock(1L), RecordingIdProvider())
 
-    listOf(" IPA ", "IPA").map { name -> async { useCase(name, BeersQuery(search = "ipa")) } }
+    listOf(" IPA ", "IPA")
+      .map { name -> async { useCase(name, BeersQuery(search = "ipa")) } }
       .awaitAll()
 
     val presets = repository.getPresets()

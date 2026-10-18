@@ -1,12 +1,11 @@
 package com.simtop.billionbeers.iosshared
 
 import com.simtop.beer_database.database.BeersDatabase
-import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeerCatalogMetadataRepository
+import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.beerdomain.domain.repositories.SavedFilterPresetsRepository
 import com.simtop.core.core.CoroutineDispatcherProvider
-import com.simtop.core.core.DefaultCoroutineDispatcherProvider
 import com.simtop.core.core.EnvironmentConfig
 import com.simtop.core.core.LanguageProvider
 import com.simtop.core.core.Logger
@@ -52,8 +51,10 @@ public class IosDataRuntime private constructor(private val graph: IosGraph) {
   internal val coroutineDispatcherProvider: CoroutineDispatcherProvider
     get() = graph.coroutineDispatcherProvider
 
-  internal suspend fun loadImage(url: String): ByteArray? =
-    runSuspendCatching { httpClient.get(url).body<ByteArray>() }.getOrNull()
+  internal suspend fun loadImage(url: String): ByteArray? = runSuspendCatching {
+    httpClient.get(url).body<ByteArray>()
+  }
+    .getOrNull()
 
   public fun close() {
     if (!closed) {
@@ -93,8 +94,9 @@ internal interface IosHostModule {
     EnvironmentConfig(apiBaseUrl = config.apiBaseUrl)
 
   @Provides
-  fun provideLanguageProvider(config: IosDataConfig): LanguageProvider =
-    LanguageProvider { config.languageCode }
+  fun provideLanguageProvider(config: IosDataConfig): LanguageProvider = LanguageProvider {
+    config.languageCode
+  }
 
   @Provides fun provideLogger(): Logger = NoOpLogger()
 
@@ -109,9 +111,7 @@ internal interface IosHostModule {
   fun provideHttpClient(environment: EnvironmentConfig): HttpClient =
     createBridgeHttpClient(environment)
 
-  @Provides
-  @SingleIn(AppScope::class)
-  fun provideDatabase(): BeersDatabase = createBridgeDatabase()
+  @Provides @SingleIn(AppScope::class) fun provideDatabase(): BeersDatabase = createBridgeDatabase()
 }
 
 internal expect fun createBridgeHttpClient(environment: EnvironmentConfig): HttpClient

@@ -18,27 +18,29 @@ fun interface SavedFilterPresetIdProvider {
 }
 
 object RandomSavedFilterPresetIdProvider : SavedFilterPresetIdProvider {
-  @OptIn(ExperimentalUuidApi::class)
-  override fun newId(): String = Uuid.random().toString()
+  @OptIn(ExperimentalUuidApi::class) override fun newId(): String = Uuid.random().toString()
 }
 
 class SaveFilterPresetUseCase(
   private val repository: SavedFilterPresetsRepository,
   private val epochTimeProvider: EpochTimeProvider = SystemEpochTimeProvider(),
-  private val idProvider: SavedFilterPresetIdProvider =
-    RandomSavedFilterPresetIdProvider,
+  private val idProvider: SavedFilterPresetIdProvider = RandomSavedFilterPresetIdProvider,
 ) {
   suspend operator fun invoke(
     name: String,
     query: BeersQuery,
   ): Either<SaveFilterPresetError, Unit> {
-    val normalizedName = normalizeFilterPresetName(name)
-      ?: return Either.Left(SaveFilterPresetError.InvalidName)
+    val normalizedName =
+      normalizeFilterPresetName(name) ?: return Either.Left(SaveFilterPresetError.InvalidName)
     val existingId =
       try {
-        repository.observeSavedFilterPresets().first().firstOrNull {
-          it.name == normalizedName && it.query == query
-        }?.id
+        repository
+          .observeSavedFilterPresets()
+          .first()
+          .firstOrNull {
+            it.name == normalizedName && it.query == query
+          }
+          ?.id
       } catch (e: CancellationException) {
         throw e
       } catch (e: Exception) {
@@ -63,8 +65,8 @@ class RenameFilterPresetUseCase(
     id: String,
     name: String,
   ): Either<MutateFilterPresetError, Unit> {
-    val normalizedName = normalizeFilterPresetName(name)
-      ?: return Either.Left(MutateFilterPresetError.InvalidName)
+    val normalizedName =
+      normalizeFilterPresetName(name) ?: return Either.Left(MutateFilterPresetError.InvalidName)
     return repository.renameFilterPreset(
       id = id,
       name = normalizedName,

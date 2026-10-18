@@ -2,9 +2,16 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
+    <ID>CyclomaticComplexMethod:EnvironmentConfig.wasmJs.kt$internal actual fun parseUrl(value: String): ParsedUrl</ID>
     <ID>CyclomaticComplexMethod:PagedListReducer.kt$PagedListReducer$fun reduce(items: List&lt;T&gt;, state: PagingState&lt;E&gt;): CommonUiState&lt;PagedListUiModel&lt;T&gt;&gt;</ID>
+    <ID>LongMethod:EnvironmentConfig.wasmJs.kt$internal actual fun parseUrl(value: String): ParsedUrl</ID>
+    <ID>MagicNumber:EnvironmentConfig.wasmJs.kt$3</ID>
+    <ID>MagicNumber:EpochTimeProvider.ios.kt$1_000.0</ID>
+    <ID>MagicNumber:EpochTimeProvider.ios.kt$978_307_200.0</ID>
+    <ID>NestedBlockDepth:PagingMediator.kt$PagingMediator$@Suppress("TooGenericExceptionCaught") override suspend fun loadNextPage()</ID>
     <ID>ReturnCount:PagingMediator.kt$PagingMediator$@Suppress("TooGenericExceptionCaught") override suspend fun loadNextPage()</ID>
     <ID>TooGenericExceptionThrown:PagingMediatorTest.kt$PagingMediatorTest$throw RuntimeException("count failed")</ID>
+    <ID>TooGenericExceptionThrown:PagingMediatorTest.kt$PagingMediatorTest$throw RuntimeException("fetch failed")</ID>
     <ID>TooGenericExceptionThrown:PagingMediatorTest.kt$PagingMediatorTest.Harness$throw RuntimeException("fetch $key failed")</ID>
     <ID>TooGenericExceptionThrown:PagingMediatorTest.kt$PagingMediatorTest.RecordingStorage$throw RuntimeException("write failed")</ID>
   </CurrentIssues>

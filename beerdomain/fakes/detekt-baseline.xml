@@ -2,7 +2,8 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>TooManyFunctions:FakeBeersRepository.kt$FakeBeersRepository : BeersRepository</ID>
+    <ID>ReturnCount:FakeSavedFilterPresetsRepository.kt$FakeSavedFilterPresetsRepository$override suspend fun saveFilterPreset( preset: SavedFilterPreset ): Either&lt;SaveFilterPresetError, Unit&gt;</ID>
+    <ID>TooManyFunctions:FakeBeersRepository.kt$FakeBeersRepository : BeersRepositoryBeerCatalogMetadataRepository</ID>
     <ID>TopLevelPropertyNaming:BeerFixtures.kt$const val fakeErrorName = "Error getting list of beers"</ID>
   </CurrentIssues>
 </SmellBaseline>
