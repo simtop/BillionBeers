@@ -11,6 +11,7 @@ import com.simtop.beer_network.network.BeersServiceHttpException
 import com.simtop.beer_network.network.BeersServiceNetworkException
 import com.simtop.beer_storage.api.BeersStorage
 import com.simtop.beer_storage.api.StoredBeer
+import com.simtop.beer_storage.api.StoredBeerLocalFlags
 import com.simtop.beer_storage.api.StoredPagingState
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.Beer
@@ -32,8 +33,13 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertSame
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.SerializationException
 import org.junit.jupiter.api.BeforeEach
@@ -740,6 +746,37 @@ class BeersPagerFactoryImplTest {
 
       expectThat(pager.data.first().single()).isEqualTo(beer.copy(isFavorite = true))
       expectThat(repository.countDBEntries()).isEqualTo(1)
+    }
+
+  @Test
+  fun `query pager keeps last flags and retries a transient local flag read failure`() =
+    runTest(testDispatcher) {
+      var failFlagReads = true
+      val storage =
+        object : BeersStorage by beersLocalSource {
+          override fun observeLocalFlags(ids: Set<String>): Flow<List<StoredBeerLocalFlags>> =
+            flow {
+              if (failFlagReads) throw IllegalStateException("transient flag read")
+              emitAll(beersLocalSource.observeLocalFlags(ids))
+            }
+        }
+      installStorage(storage)
+      beersRemoteSource.setBeersResponse(listOf(apiItem(id = "1")), totalCount = 1)
+      val pager = factory.create(BeersQuery(search = "ipa"))
+      pager.loadFirstPage()
+
+      pager.data.test {
+        val initial = awaitItem().single()
+        expectThat(initial.isFavorite).isEqualTo(false)
+
+        repository.updateFavorite(initial.copy(isFavorite = true))
+        failFlagReads = false
+        advanceTimeBy(1_000L)
+        runCurrent()
+
+        expectThat(awaitItem().single()).isEqualTo(initial.copy(isFavorite = true))
+        cancelAndIgnoreRemainingEvents()
+      }
     }
 
   @Test

@@ -3,12 +3,14 @@ package com.simtop.beerdomain.domain.repositories
 import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
 import com.simtop.beerdomain.domain.errors.UpdateFavoriteError
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.beerdomain.domain.models.BeerLocalFlags
 import com.simtop.beerdomain.domain.models.BeerPage
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.CatalogCacheStatus
 import com.simtop.core.core.CachePolicy
 import com.simtop.core.core.Either
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 /**
  * Stateless data accessor for beers. Paging coordination deliberately lives elsewhere (see
@@ -19,6 +21,15 @@ interface BeersRepository {
   suspend fun countDBEntries(): Int
 
   fun observeBeers(): Flow<List<Beer>>
+
+  /** Observes local-only fields for the requested IDs; implementations may provide a broad fallback. */
+  fun observeLocalFlags(ids: Set<String>): Flow<List<BeerLocalFlags>> =
+    observeBeers().map { beers ->
+      beers.asSequence()
+        .filter { it.id in ids }
+        .map { BeerLocalFlags(it.id, it.availability, it.isFavorite) }
+        .toList()
+    }
 
   /** Catalog-only view; defaults to all stored rows for backends without surface membership. */
   fun observeCatalogBeers(): Flow<List<Beer>> = observeBeers()

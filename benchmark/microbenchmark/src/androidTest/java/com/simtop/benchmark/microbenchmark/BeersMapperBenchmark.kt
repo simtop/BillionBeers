@@ -30,9 +30,9 @@ class BeersMapperBenchmark {
     )
 
     @Test
-    fun benchmarkFromBeerToBeerDbModel() {
+    fun benchmarkFromBeerToStoredBeer() {
         benchmarkRule.measureRepeated {
-            mapper.fromBeerToBeerDbModel(beer)
+            mapper.fromBeerToStoredBeer(beer)
         }
     }
 }
