@@ -357,6 +357,29 @@ class BeersPagerFactoryImplTest {
     }
 
   @Test
+  fun `completed fresh catalog survives recreation without another request and refresh detects growth`() =
+    runTest(testDispatcher) {
+      repository.insertPage(
+        (1..50).map { Beer.empty.copy(id = "$it") },
+        surface = "catalog:en",
+        nextKey = null,
+        totalCount = 50,
+      )
+      val recreated = factory.create()
+
+      recreated.loadNextPage()
+
+      expectThat(beersRemoteSource.requestedPages.toList()).isEqualTo(emptyList())
+      expectThat(recreated.pagingState.value).isEqualTo(PagingState.EndOfPagination(totalCount = 50))
+
+      beersRemoteSource.setBeersResponse((1..25).map { apiItem(id = "$it") }, totalCount = 60)
+      recreated.loadFirstPage()
+      recreated.loadNextPage()
+
+      expectThat(beersRemoteSource.requestedPages.toList()).isEqualTo(listOf(1, 2))
+    }
+
+  @Test
   fun `failed refresh over a warm catalog preserves the stored load-more bookmark`() =
     runTest(testDispatcher) {
       repository.insertPage(
@@ -628,6 +651,23 @@ class BeersPagerFactoryImplTest {
 
       expectThat(pager.pagingState.value).isEqualTo(PagingState.EndOfPagination(totalCount = 25))
       expectThat(beersRemoteSource.requestedPages.toList()).isEqualTo(listOf(1))
+    }
+
+  @Test
+  fun `unknown-total empty probe persists completion across pager recreation`() =
+    runTest(testDispatcher) {
+      beersRemoteSource.setBeersResponse((1..25).map { apiItem(id = "$it") }, totalCount = null)
+      val pager = factory.create()
+      pager.loadFirstPage()
+      beersRemoteSource.setBeersResponse(emptyList(), totalCount = null)
+      pager.loadNextPage()
+
+      expectThat(pager.pagingState.value).isEqualTo(PagingState.EndOfPagination())
+      expectThat(repository.pagingCompletionTotal("catalog:en")).isNotNull()
+      val recreated = factory.create()
+      recreated.loadNextPage()
+      expectThat(beersRemoteSource.requestedPages.toList()).isEqualTo(listOf(1, 2))
+      expectThat(recreated.pagingState.value).isEqualTo(PagingState.EndOfPagination())
     }
 
   @Test

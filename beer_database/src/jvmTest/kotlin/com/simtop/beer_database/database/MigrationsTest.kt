@@ -8,7 +8,7 @@ class MigrationsTest {
   @Test
   fun `registry contains every supported migration in upgrade order`() {
     assertEquals(
-      listOf(1 to 2, 2 to 3, 3 to 4, 4 to 5, 5 to 6),
+      listOf(1 to 2, 2 to 3, 3 to 4, 4 to 5, 5 to 6, 6 to 7),
       ALL_MIGRATIONS.map { it.startVersion to it.endVersion },
     )
   }

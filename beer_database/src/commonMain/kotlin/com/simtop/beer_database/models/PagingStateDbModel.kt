@@ -17,4 +17,5 @@ data class PagingStateDbModel(
   @ColumnInfo(name = "next_key") val nextKey: Int?,
   @ColumnInfo(name = "total_count") val totalCount: Int?,
   @ColumnInfo(name = "refreshed_at") val refreshedAt: Long,
+  @ColumnInfo(name = "is_complete", defaultValue = "0") val isComplete: Boolean = false,
 )

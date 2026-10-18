@@ -7,6 +7,7 @@ private const val DATABASE_VERSION_3 = 3
 private const val DATABASE_VERSION_4 = 4
 private const val DATABASE_VERSION_5 = 5
 private const val DATABASE_VERSION_6 = 6
+private const val DATABASE_VERSION_7 = 7
 
 private fun SQLiteConnection.execute(sql: String) {
   prepare(sql).use { it.step() }
@@ -87,6 +88,16 @@ val MIGRATION_5_6 =
     }
   }
 
+/** v6 → v7: distinguish a completed catalog from a missing/legacy continuation bookmark. */
+val MIGRATION_6_7 =
+  object : Migration(DATABASE_VERSION_6, DATABASE_VERSION_7) {
+    override fun migrate(connection: SQLiteConnection) {
+      connection.execute(
+        "ALTER TABLE `paging_state` ADD COLUMN `is_complete` INTEGER NOT NULL DEFAULT 0"
+      )
+    }
+  }
+
 /** Every supported upgrade, in order, for all Room hosts and database tests. */
 val ALL_MIGRATIONS: List<Migration> =
-  listOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+  listOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)

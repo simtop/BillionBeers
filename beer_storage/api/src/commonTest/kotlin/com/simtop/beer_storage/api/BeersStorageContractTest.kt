@@ -77,12 +77,27 @@ class BeersStorageContractTest {
     val storage = InMemoryBeersStorage()
 
     storage.insertPage(listOf(storedBeer("1", "One")), "catalog:en", nextKey = 4, totalCount = 206)
-    storage.insertPage(emptyList(), "catalog:en", nextKey = 2, totalCount = null)
+    storage.insertPage(listOf(storedBeer("1", "One")), "catalog:en", nextKey = 2, totalCount = null)
 
     assertEquals(
       StoredPagingState("catalog:en", nextKey = 4, totalCount = 206, refreshedAt = 0L),
       storage.getPagingState("catalog:en"),
     )
+  }
+
+  @Test
+  fun `terminal page records completion and later refresh can reopen a grown catalog`() = runTest {
+    val storage = InMemoryBeersStorage()
+    storage.insertPage(listOf(storedBeer("1", "One")), "catalog:en", nextKey = 2, totalCount = 50)
+    storage.insertPage(listOf(storedBeer("2", "Two")), "catalog:en", nextKey = null, totalCount = 50)
+
+    assertEquals(true, storage.getPagingState("catalog:en")?.isComplete)
+    assertEquals(2, storage.getPagingState("catalog:en")?.nextKey)
+
+    storage.insertPage(listOf(storedBeer("1", "One")), "catalog:en", nextKey = 2, totalCount = 60)
+
+    assertEquals(false, storage.getPagingState("catalog:en")?.isComplete)
+    assertEquals(2, storage.getPagingState("catalog:en")?.nextKey)
   }
 
   @Test
@@ -176,9 +191,12 @@ class BeersStorageContractTest {
       states[surface] =
         StoredPagingState(
           surface,
-          nextKey = listOfNotNull(old?.nextKey, nextKey).maxOrNull(),
+          nextKey =
+            if (old?.isComplete == true) nextKey ?: old.nextKey
+            else listOfNotNull(old?.nextKey, nextKey).maxOrNull(),
           totalCount = totalCount ?: old?.totalCount,
           refreshedAt = 0L,
+          isComplete = nextKey == null || beers.isEmpty(),
         )
     }
 

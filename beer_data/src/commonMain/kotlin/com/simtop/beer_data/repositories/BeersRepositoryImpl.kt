@@ -16,8 +16,9 @@ import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.beerdomain.domain.models.CatalogCacheStatus
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
-import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.beerdomain.domain.repositories.BeerCatalogMetadataRepository
+import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.beerdomain.domain.repositories.PagingCompletion
 import com.simtop.beerdomain.domain.repositories.SavedFilterPresetsRepository
 import com.simtop.core.core.CachePolicy
 import com.simtop.core.core.Either
@@ -149,6 +150,12 @@ class BeersRepositoryImpl(
 
   override suspend fun pagingNextKey(surface: String): Int? =
     beersStorage.getPagingState(surface)?.nextKey
+
+  override suspend fun pagingCompletionTotal(surface: String) =
+    beersStorage
+      .getPagingState(surface)
+      ?.takeIf { it.isComplete }
+      ?.let { PagingCompletion(it.totalCount) }
 
   override suspend fun catalogCacheStatus(policy: CachePolicy): CatalogCacheStatus {
     if (beersStorage.countCatalogEntries() == 0) return CatalogCacheStatus.Empty

@@ -261,11 +261,24 @@ import kotlinx.serialization.json.Json
           const existingTotal = previous.totalCount ?? null;
           const incomingNext = input.nextKey;
           const previousNext = previous.nextKey;
-          const nextKey = previousNext == null || (incomingNext != null && incomingNext > previousNext) ? incomingNext : previousNext;
+          const nextKey = previous.isComplete
+            ? (incomingNext == null ? previousNext : incomingNext)
+            : (
+                previousNext == null || (incomingNext != null && incomingNext > previousNext)
+                  ? incomingNext
+                  : previousNext
+              );
+          const isComplete = incomingNext == null || input.beers.length === 0;
           const beerRequests = input.beers.map(row => beers.get(row.id));
           let remaining = beerRequests.length;
           const existingRows = {};
-          const committedPaging = {surface: input.surface, nextKey, totalCount: input.totalCount ?? existingTotal, refreshedAt: Date.now()};
+          const committedPaging = {
+            surface: input.surface,
+            nextKey,
+            isComplete,
+            totalCount: input.totalCount ?? existingTotal,
+            refreshedAt: Date.now(),
+          };
           const commitPage = () => {
             if (input.surface.startsWith('catalog:')) {
               const bookmarks = paging.openCursor();
@@ -481,6 +494,7 @@ private data class PagingRecord(
   val nextKey: Int?,
   val totalCount: Int?,
   val refreshedAt: Long,
+  val isComplete: Boolean = false,
 )
 
 @Serializable
@@ -717,7 +731,7 @@ class IndexedDbBeersStorage(
 
   private companion object {
     const val DEFAULT_DATABASE_NAME = "billionbeers"
-    const val DATABASE_VERSION = 2
+    const val DATABASE_VERSION = 3
   }
 }
 
@@ -785,4 +799,5 @@ private fun BeerRecord.toStored() = StoredBeer(
   fermentationMethod, ingredients, recommendedGlasses,
 )
 
-private fun PagingRecord.toStored() = StoredPagingState(surface, nextKey, totalCount, refreshedAt)
+private fun PagingRecord.toStored() =
+  StoredPagingState(surface, nextKey, totalCount, refreshedAt, isComplete)

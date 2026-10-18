@@ -95,12 +95,16 @@ class FakeBeersLocalSource : BeersStorage {
     }
     upsertBeers(beers, isCatalog = surface.startsWith("catalog:"))
     val existing = pagingState[surface]
+    val isComplete = nextKey == null || beers.isEmpty()
     pagingState[surface] =
       StoredPagingState(
         surface = surface,
-        nextKey = listOfNotNull(existing?.nextKey, nextKey).maxOrNull(),
+        nextKey =
+          if (existing?.isComplete == true) nextKey ?: existing.nextKey
+          else listOfNotNull(existing?.nextKey, nextKey).maxOrNull(),
         totalCount = totalCount ?: existing?.totalCount,
         refreshedAt = 0L,
+        isComplete = isComplete,
       )
   }
 
@@ -116,6 +120,7 @@ class FakeBeersLocalSource : BeersStorage {
         nextKey = nextKey,
         totalCount = null,
         refreshedAt = refreshedAt,
+        isComplete = false,
       )
   }
 

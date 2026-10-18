@@ -50,6 +50,21 @@ class BeersDatabaseJvmTest {
   }
 
   @Test
+  fun insertPagePersistsCompletionAndRefreshCanReopenAfterGrowth() = runBlocking {
+    val dao = db.beersDao()
+    dao.insertPage(listOf(beer("1")), "catalog:en", 2, 50, 10L)
+    dao.insertPage(listOf(beer("50")), "catalog:en", null, 50, 20L)
+
+    assertTrue(dao.getPagingState("catalog:en")?.isComplete == true)
+    assertEquals(2, dao.getPagingState("catalog:en")?.nextKey)
+
+    dao.insertPage(listOf(beer("1")), "catalog:en", 2, 60, 30L)
+
+    assertFalse(dao.getPagingState("catalog:en")?.isComplete == true)
+    assertEquals(2, dao.getPagingState("catalog:en")?.nextKey)
+  }
+
+  @Test
   fun localSourceUsesInjectedClockForCatalogRefreshTimestamp() = runBlocking {
     val storage = BeersLocalSourceImpl(db, EpochTimeProvider { 123L })
 
@@ -318,7 +333,7 @@ class BeersDatabaseJvmTest {
   }
 
   @Test
-  fun historicalVersionOneFileMigratesThroughVersionSix() = runBlocking {
+  fun historicalVersionOneFileMigratesThroughVersionSeven() = runBlocking {
     val file = File(databaseDirectory, "version-one.db").absolutePath
     createVersionOneDatabase(file)
     db.close()
