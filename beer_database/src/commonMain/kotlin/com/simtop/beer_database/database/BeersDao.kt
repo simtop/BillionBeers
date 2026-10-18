@@ -7,6 +7,7 @@ import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Upsert
 import com.simtop.beer_database.models.BeerDbModel
+import com.simtop.beer_database.models.BeerLocalFlagsDbModel
 import com.simtop.beer_database.models.PagingStateDbModel
 import com.simtop.beer_database.models.SavedFilterPresetDbModel
 import com.simtop.beer_storage.api.FilterPresetCapacityReachedException
@@ -19,6 +20,9 @@ abstract class BeersDao {
   @Query("SELECT * FROM beers") abstract fun getAllBeers(): Flow<List<BeerDbModel>>
 
   @Query("SELECT * FROM beers WHERE id = :id") abstract suspend fun getBeerById(id: String): BeerDbModel?
+
+  @Query("SELECT id, availability, is_favorite FROM beers WHERE id IN (:ids)")
+  abstract fun observeLocalFlags(ids: List<String>): Flow<List<BeerLocalFlagsDbModel>>
 
   @Query("SELECT * FROM beers WHERE is_in_catalog = 1")
   abstract fun getCatalogBeers(): Flow<List<BeerDbModel>>

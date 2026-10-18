@@ -10,6 +10,7 @@ import com.simtop.beerdomain.domain.errors.SaveFilterPresetError
 import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
 import com.simtop.beerdomain.domain.errors.UpdateFavoriteError
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.beerdomain.domain.models.BeerLocalFlags
 import com.simtop.beerdomain.domain.models.BeerPage
 import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.beerdomain.domain.models.BeersQuery
@@ -233,6 +234,11 @@ class BeersRepositoryImpl(
   override fun observeBeers(): Flow<List<Beer>> =
     beersStorage.observeBeers().map { list ->
       list.map { beersMapper.fromStoredBeerToBeer(it) }
+    }
+
+  override fun observeLocalFlags(ids: Set<String>): Flow<List<BeerLocalFlags>> =
+    beersStorage.observeLocalFlags(ids).map { flags ->
+      flags.map { BeerLocalFlags(it.id, it.availability, it.isFavorite) }
     }
 
   override fun observeFavoriteBeers(): Flow<List<Beer>> =

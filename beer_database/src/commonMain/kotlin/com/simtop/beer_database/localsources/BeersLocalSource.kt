@@ -7,12 +7,14 @@ import com.simtop.beer_database.models.SavedFilterPresetDbModel
 import com.simtop.beer_database.utils.Converters
 import com.simtop.beer_storage.api.BeersStorage
 import com.simtop.beer_storage.api.StoredBeer
+import com.simtop.beer_storage.api.StoredBeerLocalFlags
 import com.simtop.beer_storage.api.StoredFilterPreset
 import com.simtop.beer_storage.api.StoredPagingState
 import com.simtop.core.core.EpochTimeProvider
 import com.simtop.core.core.SystemEpochTimeProvider
 import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 
 private const val MAX_PRESET_NAME_LENGTH = 64
@@ -25,6 +27,14 @@ class BeersLocalSourceImpl(
 
   override fun observeBeers(): Flow<List<StoredBeer>> =
     db.beersDao().getAllBeers().map { beers -> beers.map { it.toStoredBeer() } }
+
+  override fun observeLocalFlags(ids: Set<String>): Flow<List<StoredBeerLocalFlags>> =
+    if (ids.isEmpty()) flowOf(emptyList())
+    else {
+      db.beersDao().observeLocalFlags(ids.toList()).map { flags ->
+        flags.map { StoredBeerLocalFlags(it.id, it.availability, it.isFavorite) }
+      }
+    }
 
   override suspend fun getBeerById(id: String): StoredBeer? =
     db.beersDao().getBeerById(id)?.toStoredBeer()

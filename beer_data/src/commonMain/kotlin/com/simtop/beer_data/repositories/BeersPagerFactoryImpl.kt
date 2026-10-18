@@ -3,6 +3,7 @@ package com.simtop.beer_data.repositories
 import com.simtop.beer_network.network.BeersService
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.beerdomain.domain.models.BeerLocalFlags
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.CatalogCacheStatus
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
@@ -15,9 +16,15 @@ import com.simtop.core.core.Pager
 import com.simtop.core.core.PagingMediator
 import com.simtop.core.core.PagingStorage
 import com.simtop.core.core.StoredPagingCompletion
+import com.simtop.core.core.retryWithErrorState
 import dev.zacsweers.metro.Inject
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 
 @Inject
 class BeersPagerFactoryImpl(
@@ -95,19 +102,35 @@ class BeersPagerFactoryImpl(
  * exposing it, and overlays the current local flags from the durable store. The durable cache
  * operation does not change catalog membership, catalog positions, or paging bookmarks.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 private class QueryPagingStorage(
   private val delegate: PagingStorage<Int, Beer>,
   private val repository: BeersRepository,
 ) : PagingStorage<Int, Beer> by delegate {
 
   override val data: Flow<List<Beer>> =
-    combine(delegate.data, repository.observeBeers()) { items, cached ->
-      val cachedById = cached.associateBy { it.id }
-      items.map { beer ->
-        cachedById[beer.id]?.let { stored ->
-          beer.copy(availability = stored.availability, isFavorite = stored.isFavorite)
-        } ?: beer
+    delegate.data.flatMapLatest { items ->
+      val ids = items.mapTo(mutableSetOf(), Beer::id)
+      observeLocalFlagsWithRetry(ids).map { flags ->
+        val flagsById = flags.associateBy { it.id }
+        items.map { beer ->
+          flagsById[beer.id]?.let { local ->
+            beer.copy(availability = local.availability, isFavorite = local.isFavorite)
+          } ?: beer
+        }
       }
+    }
+
+  /** Keeps the last good overlay during an error, then resubscribes after the shared retry delay. */
+  private fun observeLocalFlagsWithRetry(ids: Set<String>): Flow<List<BeerLocalFlags>> =
+    flow {
+      var lastGoodFlags = emptyList<BeerLocalFlags>()
+      emitAll(
+        repository
+          .observeLocalFlags(ids)
+          .onEach { lastGoodFlags = it }
+          .retryWithErrorState { lastGoodFlags }
+      )
     }
 
   override suspend fun storeFirstPage(page: PageResult<Int, Beer>) {

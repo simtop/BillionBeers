@@ -7,6 +7,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.simtop.beer_database.database.BeersDatabase
 import com.simtop.beer_storage.api.BeersStorage
 import com.simtop.beer_storage.api.StoredBeer
+import com.simtop.beer_storage.api.StoredBeerLocalFlags
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -74,6 +75,22 @@ class BeersLocalSourceTest {
     localSource.upsertAvailability(beer().copy(availability = false))
 
     assertEquals(false, localSource.observeBeers().first().single().availability)
+  }
+
+  @Test
+  fun observeLocalFlagsOnlyReturnsRequestedRowsAndReflectsUpdates() = runBlocking {
+    val target = beer(id = "1").copy(availability = false, isFavorite = true)
+    localSource.insertAll(listOf(target, beer(id = "2"), beer(id = "3")))
+    val observed = localSource.observeLocalFlags(setOf("1", "missing"))
+
+    assertEquals(listOf(StoredBeerLocalFlags("1", false, true)), observed.first())
+
+    localSource.upsertFavorite(target.copy(isFavorite = false))
+
+    assertEquals(
+      listOf(StoredBeerLocalFlags("1", false, false)),
+      withTimeout(1_000) { observed.first { it.singleOrNull()?.isFavorite == false } },
+    )
   }
 
   @Test

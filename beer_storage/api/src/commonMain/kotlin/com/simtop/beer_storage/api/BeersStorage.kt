@@ -1,6 +1,8 @@
 package com.simtop.beer_storage.api
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 
 const val MAX_STORED_FILTER_PRESETS = 10
 
@@ -15,6 +17,21 @@ class FilterPresetCapacityReachedException :
  */
 interface BeersStorage {
   fun observeBeers(): Flow<List<StoredBeer>>
+
+  /**
+   * Observes local-only fields for the requested IDs. Backends with indexed reads should override
+   * this fallback, which scans their full beer observation.
+   */
+  fun observeLocalFlags(ids: Set<String>): Flow<List<StoredBeerLocalFlags>> =
+    if (ids.isEmpty()) flowOf(emptyList())
+    else {
+      observeBeers().map { beers ->
+        beers.asSequence()
+          .filter { it.id in ids }
+          .map { StoredBeerLocalFlags(it.id, it.availability, it.isFavorite) }
+          .toList()
+      }
+    }
 
   /** Reads one cached row by its primary key without materializing the full catalog. */
   suspend fun getBeerById(id: String): StoredBeer?
@@ -64,6 +81,12 @@ interface BeersStorage {
   /** Number of rows available to the full catalog pager. */
   suspend fun countCatalogEntries(): Int = count()
 }
+
+data class StoredBeerLocalFlags(
+  val id: String,
+  val availability: Boolean,
+  val isFavorite: Boolean,
+)
 
 data class StoredBeer(
   val id: String,
