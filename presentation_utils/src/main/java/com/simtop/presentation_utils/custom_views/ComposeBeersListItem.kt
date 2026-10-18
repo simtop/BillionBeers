@@ -68,7 +68,7 @@ fun BeerImage(
 ) {
   // Keeps the list item's skeleton shimmer alive on the tile until Coil resolves, so the image
   // crossfades in from the shimmer instead of flashing a static placeholder first.
-  var isLoading by remember { mutableStateOf(true) }
+  var isLoading by remember(imageUrl) { mutableStateOf(true) }
   val background = if (isLoading) shimmerBrush() else SolidColor(Color.LightGray.copy(alpha = 0.3f))
 
   Box(

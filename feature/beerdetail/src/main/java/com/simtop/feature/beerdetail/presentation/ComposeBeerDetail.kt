@@ -6,6 +6,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -42,11 +43,13 @@ fun ComposeBeerDetail(
   val context = LocalContext.current
   val locale = LocalConfiguration.current.locales[0]
   val animationsDisabled =
-    Settings.Global.getFloat(
-      context.contentResolver,
-      Settings.Global.ANIMATOR_DURATION_SCALE,
-      1f,
-    ) == 0f
+    remember(context) {
+      Settings.Global.getFloat(
+        context.contentResolver,
+        Settings.Global.ANIMATOR_DURATION_SCALE,
+        1f,
+      ) == 0f
+    }
 
   SharedBeerDetailContent(
     beer = beer,

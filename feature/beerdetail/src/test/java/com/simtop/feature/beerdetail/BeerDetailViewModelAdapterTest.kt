@@ -24,7 +24,7 @@ internal class BeerDetailViewModelAdapterTest {
       val repository = FakeBeersRepository(listOf(fakeBeerModel))
       val firstViewModel = BeerDetailViewModel(repository, fakeBeerModel.id)
       advanceUntilIdle()
-      firstViewModel.updateFavorite(fakeBeerModel)
+      firstViewModel.updateFavorite()
       advanceUntilIdle()
       expectThat((firstViewModel.beerDetailViewState.value as CommonUiState.Success).data)
         .isEqualTo(restoredBeer)
@@ -42,7 +42,7 @@ internal class BeerDetailViewModelAdapterTest {
       val repository = FakeBeersRepository(listOf(fakeBeerModel))
       val viewModel = BeerDetailViewModel(repository, fakeBeerModel.id)
 
-      viewModel.updateAvailability(fakeBeerModel)
+      viewModel.updateAvailability()
       advanceUntilIdle()
 
       val recreated = BeerDetailViewModel(repository, fakeBeerModel.id)
