@@ -1,0 +1,22 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:SharedAppShell.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun SharedAppShell( repository: BeersRepository, catalogMetadataRepository: BeerCatalogMetadataRepository, savedFilterPresetsRepository: SavedFilterPresetsRepository, pagerFactory: BeersPagerFactory, coroutineDispatcher: CoroutineDispatcherProvider, strings: SharedAppStrings, host: SharedAppHost, modifier: Modifier = Modifier, initialRoute: PortableRoute = PortableRoute.BeersList, onClose: () -&gt; Unit = {}, )</ID>
+    <ID>LongMethod:FilterPresetFormLayoutTest.kt$FilterPresetFormLayoutTest$private fun checkForm( screen: String, fontScale: Float = 2f, french: Boolean = true, direction: LayoutDirection = LayoutDirection.Ltr, )</ID>
+    <ID>LongMethod:SavedFiltersLayoutTest.kt$internal fun savedFilterStrings(rename: String, delete: String)</ID>
+    <ID>LongParameterList:SharedAppNavigationState.kt$SharedAppNavigationState$( private val repository: BeersRepository, private val catalogMetadataRepository: BeerCatalogMetadataRepository, private val savedFilterPresetsRepository: SavedFilterPresetsRepository, private val pagerFactory: BeersPagerFactory, private val coroutineDispatcher: CoroutineDispatcherProvider, initialRoute: PortableRoute, private val onNavigationEvent: (SharedAppNavigationEvent) -&gt; Unit = {}, )</ID>
+    <ID>LongParameterList:SharedAppShell.kt$( catalog: ListEntry, detail: DetailEntry, strings: SharedAppStrings, host: SharedAppHost, onBeerClick: (Beer) -&gt; Unit, onSearch: () -&gt; Unit, onBrowse: () -&gt; Unit, onSaveQuery: suspend (String) -&gt; Boolean, onBack: () -&gt; Unit, animationsDisabled: Boolean, onMessage: (String) -&gt; Unit, )</ID>
+    <ID>LongParameterList:SharedAppShell.kt$( entry: BrowseBeersEntry, strings: SharedAppStrings, host: SharedAppHost, onBack: () -&gt; Unit, onBeerClick: (Beer) -&gt; Unit, onSaveQuery: suspend (String) -&gt; Boolean, )</ID>
+    <ID>LongParameterList:SharedAppShell.kt$( entry: DetailEntry, strings: SharedAppStrings, host: SharedAppHost, onBack: () -&gt; Unit, showBackButton: Boolean = true, animationsDisabled: Boolean, onMessage: (String) -&gt; Unit, )</ID>
+    <ID>LongParameterList:SharedAppShell.kt$( entry: ListEntry, strings: SharedAppStrings, host: SharedAppHost, onBeerClick: (Beer) -&gt; Unit, onSearch: () -&gt; Unit, onBrowse: () -&gt; Unit, onSaveQuery: suspend (String) -&gt; Boolean = { false }, )</ID>
+    <ID>LongParameterList:SharedAppShell.kt$( repository: BeersRepository, catalogMetadataRepository: BeerCatalogMetadataRepository, savedFilterPresetsRepository: SavedFilterPresetsRepository, pagerFactory: BeersPagerFactory, coroutineDispatcher: CoroutineDispatcherProvider, strings: SharedAppStrings, host: SharedAppHost, modifier: Modifier = Modifier, initialRoute: PortableRoute = PortableRoute.BeersList, onClose: () -&gt; Unit = {}, )</ID>
+    <ID>MagicNumber:SharedAppShell.kt$0.42f</ID>
+    <ID>MagicNumber:SharedAppShell.kt$0.58f</ID>
+    <ID>MagicNumber:SharedAppShell.kt$4_000L</ID>
+    <ID>MatchingDeclarationName:SharedAppLayoutPolicy.kt$SharedAppWidthClass</ID>
+    <ID>TooManyFunctions:SharedAppNavigationState.kt$SharedAppNavigationState</ID>
+    <ID>TooManyFunctions:SharedAppShell.kt$com.simtop.billionbeers.shared.app.SharedAppShell.kt</ID>
+    <ID>UnusedPrivateProperty:SharedAppShell.kt$val coroutineScope = rememberCoroutineScope()</ID>
+  </CurrentIssues>
+</SmellBaseline>

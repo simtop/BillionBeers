@@ -49,9 +49,13 @@ val MIGRATION_2_3 =
       connection.execute("ALTER TABLE `beers` ADD COLUMN `released_year` INTEGER")
       connection.execute("ALTER TABLE `beers` ADD COLUMN `min_serving_temperature` INTEGER")
       connection.execute("ALTER TABLE `beers` ADD COLUMN `max_serving_temperature` INTEGER")
-      connection.execute("ALTER TABLE `beers` ADD COLUMN `fermentation_method` TEXT NOT NULL DEFAULT ''")
+      connection.execute(
+        "ALTER TABLE `beers` ADD COLUMN `fermentation_method` TEXT NOT NULL DEFAULT ''"
+      )
       connection.execute("ALTER TABLE `beers` ADD COLUMN `ingredients` TEXT NOT NULL DEFAULT '[]'")
-      connection.execute("ALTER TABLE `beers` ADD COLUMN `recommended_glasses` TEXT NOT NULL DEFAULT '[]'")
+      connection.execute(
+        "ALTER TABLE `beers` ADD COLUMN `recommended_glasses` TEXT NOT NULL DEFAULT '[]'"
+      )
     }
   }
 
@@ -84,7 +88,9 @@ val MIGRATION_4_5 =
 val MIGRATION_5_6 =
   object : Migration(DATABASE_VERSION_5, DATABASE_VERSION_6) {
     override fun migrate(connection: SQLiteConnection) {
-      connection.execute("ALTER TABLE `beers` ADD COLUMN `is_in_catalog` INTEGER NOT NULL DEFAULT 1")
+      connection.execute(
+        "ALTER TABLE `beers` ADD COLUMN `is_in_catalog` INTEGER NOT NULL DEFAULT 1"
+      )
     }
   }
 

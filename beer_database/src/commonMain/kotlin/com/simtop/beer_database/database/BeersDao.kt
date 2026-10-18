@@ -19,7 +19,8 @@ abstract class BeersDao {
 
   @Query("SELECT * FROM beers") abstract fun getAllBeers(): Flow<List<BeerDbModel>>
 
-  @Query("SELECT * FROM beers WHERE id = :id") abstract suspend fun getBeerById(id: String): BeerDbModel?
+  @Query("SELECT * FROM beers WHERE id = :id")
+  abstract suspend fun getBeerById(id: String): BeerDbModel?
 
   @Query("SELECT id, availability, is_favorite FROM beers WHERE id IN (:ids)")
   abstract fun observeLocalFlags(ids: List<String>): Flow<List<BeerLocalFlagsDbModel>>
@@ -33,8 +34,7 @@ abstract class BeersDao {
   @Query("SELECT * FROM filter_presets ORDER BY updated_at DESC, name, id")
   abstract fun getFilterPresets(): Flow<List<SavedFilterPresetDbModel>>
 
-  @Query("SELECT COUNT(id) FROM filter_presets")
-  abstract suspend fun getFilterPresetCount(): Int
+  @Query("SELECT COUNT(id) FROM filter_presets") abstract suspend fun getFilterPresetCount(): Int
 
   @Query("SELECT id FROM filter_presets WHERE id = :id")
   abstract suspend fun findFilterPresetId(id: String): String?
@@ -60,9 +60,13 @@ abstract class BeersDao {
     // Room serializes this lookup and write in one transaction. Concurrent saves of the same
     // logical preset therefore converge on the existing row even if their callers generated
     // different candidate ids.
-    val existingId = findFilterPresetIdByContents(
-      preset.name, preset.search, preset.styleId, preset.breweryId
-    ) ?: findFilterPresetId(preset.id)
+    val existingId =
+      findFilterPresetIdByContents(
+        preset.name,
+        preset.search,
+        preset.styleId,
+        preset.breweryId,
+      ) ?: findFilterPresetId(preset.id)
     if (existingId == null) {
       if (getFilterPresetCount() >= MAX_STORED_FILTER_PRESETS) {
         throw FilterPresetCapacityReachedException()

@@ -1,0 +1,8 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>LongParameterList:BeersListContent.kt$( model: PagedListUiModel&lt;Beer&gt;, beerRow: @Composable (Beer) -&gt; Unit, loadMoreFailedText: String, retryText: String, endOfListText: String, onScrollToBottom: () -&gt; Unit, onRefresh: () -&gt; Unit, onRetryLoadMore: () -&gt; Unit, listContentPadding: PaddingValues, listState: LazyListState?, )</ID>
+    <ID>LongParameterList:BeersListContent.kt$( viewState: CommonUiState&lt;PagedListUiModel&lt;Beer&gt;&gt;, beerRow: @Composable (Beer) -&gt; Unit, loadingContent: @Composable () -&gt; Unit, emptyContent: @Composable (onRetry: () -&gt; Unit) -&gt; Unit, errorContent: @Composable (CommonUiState.Error, onRetry: () -&gt; Unit) -&gt; Unit, loadMoreFailedText: String, retryText: String, endOfListText: String, onScrollToBottom: () -&gt; Unit, onRefresh: () -&gt; Unit, onRetry: () -&gt; Unit, onRetryLoadMore: () -&gt; Unit, listContentPadding: PaddingValues = PaddingValues(), animationsDisabled: Boolean = false, listState: LazyListState? = null, modifier: Modifier = Modifier, )</ID>
+  </CurrentIssues>
+</SmellBaseline>

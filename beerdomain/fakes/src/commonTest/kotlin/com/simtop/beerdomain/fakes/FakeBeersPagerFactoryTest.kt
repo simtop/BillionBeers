@@ -6,10 +6,10 @@ import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.core.core.PagingEvent
 import com.simtop.core.core.PagingState
-import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlinx.coroutines.test.runTest
 
 class FakeBeersPagerFactoryTest {
 
@@ -33,12 +33,8 @@ class FakeBeersPagerFactoryTest {
   @Test
   fun `query pager data does not leak between instances`() = runTest {
     val factory = FakeBeersPagerFactory(FakeBeersRepository())
-    val first =
-      factory.create(BeersQuery(search = "ipa")) as
-        FakePager<Beer, FetchBeersError>
-    val second =
-      factory.create(BeersQuery(search = "lager")) as
-        FakePager<Beer, FetchBeersError>
+    val first = factory.create(BeersQuery(search = "ipa")) as FakePager<Beer, FetchBeersError>
+    val second = factory.create(BeersQuery(search = "lager")) as FakePager<Beer, FetchBeersError>
 
     first.data.test {
       assertEquals(emptyList(), awaitItem())

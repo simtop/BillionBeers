@@ -1,0 +1,9 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>LongParameterList:SavedFiltersContent.kt$( presets: List&lt;SavedFilterPreset&gt;, strings: SavedFiltersStrings, onApply: (SavedFilterPreset) -&gt; Unit, onRename: suspend (SavedFilterPreset, String) -&gt; Boolean, onDelete: suspend (SavedFilterPreset) -&gt; Boolean, modifier: Modifier, )</ID>
+    <ID>LongParameterList:SavedFiltersContent.kt$( viewState: CommonUiState&lt;List&lt;SavedFilterPreset&gt;&gt;, strings: SavedFiltersStrings, onApply: (SavedFilterPreset) -&gt; Unit, onRename: suspend (SavedFilterPreset, String) -&gt; Boolean, onDelete: suspend (SavedFilterPreset) -&gt; Boolean, modifier: Modifier = Modifier, )</ID>
+    <ID>MatchingDeclarationName:SavedFiltersContent.kt$SavedFiltersStrings</ID>
+  </CurrentIssues>
+</SmellBaseline>

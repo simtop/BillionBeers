@@ -9,7 +9,6 @@ kotlin {
     browser()
   }
 
-
   android {
     namespace = "com.simtop.beer_storage.api"
   }

@@ -1,0 +1,8 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ReturnCount:FilterPresetUseCases.kt$SaveFilterPresetUseCase$suspend operator fun invoke( name: String, query: BeersQuery, ): Either&lt;SaveFilterPresetError, Unit&gt;</ID>
+    <ID>TooGenericExceptionCaught:FilterPresetUseCases.kt$SaveFilterPresetUseCase$e: Exception</ID>
+  </CurrentIssues>
+</SmellBaseline>

@@ -1,0 +1,10 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>LongParameterList:ComposeFixture.kt$( state: ComposeFixtureUiState, onTextChanged: (String) -&gt; Unit, onSubmit: () -&gt; Unit, title: String, inputLabel: String, submitLabel: String, modifier: Modifier = Modifier, requestInitialFocus: Boolean = true, )</ID>
+    <ID>LongParameterList:ComposeFixture.kt$( viewModel: ComposeFixtureViewModel, modifier: Modifier = Modifier, onEvent: (ComposeFixtureEvent) -&gt; Unit = {}, title: String? = null, inputLabel: String? = null, submitLabel: String? = null, )</ID>
+    <ID>MagicNumber:ComposeFixtureWasmRenderTest.kt$ComposeFixtureWasmRenderTest$250</ID>
+    <ID>MatchingDeclarationName:Navigation3RuntimeProbe.kt$Navigation3ProbeKey : NavKey</ID>
+  </CurrentIssues>
+</SmellBaseline>

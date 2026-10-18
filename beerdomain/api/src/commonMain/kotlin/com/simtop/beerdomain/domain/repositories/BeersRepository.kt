@@ -22,10 +22,13 @@ interface BeersRepository {
 
   fun observeBeers(): Flow<List<Beer>>
 
-  /** Observes local-only fields for the requested IDs; implementations may provide a broad fallback. */
+  /**
+   * Observes local-only fields for the requested IDs; implementations may provide a broad fallback.
+   */
   fun observeLocalFlags(ids: Set<String>): Flow<List<BeerLocalFlags>> =
     observeBeers().map { beers ->
-      beers.asSequence()
+      beers
+        .asSequence()
         .filter { it.id in ids }
         .map { BeerLocalFlags(it.id, it.availability, it.isFavorite) }
         .toList()
@@ -95,8 +98,9 @@ interface BeersRepository {
    * filtered surface.
    */
   suspend fun getBeersPageFromApi(page: Int, query: BeersQuery = BeersQuery()): BeerPage
-
 }
 
-/** Explicit durable end-of-pagination state; the count may be unknown for empty-page termination. */
+/**
+ * Explicit durable end-of-pagination state; the count may be unknown for empty-page termination.
+ */
 data class PagingCompletion(val totalCount: Int?)

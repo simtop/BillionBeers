@@ -42,9 +42,9 @@ import androidx.compose.ui.window.ComposeUIViewController
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.shared.app.SharedAppHost
 import com.simtop.billionbeers.shared.app.SharedAppShell
-import com.simtop.navigation.contract.PortableRoute
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.runSuspendCatching
+import com.simtop.navigation.contract.PortableRoute
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -55,22 +55,19 @@ import platform.UIKit.UIViewController
 private const val DEFAULT_IOS_API_BASE_URL = "https://brewbuddy.dev/"
 
 /** Owns one iOS data graph and its Compose controller for the lifetime of a host scene. */
-public class IosAppSession(
-  languageCode: String = "en",
-) {
+public class IosAppSession(languageCode: String = "en") {
   private val runtime =
     IosDataRuntime.open(
-      IosDataConfig(apiBaseUrl = DEFAULT_IOS_API_BASE_URL, languageCode = languageCode),
+      IosDataConfig(apiBaseUrl = DEFAULT_IOS_API_BASE_URL, languageCode = languageCode)
     )
   private val strings = IosLocalizedStrings.forLanguage(languageCode)
   private val routeRequests = IosRouteRequestBuffer()
   private val scope = CoroutineScope(SupervisorJob() + runtime.coroutineDispatcherProvider.io)
   private var closed = false
 
-  public val viewController: UIViewController =
-    ComposeUIViewController {
-      IosShell(runtime, strings, routeRequests.routes)
-    }
+  public val viewController: UIViewController = ComposeUIViewController {
+    IosShell(runtime, strings, routeRequests.routes)
+  }
 
   /** Delivers a supported URL without exposing repositories or navigation internals to Swift. */
   public fun handleDeepLink(url: String) {
@@ -119,7 +116,8 @@ private fun IosShell(
         availableText = strings.detailStrings.available,
         unavailableText = strings.detailStrings.outOfStock,
         errorText = strings.chrome.error,
-        titleTextStyle = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
+        titleTextStyle =
+          MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
       ),
   )
 }
@@ -189,7 +187,7 @@ private fun IosBeerRow(
       CardDefaults.cardColors(
         containerColor =
           if (beer.availability) MaterialTheme.colorScheme.surface
-          else MaterialTheme.colorScheme.errorContainer,
+          else MaterialTheme.colorScheme.errorContainer
       ),
   ) {
     Row(
@@ -204,7 +202,8 @@ private fun IosBeerRow(
       )
       Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(beer.name, style = MaterialTheme.typography.titleMedium)
-        if (beer.tagline.isNotBlank()) Text(beer.tagline, style = MaterialTheme.typography.bodyMedium)
+        if (beer.tagline.isNotBlank())
+          Text(beer.tagline, style = MaterialTheme.typography.bodyMedium)
         Text(
           "ABV ${beer.abv}% · IBU ${beer.ibu}",
           style = MaterialTheme.typography.labelMedium,
@@ -237,7 +236,8 @@ private fun IosImage(
       } else {
         runSuspendCatching {
           runtime.loadImage(url)?.let { Image.makeFromEncoded(it).toComposeImageBitmap() }
-        }.getOrNull()
+        }
+          .getOrNull()
       }
   }
   val loadedBitmap = bitmap

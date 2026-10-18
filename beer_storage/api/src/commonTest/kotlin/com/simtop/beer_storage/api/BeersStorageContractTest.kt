@@ -24,7 +24,10 @@ class BeersStorageContractTest {
       )
     )
 
-    assertEquals(cached.copy(name = "After"), storage.observeBeers().first().single { it.id == "2" })
+    assertEquals(
+      cached.copy(name = "After"),
+      storage.observeBeers().first().single { it.id == "2" },
+    )
     storage.observeFavoriteBeers().test {
       assertEquals(listOf("After", "Alpha"), awaitItem().map(StoredBeer::name))
       cancelAndIgnoreRemainingEvents()
@@ -47,7 +50,8 @@ class BeersStorageContractTest {
     val catalogBeer = storedBeer("catalog", "Catalog").copy(availability = false, isFavorite = true)
     storage.insertPage(listOf(catalogBeer), "catalog:en", nextKey = 4, totalCount = 100)
     val bookmark = storage.getPagingState("catalog:en")
-    val refreshedCatalogBeer = catalogBeer.copy(name = "Updated", availability = true, isFavorite = false)
+    val refreshedCatalogBeer =
+      catalogBeer.copy(name = "Updated", availability = true, isFavorite = false)
     val queryOnlyBeer = storedBeer("query", "Query")
 
     storage.cacheBeersForDetail(listOf(refreshedCatalogBeer, queryOnlyBeer))
@@ -69,7 +73,10 @@ class BeersStorageContractTest {
 
     storage.insertPage(listOf(first, last), "catalog:en", nextKey = 2, totalCount = 2)
 
-    assertEquals(last.copy(availability = first.availability, isFavorite = first.isFavorite), storage.observeBeers().first().single())
+    assertEquals(
+      last.copy(availability = first.availability, isFavorite = first.isFavorite),
+      storage.observeBeers().first().single(),
+    )
   }
 
   @Test
@@ -89,7 +96,12 @@ class BeersStorageContractTest {
   fun `terminal page records completion and later refresh can reopen a grown catalog`() = runTest {
     val storage = InMemoryBeersStorage()
     storage.insertPage(listOf(storedBeer("1", "One")), "catalog:en", nextKey = 2, totalCount = 50)
-    storage.insertPage(listOf(storedBeer("2", "Two")), "catalog:en", nextKey = null, totalCount = 50)
+    storage.insertPage(
+      listOf(storedBeer("2", "Two")),
+      "catalog:en",
+      nextKey = null,
+      totalCount = 50,
+    )
 
     assertEquals(true, storage.getPagingState("catalog:en")?.isComplete)
     assertEquals(2, storage.getPagingState("catalog:en")?.nextKey)
@@ -131,13 +143,16 @@ class BeersStorageContractTest {
 
     override fun observeBeers(): Flow<List<StoredBeer>> = beers
 
-    override suspend fun getBeerById(id: String): StoredBeer? = beers.value.firstOrNull { it.id == id }
+    override suspend fun getBeerById(id: String): StoredBeer? =
+      beers.value.firstOrNull { it.id == id }
 
-    override fun observeCatalogBeers(): Flow<List<StoredBeer>> =
-      beers.map { rows -> rows.filter { it.id in catalogBeerIds } }
+    override fun observeCatalogBeers(): Flow<List<StoredBeer>> = beers.map { rows ->
+      rows.filter { it.id in catalogBeerIds }
+    }
 
-    override fun observeFavoriteBeers(): Flow<List<StoredBeer>> =
-      beers.map { rows -> rows.filter { it.isFavorite }.sortedWith(compareBy({ it.name }, { it.id })) }
+    override fun observeFavoriteBeers(): Flow<List<StoredBeer>> = beers.map { rows ->
+      rows.filter { it.isFavorite }.sortedWith(compareBy({ it.name }, { it.id }))
+    }
 
     override fun observeSavedFilterPresets(): Flow<List<StoredFilterPreset>> = presets
 
@@ -146,11 +161,17 @@ class BeersStorageContractTest {
       val index = rows.indexOfFirst { it.id == preset.id }
       if (index < 0) require(rows.size < MAX_STORED_FILTER_PRESETS)
       if (index < 0) rows += preset else rows[index] = preset
-      presets.value = rows.sortedWith(compareByDescending<StoredFilterPreset> { it.updatedAt }.thenBy { it.name }.thenBy { it.id })
+      presets.value =
+        rows.sortedWith(
+          compareByDescending<StoredFilterPreset> { it.updatedAt }
+            .thenBy { it.name }
+            .thenBy { it.id }
+        )
     }
 
     override suspend fun renameFilterPreset(id: String, name: String, updatedAt: Long) {
-      presets.value = presets.value.map { if (it.id == id) it.copy(name = name, updatedAt = updatedAt) else it }
+      presets.value =
+        presets.value.map { if (it.id == id) it.copy(name = name, updatedAt = updatedAt) else it }
     }
 
     override suspend fun deleteFilterPreset(id: String) {
@@ -170,7 +191,12 @@ class BeersStorageContractTest {
       beers.forEach { incoming ->
         val index = rows.indexOfFirst { it.id == incoming.id }
         if (index < 0) rows += incoming
-        else rows[index] = incoming.copy(availability = rows[index].availability, isFavorite = rows[index].isFavorite)
+        else
+          rows[index] =
+            incoming.copy(
+              availability = rows[index].availability,
+              isFavorite = rows[index].isFavorite,
+            )
         if (isCatalog) catalogBeerIds += incoming.id
       }
       this.beers.value = rows

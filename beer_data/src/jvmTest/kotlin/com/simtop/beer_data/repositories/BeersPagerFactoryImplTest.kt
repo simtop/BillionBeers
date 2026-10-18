@@ -376,7 +376,8 @@ class BeersPagerFactoryImplTest {
       recreated.loadNextPage()
 
       expectThat(beersRemoteSource.requestedPages.toList()).isEqualTo(emptyList())
-      expectThat(recreated.pagingState.value).isEqualTo(PagingState.EndOfPagination(totalCount = 50))
+      expectThat(recreated.pagingState.value)
+        .isEqualTo(PagingState.EndOfPagination(totalCount = 50))
 
       beersRemoteSource.setBeersResponse((1..25).map { apiItem(id = "$it") }, totalCount = 60)
       recreated.loadFirstPage()
@@ -592,22 +593,41 @@ class BeersPagerFactoryImplTest {
   @Test
   fun `query append caches every page and refresh keeps earlier detail rows reachable`() =
     runTest(testDispatcher) {
-      beersRemoteSource.setBeersResponse(page = 1, beers = listOf(apiItem(id = "1")), totalCount = 50)
-      beersRemoteSource.setBeersResponse(page = 2, beers = listOf(apiItem(id = "2")), totalCount = 50)
+      beersRemoteSource.setBeersResponse(
+        page = 1,
+        beers = listOf(apiItem(id = "1")),
+        totalCount = 50,
+      )
+      beersRemoteSource.setBeersResponse(
+        page = 2,
+        beers = listOf(apiItem(id = "2")),
+        totalCount = 50,
+      )
       val pager = factory.create(BeersQuery(search = "ipa"))
 
       pager.loadFirstPage()
       pager.loadNextPage()
       assertEquals(listOf("1", "2"), pager.data.first().map(Beer::id))
-      assertEquals(listOf("1", "2"), listOfNotNull(repository.getBeerById("1"), repository.getBeerById("2")).map(Beer::id))
+      assertEquals(
+        listOf("1", "2"),
+        listOfNotNull(repository.getBeerById("1"), repository.getBeerById("2")).map(Beer::id),
+      )
 
-      beersRemoteSource.setBeersResponse(page = 1, beers = listOf(apiItem(id = "3")), totalCount = 50)
+      beersRemoteSource.setBeersResponse(
+        page = 1,
+        beers = listOf(apiItem(id = "3")),
+        totalCount = 50,
+      )
       pager.loadFirstPage()
 
       assertEquals(listOf("3"), pager.data.first().map(Beer::id))
       assertEquals(
         listOf("1", "2", "3"),
-        listOfNotNull(repository.getBeerById("1"), repository.getBeerById("2"), repository.getBeerById("3"))
+        listOfNotNull(
+            repository.getBeerById("1"),
+            repository.getBeerById("2"),
+            repository.getBeerById("3"),
+          )
           .map(Beer::id),
       )
       assertEquals(emptyList(), repository.observeCatalogBeers().first())
@@ -631,7 +651,10 @@ class BeersPagerFactoryImplTest {
       val pager = factory.create(BeersQuery(search = "ipa"))
 
       pager.loadFirstPage()
-      assertEquals(PagingState.Error(FetchBeersError.Unknown(failure), true), pager.pagingState.value)
+      assertEquals(
+        PagingState.Error(FetchBeersError.Unknown(failure), true),
+        pager.pagingState.value,
+      )
       assertEquals(emptyList(), pager.data.first())
       assertEquals(null, repository.getBeerById("1"))
       assertDatabaseFailure()

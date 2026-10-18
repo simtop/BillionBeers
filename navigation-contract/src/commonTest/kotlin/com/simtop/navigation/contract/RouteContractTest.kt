@@ -27,15 +27,30 @@ class RouteContractTest {
 
   @Test
   fun `route serializer identities remain compatible with saved Android back stacks`() {
-    assertEquals("com.simtop.navigation.BeersList", PortableRoute.BeersList.serializer().descriptor.serialName)
-    assertEquals("com.simtop.navigation.Favorites", PortableRoute.Favorites.serializer().descriptor.serialName)
-    assertEquals("com.simtop.navigation.BeersSearch", PortableRoute.BeersSearch.serializer().descriptor.serialName)
+    assertEquals(
+      "com.simtop.navigation.BeersList",
+      PortableRoute.BeersList.serializer().descriptor.serialName,
+    )
+    assertEquals(
+      "com.simtop.navigation.Favorites",
+      PortableRoute.Favorites.serializer().descriptor.serialName,
+    )
+    assertEquals(
+      "com.simtop.navigation.BeersSearch",
+      PortableRoute.BeersSearch.serializer().descriptor.serialName,
+    )
     assertEquals(
       "com.simtop.navigation.SavedFilterPresets",
       PortableRoute.SavedFilterPresets.serializer().descriptor.serialName,
     )
-    assertEquals("com.simtop.navigation.BeerBrowse", PortableRoute.BeerBrowse.serializer().descriptor.serialName)
-    assertEquals("com.simtop.navigation.BeerDetail", PortableRoute.BeerDetail.serializer().descriptor.serialName)
+    assertEquals(
+      "com.simtop.navigation.BeerBrowse",
+      PortableRoute.BeerBrowse.serializer().descriptor.serialName,
+    )
+    assertEquals(
+      "com.simtop.navigation.BeerDetail",
+      PortableRoute.BeerDetail.serializer().descriptor.serialName,
+    )
   }
 
   @Test
@@ -43,7 +58,8 @@ class RouteContractTest {
     val oldPayload =
       """
       {"type":"beer_detail","beer":{"id":"42","name":"Punk IPA","tagline":"Classic","description":"Hoppy","imageUrl":"","abv":5.6,"ibu":41.0,"foodPairing":[]}}
-      """.trimIndent()
+      """
+        .trimIndent()
 
     val restored = decodeRoute(oldPayload)
 
@@ -58,7 +74,8 @@ class RouteContractTest {
     val payload =
       """
       {"type":"beer_detail","futureRouteField":true,"beer":{"id":"42","name":"Punk IPA","tagline":"Classic","description":"Hoppy","imageUrl":"","abv":5.6,"ibu":41.0,"foodPairing":[],"futureBeerField":"ignored"}}
-      """.trimIndent()
+      """
+        .trimIndent()
 
     assertEquals(
       PortableRoute.BeerDetail("42"),

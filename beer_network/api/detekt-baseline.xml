@@ -1,0 +1,9 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>LongParameterList:BeersService.kt$BeersService$( page: Int, perPage: Int = DEFAULT_ITEMS_PER_PAGE, languageCode: String = DEFAULT_LANGUAGE_CODE, search: String? = null, typologyId: String? = null, breweryId: String? = null, )</ID>
+    <ID>MagicNumber:BeersService.kt$BeersServiceResponse$200</ID>
+    <ID>MagicNumber:BeersService.kt$BeersServiceResponse$299</ID>
+  </CurrentIssues>
+</SmellBaseline>

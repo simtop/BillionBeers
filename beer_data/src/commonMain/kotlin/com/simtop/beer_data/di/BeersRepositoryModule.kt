@@ -2,9 +2,9 @@ package com.simtop.beer_data.di
 
 import com.simtop.beer_data.repositories.BeersPagerFactoryImpl
 import com.simtop.beer_data.repositories.BeersRepositoryImpl
+import com.simtop.beerdomain.domain.repositories.BeerCatalogMetadataRepository
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
-import com.simtop.beerdomain.domain.repositories.BeerCatalogMetadataRepository
 import com.simtop.beerdomain.domain.repositories.SavedFilterPresetsRepository
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesTo

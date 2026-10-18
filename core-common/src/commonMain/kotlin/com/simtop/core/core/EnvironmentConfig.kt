@@ -73,14 +73,15 @@ data class EnvironmentConfig(
     return this
   }
 
-  private fun parseBaseUrl(): ParsedUrl =
-    runCatching { parseUrl(apiBaseUrl) }
-      .getOrElse { error ->
-        throw IllegalArgumentException(
-          "apiBaseUrl must be a valid absolute URL: $apiBaseUrl",
-          error,
-        )
-      }
+  private fun parseBaseUrl(): ParsedUrl = runCatching {
+    parseUrl(apiBaseUrl)
+  }
+    .getOrElse { error ->
+      throw IllegalArgumentException(
+        "apiBaseUrl must be a valid absolute URL: $apiBaseUrl",
+        error,
+      )
+    }
 
   private companion object {
     private fun requirePositiveFinite(value: Duration, name: String) {

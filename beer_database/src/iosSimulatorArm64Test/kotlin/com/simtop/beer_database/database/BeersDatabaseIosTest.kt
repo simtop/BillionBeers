@@ -3,13 +3,13 @@ package com.simtop.beer_database.database
 import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import com.simtop.beer_database.models.BeerDbModel
-import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSTemporaryDirectory
 
@@ -23,24 +23,27 @@ class BeersDatabaseIosTest {
     fileManager.removeItemAtPath(path, error = null)
 
     val first = open(path)
-    val beer = BeerDbModel(
-      id = "native-1",
-      name = "Native Lager",
-      tagline = "A test beer",
-      description = "A native Room test row",
-      imageUrl = "",
-      abv = 4.0,
-      ibu = 20.0,
-      foodPairing = "[]",
-    )
+    val beer =
+      BeerDbModel(
+        id = "native-1",
+        name = "Native Lager",
+        tagline = "A test beer",
+        description = "A native Room test row",
+        imageUrl = "",
+        abv = 4.0,
+        ibu = 20.0,
+        foodPairing = "[]",
+      )
 
-    first.beersDao().insertPage(
-      beers = listOf(beer),
-      surface = "catalog:en",
-      nextKey = 2,
-      totalCount = 1,
-      refreshedAt = 1L,
-    )
+    first
+      .beersDao()
+      .insertPage(
+        beers = listOf(beer),
+        surface = "catalog:en",
+        nextKey = 2,
+        totalCount = 1,
+        refreshedAt = 1L,
+      )
     first.beersDao().upsertFavorite(beer.copy(isFavorite = true))
     first.beersDao().upsertAvailability(beer.copy(availability = false))
 

@@ -80,13 +80,16 @@ class BeersLocalSourceImpl(
     nextKey: Int?,
     totalCount: Int?,
     @Suppress("UNUSED_PARAMETER") pageKey: Int?,
-  ) = db.beersDao().insertPage(
-    beers.map { it.toDbModel() },
-    surface,
-    nextKey,
-    totalCount,
-    epochTimeProvider.epochMillis(),
-  )
+  ) =
+    db
+      .beersDao()
+      .insertPage(
+        beers.map { it.toDbModel() },
+        surface,
+        nextKey,
+        totalCount,
+        epochTimeProvider.epochMillis(),
+      )
 
   override suspend fun getPagingState(surface: String): StoredPagingState? =
     db.beersDao().getPagingState(surface)?.toStoredPagingState()

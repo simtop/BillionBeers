@@ -5,6 +5,9 @@ plugins {
   id("com.android.kotlin.multiplatform.library")
 }
 
+apply(plugin = "billionbeers.spotless")
+apply(plugin = "billionbeers.detekt")
+
 afterEvaluate {
   val extraProperties = extensions.extraProperties
   val excludedTasks =

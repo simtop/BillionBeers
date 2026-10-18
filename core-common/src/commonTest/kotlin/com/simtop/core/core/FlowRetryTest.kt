@@ -18,7 +18,10 @@ class FlowRetryTest {
     val thrown =
       assertFailsWith<CancellationException> {
         flow<Int> { throw cancellation }
-          .retryWithErrorState { emitted += -1; -1 }
+          .retryWithErrorState {
+            emitted += -1
+            -1
+          }
           .toList()
       }
 

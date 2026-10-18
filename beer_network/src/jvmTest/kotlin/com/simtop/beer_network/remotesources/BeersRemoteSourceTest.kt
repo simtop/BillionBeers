@@ -7,13 +7,13 @@ import com.simtop.beer_network.fixtures.FAKE_TYPOLOGIES_JSON
 import com.simtop.beer_network.network.BeersServiceHttpException
 import com.simtop.core.core.LanguageProvider
 import java.net.HttpURLConnection
-import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.SerializationException
-import okhttp3.mockwebserver.MockResponse
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.SerializationException
+import okhttp3.mockwebserver.MockResponse
 
 class BeersRemoteSourceTest : TestMockWebService() {
 
@@ -57,7 +57,7 @@ class BeersRemoteSourceTest : TestMockWebService() {
       MockResponse()
         .setResponseCode(HttpURLConnection.HTTP_OK)
         .setHeader("Content-Type", "application/json")
-        .setBody("not-json"),
+        .setBody("not-json")
     )
 
     assertFailsWith<SerializationException> {

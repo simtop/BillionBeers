@@ -1,0 +1,8 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>LongParameterList:BrowseContent.kt$( strings: BrowseStrings, styles: CommonUiState&lt;List&lt;BeerStyle&gt;&gt;, breweries: CommonUiState&lt;List&lt;Brewery&gt;&gt;, selectedTab: Int, onTabSelected: (Int) -&gt; Unit, onStyleClick: (BeerStyle) -&gt; Unit, onBreweryClick: (Brewery) -&gt; Unit, onBack: () -&gt; Unit, backIcon: @Composable (String) -&gt; Unit, onRetryStyles: () -&gt; Unit, onRetryBreweries: () -&gt; Unit, errorContent: @Composable (CommonUiState.Error, () -&gt; Unit) -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>LongParameterList:BrowseContent.kt$( strings: BrowseStrings, title: String, viewState: CommonUiState&lt;PagedListUiModel&lt;Beer&gt;&gt;, onBack: () -&gt; Unit, backIcon: @Composable (String) -&gt; Unit, onBeerClick: (Beer) -&gt; Unit, onScrollToBottom: () -&gt; Unit, onRetryLoadMore: () -&gt; Unit, onRetryFirstPage: () -&gt; Unit, errorContent: @Composable (CommonUiState.Error, () -&gt; Unit) -&gt; Unit, beerRow: @Composable (Beer, () -&gt; Unit) -&gt; Unit, listState: LazyListState? = null, modifier: Modifier = Modifier, )</ID>
+  </CurrentIssues>
+</SmellBaseline>

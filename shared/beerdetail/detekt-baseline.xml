@@ -1,0 +1,8 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:BeerDetailContent.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable @Suppress("LongParameterList") fun SharedBeerDetailContent( beer: Beer, strings: BeerDetailStrings, onBackClick: () -&gt; Unit, onToggleAvailability: () -&gt; Unit, onToggleFavorite: () -&gt; Unit, backIcon: @Composable (contentDescription: String) -&gt; Unit, favoriteIcon: @Composable (isFavorite: Boolean, contentDescription: String) -&gt; Unit, imageContent: @Composable (imageUrl: String, contentDescription: String?, modifier: Modifier) -&gt; Unit, modifier: Modifier = Modifier, favoriteModifier: Modifier = Modifier, availabilityModifier: Modifier = Modifier, contentModifier: Modifier = Modifier, showBackButton: Boolean = true, animationsDisabled: Boolean = false, collapsingToolbarEnabled: Boolean = true, titleTextStyle: TextStyle? = null, )</ID>
+    <ID>MatchingDeclarationName:BeerDetailContent.kt$BeerDetailStrings</ID>
+  </CurrentIssues>
+</SmellBaseline>
