@@ -225,7 +225,6 @@ class BeersDatabaseMigrationTest {
   @Test
   fun migrate1To8_preservesRowsLocalDataAndPagingStateAcrossFullChain() {
     val dbName = "migration-test-1-6"
-
     helper.createDatabase(dbName, 1).apply {
       execSQL(
         "INSERT INTO beers " +
@@ -235,19 +234,7 @@ class BeersDatabaseMigrationTest {
       close()
     }
 
-    val db =
-      helper.runMigrationsAndValidate(
-        dbName,
-        8,
-        true,
-        MIGRATION_1_2,
-        MIGRATION_2_3,
-        MIGRATION_3_4,
-        MIGRATION_4_5,
-        MIGRATION_5_6,
-        MIGRATION_6_7,
-        MIGRATION_7_8,
-      )
+    val db = helper.runMigrationsAndValidate(dbName, 8, true, *ALL_MIGRATIONS.toTypedArray())
 
     db
       .query(
