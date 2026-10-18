@@ -22,6 +22,31 @@ class BeersDatabaseMigrationTest {
     MigrationTestHelper(InstrumentationRegistry.getInstrumentation(), BeersDatabase::class.java)
 
   @Test
+  fun migrate6To7_keepsBookmarkAndMarksExistingStateIncomplete() {
+    val dbName = "migration-test-6-7"
+    helper.createDatabase(dbName, 6).apply {
+      execSQL(
+        "INSERT INTO paging_state (surface, next_key, total_count, refreshed_at) " +
+          "VALUES ('catalog:en', 7, 206, 5678)"
+      )
+      close()
+    }
+
+    val db = helper.runMigrationsAndValidate(dbName, 7, true, MIGRATION_6_7)
+    db.query(
+      "SELECT next_key, total_count, refreshed_at, is_complete " +
+        "FROM paging_state WHERE surface = 'catalog:en'"
+    ).use { cursor ->
+      assertTrue(cursor.moveToFirst())
+      assertEquals(7, cursor.getInt(0))
+      assertEquals(206, cursor.getInt(1))
+      assertEquals(5678L, cursor.getLong(2))
+      assertEquals(0, cursor.getInt(3))
+    }
+    db.close()
+  }
+
+  @Test
   fun migrate1To2_keepsBeers_andAddsPagingState() {
     val dbName = "migration-test"
 
@@ -168,7 +193,7 @@ class BeersDatabaseMigrationTest {
   }
 
   @Test
-  fun migrate1To6_preservesRowsLocalDataAndPagingStateAcrossFullChain() {
+  fun migrate1To7_preservesRowsLocalDataAndPagingStateAcrossFullChain() {
     val dbName = "migration-test-1-6"
 
     helper.createDatabase(dbName, 1).apply {
@@ -183,13 +208,14 @@ class BeersDatabaseMigrationTest {
     val db =
       helper.runMigrationsAndValidate(
         dbName,
-        6,
+        7,
         true,
         MIGRATION_1_2,
         MIGRATION_2_3,
         MIGRATION_3_4,
         MIGRATION_4_5,
         MIGRATION_5_6,
+        MIGRATION_6_7,
       )
 
     db
@@ -209,11 +235,12 @@ class BeersDatabaseMigrationTest {
       "INSERT INTO paging_state (surface, next_key, total_count, refreshed_at) " +
         "VALUES ('catalog:en', 2, 206, 5678)"
     )
-    db.query("SELECT next_key, total_count FROM paging_state WHERE surface = 'catalog:en'").use {
+    db.query("SELECT next_key, total_count, is_complete FROM paging_state WHERE surface = 'catalog:en'").use {
       cursor ->
       assertTrue(cursor.moveToFirst())
       assertEquals(2, cursor.getInt(0))
       assertEquals(206, cursor.getInt(1))
+      assertEquals(0, cursor.getInt(2))
     }
     db.execSQL(
       "INSERT INTO filter_presets (id, name, search, style_id, brewery_id, updated_at) " +

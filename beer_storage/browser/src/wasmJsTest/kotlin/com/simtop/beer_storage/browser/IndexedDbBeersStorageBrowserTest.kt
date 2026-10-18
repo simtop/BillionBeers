@@ -18,6 +18,30 @@ import kotlinx.coroutines.yield
 
 class IndexedDbBeersStorageBrowserTest {
   @Test
+  fun completedBookmarkSurvivesStorageReopenAndCanBeReopenedAfterGrowth() = runTest {
+    val databaseName = "billionbeers-paging-complete-${hashCode()}"
+    var storage = IndexedDbBeersStorage(databaseName)
+    try {
+      storage.awaitReady()
+      storage.insertPage(listOf(storedBeer("1")), "catalog:en", nextKey = 2, totalCount = 50)
+      storage.insertPage(listOf(storedBeer("50")), "catalog:en", nextKey = null, totalCount = 50)
+      assertTrue(storage.getPagingState("catalog:en")?.isComplete == true)
+      storage.close()
+
+      storage = IndexedDbBeersStorage(databaseName)
+      storage.awaitReady()
+      assertEquals(50, storage.getPagingState("catalog:en")?.totalCount)
+      assertTrue(storage.getPagingState("catalog:en")?.isComplete == true)
+
+      storage.insertPage(listOf(storedBeer("1")), "catalog:en", nextKey = 2, totalCount = 60)
+      assertTrue(storage.getPagingState("catalog:en")?.isComplete == false)
+      assertEquals(2, storage.getPagingState("catalog:en")?.nextKey)
+    } finally {
+      storage.close()
+    }
+  }
+
+  @Test
   fun getBeerByIdUsesTheStoredPrimaryKey() = runTest {
     val storage = IndexedDbBeersStorage("billionbeers-beer-by-id-${hashCode()}")
     try {

@@ -64,6 +64,9 @@ interface BeersRepository {
    */
   suspend fun pagingNextKey(surface: String): Int?
 
+  /** Last known server total when [surface] is durably marked complete, or null otherwise. */
+  suspend fun pagingCompletionTotal(surface: String): PagingCompletion? = null
+
   /**
    * Classifies the catalog cache against the current language and [policy]'s TTL (using the
    * `refreshed_at` recorded with each page write). See [CatalogCacheStatus] for the states and what
@@ -83,3 +86,6 @@ interface BeersRepository {
   suspend fun getBeersPageFromApi(page: Int, query: BeersQuery = BeersQuery()): BeerPage
 
 }
+
+/** Explicit durable end-of-pagination state; the count may be unknown for empty-page termination. */
+data class PagingCompletion(val totalCount: Int?)

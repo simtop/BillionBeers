@@ -55,6 +55,9 @@ data class PageResult<Key : Any, Value : Any>(
   val pageKey: Key? = null,
 )
 
+/** A completed continuation restored from durable storage, including its last known result size. */
+data class StoredPagingCompletion(val totalCount: Int?)
+
 /**
  * A one-shot paging event - something that happened once and must be consumed exactly once (a
  * transient toast), as opposed to [PagingState], which is the current condition and is safe to
@@ -122,7 +125,10 @@ interface PagingStorage<Key : Any, Value : Any> {
    */
   suspend fun storeFirstPage(page: PageResult<Key, Value>)
 
-  /** A successfully fetched subsequent page. Its [PageResult.items] are never empty. */
+  /**
+   * A successfully fetched subsequent page, including an empty-page end probe when total is
+   * unknown.
+   */
   suspend fun append(page: PageResult<Key, Value>)
 }
 
@@ -193,6 +199,7 @@ class PagingMediator<Key : Any, Value : Any, E : Any>(
   private val classifyError: (Throwable) -> E,
   private val storage: PagingStorage<Key, Value> = InMemoryPagingStorage(),
   private val nextKeyFromStorage: (suspend () -> Key)? = null,
+  private val completionFromStorage: (suspend () -> StoredPagingCompletion?)? = null,
 ) : Pager<Value, E> {
 
   private val _pagingState = MutableStateFlow<PagingState<E>>(PagingState.Idle)
@@ -226,6 +233,10 @@ class PagingMediator<Key : Any, Value : Any, E : Any>(
           currentKey
         } else {
           try {
+            completionFromStorage?.invoke()?.let { completion ->
+              endPagination(completion.totalCount)
+              return
+            }
             nextKeyFromStorage?.invoke() ?: initialKey
           } catch (e: CancellationException) {
             throw e
@@ -256,7 +267,7 @@ class PagingMediator<Key : Any, Value : Any, E : Any>(
       val result = fetchRemote(key)
       val items = result.items
       if (storeAsFirstPage) storage.storeFirstPage(result)
-      else if (items.isNotEmpty()) storage.append(result)
+      else storage.append(result)
 
       // Empty-page probe: the fallback end signal when the server reports no total (nextKey stays
       // non-null) - preserves the pre-2.0 behaviour for a header-less backend.
@@ -273,6 +284,12 @@ class PagingMediator<Key : Any, Value : Any, E : Any>(
       // sub-page dataset rounding to "page 1 is next") must not resurrect pagination past it.
       val nextKey =
         if (storeAsFirstPage && result.nextKey != null) {
+          val completion = completionFromStorage?.invoke()
+          if (completion != null) {
+            commitPosition(nextKey = null)
+            endPagination(completion.totalCount)
+            return
+          }
           nextKeyFromStorage?.invoke() ?: result.nextKey
         } else {
           result.nextKey

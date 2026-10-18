@@ -101,4 +101,5 @@ data class StoredPagingState(
   val nextKey: Int?,
   val totalCount: Int?,
   val refreshedAt: Long,
+  val isComplete: Boolean = false,
 )

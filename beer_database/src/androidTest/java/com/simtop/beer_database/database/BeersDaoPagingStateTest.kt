@@ -61,6 +61,20 @@ class BeersDaoPagingStateTest {
   }
 
   @Test
+  fun insertPage_persistsCompletionAndRefreshCanReopenAfterGrowth() = runBlocking {
+    dao.insertPage(listOf(beer("1")), "catalog:en", nextKey = 2, totalCount = 50, 0L)
+    dao.insertPage(listOf(beer("50")), "catalog:en", nextKey = null, totalCount = 50, 1L)
+
+    assertEquals(true, dao.getPagingState("catalog:en")?.isComplete)
+    assertEquals(2, dao.getPagingState("catalog:en")?.nextKey)
+
+    dao.insertPage(listOf(beer("1")), "catalog:en", nextKey = 2, totalCount = 60, 2L)
+
+    assertEquals(false, dao.getPagingState("catalog:en")?.isComplete)
+    assertEquals(2, dao.getPagingState("catalog:en")?.nextKey)
+  }
+
+  @Test
   fun insertPage_invalidatesOtherLanguageCatalogBookmarks() = runBlocking {
     dao.insertPage(listOf(beer("1")), surface = "catalog:en", nextKey = 2, totalCount = 206, 0L)
     dao.insertPage(listOf(beer("2")), surface = "catalog:fr", nextKey = 9, totalCount = 300, 0L)

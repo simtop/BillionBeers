@@ -162,5 +162,6 @@ class BeersLocalSourceImpl(
       nextKey = nextKey,
       totalCount = totalCount,
       refreshedAt = refreshedAt,
+      isComplete = isComplete,
     )
 }

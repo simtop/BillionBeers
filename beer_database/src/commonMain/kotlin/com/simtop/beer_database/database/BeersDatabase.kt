@@ -10,7 +10,7 @@ import com.simtop.beer_database.models.SavedFilterPresetDbModel
 
 @Database(
   entities = [BeerDbModel::class, PagingStateDbModel::class, SavedFilterPresetDbModel::class],
-  version = 6,
+  version = 7,
   exportSchema = true,
 )
 @ConstructedBy(BeersDatabaseConstructor::class)

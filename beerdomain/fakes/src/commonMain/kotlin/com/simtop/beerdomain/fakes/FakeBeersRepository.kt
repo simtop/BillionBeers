@@ -10,6 +10,7 @@ import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.beerdomain.domain.models.CatalogCacheStatus
 import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.beerdomain.domain.repositories.PagingCompletion
 import com.simtop.beerdomain.domain.repositories.BeerCatalogMetadataRepository
 import com.simtop.core.core.CachePolicy
 import com.simtop.core.core.Either
@@ -113,10 +114,12 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) :
   }
 
   private val pagingNextKeys = mutableMapOf<String, Int?>()
+  private val pagingCompletions = mutableMapOf<String, PagingCompletion?>()
 
   /** Test helper: seed a stored resume bookmark for [surface] as a warm cache would leave. */
   fun setPagingNextKey(surface: String, nextKey: Int?) {
     pagingNextKeys[surface] = nextKey
+    pagingCompletions[surface] = null
   }
 
   /** Mirrors the DAO: upsert the rows and merge the bookmark monotonically in one step. */
@@ -128,10 +131,18 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) :
     pageKey: Int?,
   ) {
     insertAllToDB(beers)
-    pagingNextKeys[surface] = listOfNotNull(pagingNextKeys[surface], nextKey).maxOrNull()
+    val wasComplete = pagingCompletions[surface] != null
+    pagingNextKeys[surface] =
+      if (wasComplete) nextKey ?: pagingNextKeys[surface]
+      else listOfNotNull(pagingNextKeys[surface], nextKey).maxOrNull()
+    pagingCompletions[surface] =
+      if (nextKey == null || beers.isEmpty()) PagingCompletion(totalCount) else null
   }
 
   override suspend fun pagingNextKey(surface: String): Int? = pagingNextKeys[surface]
+
+  override suspend fun pagingCompletionTotal(surface: String): PagingCompletion? =
+    pagingCompletions[surface]
 
   /**
    * What [catalogCacheStatus] reports. Left null it derives from the data - empty cache -> Empty,

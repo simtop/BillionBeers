@@ -227,9 +227,9 @@ abstract class BeersDao {
    * Writes a fetched page and its paging bookmark atomically, so [PagingStateDbModel.nextKey] can
    * never point past — or short of — the rows actually stored (the PR #57 divergence class).
    * [nextKey] is merged monotonically: a refresh re-fetching page 1 (`nextKey = 2`) must not rewind
-   * a warm cache that already reached a later page, so the stored value only ever advances. A null
-   * incoming [nextKey] (last page) leaves the bookmark untouched — end-of-pagination is decided by
-   * the fetch's total-count math, not by persisting a null key.
+   * a warm partial cache that already reached a later page, so the stored value only ever advances.
+   * A null incoming [nextKey] records a completed surface while retaining the last positive key for
+   * diagnostics. A later successful refresh with a continuation reopens a completed surface.
    */
   @Transaction
   open suspend fun insertPage(
@@ -245,9 +245,12 @@ abstract class BeersDao {
     upsertPagingState(
       PagingStateDbModel(
         surface = surface,
-        nextKey = listOfNotNull(existing?.nextKey, nextKey).maxOrNull(),
+        nextKey =
+          if (existing?.isComplete == true) nextKey ?: existing.nextKey
+          else listOfNotNull(existing?.nextKey, nextKey).maxOrNull(),
         totalCount = totalCount ?: existing?.totalCount,
         refreshedAt = refreshedAt,
+        isComplete = nextKey == null || beers.isEmpty(),
       )
     )
   }

@@ -14,6 +14,7 @@ import com.simtop.core.core.PageResult
 import com.simtop.core.core.Pager
 import com.simtop.core.core.PagingMediator
 import com.simtop.core.core.PagingStorage
+import com.simtop.core.core.StoredPagingCompletion
 import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -49,6 +50,12 @@ class BeersPagerFactoryImpl(
                 repository.countCatalogDBEntries() / BeersService.DEFAULT_ITEMS_PER_PAGE +
                   FIRST_PAGE
             }
+        }
+      },
+      completionFromStorage = {
+        withFetchDiagnostics(logger, FetchFailureOrigin.STORAGE) {
+          repository.pagingCompletionTotal(catalogSurface(languageProvider))
+            ?.let { StoredPagingCompletion(it.totalCount) }
         }
       },
     )
