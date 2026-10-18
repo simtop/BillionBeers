@@ -8,6 +8,7 @@ private const val DATABASE_VERSION_4 = 4
 private const val DATABASE_VERSION_5 = 5
 private const val DATABASE_VERSION_6 = 6
 private const val DATABASE_VERSION_7 = 7
+private const val DATABASE_VERSION_8 = 8
 
 private fun SQLiteConnection.execute(sql: String) {
   prepare(sql).use { it.step() }
@@ -104,6 +105,25 @@ val MIGRATION_6_7 =
     }
   }
 
+/** v7 → v8: index local favorites in the same order used by the favorites query. */
+val MIGRATION_7_8 =
+  object : Migration(DATABASE_VERSION_7, DATABASE_VERSION_8) {
+    override fun migrate(connection: SQLiteConnection) {
+      connection.execute(
+        "CREATE INDEX IF NOT EXISTS `index_beers_is_favorite_name_id` " +
+          "ON `beers` (`is_favorite`, `name`, `id`)"
+      )
+    }
+  }
+
 /** Every supported upgrade, in order, for all Room hosts and database tests. */
 val ALL_MIGRATIONS: List<Migration> =
-  listOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+  listOf(
+    MIGRATION_1_2,
+    MIGRATION_2_3,
+    MIGRATION_3_4,
+    MIGRATION_4_5,
+    MIGRATION_5_6,
+    MIGRATION_6_7,
+    MIGRATION_7_8,
+  )

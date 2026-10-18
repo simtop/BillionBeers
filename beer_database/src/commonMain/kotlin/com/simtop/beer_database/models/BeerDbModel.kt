@@ -2,9 +2,13 @@ package com.simtop.beer_database.models
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "beers")
+@Entity(
+  tableName = "beers",
+  indices = [Index(value = ["is_favorite", "name", "id"])],
+)
 data class BeerDbModel(
   @PrimaryKey @ColumnInfo(name = "id") val id: String,
   @ColumnInfo(name = "name") val name: String,

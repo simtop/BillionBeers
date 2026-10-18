@@ -4,6 +4,7 @@ import androidx.room.testing.MigrationTestHelper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -20,6 +21,33 @@ class BeersDatabaseMigrationTest {
   @get:Rule
   val helper =
     MigrationTestHelper(InstrumentationRegistry.getInstrumentation(), BeersDatabase::class.java)
+
+  @Test
+  fun migrate7To8_indexesFavoritesWithoutChangingRows() {
+    val dbName = "migration-test-7-8"
+    helper.createDatabase(dbName, 7).apply {
+      execSQL(
+        "INSERT INTO beers " +
+          "(id, name, tagline, description, image_url, abv, ibu, food_pairing, availability, is_favorite) " +
+          "VALUES ('2', 'Zulu', '', '', '', 0.0, 0.0, '[]', 1, 1), " +
+          "('1', 'Amber', '', '', '', 0.0, 0.0, '[]', 0, 1)"
+      )
+      close()
+    }
+
+    val db = helper.runMigrationsAndValidate(dbName, 8, true, MIGRATION_7_8)
+    db.query("SELECT id, availability FROM beers WHERE is_favorite = 1 ORDER BY name, id").use {
+      cursor ->
+      assertTrue(cursor.moveToFirst())
+      assertEquals("1", cursor.getString(0))
+      assertEquals(0, cursor.getInt(1))
+      assertTrue(cursor.moveToNext())
+      assertEquals("2", cursor.getString(0))
+      assertEquals(1, cursor.getInt(1))
+      assertFalse(cursor.moveToNext())
+    }
+    db.close()
+  }
 
   @Test
   fun migrate6To7_keepsBookmarkAndMarksExistingStateIncomplete() {
@@ -195,7 +223,7 @@ class BeersDatabaseMigrationTest {
   }
 
   @Test
-  fun migrate1To7_preservesRowsLocalDataAndPagingStateAcrossFullChain() {
+  fun migrate1To8_preservesRowsLocalDataAndPagingStateAcrossFullChain() {
     val dbName = "migration-test-1-6"
 
     helper.createDatabase(dbName, 1).apply {
@@ -210,7 +238,7 @@ class BeersDatabaseMigrationTest {
     val db =
       helper.runMigrationsAndValidate(
         dbName,
-        7,
+        8,
         true,
         MIGRATION_1_2,
         MIGRATION_2_3,
@@ -218,6 +246,7 @@ class BeersDatabaseMigrationTest {
         MIGRATION_4_5,
         MIGRATION_5_6,
         MIGRATION_6_7,
+        MIGRATION_7_8,
       )
 
     db
