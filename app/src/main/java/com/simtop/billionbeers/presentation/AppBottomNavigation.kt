@@ -8,6 +8,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -71,6 +73,53 @@ fun AppBottomNavigation(
       },
       label = { Text(stringResource(R.string.saved_filters_title)) },
       colors = itemColors,
+    )
+  }
+}
+
+@Composable
+fun AppNavigationRail(
+  selectedTab: NavKey?,
+  onTabSelect: (NavKey) -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  NavigationRail(
+    modifier = modifier.testTag("app_navigation_rail"),
+    containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface,
+  ) {
+    NavigationRailItem(
+      modifier = Modifier.testTag("home_tab"),
+      selected = selectedTab == PortableRoute.BeersList,
+      onClick = { onTabSelect(PortableRoute.BeersList) },
+      icon = { Icon(Icons.Filled.Home, contentDescription = stringResource(R.string.home_tab)) },
+      label = { Text(stringResource(R.string.home_tab)) },
+      alwaysShowLabel = true,
+    )
+    NavigationRailItem(
+      modifier = Modifier.testTag("favorites_tab"),
+      selected = selectedTab == PortableRoute.Favorites,
+      onClick = { onTabSelect(PortableRoute.Favorites) },
+      icon = {
+        Icon(
+          Icons.Filled.Favorite,
+          contentDescription = stringResource(R.string.favorites_title),
+        )
+      },
+      label = { Text(stringResource(R.string.favorites_title)) },
+      alwaysShowLabel = true,
+    )
+    NavigationRailItem(
+      modifier = Modifier.testTag("saved_filters_tab"),
+      selected = selectedTab == PortableRoute.SavedFilterPresets,
+      onClick = { onTabSelect(PortableRoute.SavedFilterPresets) },
+      icon = {
+        Icon(
+          Icons.AutoMirrored.Filled.List,
+          contentDescription = stringResource(R.string.saved_filters_title),
+        )
+      },
+      label = { Text(stringResource(R.string.saved_filters_title)) },
+      alwaysShowLabel = true,
     )
   }
 }
