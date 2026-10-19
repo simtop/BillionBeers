@@ -13,9 +13,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -155,6 +160,15 @@ private fun iosHost(
             stateDescription = contentDescription
           },
       )
+    },
+    catalogNavigationIcon = { contentDescription ->
+      Icon(Icons.Filled.Home, contentDescription = contentDescription)
+    },
+    favoritesNavigationIcon = { contentDescription ->
+      Icon(Icons.Filled.Favorite, contentDescription = contentDescription)
+    },
+    savedFiltersNavigationIcon = { contentDescription ->
+      Icon(Icons.AutoMirrored.Filled.List, contentDescription = contentDescription)
     },
     imageContent = { imageUrl, description, modifier ->
       IosImage(runtime, imageUrl, description, modifier)
