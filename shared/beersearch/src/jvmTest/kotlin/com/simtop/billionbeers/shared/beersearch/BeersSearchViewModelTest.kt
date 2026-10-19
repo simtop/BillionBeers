@@ -248,12 +248,11 @@ class BeersSearchViewModelTest {
     }
 
   @Test
-  fun `an initial query re-runs the search`() =
+  fun `an initial query starts the search without debounce`() =
     runTest(mainDispatcher.testDispatcher) {
       val viewModel = buildViewModel(initialQuery = "ipa")
 
       viewModel.viewState().test {
-        advanceTimeBy(pastDebounce)
         runCurrent()
 
         expectThat(fakeFactory.createdQueries.toList()).isEqualTo(listOf(BeersQuery("ipa")))
@@ -297,13 +296,11 @@ class BeersSearchViewModelTest {
     }
 
   @Test
-  fun `initial style creates one style-only query after debounce`() =
+  fun `initial style starts one style-only query without debounce`() =
     runTest(mainDispatcher.testDispatcher) {
       val viewModel = buildViewModel(initialStyleId = "style-1")
 
       viewModel.viewState().test {
-        expectThat(awaitItem()).isEqualTo(CommonUiState.Empty)
-        advanceTimeBy(pastDebounce)
         runCurrent()
 
         expectThat(fakeFactory.createdQueries.toList())
