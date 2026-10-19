@@ -19,6 +19,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -171,6 +173,9 @@ data class SharedAppHost(
   val errorContent: @Composable (CommonUiState.Error, () -> Unit) -> Unit,
   val backIcon: @Composable (String) -> Unit,
   val favoriteIcon: @Composable (Boolean, String) -> Unit,
+  val catalogNavigationIcon: @Composable (String) -> Unit = {},
+  val favoritesNavigationIcon: @Composable (String) -> Unit = {},
+  val savedFiltersNavigationIcon: @Composable (String) -> Unit = {},
   val imageContent: @Composable (String, String?, Modifier) -> Unit,
   val detailAnimationsDisabled: Boolean = false,
   val detailCollapsingToolbarEnabled: Boolean = true,
@@ -280,166 +285,193 @@ fun SharedAppShell(
   }
 
   BillionBeersTheme(darkTheme = host.darkTheme) {
-    Scaffold(
-      modifier = modifier,
-      topBar = {
-        if (shouldShowShellTopBar(entry)) {
-          ShellTopBar(
-            title =
-              when (route) {
-                PortableRoute.BeersList -> strings.chrome.list
-                PortableRoute.Favorites -> strings.chrome.favorites
-                PortableRoute.BeersSearch -> strings.chrome.search
-                PortableRoute.SavedFilterPresets ->
-                  (entry as? SavedFilterResultsEntry)?.preset?.name ?: strings.chrome.savedFilters
-                PortableRoute.BeerBrowse -> strings.chrome.browse
-                is PortableRoute.BeerBrowseSelection -> route.category.name
-                is PortableRoute.BeerDetail -> route.beerId
-              },
-            showBack = canGoBack,
-            back = strings.chrome.back,
-            backIcon = host.backIcon,
-            onBack = ::pop,
-          )
-        }
-      },
-      bottomBar = {
-        Column {
-          message?.let { currentMessage ->
-            Box(Modifier.fillMaxWidth().padding(16.dp).testTag("shell_message")) {
-              host.messageContent(currentMessage)
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+      val showNavigation =
+        route == PortableRoute.BeersList ||
+          route == PortableRoute.Favorites ||
+          route == PortableRoute.SavedFilterPresets
+      val showNavigationRail = shouldShowNavigationRail(maxWidth, route)
+      Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        topBar = {
+          if (shouldShowShellTopBar(entry)) {
+            ShellTopBar(
+              title =
+                when (route) {
+                  PortableRoute.BeersList -> strings.chrome.list
+                  PortableRoute.Favorites -> strings.chrome.favorites
+                  PortableRoute.BeersSearch -> strings.chrome.search
+                  PortableRoute.SavedFilterPresets ->
+                    (entry as? SavedFilterResultsEntry)?.preset?.name ?: strings.chrome.savedFilters
+                  PortableRoute.BeerBrowse -> strings.chrome.browse
+                  is PortableRoute.BeerBrowseSelection -> route.category.name
+                  is PortableRoute.BeerDetail -> route.beerId
+                },
+              showBack = canGoBack,
+              back = strings.chrome.back,
+              backIcon = host.backIcon,
+              onBack = ::pop,
+            )
+          }
+        },
+        bottomBar = {
+          Column {
+            message?.let { currentMessage ->
+              Box(Modifier.fillMaxWidth().padding(16.dp).testTag("shell_message")) {
+                host.messageContent(currentMessage)
+              }
+            }
+            if (showNavigation && !showNavigationRail) {
+              NavigationBar {
+                NavigationBarItem(
+                  selected = route == PortableRoute.BeersList,
+                  onClick = { navigate(PortableRoute.BeersList) },
+                  icon = { host.catalogNavigationIcon(strings.chrome.list) },
+                  label = { Text(strings.chrome.list) },
+                )
+                NavigationBarItem(
+                  selected = route == PortableRoute.Favorites,
+                  onClick = { navigate(PortableRoute.Favorites) },
+                  icon = { host.favoritesNavigationIcon(strings.chrome.favorites) },
+                  label = { Text(strings.chrome.favorites) },
+                )
+                NavigationBarItem(
+                  selected = route == PortableRoute.SavedFilterPresets,
+                  onClick = { navigate(PortableRoute.SavedFilterPresets) },
+                  icon = { host.savedFiltersNavigationIcon(strings.chrome.savedFilters) },
+                  label = { Text(strings.chrome.savedFilters) },
+                )
+              }
             }
           }
-          if (
-            route == PortableRoute.BeersList ||
-              route == PortableRoute.Favorites ||
-              route == PortableRoute.SavedFilterPresets
-          ) {
-            NavigationBar {
-              NavigationBarItem(
+        },
+      ) { padding ->
+        Row(modifier = Modifier.fillMaxSize().padding(padding)) {
+          if (showNavigation && showNavigationRail) {
+            NavigationRail {
+              NavigationRailItem(
                 selected = route == PortableRoute.BeersList,
                 onClick = { navigate(PortableRoute.BeersList) },
-                icon = {},
+                icon = { host.catalogNavigationIcon(strings.chrome.list) },
                 label = { Text(strings.chrome.list) },
               )
-              NavigationBarItem(
+              NavigationRailItem(
                 selected = route == PortableRoute.Favorites,
                 onClick = { navigate(PortableRoute.Favorites) },
-                icon = {},
+                icon = { host.favoritesNavigationIcon(strings.chrome.favorites) },
                 label = { Text(strings.chrome.favorites) },
               )
-              NavigationBarItem(
+              NavigationRailItem(
                 selected = route == PortableRoute.SavedFilterPresets,
                 onClick = { navigate(PortableRoute.SavedFilterPresets) },
-                icon = {},
+                icon = { host.savedFiltersNavigationIcon(strings.chrome.savedFilters) },
                 label = { Text(strings.chrome.savedFilters) },
               )
             }
           }
-        }
-      },
-    ) { padding ->
-      BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(padding)) {
-        if (shouldShowExpandedCatalogDetail(maxWidth, navigation.entries)) {
-          ExpandedCatalogDetail(
-            catalog = navigation.entries.first() as ListEntry,
-            detail = entry as DetailEntry,
-            strings = strings,
-            host = host,
-            onBeerClick = { navigate(PortableRoute.BeerDetail(it.id)) },
-            onSearch = { navigate(PortableRoute.BeersSearch) },
-            onBrowse = { navigate(PortableRoute.BeerBrowse) },
-            onSaveQuery = { name -> savePreset(name, BeersQuery()) },
-            onBack = ::pop,
-            animationsDisabled = host.detailAnimationsDisabled,
-            onMessage = { message = it },
-          )
-        } else {
-          when (entry) {
-            is ListEntry ->
-              ListDestination(
-                entry = entry,
+          BoxWithConstraints(modifier = Modifier.weight(1f).fillMaxHeight()) {
+            if (shouldShowExpandedCatalogDetail(maxWidth, navigation.entries)) {
+              ExpandedCatalogDetail(
+                catalog = navigation.entries.first() as ListEntry,
+                detail = entry as DetailEntry,
                 strings = strings,
                 host = host,
                 onBeerClick = { navigate(PortableRoute.BeerDetail(it.id)) },
                 onSearch = { navigate(PortableRoute.BeersSearch) },
                 onBrowse = { navigate(PortableRoute.BeerBrowse) },
                 onSaveQuery = { name -> savePreset(name, BeersQuery()) },
-              )
-            is FavoritesEntry ->
-              FavoritesDestination(
-                entry = entry,
-                strings = strings,
-                host = host,
-                onBeerClick = { navigate(PortableRoute.BeerDetail(it.id)) },
-              )
-            is SavedFiltersEntry ->
-              SavedFiltersDestination(
-                entry = entry,
-                strings = strings,
-                onApply = ::applyPreset,
-                onRename = { preset, name ->
-                  when (val result = entry.rename(preset.id, name)) {
-                    is Either.Right -> true
-                    is Either.Left -> {
-                      if (result.value is MutateFilterPresetError.Unknown) {
-                        message = strings.savedFilterActions.mutateFilterFailed
-                      }
-                      false
-                    }
-                  }
-                },
-                onDelete = { preset ->
-                  val succeeded = entry.delete(preset.id) is Either.Right
-                  if (!succeeded) message = strings.savedFilterActions.mutateFilterFailed
-                  succeeded
-                },
-              )
-            is SearchEntry ->
-              SearchDestination(
-                entry = entry,
-                strings = strings,
-                host = host,
-                onBeerClick = { navigate(PortableRoute.BeerDetail(it.id)) },
-                onSaveQuery = { name ->
-                  savePreset(name, entry.viewModel.uiState.value.activeQuery)
-                },
-              )
-            is BrowseHomeEntry ->
-              BrowseHomeDestination(
-                entry = entry,
-                strings = strings,
-                host = host,
-                onSelection = navigation::selectBrowse,
-                onBack = ::pop,
-              )
-            is BrowseBeersEntry ->
-              BrowseBeersDestination(
-                entry = entry,
-                strings = strings,
-                host = host,
-                onBack = ::pop,
-                onBeerClick = { navigate(PortableRoute.BeerDetail(it.id)) },
-                onSaveQuery = { name -> savePreset(name, entry.selection.toQuery()) },
-              )
-            is SavedFilterResultsEntry ->
-              SavedFilterResultsDestination(
-                entry = entry,
-                strings = strings,
-                host = host,
-                onBack = ::pop,
-                onBeerClick = { navigate(PortableRoute.BeerDetail(it.id)) },
-              )
-            is DetailEntry ->
-              DetailDestination(
-                entry = entry,
-                strings = strings,
-                host = host,
                 onBack = ::pop,
                 animationsDisabled = host.detailAnimationsDisabled,
                 onMessage = { message = it },
               )
-            is ManagedSharedAppEntry -> error("Unhandled shared app entry: $entry")
+            } else {
+              when (entry) {
+                is ListEntry ->
+                  ListDestination(
+                    entry = entry,
+                    strings = strings,
+                    host = host,
+                    onBeerClick = { navigate(PortableRoute.BeerDetail(it.id)) },
+                    onSearch = { navigate(PortableRoute.BeersSearch) },
+                    onBrowse = { navigate(PortableRoute.BeerBrowse) },
+                    onSaveQuery = { name -> savePreset(name, BeersQuery()) },
+                  )
+                is FavoritesEntry ->
+                  FavoritesDestination(
+                    entry = entry,
+                    strings = strings,
+                    host = host,
+                    onBeerClick = { navigate(PortableRoute.BeerDetail(it.id)) },
+                  )
+                is SavedFiltersEntry ->
+                  SavedFiltersDestination(
+                    entry = entry,
+                    strings = strings,
+                    onApply = ::applyPreset,
+                    onRename = { preset, name ->
+                      when (val result = entry.rename(preset.id, name)) {
+                        is Either.Right -> true
+                        is Either.Left -> {
+                          if (result.value is MutateFilterPresetError.Unknown) {
+                            message = strings.savedFilterActions.mutateFilterFailed
+                          }
+                          false
+                        }
+                      }
+                    },
+                    onDelete = { preset ->
+                      val succeeded = entry.delete(preset.id) is Either.Right
+                      if (!succeeded) message = strings.savedFilterActions.mutateFilterFailed
+                      succeeded
+                    },
+                  )
+                is SearchEntry ->
+                  SearchDestination(
+                    entry = entry,
+                    strings = strings,
+                    host = host,
+                    onBeerClick = { navigate(PortableRoute.BeerDetail(it.id)) },
+                    onSaveQuery = { name ->
+                      savePreset(name, entry.viewModel.uiState.value.activeQuery)
+                    },
+                  )
+                is BrowseHomeEntry ->
+                  BrowseHomeDestination(
+                    entry = entry,
+                    strings = strings,
+                    host = host,
+                    onSelection = navigation::selectBrowse,
+                    onBack = ::pop,
+                  )
+                is BrowseBeersEntry ->
+                  BrowseBeersDestination(
+                    entry = entry,
+                    strings = strings,
+                    host = host,
+                    onBack = ::pop,
+                    onBeerClick = { navigate(PortableRoute.BeerDetail(it.id)) },
+                    onSaveQuery = { name -> savePreset(name, entry.selection.toQuery()) },
+                  )
+                is SavedFilterResultsEntry ->
+                  SavedFilterResultsDestination(
+                    entry = entry,
+                    strings = strings,
+                    host = host,
+                    onBack = ::pop,
+                    onBeerClick = { navigate(PortableRoute.BeerDetail(it.id)) },
+                  )
+                is DetailEntry ->
+                  DetailDestination(
+                    entry = entry,
+                    strings = strings,
+                    host = host,
+                    onBack = ::pop,
+                    animationsDisabled = host.detailAnimationsDisabled,
+                    onMessage = { message = it },
+                  )
+                is ManagedSharedAppEntry -> error("Unhandled shared app entry: $entry")
+              }
+            }
           }
         }
       }

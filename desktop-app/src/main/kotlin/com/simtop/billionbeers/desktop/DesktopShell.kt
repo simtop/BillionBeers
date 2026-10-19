@@ -12,8 +12,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -90,6 +92,15 @@ internal val desktopHost =
         if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
         contentDescription = contentDescription,
       )
+    },
+    catalogNavigationIcon = { contentDescription ->
+      Icon(Icons.Filled.Home, contentDescription = contentDescription)
+    },
+    favoritesNavigationIcon = { contentDescription ->
+      Icon(Icons.Filled.Favorite, contentDescription = contentDescription)
+    },
+    savedFiltersNavigationIcon = { contentDescription ->
+      Icon(Icons.Filled.Bookmark, contentDescription = contentDescription)
     },
     imageContent = { imageUrl, contentDescription, modifier ->
       if (imageUrl.isNullOrBlank()) {
