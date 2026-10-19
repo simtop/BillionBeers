@@ -2,6 +2,7 @@ package com.simtop.billionbeers.presentation
 
 import android.net.Uri
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -75,6 +76,7 @@ fun AppNavigation(
     selectedTab == PortableRoute.BeersList ||
       selectedTab == PortableRoute.Favorites ||
       selectedTab == PortableRoute.SavedFilterPresets
+  val navigationPresentation = resolveNavigationPresentation(showBottomBar, isExpandedWindow)
   val snackbarHostState = remember { SnackbarHostState() }
   val presetLimitMessage = stringResource(R.string.filter_preset_limit_reached)
   val presetSaveFailedMessage = stringResource(R.string.filter_preset_save_failed)
@@ -99,10 +101,10 @@ fun AppNavigation(
     snackbarHost = { SnackbarHost(snackbarHostState) },
     // The destination screens own their top-bar and content insets. Keeping the root inset-free
     // lets those top bars draw behind the status bar instead of placing the entire NavDisplay
-    // below it. NavigationBar still contributes its measured height to innerPadding.
+    // below it. The compact NavigationBar contributes its measured height to innerPadding.
     contentWindowInsets = WindowInsets(0),
     bottomBar = {
-      if (showBottomBar) {
+      if (navigationPresentation == NavigationPresentation.BOTTOM_BAR) {
         AppBottomNavigation(
           selectedTab = selectedTab,
           onTabSelect = { tab ->
@@ -113,63 +115,91 @@ fun AppNavigation(
       }
     },
   ) { innerPadding ->
-    NavDisplay(
-      modifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding),
-      backStack = backStack,
-      onBack = { backStack.removeLastOrNull() },
-      sceneStrategies = listOf(listDetailStrategy),
-      entryProvider =
-        entryProvider {
-          entry<PortableRoute.BeersList>(
-            metadata =
-              ListDetailSceneStrategy.listPane(
-                detailPlaceholder = {
-                  Box(modifier = Modifier.fillMaxSize().testTag("beer_detail_placeholder"))
-                }
+    Row(Modifier.padding(innerPadding).consumeWindowInsets(innerPadding)) {
+      if (navigationPresentation == NavigationPresentation.RAIL) {
+        AppNavigationRail(
+          selectedTab = selectedTab,
+          onTabSelect = { tab ->
+            backStack.clear()
+            backStack.add(tab)
+          },
+        )
+      }
+      NavDisplay(
+        modifier = Modifier.weight(1f),
+        backStack = backStack,
+        onBack = { backStack.removeLastOrNull() },
+        sceneStrategies = listOf(listDetailStrategy),
+        entryProvider =
+          entryProvider {
+            entry<PortableRoute.BeersList>(
+              metadata =
+                ListDetailSceneStrategy.listPane(
+                  detailPlaceholder = {
+                    Box(modifier = Modifier.fillMaxSize().testTag("beer_detail_placeholder"))
+                  }
+                )
+            ) {
+              BeersListScreen(
+                onBeerClick = { beer -> navigateToBeerDetail(beer.id) },
+                onSearchClick = { navigate(PortableRoute.BeersSearch) },
+                onBrowseClick = { navigate(PortableRoute.BeerBrowse) },
+                onSaveQuery = { name ->
+                  savePreset(name, BeersQuery())
+                },
               )
-          ) {
-            BeersListScreen(
-              onBeerClick = { beer -> navigateToBeerDetail(beer.id) },
-              onSearchClick = { navigate(PortableRoute.BeersSearch) },
-              onBrowseClick = { navigate(PortableRoute.BeerBrowse) },
-              onSaveQuery = { name ->
-                savePreset(name, BeersQuery())
-              },
-            )
-          }
+            }
 
-          viewModel.navigationContributions.forEach { contribution ->
-            contribution.contribute(this, navigationActions)
-          }
+            viewModel.navigationContributions.forEach { contribution ->
+              contribution.contribute(this, navigationActions)
+            }
 
-          entry<PortableRoute.BeerDetail>(metadata = ListDetailSceneStrategy.detailPane()) { key ->
-            DynamicFeatureContent(
-              key = key,
-              onBack = { backStack.removeLastOrNull() },
-              showBackButton = showDetailBackButton,
-            )
-          }
+            entry<PortableRoute.BeerDetail>(metadata = ListDetailSceneStrategy.detailPane()) { key
+              ->
+              DynamicFeatureContent(
+                key = key,
+                onBack = { backStack.removeLastOrNull() },
+                showBackButton = showDetailBackButton,
+              )
+            }
 
-          // onNavigate lets browse push a beer's detail from inside the module - routed through
-          // `navigate`, so it is gated like every other caller.
-          entry<PortableRoute.BeerBrowse> { key ->
-            DynamicFeatureContent(
-              key = key,
-              onBack = { backStack.removeLastOrNull() },
-              onNavigate = { destination ->
-                if (destination is PortableRoute.BeerDetail) {
-                  navigateToBeerDetail(destination.beerId)
-                } else {
-                  navigate(destination)
-                }
-              },
-              onSaveQuery = ::savePreset,
-            )
-          }
-        },
-    )
+            // onNavigate lets browse push a beer's detail from inside the module - routed through
+            // `navigate`, so it is gated like every other caller.
+            entry<PortableRoute.BeerBrowse> { key ->
+              DynamicFeatureContent(
+                key = key,
+                onBack = { backStack.removeLastOrNull() },
+                onNavigate = { destination ->
+                  if (destination is PortableRoute.BeerDetail) {
+                    navigateToBeerDetail(destination.beerId)
+                  } else {
+                    navigate(destination)
+                  }
+                },
+                onSaveQuery = ::savePreset,
+              )
+            }
+          },
+      )
+    }
   }
 }
+
+private enum class NavigationPresentation {
+  HIDDEN,
+  BOTTOM_BAR,
+  RAIL,
+}
+
+private fun resolveNavigationPresentation(
+  showNavigation: Boolean,
+  isExpandedWindow: Boolean,
+): NavigationPresentation =
+  when {
+    !showNavigation -> NavigationPresentation.HIDDEN
+    isExpandedWindow -> NavigationPresentation.RAIL
+    else -> NavigationPresentation.BOTTOM_BAR
+  }
 
 private suspend fun handleDeepLink(
   uri: Uri,
