@@ -1,19 +1,17 @@
 package com.simtop.billionbeers.shared.presentation
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontStyle
@@ -42,6 +40,7 @@ fun SharedBeerListItem(
   titleMaxLines: Int = 1,
 ) {
   Card(
+    onClick = onClick,
     modifier =
       modifier
         .fillMaxWidth()
@@ -51,13 +50,10 @@ fun SharedBeerListItem(
         )
         .testTag("beer_list_item")
         .minimumInteractiveComponentSize()
-        .clickable(
-          interactionSource = remember { MutableInteractionSource() },
-          indication = null,
-          role = Role.Button,
-          onClick = onClick,
-        )
-        .semantics { stateDescription = labels.availability },
+        .semantics {
+          role = Role.Button
+          stateDescription = labels.availability
+        },
     shape = RoundedCornerShape(BillionBeersTheme.spacing.medium),
     elevation = CardDefaults.cardElevation(defaultElevation = BillionBeersTheme.spacing.extraSmall),
     colors =
