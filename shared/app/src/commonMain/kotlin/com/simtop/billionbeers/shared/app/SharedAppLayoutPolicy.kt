@@ -2,6 +2,7 @@ package com.simtop.billionbeers.shared.app
 
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.simtop.navigation.contract.PortableRoute
 
 internal enum class SharedAppWidthClass {
   Compact,
@@ -15,6 +16,12 @@ internal fun classifySharedAppWidth(width: Dp): SharedAppWidthClass =
     width < 840.dp -> SharedAppWidthClass.Medium
     else -> SharedAppWidthClass.Expanded
   }
+
+internal fun shouldShowNavigationRail(width: Dp, route: PortableRoute): Boolean =
+  classifySharedAppWidth(width) == SharedAppWidthClass.Expanded &&
+    (route == PortableRoute.BeersList ||
+      route == PortableRoute.Favorites ||
+      route == PortableRoute.SavedFilterPresets)
 
 internal fun shouldShowExpandedCatalogDetail(
   width: Dp,

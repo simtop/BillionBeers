@@ -22,6 +22,15 @@ class SharedAppLayoutPolicyTest {
   }
 
   @Test
+  fun usesNavigationRailForExpandedTopLevelDestinations() {
+    assertFalse(shouldShowNavigationRail(839.dp, PortableRoute.BeersList))
+    assertTrue(shouldShowNavigationRail(840.dp, PortableRoute.BeersList))
+    assertTrue(shouldShowNavigationRail(1000.dp, PortableRoute.Favorites))
+    assertTrue(shouldShowNavigationRail(1000.dp, PortableRoute.SavedFilterPresets))
+    assertFalse(shouldShowNavigationRail(1000.dp, PortableRoute.BeersSearch))
+  }
+
+  @Test
   fun expandsOnlyForCatalogRootWithDetailStack() {
     val navigation = navigation()
     val list = navigation.current
