@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
@@ -67,6 +68,7 @@ open class BeersSearchViewModel(
   @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
   private val searchResults: StateFlow<SearchResults> =
     merge(
+        flowOf(effectiveQuery(initialQuery, initialStyleId)),
         queryText.map(String::trim).debounce(DEBOUNCE_MILLIS).distinctUntilChanged().map { term ->
           effectiveQuery(term, selectedStyleId.value)
         },
