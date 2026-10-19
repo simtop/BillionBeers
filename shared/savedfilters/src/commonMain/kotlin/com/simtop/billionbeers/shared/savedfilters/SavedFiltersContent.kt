@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -25,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
+import com.simtop.billionbeers.shared.designsystem.components.SharedLazyColumn
 import com.simtop.core.core.CommonUiState
 import kotlinx.coroutines.launch
 
@@ -73,7 +73,7 @@ private fun SavedFiltersList(
   onDelete: suspend (SavedFilterPreset) -> Boolean,
   modifier: Modifier,
 ) {
-  LazyColumn(modifier.padding(12.dp)) {
+  SharedLazyColumn(modifier.padding(12.dp)) {
     if (presets.isEmpty()) item { Text(strings.empty) }
     items(presets, key = SavedFilterPreset::id) { preset ->
       SavedFilterRow(preset, strings, onApply, onRename, onDelete)

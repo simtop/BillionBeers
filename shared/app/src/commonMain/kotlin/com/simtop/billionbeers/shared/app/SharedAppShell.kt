@@ -290,7 +290,9 @@ fun SharedAppShell(
         route == PortableRoute.BeersList ||
           route == PortableRoute.Favorites ||
           route == PortableRoute.SavedFilterPresets
-      val showNavigationRail = shouldShowNavigationRail(maxWidth, route)
+      val expandedCatalogDetail = shouldShowExpandedCatalogDetail(maxWidth, navigation.entries)
+      val navigationRoute = if (expandedCatalogDetail) navigation.entries.first().route else route
+      val showNavigationRail = shouldShowNavigationRail(maxWidth, navigationRoute)
       Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
@@ -347,22 +349,22 @@ fun SharedAppShell(
         },
       ) { padding ->
         Row(modifier = Modifier.fillMaxSize().padding(padding)) {
-          if (showNavigation && showNavigationRail) {
+          if (showNavigationRail) {
             NavigationRail {
               NavigationRailItem(
-                selected = route == PortableRoute.BeersList,
+                selected = navigationRoute == PortableRoute.BeersList,
                 onClick = { navigate(PortableRoute.BeersList) },
                 icon = { host.catalogNavigationIcon(strings.chrome.list) },
                 label = { Text(strings.chrome.list) },
               )
               NavigationRailItem(
-                selected = route == PortableRoute.Favorites,
+                selected = navigationRoute == PortableRoute.Favorites,
                 onClick = { navigate(PortableRoute.Favorites) },
                 icon = { host.favoritesNavigationIcon(strings.chrome.favorites) },
                 label = { Text(strings.chrome.favorites) },
               )
               NavigationRailItem(
-                selected = route == PortableRoute.SavedFilterPresets,
+                selected = navigationRoute == PortableRoute.SavedFilterPresets,
                 onClick = { navigate(PortableRoute.SavedFilterPresets) },
                 icon = { host.savedFiltersNavigationIcon(strings.chrome.savedFilters) },
                 label = { Text(strings.chrome.savedFilters) },
@@ -370,13 +372,13 @@ fun SharedAppShell(
             }
           }
           BoxWithConstraints(modifier = Modifier.weight(1f).fillMaxHeight()) {
-            if (shouldShowExpandedCatalogDetail(maxWidth, navigation.entries)) {
+            if (expandedCatalogDetail) {
               ExpandedCatalogDetail(
                 catalog = navigation.entries.first() as ListEntry,
                 detail = entry as DetailEntry,
                 strings = strings,
                 host = host,
-                onBeerClick = { navigate(PortableRoute.BeerDetail(it.id)) },
+                onBeerClick = { navigation.selectDetail(it.id) },
                 onSearch = { navigate(PortableRoute.BeersSearch) },
                 onBrowse = { navigate(PortableRoute.BeerBrowse) },
                 onSaveQuery = { name -> savePreset(name, BeersQuery()) },

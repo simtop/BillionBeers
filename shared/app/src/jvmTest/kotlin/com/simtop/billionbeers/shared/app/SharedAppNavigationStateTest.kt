@@ -95,6 +95,35 @@ class SharedAppNavigationStateTest {
   }
 
   @Test
+  fun expandedSelectionReplacesDetailAndBackReturnsToCatalog() {
+    val events = mutableListOf<SharedAppNavigationEvent>()
+    val navigation = navigation(events::add)
+    val catalog = navigation.current as ListEntry
+    navigation.selectDetail("beer-1")
+    val first = navigation.current
+    navigation.selectDetail("beer-1")
+    assertSame(first, navigation.current)
+    navigation.selectDetail("beer-2")
+
+    assertTrue(first.isClosed)
+    assertEquals(2, navigation.entries.size)
+    assertEquals(PortableRoute.BeerDetail("beer-2"), navigation.current.route)
+    assertSame(catalog, navigation.entries.first())
+    assertEquals(
+      listOf(
+        SharedAppNavigationEvent.Push(PortableRoute.BeerDetail("beer-1")),
+        SharedAppNavigationEvent.Replace(PortableRoute.BeerDetail("beer-2")),
+      ),
+      events,
+    )
+    // Resizing changes presentation only: one Back must leave the selected detail.
+    assertTrue(navigation.pop())
+    assertSame(catalog, navigation.current)
+    assertFalse(navigation.pop())
+    navigation.disposeAll()
+  }
+
+  @Test
   fun browseBackPopsCategoryBeforeHome() {
     val navigation = navigation()
     navigation.navigate(PortableRoute.BeerBrowse)

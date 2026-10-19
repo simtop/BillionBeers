@@ -3,7 +3,6 @@ package com.simtop.billionbeers.shared.favorites
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.CircularProgressIndicator
@@ -14,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.billionbeers.shared.designsystem.components.SharedLazyColumn
 import com.simtop.core.core.CommonUiState
 
 @Composable
@@ -43,7 +43,7 @@ fun SharedFavoritesContent(
         Text(viewState.message ?: errorText)
       }
     is CommonUiState.Success ->
-      LazyColumn(
+      SharedLazyColumn(
         state = resolvedListState,
         modifier = modifier.fillMaxSize().testTag("favorites_list"),
       ) {

@@ -7,7 +7,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -16,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.billionbeers.shared.designsystem.components.SharedLazyColumn
 import com.simtop.billionbeers.shared.presentation.InfiniteListHandler
 import com.simtop.billionbeers.shared.presentation.sharedPagedListFooter
 import com.simtop.core.core.CommonUiState
@@ -106,7 +106,7 @@ private fun SharedBeersListSuccessContent(
     onRefresh = onRefresh,
     modifier = Modifier.fillMaxSize(),
   ) {
-    LazyColumn(
+    SharedLazyColumn(
       state = resolvedListState,
       modifier = Modifier.fillMaxSize().testTag("beer_list"),
       contentPadding = listContentPadding,

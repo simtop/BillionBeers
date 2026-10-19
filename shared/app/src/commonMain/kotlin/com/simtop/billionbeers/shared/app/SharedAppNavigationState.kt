@@ -219,6 +219,20 @@ internal class SharedAppNavigationState(
     onNavigationEvent(SharedAppNavigationEvent.Push(current.route))
   }
 
+  // A click in the visible supporting list changes selection, not navigation depth.
+  fun selectDetail(beerId: String) {
+    if ((current as? DetailEntry)?.beerId == beerId) return
+    val detail = createEntry(PortableRoute.BeerDetail(beerId))
+    if (current is DetailEntry) {
+      current.close()
+      entriesState.value = entries.dropLast(1) + detail
+      onNavigationEvent(SharedAppNavigationEvent.Replace(detail.route))
+    } else {
+      append(detail)
+      onNavigationEvent(SharedAppNavigationEvent.Push(detail.route))
+    }
+  }
+
   fun selectBrowse(selection: BrowseSelection) {
     navigate(selection.toRoute())
   }

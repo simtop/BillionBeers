@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -30,6 +29,7 @@ import androidx.compose.ui.text.style.TextAlign
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.beerdomain.domain.models.Brewery
+import com.simtop.billionbeers.shared.designsystem.components.SharedLazyColumn
 import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersTheme
 import com.simtop.billionbeers.shared.presentation.SharedPagedBeersContent
 import com.simtop.billionbeers.shared.presentation.SharedPagedBeersStrings
@@ -107,7 +107,7 @@ fun SharedBrowseHomeContent(
             onRetry = onRetryStyles,
             errorContent = errorContent,
           ) { items ->
-            LazyColumn(
+            SharedLazyColumn(
               modifier = Modifier.fillMaxSize(),
               contentPadding = PaddingValues(bottom = padding.calculateBottomPadding()),
             ) {
@@ -128,7 +128,7 @@ fun SharedBrowseHomeContent(
             onRetry = onRetryBreweries,
             errorContent = errorContent,
           ) { items ->
-            LazyColumn(
+            SharedLazyColumn(
               modifier = Modifier.fillMaxSize(),
               contentPadding = PaddingValues(bottom = padding.calculateBottomPadding()),
             ) {

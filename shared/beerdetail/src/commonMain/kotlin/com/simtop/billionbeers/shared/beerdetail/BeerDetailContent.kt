@@ -12,11 +12,16 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
@@ -25,11 +30,13 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -47,6 +54,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.billionbeers.shared.designsystem.components.SharedScrollContainer
 import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersTheme
 
 /** Localized strings and formatted values supplied by the platform resource adapter. */
@@ -102,6 +110,32 @@ fun SharedBeerDetailContent(
     if (collapsingToolbarEnabled) TopAppBarDefaults.exitUntilCollapsedScrollBehavior() else null
   val animationDurationMs = if (animationsDisabled) 0 else AVAILABILITY_ANIMATION_DURATION_MS
   val favoriteLabel = if (beer.isFavorite) strings.removeFromFavorites else strings.addToFavorites
+  val scrollState = rememberScrollState()
+  val headerTitleStyle =
+    titleTextStyle
+      ?: MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold)
+  val headerButtonModifier =
+    if (collapsingToolbarEnabled) Modifier
+    else Modifier.size(48.dp).background(Color.Black.copy(alpha = 0.6f), CircleShape)
+  val favoriteButton: @Composable () -> Unit = {
+    IconButton(
+      onClick = onToggleFavorite,
+      modifier =
+        favoriteModifier.then(headerButtonModifier).semantics {
+          role = Role.Button
+          stateDescription = favoriteLabel
+        },
+    ) {
+      favoriteIcon(beer.isFavorite, favoriteLabel)
+    }
+  }
+  val backButton: @Composable () -> Unit = {
+    if (showBackButton) {
+      IconButton(onClick = onBackClick, modifier = headerButtonModifier) {
+        backIcon(strings.back)
+      }
+    }
+  }
 
   Scaffold(
     modifier =
@@ -126,49 +160,58 @@ fun SharedBeerDetailContent(
                   )
                 )
           )
-          LargeTopAppBar(
-            title = {
-              Text(
-                text = beer.name,
-                style =
-                  titleTextStyle
-                    ?: MaterialTheme.typography.headlineMedium.copy(
-                      fontWeight = FontWeight.ExtraBold
-                    ),
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-              )
-            },
-            expandedHeight = 350.dp,
-            navigationIcon = {
-              if (showBackButton) {
-                IconButton(onClick = onBackClick) {
-                  backIcon(strings.back)
-                }
-              }
-            },
-            actions = {
-              IconButton(
-                onClick = onToggleFavorite,
+          if (collapsingToolbarEnabled) {
+            LargeTopAppBar(
+              title = {
+                Text(
+                  text = beer.name,
+                  style = headerTitleStyle,
+                  maxLines = 2,
+                  overflow = TextOverflow.Ellipsis,
+                )
+              },
+              expandedHeight = 350.dp,
+              navigationIcon = backButton,
+              actions = { favoriteButton() },
+              colors =
+                TopAppBarDefaults.largeTopAppBarColors(
+                  containerColor = Color.Transparent,
+                  scrolledContainerColor = MaterialTheme.colorScheme.primary,
+                  titleContentColor = Color.White,
+                  navigationIconContentColor = Color.White,
+                  actionIconContentColor = Color.White,
+                ),
+              scrollBehavior = scrollBehavior,
+            )
+          } else {
+            // Static headers do not need the app bar's animated title baseline/clip bounds.
+            CompositionLocalProvider(LocalContentColor provides Color.White) {
+              Column(
                 modifier =
-                  favoriteModifier.semantics {
-                    role = Role.Button
-                    stateDescription = favoriteLabel
-                  },
+                  Modifier.fillMaxSize()
+                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.SpaceBetween,
               ) {
-                favoriteIcon(beer.isFavorite, favoriteLabel)
+                Row(
+                  modifier = Modifier.fillMaxWidth(),
+                  horizontalArrangement = Arrangement.SpaceBetween,
+                  verticalAlignment = Alignment.CenterVertically,
+                ) {
+                  Box { backButton() }
+                  favoriteButton()
+                }
+                Text(
+                  text = beer.name,
+                  style = headerTitleStyle,
+                  color = Color.White,
+                  maxLines = 2,
+                  overflow = TextOverflow.Ellipsis,
+                  modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp),
+                )
               }
-            },
-            colors =
-              TopAppBarDefaults.largeTopAppBarColors(
-                containerColor = Color.Transparent,
-                scrolledContainerColor = MaterialTheme.colorScheme.primary,
-                titleContentColor = Color.White,
-                navigationIconContentColor = Color.White,
-                actionIconContentColor = Color.White,
-              ),
-            scrollBehavior = scrollBehavior,
-          )
+            }
+          }
         }
       }
     },
@@ -204,135 +247,139 @@ fun SharedBeerDetailContent(
       }
     },
   ) { paddingValues ->
-    Column(
-      modifier =
-        contentModifier
-          .fillMaxSize()
-          .padding(paddingValues)
-          .verticalScroll(rememberScrollState())
-          .padding(BillionBeersTheme.spacing.medium)
-          .semantics {}
+    SharedScrollContainer(
+      state = scrollState,
+      modifier = Modifier.fillMaxSize().padding(paddingValues),
     ) {
-      Text(
-        text = beer.tagline,
-        style =
-          MaterialTheme.typography.titleMedium.copy(
-            fontStyle = FontStyle.Italic,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-          ),
-      )
-
-      if (beer.styleName.isNotEmpty() && beer.breweryName.isNotEmpty()) {
+      Column(
+        modifier =
+          contentModifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+            .padding(BillionBeersTheme.spacing.medium)
+            .semantics {}
+      ) {
         Text(
-          text = strings.styleAndBrewery(beer.styleName, beer.breweryName),
-          style = MaterialTheme.typography.bodyMedium,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
+          text = beer.tagline,
+          style =
+            MaterialTheme.typography.titleMedium.copy(
+              fontStyle = FontStyle.Italic,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            ),
         )
-      }
 
-      Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
+        if (beer.styleName.isNotEmpty() && beer.breweryName.isNotEmpty()) {
+          Text(
+            text = strings.styleAndBrewery(beer.styleName, beer.breweryName),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+        }
 
-      BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-        val stackMetricCards =
-          maxWidth < 500.dp && LocalDensity.current.fontScale >= LARGE_FONT_METRIC_CARD_SCALE
-        if (stackMetricCards) {
-          Column(verticalArrangement = Arrangement.spacedBy(BillionBeersTheme.spacing.medium)) {
-            StatCard(
-              label = strings.abv,
-              value = "${strings.metricValue(beer.abv)}%",
-              color = BillionBeersTheme.colors.abvContainer,
-              textColor = BillionBeersTheme.colors.onAbvContainer,
+        Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
+
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+          val stackMetricCards =
+            maxWidth < 500.dp && LocalDensity.current.fontScale >= LARGE_FONT_METRIC_CARD_SCALE
+          if (stackMetricCards) {
+            Column(verticalArrangement = Arrangement.spacedBy(BillionBeersTheme.spacing.medium)) {
+              StatCard(
+                label = strings.abv,
+                value = "${strings.metricValue(beer.abv)}%",
+                color = BillionBeersTheme.colors.abvContainer,
+                textColor = BillionBeersTheme.colors.onAbvContainer,
+                modifier = Modifier.fillMaxWidth(),
+              )
+              StatCard(
+                label = strings.ibu,
+                value = strings.metricValue(beer.ibu),
+                color = BillionBeersTheme.colors.ibuContainer,
+                textColor = BillionBeersTheme.colors.onIbuContainer,
+                modifier = Modifier.fillMaxWidth(),
+              )
+            }
+          } else {
+            Row(
               modifier = Modifier.fillMaxWidth(),
-            )
-            StatCard(
-              label = strings.ibu,
-              value = strings.metricValue(beer.ibu),
-              color = BillionBeersTheme.colors.ibuContainer,
-              textColor = BillionBeersTheme.colors.onIbuContainer,
-              modifier = Modifier.fillMaxWidth(),
-            )
-          }
-        } else {
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(BillionBeersTheme.spacing.medium),
-          ) {
-            StatCard(
-              label = strings.abv,
-              value = "${strings.metricValue(beer.abv)}%",
-              color = BillionBeersTheme.colors.abvContainer,
-              textColor = BillionBeersTheme.colors.onAbvContainer,
-              modifier = Modifier.weight(1f),
-            )
-            StatCard(
-              label = strings.ibu,
-              value = strings.metricValue(beer.ibu),
-              color = BillionBeersTheme.colors.ibuContainer,
-              textColor = BillionBeersTheme.colors.onIbuContainer,
-              modifier = Modifier.weight(1f),
-            )
+              horizontalArrangement = Arrangement.spacedBy(BillionBeersTheme.spacing.medium),
+            ) {
+              StatCard(
+                label = strings.abv,
+                value = "${strings.metricValue(beer.abv)}%",
+                color = BillionBeersTheme.colors.abvContainer,
+                textColor = BillionBeersTheme.colors.onAbvContainer,
+                modifier = Modifier.weight(1f),
+              )
+              StatCard(
+                label = strings.ibu,
+                value = strings.metricValue(beer.ibu),
+                color = BillionBeersTheme.colors.ibuContainer,
+                textColor = BillionBeersTheme.colors.onIbuContainer,
+                modifier = Modifier.weight(1f),
+              )
+            }
           }
         }
-      }
 
-      Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
-      Text(
-        text = strings.description,
-        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-      )
-      Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.small))
-      Text(
-        text = beer.description,
-        style =
-          MaterialTheme.typography.bodyLarge.copy(
-            lineHeight = 24.sp,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = TEXT_ALPHA),
-          ),
-      )
-
-      Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
-      BulletSection(strings.foodPairing, beer.foodPairing)
-
-      val detailRows = buildList {
-        beer.releasedYear?.let { add(strings.released to "$it") }
-        val minTemp = beer.minServingTemperature
-        val maxTemp = beer.maxServingTemperature
-        if (minTemp != null && maxTemp != null) {
-          add(strings.servingTemperature to strings.servingTemperatureValue(minTemp, maxTemp))
-        }
-        if (beer.fermentationMethod.isNotEmpty()) {
-          add(strings.fermentation to beer.fermentationMethod)
-        }
-        beer.srm?.let { add(strings.srm to "$it") }
-      }
-      if (detailRows.isNotEmpty()) {
         Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
         Text(
-          text = strings.details,
+          text = strings.description,
           style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
         )
         Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.small))
-        detailRows.forEach { (label, value) ->
-          Row(
-            modifier =
-              Modifier.fillMaxWidth().padding(vertical = BillionBeersTheme.spacing.extraSmall),
-            horizontalArrangement = Arrangement.SpaceBetween,
-          ) {
-            Text(
-              text = label,
-              style = MaterialTheme.typography.bodyLarge,
-              color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(text = value, style = MaterialTheme.typography.bodyLarge)
+        Text(
+          text = beer.description,
+          style =
+            MaterialTheme.typography.bodyLarge.copy(
+              lineHeight = 24.sp,
+              color = MaterialTheme.colorScheme.onSurface.copy(alpha = TEXT_ALPHA),
+            ),
+        )
+
+        Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
+        BulletSection(strings.foodPairing, beer.foodPairing)
+
+        val detailRows = buildList {
+          beer.releasedYear?.let { add(strings.released to "$it") }
+          val minTemp = beer.minServingTemperature
+          val maxTemp = beer.maxServingTemperature
+          if (minTemp != null && maxTemp != null) {
+            add(strings.servingTemperature to strings.servingTemperatureValue(minTemp, maxTemp))
+          }
+          if (beer.fermentationMethod.isNotEmpty()) {
+            add(strings.fermentation to beer.fermentationMethod)
+          }
+          beer.srm?.let { add(strings.srm to "$it") }
+        }
+        if (detailRows.isNotEmpty()) {
+          Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
+          Text(
+            text = strings.details,
+            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+          )
+          Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.small))
+          detailRows.forEach { (label, value) ->
+            Row(
+              modifier =
+                Modifier.fillMaxWidth().padding(vertical = BillionBeersTheme.spacing.extraSmall),
+              horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+              Text(
+                text = label,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+              )
+              Text(text = value, style = MaterialTheme.typography.bodyLarge)
+            }
           }
         }
-      }
 
-      Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
-      BulletSection(strings.ingredients, beer.ingredients)
-      Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
-      BulletSection(strings.recommendedGlasses, beer.recommendedGlasses)
-      Spacer(modifier = Modifier.height(96.dp))
+        Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
+        BulletSection(strings.ingredients, beer.ingredients)
+        Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.large))
+        BulletSection(strings.recommendedGlasses, beer.recommendedGlasses)
+        Spacer(modifier = Modifier.height(96.dp))
+      }
     }
   }
 }
