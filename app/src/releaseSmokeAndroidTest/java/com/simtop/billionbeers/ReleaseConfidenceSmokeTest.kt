@@ -1,6 +1,7 @@
 package com.simtop.billionbeers
 
 import android.content.Intent
+import android.graphics.Typeface
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
@@ -11,6 +12,7 @@ import java.nio.charset.StandardCharsets
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
 import org.junit.After
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -35,6 +37,8 @@ class ReleaseConfidenceSmokeTest {
   fun minifiedAppLoadsMapsNavigatesAndPersistsAvailability() {
     val instrumentation = InstrumentationRegistry.getInstrumentation()
     val device = UiDevice.getInstance(instrumentation)
+
+    assertPackagedBrandFonts(instrumentation.targetContext)
 
     launchApp(device)
     assertTrue(
@@ -91,6 +95,15 @@ class ReleaseConfidenceSmokeTest {
       "Launcher window for $TARGET_PACKAGE did not appear",
       device.wait(Until.hasObject(By.pkg(TARGET_PACKAGE).depth(0)), UI_TIMEOUT_MS),
     )
+  }
+
+  private fun assertPackagedBrandFonts(context: android.content.Context) {
+    for (fontAsset in BRAND_FONT_ASSETS) {
+      assertNotNull(
+        "Compose brand font was not packaged or could not be parsed: $fontAsset",
+        Typeface.Builder(context.assets, fontAsset).build(),
+      )
+    }
   }
 
   private fun clickText(device: UiDevice, text: String) {
@@ -162,6 +175,11 @@ class ReleaseConfidenceSmokeTest {
     const val FIXTURE_NAME = "Smoke Test Lager"
     const val FIXTURE_TAGLINE = "A deterministic release path."
     const val FIXTURE_DESCRIPTION = "The release smoke server supplied this description."
+    val BRAND_FONT_ASSETS =
+      listOf(
+        "composeResources/billionbeers.shared.designsystem.generated.resources/font/inter-variable.ttf",
+        "composeResources/billionbeers.shared.designsystem.generated.resources/font/plusjakarta-variable.ttf",
+      )
     val FIXTURE_BEERS_JSON =
       """
       [{

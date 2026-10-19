@@ -5,6 +5,10 @@ plugins {
 }
 
 kotlin {
+  android {
+    androidResources.enable = true
+  }
+
   wasmJs {
     binaries.executable()
   }
