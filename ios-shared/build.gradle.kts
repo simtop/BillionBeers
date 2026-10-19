@@ -19,6 +19,7 @@ kotlin {
   sourceSets {
     val iosMain by getting {
       dependencies {
+        implementation(libs.composeMaterialIconsCore)
         implementation(libs.ktorClientDarwin)
         implementation(libs.sqliteBundled)
       }
