@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
@@ -18,6 +19,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -211,12 +213,7 @@ private fun DesktopBeerRow(beer: Beer, onClick: () -> Unit) {
   Card(
     modifier =
       Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp).clickable { onClick() },
-    colors =
-      CardDefaults.cardColors(
-        containerColor =
-          if (beer.availability) MaterialTheme.colorScheme.surface
-          else MaterialTheme.colorScheme.errorContainer
-      ),
+    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
   ) {
     Row(
       modifier = Modifier.fillMaxWidth().padding(12.dp),
@@ -258,13 +255,25 @@ private fun DesktopBeerRow(beer: Beer, onClick: () -> Unit) {
           style = MaterialTheme.typography.labelMedium,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Text(
-          if (beer.availability) "Available" else "Out of stock",
-          style = MaterialTheme.typography.labelMedium,
-          color =
-            if (beer.availability) MaterialTheme.colorScheme.primary
-            else MaterialTheme.colorScheme.onErrorContainer,
-        )
+        if (beer.availability) {
+          Text(
+            "Available",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+          )
+        } else {
+          Surface(
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            shape = RoundedCornerShape(percent = 50),
+          ) {
+            Text(
+              "Out of stock",
+              modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+              style = MaterialTheme.typography.labelSmall,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+          }
+        }
       }
     }
   }
