@@ -179,7 +179,7 @@ data class SharedAppHost(
   val imageContent: @Composable (String, String?, Modifier) -> Unit,
   val detailAnimationsDisabled: Boolean = false,
   val detailCollapsingToolbarEnabled: Boolean = true,
-  val detailTitleTextStyle: TextStyle? = null,
+  val detailTitleTextStyle: @Composable () -> TextStyle? = { null },
   val darkTheme: Boolean = false,
   val routeRequests: Flow<PortableRoute> = emptyFlow(),
   val navigationRequests: Flow<SharedAppNavigationRequest> = emptyFlow(),
@@ -779,7 +779,7 @@ private fun DetailDestination(
         imageContent = host.imageContent,
         animationsDisabled = animationsDisabled,
         collapsingToolbarEnabled = host.detailCollapsingToolbarEnabled,
-        titleTextStyle = host.detailTitleTextStyle,
+        titleTextStyle = host.detailTitleTextStyle(),
         showBackButton = showBackButton,
       )
   }
