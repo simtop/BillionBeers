@@ -56,12 +56,7 @@ fun SharedBeerListItem(
         },
     shape = RoundedCornerShape(BillionBeersTheme.spacing.medium),
     elevation = CardDefaults.cardElevation(defaultElevation = BillionBeersTheme.spacing.extraSmall),
-    colors =
-      CardDefaults.cardColors(
-        containerColor =
-          if (beer.availability) MaterialTheme.colorScheme.surface
-          else MaterialTheme.colorScheme.errorContainer
-      ),
+    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
   ) {
     Row(
       modifier =
@@ -130,8 +125,8 @@ fun SharedBeerListItem(
           } else {
             BeerChip(
               text = labels.availability,
-              color = Color(UNAVAILABLE_BG_COLOR),
-              textColor = Color(UNAVAILABLE_TEXT_COLOR),
+              color = MaterialTheme.colorScheme.surfaceVariant,
+              textColor = MaterialTheme.colorScheme.onSurfaceVariant,
             )
           }
         }
@@ -165,5 +160,3 @@ private fun BeerChip(text: String, color: Color, textColor: Color, modifier: Mod
 
 private const val AVAILABLE_BG_COLOR = 0xFFE8F5E9
 private const val AVAILABLE_TEXT_COLOR = 0xFF1B5E20
-private const val UNAVAILABLE_BG_COLOR = 0xFFFFEBEE
-private const val UNAVAILABLE_TEXT_COLOR = 0xFFB71C1C

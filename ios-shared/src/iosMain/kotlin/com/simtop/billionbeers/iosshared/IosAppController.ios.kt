@@ -12,10 +12,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -183,12 +185,7 @@ private fun IosBeerRow(
           role = Role.Button
           stateDescription = availability
         },
-    colors =
-      CardDefaults.cardColors(
-        containerColor =
-          if (beer.availability) MaterialTheme.colorScheme.surface
-          else MaterialTheme.colorScheme.errorContainer
-      ),
+    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
   ) {
     Row(
       modifier = Modifier.fillMaxWidth().padding(12.dp),
@@ -209,13 +206,25 @@ private fun IosBeerRow(
           style = MaterialTheme.typography.labelMedium,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Text(
-          availability,
-          style = MaterialTheme.typography.labelMedium,
-          color =
-            if (beer.availability) MaterialTheme.colorScheme.primary
-            else MaterialTheme.colorScheme.onErrorContainer,
-        )
+        if (beer.availability) {
+          Text(
+            availability,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+          )
+        } else {
+          Surface(
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            shape = RoundedCornerShape(percent = 50),
+          ) {
+            Text(
+              availability,
+              modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+              style = MaterialTheme.typography.labelSmall,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+          }
+        }
       }
     }
   }
