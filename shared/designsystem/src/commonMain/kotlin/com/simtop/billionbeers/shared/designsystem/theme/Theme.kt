@@ -19,18 +19,19 @@ fun BillionBeersTheme(
   darkTheme: Boolean,
   colors: BillionBeersColors? = null,
   spacing: BillionBeersSpacing = BillionBeersSpacing(),
-  typography: androidx.compose.material3.Typography = BillionBeersTypography,
+  typography: androidx.compose.material3.Typography? = null,
   content: @Composable () -> Unit,
 ) {
   val resolvedColors = colors ?: if (darkTheme) BillionBeersDarkColors else BillionBeersLightColors
+  val resolvedTypography = typography ?: loadedBillionBeersTypography()
   CompositionLocalProvider(
     LocalSpacing provides spacing,
     LocalColors provides resolvedColors,
-    LocalTypography provides typography,
+    LocalTypography provides resolvedTypography,
   ) {
     MaterialTheme(
       colorScheme = resolvedColors.toMaterialColorScheme(darkTheme),
-      typography = typography,
+      typography = resolvedTypography,
       content = content,
     )
   }
