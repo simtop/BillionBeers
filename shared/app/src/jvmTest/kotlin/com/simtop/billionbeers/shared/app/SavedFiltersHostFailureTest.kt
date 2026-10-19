@@ -1,11 +1,14 @@
 package com.simtop.billionbeers.shared.app
 
 import androidx.compose.foundation.clickable
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
@@ -13,11 +16,16 @@ import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.v2.runSkikoComposeUiTest
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Density
 import com.simtop.beerdomain.domain.errors.MutateFilterPresetError
 import com.simtop.beerdomain.domain.errors.SaveFilterPresetError
@@ -33,12 +41,65 @@ import com.simtop.core.core.Either
 import com.simtop.navigation.contract.PortableRoute
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
 @OptIn(ExperimentalTestApi::class)
 class SavedFiltersHostFailureTest {
+  @Test
+  fun detailTitleStyleProviderUsesBrandedThemeTypography() = runSkikoComposeUiTest {
+    val fixture = Fixture(presetCount = 0)
+    val beer = Beer.empty.copy(id = "themed-detail", name = "Themed detail")
+    fixture.backingRepository.setBeers(listOf(beer))
+    var themeHeadline: TextStyle? = null
+    var renderedStyle: TextStyle? = null
+
+    setContent {
+      SharedAppShell(
+        repository = fixture.repository,
+        catalogMetadataRepository = fixture.backingRepository,
+        savedFilterPresetsRepository = fixture.savedFilterPresetsRepository,
+        pagerFactory = FakeBeersPagerFactory(fixture.backingRepository),
+        coroutineDispatcher = DefaultCoroutineDispatcherProvider(),
+        strings = savedFilterStrings("Rename", "Delete"),
+        host =
+          SharedAppHost(
+            beerRow = { _, _ -> },
+            errorContent = { _, _ -> Text("Load error") },
+            backIcon = { Text(it) },
+            favoriteIcon = { _, _ -> },
+            imageContent = { _, _, _ ->
+              val headline = MaterialTheme.typography.headlineSmall
+              SideEffect { themeHeadline = headline }
+            },
+            detailCollapsingToolbarEnabled = false,
+            detailTitleTextStyle = {
+              MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold)
+            },
+          ),
+        initialRoute = PortableRoute.BeerDetail(beer.id),
+      )
+    }
+
+    onAllNodesWithText(beer.name, useUnmergedTree = true)[0]
+      .assertIsDisplayed()
+      .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { getResults ->
+        val results = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+        getResults(results)
+        renderedStyle = results.single().layoutInput.style
+      }
+    runOnIdle {
+      val brandedHeadline = requireNotNull(themeHeadline)
+      val actualStyle = requireNotNull(renderedStyle)
+      assertNotEquals(FontFamily.Default, actualStyle.fontFamily)
+      assertEquals(brandedHeadline.fontFamily, actualStyle.fontFamily)
+      assertEquals(brandedHeadline.fontSize, actualStyle.fontSize)
+      assertEquals(FontWeight.ExtraBold, actualStyle.fontWeight)
+    }
+  }
+
   @Test
   fun capacityFailureKeepsNameAndRetriesAfterCapacityBecomesAvailable() = runSkikoComposeUiTest {
     val fixture = Fixture(presetCount = SavedFilterPreset.MAX_COUNT)

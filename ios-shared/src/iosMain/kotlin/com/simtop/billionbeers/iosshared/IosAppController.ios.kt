@@ -49,6 +49,7 @@ import androidx.compose.ui.window.ComposeUIViewController
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.shared.app.SharedAppHost
 import com.simtop.billionbeers.shared.app.SharedAppShell
+import com.simtop.billionbeers.shared.app.SharedAppStrings
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.runSuspendCatching
 import com.simtop.navigation.contract.PortableRoute
@@ -119,12 +120,7 @@ private fun IosShell(
         runtime = runtime,
         darkTheme = darkTheme,
         routeRequests = routeRequests,
-        retryText = strings.list.retry,
-        availableText = strings.detailStrings.available,
-        unavailableText = strings.detailStrings.outOfStock,
-        errorText = strings.chrome.error,
-        titleTextStyle =
-          MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
+        strings = strings,
       ),
   )
 }
@@ -133,17 +129,21 @@ private fun iosHost(
   runtime: IosDataRuntime,
   darkTheme: Boolean,
   routeRequests: kotlinx.coroutines.flow.Flow<PortableRoute>,
-  retryText: String,
-  availableText: String,
-  unavailableText: String,
-  errorText: String,
-  titleTextStyle: androidx.compose.ui.text.TextStyle,
+  strings: SharedAppStrings,
 ) =
   SharedAppHost(
     beerRow = { beer, onClick ->
-      IosBeerRow(runtime, beer, onClick, availableText, unavailableText)
+      IosBeerRow(
+        runtime,
+        beer,
+        onClick,
+        strings.detailStrings.available,
+        strings.detailStrings.outOfStock,
+      )
     },
-    errorContent = { state, retry -> IosError(state, retry, retryText, errorText) },
+    errorContent = { state, retry ->
+      IosError(state, retry, strings.list.retry, strings.chrome.error)
+    },
     backIcon = { contentDescription ->
       Text(
         text = "‹",
@@ -177,7 +177,9 @@ private fun iosHost(
     routeRequests = routeRequests,
     detailAnimationsDisabled = true,
     detailCollapsingToolbarEnabled = false,
-    detailTitleTextStyle = titleTextStyle,
+    detailTitleTextStyle = {
+      MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold)
+    },
   )
 
 @Composable
