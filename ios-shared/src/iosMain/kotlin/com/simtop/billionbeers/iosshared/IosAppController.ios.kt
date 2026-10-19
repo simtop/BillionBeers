@@ -14,8 +14,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -145,20 +147,12 @@ private fun iosHost(
       IosError(state, retry, strings.list.retry, strings.chrome.error)
     },
     backIcon = { contentDescription ->
-      Text(
-        text = "‹",
-        modifier = Modifier.semantics { this.contentDescription = contentDescription },
-      )
+      Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = contentDescription)
     },
     favoriteIcon = { isFavorite, contentDescription ->
-      Text(
-        text = if (isFavorite) "♥" else "♡",
-        modifier =
-          Modifier.semantics {
-            this.contentDescription = contentDescription
-            role = Role.Button
-            stateDescription = contentDescription
-          },
+      Icon(
+        if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+        contentDescription = contentDescription,
       )
     },
     catalogNavigationIcon = { contentDescription ->
