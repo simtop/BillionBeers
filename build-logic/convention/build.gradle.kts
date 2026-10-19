@@ -6,7 +6,7 @@ plugins {
 // stable output for those classes even when the Kotlin DSL compiler leaves the classes directory
 // empty after packaging.
 tasks.named<org.gradle.plugin.devel.tasks.PluginUnderTestMetadata>("pluginUnderTestMetadata") {
-    pluginClasspath.from(tasks.named("jar"))
+    pluginClasspath.setFrom(configurations.runtimeClasspath, tasks.named("jar"))
 }
 
 group = "com.simtop.billionbeers.buildlogic"
@@ -34,4 +34,5 @@ dependencies {
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
+    classpath += files(tasks.named("jar"))
 }
