@@ -109,29 +109,27 @@ private class QueryPagingStorage(
   private val repository: BeersRepository,
 ) : PagingStorage<Int, Beer> by delegate {
 
-  override val data: Flow<List<Beer>> =
-    delegate.data.flatMapLatest { items ->
-      val ids = items.mapTo(mutableSetOf(), Beer::id)
-      observeLocalFlagsWithRetry(ids).map { flags ->
-        val flagsById = flags.associateBy { it.id }
-        items.map { beer ->
-          flagsById[beer.id]?.let { local ->
-            beer.copy(availability = local.availability, isFavorite = local.isFavorite)
-          } ?: beer
-        }
-      }
-    }
-
-  /**
-   * Keeps the last good overlay during an error, then resubscribes after the shared retry delay.
-   */
-  private fun observeLocalFlagsWithRetry(ids: Set<String>): Flow<List<BeerLocalFlags>> = flow {
+  override val data: Flow<List<Beer>> = flow {
+    // Keep one collector-owned snapshot as membership changes. Bound it to the current result IDs
+    // so refreshed-out rows do not accumulate while still preserving flags for overlapping rows.
     var lastGoodFlags = emptyList<BeerLocalFlags>()
     emitAll(
-      repository
-        .observeLocalFlags(ids)
-        .onEach { lastGoodFlags = it }
-        .retryWithErrorState { lastGoodFlags }
+      delegate.data.flatMapLatest { items ->
+        val ids = items.mapTo(mutableSetOf(), Beer::id)
+        lastGoodFlags = lastGoodFlags.filter { it.id in ids }
+        repository
+          .observeLocalFlags(ids)
+          .onEach { lastGoodFlags = it }
+          .retryWithErrorState { lastGoodFlags }
+          .map { flags ->
+            val flagsById = flags.associateBy { it.id }
+            items.map { beer ->
+              flagsById[beer.id]?.let { local ->
+                beer.copy(availability = local.availability, isFavorite = local.isFavorite)
+              } ?: beer
+            }
+          }
+      }
     )
   }
 
