@@ -3,6 +3,7 @@ plugins {
   id("billionbeers.android.compose")
   id("billionbeers.android.metro")
   id("billionbeers.android.managed.device")
+  id("billionbeers.android.screenshot")
 
   id("billionbeers.duplicate-classes")
   id("billionbeers.unused-dependencies")
@@ -111,6 +112,7 @@ android {
 }
 
 dependencies {
+  debugImplementation(libs.coil3)
   implementation(this.project(":beerdomain:api"))
   implementation(this.project(":beerdomain:impl"))
   testImplementation(this.project(":beerdomain:fakes"))

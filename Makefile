@@ -71,6 +71,9 @@ WEB_RELEASE_CONFIDENCE_DIR ?= web-app/build/web-release-confidence
 DESKTOP_APP_DIR ?= desktop-app/build/compose/binaries/main/app/BillionBeers.app
 DESKTOP_DMG_DIR ?= desktop-app/build/compose/binaries/main/dmg
 SCREENSHOT_INVENTORY_DIR ?= build/reports/paparazzi/inventory
+DESIGN_REVIEW_SCREEN ?= catalog
+DESIGN_REVIEW_OUTPUT ?= design/reviews/$(DESIGN_REVIEW_SCREEN)/$(shell date -u +%Y%m%dT%H%M%SZ)/baseline
+DESIGN_REVIEW_RUN ?= verify
 .PHONY: detekt-baseline help setup setup-ai-tools update-android-skills build bundle-release release-smoke install desktop-test desktop-run desktop-live desktop-package desktop-package-test desktop-package-smoke desktop-package-verify ios-simulator-evidence web-run web-image-proxy-test web-static-test web-verify ios-compile ios-framework ios-test ios-host-build ios-host-run ios-simulator-open ios-simulator-list ios-simulator-stop clean deep-clean test test-tier-inventory konsist check-data-layer-boundary architecture-policy compose-metrics ui-test ui-test-local ui-test-managed ui-test-managed-newest ui-test-managed-tablet ui-test-managed-ci ui-test-managed-all emulator-create emulator-recreate emulator-start emulator-stop emulator-status emulator-delete screenshot-record screenshot-verify screenshot-clean lint android-lint format check docs-check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline check-gradle-compatibility-flags verification-metadata verification-metadata-reference verification-metadata-candidate health module-graph metro-graph architecture-report repo-doctor benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark build-budget build-budget-check jacoco-report coverage-check update-docs install-profiler install-diffuse new-feature-module new-dev-app release-preflight play-listing-check play-listing-capture play-listing-reset store-frames
 
 .PHONY: screenshot-verify-run screenshot-inventory-record
@@ -300,10 +303,14 @@ ifeq ($(MODULE_TRIMMED),)
 	@python3 -I scripts/test_release_preflight.py
 	@python3 .github/scripts/test_extract_failure_screenshots.py
 	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) $(TEST_FLAGS) testDebugUnitTest $(addsuffix :test,$(JVM_TEST_MODULES)) kmpTest --continue
-	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) -p build-logic $(TEST_FLAGS) :convention:test --continue
+	@$(MAKE) --no-print-directory build-logic-test
 else
 	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) $(TEST_FLAGS) -PtestModule=$(MODULE_TRIMMED) testModule --continue
 endif
+
+.PHONY: build-logic-test
+build-logic-test: ## Run standalone convention-plugin tests without repeating app unit suites.
+	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) -p build-logic $(TEST_FLAGS) :convention:test --continue
 
 .PHONY: ci-report-test
 ci-report-test: ## Test CI diagnosis, evidence parsing, and incremental comment lifecycle.
@@ -405,6 +412,14 @@ ui-test-managed-all: ## Run instrumented tests on both managed devices, every op
 	$(GRADLE_RUNNER) allDevicesDebugAndroidTest allDevicesAndroidDeviceTest $(UI_TEST_ARGS)
 
 ##@ Screenshots
+.PHONY: design-review-capture design-review-test
+
+design-review-capture: ## Freeze configured UI screenshots and their source provenance for a design review.
+	python3 skills/ui-design-review/scripts/review.py capture --config qa/design-review.json --screen "$(DESIGN_REVIEW_SCREEN)" --output "$(DESIGN_REVIEW_OUTPUT)" --run "$(DESIGN_REVIEW_RUN)"
+
+design-review-test: ## Test UI review evidence validation and offline report generation without Gradle.
+	python3 skills/ui-design-review/scripts/test_review.py
+
 screenshot-record: ## Record golden images for Paparazzi.
 	$(GRADLE_RUNNER) $(MODULE_PREFIX)recordPaparazziDebug
 

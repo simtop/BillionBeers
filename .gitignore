@@ -41,3 +41,6 @@ rod/
 !.claude/skills/.android-skills-ignore
 !.claude/skills/EVALS_SCHEMA.md
 !.claude/skills/play-listing/
+
+# Local design-review reports, captures and experiment recovery manifests.
+/design/
