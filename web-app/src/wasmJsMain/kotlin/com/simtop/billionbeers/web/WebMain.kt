@@ -374,7 +374,6 @@ private fun webHost(runtime: WebDataRuntime, session: WebRouteSession) =
     },
     navigationRequests = session.routes(),
     onNavigationEvent = session::onNavigationEvent,
-    detailCollapsingToolbarEnabled = false,
     detailAnimationsDisabled = true,
   )
 

@@ -1,10 +1,13 @@
 package com.simtop.feature.beerslist
 
 import android.provider.Settings
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -16,45 +19,69 @@ import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.billionbeers.core.designsystem.component.AccessibilityMatrixPreview
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.component.shimmerBrush
@@ -80,10 +107,12 @@ fun BeersListScreen(
   onBeerClick: (Beer) -> Unit,
   onSearchClick: () -> Unit,
   onBrowseClick: () -> Unit,
-  onSaveQuery: suspend (String) -> Boolean,
+  onSaveQuery: suspend (String, BeersQuery) -> Boolean,
   viewModel: BeersListViewModel = metroViewModel(),
 ) {
   val rawState by viewModel.beerListViewState.collectAsStateWithLifecycle()
+  val query by viewModel.query.collectAsStateWithLifecycle()
+  val activeQuery by viewModel.activeQuery.collectAsStateWithLifecycle()
   val context = LocalContext.current
   val lifecycleOwner = LocalLifecycleOwner.current
   val loadMoreFailedMessage = stringResource(PresentationUtilsR.string.paged_list_load_more_failed)
@@ -107,7 +136,14 @@ fun BeersListScreen(
     onBeerClick = onBeerClick,
     onSearchClick = onSearchClick,
     onBrowseClick = onBrowseClick,
-    onSaveQuery = onSaveQuery,
+    onSaveQuery = { name ->
+      viewModel.submitSearch()
+      onSaveQuery(name, viewModel.activeQuery.value)
+    },
+    searchQuery = query,
+    activeSearchQuery = activeQuery.search,
+    onSearchQueryChange = viewModel::onQueryChange,
+    onSearchSubmit = viewModel::submitSearch,
     onScrollToBottom = { viewModel.onScrollToBottom() },
     onRefresh = { viewModel.refresh() },
     onRetry = { viewModel.refresh() },
@@ -131,47 +167,44 @@ fun BeersListContent(
   onRetry: () -> Unit,
   modifier: Modifier = Modifier,
   onRetryLoadMore: () -> Unit,
+  searchInitiallyExpanded: Boolean = false,
+  saveInitiallyExpanded: Boolean = false,
+  searchQuery: String = "",
+  onSearchQueryChange: (String) -> Unit = {},
+  activeSearchQuery: String? = null,
+  onSearchSubmit: () -> Unit = {},
 ) {
   val context = LocalContext.current
-  val toggleDebugDrawer = LocalDebugDrawerToggle.current
-  var presetName by remember { mutableStateOf("") }
+  var presetName by rememberSaveable { mutableStateOf("") }
+  var searchExpanded by rememberSaveable { mutableStateOf(searchInitiallyExpanded) }
+  var saveExpanded by rememberSaveable { mutableStateOf(saveInitiallyExpanded) }
   val saveScope = rememberCoroutineScope()
+  val focus = LocalFocusManager.current
+  val keyboard = LocalSoftwareKeyboardController.current
+  val catalogListState = rememberLazyListState()
+  val searchListState = rememberLazyListState()
+  val closeSearch: () -> Unit = {
+    searchExpanded = false
+    saveExpanded = false
+    onSearchQueryChange("")
+    focus.clearFocus()
+    keyboard?.hide()
+  }
+  BackHandler(enabled = searchExpanded || saveExpanded) {
+    if (saveExpanded) saveExpanded = false else closeSearch()
+  }
+  LaunchedEffect(activeSearchQuery) {
+    if (activeSearchQuery != null) searchListState.scrollToItem(0)
+  }
   Scaffold(
     modifier = modifier,
     topBar = {
-      TopAppBar(
-        title = {
-          // The label is clickable to reveal the debug drawer; the count line only appears once the
-          // server total is known, so states without a total render exactly as before.
-          val titleModifier =
-            toggleDebugDrawer?.let { toggle ->
-              Modifier.combinedClickable(onClick = {}, onLongClick = toggle)
-            } ?: Modifier
-          val loaded = (viewState as? CommonUiState.Success)?.data
-          val total = loaded?.totalCount
-          if (total != null) {
-            Column(modifier = titleModifier) {
-              Text(text = stringResource(R.string.billion_beers_list))
-              Text(
-                text = stringResource(R.string.beers_count_of_total, loaded.items.size, total),
-                style = MaterialTheme.typography.labelMedium,
-              )
-            }
-          } else {
-            Text(text = stringResource(R.string.billion_beers_list), modifier = titleModifier)
-          }
-        },
-        actions = {
-          IconButton(onClick = onBrowseClick) {
-            Icon(
-              Icons.AutoMirrored.Filled.List,
-              contentDescription = stringResource(R.string.beers_browse),
-            )
-          }
-          IconButton(onClick = onSearchClick) {
-            Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.beers_search))
-          }
-        },
+      CatalogHeader(
+        loaded = (viewState as? CommonUiState.Success)?.data,
+        searchExpanded = searchExpanded,
+        onSave = { saveExpanded = !saveExpanded },
+        onBrowse = onBrowseClick,
+        onSearch = { if (searchExpanded) closeSearch() else searchExpanded = true },
       )
     },
     contentWindowInsets = WindowInsets.statusBars,
@@ -187,23 +220,64 @@ fun BeersListContent(
     val contentPadding =
       PaddingValues(
         start = navBarsPadding.calculateStartPadding(layoutDirection),
-        top = paddingValues.calculateTopPadding(),
+        top = BillionBeersTheme.spacing.extraSmall,
         end = navBarsPadding.calculateEndPadding(layoutDirection),
         bottom =
           paddingValues.calculateBottomPadding() +
             navBarsPadding.calculateBottomPadding() +
             BillionBeersTheme.spacing.medium,
       )
-    val stateContentPadding = PaddingValues(top = paddingValues.calculateTopPadding())
+    val stateContentPadding = PaddingValues()
     val itemCount = (viewState as? CommonUiState.Success)?.data?.items?.size ?: 0
 
-    Column(Modifier.fillMaxSize()) {
+    Column(Modifier.fillMaxSize().padding(top = paddingValues.calculateTopPadding())) {
+      if (searchExpanded) {
+        CatalogSearchField(
+          query = searchQuery,
+          onQueryChange = onSearchQueryChange,
+          onSubmit = onSearchSubmit,
+          onAdvancedSearch = onSearchClick,
+        )
+      }
+      if (saveExpanded) {
+        ComposeFilterPresetForm(
+          name = presetName,
+          onNameChange = { presetName = it },
+          onSave = {
+            saveScope.launch {
+              if (onSaveQuery(presetName)) {
+                presetName = ""
+                saveExpanded = false
+              }
+            }
+          },
+          modifier = Modifier.padding(horizontal = BillionBeersTheme.spacing.medium),
+        )
+      }
+
       SharedBeersListContent(
         viewState = viewState,
         beerRow = { beer -> ComposeBeersListItem(beer = beer, onClick = onBeerClick) },
         loadingContent = { BeersListSkeleton(modifier = Modifier.padding(stateContentPadding)) },
         emptyContent = { retry ->
-          ComposeErrorView(onRetry = retry, modifier = Modifier.padding(stateContentPadding))
+          if (activeSearchQuery != null) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+              Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(24.dp),
+              ) {
+                Text(
+                  stringResource(R.string.beers_search_no_results),
+                  style = MaterialTheme.typography.titleMedium,
+                )
+                TextButton(onClick = { onSearchQueryChange("") }) {
+                  Text(stringResource(R.string.beers_clear_search))
+                }
+              }
+            }
+          } else {
+            ComposeErrorView(onRetry = retry, modifier = Modifier.padding(stateContentPadding))
+          }
         },
         errorContent = { error, retry ->
           val errorMessage = error.resolvedMessage()
@@ -223,20 +297,151 @@ fun BeersListContent(
         onRetryLoadMore = onRetryLoadMore,
         listContentPadding = contentPadding,
         animationsDisabled = animationsDisabled,
+        listState = if (activeSearchQuery == null) catalogListState else searchListState,
         modifier = Modifier.weight(1f),
-      )
-      ComposeFilterPresetForm(
-        name = presetName,
-        onNameChange = { presetName = it },
-        onSave = {
-          saveScope.launch {
-            if (onSaveQuery(presetName)) presetName = ""
-          }
-        },
-        modifier = Modifier.padding(horizontal = BillionBeersTheme.spacing.medium),
       )
     }
   }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@Composable
+private fun CatalogHeader(
+  loaded: PagedListUiModel<Beer>?,
+  searchExpanded: Boolean,
+  onSave: () -> Unit,
+  onBrowse: () -> Unit,
+  onSearch: () -> Unit,
+) {
+  val toggleDebugDrawer = LocalDebugDrawerToggle.current
+  val fontScale = LocalDensity.current.fontScale
+  BoxWithConstraints(Modifier.fillMaxWidth()) {
+    val stackActions = maxWidth < 600.dp && fontScale > HEADER_ACTION_STACK_FONT_SCALE
+    val saveMaxWidth = if (stackActions) maxOf(96.dp, maxWidth - 112.dp) else 128.dp
+    val actions: @Composable () -> Unit = {
+      Row(verticalAlignment = Alignment.CenterVertically) {
+        TextButton(
+          onClick = onSave,
+          modifier = Modifier.widthIn(max = saveMaxWidth),
+        ) {
+          Text(stringResource(PresentationUtilsR.string.save_filter))
+        }
+        IconButton(onClick = onBrowse) {
+          Icon(
+            Icons.AutoMirrored.Filled.List,
+            contentDescription = stringResource(R.string.beers_browse),
+          )
+        }
+        IconButton(onClick = onSearch) {
+          Icon(
+            if (searchExpanded) Icons.Filled.Close else Icons.Filled.Search,
+            contentDescription =
+              stringResource(
+                if (searchExpanded) R.string.beers_close_search else R.string.beers_search
+              ),
+          )
+        }
+      }
+    }
+    Column(Modifier.background(MaterialTheme.colorScheme.surface)) {
+      Row(
+        modifier =
+          Modifier.fillMaxWidth()
+            .windowInsetsPadding(WindowInsets.statusBars)
+            .heightIn(min = 80.dp)
+            .padding(start = 16.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        val titleModifier =
+          toggleDebugDrawer?.let { toggle ->
+            Modifier.combinedClickable(onClick = {}, onLongClick = toggle)
+          } ?: Modifier
+        Column(Modifier.weight(1f).then(titleModifier)) {
+          Text(
+            stringResource(R.string.billion_beers_list),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 24.sp,
+            fontFamily = FontFamily.Serif,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+          )
+          loaded?.totalCount?.let { total ->
+            Text(
+              stringResource(R.string.beers_count_of_total, loaded.items.size, total),
+              style = MaterialTheme.typography.labelMedium,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis,
+            )
+          }
+        }
+        if (!stackActions) actions()
+      }
+      if (stackActions) {
+        Row(Modifier.fillMaxWidth().padding(end = 4.dp), horizontalArrangement = Arrangement.End) {
+          actions()
+        }
+      }
+    }
+  }
+}
+
+@Composable
+private fun CatalogSearchField(
+  query: String,
+  onQueryChange: (String) -> Unit,
+  onSubmit: () -> Unit,
+  onAdvancedSearch: () -> Unit,
+) {
+  val focusRequester = remember { FocusRequester() }
+  val focus = LocalFocusManager.current
+  val keyboard = LocalSoftwareKeyboardController.current
+  val inspectionMode = LocalInspectionMode.current
+  LaunchedEffect(Unit) {
+    if (!inspectionMode) {
+      focusRequester.requestFocus()
+      keyboard?.show()
+    }
+  }
+  OutlinedTextField(
+    value = query,
+    onValueChange = onQueryChange,
+    label = { Text(stringResource(R.string.beers_search)) },
+    singleLine = true,
+    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+    trailingIcon = {
+      Row {
+        if (query.isNotEmpty()) {
+          IconButton(onClick = { onQueryChange("") }) {
+            Icon(
+              Icons.Filled.Close,
+              contentDescription = stringResource(R.string.beers_clear_search),
+            )
+          }
+        }
+        IconButton(onClick = onAdvancedSearch) {
+          Icon(
+            Icons.Filled.Settings,
+            contentDescription = stringResource(R.string.beers_advanced_search),
+          )
+        }
+      }
+    },
+    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+    keyboardActions =
+      KeyboardActions(
+        onSearch = {
+          onSubmit()
+          focus.clearFocus()
+          keyboard?.hide()
+        }
+      ),
+    modifier =
+      Modifier.fillMaxWidth()
+        .padding(horizontal = BillionBeersTheme.spacing.medium)
+        .focusRequester(focusRequester)
+        .testTag("search_field"),
+  )
 }
 
 class BeersListPreviewParameterProvider :
@@ -494,3 +699,5 @@ const val SKELETON_ITEM_COUNT = 10
 const val SHIMMER_TARGET_VALUE = 1300f
 const val TITLE_WIDTH_FRACTION = 0.7f
 const val TAGLINE_WIDTH_FRACTION = 0.5f
+
+private const val HEADER_ACTION_STACK_FONT_SCALE = 1.2f

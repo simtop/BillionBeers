@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="billion_beers_list">"Billion Beers List"</string>
+    <string name="billion_beers_list">Billion Beers</string>
     <string name="beers_count_of_total">%1$d of %2$d</string>
     <string name="beers_refresh_failed">Couldn\'t refresh</string>
     <plurals name="beers_end_of_list">
@@ -9,4 +9,8 @@
     </plurals>
     <string name="beers_search">Search</string>
     <string name="beers_browse">Browse</string>
+    <string name="beers_close_search">Close search</string>
+    <string name="beers_clear_search">Clear search</string>
+    <string name="beers_advanced_search">Advanced search</string>
+    <string name="beers_search_no_results">No beers match your search</string>
 </resources>

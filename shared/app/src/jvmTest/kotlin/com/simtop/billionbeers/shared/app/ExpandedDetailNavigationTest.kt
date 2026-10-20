@@ -65,7 +65,6 @@ class ExpandedDetailNavigationTest {
                 backIcon = { Text("Go back") },
                 favoriteIcon = { _, _ -> Text("Heart") },
                 imageContent = { _, _, _ -> },
-                detailCollapsingToolbarEnabled = false,
               ),
           )
         }

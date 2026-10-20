@@ -14,6 +14,7 @@ import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
@@ -50,12 +51,13 @@ class FilterPresetFormLayoutTest(private val screen: String) {
       saveSucceeds
     }
     showContent(save)
+    if (screen == "catalog") compose.onNodeWithText("Enregistrer le filtre").performClick()
 
     val editor = compose.onNode(hasSetTextAction() and !hasTestTag(SEARCH_FIELD_TAG))
     editor.assertIsDisplayed().assertWidthIsAtLeast(240.dp)
     compose.onNodeWithText("Nom du filtre").assertIsDisplayed()
     editor.performTextReplacement("IPA françaises")
-    compose.onNodeWithText("Enregistrer le filtre").assertIsDisplayed().performClick()
+    compose.onNodeWithTag("filter_preset_save").assertIsDisplayed().performClick()
     compose.runOnIdle { assertEquals(listOf("IPA françaises"), savedNames) }
     assertEquals(
       "IPA françaises",
@@ -63,9 +65,13 @@ class FilterPresetFormLayoutTest(private val screen: String) {
     )
 
     compose.runOnIdle { saveSucceeds = true }
-    compose.onNodeWithText("Enregistrer le filtre").performClick()
+    compose.onNodeWithTag("filter_preset_save").performClick()
     compose.runOnIdle { assertEquals(listOf("IPA françaises", "IPA françaises"), savedNames) }
-    assertEquals("", editor.fetchSemanticsNode().config[SemanticsProperties.EditableText].text)
+    if (screen == "catalog") {
+      compose.onNodeWithTag("filter_preset_save").assertDoesNotExist()
+    } else {
+      assertEquals("", editor.fetchSemanticsNode().config[SemanticsProperties.EditableText].text)
+    }
   }
 
   private fun showContent(save: suspend (String) -> Boolean) {

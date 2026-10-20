@@ -74,7 +74,6 @@ class SavedFiltersHostFailureTest {
               val headline = MaterialTheme.typography.headlineSmall
               SideEffect { themeHeadline = headline }
             },
-            detailCollapsingToolbarEnabled = false,
             detailTitleTextStyle = {
               MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold)
             },

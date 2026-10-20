@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersTheme
 
@@ -42,7 +43,11 @@ fun SharedFilterPresetForm(
       modifier = Modifier.fillMaxWidth(),
       singleLine = true,
     )
-    Button(onClick = onSave, enabled = enabled && name.isNotBlank()) {
+    Button(
+      onClick = onSave,
+      enabled = enabled && name.isNotBlank(),
+      modifier = Modifier.testTag("filter_preset_save"),
+    ) {
       Text(labels.save)
     }
   }

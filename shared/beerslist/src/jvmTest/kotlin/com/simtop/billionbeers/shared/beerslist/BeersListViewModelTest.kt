@@ -23,6 +23,7 @@ import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
@@ -333,6 +334,155 @@ class BeersListViewModelTest {
 
       expectThat(factory.createdPagers.size).isEqualTo(2)
       expectThat(factory.createdPagers[0] === factory.createdPagers[1]).isFalse()
+    }
+
+  @Test
+  fun `inline search debounces trimmed criteria without filtering the catalog`() =
+    runTest(testDispatcher) {
+      val original = Beer.empty.copy(id = "catalog", name = "Catalog beer")
+      fakeBeersRepository.setBeers(listOf(original))
+      val model = buildViewModel()
+      model.onQueryChange("  IPA  ")
+      advanceTimeBy(699)
+      runCurrent()
+      expectThat(fakeBeersPagerFactory.createdQueries.size).isEqualTo(0)
+      advanceTimeBy(1)
+      runCurrent()
+      expectThat(fakeBeersPagerFactory.createdQueries.toList())
+        .isEqualTo(listOf(BeersQuery(search = "IPA")))
+      val search = fakeBeersPagerFactory.searchPagers.single()
+      expectThat(search.loadFirstPageCallCount).isEqualTo(1)
+      search.setData(listOf(Beer.empty.copy(id = "search", name = "IPA")))
+      runCurrent()
+      expectThat((model.beerListViewState.value as CommonUiState.Success).data.items.single().id)
+        .isEqualTo("search")
+      model.onQueryChange("")
+      runCurrent()
+      expectThat((model.beerListViewState.value as CommonUiState.Success).data.items)
+        .isEqualTo(listOf(original))
+    }
+
+  @Test
+  fun `replaced search cannot overwrite newer results`() =
+    runTest(testDispatcher) {
+      val model = buildViewModel()
+      model.onQueryChange("IPA")
+      model.submitSearch()
+      runCurrent()
+      val old = fakeBeersPagerFactory.searchPagers.single()
+      old.setData(listOf(Beer.empty.copy(id = "old")))
+      model.onQueryChange("stout")
+      model.submitSearch()
+      runCurrent()
+      val newest = fakeBeersPagerFactory.searchPagers.last()
+      old.setData(listOf(Beer.empty.copy(id = "stale")))
+      runCurrent()
+      expectThat(model.beerListViewState.value).isA<CommonUiState.Loading>()
+      newest.setData(listOf(Beer.empty.copy(id = "new")))
+      runCurrent()
+      expectThat((model.beerListViewState.value as CommonUiState.Success).data.items.single().id)
+        .isEqualTo("new")
+    }
+
+  @Test
+  fun `submit applies pending search immediately without duplicating the pager`() =
+    runTest(testDispatcher) {
+      val model = buildViewModel()
+      model.onQueryChange("  pale ale  ")
+      model.submitSearch()
+      runCurrent()
+      expectThat(model.activeQuery.value).isEqualTo(BeersQuery(search = "pale ale"))
+      advanceTimeBy(1000)
+      runCurrent()
+      expectThat(fakeBeersPagerFactory.createdQueries.size).isEqualTo(1)
+      model.onQueryChange("x")
+      expectThat(model.activeQuery.value).isEqualTo(BeersQuery())
+    }
+
+  @Test
+  fun `paging refresh and retries follow the active search pager`() =
+    runTest(testDispatcher) {
+      val model = buildViewModel()
+      val originalLoads = fakeBeersPagerFactory.pager.loadFirstPageCallCount
+      model.onQueryChange("IPA")
+      model.submitSearch()
+      runCurrent()
+      val search = fakeBeersPagerFactory.searchPagers.single()
+      model.onScrollToBottom()
+      model.onRetryLoadMore()
+      model.refresh()
+      runCurrent()
+      expectThat(search.loadNextPageCallCount).isEqualTo(2)
+      expectThat(search.loadFirstPageCallCount).isEqualTo(2)
+      expectThat(fakeBeersPagerFactory.pager.loadNextPageCallCount).isEqualTo(0)
+      expectThat(fakeBeersPagerFactory.pager.loadFirstPageCallCount).isEqualTo(originalLoads)
+      search.setPagingState(PagingState.EndOfPagination())
+      runCurrent()
+      expectThat(model.beerListViewState.value).isEqualTo(CommonUiState.Empty)
+      model.onQueryChange("")
+      model.onScrollToBottom()
+      runCurrent()
+      expectThat(fakeBeersPagerFactory.pager.loadNextPageCallCount).isEqualTo(1)
+    }
+
+  @Test
+  fun `search refresh failure is one event even if data changes again`() =
+    runTest(testDispatcher) {
+      val model = buildViewModel()
+      model.onQueryChange("IPA")
+      model.submitSearch()
+      runCurrent()
+      val search = fakeBeersPagerFactory.searchPagers.single()
+      search.setData(listOf(Beer.empty.copy(id = "first")))
+      runCurrent()
+      model.events.test {
+        fakeBeersPagerFactory.pager.emitEvent(PagingEvent.LoadMoreFailed(FetchBeersError.Network))
+        runCurrent()
+        expectNoEvents()
+        search.setPagingState(PagingState.Error(FetchBeersError.Network, isFirstPage = true))
+        runCurrent()
+        expectThat(awaitItem()).isEqualTo(BeersListEvent.ShowRefreshError)
+        search.setData(listOf(Beer.empty.copy(id = "updated")))
+        runCurrent()
+        expectNoEvents()
+        expectThat((model.beerListViewState.value as CommonUiState.Success).data.items.single().id)
+          .isEqualTo("updated")
+      }
+    }
+
+  @Test
+  fun `search observation recovers from a transient read failure and stops on clear`() =
+    runTest(testDispatcher) {
+      var subscriptions = 0
+      val base = FakePager<Beer, FetchBeersError>()
+      val search =
+        FakePager<Beer, FetchBeersError>(
+          flow {
+            if (subscriptions++ == 0) error("temporary read failure")
+            emit(listOf(Beer.empty.copy(id = "recovered")))
+            awaitCancellation()
+          }
+        )
+      val factory =
+        object : BeersPagerFactory {
+          override fun create(): Pager<Beer, FetchBeersError> = base
+
+          override fun create(query: BeersQuery): Pager<Beer, FetchBeersError> = search
+        }
+      val model = BeersListViewModel(fakeBeersRepository, factory)
+      model.onQueryChange("IPA")
+      model.submitSearch()
+      runCurrent()
+      expectThat(model.beerListViewState.value).isA<CommonUiState.Error>()
+      advanceTimeBy(FLOW_RETRY_DELAY_MILLIS + 1)
+      runCurrent()
+      expectThat((model.beerListViewState.value as CommonUiState.Success).data.items.single().id)
+        .isEqualTo("recovered")
+      model.onQueryChange("")
+      advanceTimeBy(FLOW_RETRY_DELAY_MILLIS * 2)
+      runCurrent()
+      expectThat(subscriptions).isEqualTo(2)
+      expectThat(model.activeQuery.value).isEqualTo(BeersQuery())
     }
 
   private class IsolatedPagerFactory : BeersPagerFactory {

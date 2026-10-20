@@ -3,6 +3,7 @@ package com.simtop.presentation_utils.custom_views
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -10,7 +11,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -69,7 +69,9 @@ fun BeerImage(
   // Keeps the list item's skeleton shimmer alive on the tile until Coil resolves, so the image
   // crossfades in from the shimmer instead of flashing a static placeholder first.
   var isLoading by remember(imageUrl) { mutableStateOf(true) }
-  val background = if (isLoading) shimmerBrush() else SolidColor(Color.LightGray.copy(alpha = 0.3f))
+  val background =
+    if (isLoading) shimmerBrush()
+    else SolidColor(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
 
   Box(
     modifier =

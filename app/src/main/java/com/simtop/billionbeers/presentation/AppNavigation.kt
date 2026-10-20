@@ -144,9 +144,7 @@ fun AppNavigation(
                 onBeerClick = { beer -> navigateToBeerDetail(beer.id) },
                 onSearchClick = { navigate(PortableRoute.BeersSearch) },
                 onBrowseClick = { navigate(PortableRoute.BeerBrowse) },
-                onSaveQuery = { name ->
-                  savePreset(name, BeersQuery())
-                },
+                onSaveQuery = ::savePreset,
               )
             }
 

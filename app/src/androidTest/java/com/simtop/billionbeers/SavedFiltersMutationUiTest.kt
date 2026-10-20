@@ -7,6 +7,7 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -21,6 +22,8 @@ import com.simtop.billionbeers.di.BaseAppGraph
 import com.simtop.billionbeers.di.FakeBeersRepositoryModule
 import com.simtop.billionbeers.presentation.MainActivity
 import com.simtop.billionbeers.utils.useWithFailureScreenshot
+import com.simtop.feature.beersearch.SEARCH_FIELD_TAG
+import com.simtop.feature.beerslist.R as CatalogR
 import com.simtop.feature.savedfilters.R as SavedFiltersR
 import com.simtop.presentation_utils.R as PresentationUtilsR
 import com.simtop.testing_utils_android.withFailureScreenshot
@@ -100,8 +103,9 @@ class SavedFiltersMutationUiTest {
 
     ActivityScenario.launch(MainActivity::class.java).useWithFailureScreenshot {
       val name = "Recovered filter"
-      composeTestRule.onNode(hasSetTextAction()).performTextReplacement(name)
       composeTestRule.onNodeWithText(saveLabel).performClick()
+      composeTestRule.onNode(hasSetTextAction()).performTextReplacement(name)
+      composeTestRule.onNodeWithTag("filter_preset_save").performClick()
 
       composeTestRule.onNodeWithText(capacityMessage).assertIsDisplayed()
       composeTestRule.onNode(hasText(name)).assertIsDisplayed()
@@ -115,7 +119,7 @@ class SavedFiltersMutationUiTest {
       composeTestRule.waitUntil(timeoutMillis = 6_000) {
         composeTestRule.onAllNodesWithText(capacityMessage).fetchSemanticsNodes().isEmpty()
       }
-      composeTestRule.onNodeWithText(saveLabel).performClick()
+      composeTestRule.onNodeWithTag("filter_preset_save").performClick()
 
       composeTestRule.waitUntil(timeoutMillis = 5_000) {
         persistedPresets().any { it.name == name }
@@ -123,6 +127,35 @@ class SavedFiltersMutationUiTest {
       val recovered = persistedPresets()
       assertEquals(SavedFilterPreset.MAX_COUNT, recovered.size)
       assertEquals(name, recovered.first { it.name == name }.name)
+    }
+  }
+
+  @Test
+  fun catalogInlineSearchSavesTheTypedCriteriaAndKeepsTheSavedPreset() {
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+    ActivityScenario.launch(MainActivity::class.java).useWithFailureScreenshot {
+      composeTestRule
+        .onNodeWithContentDescription(context.getString(CatalogR.string.beers_search))
+        .performClick()
+      composeTestRule.onNodeWithTag(SEARCH_FIELD_TAG).performTextReplacement("  pale ale  ")
+      composeTestRule.onNodeWithText(saveLabel).performClick()
+      composeTestRule
+        .onNode(hasSetTextAction() and !hasTestTag(SEARCH_FIELD_TAG))
+        .performTextReplacement("Pale ales")
+      composeTestRule.onNodeWithTag("filter_preset_save").performClick()
+      composeTestRule.waitUntil(timeoutMillis = 5_000) {
+        persistedPresets().any { it.name == "Pale ales" }
+      }
+      assertEquals(
+        BeersQuery(search = "pale ale"),
+        persistedPresets().single { it.name == "Pale ales" }.query,
+      )
+      composeTestRule.onNodeWithTag("filter_preset_save").assertDoesNotExist()
+      composeTestRule
+        .onNodeWithContentDescription(context.getString(CatalogR.string.beers_close_search))
+        .performClick()
+      composeTestRule.onNodeWithTag(SEARCH_FIELD_TAG).assertDoesNotExist()
+      assertTrue(persistedPresets().any { it.name == "Pale ales" })
     }
   }
 
