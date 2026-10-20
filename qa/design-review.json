@@ -1,0 +1,206 @@
+{
+  "schema": 1,
+  "screens": {
+    "catalog": {
+      "platform": "android",
+      "renderer": "paparazzi",
+      "record": [
+        "make",
+        "screenshot-record",
+        "MODULE=:app",
+        "GRADLE_RUNNER=./gradlew"
+      ],
+      "verify": [
+        "make",
+        "screenshot-verify",
+        "MODULE=:app",
+        "GRADLE_RUNNER=./gradlew"
+      ],
+      "image_directory": "app/src/test/snapshots/images",
+      "sources": [
+        "app/src/debug/**/*.kt",
+        "app/src/main/java/com/simtop/billionbeers/presentation/AppBottomNavigation.kt",
+        "app/src/main/res/values*/strings.xml",
+        "feature/beerslist/src/main/**/*.kt",
+        "feature/beerslist/src/main/res/values*/strings.xml",
+        "presentation_utils/src/main/res/values*/strings.xml",
+        "presentation_utils/src/main/java/com/simtop/presentation_utils/custom_views/ComposeBeersListItem.kt",
+        "presentation_utils/src/main/java/com/simtop/presentation_utils/custom_views/ComposeFilterPresetForm.kt",
+        "shared/beerslist/src/commonMain/**/*.kt",
+        "shared/presentation/src/commonMain/**/*.kt",
+        "shared/designsystem/src/commonMain/**/*.kt",
+        "core/designsystem/src/main/**/*.kt"
+      ],
+      "fixtures": [
+        "app/src/debug/java/com/simtop/billionbeers/presentation/CatalogDesignReviewPreview.kt"
+      ],
+      "cases": [
+        {
+          "id": "catalog-light",
+          "match": "[CatalogDesignReviewPreview]",
+          "conditions": {
+            "theme": "light",
+            "font_scale": 1.0,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "image_state": "synthetic-loaded"
+          }
+        },
+        {
+          "id": "catalog-dark",
+          "match": "[CatalogDesignReviewPreview_dark]",
+          "conditions": {
+            "theme": "dark",
+            "font_scale": 1.0,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "image_state": "synthetic-loaded"
+          }
+        },
+        {
+          "id": "catalog-large-text",
+          "match": "[CatalogDesignReviewPreview_font150]",
+          "conditions": {
+            "theme": "light",
+            "font_scale": 1.5,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "image_state": "synthetic-loaded"
+          }
+        },
+        {
+          "id": "catalog-long-content",
+          "match": "[CatalogLongContentDesignReviewPreview]",
+          "conditions": {
+            "theme": "light",
+            "font_scale": 1.0,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "image_state": "synthetic-loaded",
+            "content": "long"
+          }
+        },
+        {
+          "id": "catalog-loading",
+          "match": "[CatalogLoadingDesignReviewPreview]",
+          "conditions": {
+            "theme": "light",
+            "font_scale": 1.0,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "image_state": "loading"
+          }
+        },
+        {
+          "id": "catalog-empty",
+          "match": "[CatalogEmptyDesignReviewPreview]",
+          "conditions": {
+            "theme": "light",
+            "font_scale": 1.0,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "state": "empty"
+          }
+        },
+        {
+          "id": "catalog-error",
+          "match": "[CatalogErrorDesignReviewPreview]",
+          "conditions": {
+            "theme": "light",
+            "font_scale": 1.0,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "state": "error"
+          }
+        }
+      ]
+    },
+    "detail": {
+      "platform": "android",
+      "renderer": "paparazzi",
+      "record": [
+        "make",
+        "screenshot-record",
+        "MODULE=:feature:beerdetail",
+        "GRADLE_RUNNER=./gradlew"
+      ],
+      "verify": [
+        "make",
+        "screenshot-verify",
+        "MODULE=:feature:beerdetail",
+        "GRADLE_RUNNER=./gradlew"
+      ],
+      "image_directory": "feature/beerdetail/src/test/snapshots/images",
+      "sources": [
+        "feature/beerdetail/src/debug/**/*.kt",
+        "feature/beerdetail/src/main/**/*.kt",
+        "shared/beerdetail/src/commonMain/**/*.kt",
+        "shared/designsystem/src/commonMain/**/*.kt",
+        "presentation_utils/src/main/res/values*/strings.xml",
+        "core/designsystem/src/main/**/*.kt"
+      ],
+      "fixtures": [
+        "feature/beerdetail/src/debug/java/com/simtop/feature/beerdetail/presentation/DetailDesignReviewPreview.kt"
+      ],
+      "cases": [
+        {
+          "id": "detail-light",
+          "match": "[DetailDesignReviewPreview]",
+          "conditions": {
+            "theme": "light",
+            "font_scale": 1.0,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "image_state": "synthetic-loaded"
+          }
+        },
+        {
+          "id": "detail-dark",
+          "match": "[DetailDesignReviewPreview_dark]",
+          "conditions": {
+            "theme": "dark",
+            "font_scale": 1.0,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "image_state": "synthetic-loaded"
+          }
+        },
+        {
+          "id": "detail-large-text",
+          "match": "[DetailDesignReviewPreview_font150]",
+          "conditions": {
+            "theme": "light",
+            "font_scale": 1.5,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "image_state": "synthetic-loaded"
+          }
+        },
+        {
+          "id": "detail-long-content",
+          "match": "[DetailLongContentDesignReviewPreview]",
+          "conditions": {
+            "theme": "light",
+            "font_scale": 1.0,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "image_state": "synthetic-loaded",
+            "content": "long"
+          }
+        },
+        {
+          "id": "detail-sparse",
+          "match": "[DetailSparseDesignReviewPreview]",
+          "conditions": {
+            "theme": "light",
+            "font_scale": 1.0,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "image_state": "synthetic-loaded",
+            "content": "sparse"
+          }
+        }
+      ]
+    }
+  }
+}

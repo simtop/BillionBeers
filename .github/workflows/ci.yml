@@ -76,6 +76,9 @@ jobs:
       - name: Test screenshot inventory guard
         run: python3 .github/scripts/test_check_screenshot_inventory.py
 
+      - name: Test UI design review evidence
+        run: make design-review-test
+
       - name: Test Room schema guard
         run: python3 .github/scripts/test_check_room_schemas.py
 

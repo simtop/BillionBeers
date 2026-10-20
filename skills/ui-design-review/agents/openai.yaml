@@ -1,0 +1,4 @@
+interface:
+  display_name: "UI Design Review"
+  short_description: "Critique UI with rendered alternatives and a report"
+  default_prompt: "Use $ui-design-review to critique this screen and render distinct visual directions and a final curated synthesis with a recommendation."

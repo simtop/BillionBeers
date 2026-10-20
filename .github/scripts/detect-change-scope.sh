@@ -99,6 +99,8 @@ classify_path() {
     a_native=true # the Apple lane builds the Xcode host through this Gradle bridge
   elif [ "$f" = "qa/project.config.json" ] || [[ "$f" == skills/agent-qa/scripts/*.py ]] || [ "$f" = "scripts/test_qa_integration.py" ]; then
     : # QA discovery contracts run in always-run format checks; no app test runner consumes them.
+  elif [ "$f" = "qa/design-review.json" ] || [[ "$f" == skills/ui-design-review/scripts/*.py ]] || [ "$f" = "skills/ui-design-review/agents/openai.yaml" ]; then
+    : # Design-review evidence checks run in the always-run format lane.
   elif [ "$f" = "scripts/verify-release-smoke-artifacts.sh" ]; then
     a_instrumented=true # the instrumented lane executes it (make release-smoke)
   elif [ "$f" = "scripts/check_apk_size_budget.py" ] || [ "$f" = "config/apk-size-budget.txt" ]; then
@@ -181,6 +183,9 @@ if [[ "${1:-}" == "--self-test" ]]; then
   assert_lanes "skills/agent-qa/scripts/test_project_index.py" false false false false false
   assert_lanes "scripts/test_qa_integration.py" false false false false false
   assert_lanes "skills/agent-qa/SKILL.md" false false false false false
+  assert_lanes "skills/ui-design-review/scripts/review.py" false false false false false
+  assert_lanes "qa/design-review.json" false false false false false
+  assert_lanes "skills/ui-design-review/agents/openai.yaml" false false false false false
   assert_lanes "scripts/verify_ios_simulator_artifacts.py" false false false true false
   assert_lanes "scripts/test_verify_ios_simulator_artifacts.py" false false false true false
   assert_lanes "scripts/test-tier-inventory.sh" true false false false false
