@@ -100,7 +100,7 @@ classify_path() {
   elif [ "$f" = "qa/project.config.json" ] || [[ "$f" == skills/agent-qa/scripts/*.py ]] || [ "$f" = "scripts/test_qa_integration.py" ]; then
     : # QA discovery contracts run in always-run format checks; no app test runner consumes them.
   elif [ "$f" = "qa/design-review.json" ] || [[ "$f" == skills/ui-design-review/scripts/*.py ]] || [ "$f" = "skills/ui-design-review/agents/openai.yaml" ]; then
-    : # Design-review evidence checks run in the always-run format lane.
+    : # Local design-review tooling is not consumed by an app test lane.
   elif [ "$f" = "scripts/verify-release-smoke-artifacts.sh" ]; then
     a_instrumented=true # the instrumented lane executes it (make release-smoke)
   elif [ "$f" = "scripts/check_apk_size_budget.py" ] || [ "$f" = "config/apk-size-budget.txt" ]; then

@@ -59,4 +59,4 @@ python3 skills/ui-design-review/scripts/review.py stash \
 
 The helper rejects unrelated changes, broad path selections and duplicate experiment IDs. It records the stable stash OID, baseline revision and source hashes, includes new source files and leaves older stashes intact. Recover with `git stash apply <OID>`; keep the stash available for further comparisons.
 
-Run `make design-review-test` to test capture integrity and report generation without an Android build.
+Run `make design-review-test` locally to test capture integrity and report generation without an Android build. Design critique, experiments, and report generation run locally; CI does not invoke the skill.
