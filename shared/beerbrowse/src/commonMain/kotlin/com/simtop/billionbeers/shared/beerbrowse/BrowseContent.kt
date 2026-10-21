@@ -156,6 +156,8 @@ fun SharedBrowseHomeContent(
 }
 
 @Composable
+// Keep independent events and rendering slots explicit at this Compose boundary.
+@Suppress("LongParameterList")
 fun SharedBrowseBeersContent(
   strings: BrowseStrings,
   title: String,
@@ -170,6 +172,8 @@ fun SharedBrowseBeersContent(
   beerRow: @Composable (Beer, () -> Unit) -> Unit,
   listState: LazyListState? = null,
   modifier: Modifier = Modifier,
+  headerActions: @Composable () -> Unit = {},
+  headerContent: @Composable () -> Unit = {},
 ) {
   SharedPagedBeersContent(
     strings =
@@ -193,6 +197,8 @@ fun SharedBrowseBeersContent(
     beerRow = beerRow,
     listState = listState,
     modifier = modifier,
+    headerActions = headerActions,
+    headerContent = headerContent,
   )
 }
 

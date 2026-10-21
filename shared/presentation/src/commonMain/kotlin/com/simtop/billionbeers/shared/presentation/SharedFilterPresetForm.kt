@@ -23,6 +23,8 @@ import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersTheme
  * host.
  */
 @Composable
+// Keep editor events and query/submission availability explicit at this Compose boundary.
+@Suppress("LongParameterList")
 fun SharedFilterPresetForm(
   name: String,
   onNameChange: (String) -> Unit,
@@ -30,6 +32,7 @@ fun SharedFilterPresetForm(
   labels: FilterPresetFormLabels,
   modifier: Modifier = Modifier,
   enabled: Boolean = true,
+  saving: Boolean = false,
 ) {
   Column(
     modifier = modifier.fillMaxWidth(),
@@ -42,10 +45,11 @@ fun SharedFilterPresetForm(
       label = { Text(labels.nameHint) },
       modifier = Modifier.fillMaxWidth(),
       singleLine = true,
+      enabled = !saving,
     )
     Button(
       onClick = onSave,
-      enabled = enabled && name.isNotBlank(),
+      enabled = enabled && !saving && name.isNotBlank(),
       modifier = Modifier.testTag("filter_preset_save"),
     ) {
       Text(labels.save)

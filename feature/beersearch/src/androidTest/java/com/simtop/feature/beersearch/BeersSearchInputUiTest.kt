@@ -4,12 +4,24 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextReplacement
+import androidx.test.platform.app.InstrumentationRegistry
 import com.simtop.beerdomain.domain.models.BeerStyle
+import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.core.core.CommonUiState
 import com.simtop.testing_utils_android.withFailureScreenshot
+import kotlinx.coroutines.CompletableDeferred
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -62,6 +74,54 @@ class BeersSearchInputUiTest {
         )
       }
     }
+  }
+
+  @Test
+  fun expandedSavePreviewShowsTheHeaderActionAndNameForm() {
+    composeTestRule.setContent { SearchSaveFilterPreview() }
+    composeTestRule.onNodeWithTag("filter_preset_toggle").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("filter_preset_save").assertIsDisplayed()
+  }
+
+  @Test
+  fun pendingSaveDoesNotStealFocusAfterTheFormWasClosed() {
+    val completion = CompletableDeferred<Boolean>()
+    var backCount = 0
+    var saveCompleted = false
+    composeTestRule.setContent {
+      var query by remember { mutableStateOf("ipa") }
+      BillionBeersTheme {
+        BeersSearchContent(
+          viewState = CommonUiState.Empty,
+          query = query,
+          onQueryChange = { query = it },
+          activeQuery = BeersQuery(search = "ipa"),
+          onBeerClick = {},
+          onBack = { backCount++ },
+          onSaveQuery = { _, _ -> completion.await().also { saveCompleted = true } },
+          onScrollToBottom = {},
+          onRetryLoadMore = {},
+          onRetrySearch = {},
+          autoFocus = false,
+        )
+      }
+    }
+    composeTestRule.onNodeWithTag("filter_preset_toggle").performClick()
+    composeTestRule
+      .onNode(hasSetTextAction() and !hasTestTag(SEARCH_FIELD_TAG))
+      .performTextReplacement("Weekend beers")
+    composeTestRule.onNodeWithTag("filter_preset_save").performClick()
+    val back =
+      InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.search_back)
+    composeTestRule.onNodeWithContentDescription(back).performClick()
+    composeTestRule.onNodeWithTag("filter_preset_save").assertDoesNotExist()
+    val search = composeTestRule.onNodeWithTag(SEARCH_FIELD_TAG)
+    search.performClick().performTextReplacement("ipa revised")
+    search.assertIsFocused()
+    composeTestRule.runOnIdle { completion.complete(true) }
+    composeTestRule.runOnIdle { assertTrue(saveCompleted) }
+    search.assertIsFocused()
+    assertEquals(0, backCount)
   }
 
   @Test

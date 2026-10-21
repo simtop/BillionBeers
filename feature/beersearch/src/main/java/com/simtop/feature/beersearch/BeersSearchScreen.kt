@@ -1,5 +1,6 @@
 package com.simtop.feature.beersearch
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -28,10 +29,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -45,6 +43,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -65,9 +64,11 @@ import com.simtop.presentation_utils.R as PresentationUtilsR
 import com.simtop.presentation_utils.core.resolvedMessage
 import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import com.simtop.presentation_utils.custom_views.ComposeErrorView
-import com.simtop.presentation_utils.custom_views.ComposeFilterPresetForm
+import com.simtop.presentation_utils.custom_views.ComposeSaveFilterAction
+import com.simtop.presentation_utils.custom_views.ComposeSaveFilterForm
+import com.simtop.presentation_utils.custom_views.rememberSaveFilterState
+import com.simtop.presentation_utils.custom_views.saveFilterActionNeedsOwnRow
 import dev.zacsweers.metrox.viewmodel.metroViewModel
-import kotlinx.coroutines.launch
 
 /**
  * The search input, addressed by tag rather than by its placeholder so an instrumented test does
@@ -139,32 +140,52 @@ fun BeersSearchContent(
   onRetrySearch: () -> Unit,
   modifier: Modifier = Modifier,
   autoFocus: Boolean = true,
+  saveInitiallyExpanded: Boolean = false,
 ) {
-  var presetName by remember { mutableStateOf("") }
-  val saveScope = rememberCoroutineScope()
+  val saveFilter = rememberSaveFilterState(saveInitiallyExpanded)
+  val canSave = activeQuery.search != null || activeQuery.styleId != null
   Scaffold(
     modifier = modifier,
     topBar = {
-      TopAppBar(
-        navigationIcon = {
-          IconButton(onClick = onBack) {
-            Icon(
-              Icons.AutoMirrored.Filled.ArrowBack,
-              contentDescription = stringResource(R.string.search_back),
-            )
-          }
-        },
-        title = {
-          SearchField(query = query, onQueryChange = onQueryChange, autoFocus = autoFocus)
-        },
-        actions = {
-          if (query.isNotEmpty()) {
-            IconButton(onClick = { onQueryChange("") }) {
-              Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.search_clear))
+      Column {
+        TopAppBar(
+          navigationIcon = {
+            IconButton(onClick = { if (saveFilter.expanded) saveFilter.close() else onBack() }) {
+              Icon(
+                Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = stringResource(R.string.search_back),
+              )
             }
+          },
+          title = {
+            SearchField(query = query, onQueryChange = onQueryChange, autoFocus = autoFocus)
+          },
+          actions = {
+            if (!saveFilterActionNeedsOwnRow()) {
+              ComposeSaveFilterAction(saveFilter, enabled = canSave)
+            }
+            if (query.isNotEmpty()) {
+              IconButton(onClick = { onQueryChange("") }) {
+                Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.search_clear))
+              }
+            }
+          },
+        )
+        if (saveFilterActionNeedsOwnRow()) {
+          Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+          ) {
+            ComposeSaveFilterAction(saveFilter, enabled = canSave, maxWidth = Dp.Unspecified)
           }
-        },
-      )
+        }
+        ComposeSaveFilterForm(
+          state = saveFilter,
+          onSave = { name -> onSaveQuery(name, activeQuery) },
+          enabled = canSave,
+          modifier = Modifier.padding(horizontal = BillionBeersTheme.spacing.medium),
+        )
+      }
     },
   ) { padding ->
     val layoutDirection = LocalLayoutDirection.current
@@ -257,17 +278,6 @@ fun BeersSearchContent(
           contentPadding = contentPadding,
         )
       }
-      ComposeFilterPresetForm(
-        name = presetName,
-        onNameChange = { presetName = it },
-        onSave = {
-          saveScope.launch {
-            if (onSaveQuery(presetName, activeQuery)) presetName = ""
-          }
-        },
-        modifier = Modifier.padding(horizontal = BillionBeersTheme.spacing.medium),
-        enabled = activeQuery.search != null || activeQuery.styleId != null,
-      )
     }
   }
 }
@@ -359,6 +369,7 @@ internal fun BeersSearchScreenPreview(
     BeersSearchContent(
       viewState = case.state,
       query = case.query,
+      activeQuery = BeersQuery(search = case.query.takeIf { it.length >= 2 }),
       onQueryChange = {},
       onBeerClick = {},
       onBack = {},
@@ -398,6 +409,7 @@ internal fun BeersSearchAccessibilityMatrixPreview() {
           )
         ),
       query = "a very long query that should remain understandable",
+      activeQuery = BeersQuery(search = "a very long query that should remain understandable"),
       onQueryChange = {},
       onBeerClick = {},
       onBack = {},

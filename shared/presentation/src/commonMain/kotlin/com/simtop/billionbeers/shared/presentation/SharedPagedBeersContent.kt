@@ -41,6 +41,8 @@ data class SharedPagedBeersStrings(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+// Keep independent events and rendering slots explicit at this Compose boundary.
+@Suppress("LongParameterList")
 fun SharedPagedBeersContent(
   strings: SharedPagedBeersStrings,
   title: String,
@@ -55,16 +57,22 @@ fun SharedPagedBeersContent(
   beerRow: @Composable (Beer, () -> Unit) -> Unit,
   listState: LazyListState? = null,
   modifier: Modifier = Modifier,
+  headerActions: @Composable () -> Unit = {},
+  headerContent: @Composable () -> Unit = {},
 ) {
   Scaffold(
     modifier = modifier,
     topBar = {
-      TopAppBar(
-        title = title,
-        back = strings.back,
-        onBack = onBack,
-        backIcon = backIcon,
-      )
+      Column {
+        TopAppBar(
+          title = title,
+          back = strings.back,
+          onBack = onBack,
+          backIcon = backIcon,
+          actions = headerActions,
+        )
+        headerContent()
+      }
     },
   ) { padding ->
     Box(modifier = Modifier.fillMaxSize().consumeWindowInsets(padding)) {
@@ -109,12 +117,14 @@ private fun TopAppBar(
   back: String,
   onBack: () -> Unit,
   backIcon: @Composable (String) -> Unit,
+  actions: @Composable () -> Unit,
 ) {
   androidx.compose.material3.TopAppBar(
     navigationIcon = {
       androidx.compose.material3.IconButton(onClick = onBack) { backIcon(back) }
     },
     title = { Text(title) },
+    actions = { actions() },
   )
 }
 

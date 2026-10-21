@@ -1,7 +1,10 @@
 package com.simtop.feature.beerbrowse.presentation
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -9,15 +12,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -37,9 +37,11 @@ import com.simtop.presentation_utils.R
 import com.simtop.presentation_utils.core.resolvedMessage
 import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import com.simtop.presentation_utils.custom_views.ComposeErrorView
-import com.simtop.presentation_utils.custom_views.ComposeFilterPresetForm
+import com.simtop.presentation_utils.custom_views.ComposeSaveFilterAction
+import com.simtop.presentation_utils.custom_views.ComposeSaveFilterForm
+import com.simtop.presentation_utils.custom_views.rememberSaveFilterState
+import com.simtop.presentation_utils.custom_views.saveFilterActionNeedsOwnRow
 import dev.zacsweers.metrox.viewmodel.assistedMetroViewModel
-import kotlinx.coroutines.launch
 
 @Composable
 internal fun BrowseBeersScreen(
@@ -94,16 +96,30 @@ internal fun BrowseBeersContent(
   onScrollToBottom: () -> Unit,
   onRetryLoadMore: () -> Unit,
   onRetryFirstPage: () -> Unit,
+  saveInitiallyExpanded: Boolean = false,
 ) {
-  var presetName by remember { mutableStateOf("") }
-  val saveScope = rememberCoroutineScope()
+  val saveFilter = rememberSaveFilterState(saveInitiallyExpanded)
+  val stackActions = saveFilterActionNeedsOwnRow()
   Column(Modifier.fillMaxSize()) {
     SharedBrowseBeersContent(
       modifier = Modifier.weight(1f),
+      headerActions = { if (!stackActions) ComposeSaveFilterAction(saveFilter) },
+      headerContent = {
+        if (stackActions) {
+          Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            ComposeSaveFilterAction(saveFilter, maxWidth = Dp.Unspecified)
+          }
+        }
+        ComposeSaveFilterForm(
+          state = saveFilter,
+          onSave = onSaveQuery,
+          modifier = Modifier.padding(horizontal = BillionBeersTheme.spacing.medium),
+        )
+      },
       strings = browseStrings,
       title = title,
       viewState = viewState,
-      onBack = onBack,
+      onBack = { if (saveFilter.expanded) saveFilter.close() else onBack() },
       backIcon = { contentDescription ->
         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = contentDescription)
       },
@@ -121,16 +137,6 @@ internal fun BrowseBeersContent(
       beerRow = { beer, onClick ->
         ComposeBeersListItem(beer = beer, onClick = { onClick() })
       },
-    )
-    ComposeFilterPresetForm(
-      name = presetName,
-      onNameChange = { presetName = it },
-      onSave = {
-        saveScope.launch {
-          if (onSaveQuery(presetName)) presetName = ""
-        }
-      },
-      modifier = Modifier.padding(horizontal = BillionBeersTheme.spacing.medium),
     )
   }
 }

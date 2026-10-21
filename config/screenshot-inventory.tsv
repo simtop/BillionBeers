@@ -136,6 +136,8 @@ com.simtop.feature.beerbrowse	BrowseHomeScreenPreview_1	light	1.0	en	ltr	compact
 com.simtop.feature.beerbrowse	BrowseHomeScreenPreview_1_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
 com.simtop.feature.beerbrowse	BrowseHomeScreenPreview_2	light	1.0	en	ltr	compact	Light Mode	Themes
 com.simtop.feature.beerbrowse	BrowseHomeScreenPreview_2_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.beerbrowse	BrowseSaveFilterPreview	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.feature.beerbrowse	BrowseSaveFilterPreview_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
 com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_dark_font100_en_ltr_compact	dark	1.0	en	ltr	compact
 com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_dark_font100_en_ltr_expanded	dark	1.0	en	ltr	expanded
 com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_dark_font100_en_rtl_compact	dark	1.0	en	rtl	compact
@@ -229,6 +231,8 @@ com.simtop.feature.beersearch	BeersSearchScreenPreview_3	light	1.0	en	ltr	compac
 com.simtop.feature.beersearch	BeersSearchScreenPreview_3_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
 com.simtop.feature.beersearch	BeersSearchScreenPreview_4	light	1.0	en	ltr	compact	Light Mode	Themes
 com.simtop.feature.beersearch	BeersSearchScreenPreview_4_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.beersearch	SearchSaveFilterPreview	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.feature.beersearch	SearchSaveFilterPreview_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
 com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_dark_font100_en_ltr_compact	dark	1.0	en	ltr	compact
 com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_dark_font100_en_ltr_expanded	dark	1.0	en	ltr	expanded
 com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_dark_font100_en_rtl_compact	dark	1.0	en	rtl	compact
