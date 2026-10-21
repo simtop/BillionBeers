@@ -16,6 +16,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeRight
@@ -38,7 +39,9 @@ import com.simtop.billionbeers.utils.runMainActivityTest
 import com.simtop.billionbeers.utils.searchScreen
 import com.simtop.billionbeers.utils.useWithFailureScreenshot
 import com.simtop.core.core.Either
+import com.simtop.feature.beersearch.R as SearchR
 import com.simtop.feature.beersearch.SEARCH_FIELD_TAG
+import com.simtop.feature.beerslist.R as CatalogR
 import com.simtop.navigation.DynamicFeature
 import com.simtop.testing_utils_android.withFailureScreenshot
 import dev.zacsweers.metro.createGraphFactory
@@ -132,6 +135,35 @@ class MainActivityComposeTest {
       tabToSearchResult()
       pressKeyboardKey(KeyEvent.KEYCODE_SPACE)
       detailScreen { waitUntilNodeWithTextIsDisplayed(fakeBeer.description) }
+    }
+
+  @Test
+  fun inlineSearchCanClearToCatalogAndOpenAdvancedSearch() =
+    runMainActivityTest(composeTestRule) {
+      val context = InstrumentationRegistry.getInstrumentation().targetContext
+      homeScreen {
+        waitUntilNodeWithTextIsDisplayed(fakeBeer.name)
+        clickOnSearch()
+      }
+      onNodeWithTag(SEARCH_FIELD_TAG).performTextInput("Buzz")
+      waitUntil(timeoutMillis = 5_000) {
+        fakePagerFactory.createdQueries.lastOrNull()?.search == "Buzz"
+      }
+      onNodeWithContentDescription(context.getString(CatalogR.string.beers_clear_search))
+        .performClick()
+      homeScreen { waitUntilNodeWithTextIsDisplayed(secondFakeBeer.name) }
+      onNodeWithContentDescription(context.getString(CatalogR.string.beers_advanced_search))
+        .performClick()
+      searchScreen {
+        assertSearchFieldIsDisplayed()
+        assertBackButtonIsDisplayed()
+      }
+      onNodeWithContentDescription(context.getString(SearchR.string.search_back)).performClick()
+      homeScreen { assertCloseSearchIsDisplayed() }
+      onNodeWithTag(SEARCH_FIELD_TAG).performImeAction()
+      pressBack()
+      onNodeWithTag(SEARCH_FIELD_TAG).assertDoesNotExist()
+      homeScreen { assertBeerListIsDisplayed() }
     }
 
   @Test
@@ -435,9 +467,9 @@ class MainActivityComposeTest {
 
       searchScreen {
         assertSearchFieldIsDisplayed()
-        assertBackButtonIsDisplayed()
         assertInteractiveNodesAreAccessible()
       }
+      homeScreen { assertCloseSearchIsDisplayed() }
     }
 
   // The §10.7 proof: the browse destination lives in the *second* on-demand module, reached

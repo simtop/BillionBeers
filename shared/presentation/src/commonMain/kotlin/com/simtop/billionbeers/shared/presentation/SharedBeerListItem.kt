@@ -17,6 +17,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersTheme
 
@@ -25,19 +26,21 @@ import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersTheme
 
 /**
  * Supported Android/Web beer row: one button with merged beer text and availability state.
- * Metrics/status wrap; the title defaults to one line and the tagline to two. Hosts can retain a
+ * Metrics/status wrap; the title defaults to two lines and the tagline to two. Hosts can retain a
  * longer title policy. Full text stays in semantics and the row opens detail. Hosts supply
- * localized labels and an image slot that honors its modifier. The rounded 80dp tile owns geometry;
- * loading, failure and decoding stay in the host.
+ * localized labels and an image slot that honors its modifier. The rounded portrait tile owns
+ * geometry; loading, failure and decoding stay in the host.
  */
 @Composable
+// The host image slot and title policy are explicit parts of this UI boundary.
+@Suppress("LongParameterList")
 fun SharedBeerListItem(
   beer: Beer,
   labels: BeerListItemLabels,
   onClick: () -> Unit,
   imageContent: @Composable (Modifier) -> Unit,
   modifier: Modifier = Modifier,
-  titleMaxLines: Int = 1,
+  titleMaxLines: Int = 2,
 ) {
   Card(
     onClick = onClick,
@@ -55,7 +58,7 @@ fun SharedBeerListItem(
           stateDescription = labels.availability
         },
     shape = RoundedCornerShape(BillionBeersTheme.spacing.medium),
-    elevation = CardDefaults.cardElevation(defaultElevation = BillionBeersTheme.spacing.extraSmall),
+    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
   ) {
     Row(
@@ -66,7 +69,8 @@ fun SharedBeerListItem(
     ) {
       Box(
         modifier =
-          Modifier.size(BillionBeersTheme.spacing.extraHuge + BillionBeersTheme.spacing.medium)
+          Modifier.width(72.dp)
+            .height(96.dp)
             .clip(
               RoundedCornerShape(
                 BillionBeersTheme.spacing.small + BillionBeersTheme.spacing.extraSmall
@@ -82,7 +86,7 @@ fun SharedBeerListItem(
       Column(modifier = Modifier.weight(1f)) {
         Text(
           text = beer.name,
-          style = MaterialTheme.typography.titleLarge,
+          style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
           maxLines = titleMaxLines,
           overflow = TextOverflow.Ellipsis,
         )
@@ -93,7 +97,7 @@ fun SharedBeerListItem(
           text = beer.tagline,
           style =
             MaterialTheme.typography.bodyMedium.copy(
-              fontStyle = FontStyle.Italic,
+              fontStyle = FontStyle.Normal,
               color = MaterialTheme.colorScheme.onSurfaceVariant,
             ),
           maxLines = 2,
@@ -106,15 +110,10 @@ fun SharedBeerListItem(
           horizontalArrangement = Arrangement.spacedBy(BillionBeersTheme.spacing.small),
           verticalArrangement = Arrangement.spacedBy(BillionBeersTheme.spacing.small),
         ) {
-          BeerChip(
-            text = labels.abv,
-            color = BillionBeersTheme.colors.abvContainer,
-            textColor = BillionBeersTheme.colors.onAbvContainer,
-          )
-          BeerChip(
-            text = labels.ibu,
-            color = BillionBeersTheme.colors.ibuContainer,
-            textColor = BillionBeersTheme.colors.onIbuContainer,
+          Text(
+            text = labels.abv + "  ·  " + labels.ibu,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
           )
           if (beer.availability) {
             BeerChip(

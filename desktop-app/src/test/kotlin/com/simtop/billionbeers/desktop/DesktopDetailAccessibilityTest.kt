@@ -51,7 +51,6 @@ class DesktopDetailAccessibilityTest {
           backIcon = desktopHost.backIcon,
           favoriteIcon = desktopHost.favoriteIcon,
           imageContent = { _, _, modifier -> Box(modifier.background(Color.White)) },
-          collapsingToolbarEnabled = false,
         )
       }
       for (label in listOf("Back", "Add to favorites")) {
@@ -63,6 +62,14 @@ class DesktopDetailAccessibilityTest {
             (0 until pixels.width).count { x -> pixels[x, y].red < 0.5f }
           }
         assertTrue("$label needs a contrasting backdrop", darkPixels > 500)
+        val lightPixels =
+          (0 until pixels.height).sumOf { y ->
+            (0 until pixels.width).count { x ->
+              val pixel = pixels[x, y]
+              pixel.red > 0.8f && pixel.green > 0.8f && pixel.blue > 0.8f
+            }
+          }
+        assertTrue("$label needs a visible light icon on the dark hero", lightPixels > 25)
       }
       val title = onNodeWithText(name).fetchSemanticsNode().boundsInRoot
       assertTrue("Title must have bottom space before the header ends", title.bottom < 350f)
@@ -87,7 +94,6 @@ class DesktopDetailAccessibilityTest {
         favoriteIcon = desktopHost.favoriteIcon,
         imageContent = desktopHost.imageContent,
         animationsDisabled = true,
-        collapsingToolbarEnabled = desktopHost.detailCollapsingToolbarEnabled,
       )
     }
 

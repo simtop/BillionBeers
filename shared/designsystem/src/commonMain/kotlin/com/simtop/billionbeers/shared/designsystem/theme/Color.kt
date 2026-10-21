@@ -4,20 +4,23 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
-private val Blue10 = Color(0xFF001945)
-private val Blue20 = Color(0xFF002F6E)
-private val Blue30 = Color(0xFF0047AB)
-private val Blue40 = Color(0xFF1E5BBF)
-private val Blue80 = Color(0xFFADC6FF)
-private val Blue90 = Color(0xFFD8E2FF)
+private const val AMBER_40 = 0xFF875016
+private const val AMBER_80 = 0xFFF1BD79
+private const val AMBER_90 = 0xFFF4DFBB
+private const val AMBER_10 = 0xFF321A05
+private const val AMBER_20 = 0xFF3E260B
+private const val AMBER_30 = 0xFF5C3A18
+private const val PAPER_95 = 0xFFF5F0E7
+private const val PAPER_100 = 0xFFFFFCF6
+private const val INK_10 = 0xFF2D251B
+private const val WARM_NEUTRAL_10 = 0xFF201C17
+private const val WARM_NEUTRAL_20 = 0xFF302A23
+private const val WARM_NEUTRAL_90 = 0xFFF3EADF
 
 private val Neutral10 = Color(0xFF1B1B1F)
-private val Neutral20 = Color(0xFF303033)
 private val Neutral90 = Color(0xFFE3E2E6)
-private val Neutral95 = Color(0xFFF1F0F4)
 private val Neutral100 = Color(0xFFFFFFFF)
 
-private val Error10 = Color(0xFF410002)
 private val Error20 = Color(0xFF690005)
 private val Error30 = Color(0xFF93000A)
 private val Error80 = Color(0xFFFFB4AB)
@@ -59,16 +62,16 @@ data class BillionBeersColors(
 
 internal val BillionBeersLightColors =
   BillionBeersColors(
-    primary = Blue30,
+    primary = Color(AMBER_40),
     onPrimary = Neutral100,
-    primaryContainer = Blue90,
-    onPrimaryContainer = Blue10,
-    secondary = Blue40,
+    primaryContainer = Color(AMBER_90),
+    onPrimaryContainer = Color(AMBER_10),
+    secondary = Color(AMBER_40),
     onSecondary = Neutral100,
-    background = Neutral95,
+    background = Color(PAPER_95),
     onBackground = Neutral10,
-    surface = Neutral100,
-    onSurface = Neutral10,
+    surface = Color(PAPER_100),
+    onSurface = Color(INK_10),
     error = Error30,
     onError = Neutral100,
     abvContainer = Teal90,
@@ -79,16 +82,16 @@ internal val BillionBeersLightColors =
 
 internal val BillionBeersDarkColors =
   BillionBeersColors(
-    primary = Blue80,
-    onPrimary = Blue20,
-    primaryContainer = Blue30,
-    onPrimaryContainer = Blue90,
-    secondary = Blue80,
-    onSecondary = Blue20,
-    background = Neutral10,
+    primary = Color(AMBER_80),
+    onPrimary = Color(AMBER_20),
+    primaryContainer = Color(AMBER_30),
+    onPrimaryContainer = Color(AMBER_90),
+    secondary = Color(AMBER_80),
+    onSecondary = Color(AMBER_20),
+    background = Color(WARM_NEUTRAL_10),
     onBackground = Neutral90,
-    surface = Neutral20,
-    onSurface = Neutral90,
+    surface = Color(WARM_NEUTRAL_20),
+    onSurface = Color(WARM_NEUTRAL_90),
     error = Error80,
     onError = Error20,
     abvContainer = Teal20,

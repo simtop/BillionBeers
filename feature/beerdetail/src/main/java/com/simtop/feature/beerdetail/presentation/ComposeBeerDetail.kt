@@ -129,7 +129,7 @@ fun BeerDetailImage(imageUrl: String, contentDescription: String?, modifier: Mod
         .error(R.drawable.blue_image)
         .build(),
     contentDescription = contentDescription,
-    contentScale = ContentScale.Crop,
+    contentScale = ContentScale.Fit,
     modifier = modifier,
   )
 }

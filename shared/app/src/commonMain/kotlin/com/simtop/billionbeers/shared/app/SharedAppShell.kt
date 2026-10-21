@@ -178,7 +178,6 @@ data class SharedAppHost(
   val savedFiltersNavigationIcon: @Composable (String) -> Unit = {},
   val imageContent: @Composable (String, String?, Modifier) -> Unit,
   val detailAnimationsDisabled: Boolean = false,
-  val detailCollapsingToolbarEnabled: Boolean = true,
   val detailTitleTextStyle: @Composable () -> TextStyle? = { null },
   val darkTheme: Boolean = false,
   val routeRequests: Flow<PortableRoute> = emptyFlow(),
@@ -780,7 +779,6 @@ private fun DetailDestination(
         favoriteIcon = host.favoriteIcon,
         imageContent = host.imageContent,
         animationsDisabled = animationsDisabled,
-        collapsingToolbarEnabled = host.detailCollapsingToolbarEnabled,
         titleTextStyle = host.detailTitleTextStyle(),
         showBackButton = showBackButton,
       )

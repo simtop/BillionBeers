@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="billion_beers_list">"Liste de milliards de bières"</string>
+    <string name="billion_beers_list">Billion Beers</string>
     <string name="beers_count_of_total">%1$d sur %2$d</string>
     <string name="beers_refresh_failed">Impossible d\'actualiser</string>
     <plurals name="beers_end_of_list">
@@ -10,4 +10,8 @@
     </plurals>
     <string name="beers_search">Rechercher</string>
     <string name="beers_browse">Explorer</string>
+    <string name="beers_close_search">Fermer la recherche</string>
+    <string name="beers_clear_search">Effacer la recherche</string>
+    <string name="beers_advanced_search">Recherche avancée</string>
+    <string name="beers_search_no_results">Aucune bière ne correspond à votre recherche</string>
 </resources>

@@ -14,6 +14,7 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
@@ -71,7 +72,7 @@ class BeerListItemLayoutTest {
     dark: Boolean,
     fontScale: Float,
     direction: LayoutDirection,
-    titleMaxLines: Int = 1,
+    titleMaxLines: Int = 2,
   ) =
     runSkikoComposeUiTest(size = Size(360f, 640f), density = Density(1f, fontScale)) {
       var beer by
@@ -103,8 +104,8 @@ class BeerListItemLayoutTest {
       }
 
       onNodeWithTag("host_image", useUnmergedTree = true)
-        .assertWidthIsEqualTo(80.dp)
-        .assertHeightIsEqualTo(80.dp)
+        .assertWidthIsEqualTo(72.dp)
+        .assertHeightIsEqualTo(96.dp)
       if (titleMaxLines == Int.MAX_VALUE) {
         onNodeWithText(beer.name, useUnmergedTree = true)
           .assertIsDisplayed()
@@ -119,27 +120,10 @@ class BeerListItemLayoutTest {
       }
       for (status in listOf("Disponible", "Rupture de stock")) {
         for (label in listOf("ABV: 7.0%", "IBU: 71.0", status)) {
-          onNodeWithText(label, useUnmergedTree = true)
-            .assertIsDisplayed()
-            .assertWidthIsAtLeast((30 * fontScale).dp)
-            .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { getResults ->
-              val results = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
-              getResults(results)
-              assertEquals(1, results.size)
-              val layout = results.single()
-              assertFalse(layout.didOverflowHeight, "Chip height must fit: $label")
-              for (line in 0 until layout.lineCount) {
-                assertFalse(layout.isLineEllipsized(line), "Chip copy must remain complete: $label")
-                val textWidth = layout.getLineRight(line) - layout.getLineLeft(line)
-                assertTrue(textWidth <= layout.size.width + 1f, "Chip glyphs must fit: $label")
-              }
-            }
+          onNodeWithText(label, substring = true, useUnmergedTree = true)
+            .assertCompleteMetadata(label, fontScale)
         }
-        val row = onNodeWithTag("beer_list_item")
-        row
-          .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
-          .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, status))
-          .performClick()
+        onNodeWithTag("beer_list_item").assertStatusAndClick(status)
         System.getenv("BEER_ROW_QA_DIR")?.let { directory ->
           val file = File(directory, "row-$dark-$fontScale-$direction-$titleMaxLines-$status.png")
           file.parentFile.mkdirs()
@@ -148,5 +132,29 @@ class BeerListItemLayoutTest {
         runOnIdle { beer = beer.copy(availability = false) }
       }
       runOnIdle { assertEquals(2, clicks) }
+    }
+
+  private fun SemanticsNodeInteraction.assertStatusAndClick(status: String) =
+    assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+      .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, status))
+      .performClick()
+
+  private fun SemanticsNodeInteraction.assertCompleteMetadata(label: String, fontScale: Float) =
+    this.assertIsDisplayed().assertWidthIsAtLeast((30 * fontScale).dp).performSemanticsAction(
+      SemanticsActions.GetTextLayoutResult
+    ) { getResults ->
+      val results = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+      getResults(results)
+      assertEquals(1, results.size)
+      val layout = results.single()
+      assertFalse(layout.didOverflowHeight, "Metadata height must fit: $label")
+      for (line in 0 until layout.lineCount) {
+        assertFalse(
+          layout.isLineEllipsized(line),
+          "Metadata copy must remain complete: $label",
+        )
+        val textWidth = layout.getLineRight(line) - layout.getLineLeft(line)
+        assertTrue(textWidth <= layout.size.width + 1f, "Metadata glyphs must fit: $label")
+      }
     }
 }

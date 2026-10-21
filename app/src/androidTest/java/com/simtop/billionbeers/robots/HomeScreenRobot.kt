@@ -19,6 +19,10 @@ class HomeScreenRobot(composeTestRule: ComposeTestRule) :
     clickOnNodeWithContentDescription(string(BeersListR.string.beers_search))
   }
 
+  fun assertCloseSearchIsDisplayed() {
+    assertNodeWithContentDescriptionIsDisplayed(string(BeersListR.string.beers_close_search))
+  }
+
   fun assertBeerNameIsDisplayed(beerName: String) {
     assertTextIsDisplayed(beerName)
   }

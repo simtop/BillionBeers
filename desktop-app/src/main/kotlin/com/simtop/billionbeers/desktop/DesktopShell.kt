@@ -115,7 +115,6 @@ internal val desktopHost =
       }
     },
     detailAnimationsDisabled = false,
-    detailCollapsingToolbarEnabled = false,
   )
 
 internal val desktopStrings =

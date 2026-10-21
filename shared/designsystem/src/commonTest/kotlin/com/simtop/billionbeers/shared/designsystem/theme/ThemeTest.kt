@@ -18,10 +18,10 @@ class ThemeTest {
 
   @Test
   fun colorTokensExposeDistinctLightAndDarkRoles() {
-    assertEquals(Color(0xFF0047AB), BillionBeersLightColors.primary)
-    assertEquals(Color(0xFFADC6FF), BillionBeersDarkColors.primary)
-    assertEquals(Color(0xFFF1F0F4), BillionBeersLightColors.background)
-    assertEquals(Color(0xFF1B1B1F), BillionBeersDarkColors.background)
+    assertEquals(Color(0xFF875016), BillionBeersLightColors.primary)
+    assertEquals(Color(0xFFF1BD79), BillionBeersDarkColors.primary)
+    assertEquals(Color(0xFFF5F0E7), BillionBeersLightColors.background)
+    assertEquals(Color(0xFF201C17), BillionBeersDarkColors.background)
   }
 
   @Test
@@ -31,10 +31,15 @@ class ThemeTest {
   }
 
   @Test
-  fun metricForegroundsMeetNormalTextContrastInBothThemes() {
+  fun foregroundsMeetNormalTextContrastInBothThemes() {
     for (colors in listOf(BillionBeersLightColors, BillionBeersDarkColors)) {
       val pairs =
         listOf(
+          "Primary" to (colors.onPrimary to colors.primary),
+          "Primary container" to (colors.onPrimaryContainer to colors.primaryContainer),
+          "Secondary" to (colors.onSecondary to colors.secondary),
+          "Surface" to (colors.onSurface to colors.surface),
+          "Background" to (colors.onBackground to colors.background),
           "ABV" to (colors.onAbvContainer to colors.abvContainer),
           "IBU" to (colors.onIbuContainer to colors.ibuContainer),
         )

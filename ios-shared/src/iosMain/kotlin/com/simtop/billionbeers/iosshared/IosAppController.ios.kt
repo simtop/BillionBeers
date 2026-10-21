@@ -170,7 +170,6 @@ private fun iosHost(
     darkTheme = darkTheme,
     routeRequests = routeRequests,
     detailAnimationsDisabled = true,
-    detailCollapsingToolbarEnabled = false,
     detailTitleTextStyle = {
       MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold)
     },
