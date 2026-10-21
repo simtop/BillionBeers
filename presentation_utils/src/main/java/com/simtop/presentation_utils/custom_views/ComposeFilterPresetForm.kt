@@ -10,15 +10,14 @@ import com.simtop.presentation_utils.R
 /** Android resource adapter for the shared full-width saved-filter form. */
 @Composable
 fun ComposeFilterPresetForm(
-  name: String,
-  onNameChange: (String) -> Unit,
+  state: SaveFilterState,
   onSave: () -> Unit,
   modifier: Modifier = Modifier,
   enabled: Boolean = true,
 ) {
   SharedFilterPresetForm(
-    name = name,
-    onNameChange = onNameChange,
+    name = state.name,
+    onNameChange = { state.name = it },
     onSave = onSave,
     labels =
       FilterPresetFormLabels(
@@ -27,5 +26,6 @@ fun ComposeFilterPresetForm(
       ),
     modifier = modifier,
     enabled = enabled,
+    saving = state.saving,
   )
 }

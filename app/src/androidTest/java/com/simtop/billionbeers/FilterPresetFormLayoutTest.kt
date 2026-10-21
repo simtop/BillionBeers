@@ -13,6 +13,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -40,6 +41,7 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 class FilterPresetFormLayoutTest(private val screen: String) {
   private val compose = createComposeRule()
+  private val restoration = StateRestorationTester(compose)
   @get:Rule val failureScreenshots = withFailureScreenshot(compose)
 
   @Test
@@ -51,7 +53,7 @@ class FilterPresetFormLayoutTest(private val screen: String) {
       saveSucceeds
     }
     showContent(save)
-    if (screen == "catalog") compose.onNodeWithText("Enregistrer le filtre").performClick()
+    compose.onNodeWithText("Enregistrer le filtre").performClick()
 
     val editor = compose.onNode(hasSetTextAction() and !hasTestTag(SEARCH_FIELD_TAG))
     editor.assertIsDisplayed().assertWidthIsAtLeast(240.dp)
@@ -64,14 +66,15 @@ class FilterPresetFormLayoutTest(private val screen: String) {
       editor.fetchSemanticsNode().config[SemanticsProperties.EditableText].text,
     )
 
+    restoration.emulateSavedInstanceStateRestore()
+    assertEquals(
+      "IPA françaises",
+      editor.fetchSemanticsNode().config[SemanticsProperties.EditableText].text,
+    )
     compose.runOnIdle { saveSucceeds = true }
     compose.onNodeWithTag("filter_preset_save").performClick()
     compose.runOnIdle { assertEquals(listOf("IPA françaises", "IPA françaises"), savedNames) }
-    if (screen == "catalog") {
-      compose.onNodeWithTag("filter_preset_save").assertDoesNotExist()
-    } else {
-      assertEquals("", editor.fetchSemanticsNode().config[SemanticsProperties.EditableText].text)
-    }
+    compose.onNodeWithTag("filter_preset_save").assertDoesNotExist()
   }
 
   private fun showContent(save: suspend (String) -> Boolean) {
@@ -79,7 +82,7 @@ class FilterPresetFormLayoutTest(private val screen: String) {
     val configuration =
       Configuration(context.resources.configuration).apply { setLocale(Locale.FRENCH) }
     val frenchContext = context.createConfigurationContext(configuration)
-    compose.setContent {
+    restoration.setContent {
       val density = LocalDensity.current.density
       CompositionLocalProvider(
         LocalContext provides frenchContext,
@@ -123,10 +126,13 @@ class FilterPresetFormLayoutTest(private val screen: String) {
           },
         query = "ipa",
         onQueryChange = {},
-        activeQuery = BeersQuery(search = "ipa"),
+        activeQuery = BeersQuery(search = "ipa", styleId = "ipa-style"),
         onBeerClick = {},
         onBack = {},
-        onSaveQuery = { name, _ -> save(name) },
+        onSaveQuery = { name, query ->
+          assertEquals(BeersQuery(search = "ipa", styleId = "ipa-style"), query)
+          save(name)
+        },
         onScrollToBottom = {},
         onRetryLoadMore = {},
         onRetrySearch = {},

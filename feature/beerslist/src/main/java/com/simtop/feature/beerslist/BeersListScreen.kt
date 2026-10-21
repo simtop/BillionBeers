@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -51,7 +50,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -97,9 +95,11 @@ import com.simtop.presentation_utils.core.LocalDebugDrawerToggle
 import com.simtop.presentation_utils.core.resolvedMessage
 import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import com.simtop.presentation_utils.custom_views.ComposeErrorView
-import com.simtop.presentation_utils.custom_views.ComposeFilterPresetForm
+import com.simtop.presentation_utils.custom_views.ComposeSaveFilterAction
+import com.simtop.presentation_utils.custom_views.ComposeSaveFilterForm
+import com.simtop.presentation_utils.custom_views.SaveFilterState
+import com.simtop.presentation_utils.custom_views.rememberSaveFilterState
 import dev.zacsweers.metrox.viewmodel.metroViewModel
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -175,23 +175,21 @@ fun BeersListContent(
   onSearchSubmit: () -> Unit = {},
 ) {
   val context = LocalContext.current
-  var presetName by rememberSaveable { mutableStateOf("") }
   var searchExpanded by rememberSaveable { mutableStateOf(searchInitiallyExpanded) }
-  var saveExpanded by rememberSaveable { mutableStateOf(saveInitiallyExpanded) }
-  val saveScope = rememberCoroutineScope()
+  val saveFilter = rememberSaveFilterState(saveInitiallyExpanded)
   val focus = LocalFocusManager.current
   val keyboard = LocalSoftwareKeyboardController.current
   val catalogListState = rememberLazyListState()
   val searchListState = rememberLazyListState()
   val closeSearch: () -> Unit = {
     searchExpanded = false
-    saveExpanded = false
+    saveFilter.close()
     onSearchQueryChange("")
     focus.clearFocus()
     keyboard?.hide()
   }
-  BackHandler(enabled = searchExpanded || saveExpanded) {
-    if (saveExpanded) saveExpanded = false else closeSearch()
+  BackHandler(enabled = searchExpanded || saveFilter.expanded) {
+    if (saveFilter.expanded) saveFilter.close() else closeSearch()
   }
   LaunchedEffect(activeSearchQuery) {
     if (activeSearchQuery != null) searchListState.scrollToItem(0)
@@ -202,7 +200,7 @@ fun BeersListContent(
       CatalogHeader(
         loaded = (viewState as? CommonUiState.Success)?.data,
         searchExpanded = searchExpanded,
-        onSave = { saveExpanded = !saveExpanded },
+        saveFilter = saveFilter,
         onBrowse = onBrowseClick,
         onSearch = { if (searchExpanded) closeSearch() else searchExpanded = true },
       )
@@ -239,21 +237,11 @@ fun BeersListContent(
           onAdvancedSearch = onSearchClick,
         )
       }
-      if (saveExpanded) {
-        ComposeFilterPresetForm(
-          name = presetName,
-          onNameChange = { presetName = it },
-          onSave = {
-            saveScope.launch {
-              if (onSaveQuery(presetName)) {
-                presetName = ""
-                saveExpanded = false
-              }
-            }
-          },
-          modifier = Modifier.padding(horizontal = BillionBeersTheme.spacing.medium),
-        )
-      }
+      ComposeSaveFilterForm(
+        state = saveFilter,
+        onSave = onSaveQuery,
+        modifier = Modifier.padding(horizontal = BillionBeersTheme.spacing.medium),
+      )
 
       SharedBeersListContent(
         viewState = viewState,
@@ -309,7 +297,7 @@ fun BeersListContent(
 private fun CatalogHeader(
   loaded: PagedListUiModel<Beer>?,
   searchExpanded: Boolean,
-  onSave: () -> Unit,
+  saveFilter: SaveFilterState,
   onBrowse: () -> Unit,
   onSearch: () -> Unit,
 ) {
@@ -320,12 +308,7 @@ private fun CatalogHeader(
     val saveMaxWidth = if (stackActions) maxOf(96.dp, maxWidth - 112.dp) else 128.dp
     val actions: @Composable () -> Unit = {
       Row(verticalAlignment = Alignment.CenterVertically) {
-        TextButton(
-          onClick = onSave,
-          modifier = Modifier.widthIn(max = saveMaxWidth),
-        ) {
-          Text(stringResource(PresentationUtilsR.string.save_filter))
-        }
+        ComposeSaveFilterAction(saveFilter, maxWidth = saveMaxWidth)
         IconButton(onClick = onBrowse) {
           Icon(
             Icons.AutoMirrored.Filled.List,

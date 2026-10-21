@@ -26,6 +26,7 @@
         "presentation_utils/src/main/res/values*/strings.xml",
         "presentation_utils/src/main/java/com/simtop/presentation_utils/custom_views/ComposeBeersListItem.kt",
         "presentation_utils/src/main/java/com/simtop/presentation_utils/custom_views/ComposeFilterPresetForm.kt",
+        "presentation_utils/src/main/java/com/simtop/presentation_utils/custom_views/SaveFilterState.kt",
         "shared/beerslist/src/commonMain/**/*.kt",
         "shared/presentation/src/commonMain/**/*.kt",
         "shared/designsystem/src/commonMain/**/*.kt",

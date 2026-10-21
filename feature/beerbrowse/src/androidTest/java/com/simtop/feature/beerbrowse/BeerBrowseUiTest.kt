@@ -4,12 +4,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.platform.app.InstrumentationRegistry
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeerStyle
+import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.core.core.CommonUiState
@@ -17,6 +23,8 @@ import com.simtop.core.core.PagedListFooter
 import com.simtop.core.core.PagedListUiModel
 import com.simtop.feature.beerbrowse.presentation.BrowseBeersContent
 import com.simtop.feature.beerbrowse.presentation.BrowseHomeContent
+import com.simtop.feature.beerbrowse.presentation.BrowseSaveFilterPreview
+import com.simtop.feature.beerbrowse.presentation.BrowseSelection
 import com.simtop.presentation_utils.R
 import com.simtop.testing_utils_android.BaseTestRobot
 import com.simtop.testing_utils_android.withFailureScreenshot
@@ -109,6 +117,62 @@ class BeerBrowseUiTest {
 
     composeTestRule.onNodeWithText(string(R.string.retry)).performClick()
     assertEquals(1, retryCount)
+  }
+
+  @Test
+  fun expandedSavePreviewShowsTheHeaderActionAndNameForm() {
+    composeTestRule.setContent { BrowseSaveFilterPreview() }
+    composeTestRule.onNodeWithTag("filter_preset_toggle").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("filter_preset_save").assertIsDisplayed()
+  }
+
+  @Test
+  fun browseStyleSaveRetainsCriteriaAndRestoresFailedDraft() {
+    verifySave(BrowseSelection(styleId = "style-1", name = "IPA"), BeersQuery(styleId = "style-1"))
+  }
+
+  @Test
+  fun browseBrewerySaveRetainsCriteriaAndRestoresFailedDraft() {
+    verifySave(
+      BrowseSelection(breweryId = "brewery-1", name = "Hop Haven"),
+      BeersQuery(breweryId = "brewery-1"),
+    )
+  }
+
+  private fun verifySave(selection: BrowseSelection, expected: BeersQuery) {
+    val restoration = StateRestorationTester(composeTestRule)
+    val attempts = mutableListOf<BeersQuery>()
+    var succeeds = false
+    restoration.setContent {
+      BillionBeersTheme {
+        BrowseBeersContent(
+          title = selection.name,
+          viewState = CommonUiState.Success(PagedListUiModel(items = listOf(beer))),
+          onBack = {},
+          onBeerClick = {},
+          onScrollToBottom = {},
+          onRetryLoadMore = {},
+          onRetryFirstPage = {},
+          onSaveQuery = { name ->
+            assertEquals("Weekend beers", name)
+            attempts += selection.toQuery()
+            succeeds
+          },
+        )
+      }
+    }
+    composeTestRule.onNodeWithTag("filter_preset_save").assertDoesNotExist()
+    composeTestRule.onNodeWithTag("filter_preset_toggle").performClick()
+    val editor = composeTestRule.onNode(hasSetTextAction())
+    editor.performTextReplacement("Weekend beers")
+    composeTestRule.onNodeWithTag("filter_preset_save").performClick()
+    composeTestRule.runOnIdle { assertEquals(listOf(expected), attempts) }
+    restoration.emulateSavedInstanceStateRestore()
+    composeTestRule.onNodeWithText("Weekend beers").assertExists()
+    composeTestRule.runOnIdle { succeeds = true }
+    composeTestRule.onNodeWithTag("filter_preset_save").performClick()
+    composeTestRule.runOnIdle { assertEquals(listOf(expected, expected), attempts) }
+    composeTestRule.onNodeWithTag("filter_preset_save").assertDoesNotExist()
   }
 
   private fun string(resId: Int): String =
