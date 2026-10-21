@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -107,9 +108,9 @@ fun SharedBeerDetailContent(
   titleTextStyle: TextStyle? = null,
   headerModifier: Modifier = Modifier,
   scrollBehavior: TopAppBarScrollBehavior? = null,
+  scrollState: ScrollState = rememberScrollState(),
 ) {
   val favoriteLabel = if (beer.isFavorite) strings.removeFromFavorites else strings.addToFavorites
-  val scrollState = rememberScrollState()
   val headerTitleStyle = titleTextStyle ?: BillionBeersTheme.brand.detailTitle
   val headerButtonModifier = Modifier.size(48.dp)
   val headerButtonColors =

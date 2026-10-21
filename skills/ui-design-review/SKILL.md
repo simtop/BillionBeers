@@ -17,6 +17,8 @@ Read the actual screenshots and relevant production code before judging. Record 
 
 If `qa/design-review.json` exists, use its screen cases and commands. Otherwise find the project's existing capture commands. Read [capture-and-compare.md](references/capture-and-compare.md) for the helper commands and report format. For Android in BillionBeers, read [billionbeers.md](references/billionbeers.md).
 
+Before changing a shared component, inventory its route consumers and the behavior to retain. Read [interaction-coverage.md](references/interaction-coverage.md) when a proposal touches shared UI, disclosure, search, scrolling, or adoption. Separate a visual rebrand from intentional behavior changes.
+
 Freeze baseline images before editing. Keep theme, font scale, viewport, locale, content, image state, and scroll position equal within every comparison. Loaded, offline image fixtures are preferable for visual composition. Identify synthetic artwork and data in the report. Keep loading previews as separate state coverage.
 
 ## Choose a visual direction
@@ -39,9 +41,13 @@ For alternatives, change the actual rendering code in an isolated checkout. Star
 
 An existing clean checkout can be copied or put in a temporary Git worktree. If the user's checkout has changes, carry the relevant tracked diff and required new files into the isolated copy. Never reset or overwrite the user's working files. Keep reports, captures, source patches and stash manifests under the project’s `design/reviews/<run>/` directory, ignored locally. The HTML report belongs in that directory too. Honor a user-chosen destination when supplied. Do not update the user's accepted goldens with proposed designs.
 
+Put new review fixtures in debug/test source sets and freeze their data providers as well as their wrapper. Confirm the renderer applies the declared viewport, font scale, direction and state; preview names alone do not establish coverage.
+
 Use the existing screenshot record command in the isolated checkout, then capture the resulting PNGs and their source provenance. The helper rejects ambiguous or missing cases and records fixture hashes. Compare every configured state, including dark theme and larger text when available. An Android-rendered shared Compose screen is Android evidence, not an iOS, browser, or Desktop screenshot.
 
 Inspect every final image. Batch one correction pass for broken captures, unintended drift, or obvious implementation mistakes. Stop rather than polishing endlessly. Record build failures and unavailable platforms honestly. Do not create AI-painted images and label them as screenshot-test results.
+
+This is an interactive local review workflow. Keep model critique, experiment preservation and report generation local; use the project's existing deterministic build, screenshot and behavior checks. Do not wire this skill or its report generation into CI as part of a review.
 
 ## Deliver the critique
 
@@ -49,4 +55,4 @@ Write the report using the helper's format. Put the skill or skills used in each
 
 Lead the conclusion with your recommendation and the evidence that supports it. A smaller change or the unchanged screen can win. Do not invent taste scores, user-study results, or interaction measurements. Distinguish visual judgment, screenshot verification, and runtime testing. Mention shared model context if comparing design skills without isolated runs.
 
-Deliver an HTML report with embedded images and a Markdown report, plus the source patches and capture manifests. Link the report and show at least one before-and-after pair in chat. State which platforms were rendered and which checks ran. Leave the product design unchanged unless the user also asked to adopt an option. Before cleaning a temporary checkout, verify every option has a saved stash OID, source patch and capture manifest. Keep those stashes until the user requests removal. Recover with `git stash apply <OID>` so the original remains available; selectively restore files when composing a mix. Clean up only temporary files and checkouts created for this review.
+Deliver an HTML report with embedded images and a Markdown report, plus the source patches and capture manifests. Link the report and show at least one before-and-after pair in chat. State which platforms were rendered and which checks ran. A request to adopt an identified option authorizes implementing it; do not ask for the same selection again. Otherwise deliver the comparison before asking which direction to adopt. For adoption, replay the affected route/state inventory and runtime contracts, then capture the implemented result and update the conclusion with that evidence. Before cleaning a temporary checkout, verify every option has a saved stash OID, source patch and capture manifest. Keep those stashes until the user requests removal. Recover with `git stash apply <OID>` so the original remains available; selectively restore files when composing a mix. Clean up only temporary files and checkouts created for this review.

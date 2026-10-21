@@ -9,7 +9,7 @@ From the checkout that owns the screenshots, run:
 ```bash
 python3 skills/ui-design-review/scripts/review.py capture \
   --config qa/design-review.json --screen catalog \
-  --output /tmp/catalog-review/baseline --run record
+  --output design/reviews/catalog-trial/baseline --run record
 ```
 
 `--run record` executes the configured record command. Use that mode for new previews or inside an isolated candidate checkout. `--run verify` executes the configured verification command without accepting new goldens. `--run existing` imports existing images and labels their freshness as unverified. Explain that limitation when using imported captures.
@@ -19,6 +19,8 @@ Each capture directory contains `capture.json`, named PNGs, and the renderer log
 The project config has `schema: 1` and a `screens` object. Each screen declares `platform`, `renderer`, `record`, `verify`, `image_directory`, `sources`, `fixtures`, and `cases`. Commands are argument arrays, executed without a shell. Each case has `id`, a unique literal filename `match`, and `conditions`. Keep platform-appropriate conditions such as theme, font scale, locale, viewport, and image state explicit.
 
 The helper can import PNGs from Android, iOS, Web, or Desktop using that same format. A config entry does not implement a renderer. Add a host only after checking its actual capture command and output.
+
+For a flow spanning several screen IDs, capture and report each screen with the same option/revision IDs. Keep one stash/patch for the option's complete changes and use a local index under `design/` to summarize the recommendation across screens. Each report still needs matching before/after cases for its own screen.
 
 ## Describe the review
 
@@ -56,8 +58,8 @@ Set `recommendation` to an option ID or `baseline`. Paths resolve relative to th
 
 ```bash
 python3 skills/ui-design-review/scripts/review.py report \
-  --baseline /tmp/catalog-review/baseline/capture.json \
-  --review /tmp/catalog-review/review.json --output design/reviews/catalog-trial/report
+  --baseline design/reviews/catalog-trial/baseline/capture.json \
+  --review design/reviews/catalog-trial/review.json --output design/reviews/catalog-trial/report
 ```
 
 The helper creates `report.html` and `report.md`. HTML embeds all images and works offline. It rejects altered images, different case sets, different dimensions or conditions, and changed fixture files. A matching manifest establishes comparable render inputs, not design quality. Open the report, inspect its layout, and show the user the observed result.
@@ -78,6 +80,6 @@ python3 skills/ui-design-review/scripts/review.py stash \
 
 The output path resolves from the command's working directory. It defaults beneath `design/reviews/` in the experiment checkout; specify a persistent project path when that checkout is temporary. The helper refuses dirty files outside the declared source paths, duplicate IDs and an existing manifest. It saves tracked and new files to a named Git stash and records its stable OID, source hashes and baseline revision. Existing stashes remain intact. Keep the manifest with the report and add the OID to that option's assessment or limitations.
 
-Run `git stash apply <OID>` on an isolated adoption branch to recover an entire option without dropping its backup. For a mix, use `git restore --source=<OID> -- path/to/Tracked.kt`. Added files are in the stash's third parent: `git show '<OID>^3:path/to/NewPreview.kt' > path/to/NewPreview.kt`. Inspect the diff and resolve conflicts against the current source before testing. Never use a moving `stash@{n}` as the saved identity or automatically drop experiment stashes after adoption.
+Run `git stash apply <OID>` on an isolated adoption branch to recover an entire option without dropping its backup. For a mix, use `git restore --source=<OID> -- path/to/Tracked.kt`. Added files are in the stash's third parent: `git show '<OID>^3:path/to/NewPreview.kt' > path/to/NewPreview.kt`. Inspect the diff and resolve conflicts against the current source before testing. For an older baseline, adapt selected files/hunks against current interfaces and check that accepted interaction fixes survive the mix. Never use a moving `stash@{n}` as the saved identity or automatically drop experiment stashes after adoption.
 
 The report command defaults to the current project's `design/reviews/<UTC run>/` when `--output` is omitted. Keep that directory ignored because capture provenance can contain local paths and working-tree metadata. The selected report can be moved to another directory under `design/` when requested.

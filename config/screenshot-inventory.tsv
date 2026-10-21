@@ -5,8 +5,13 @@ com.simtop.billionbeers	CatalogEmptyDesignReviewPreview	light	1.0	en	ltr	compact
 com.simtop.billionbeers	CatalogErrorDesignReviewPreview	light	1.0	en	ltr	compact	Catalog Error	Design Review
 com.simtop.billionbeers	CatalogExpandedSaveReviewPreview	light	1.0	en	ltr	compact	Save expanded	Design Review
 com.simtop.billionbeers	CatalogExpandedSearchReviewPreview	light	1.0	en	ltr	compact	Search expanded	Design Review
+com.simtop.billionbeers	CatalogInlineSearchDesignReviewPreview	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.billionbeers	CatalogInlineSearchDesignReviewPreview_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
 com.simtop.billionbeers	CatalogLoadingDesignReviewPreview	light	1.0	en	ltr	compact	Catalog Loading	Design Review
 com.simtop.billionbeers	CatalogLongContentDesignReviewPreview	light	1.0	en	ltr	compact	Catalog Long Content	Design Review
+com.simtop.billionbeers	CatalogSaveFilterDesignReviewPreview	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.billionbeers	CatalogSaveFilterDesignReviewPreview_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.billionbeers	CatalogSaveFilterDesignReviewPreview_font150	light	1.5	en	ltr	compact	Catalog Save Large Text	Design Review
 com.simtop.billionbeers.composefixture.screenshot	ComposeFixturePreview	light	1.0	en	ltr	compact	Compose Multiplatform fixture
 com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_dark_font100_en_ltr_compact	dark	1.0	en	ltr	compact
 com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_dark_font100_en_ltr_expanded	dark	1.0	en	ltr	expanded
@@ -94,6 +99,8 @@ com.simtop.feature.beerbrowse	BrowseBeersScreenPreview_1	light	1.0	en	ltr	compac
 com.simtop.feature.beerbrowse	BrowseBeersScreenPreview_1_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
 com.simtop.feature.beerbrowse	BrowseBeersScreenPreview_2	light	1.0	en	ltr	compact	Light Mode	Themes
 com.simtop.feature.beerbrowse	BrowseBeersScreenPreview_2_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.beerbrowse	BrowseBreweryDesignReviewPreview	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.feature.beerbrowse	BrowseBreweryDesignReviewPreview_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
 com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_dark_font100_en_ltr_compact	dark	1.0	en	ltr	compact
 com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_dark_font100_en_ltr_expanded	dark	1.0	en	ltr	expanded
 com.simtop.feature.beerbrowse	BrowseHomeAccessibilityMatrixPreview_dark_font100_en_rtl_compact	dark	1.0	en	rtl	compact
@@ -138,6 +145,11 @@ com.simtop.feature.beerbrowse	BrowseHomeScreenPreview_2	light	1.0	en	ltr	compact
 com.simtop.feature.beerbrowse	BrowseHomeScreenPreview_2_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
 com.simtop.feature.beerbrowse	BrowseSaveFilterPreview	light	1.0	en	ltr	compact	Light Mode	Themes
 com.simtop.feature.beerbrowse	BrowseSaveFilterPreview_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.beerbrowse	BrowseSaveFilterPreview_font150	light	1.5	en	ltr	compact	Brewery Save Large Text	Design Review
+com.simtop.feature.beerbrowse	BrowseStyleDesignReviewPreview	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.feature.beerbrowse	BrowseStyleDesignReviewPreview_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.beerbrowse	BrowseStyleSaveFilterPreview	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.feature.beerbrowse	BrowseStyleSaveFilterPreview_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
 com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_dark_font100_en_ltr_compact	dark	1.0	en	ltr	compact
 com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_dark_font100_en_ltr_expanded	dark	1.0	en	ltr	expanded
 com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_dark_font100_en_rtl_compact	dark	1.0	en	rtl	compact
@@ -188,6 +200,9 @@ com.simtop.feature.beerdetail	DetailLandscapeDesignReviewPreview	light	1.0	en	lt
 com.simtop.feature.beerdetail	DetailLandscapeDesignReviewPreview_font150	light	1.5	en	ltr	expanded	Detail landscape large text	Design Review
 com.simtop.feature.beerdetail	DetailLongContentDesignReviewPreview	light	1.0	en	ltr	compact	Detail Long Content	Design Review
 com.simtop.feature.beerdetail	DetailPartialCollapseDesignReviewPreview	light	1.0	en	ltr	compact	Detail Partial Collapse	Design Review
+com.simtop.feature.beerdetail	DetailScrolledDesignReviewPreview	light	1.0	en	ltr	compact	Detail Body End	Design Review
+com.simtop.feature.beerdetail	DetailScrolledDesignReviewPreview_dark	dark	1.0	en	ltr	compact	Detail Body End Dark	Design Review
+com.simtop.feature.beerdetail	DetailScrolledDesignReviewPreview_font150	light	1.5	en	ltr	compact	Detail Body End Large Text	Design Review
 com.simtop.feature.beerdetail	DetailSparseDesignReviewPreview	light	1.0	en	ltr	compact	Detail Sparse	Design Review
 com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_dark_font100_en_ltr_compact	dark	1.0	en	ltr	compact
 com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_dark_font100_en_ltr_expanded	dark	1.0	en	ltr	expanded
@@ -235,8 +250,11 @@ com.simtop.feature.beersearch	BeersSearchScreenPreview_3	light	1.0	en	ltr	compac
 com.simtop.feature.beersearch	BeersSearchScreenPreview_3_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
 com.simtop.feature.beersearch	BeersSearchScreenPreview_4	light	1.0	en	ltr	compact	Light Mode	Themes
 com.simtop.feature.beersearch	BeersSearchScreenPreview_4_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.beersearch	SearchQueryDesignReviewPreview	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.feature.beersearch	SearchQueryDesignReviewPreview_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
 com.simtop.feature.beersearch	SearchSaveFilterPreview	light	1.0	en	ltr	compact	Light Mode	Themes
 com.simtop.feature.beersearch	SearchSaveFilterPreview_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.beersearch	SearchSaveFilterPreview_font150	light	1.5	en	ltr	compact	Search Save Large Text	Design Review
 com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_dark_font100_en_ltr_compact	dark	1.0	en	ltr	compact
 com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_dark_font100_en_ltr_expanded	dark	1.0	en	ltr	expanded
 com.simtop.feature.beerslist	BeersListAccessibilityMatrixPreview_dark_font100_en_rtl_compact	dark	1.0	en	rtl	compact
