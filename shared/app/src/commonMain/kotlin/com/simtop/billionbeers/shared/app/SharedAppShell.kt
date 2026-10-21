@@ -741,6 +741,7 @@ private fun BrowseBeersDestination(
   }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DetailDestination(
   entry: DetailEntry,

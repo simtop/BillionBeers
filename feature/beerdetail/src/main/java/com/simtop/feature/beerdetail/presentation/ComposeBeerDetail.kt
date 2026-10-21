@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package com.simtop.feature.beerdetail.presentation
 
 import android.provider.Settings
@@ -5,6 +7,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -20,9 +24,6 @@ import coil3.request.crossfade
 import coil3.request.error
 import coil3.request.placeholder
 import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.billionbeers.core.designsystem.component.AccessibilityMatrixPreview
-import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
-import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailStrings
 import com.simtop.billionbeers.shared.beerdetail.MAX_BEER_METRIC_FRACTION_DIGITS
 import com.simtop.billionbeers.shared.beerdetail.SharedBeerDetailContent
@@ -39,6 +40,7 @@ fun ComposeBeerDetail(
   modifier: Modifier = Modifier,
   onToggleFavorite: () -> Unit = {},
   showBackButton: Boolean = true,
+  scrollBehavior: TopAppBarScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(),
 ) {
   val context = LocalContext.current
   val locale = LocalConfiguration.current.locales[0]
@@ -113,6 +115,8 @@ fun ComposeBeerDetail(
     favoriteModifier = Modifier.testTag("toggle_favorite"),
     availabilityModifier = Modifier.testTag("toggle_availability"),
     contentModifier = Modifier.testTag("detail_scroll_view"),
+    headerModifier = Modifier.testTag("detail_header"),
+    scrollBehavior = scrollBehavior,
     showBackButton = showBackButton,
     animationsDisabled = animationsDisabled,
   )
@@ -132,82 +136,4 @@ fun BeerDetailImage(imageUrl: String, contentDescription: String?, modifier: Mod
     contentScale = ContentScale.Fit,
     modifier = modifier,
   )
-}
-
-@PreviewLightDark
-@Composable
-internal fun ComposeBeerDetailPreview() {
-  BillionBeersTheme {
-    ComposeBeerDetail(
-      beer =
-        Beer.empty.copy(
-          name = "Buzz",
-          tagline = "A Real Bitter Experience.",
-          description =
-            "A light, crisp and bitter IPA brewed with English and American hops. A small batch brewed only once.",
-          abv = 4.5,
-          ibu = 60.0,
-          foodPairing =
-            listOf("Spicy chicken tikka masala", "Grilled chicken quesadilla", "Pastrami on rye"),
-          styleName = "IPA (Indian Pale Ale)",
-          breweryName = "ChuckleCraft Brewery",
-          srm = 9,
-          releasedYear = 1980,
-          minServingTemperature = 4,
-          maxServingTemperature = 8,
-          fermentationMethod = "Ale",
-          ingredients = listOf("Pale malt", "Cascade hops", "American ale yeast"),
-          recommendedGlasses = listOf("Pint glass", "Tulip"),
-        ),
-      onBackClick = {},
-      onToggleAvailability = {},
-    )
-  }
-}
-
-@PreviewLightDark
-@Composable
-internal fun ComposeBeerDetailWithoutEnrichedFieldsPreview() {
-  BillionBeersTheme {
-    ComposeBeerDetail(
-      beer =
-        Beer.empty.copy(
-          name = "Buzz",
-          tagline = "A Real Bitter Experience.",
-          description = "A light, crisp and bitter IPA.",
-          abv = 4.5,
-          ibu = 60.0,
-        ),
-      onBackClick = {},
-      onToggleAvailability = {},
-    )
-  }
-}
-
-@AccessibilityMatrixPreview
-@Composable
-@Suppress("PreviewPublic")
-internal fun ComposeBeerDetailAccessibilityMatrixPreview() {
-  BillionBeersTheme {
-    ComposeBeerDetail(
-      beer =
-        Beer.empty.copy(
-          name = "A Very Long Beer Name That Must Wrap Correctly",
-          tagline = "A long tagline for large-font accessibility coverage.",
-          description =
-            "A deliberately long description that exercises scrolling, wrapping, RTL layout, and " +
-              "compact versus expanded widths.",
-          abv = 5.6,
-          ibu = 41.5,
-          foodPairing = listOf("Spicy chicken tikka masala", "Grilled chicken quesadilla"),
-          styleName = "IPA (Indian Pale Ale)",
-          breweryName = "A Brewery With A Deliberately Long Name For Accessibility Testing",
-          availability = true,
-          ingredients = listOf("Pale malt", "Cascade hops", "American ale yeast"),
-          recommendedGlasses = listOf("Pint glass", "Tulip"),
-        ),
-      onBackClick = {},
-      onToggleAvailability = {},
-    )
-  }
 }

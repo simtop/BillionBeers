@@ -1,15 +1,21 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package com.simtop.feature.beerdetail.presentation
 
 import android.content.res.Configuration
 import android.graphics.Canvas
 import android.graphics.Paint
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
 import coil3.annotation.ExperimentalCoilApi
 import coil3.asImage
@@ -65,9 +71,27 @@ internal fun DetailSparseDesignReviewPreview() {
   )
 }
 
+@Preview(name = "Detail Collapsed", group = "Design Review", showBackground = true)
+@Preview(
+  name = "Detail Collapsed Dark",
+  group = "Design Review",
+  uiMode = Configuration.UI_MODE_NIGHT_YES,
+)
+@Preview(name = "Detail Collapsed Large Text", group = "Design Review", fontScale = 1.5f)
+@Composable
+internal fun DetailCollapsedDesignReviewPreview() {
+  DetailReviewFrame(detailReviewBeer, initialHeaderOffsetDp = -10000f)
+}
+
+@Preview(name = "Detail Partial Collapse", group = "Design Review", showBackground = true)
+@Composable
+internal fun DetailPartialCollapseDesignReviewPreview() {
+  DetailReviewFrame(detailReviewBeer, initialHeaderOffsetDp = -88f)
+}
+
 @OptIn(ExperimentalCoilApi::class)
 @Composable
-private fun DetailReviewFrame(beer: Beer) {
+private fun DetailReviewFrame(beer: Beer, initialHeaderOffsetDp: Float = 0f) {
   val imageHandler = remember {
     // Override the suite's loading handler only here. No network or third-party artwork is used.
     AsyncImagePreviewHandler { _, request ->
@@ -100,6 +124,12 @@ private fun DetailReviewFrame(beer: Beer) {
         onBackClick = {},
         onToggleAvailability = {},
         onToggleFavorite = {},
+        scrollBehavior =
+          TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
+            rememberTopAppBarState(
+              initialHeightOffset = with(LocalDensity.current) { initialHeaderOffsetDp.dp.toPx() }
+            )
+          ),
       )
     }
   }
