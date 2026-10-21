@@ -35,7 +35,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-@OptIn(ExperimentalTestApi::class)
+@OptIn(ExperimentalTestApi::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
 class DesktopDetailAccessibilityTest {
   @Test
   fun controlsRemainVisibleOverWhiteImagesAndTwoLineTitleHasRoom() =

@@ -33,10 +33,14 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
@@ -46,8 +50,10 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.lerp
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.sp
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.shared.designsystem.components.SharedScrollContainer
@@ -100,6 +106,8 @@ fun SharedBeerDetailContent(
   showBackButton: Boolean = true,
   animationsDisabled: Boolean = false,
   titleTextStyle: TextStyle? = null,
+  headerModifier: Modifier = Modifier,
+  scrollBehavior: TopAppBarScrollBehavior? = null,
 ) {
   val favoriteLabel = if (beer.isFavorite) strings.removeFromFavorites else strings.addToFavorites
   val scrollState = rememberScrollState()
@@ -138,49 +146,22 @@ fun SharedBeerDetailContent(
   }
 
   Scaffold(
-    modifier = modifier,
+    modifier =
+      modifier.then(
+        scrollBehavior?.let { Modifier.nestedScroll(it.nestedScrollConnection) } ?: Modifier
+      ),
     topBar = {
-      BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-        val preferredHeight = if (LocalDensity.current.fontScale > 1f) 340.dp else 260.dp
-        val heroHeight = minOf(preferredHeight, maxHeight * HERO_MAX_HEIGHT_FRACTION)
-        Box(
-          Modifier.fillMaxWidth()
-            .height(heroHeight)
-            .windowInsetsPadding(WindowInsets.statusBars)
-            .background(Color(HERO_BACKGROUND))
-            .padding(horizontal = 16.dp)
-        ) {
-          Row(
-            Modifier.fillMaxSize().padding(top = 56.dp, bottom = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-          ) {
-            Column(Modifier.weight(1f).padding(end = 8.dp)) {
-              Text(
-                text = beer.name,
-                color = Color(HERO_FOREGROUND),
-                style = headerTitleStyle,
-                maxLines = if (heroHeight < 220.dp) 1 else HERO_TITLE_MAX_LINES,
-                overflow = TextOverflow.Ellipsis,
-              )
-              Spacer(Modifier.height(16.dp))
-              Box(Modifier.width(48.dp).height(4.dp).background(Color(HERO_ACCENT)))
-            }
-            imageContent(
-              beer.imageUrl,
-              strings.imageDescription(beer.name),
-              Modifier.width(112.dp).height(200.dp),
-            )
-          }
-          Row(
-            Modifier.fillMaxWidth().height(56.dp).align(Alignment.TopCenter),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-          ) {
-            Box { backButton() }
-            favoriteButton()
-          }
-        }
-      }
+      BeerDetailHeader(
+        beer = beer,
+        strings = strings,
+        titleStyle = headerTitleStyle,
+        backButton = backButton,
+        favoriteButton = favoriteButton,
+        imageContent = imageContent,
+        showBackButton = showBackButton,
+        scrollBehavior = scrollBehavior,
+        modifier = headerModifier,
+      )
     },
     floatingActionButton = {
       BeerAvailabilityAction(
@@ -291,6 +272,103 @@ fun SharedBeerDetailContent(
         Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.medium))
         BulletSection(strings.recommendedGlasses, beer.recommendedGlasses)
         Spacer(modifier = Modifier.height(96.dp))
+      }
+    }
+  }
+}
+
+/** A static hero by default; Android supplies its native exit-until-collapsed policy. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+@Suppress("LongParameterList")
+private fun BeerDetailHeader(
+  beer: Beer,
+  strings: BeerDetailStrings,
+  titleStyle: TextStyle,
+  backButton: @Composable () -> Unit,
+  favoriteButton: @Composable () -> Unit,
+  imageContent: @Composable (String, String?, Modifier) -> Unit,
+  showBackButton: Boolean,
+  scrollBehavior: TopAppBarScrollBehavior?,
+  modifier: Modifier = Modifier,
+) {
+  BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+    val density = LocalDensity.current
+    val preferredHeight = if (density.fontScale > 1f) 340.dp else 260.dp
+    val compactHeight = 56.dp + with(density) { WindowInsets.statusBars.getTop(this).toDp() }
+    val expandedHeight =
+      minOf(preferredHeight, maxHeight * HERO_MAX_HEIGHT_FRACTION).coerceAtLeast(compactHeight)
+    val collapseRange = with(density) { (expandedHeight - compactHeight).toPx() }
+    val state = scrollBehavior?.state
+    SideEffect {
+      state?.let {
+        it.heightOffsetLimit = -collapseRange
+        it.heightOffset = it.heightOffset.coerceIn(-collapseRange, 0f)
+      }
+    }
+    val offset = state?.heightOffset?.coerceIn(-collapseRange, 0f) ?: 0f
+    val fraction = if (collapseRange > 0f) -offset / collapseRange else 0f
+    val currentHeight = expandedHeight + with(density) { offset.toDp() }
+    Box(
+      Modifier.fillMaxWidth()
+        .height(currentHeight)
+        .windowInsetsPadding(WindowInsets.statusBars)
+        .background(Color(HERO_BACKGROUND))
+        .clipToBounds()
+        .padding(horizontal = 16.dp)
+    ) {
+      Row(
+        Modifier.fillMaxSize()
+          .padding(
+            top = lerp(56.dp, 0.dp, fraction),
+            bottom = lerp(16.dp, 0.dp, fraction),
+            start = lerp(0.dp, if (showBackButton) 48.dp else 0.dp, fraction),
+            end = lerp(0.dp, 48.dp, fraction),
+          ),
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        Column(Modifier.weight(1f).padding(end = lerp(8.dp, 0.dp, fraction))) {
+          Text(
+            text = beer.name,
+            color = Color(HERO_FOREGROUND),
+            style =
+              lerp(
+                titleStyle,
+                MaterialTheme.typography.titleMedium.copy(
+                  fontWeight = FontWeight.ExtraBold,
+                  fontFamily = FontFamily.Serif,
+                ),
+                fraction,
+              ),
+            maxLines =
+              if (expandedHeight < 220.dp || fraction > HERO_SINGLE_LINE_COLLAPSE_FRACTION) 1
+              else HERO_TITLE_MAX_LINES,
+            overflow = TextOverflow.Ellipsis,
+          )
+          if (fraction < 1f) {
+            Spacer(Modifier.height(lerp(16.dp, 0.dp, fraction)))
+            Box(
+              Modifier.width(48.dp)
+                .height(lerp(4.dp, 0.dp, fraction))
+                .background(Color(HERO_ACCENT))
+            )
+          }
+        }
+        if (fraction < 1f) {
+          imageContent(
+            beer.imageUrl,
+            strings.imageDescription(beer.name),
+            Modifier.width(lerp(112.dp, 0.dp, fraction)).height(lerp(200.dp, 0.dp, fraction)),
+          )
+        }
+      }
+      Row(
+        Modifier.fillMaxWidth().height(56.dp).align(Alignment.TopCenter),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        Box { backButton() }
+        favoriteButton()
       }
     }
   }
@@ -442,3 +520,5 @@ private const val HERO_BACKGROUND = 0xFF302719
 private const val HERO_ACCENT = 0xFFE6AF64
 private const val HERO_MAX_HEIGHT_FRACTION = 0.45f
 private const val HERO_TITLE_MAX_LINES = 3
+
+private const val HERO_SINGLE_LINE_COLLAPSE_FRACTION = 0.5f

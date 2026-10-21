@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package com.simtop.feature.beerdetail.presentation
 
 import androidx.compose.foundation.layout.Box

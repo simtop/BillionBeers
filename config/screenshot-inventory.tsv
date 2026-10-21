@@ -178,12 +178,16 @@ com.simtop.feature.beerdetail	ComposeBeerDetailPreview	light	1.0	en	ltr	compact	
 com.simtop.feature.beerdetail	ComposeBeerDetailPreview_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
 com.simtop.feature.beerdetail	ComposeBeerDetailWithoutEnrichedFieldsPreview	light	1.0	en	ltr	compact	Light Mode	Themes
 com.simtop.feature.beerdetail	ComposeBeerDetailWithoutEnrichedFieldsPreview_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.beerdetail	DetailCollapsedDesignReviewPreview	light	1.0	en	ltr	compact	Detail Collapsed	Design Review
+com.simtop.feature.beerdetail	DetailCollapsedDesignReviewPreview_dark	dark	1.0	en	ltr	compact	Detail Collapsed Dark	Design Review
+com.simtop.feature.beerdetail	DetailCollapsedDesignReviewPreview_font150	light	1.5	en	ltr	compact	Detail Collapsed Large Text	Design Review
 com.simtop.feature.beerdetail	DetailDesignReviewPreview	light	1.0	en	ltr	compact	Detail Light	Design Review
 com.simtop.feature.beerdetail	DetailDesignReviewPreview_dark	dark	1.0	en	ltr	compact	Detail Dark	Design Review
 com.simtop.feature.beerdetail	DetailDesignReviewPreview_font150	light	1.5	en	ltr	compact	Detail Large Text	Design Review
 com.simtop.feature.beerdetail	DetailLandscapeDesignReviewPreview	light	1.0	en	ltr	expanded	Detail landscape	Design Review
 com.simtop.feature.beerdetail	DetailLandscapeDesignReviewPreview_font150	light	1.5	en	ltr	expanded	Detail landscape large text	Design Review
 com.simtop.feature.beerdetail	DetailLongContentDesignReviewPreview	light	1.0	en	ltr	compact	Detail Long Content	Design Review
+com.simtop.feature.beerdetail	DetailPartialCollapseDesignReviewPreview	light	1.0	en	ltr	compact	Detail Partial Collapse	Design Review
 com.simtop.feature.beerdetail	DetailSparseDesignReviewPreview	light	1.0	en	ltr	compact	Detail Sparse	Design Review
 com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_dark_font100_en_ltr_compact	dark	1.0	en	ltr	compact
 com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_dark_font100_en_ltr_expanded	dark	1.0	en	ltr	expanded
