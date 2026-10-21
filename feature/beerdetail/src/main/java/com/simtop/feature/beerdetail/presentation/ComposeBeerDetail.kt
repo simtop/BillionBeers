@@ -12,7 +12,6 @@ import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -24,6 +23,7 @@ import coil3.request.crossfade
 import coil3.request.error
 import coil3.request.placeholder
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailStrings
 import com.simtop.billionbeers.shared.beerdetail.MAX_BEER_METRIC_FRACTION_DIGITS
 import com.simtop.billionbeers.shared.beerdetail.SharedBeerDetailContent
@@ -98,14 +98,14 @@ fun ComposeBeerDetail(
       androidx.compose.material3.Icon(
         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
         contentDescription = contentDescription,
-        tint = Color.White,
+        tint = BillionBeersTheme.brand.detailHeroIcon,
       )
     },
     favoriteIcon = { isFavorite, contentDescription ->
       androidx.compose.material3.Icon(
         imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
         contentDescription = contentDescription,
-        tint = Color.White,
+        tint = BillionBeersTheme.brand.detailHeroIcon,
       )
     },
     imageContent = { imageUrl, contentDescription, imageModifier ->

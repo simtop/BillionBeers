@@ -39,6 +39,8 @@ fun BillionBeersTheme(
 
 /** Supported composable accessors for the shared design-system tokens. */
 object BillionBeersTheme {
+  val brand: BillionBeersBrand = BillionBeersBrand
+
   val spacing: BillionBeersSpacing
     @Composable @ReadOnlyComposable get() = LocalSpacing.current
 
