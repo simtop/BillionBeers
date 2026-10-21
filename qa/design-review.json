@@ -30,10 +30,12 @@
         "shared/beerslist/src/commonMain/**/*.kt",
         "shared/presentation/src/commonMain/**/*.kt",
         "shared/designsystem/src/commonMain/**/*.kt",
-        "core/designsystem/src/main/**/*.kt"
+        "core/designsystem/src/main/**/*.kt",
+        "beerdomain/api/src/commonMain/**/*.kt"
       ],
       "fixtures": [
-        "app/src/debug/java/com/simtop/billionbeers/presentation/CatalogDesignReviewPreview.kt"
+        "app/src/debug/java/com/simtop/billionbeers/presentation/CatalogDesignReviewPreview.kt",
+        "beerdomain/api/src/commonMain/kotlin/com/simtop/beerdomain/domain/models/Beer.kt"
       ],
       "cases": [
         {
@@ -44,7 +46,12 @@
             "font_scale": 1.0,
             "locale": "en",
             "device": "PIXEL_5",
-            "image_state": "synthetic-loaded"
+            "image_state": "synthetic-loaded",
+            "layout_direction": "ltr",
+            "surface": "home-with-bottom-navigation",
+            "ime": "not-rendered",
+            "save_form": "closed",
+            "search": "collapsed"
           }
         },
         {
@@ -55,7 +62,12 @@
             "font_scale": 1.0,
             "locale": "en",
             "device": "PIXEL_5",
-            "image_state": "synthetic-loaded"
+            "image_state": "synthetic-loaded",
+            "layout_direction": "ltr",
+            "surface": "home-with-bottom-navigation",
+            "ime": "not-rendered",
+            "save_form": "closed",
+            "search": "collapsed"
           }
         },
         {
@@ -66,7 +78,12 @@
             "font_scale": 1.5,
             "locale": "en",
             "device": "PIXEL_5",
-            "image_state": "synthetic-loaded"
+            "image_state": "synthetic-loaded",
+            "layout_direction": "ltr",
+            "surface": "home-with-bottom-navigation",
+            "ime": "not-rendered",
+            "save_form": "closed",
+            "search": "collapsed"
           }
         },
         {
@@ -78,7 +95,12 @@
             "locale": "en",
             "device": "PIXEL_5",
             "image_state": "synthetic-loaded",
-            "content": "long"
+            "content": "long",
+            "layout_direction": "ltr",
+            "surface": "home-with-bottom-navigation",
+            "ime": "not-rendered",
+            "save_form": "closed",
+            "search": "collapsed"
           }
         },
         {
@@ -89,7 +111,12 @@
             "font_scale": 1.0,
             "locale": "en",
             "device": "PIXEL_5",
-            "image_state": "loading"
+            "image_state": "loading",
+            "layout_direction": "ltr",
+            "surface": "home-with-bottom-navigation",
+            "ime": "not-rendered",
+            "save_form": "closed",
+            "search": "collapsed"
           }
         },
         {
@@ -100,7 +127,12 @@
             "font_scale": 1.0,
             "locale": "en",
             "device": "PIXEL_5",
-            "state": "empty"
+            "state": "empty",
+            "layout_direction": "ltr",
+            "surface": "home-with-bottom-navigation",
+            "ime": "not-rendered",
+            "save_form": "closed",
+            "search": "collapsed"
           }
         },
         {
@@ -111,7 +143,96 @@
             "font_scale": 1.0,
             "locale": "en",
             "device": "PIXEL_5",
-            "state": "error"
+            "state": "error",
+            "layout_direction": "ltr",
+            "surface": "home-with-bottom-navigation",
+            "ime": "not-rendered",
+            "save_form": "closed",
+            "search": "collapsed"
+          }
+        },
+        {
+          "id": "catalog-save-light",
+          "match": "[CatalogSaveFilterDesignReviewPreview]",
+          "conditions": {
+            "theme": "light",
+            "font_scale": 1.0,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "layout_direction": "ltr",
+            "image_state": "synthetic-loaded",
+            "save_form": "open",
+            "surface": "home-with-bottom-navigation",
+            "ime": "not-rendered",
+            "search": "collapsed"
+          }
+        },
+        {
+          "id": "catalog-inline-search-light",
+          "match": "[CatalogInlineSearchDesignReviewPreview]",
+          "conditions": {
+            "theme": "light",
+            "font_scale": 1.0,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "layout_direction": "ltr",
+            "image_state": "synthetic-loaded",
+            "search": "expanded",
+            "query": "ipa",
+            "content": "fixed-preview-results",
+            "surface": "home-with-bottom-navigation",
+            "ime": "not-rendered",
+            "save_form": "closed"
+          }
+        },
+        {
+          "id": "catalog-save-dark",
+          "match": "[CatalogSaveFilterDesignReviewPreview_dark]",
+          "conditions": {
+            "theme": "dark",
+            "font_scale": 1.0,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "layout_direction": "ltr",
+            "image_state": "synthetic-loaded",
+            "save_form": "open",
+            "surface": "home-with-bottom-navigation",
+            "ime": "not-rendered",
+            "search": "collapsed"
+          }
+        },
+        {
+          "id": "catalog-inline-search-dark",
+          "match": "[CatalogInlineSearchDesignReviewPreview_dark]",
+          "conditions": {
+            "theme": "dark",
+            "font_scale": 1.0,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "layout_direction": "ltr",
+            "image_state": "synthetic-loaded",
+            "search": "expanded",
+            "query": "ipa",
+            "content": "fixed-preview-results",
+            "surface": "home-with-bottom-navigation",
+            "ime": "not-rendered",
+            "save_form": "closed"
+          }
+        },
+        {
+          "id": "catalog-save-large-text",
+          "match": "[CatalogSaveFilterDesignReviewPreview_font150]",
+          "conditions": {
+            "theme": "light",
+            "font_scale": 1.5,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "layout_direction": "ltr",
+            "image_state": "synthetic-loaded",
+            "save_form": "open",
+            "surface": "home-with-bottom-navigation",
+            "ime": "not-rendered",
+            "search": "collapsed"
           }
         }
       ]
@@ -138,10 +259,12 @@
         "shared/beerdetail/src/commonMain/**/*.kt",
         "shared/designsystem/src/commonMain/**/*.kt",
         "presentation_utils/src/main/res/values*/strings.xml",
-        "core/designsystem/src/main/**/*.kt"
+        "core/designsystem/src/main/**/*.kt",
+        "beerdomain/api/src/commonMain/**/*.kt"
       ],
       "fixtures": [
-        "feature/beerdetail/src/debug/java/com/simtop/feature/beerdetail/presentation/DetailDesignReviewPreview.kt"
+        "feature/beerdetail/src/debug/java/com/simtop/feature/beerdetail/presentation/DetailDesignReviewPreview.kt",
+        "beerdomain/api/src/commonMain/kotlin/com/simtop/beerdomain/domain/models/Beer.kt"
       ],
       "cases": [
         {
@@ -152,7 +275,11 @@
             "font_scale": 1.0,
             "locale": "en",
             "device": "PIXEL_5",
-            "image_state": "synthetic-loaded"
+            "image_state": "synthetic-loaded",
+            "layout_direction": "ltr",
+            "header": "expanded",
+            "body_scroll": "top",
+            "ime": "not-rendered"
           }
         },
         {
@@ -163,7 +290,11 @@
             "font_scale": 1.0,
             "locale": "en",
             "device": "PIXEL_5",
-            "image_state": "synthetic-loaded"
+            "image_state": "synthetic-loaded",
+            "layout_direction": "ltr",
+            "header": "expanded",
+            "body_scroll": "top",
+            "ime": "not-rendered"
           }
         },
         {
@@ -174,7 +305,11 @@
             "font_scale": 1.5,
             "locale": "en",
             "device": "PIXEL_5",
-            "image_state": "synthetic-loaded"
+            "image_state": "synthetic-loaded",
+            "layout_direction": "ltr",
+            "header": "expanded",
+            "body_scroll": "top",
+            "ime": "not-rendered"
           }
         },
         {
@@ -186,7 +321,11 @@
             "locale": "en",
             "device": "PIXEL_5",
             "image_state": "synthetic-loaded",
-            "content": "long"
+            "content": "long",
+            "layout_direction": "ltr",
+            "header": "expanded",
+            "body_scroll": "top",
+            "ime": "not-rendered"
           }
         },
         {
@@ -198,7 +337,443 @@
             "locale": "en",
             "device": "PIXEL_5",
             "image_state": "synthetic-loaded",
-            "content": "sparse"
+            "content": "sparse",
+            "layout_direction": "ltr",
+            "header": "expanded",
+            "body_scroll": "top",
+            "ime": "not-rendered"
+          }
+        },
+        {
+          "id": "detail-partial",
+          "match": "[DetailPartialCollapseDesignReviewPreview]",
+          "conditions": {
+            "theme": "light",
+            "font_scale": 1.0,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "layout_direction": "ltr",
+            "image_state": "synthetic-loaded",
+            "header": "partial",
+            "body_scroll": "top",
+            "ime": "not-rendered"
+          }
+        },
+        {
+          "id": "detail-compact-light",
+          "match": "[DetailCollapsedDesignReviewPreview]",
+          "conditions": {
+            "theme": "light",
+            "font_scale": 1.0,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "layout_direction": "ltr",
+            "image_state": "synthetic-loaded",
+            "header": "compact",
+            "body_scroll": "top",
+            "ime": "not-rendered"
+          }
+        },
+        {
+          "id": "detail-compact-dark",
+          "match": "[DetailCollapsedDesignReviewPreview_dark]",
+          "conditions": {
+            "theme": "dark",
+            "font_scale": 1.0,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "layout_direction": "ltr",
+            "image_state": "synthetic-loaded",
+            "header": "compact",
+            "body_scroll": "top",
+            "ime": "not-rendered"
+          }
+        },
+        {
+          "id": "detail-compact-large-text",
+          "match": "[DetailCollapsedDesignReviewPreview_font150]",
+          "conditions": {
+            "theme": "light",
+            "font_scale": 1.5,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "layout_direction": "ltr",
+            "image_state": "synthetic-loaded",
+            "header": "compact",
+            "body_scroll": "top",
+            "ime": "not-rendered"
+          }
+        },
+        {
+          "id": "detail-scrolled-light",
+          "match": "[DetailScrolledDesignReviewPreview]",
+          "conditions": {
+            "theme": "light",
+            "font_scale": 1.0,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "layout_direction": "ltr",
+            "image_state": "synthetic-loaded",
+            "header": "compact",
+            "body_scroll": "end",
+            "ime": "not-rendered"
+          }
+        },
+        {
+          "id": "detail-scrolled-dark",
+          "match": "[DetailScrolledDesignReviewPreview_dark]",
+          "conditions": {
+            "theme": "dark",
+            "font_scale": 1.0,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "layout_direction": "ltr",
+            "image_state": "synthetic-loaded",
+            "header": "compact",
+            "body_scroll": "end",
+            "ime": "not-rendered"
+          }
+        },
+        {
+          "id": "detail-scrolled-large-text",
+          "match": "[DetailScrolledDesignReviewPreview_font150]",
+          "conditions": {
+            "theme": "light",
+            "font_scale": 1.5,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "layout_direction": "ltr",
+            "image_state": "synthetic-loaded",
+            "header": "compact",
+            "body_scroll": "end",
+            "ime": "not-rendered"
+          }
+        }
+      ]
+    },
+    "advanced-search": {
+      "platform": "android",
+      "renderer": "paparazzi",
+      "record": [
+        "make",
+        "screenshot-record",
+        "MODULE=:feature:beersearch",
+        "GRADLE_RUNNER=./gradlew"
+      ],
+      "verify": [
+        "make",
+        "screenshot-verify",
+        "MODULE=:feature:beersearch",
+        "GRADLE_RUNNER=./gradlew"
+      ],
+      "image_directory": "feature/beersearch/src/test/snapshots/images",
+      "sources": [
+        "feature/beersearch/src/main/**/*.kt",
+        "feature/beersearch/src/main/res/values*/strings.xml",
+        "feature/beersearch/src/debug/**/*.kt",
+        "shared/beersearch/src/commonMain/**/*.kt",
+        "presentation_utils/src/main/java/com/simtop/presentation_utils/custom_views/*.kt",
+        "presentation_utils/src/main/res/values*/strings.xml",
+        "shared/presentation/src/commonMain/**/*.kt",
+        "shared/designsystem/src/commonMain/**/*.kt",
+        "core/designsystem/src/main/**/*.kt",
+        "beerdomain/api/src/commonMain/**/*.kt"
+      ],
+      "fixtures": [
+        "feature/beersearch/src/debug/java/com/simtop/feature/beersearch/SearchSaveFilterPreview.kt",
+        "beerdomain/api/src/commonMain/kotlin/com/simtop/beerdomain/domain/models/Beer.kt"
+      ],
+      "cases": [
+        {
+          "id": "search-save-closed-light",
+          "match": "[SearchQueryDesignReviewPreview]",
+          "conditions": {
+            "theme": "light",
+            "font_scale": 1.0,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "layout_direction": "ltr",
+            "image_state": "loading-placeholder",
+            "query": "ipa+style",
+            "save_form": "closed",
+            "surface": "feature-content-without-host-navigation",
+            "ime": "not-rendered"
+          }
+        },
+        {
+          "id": "search-save-open-light",
+          "match": "[SearchSaveFilterPreview]",
+          "conditions": {
+            "theme": "light",
+            "font_scale": 1.0,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "layout_direction": "ltr",
+            "image_state": "loading-placeholder",
+            "query": "ipa+style",
+            "save_form": "open",
+            "surface": "feature-content-without-host-navigation",
+            "ime": "not-rendered"
+          }
+        },
+        {
+          "id": "search-save-closed-dark",
+          "match": "[SearchQueryDesignReviewPreview_dark]",
+          "conditions": {
+            "theme": "dark",
+            "font_scale": 1.0,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "layout_direction": "ltr",
+            "image_state": "loading-placeholder",
+            "query": "ipa+style",
+            "save_form": "closed",
+            "surface": "feature-content-without-host-navigation",
+            "ime": "not-rendered"
+          }
+        },
+        {
+          "id": "search-save-open-dark",
+          "match": "[SearchSaveFilterPreview_dark]",
+          "conditions": {
+            "theme": "dark",
+            "font_scale": 1.0,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "layout_direction": "ltr",
+            "image_state": "loading-placeholder",
+            "query": "ipa+style",
+            "save_form": "open",
+            "surface": "feature-content-without-host-navigation",
+            "ime": "not-rendered"
+          }
+        },
+        {
+          "id": "search-save-large-text",
+          "match": "[SearchSaveFilterPreview_font150]",
+          "conditions": {
+            "theme": "light",
+            "font_scale": 1.5,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "layout_direction": "ltr",
+            "image_state": "loading-placeholder",
+            "query": "ipa+style",
+            "save_form": "open",
+            "surface": "feature-content-without-host-navigation",
+            "ime": "not-rendered"
+          }
+        }
+      ]
+    },
+    "browse-style": {
+      "platform": "android",
+      "renderer": "paparazzi",
+      "record": [
+        "make",
+        "screenshot-record",
+        "MODULE=:feature:beerbrowse",
+        "GRADLE_RUNNER=./gradlew"
+      ],
+      "verify": [
+        "make",
+        "screenshot-verify",
+        "MODULE=:feature:beerbrowse",
+        "GRADLE_RUNNER=./gradlew"
+      ],
+      "image_directory": "feature/beerbrowse/src/test/snapshots/images",
+      "sources": [
+        "feature/beerbrowse/src/main/**/*.kt",
+        "feature/beerbrowse/src/debug/**/*.kt",
+        "shared/beerbrowse/src/commonMain/**/*.kt",
+        "presentation_utils/src/main/java/com/simtop/presentation_utils/custom_views/*.kt",
+        "presentation_utils/src/main/res/values*/strings.xml",
+        "shared/presentation/src/commonMain/**/*.kt",
+        "shared/designsystem/src/commonMain/**/*.kt",
+        "core/designsystem/src/main/**/*.kt",
+        "beerdomain/api/src/commonMain/**/*.kt"
+      ],
+      "fixtures": [
+        "feature/beerbrowse/src/debug/java/com/simtop/feature/beerbrowse/presentation/BrowseSaveFilterPreview.kt",
+        "beerdomain/api/src/commonMain/kotlin/com/simtop/beerdomain/domain/models/Beer.kt"
+      ],
+      "cases": [
+        {
+          "id": "browse-style-save-closed-light",
+          "match": "[BrowseStyleDesignReviewPreview]",
+          "conditions": {
+            "theme": "light",
+            "font_scale": 1.0,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "layout_direction": "ltr",
+            "image_state": "loading-placeholder",
+            "selection": "style",
+            "save_form": "closed",
+            "surface": "feature-content-without-host-navigation",
+            "ime": "not-rendered"
+          }
+        },
+        {
+          "id": "browse-style-save-open-light",
+          "match": "[BrowseStyleSaveFilterPreview]",
+          "conditions": {
+            "theme": "light",
+            "font_scale": 1.0,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "layout_direction": "ltr",
+            "image_state": "loading-placeholder",
+            "selection": "style",
+            "save_form": "open",
+            "surface": "feature-content-without-host-navigation",
+            "ime": "not-rendered"
+          }
+        },
+        {
+          "id": "browse-style-save-closed-dark",
+          "match": "[BrowseStyleDesignReviewPreview_dark]",
+          "conditions": {
+            "theme": "dark",
+            "font_scale": 1.0,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "layout_direction": "ltr",
+            "image_state": "loading-placeholder",
+            "selection": "style",
+            "save_form": "closed",
+            "surface": "feature-content-without-host-navigation",
+            "ime": "not-rendered"
+          }
+        },
+        {
+          "id": "browse-style-save-open-dark",
+          "match": "[BrowseStyleSaveFilterPreview_dark]",
+          "conditions": {
+            "theme": "dark",
+            "font_scale": 1.0,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "layout_direction": "ltr",
+            "image_state": "loading-placeholder",
+            "selection": "style",
+            "save_form": "open",
+            "surface": "feature-content-without-host-navigation",
+            "ime": "not-rendered"
+          }
+        }
+      ]
+    },
+    "browse-brewery": {
+      "platform": "android",
+      "renderer": "paparazzi",
+      "record": [
+        "make",
+        "screenshot-record",
+        "MODULE=:feature:beerbrowse",
+        "GRADLE_RUNNER=./gradlew"
+      ],
+      "verify": [
+        "make",
+        "screenshot-verify",
+        "MODULE=:feature:beerbrowse",
+        "GRADLE_RUNNER=./gradlew"
+      ],
+      "image_directory": "feature/beerbrowse/src/test/snapshots/images",
+      "sources": [
+        "feature/beerbrowse/src/main/**/*.kt",
+        "feature/beerbrowse/src/debug/**/*.kt",
+        "shared/beerbrowse/src/commonMain/**/*.kt",
+        "presentation_utils/src/main/java/com/simtop/presentation_utils/custom_views/*.kt",
+        "presentation_utils/src/main/res/values*/strings.xml",
+        "shared/presentation/src/commonMain/**/*.kt",
+        "shared/designsystem/src/commonMain/**/*.kt",
+        "core/designsystem/src/main/**/*.kt",
+        "beerdomain/api/src/commonMain/**/*.kt"
+      ],
+      "fixtures": [
+        "feature/beerbrowse/src/debug/java/com/simtop/feature/beerbrowse/presentation/BrowseSaveFilterPreview.kt",
+        "beerdomain/api/src/commonMain/kotlin/com/simtop/beerdomain/domain/models/Beer.kt"
+      ],
+      "cases": [
+        {
+          "id": "browse-brewery-save-closed-light",
+          "match": "[BrowseBreweryDesignReviewPreview]",
+          "conditions": {
+            "theme": "light",
+            "font_scale": 1.0,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "layout_direction": "ltr",
+            "image_state": "loading-placeholder",
+            "selection": "brewery",
+            "save_form": "closed",
+            "surface": "feature-content-without-host-navigation",
+            "ime": "not-rendered"
+          }
+        },
+        {
+          "id": "browse-brewery-save-open-light",
+          "match": "[BrowseSaveFilterPreview]",
+          "conditions": {
+            "theme": "light",
+            "font_scale": 1.0,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "layout_direction": "ltr",
+            "image_state": "loading-placeholder",
+            "selection": "brewery",
+            "save_form": "open",
+            "surface": "feature-content-without-host-navigation",
+            "ime": "not-rendered"
+          }
+        },
+        {
+          "id": "browse-brewery-save-closed-dark",
+          "match": "[BrowseBreweryDesignReviewPreview_dark]",
+          "conditions": {
+            "theme": "dark",
+            "font_scale": 1.0,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "layout_direction": "ltr",
+            "image_state": "loading-placeholder",
+            "selection": "brewery",
+            "save_form": "closed",
+            "surface": "feature-content-without-host-navigation",
+            "ime": "not-rendered"
+          }
+        },
+        {
+          "id": "browse-brewery-save-open-dark",
+          "match": "[BrowseSaveFilterPreview_dark]",
+          "conditions": {
+            "theme": "dark",
+            "font_scale": 1.0,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "layout_direction": "ltr",
+            "image_state": "loading-placeholder",
+            "selection": "brewery",
+            "save_form": "open",
+            "surface": "feature-content-without-host-navigation",
+            "ime": "not-rendered"
+          }
+        },
+        {
+          "id": "browse-brewery-save-large-text",
+          "match": "[BrowseSaveFilterPreview_font150]",
+          "conditions": {
+            "theme": "light",
+            "font_scale": 1.5,
+            "locale": "en",
+            "device": "PIXEL_5",
+            "layout_direction": "ltr",
+            "image_state": "loading-placeholder",
+            "selection": "brewery",
+            "save_form": "open",
+            "surface": "feature-content-without-host-navigation",
+            "ime": "not-rendered"
           }
         }
       ]

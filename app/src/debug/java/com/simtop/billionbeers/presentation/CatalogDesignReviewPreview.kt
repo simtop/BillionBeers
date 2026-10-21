@@ -24,6 +24,7 @@ import coil3.compose.LocalAsyncImagePreviewHandler
 import coil3.decode.DataSource
 import coil3.request.SuccessResult
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.PagedListUiModel
@@ -80,9 +81,32 @@ internal fun CatalogEmptyDesignReviewPreview() {
   CatalogReviewFrame(CommonUiState.Empty)
 }
 
+@PreviewLightDark
+@Preview(name = "Catalog Save Large Text", group = "Design Review", fontScale = 1.5f)
+@Composable
+internal fun CatalogSaveFilterDesignReviewPreview() {
+  CatalogReviewFrame(
+    CommonUiState.Success(PagedListUiModel(items = reviewBeers)),
+    saveExpanded = true,
+  )
+}
+
+@PreviewLightDark
+@Composable
+internal fun CatalogInlineSearchDesignReviewPreview() {
+  CatalogReviewFrame(
+    CommonUiState.Success(PagedListUiModel(items = reviewBeers)),
+    searchExpanded = true,
+  )
+}
+
 @OptIn(ExperimentalCoilApi::class)
 @Composable
-private fun CatalogReviewFrame(state: CommonUiState<PagedListUiModel<Beer>>) {
+private fun CatalogReviewFrame(
+  state: CommonUiState<PagedListUiModel<Beer>>,
+  saveExpanded: Boolean = false,
+  searchExpanded: Boolean = false,
+) {
   val imageHandler = remember {
     // Override the suite's loading handler only here. No network or third-party artwork is used.
     AsyncImagePreviewHandler { _, request ->
@@ -122,6 +146,10 @@ private fun CatalogReviewFrame(state: CommonUiState<PagedListUiModel<Beer>>) {
           onSearchClick = {},
           onBrowseClick = {},
           onSaveQuery = { false },
+          saveInitiallyExpanded = saveExpanded,
+          searchInitiallyExpanded = searchExpanded,
+          searchQuery = if (searchExpanded) "ipa" else "",
+          activeSearchQuery = if (searchExpanded) "ipa" else null,
           onScrollToBottom = {},
           onRefresh = {},
           onRetry = {},

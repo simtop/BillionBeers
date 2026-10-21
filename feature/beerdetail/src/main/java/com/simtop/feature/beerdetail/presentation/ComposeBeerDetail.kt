@@ -3,6 +3,8 @@
 package com.simtop.feature.beerdetail.presentation
 
 import android.provider.Settings
+import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
@@ -41,6 +43,7 @@ fun ComposeBeerDetail(
   onToggleFavorite: () -> Unit = {},
   showBackButton: Boolean = true,
   scrollBehavior: TopAppBarScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(),
+  scrollState: ScrollState = rememberScrollState(),
 ) {
   val context = LocalContext.current
   val locale = LocalConfiguration.current.locales[0]
@@ -117,6 +120,7 @@ fun ComposeBeerDetail(
     contentModifier = Modifier.testTag("detail_scroll_view"),
     headerModifier = Modifier.testTag("detail_header"),
     scrollBehavior = scrollBehavior,
+    scrollState = scrollState,
     showBackButton = showBackButton,
     animationsDisabled = animationsDisabled,
   )

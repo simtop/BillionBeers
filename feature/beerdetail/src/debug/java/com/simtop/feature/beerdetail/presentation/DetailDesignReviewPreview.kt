@@ -5,10 +5,12 @@ package com.simtop.feature.beerdetail.presentation
 import android.content.res.Configuration
 import android.graphics.Canvas
 import android.graphics.Paint
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
@@ -89,9 +91,29 @@ internal fun DetailPartialCollapseDesignReviewPreview() {
   DetailReviewFrame(detailReviewBeer, initialHeaderOffsetDp = -88f)
 }
 
+@Preview(name = "Detail Body End", group = "Design Review", showBackground = true)
+@Preview(
+  name = "Detail Body End Dark",
+  group = "Design Review",
+  uiMode = Configuration.UI_MODE_NIGHT_YES,
+)
+@Preview(name = "Detail Body End Large Text", group = "Design Review", fontScale = 1.5f)
+@Composable
+internal fun DetailScrolledDesignReviewPreview() {
+  DetailReviewFrame(
+    detailReviewBeer,
+    initialHeaderOffsetDp = -10000f,
+    bodyAtEnd = true,
+  )
+}
+
 @OptIn(ExperimentalCoilApi::class)
 @Composable
-private fun DetailReviewFrame(beer: Beer, initialHeaderOffsetDp: Float = 0f) {
+private fun DetailReviewFrame(
+  beer: Beer,
+  initialHeaderOffsetDp: Float = 0f,
+  bodyAtEnd: Boolean = false,
+) {
   val imageHandler = remember {
     // Override the suite's loading handler only here. No network or third-party artwork is used.
     AsyncImagePreviewHandler { _, request ->
@@ -119,11 +141,18 @@ private fun DetailReviewFrame(beer: Beer, initialHeaderOffsetDp: Float = 0f) {
     LocalAsyncImagePreviewHandler provides imageHandler,
   ) {
     BillionBeersTheme {
+      val scrollState = rememberScrollState(initial = if (bodyAtEnd) Int.MAX_VALUE else 0)
+      LaunchedEffect(bodyAtEnd, scrollState.maxValue) {
+        if (bodyAtEnd && scrollState.maxValue < Int.MAX_VALUE) {
+          scrollState.scrollTo(scrollState.maxValue)
+        }
+      }
       ComposeBeerDetail(
         beer = beer,
         onBackClick = {},
         onToggleAvailability = {},
         onToggleFavorite = {},
+        scrollState = scrollState,
         scrollBehavior =
           TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
             rememberTopAppBarState(

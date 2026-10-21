@@ -4,6 +4,7 @@ package com.simtop.feature.beerdetail
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -11,11 +12,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
@@ -25,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.feature.beerdetail.presentation.ComposeBeerDetail
+import com.simtop.feature.beerdetail.presentation.DetailScrolledDesignReviewPreview
 import com.simtop.presentation_utils.R
 import com.simtop.testing_utils_android.BaseTestRobot
 import com.simtop.testing_utils_android.withFailureScreenshot
@@ -99,6 +104,40 @@ class BeerDetailUiTest {
     verifyCollapse(fontScale = 2f, heightDp = 400)
   }
 
+  @Test
+  fun scrolledReferenceShowsEndOfBodyUnderCompactHeader() {
+    verifyScrolledReference(fontScale = 1f)
+  }
+
+  @Test
+  fun largeTextScrolledReferenceShowsEndOfBodyUnderCompactHeader() {
+    verifyScrolledReference(fontScale = 1.5f)
+  }
+
+  private fun verifyScrolledReference(fontScale: Float) {
+    composeTestRule.setContent {
+      val density = LocalDensity.current.density
+      CompositionLocalProvider(LocalDensity provides Density(density, fontScale)) {
+        Box(Modifier.width(360.dp).height(760.dp)) {
+          DetailScrolledDesignReviewPreview()
+        }
+      }
+    }
+    val robot = BaseTestRobot(composeTestRule)
+    robot.assertTextIsDisplayed("Pint glass")
+    robot.assertTextIsDisplayed("Tulip")
+    composeTestRule.onNodeWithText("A Real Bitter Experience.").assertIsNotDisplayed()
+    val header = composeTestRule.onNodeWithTag("detail_header").getUnclippedBoundsInRoot()
+    assertTrue("The scrolled reference uses the compact bar", header.bottom - header.top <= 100.dp)
+    val range =
+      composeTestRule
+        .onNodeWithTag("detail_scroll_view")
+        .fetchSemanticsNode()
+        .config[SemanticsProperties.VerticalScrollAxisRange]
+    assertTrue("The reference body must actually scroll", range.value() > 0f)
+    assertEquals(range.maxValue(), range.value(), 1f)
+  }
+
   private fun verifyCollapse(fontScale: Float, heightDp: Int) {
     var backCount = 0
     var favoriteCount = 0
@@ -107,7 +146,7 @@ class BeerDetailUiTest {
       val density = LocalDensity.current.density
       CompositionLocalProvider(LocalDensity provides Density(density, fontScale)) {
         BillionBeersTheme {
-          Box(Modifier.height(heightDp.dp)) {
+          Box(Modifier.width(360.dp).height(heightDp.dp)) {
             ComposeBeerDetail(
               beer =
                 beer.copy(description = List(40) { "A crisp and bitter IPA." }.joinToString(" ")),
@@ -126,6 +165,9 @@ class BeerDetailUiTest {
     content.performTouchInput { swipeUp(durationMillis = 600) }
     composeTestRule.waitForIdle()
     val collapsed = header.getUnclippedBoundsInRoot().run { bottom - top }
+    val bodyOffset =
+      content.fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange].value()
+    assertTrue("The body must scroll after the header collapses", bodyOffset > 0f)
     assertTrue("Header must release space", collapsed < expanded - 40.dp)
     assertTrue(
       "Body must move into released space",
@@ -140,6 +182,11 @@ class BeerDetailUiTest {
     restoration.emulateSavedInstanceStateRestore()
     composeTestRule.waitForIdle()
     assertEquals(collapsed.value, header.getUnclippedBoundsInRoot().run { bottom - top }.value, 1f)
+    assertEquals(
+      bodyOffset,
+      content.fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange].value(),
+      1f,
+    )
     repeat(6) { content.performTouchInput { swipeDown(durationMillis = 600) } }
     composeTestRule.waitForIdle()
     assertEquals(expanded.value, header.getUnclippedBoundsInRoot().run { bottom - top }.value, 1f)

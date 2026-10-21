@@ -30,7 +30,7 @@ def png(width=2, height=3):
 
 
 class ReviewTest(unittest.TestCase):
-    def test_project_adapter_selects_unique_golden_names_and_existing_fixtures(self):
+    def test_project_adapter_selects_unique_goldens_and_existing_sources(self):
         root = Path(__file__).resolve().parents[3]
         config = root / "qa" / "design-review.json"
         if not config.is_file():
@@ -38,13 +38,14 @@ class ReviewTest(unittest.TestCase):
         for name, screen in review.read_json(config)["screens"].items():
             with self.subTest(screen=name):
                 selected = []
-                # The CI format lane can see LFS pointers, so inspect names without decoding images.
+                # Name validation also supports checkouts with LFS pointers, without decoding images.
                 images = list((root / screen["image_directory"]).glob("*.png"))
                 for case in screen["cases"]:
                     matches = [path for path in images if case["match"] in path.name]
                     self.assertEqual(len(matches), 1, case["id"])
                     selected.extend(matches)
                 self.assertEqual(len(selected), len(set(selected)))
+                self.assertTrue(review.source_hashes(root, screen["sources"]))
                 self.assertTrue(review.source_hashes(root, screen["fixtures"]))
 
     def setUp(self):
