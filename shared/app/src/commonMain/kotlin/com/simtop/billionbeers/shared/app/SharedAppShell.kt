@@ -65,6 +65,7 @@ import com.simtop.billionbeers.shared.beerdetail.SharedBeerDetailContent
 import com.simtop.billionbeers.shared.beersearch.BeersSearchStyleFilter
 import com.simtop.billionbeers.shared.beersearch.SharedBeersSearchContent
 import com.simtop.billionbeers.shared.beerslist.SharedBeersListContent
+import com.simtop.billionbeers.shared.designsystem.components.rememberNavigationLabel
 import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersTheme
 import com.simtop.billionbeers.shared.favorites.SharedFavoritesContent
 import com.simtop.billionbeers.shared.presentation.FilterPresetFormLabels
@@ -292,6 +293,10 @@ fun SharedAppShell(
       val expandedCatalogDetail = shouldShowExpandedCatalogDetail(maxWidth, navigation.entries)
       val navigationRoute = if (expandedCatalogDetail) navigation.entries.first().route else route
       val showNavigationRail = shouldShowNavigationRail(maxWidth, navigationRoute)
+      val navigationLabel =
+        rememberNavigationLabel(
+          listOf(strings.chrome.list, strings.chrome.favorites, strings.chrome.savedFilters)
+        )
       Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
@@ -328,19 +333,19 @@ fun SharedAppShell(
                   selected = route == PortableRoute.BeersList,
                   onClick = { navigate(PortableRoute.BeersList) },
                   icon = { host.catalogNavigationIcon(strings.chrome.list) },
-                  label = { Text(strings.chrome.list) },
+                  label = { navigationLabel(strings.chrome.list) },
                 )
                 NavigationBarItem(
                   selected = route == PortableRoute.Favorites,
                   onClick = { navigate(PortableRoute.Favorites) },
                   icon = { host.favoritesNavigationIcon(strings.chrome.favorites) },
-                  label = { Text(strings.chrome.favorites) },
+                  label = { navigationLabel(strings.chrome.favorites) },
                 )
                 NavigationBarItem(
                   selected = route == PortableRoute.SavedFilterPresets,
                   onClick = { navigate(PortableRoute.SavedFilterPresets) },
                   icon = { host.savedFiltersNavigationIcon(strings.chrome.savedFilters) },
-                  label = { Text(strings.chrome.savedFilters) },
+                  label = { navigationLabel(strings.chrome.savedFilters) },
                 )
               }
             }
@@ -354,19 +359,19 @@ fun SharedAppShell(
                 selected = navigationRoute == PortableRoute.BeersList,
                 onClick = { navigate(PortableRoute.BeersList) },
                 icon = { host.catalogNavigationIcon(strings.chrome.list) },
-                label = { Text(strings.chrome.list) },
+                label = { navigationLabel(strings.chrome.list) },
               )
               NavigationRailItem(
                 selected = navigationRoute == PortableRoute.Favorites,
                 onClick = { navigate(PortableRoute.Favorites) },
                 icon = { host.favoritesNavigationIcon(strings.chrome.favorites) },
-                label = { Text(strings.chrome.favorites) },
+                label = { navigationLabel(strings.chrome.favorites) },
               )
               NavigationRailItem(
                 selected = navigationRoute == PortableRoute.SavedFilterPresets,
                 onClick = { navigate(PortableRoute.SavedFilterPresets) },
                 icon = { host.savedFiltersNavigationIcon(strings.chrome.savedFilters) },
-                label = { Text(strings.chrome.savedFilters) },
+                label = { navigationLabel(strings.chrome.savedFilters) },
               )
             }
           }

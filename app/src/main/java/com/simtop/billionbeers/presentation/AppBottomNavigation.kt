@@ -10,13 +10,13 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
+import com.simtop.billionbeers.shared.designsystem.components.rememberNavigationLabel
 import com.simtop.navigation.contract.PortableRoute
 import com.simtop.presentation_utils.R
 
@@ -26,6 +26,14 @@ fun AppBottomNavigation(
   onTabSelect: (NavKey) -> Unit,
   modifier: Modifier = Modifier,
 ) {
+  val navigationLabel =
+    rememberNavigationLabel(
+      listOf(
+        stringResource(R.string.home_tab),
+        stringResource(R.string.favorites_title),
+        stringResource(R.string.saved_filters_title),
+      )
+    )
   val itemColors =
     NavigationBarItemDefaults.colors(
       selectedIconColor = androidx.compose.material3.MaterialTheme.colorScheme.onPrimaryContainer,
@@ -45,7 +53,7 @@ fun AppBottomNavigation(
       selected = selectedTab == PortableRoute.BeersList,
       onClick = { onTabSelect(PortableRoute.BeersList) },
       icon = { Icon(Icons.Filled.Home, contentDescription = stringResource(R.string.home_tab)) },
-      label = { Text(stringResource(R.string.home_tab)) },
+      label = { navigationLabel(stringResource(R.string.home_tab)) },
       colors = itemColors,
     )
     NavigationBarItem(
@@ -58,7 +66,7 @@ fun AppBottomNavigation(
           contentDescription = stringResource(R.string.favorites_title),
         )
       },
-      label = { Text(stringResource(R.string.favorites_title)) },
+      label = { navigationLabel(stringResource(R.string.favorites_title)) },
       colors = itemColors,
     )
     NavigationBarItem(
@@ -71,7 +79,7 @@ fun AppBottomNavigation(
           contentDescription = stringResource(R.string.saved_filters_title),
         )
       },
-      label = { Text(stringResource(R.string.saved_filters_title)) },
+      label = { navigationLabel(stringResource(R.string.saved_filters_title)) },
       colors = itemColors,
     )
   }
@@ -83,6 +91,14 @@ fun AppNavigationRail(
   onTabSelect: (NavKey) -> Unit,
   modifier: Modifier = Modifier,
 ) {
+  val navigationLabel =
+    rememberNavigationLabel(
+      listOf(
+        stringResource(R.string.home_tab),
+        stringResource(R.string.favorites_title),
+        stringResource(R.string.saved_filters_title),
+      )
+    )
   NavigationRail(
     modifier = modifier.testTag("app_navigation_rail"),
     containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface,
@@ -92,7 +108,7 @@ fun AppNavigationRail(
       selected = selectedTab == PortableRoute.BeersList,
       onClick = { onTabSelect(PortableRoute.BeersList) },
       icon = { Icon(Icons.Filled.Home, contentDescription = stringResource(R.string.home_tab)) },
-      label = { Text(stringResource(R.string.home_tab)) },
+      label = { navigationLabel(stringResource(R.string.home_tab)) },
       alwaysShowLabel = true,
     )
     NavigationRailItem(
@@ -105,7 +121,7 @@ fun AppNavigationRail(
           contentDescription = stringResource(R.string.favorites_title),
         )
       },
-      label = { Text(stringResource(R.string.favorites_title)) },
+      label = { navigationLabel(stringResource(R.string.favorites_title)) },
       alwaysShowLabel = true,
     )
     NavigationRailItem(
@@ -118,7 +134,7 @@ fun AppNavigationRail(
           contentDescription = stringResource(R.string.saved_filters_title),
         )
       },
-      label = { Text(stringResource(R.string.saved_filters_title)) },
+      label = { navigationLabel(stringResource(R.string.saved_filters_title)) },
       alwaysShowLabel = true,
     )
   }
