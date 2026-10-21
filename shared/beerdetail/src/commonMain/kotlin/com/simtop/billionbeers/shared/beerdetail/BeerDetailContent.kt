@@ -47,7 +47,6 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.lerp
@@ -111,15 +110,10 @@ fun SharedBeerDetailContent(
 ) {
   val favoriteLabel = if (beer.isFavorite) strings.removeFromFavorites else strings.addToFavorites
   val scrollState = rememberScrollState()
-  val headerTitleStyle =
-    titleTextStyle
-      ?: MaterialTheme.typography.headlineLarge.copy(
-        fontWeight = FontWeight.ExtraBold,
-        fontFamily = FontFamily.Serif,
-      )
+  val headerTitleStyle = titleTextStyle ?: BillionBeersTheme.brand.detailTitle
   val headerButtonModifier = Modifier.size(48.dp)
   val headerButtonColors =
-    IconButtonDefaults.iconButtonColors(contentColor = Color(HERO_FOREGROUND))
+    IconButtonDefaults.iconButtonColors(contentColor = BillionBeersTheme.brand.detailHeroForeground)
   val favoriteButton: @Composable () -> Unit = {
     IconButton(
       onClick = onToggleFavorite,
@@ -294,7 +288,9 @@ private fun BeerDetailHeader(
 ) {
   BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
     val density = LocalDensity.current
-    val preferredHeight = if (density.fontScale > 1f) 340.dp else 260.dp
+    val preferredHeight =
+      if (density.fontScale > 1f) BillionBeersTheme.brand.largeTextDetailHeroHeight
+      else BillionBeersTheme.brand.detailHeroHeight
     val compactHeight = 56.dp + with(density) { WindowInsets.statusBars.getTop(this).toDp() }
     val expandedHeight =
       minOf(preferredHeight, maxHeight * HERO_MAX_HEIGHT_FRACTION).coerceAtLeast(compactHeight)
@@ -313,7 +309,7 @@ private fun BeerDetailHeader(
       Modifier.fillMaxWidth()
         .height(currentHeight)
         .windowInsetsPadding(WindowInsets.statusBars)
-        .background(Color(HERO_BACKGROUND))
+        .background(BillionBeersTheme.brand.detailHeroBackground)
         .clipToBounds()
         .padding(horizontal = 16.dp)
     ) {
@@ -330,14 +326,11 @@ private fun BeerDetailHeader(
         Column(Modifier.weight(1f).padding(end = lerp(8.dp, 0.dp, fraction))) {
           Text(
             text = beer.name,
-            color = Color(HERO_FOREGROUND),
+            color = BillionBeersTheme.brand.detailHeroForeground,
             style =
               lerp(
                 titleStyle,
-                MaterialTheme.typography.titleMedium.copy(
-                  fontWeight = FontWeight.ExtraBold,
-                  fontFamily = FontFamily.Serif,
-                ),
+                BillionBeersTheme.brand.compactDetailTitle,
                 fraction,
               ),
             maxLines =
@@ -348,9 +341,9 @@ private fun BeerDetailHeader(
           if (fraction < 1f) {
             Spacer(Modifier.height(lerp(16.dp, 0.dp, fraction)))
             Box(
-              Modifier.width(48.dp)
-                .height(lerp(4.dp, 0.dp, fraction))
-                .background(Color(HERO_ACCENT))
+              Modifier.width(BillionBeersTheme.brand.detailHeroAccentSize.width)
+                .height(lerp(BillionBeersTheme.brand.detailHeroAccentSize.height, 0.dp, fraction))
+                .background(BillionBeersTheme.brand.detailHeroAccent)
             )
           }
         }
@@ -358,7 +351,8 @@ private fun BeerDetailHeader(
           imageContent(
             beer.imageUrl,
             strings.imageDescription(beer.name),
-            Modifier.width(lerp(112.dp, 0.dp, fraction)).height(lerp(200.dp, 0.dp, fraction)),
+            Modifier.width(lerp(BillionBeersTheme.brand.detailArtworkSize.width, 0.dp, fraction))
+              .height(lerp(BillionBeersTheme.brand.detailArtworkSize.height, 0.dp, fraction)),
           )
         }
       }
@@ -515,9 +509,6 @@ private const val TEXT_ALPHA = 0.8f
 private const val AVAILABILITY_ANIMATION_DURATION_MS = 300
 private const val LARGE_FONT_METRIC_CARD_SCALE = 2f
 
-private const val HERO_FOREGROUND = 0xFFFFF7E6
-private const val HERO_BACKGROUND = 0xFF302719
-private const val HERO_ACCENT = 0xFFE6AF64
 private const val HERO_MAX_HEIGHT_FRACTION = 0.45f
 private const val HERO_TITLE_MAX_LINES = 3
 

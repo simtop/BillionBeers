@@ -4,6 +4,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
+import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersBrand
 import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersTheme as SharedBillionBeersTheme
 
 /**
@@ -19,6 +20,9 @@ fun BillionBeersTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Comp
 
 /** Stable Android-facing accessors for the shared semantic tokens. */
 object BillionBeersTheme {
+  val brand: BillionBeersBrand
+    get() = SharedBillionBeersTheme.brand
+
   val spacing: BillionBeersSpacing
     @Composable @ReadOnlyComposable get() = SharedBillionBeersTheme.spacing
 

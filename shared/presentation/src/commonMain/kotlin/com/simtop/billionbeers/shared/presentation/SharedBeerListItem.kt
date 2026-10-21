@@ -17,7 +17,6 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersTheme
 
@@ -58,7 +57,8 @@ fun SharedBeerListItem(
           stateDescription = labels.availability
         },
     shape = RoundedCornerShape(BillionBeersTheme.spacing.medium),
-    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+    elevation =
+      CardDefaults.cardElevation(defaultElevation = BillionBeersTheme.brand.beerCardElevation),
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
   ) {
     Row(
@@ -69,8 +69,8 @@ fun SharedBeerListItem(
     ) {
       Box(
         modifier =
-          Modifier.width(72.dp)
-            .height(96.dp)
+          Modifier.width(BillionBeersTheme.brand.beerArtworkSize.width)
+            .height(BillionBeersTheme.brand.beerArtworkSize.height)
             .clip(
               RoundedCornerShape(
                 BillionBeersTheme.spacing.small + BillionBeersTheme.spacing.extraSmall
@@ -86,7 +86,7 @@ fun SharedBeerListItem(
       Column(modifier = Modifier.weight(1f)) {
         Text(
           text = beer.name,
-          style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
+          style = BillionBeersTheme.brand.beerTitle,
           maxLines = titleMaxLines,
           overflow = TextOverflow.Ellipsis,
         )
