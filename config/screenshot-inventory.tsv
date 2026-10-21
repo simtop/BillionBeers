@@ -1,3 +1,9 @@
+com.simtop.billionbeers	AppNavigationLabelPreview	light	1.0	es	ltr	compact	Spanish	Navigation labels
+com.simtop.billionbeers	AppNavigationLabelPreview_font150_es	light	1.5	es	ltr	compact	Spanish large	Navigation labels
+com.simtop.billionbeers	AppNavigationLabelPreview_font200_es	light	2.0	es	ltr	compact	Spanish largest	Navigation labels
+com.simtop.billionbeers	AppNavigationRailLabelPreview	light	1.0	es	ltr	compact	Spanish rail	Navigation labels
+com.simtop.billionbeers	AppNavigationRailLabelPreview_font150_es	light	1.5	es	ltr	compact	Spanish rail large	Navigation labels
+com.simtop.billionbeers	AppNavigationRailLabelPreview_font200_es	light	2.0	es	ltr	compact	Spanish rail largest	Navigation labels
 com.simtop.billionbeers	CatalogDesignReviewPreview	light	1.0	en	ltr	compact	Catalog Light	Design Review
 com.simtop.billionbeers	CatalogDesignReviewPreview_dark	dark	1.0	en	ltr	compact	Catalog Dark	Design Review
 com.simtop.billionbeers	CatalogDesignReviewPreview_font150	light	1.5	en	ltr	compact	Catalog Large Text	Design Review
