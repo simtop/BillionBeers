@@ -6,10 +6,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,6 +14,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.simtop.billionbeers.shared.designsystem.controls.BrandCircularProgressIndicator
+import com.simtop.billionbeers.shared.designsystem.controls.BrandText
+import com.simtop.billionbeers.shared.designsystem.controls.BrandTextButton
 import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersTheme
 import com.simtop.core.core.PagedListFooter
 import com.simtop.core.core.PagedListUiModel
@@ -51,7 +50,7 @@ private fun LoadingMoreFooter() {
     modifier = Modifier.fillMaxWidth().padding(BillionBeersTheme.spacing.large),
     contentAlignment = Alignment.Center,
   ) {
-    CircularProgressIndicator(
+    BrandCircularProgressIndicator(
       modifier = Modifier.size(BillionBeersTheme.spacing.extraLarge),
       strokeWidth = 3.dp,
     )
@@ -68,17 +67,17 @@ private fun LoadMoreRetryFooter(
     modifier = Modifier.fillMaxWidth().padding(BillionBeersTheme.spacing.medium),
     horizontalAlignment = Alignment.CenterHorizontally,
   ) {
-    Text(
+    BrandText(
       text = message,
-      style = MaterialTheme.typography.bodyMedium,
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
+      style = BillionBeersTheme.typography.bodyMedium,
+      color = BillionBeersTheme.colorScheme.onSurfaceVariant,
       modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
     )
-    TextButton(
+    BrandTextButton(
       onClick = onRetry,
       modifier = Modifier.semantics { contentDescription = retryLabel },
     ) {
-      Text(text = retryLabel)
+      BrandText(text = retryLabel)
     }
   }
 }
@@ -89,10 +88,10 @@ private fun EndOfListFooter(text: String) {
     modifier = Modifier.fillMaxWidth().padding(BillionBeersTheme.spacing.large),
     contentAlignment = Alignment.Center,
   ) {
-    Text(
+    BrandText(
       text = text,
-      style = MaterialTheme.typography.bodyMedium,
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
+      style = BillionBeersTheme.typography.bodyMedium,
+      color = BillionBeersTheme.colorScheme.onSurfaceVariant,
     )
   }
 }

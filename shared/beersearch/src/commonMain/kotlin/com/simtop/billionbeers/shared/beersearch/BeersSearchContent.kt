@@ -6,10 +6,6 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -20,6 +16,10 @@ import androidx.compose.ui.platform.testTag
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.billionbeers.shared.designsystem.components.SharedLazyColumn
+import com.simtop.billionbeers.shared.designsystem.controls.BrandDropdownMenu
+import com.simtop.billionbeers.shared.designsystem.controls.BrandDropdownMenuItem
+import com.simtop.billionbeers.shared.designsystem.controls.BrandFilterChip
+import com.simtop.billionbeers.shared.designsystem.controls.BrandText
 import com.simtop.billionbeers.shared.presentation.InfiniteListHandler
 import com.simtop.billionbeers.shared.presentation.sharedPagedListFooter
 import com.simtop.core.core.CommonUiState
@@ -40,15 +40,15 @@ fun BeersSearchStyleFilter(
 ) {
   var expanded by remember { mutableStateOf(false) }
   Box(modifier) {
-    FilterChip(
+    BrandFilterChip(
       selected = selectedStyle != null,
       onClick = { expanded = true },
-      label = { Text(selectedStyle?.name ?: styleLabel) },
+      label = { BrandText(selectedStyle?.name ?: styleLabel) },
       modifier = Modifier.testTag("style_filter"),
     )
-    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-      DropdownMenuItem(
-        text = { Text(allStylesLabel) },
+    BrandDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+      BrandDropdownMenuItem(
+        text = { BrandText(allStylesLabel) },
         onClick = {
           onStyleChange(null)
           expanded = false
@@ -56,21 +56,23 @@ fun BeersSearchStyleFilter(
         enabled = selectedStyle != null,
       )
       when (val state = styles) {
-        CommonUiState.Loading -> DropdownMenuItem(text = { Text(styleLabel) }, onClick = {})
-        CommonUiState.Empty -> DropdownMenuItem(text = { Text(allStylesLabel) }, onClick = {})
+        CommonUiState.Loading ->
+          BrandDropdownMenuItem(text = { BrandText(styleLabel) }, onClick = {})
+        CommonUiState.Empty ->
+          BrandDropdownMenuItem(text = { BrandText(allStylesLabel) }, onClick = {})
         is CommonUiState.Error ->
-          DropdownMenuItem(
-            text = { Text(state.message ?: styleLabel) },
+          BrandDropdownMenuItem(
+            text = { BrandText(state.message ?: styleLabel) },
             onClick = {
               onRetryStyles()
               expanded = false
             },
-            trailingIcon = { Text(retryLabel) },
+            trailingIcon = { BrandText(retryLabel) },
           )
         is CommonUiState.Success ->
           state.data.forEach { style ->
-            DropdownMenuItem(
-              text = { Text(style.name) },
+            BrandDropdownMenuItem(
+              text = { BrandText(style.name) },
               onClick = {
                 onStyleChange(style.id)
                 expanded = false
@@ -79,8 +81,8 @@ fun BeersSearchStyleFilter(
           }
       }
       if (selectedStyle != null) {
-        DropdownMenuItem(
-          text = { Text(clearStyleLabel) },
+        BrandDropdownMenuItem(
+          text = { BrandText(clearStyleLabel) },
           onClick = {
             onStyleChange(null)
             expanded = false

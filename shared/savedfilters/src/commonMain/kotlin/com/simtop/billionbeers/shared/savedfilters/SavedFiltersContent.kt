@@ -8,10 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,6 +21,10 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.billionbeers.shared.designsystem.components.SharedLazyColumn
+import com.simtop.billionbeers.shared.designsystem.controls.BrandButton
+import com.simtop.billionbeers.shared.designsystem.controls.BrandCircularProgressIndicator
+import com.simtop.billionbeers.shared.designsystem.controls.BrandOutlinedTextField
+import com.simtop.billionbeers.shared.designsystem.controls.BrandText
 import com.simtop.core.core.CommonUiState
 import kotlinx.coroutines.launch
 
@@ -48,7 +48,7 @@ fun SharedSavedFiltersContent(
   when (val state = viewState) {
     CommonUiState.Loading ->
       Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator()
+        BrandCircularProgressIndicator()
       }
     CommonUiState.Empty ->
       SavedFiltersList(emptyList(), strings, onApply, onRename, onDelete, modifier)
@@ -57,7 +57,7 @@ fun SharedSavedFiltersContent(
         modifier.fillMaxSize().testTag("saved_filters_load_error"),
         contentAlignment = Alignment.Center,
       ) {
-        Text(strings.loadFailed)
+        BrandText(strings.loadFailed)
       }
     is CommonUiState.Success ->
       SavedFiltersList(state.data, strings, onApply, onRename, onDelete, modifier)
@@ -74,7 +74,7 @@ private fun SavedFiltersList(
   modifier: Modifier,
 ) {
   SharedLazyColumn(modifier.padding(12.dp)) {
-    if (presets.isEmpty()) item { Text(strings.empty) }
+    if (presets.isEmpty()) item { BrandText(strings.empty) }
     items(presets, key = SavedFilterPreset::id) { preset ->
       SavedFilterRow(preset, strings, onApply, onRename, onDelete)
     }
@@ -99,18 +99,18 @@ private fun SavedFilterRow(
     verticalArrangement = Arrangement.spacedBy(8.dp),
   ) {
     if (editing) {
-      OutlinedTextField(
+      BrandOutlinedTextField(
         value = name,
         onValueChange = { value ->
-          if (renaming) return@OutlinedTextField
+          if (renaming) return@BrandOutlinedTextField
           if (value.length <= SavedFilterPreset.MAX_NAME_LENGTH) name = value
         },
-        label = { Text(strings.name) },
+        label = { BrandText(strings.name) },
         modifier = Modifier.fillMaxWidth(),
         singleLine = true,
         enabled = !renaming,
       )
-      Button(
+      BrandButton(
         onClick = {
           if (!renaming) {
             renaming = true
@@ -125,18 +125,18 @@ private fun SavedFilterRow(
         },
         enabled = !renaming,
       ) {
-        Text(strings.rename)
+        BrandText(strings.rename)
       }
     } else {
-      Button(onClick = { onApply(preset) }, modifier = Modifier.fillMaxWidth()) {
-        Text(preset.name)
+      BrandButton(onClick = { onApply(preset) }, modifier = Modifier.fillMaxWidth()) {
+        BrandText(preset.name)
       }
       FlowRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
       ) {
-        Button(onClick = { editing = true }) { Text(strings.rename) }
-        Button(onClick = { scope.launch { onDelete(preset) } }) { Text(strings.delete) }
+        BrandButton(onClick = { editing = true }) { BrandText(strings.rename) }
+        BrandButton(onClick = { scope.launch { onDelete(preset) } }) { BrandText(strings.delete) }
       }
     }
   }

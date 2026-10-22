@@ -10,12 +10,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,6 +21,11 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.shared.designsystem.components.SharedLazyColumn
+import com.simtop.billionbeers.shared.designsystem.controls.BrandCircularProgressIndicator
+import com.simtop.billionbeers.shared.designsystem.controls.BrandIconButton
+import com.simtop.billionbeers.shared.designsystem.controls.BrandPullToRefreshBox
+import com.simtop.billionbeers.shared.designsystem.controls.BrandText
+import com.simtop.billionbeers.shared.designsystem.controls.BrandTopAppBar
 import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersTheme
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.PagedListFooter
@@ -64,7 +65,7 @@ fun SharedPagedBeersContent(
     modifier = modifier,
     topBar = {
       Column {
-        TopAppBar(
+        PagedTopAppBar(
           title = title,
           back = strings.back,
           onBack = onBack,
@@ -83,7 +84,7 @@ fun SharedPagedBeersContent(
             modifier = Modifier.fillMaxSize().padding(padding),
             contentAlignment = Alignment.Center,
           ) {
-            CircularProgressIndicator()
+            BrandCircularProgressIndicator()
           }
         is CommonUiState.Error ->
           Box(modifier = Modifier.fillMaxSize().padding(padding)) {
@@ -112,18 +113,18 @@ fun SharedPagedBeersContent(
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
-private fun TopAppBar(
+private fun PagedTopAppBar(
   title: String,
   back: String,
   onBack: () -> Unit,
   backIcon: @Composable (String) -> Unit,
   actions: @Composable () -> Unit,
 ) {
-  androidx.compose.material3.TopAppBar(
+  BrandTopAppBar(
     navigationIcon = {
-      androidx.compose.material3.IconButton(onClick = onBack) { backIcon(back) }
+      BrandIconButton(onClick = onBack) { backIcon(back) }
     },
-    title = { Text(title) },
+    title = { BrandText(title) },
     actions = { actions() },
   )
 }
@@ -150,12 +151,12 @@ private fun PagedBeersResults(
     onLoadMore = onScrollToBottom,
   )
 
-  PullToRefreshBox(isRefreshing = model.isRefreshing, onRefresh = onRefresh) {
+  BrandPullToRefreshBox(isRefreshing = model.isRefreshing, onRefresh = onRefresh) {
     Column {
       model.totalCount?.let { count ->
-        Text(
+        BrandText(
           text = strings.beersCount(count),
-          style = MaterialTheme.typography.labelLarge,
+          style = BillionBeersTheme.typography.labelLarge,
           modifier =
             Modifier.fillMaxWidth()
               .padding(
@@ -193,10 +194,10 @@ private fun CenteredHint(text: String, modifier: Modifier = Modifier) {
     modifier = modifier.fillMaxSize().padding(BillionBeersTheme.spacing.large),
     contentAlignment = Alignment.Center,
   ) {
-    Text(
+    BrandText(
       text = text,
-      style = MaterialTheme.typography.bodyLarge,
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
+      style = BillionBeersTheme.typography.bodyLarge,
+      color = BillionBeersTheme.colorScheme.onSurfaceVariant,
       textAlign = TextAlign.Center,
       modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
     )

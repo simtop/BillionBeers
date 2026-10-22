@@ -10,11 +10,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -30,6 +25,9 @@ import com.google.android.play.core.splitinstall.model.SplitInstallErrorCode
 import com.simtop.billionbeers.core.designsystem.component.CatalogSettings
 import com.simtop.billionbeers.core.designsystem.component.DialogWithProgressBar
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.billionbeers.shared.designsystem.controls.BrandNotice
+import com.simtop.billionbeers.shared.designsystem.controls.BrandText
+import com.simtop.billionbeers.shared.designsystem.controls.BrandTextButton
 import com.simtop.presentation_utils.R
 
 /**
@@ -153,36 +151,30 @@ internal fun InstallFailedContent(
   onCancel: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
-  Surface(
-    modifier = modifier.fillMaxWidth(),
-    shape = RoundedCornerShape(8.dp),
-    color = MaterialTheme.colorScheme.surface,
-    tonalElevation = 6.dp,
-    shadowElevation = 6.dp,
-  ) {
+  BrandNotice(modifier = modifier.fillMaxWidth()) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(16.dp)) {
-      Text(
+      BrandText(
         text = stringResource(R.string.failed_to_install_feature),
-        style = MaterialTheme.typography.titleMedium,
+        style = BillionBeersTheme.typography.titleMedium,
       )
-      Text(
+      BrandText(
         text = stringResource(installErrorMessage(errorCode)),
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        style = BillionBeersTheme.typography.bodyMedium,
+        color = BillionBeersTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(top = 8.dp),
       )
       // Keep the raw code as a small, de-emphasised line so support can still diagnose unknown
       // codes.
-      Text(
+      BrandText(
         text = stringResource(R.string.install_error_code, errorCode),
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        style = BillionBeersTheme.typography.bodySmall,
+        color = BillionBeersTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(top = 4.dp),
       )
       Row(modifier = Modifier.padding(top = 16.dp)) {
-        TextButton(onClick = onCancel) { Text(stringResource(R.string.install_cancel)) }
+        BrandTextButton(onClick = onCancel) { BrandText(stringResource(R.string.install_cancel)) }
         Spacer(modifier = Modifier.width(8.dp))
-        TextButton(onClick = onRetry) { Text(stringResource(R.string.retry)) }
+        BrandTextButton(onClick = onRetry) { BrandText(stringResource(R.string.retry)) }
       }
     }
   }

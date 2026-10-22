@@ -23,7 +23,7 @@ dependencies { testImplementation(libs.konsist) }
 // that no longer exists.
 val ruleFileTree =
   rootProject.layout.projectDirectory.asFileTree.matching {
-    include("**/*.kt", "**/*.kts")
+    include("**/*.kt", "**/*.kts", "**/src/*/res/**/*.xml")
     exclude(
       "**/build/**",
       "**/bin/**",

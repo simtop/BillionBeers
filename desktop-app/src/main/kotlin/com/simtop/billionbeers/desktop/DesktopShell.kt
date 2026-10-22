@@ -9,20 +9,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
@@ -50,6 +42,12 @@ import com.simtop.billionbeers.shared.beerbrowse.BrowseStrings
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailStrings
 import com.simtop.billionbeers.shared.beerdetail.MAX_BEER_METRIC_FRACTION_DIGITS
 import com.simtop.billionbeers.shared.beerdetail.formatServingTemperatureRange
+import com.simtop.billionbeers.shared.designsystem.controls.BrandAvailabilityBadge
+import com.simtop.billionbeers.shared.designsystem.controls.BrandButton
+import com.simtop.billionbeers.shared.designsystem.controls.BrandCard
+import com.simtop.billionbeers.shared.designsystem.controls.BrandIcon
+import com.simtop.billionbeers.shared.designsystem.controls.BrandText
+import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersTheme
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.DefaultCoroutineDispatcherProvider
 import java.text.NumberFormat
@@ -85,26 +83,26 @@ internal val desktopHost =
     beerRow = { beer, onClick -> DesktopBeerRow(beer, onClick) },
     errorContent = { state, retry -> DesktopError(state, retry) },
     backIcon = { contentDescription ->
-      Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = contentDescription)
+      BrandIcon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = contentDescription)
     },
     favoriteIcon = { isFavorite, contentDescription ->
-      Icon(
+      BrandIcon(
         if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
         contentDescription = contentDescription,
       )
     },
     catalogNavigationIcon = { contentDescription ->
-      Icon(Icons.Filled.Home, contentDescription = contentDescription)
+      BrandIcon(Icons.Filled.Home, contentDescription = contentDescription)
     },
     favoritesNavigationIcon = { contentDescription ->
-      Icon(Icons.Filled.Favorite, contentDescription = contentDescription)
+      BrandIcon(Icons.Filled.Favorite, contentDescription = contentDescription)
     },
     savedFiltersNavigationIcon = { contentDescription ->
-      Icon(Icons.Filled.Bookmark, contentDescription = contentDescription)
+      BrandIcon(Icons.Filled.Bookmark, contentDescription = contentDescription)
     },
     imageContent = { imageUrl, contentDescription, modifier ->
       if (imageUrl.isNullOrBlank()) {
-        Box(modifier, contentAlignment = Alignment.Center) { Text("No image") }
+        Box(modifier, contentAlignment = Alignment.Center) { BrandText("No image") }
       } else {
         AsyncImage(
           model = imageUrl,
@@ -220,10 +218,10 @@ internal val desktopStrings =
 
 @Composable
 private fun DesktopBeerRow(beer: Beer, onClick: () -> Unit) {
-  Card(
+  BrandCard(
     modifier =
       Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp).clickable { onClick() },
-    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    containerColor = BillionBeersTheme.colorScheme.surface,
   ) {
     Row(
       modifier = Modifier.fillMaxWidth().padding(12.dp),
@@ -234,7 +232,7 @@ private fun DesktopBeerRow(beer: Beer, onClick: () -> Unit) {
           modifier = Modifier.width(72.dp).height(96.dp),
           contentAlignment = Alignment.Center,
         ) {
-          Text("No image", style = MaterialTheme.typography.labelSmall)
+          BrandText("No image", style = BillionBeersTheme.typography.labelSmall)
         }
       } else {
         AsyncImage(
@@ -248,42 +246,27 @@ private fun DesktopBeerRow(beer: Beer, onClick: () -> Unit) {
         modifier = Modifier.weight(1f),
         verticalArrangement = Arrangement.spacedBy(4.dp),
       ) {
-        Text(beer.name, style = MaterialTheme.typography.titleMedium)
+        BrandText(beer.name, style = BillionBeersTheme.brand.beerTitle)
         if (beer.tagline.isNotBlank()) {
-          Text(beer.tagline, style = MaterialTheme.typography.bodyMedium)
+          BrandText(beer.tagline, style = BillionBeersTheme.typography.bodyMedium)
         }
         val classification = listOf(beer.styleName, beer.breweryName).filter(String::isNotBlank)
         if (classification.isNotEmpty()) {
-          Text(
+          BrandText(
             classification.joinToString(" · "),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = BillionBeersTheme.typography.labelMedium,
+            color = BillionBeersTheme.colorScheme.onSurfaceVariant,
           )
         }
-        Text(
+        BrandText(
           "ABV ${beer.abv}% · IBU ${beer.ibu}",
-          style = MaterialTheme.typography.labelMedium,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
+          style = BillionBeersTheme.typography.labelMedium,
+          color = BillionBeersTheme.colorScheme.onSurfaceVariant,
         )
-        if (beer.availability) {
-          Text(
-            "Available",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.primary,
-          )
-        } else {
-          Surface(
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            shape = RoundedCornerShape(percent = 50),
-          ) {
-            Text(
-              "Out of stock",
-              modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-              style = MaterialTheme.typography.labelSmall,
-              color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-          }
-        }
+        BrandAvailabilityBadge(
+          text = if (beer.availability) "Available" else "Out of stock",
+          available = beer.availability,
+        )
       }
     }
   }
@@ -296,8 +279,8 @@ private fun DesktopError(state: CommonUiState.Error, retry: () -> Unit) {
       horizontalAlignment = Alignment.CenterHorizontally,
       verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-      Text(state.message ?: "Unable to load beers")
-      Button(onClick = retry) { Text("Retry") }
+      BrandText(state.message ?: "Unable to load beers")
+      BrandButton(onClick = retry) { BrandText("Retry") }
     }
   }
 }

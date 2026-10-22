@@ -20,7 +20,7 @@ binary library.
 
 These declarations are safe for application and feature modules to consume:
 
-- `BillionBeersTheme` and its `colors`, `spacing`, and `typography` accessors;
+- `BillionBeersTheme` and its `brand`, `colorScheme`, `colors`, `spacing`, and `typography` accessors;
 - semantic token value types and their composition locals when a consumer has a documented reason to
   provide a theme override;
 - reusable components and helpers whose KDoc describes their behavior and accessibility contract.
@@ -30,7 +30,7 @@ consumer should be allowed to depend on it and document the decision in the decl
 
 ### Implementation API
 
-Primitive color values, light/dark token instances, Material color-scheme mapping, and private
+Primitive color values, Material color-scheme mapping, and private
 layout helpers are implementation details. Keep them `internal` or `private`; consumers should use
 semantic roles rather than raw palette values.
 
@@ -55,6 +55,37 @@ actually needs them.
 
 ## Component contract
 
+### Brand control boundary
+
+Product source sets use the `Brand*` controls in `:shared:designsystem`. Buttons, text, icons,
+fields, app bars, navigation, cards, menus, badges, tabs and progress controls have one appearance
+owner. Add a supported variant there when a screen needs a different control appearance. Do not
+copy a Material control into a feature. Keep state, navigation, scrolling, responsive layout,
+content images and interaction semantics with their existing owners.
+
+Apply `BillionBeersTheme` at each host entry point, including startup, loading and failure views.
+`SharedAppShell` also applies the theme to its navigation content.
+
+`BillionBeersBrand` owns distinctive title/emphasis roles; `Color.kt` supplies every Material color
+role explicitly and keeps availability, ABV/IBU and errors separate. General type and spacing remain
+in `Type.kt` and `Spacing.kt`. `BrandAvailabilityBadge` and `BrandMetricCard` consume these pairs.
+The iOS detail-title role retains its host-specific size within the same brand owner.
+
+Android launcher widgets use the Glance adapter in `:core:designsystem`. The exported
+`BillionBeersLightColors` and `BillionBeersDarkColors` support OS surfaces outside a Compose theme;
+ordinary screens use the active `BillionBeersTheme` accessors. Native splash/placeholder colors
+live under the core design-system resources. `BrandResourceTest` checks their compiled light/dark
+values against the portable palette. Photographs, beer images and launcher artwork remain content
+assets rather than palette tokens.
+
+`BrandUiBoundaryTest` rejects direct Material controls/themes, BasicText controls, Glance text/images,
+raw colors and local typography outside the two design-system modules. It checks imports (including
+aliases and wildcards), qualified calls and typography overrides. Android XML color literals also
+belong in the design system. Production `main`, `*Main`, `release` and `releaseSmoke` source sets
+are covered, including new modules. Debug previews, tests, catalogs and the isolated multiplatform fixture are excluded.
+Material layout/state APIs such as Scaffold and app-bar scroll behavior remain available. This is a
+source architecture policy, not a proof of visual quality; review the screenshots and interactions.
+
 ### Metric colors
 
 `BillionBeersTheme.colors.abvContainer` / `onAbvContainer` and `ibuContainer` /
@@ -77,7 +108,7 @@ Desktop and iOS still use their host rows.
 Hosts supply formatted/localized labels and image content. Android retains Coil loading/shimmer
 and error resources; Web retains Fetch/Skia and its deterministic placeholder. Web list images use
 `Fit` to preserve the whole bottle; detail's image policy remains host-owned. The shared row caps
-the Android title/tagline at one/two lines, with full text in semantics and detail available through the row.
+the Android title/tagline at two/two lines, with full text in semantics and detail available through the row.
 Web retains wrapping full titles through `titleMaxLines` so the shared style does not hide beer names.
 Metric/status labels wrap rather than squeezing into a narrow fixed row.
 

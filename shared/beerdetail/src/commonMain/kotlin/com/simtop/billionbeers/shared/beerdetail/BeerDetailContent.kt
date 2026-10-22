@@ -23,24 +23,15 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
@@ -48,15 +39,16 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.lerp
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
-import androidx.compose.ui.unit.sp
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.shared.designsystem.components.SharedScrollContainer
+import com.simtop.billionbeers.shared.designsystem.controls.BrandExtendedFloatingActionButton
+import com.simtop.billionbeers.shared.designsystem.controls.BrandIconButton
+import com.simtop.billionbeers.shared.designsystem.controls.BrandMetricCard
+import com.simtop.billionbeers.shared.designsystem.controls.BrandText
 import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersTheme
 
 /** Localized strings and formatted values supplied by the platform resource adapter. */
@@ -113,12 +105,10 @@ fun SharedBeerDetailContent(
   val favoriteLabel = if (beer.isFavorite) strings.removeFromFavorites else strings.addToFavorites
   val headerTitleStyle = titleTextStyle ?: BillionBeersTheme.brand.detailTitle
   val headerButtonModifier = Modifier.size(48.dp)
-  val headerButtonColors =
-    IconButtonDefaults.iconButtonColors(contentColor = BillionBeersTheme.brand.detailHeroForeground)
   val favoriteButton: @Composable () -> Unit = {
-    IconButton(
+    BrandIconButton(
       onClick = onToggleFavorite,
-      colors = headerButtonColors,
+      onHero = true,
       modifier =
         favoriteModifier.then(headerButtonModifier).semantics {
           role = Role.Button
@@ -130,10 +120,10 @@ fun SharedBeerDetailContent(
   }
   val backButton: @Composable () -> Unit = {
     if (showBackButton) {
-      IconButton(
+      BrandIconButton(
         onClick = onBackClick,
         modifier = headerButtonModifier,
-        colors = headerButtonColors,
+        onHero = true,
       ) {
         backIcon(strings.back)
       }
@@ -180,20 +170,17 @@ fun SharedBeerDetailContent(
             .padding(BillionBeersTheme.spacing.medium)
             .semantics {}
       ) {
-        Text(
+        BrandText(
           text = beer.tagline,
-          style =
-            MaterialTheme.typography.titleMedium.copy(
-              fontStyle = FontStyle.Normal,
-              color = MaterialTheme.colorScheme.onSurfaceVariant,
-            ),
+          style = BillionBeersTheme.typography.titleMedium,
+          color = BillionBeersTheme.colorScheme.onSurfaceVariant,
         )
 
         if (beer.styleName.isNotEmpty() && beer.breweryName.isNotEmpty()) {
-          Text(
+          BrandText(
             text = strings.styleAndBrewery(beer.styleName, beer.breweryName),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = BillionBeersTheme.typography.bodyMedium,
+            color = BillionBeersTheme.colorScheme.onSurfaceVariant,
           )
         }
 
@@ -204,14 +191,14 @@ fun SharedBeerDetailContent(
             maxWidth < 500.dp && LocalDensity.current.fontScale >= LARGE_FONT_METRIC_CARD_SCALE
           if (stackMetricCards) {
             Column(verticalArrangement = Arrangement.spacedBy(BillionBeersTheme.spacing.medium)) {
-              StatCard(
+              BrandMetricCard(
                 label = strings.abv,
                 value = "${strings.metricValue(beer.abv)}%",
                 color = BillionBeersTheme.colors.abvContainer,
                 textColor = BillionBeersTheme.colors.onAbvContainer,
                 modifier = Modifier.fillMaxWidth(),
               )
-              StatCard(
+              BrandMetricCard(
                 label = strings.ibu,
                 value = strings.metricValue(beer.ibu),
                 color = BillionBeersTheme.colors.ibuContainer,
@@ -224,14 +211,14 @@ fun SharedBeerDetailContent(
               modifier = Modifier.fillMaxWidth(),
               horizontalArrangement = Arrangement.spacedBy(BillionBeersTheme.spacing.medium),
             ) {
-              StatCard(
+              BrandMetricCard(
                 label = strings.abv,
                 value = "${strings.metricValue(beer.abv)}%",
                 color = BillionBeersTheme.colors.abvContainer,
                 textColor = BillionBeersTheme.colors.onAbvContainer,
                 modifier = Modifier.weight(1f),
               )
-              StatCard(
+              BrandMetricCard(
                 label = strings.ibu,
                 value = strings.metricValue(beer.ibu),
                 color = BillionBeersTheme.colors.ibuContainer,
@@ -243,18 +230,14 @@ fun SharedBeerDetailContent(
         }
 
         Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.medium))
-        Text(
+        BrandText(
           text = strings.description,
-          style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+          style = BillionBeersTheme.brand.sectionTitle,
         )
         Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.small))
-        Text(
+        BrandText(
           text = beer.description,
-          style =
-            MaterialTheme.typography.bodyLarge.copy(
-              lineHeight = 24.sp,
-              color = MaterialTheme.colorScheme.onSurface.copy(alpha = TEXT_ALPHA),
-            ),
+          style = BillionBeersTheme.brand.description,
         )
 
         Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.medium))
@@ -325,7 +308,7 @@ private fun BeerDetailHeader(
         verticalAlignment = Alignment.CenterVertically,
       ) {
         Column(Modifier.weight(1f).padding(end = lerp(8.dp, 0.dp, fraction))) {
-          Text(
+          BrandText(
             text = beer.name,
             color = BillionBeersTheme.brand.detailHeroForeground,
             style =
@@ -378,13 +361,13 @@ private fun BeerAvailabilityAction(
   onToggle: () -> Unit,
 ) {
   val animationDurationMs = if (animationsDisabled) 0 else AVAILABILITY_ANIMATION_DURATION_MS
-  ExtendedFloatingActionButton(
+  BrandExtendedFloatingActionButton(
     onClick = onToggle,
     containerColor =
-      if (available) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+      if (available) BillionBeersTheme.colorScheme.primary else BillionBeersTheme.colorScheme.error,
     contentColor =
-      if (available) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onError,
-    shape = RoundedCornerShape(BillionBeersTheme.spacing.medium),
+      if (available) BillionBeersTheme.colorScheme.onPrimary
+      else BillionBeersTheme.colorScheme.onError,
     modifier =
       modifier.semantics {
         role = Role.Button
@@ -399,9 +382,9 @@ private fun BeerAvailabilityAction(
           fadeOut(animationSpec = tween(animationDurationMs))
       },
     ) { isAvailable ->
-      Text(
+      BrandText(
         text = if (isAvailable) strings.markAsEmpty else strings.refillBarrels,
-        fontWeight = FontWeight.Bold,
+        style = BillionBeersTheme.brand.actionLabel,
       )
     }
   }
@@ -423,9 +406,9 @@ private fun BeerDetailFacts(beer: Beer, strings: BeerDetailStrings) {
   }
   if (detailRows.isNotEmpty()) {
     Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.medium))
-    Text(
+    BrandText(
       text = strings.details,
-      style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+      style = BillionBeersTheme.brand.sectionTitle,
     )
     Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.small))
     detailRows.forEach { (label, value) ->
@@ -433,12 +416,12 @@ private fun BeerDetailFacts(beer: Beer, strings: BeerDetailStrings) {
         modifier = Modifier.fillMaxWidth().padding(vertical = BillionBeersTheme.spacing.extraSmall),
         horizontalArrangement = Arrangement.SpaceBetween,
       ) {
-        Text(
+        BrandText(
           text = label,
-          style = MaterialTheme.typography.bodyLarge,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
+          style = BillionBeersTheme.typography.bodyLarge,
+          color = BillionBeersTheme.colorScheme.onSurfaceVariant,
         )
-        Text(text = value, style = MaterialTheme.typography.bodyLarge)
+        BrandText(text = value, style = BillionBeersTheme.typography.bodyLarge)
       }
     }
   }
@@ -448,9 +431,9 @@ private fun BeerDetailFacts(beer: Beer, strings: BeerDetailStrings) {
 private fun BulletSection(title: String, items: List<String>) {
   if (items.isEmpty()) return
   Column {
-    Text(
+    BrandText(
       text = title,
-      style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+      style = BillionBeersTheme.brand.sectionTitle,
     )
     Spacer(
       modifier =
@@ -458,55 +441,17 @@ private fun BulletSection(title: String, items: List<String>) {
     )
     items.forEach { item ->
       Row(modifier = Modifier.padding(vertical = BillionBeersTheme.spacing.extraSmall)) {
-        Text(
+        BrandText(
           text = "•",
-          style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+          style = BillionBeersTheme.brand.bodyStrong,
           modifier = Modifier.padding(end = BillionBeersTheme.spacing.small),
         )
-        Text(text = item, style = MaterialTheme.typography.bodyLarge)
+        BrandText(text = item, style = BillionBeersTheme.typography.bodyLarge)
       }
     }
   }
 }
 
-@Composable
-private fun StatCard(
-  label: String,
-  value: String,
-  color: Color,
-  textColor: Color,
-  modifier: Modifier = Modifier,
-) {
-  Card(
-    colors = CardDefaults.cardColors(containerColor = color),
-    shape = RoundedCornerShape(BillionBeersTheme.spacing.medium),
-    modifier = modifier.fillMaxWidth(),
-  ) {
-    Column(
-      modifier = Modifier.padding(BillionBeersTheme.spacing.small),
-      horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-      Text(
-        text = value,
-        style =
-          MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, color = textColor),
-        maxLines = 1,
-        softWrap = false,
-        overflow = TextOverflow.Clip,
-      )
-      Text(
-        text = label,
-        style =
-          MaterialTheme.typography.labelMedium.copy(
-            fontWeight = FontWeight.SemiBold,
-            color = textColor,
-          ),
-      )
-    }
-  }
-}
-
-private const val TEXT_ALPHA = 0.8f
 private const val AVAILABILITY_ANIMATION_DURATION_MS = 300
 private const val LARGE_FONT_METRIC_CARD_SCALE = 2f
 

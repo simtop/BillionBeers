@@ -5,8 +5,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -14,6 +12,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.shared.designsystem.components.SharedLazyColumn
+import com.simtop.billionbeers.shared.designsystem.controls.BrandCircularProgressIndicator
+import com.simtop.billionbeers.shared.designsystem.controls.BrandText
 import com.simtop.core.core.CommonUiState
 
 @Composable
@@ -29,18 +29,18 @@ fun SharedFavoritesContent(
   when (viewState) {
     CommonUiState.Loading ->
       Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator()
+        BrandCircularProgressIndicator()
       }
     CommonUiState.Empty ->
       Box(
         modifier.fillMaxSize().testTag("favorites_empty"),
         contentAlignment = Alignment.Center,
       ) {
-        Text(emptyText)
+        BrandText(emptyText)
       }
     is CommonUiState.Error ->
       Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(viewState.message ?: errorText)
+        BrandText(viewState.message ?: errorText)
       }
     is CommonUiState.Success ->
       SharedLazyColumn(

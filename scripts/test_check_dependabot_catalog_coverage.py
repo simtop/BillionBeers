@@ -22,7 +22,7 @@ class DependabotCatalogCoverageTest(unittest.TestCase):
 
         total, failures = check_coverage(catalog, dependabot)
 
-        self.assertEqual(117, total)
+        self.assertEqual(118, total)
         self.assertEqual([], failures)
 
     def test_catalog_resolves_library_notations_and_plugin_ids(self) -> None:

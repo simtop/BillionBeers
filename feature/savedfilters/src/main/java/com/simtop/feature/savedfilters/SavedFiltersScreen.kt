@@ -6,12 +6,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -30,6 +26,10 @@ import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.billionbeers.shared.designsystem.controls.BrandIcon
+import com.simtop.billionbeers.shared.designsystem.controls.BrandSnackbarHost
+import com.simtop.billionbeers.shared.designsystem.controls.BrandText
+import com.simtop.billionbeers.shared.designsystem.controls.BrandTopAppBar
 import com.simtop.billionbeers.shared.presentation.SharedPagedBeersContent
 import com.simtop.billionbeers.shared.presentation.SharedPagedBeersStrings
 import com.simtop.billionbeers.shared.savedfilters.SavedFiltersStrings
@@ -99,8 +99,8 @@ fun SavedFiltersContent(
     )
   Scaffold(
     modifier = modifier,
-    topBar = { TopAppBar(title = { Text(stringResource(R.string.savedfilters_title)) }) },
-    snackbarHost = { SnackbarHost(snackbarHostState) },
+    topBar = { BrandTopAppBar(title = { BrandText(stringResource(R.string.savedfilters_title)) }) },
+    snackbarHost = { BrandSnackbarHost(snackbarHostState) },
   ) { paddingValues ->
     SharedSavedFiltersContent(
       viewState = viewState,
@@ -158,7 +158,7 @@ private fun SavedFilterResultsContent(
     viewState = viewState,
     onBack = onBack,
     backIcon = { description ->
-      Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = description)
+      BrandIcon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = description)
     },
     onBeerClick = onBeerClick,
     onScrollToBottom = onScrollToBottom,

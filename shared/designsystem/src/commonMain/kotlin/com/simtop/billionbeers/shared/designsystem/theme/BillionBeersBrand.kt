@@ -19,6 +19,9 @@ import androidx.compose.ui.unit.sp
  * targets and responsive constraints belong to the screen that owns their behavior.
  */
 object BillionBeersBrand {
+  val screenTitle: TextStyle
+    @Composable @ReadOnlyComposable get() = MaterialTheme.typography.titleLarge
+
   val catalogTitle: TextStyle
     @Composable
     @ReadOnlyComposable
@@ -51,6 +54,49 @@ object BillionBeersBrand {
         fontWeight = FontWeight.ExtraBold,
         fontFamily = FontFamily.Serif,
       )
+
+  val sectionTitle: TextStyle
+    @Composable
+    @ReadOnlyComposable
+    get() = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+
+  val bodyStrong: TextStyle
+    @Composable
+    @ReadOnlyComposable
+    get() = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+
+  val actionLabel: TextStyle
+    @Composable
+    @ReadOnlyComposable
+    get() = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+
+  val badgeLabel: TextStyle
+    @Composable
+    @ReadOnlyComposable
+    get() = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold)
+
+  val metricLabel: TextStyle
+    @Composable
+    @ReadOnlyComposable
+    get() = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold)
+
+  val description: TextStyle
+    @Composable
+    @ReadOnlyComposable
+    get() =
+      MaterialTheme.typography.bodyLarge.copy(
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+      )
+
+  val iosDetailTitle: TextStyle
+    @Composable
+    @ReadOnlyComposable
+    get() = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold)
+
+  val imagePlaceholder: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
 
   val detailHeroBackground = Color(HERO_BACKGROUND)
   val detailHeroForeground = Color(HERO_FOREGROUND)

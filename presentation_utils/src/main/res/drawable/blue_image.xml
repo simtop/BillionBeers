@@ -1,0 +1,4 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item><shape><solid android:color="@color/brand_background" /></shape></item>
+    <item android:drawable="@drawable/brand_beer" />
+</layer-list>

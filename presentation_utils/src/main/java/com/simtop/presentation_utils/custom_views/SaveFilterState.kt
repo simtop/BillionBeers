@@ -2,8 +2,6 @@ package com.simtop.presentation_utils.custom_views
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -20,6 +18,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.simtop.billionbeers.shared.designsystem.controls.BrandText
+import com.simtop.billionbeers.shared.designsystem.controls.BrandTextButton
 import com.simtop.presentation_utils.R
 import kotlinx.coroutines.launch
 
@@ -76,12 +76,12 @@ fun ComposeSaveFilterAction(
   enabled: Boolean = true,
   maxWidth: Dp = 144.dp,
 ) {
-  TextButton(
+  BrandTextButton(
     onClick = state::toggle,
     enabled = (enabled || state.expanded) && !state.saving,
     modifier = modifier.widthIn(max = maxWidth).testTag("filter_preset_toggle"),
   ) {
-    Text(stringResource(R.string.save_filter))
+    BrandText(stringResource(R.string.save_filter))
   }
 }
 

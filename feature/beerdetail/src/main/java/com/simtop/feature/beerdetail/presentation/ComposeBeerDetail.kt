@@ -30,6 +30,7 @@ import com.simtop.billionbeers.shared.beerdetail.BeerDetailStrings
 import com.simtop.billionbeers.shared.beerdetail.MAX_BEER_METRIC_FRACTION_DIGITS
 import com.simtop.billionbeers.shared.beerdetail.SharedBeerDetailContent
 import com.simtop.billionbeers.shared.beerdetail.formatServingTemperatureRange
+import com.simtop.billionbeers.shared.designsystem.controls.BrandIcon
 import com.simtop.presentation_utils.R
 import java.text.NumberFormat
 
@@ -98,14 +99,14 @@ fun ComposeBeerDetail(
     onToggleAvailability = onToggleAvailability,
     onToggleFavorite = onToggleFavorite,
     backIcon = { contentDescription ->
-      androidx.compose.material3.Icon(
+      BrandIcon(
         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
         contentDescription = contentDescription,
         tint = BillionBeersTheme.brand.detailHeroIcon,
       )
     },
     favoriteIcon = { isFavorite, contentDescription ->
-      androidx.compose.material3.Icon(
+      BrandIcon(
         imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
         contentDescription = contentDescription,
         tint = BillionBeersTheme.brand.detailHeroIcon,

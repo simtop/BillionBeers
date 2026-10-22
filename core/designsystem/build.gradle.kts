@@ -11,6 +11,10 @@ android {
 
 dependencies {
   api(project(":shared:designsystem"))
+  // The app owns the widget runtime; ordinary UI consumers must not inherit WorkManager/Room.
+  compileOnly(libs.androidx.glance.appwidget) { isTransitive = false }
+  compileOnly(libs.androidx.glance.core) { isTransitive = false }
+  implementation(libs.appcompat)
 }
 
 // Foundation and material3 come from billionbeers.android.compose; the shared module owns the

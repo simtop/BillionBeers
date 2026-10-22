@@ -35,16 +35,8 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -84,6 +76,12 @@ import com.simtop.billionbeers.core.designsystem.component.showToast
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.billionbeers.shared.beerslist.BeersListEvent
 import com.simtop.billionbeers.shared.beerslist.SharedBeersListContent
+import com.simtop.billionbeers.shared.designsystem.controls.BrandCard
+import com.simtop.billionbeers.shared.designsystem.controls.BrandIcon
+import com.simtop.billionbeers.shared.designsystem.controls.BrandIconButton
+import com.simtop.billionbeers.shared.designsystem.controls.BrandOutlinedTextField
+import com.simtop.billionbeers.shared.designsystem.controls.BrandText
+import com.simtop.billionbeers.shared.designsystem.controls.BrandTextButton
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.PagedListFooter
 import com.simtop.core.core.PagedListUiModel
@@ -251,12 +249,12 @@ fun BeersListContent(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.padding(24.dp),
               ) {
-                Text(
+                BrandText(
                   stringResource(R.string.beers_search_no_results),
-                  style = MaterialTheme.typography.titleMedium,
+                  style = BillionBeersTheme.typography.titleMedium,
                 )
-                TextButton(onClick = { onSearchQueryChange("") }) {
-                  Text(stringResource(R.string.beers_clear_search))
+                BrandTextButton(onClick = { onSearchQueryChange("") }) {
+                  BrandText(stringResource(R.string.beers_clear_search))
                 }
               }
             }
@@ -306,14 +304,14 @@ private fun CatalogHeader(
     val actions: @Composable () -> Unit = {
       Row(verticalAlignment = Alignment.CenterVertically) {
         ComposeSaveFilterAction(saveFilter, maxWidth = saveMaxWidth)
-        IconButton(onClick = onBrowse) {
-          Icon(
+        BrandIconButton(onClick = onBrowse) {
+          BrandIcon(
             Icons.AutoMirrored.Filled.List,
             contentDescription = stringResource(R.string.beers_browse),
           )
         }
-        IconButton(onClick = onSearch) {
-          Icon(
+        BrandIconButton(onClick = onSearch) {
+          BrandIcon(
             if (searchExpanded) Icons.Filled.Close else Icons.Filled.Search,
             contentDescription =
               stringResource(
@@ -323,7 +321,7 @@ private fun CatalogHeader(
         }
       }
     }
-    Column(Modifier.background(MaterialTheme.colorScheme.surface)) {
+    Column(Modifier.background(BillionBeersTheme.colorScheme.surface)) {
       Row(
         modifier =
           Modifier.fillMaxWidth()
@@ -337,16 +335,16 @@ private fun CatalogHeader(
             Modifier.combinedClickable(onClick = {}, onLongClick = toggle)
           } ?: Modifier
         Column(Modifier.weight(1f).then(titleModifier)) {
-          Text(
+          BrandText(
             stringResource(R.string.billion_beers_list),
             style = BillionBeersTheme.brand.catalogTitle,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
           )
           loaded?.totalCount?.let { total ->
-            Text(
+            BrandText(
               stringResource(R.string.beers_count_of_total, loaded.items.size, total),
-              style = MaterialTheme.typography.labelMedium,
+              style = BillionBeersTheme.typography.labelMedium,
               maxLines = 1,
               overflow = TextOverflow.Ellipsis,
             )
@@ -380,24 +378,24 @@ private fun CatalogSearchField(
       keyboard?.show()
     }
   }
-  OutlinedTextField(
+  BrandOutlinedTextField(
     value = query,
     onValueChange = onQueryChange,
-    label = { Text(stringResource(R.string.beers_search)) },
+    label = { BrandText(stringResource(R.string.beers_search)) },
     singleLine = true,
-    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+    leadingIcon = { BrandIcon(Icons.Filled.Search, contentDescription = null) },
     trailingIcon = {
       Row {
         if (query.isNotEmpty()) {
-          IconButton(onClick = { onQueryChange("") }) {
-            Icon(
+          BrandIconButton(onClick = { onQueryChange("") }) {
+            BrandIcon(
               Icons.Filled.Close,
               contentDescription = stringResource(R.string.beers_clear_search),
             )
           }
         }
-        IconButton(onClick = onAdvancedSearch) {
-          Icon(
+        BrandIconButton(onClick = onAdvancedSearch) {
+          BrandIcon(
             Icons.Filled.Settings,
             contentDescription = stringResource(R.string.beers_advanced_search),
           )
@@ -592,7 +590,7 @@ fun BeersListSkeleton(modifier: Modifier = Modifier) {
 fun BeersListItemSkeleton(modifier: Modifier = Modifier) {
   val shimmerBrush = shimmerBrush(targetValue = SHIMMER_TARGET_VALUE)
 
-  Card(
+  BrandCard(
     modifier =
       modifier
         .fillMaxWidth()
@@ -600,9 +598,7 @@ fun BeersListItemSkeleton(modifier: Modifier = Modifier) {
           horizontal = BillionBeersTheme.spacing.medium,
           vertical = BillionBeersTheme.spacing.small,
         ),
-    shape = RoundedCornerShape(BillionBeersTheme.spacing.medium),
-    elevation = CardDefaults.cardElevation(defaultElevation = BillionBeersTheme.spacing.extraSmall),
-    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    containerColor = BillionBeersTheme.colorScheme.surface,
   ) {
     Row(
       modifier =

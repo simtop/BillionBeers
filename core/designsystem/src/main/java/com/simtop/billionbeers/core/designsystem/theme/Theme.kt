@@ -1,6 +1,7 @@
 package com.simtop.billionbeers.core.designsystem.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
@@ -28,6 +29,9 @@ object BillionBeersTheme {
 
   val colors: BillionBeersColors
     @Composable @ReadOnlyComposable get() = SharedBillionBeersTheme.colors
+
+  val colorScheme: ColorScheme
+    @Composable @ReadOnlyComposable get() = SharedBillionBeersTheme.colorScheme
 
   val typography: Typography
     @Composable @ReadOnlyComposable get() = SharedBillionBeersTheme.typography
