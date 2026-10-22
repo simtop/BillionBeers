@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -28,6 +27,7 @@ import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.component.showToast
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.billionbeers.shared.beerbrowse.SharedBrowseBeersContent
+import com.simtop.billionbeers.shared.designsystem.controls.BrandIcon
 import com.simtop.billionbeers.shared.presentation.BrowseBeersEvent as SharedBrowseBeersEvent
 import com.simtop.core.core.CommonUiErrorKey
 import com.simtop.core.core.CommonUiState
@@ -121,7 +121,7 @@ internal fun BrowseBeersContent(
       viewState = viewState,
       onBack = { if (saveFilter.expanded) saveFilter.close() else onBack() },
       backIcon = { contentDescription ->
-        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = contentDescription)
+        BrandIcon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = contentDescription)
       },
       onBeerClick = onBeerClick,
       onScrollToBottom = onScrollToBottom,

@@ -3,15 +3,15 @@ package com.simtop.billionbeers.shared.presentation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
+import com.simtop.billionbeers.shared.designsystem.controls.BrandButton
+import com.simtop.billionbeers.shared.designsystem.controls.BrandOutlinedTextField
+import com.simtop.billionbeers.shared.designsystem.controls.BrandText
 import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersTheme
 
 @Immutable data class FilterPresetFormLabels(val nameHint: String, val save: String)
@@ -39,20 +39,20 @@ fun SharedFilterPresetForm(
     verticalArrangement = Arrangement.spacedBy(BillionBeersTheme.spacing.small),
     horizontalAlignment = Alignment.End,
   ) {
-    OutlinedTextField(
+    BrandOutlinedTextField(
       value = name,
       onValueChange = { if (it.length <= SavedFilterPreset.MAX_NAME_LENGTH) onNameChange(it) },
-      label = { Text(labels.nameHint) },
+      label = { BrandText(labels.nameHint) },
       modifier = Modifier.fillMaxWidth(),
       singleLine = true,
       enabled = !saving,
     )
-    Button(
+    BrandButton(
       onClick = onSave,
       enabled = enabled && !saving && name.isNotBlank(),
       modifier = Modifier.testTag("filter_preset_save"),
     ) {
-      Text(labels.save)
+      BrandText(labels.save)
     }
   }
 }

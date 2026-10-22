@@ -12,20 +12,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -45,13 +37,18 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.ComposeUIViewController
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.shared.app.SharedAppHost
 import com.simtop.billionbeers.shared.app.SharedAppShell
 import com.simtop.billionbeers.shared.app.SharedAppStrings
+import com.simtop.billionbeers.shared.designsystem.controls.BrandAvailabilityBadge
+import com.simtop.billionbeers.shared.designsystem.controls.BrandButton
+import com.simtop.billionbeers.shared.designsystem.controls.BrandCard
+import com.simtop.billionbeers.shared.designsystem.controls.BrandIcon
+import com.simtop.billionbeers.shared.designsystem.controls.BrandText
+import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersTheme
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.runSuspendCatching
 import com.simtop.navigation.contract.PortableRoute
@@ -147,22 +144,22 @@ private fun iosHost(
       IosError(state, retry, strings.list.retry, strings.chrome.error)
     },
     backIcon = { contentDescription ->
-      Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = contentDescription)
+      BrandIcon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = contentDescription)
     },
     favoriteIcon = { isFavorite, contentDescription ->
-      Icon(
+      BrandIcon(
         if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
         contentDescription = contentDescription,
       )
     },
     catalogNavigationIcon = { contentDescription ->
-      Icon(Icons.Filled.Home, contentDescription = contentDescription)
+      BrandIcon(Icons.Filled.Home, contentDescription = contentDescription)
     },
     favoritesNavigationIcon = { contentDescription ->
-      Icon(Icons.Filled.Favorite, contentDescription = contentDescription)
+      BrandIcon(Icons.Filled.Favorite, contentDescription = contentDescription)
     },
     savedFiltersNavigationIcon = { contentDescription ->
-      Icon(Icons.AutoMirrored.Filled.List, contentDescription = contentDescription)
+      BrandIcon(Icons.AutoMirrored.Filled.List, contentDescription = contentDescription)
     },
     imageContent = { imageUrl, description, modifier ->
       IosImage(runtime, imageUrl, description, modifier)
@@ -171,7 +168,7 @@ private fun iosHost(
     routeRequests = routeRequests,
     detailAnimationsDisabled = true,
     detailTitleTextStyle = {
-      MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold)
+      BillionBeersTheme.brand.iosDetailTitle
     },
   )
 
@@ -184,7 +181,7 @@ private fun IosBeerRow(
   unavailableText: String,
 ) {
   val availability = if (beer.availability) availableText else unavailableText
-  Card(
+  BrandCard(
     modifier =
       Modifier.fillMaxWidth()
         .padding(horizontal = 12.dp, vertical = 4.dp)
@@ -194,7 +191,7 @@ private fun IosBeerRow(
           role = Role.Button
           stateDescription = availability
         },
-    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    containerColor = BillionBeersTheme.colorScheme.surface,
   ) {
     Row(
       modifier = Modifier.fillMaxWidth().padding(12.dp),
@@ -207,33 +204,15 @@ private fun IosBeerRow(
         Modifier.width(72.dp).height(96.dp),
       )
       Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(beer.name, style = MaterialTheme.typography.titleMedium)
+        BrandText(beer.name, style = BillionBeersTheme.brand.beerTitle)
         if (beer.tagline.isNotBlank())
-          Text(beer.tagline, style = MaterialTheme.typography.bodyMedium)
-        Text(
+          BrandText(beer.tagline, style = BillionBeersTheme.typography.bodyMedium)
+        BrandText(
           "ABV ${beer.abv}% · IBU ${beer.ibu}",
-          style = MaterialTheme.typography.labelMedium,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
+          style = BillionBeersTheme.typography.labelMedium,
+          color = BillionBeersTheme.colorScheme.onSurfaceVariant,
         )
-        if (beer.availability) {
-          Text(
-            availability,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.primary,
-          )
-        } else {
-          Surface(
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            shape = RoundedCornerShape(percent = 50),
-          ) {
-            Text(
-              availability,
-              modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-              style = MaterialTheme.typography.labelSmall,
-              color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-          }
-        }
+        BrandAvailabilityBadge(text = availability, available = beer.availability)
       }
     }
   }
@@ -280,7 +259,7 @@ private fun IosImagePlaceholder(description: String?, modifier: Modifier) {
       },
     contentAlignment = Alignment.Center,
   ) {
-    Text("Beer", style = MaterialTheme.typography.headlineMedium)
+    BrandText("Beer", style = BillionBeersTheme.typography.headlineMedium)
   }
 }
 
@@ -296,11 +275,11 @@ private fun IosError(
       horizontalAlignment = Alignment.CenterHorizontally,
       verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-      Text(
+      BrandText(
         state.message ?: errorText,
         modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
       )
-      Button(onClick = retry) { Text(retryText) }
+      BrandButton(onClick = retry) { BrandText(retryText) }
     }
   }
 }

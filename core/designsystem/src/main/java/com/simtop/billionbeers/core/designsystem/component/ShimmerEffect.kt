@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 
 /**
  * Creates the loading brush used by skeleton content.
@@ -22,9 +23,9 @@ fun shimmerBrush(showShimmer: Boolean = true, targetValue: Float = SHIMMER_TARGE
   return if (showShimmer) {
     val shimmerColors =
       listOf(
-        Color.LightGray.copy(alpha = SHIMMER_ALPHA_HIGH),
-        Color.LightGray.copy(alpha = SHIMMER_ALPHA_LOW),
-        Color.LightGray.copy(alpha = SHIMMER_ALPHA_HIGH),
+        BillionBeersTheme.colorScheme.surfaceVariant.copy(alpha = SHIMMER_ALPHA_HIGH),
+        BillionBeersTheme.colorScheme.surfaceVariant.copy(alpha = SHIMMER_ALPHA_LOW),
+        BillionBeersTheme.colorScheme.surfaceVariant.copy(alpha = SHIMMER_ALPHA_HIGH),
       )
 
     val transition = rememberInfiniteTransition(label = "shimmer")

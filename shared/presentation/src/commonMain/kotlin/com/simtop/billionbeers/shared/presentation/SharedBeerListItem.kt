@@ -2,22 +2,22 @@ package com.simtop.billionbeers.shared.presentation
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.billionbeers.shared.designsystem.controls.BrandAvailabilityBadge
+import com.simtop.billionbeers.shared.designsystem.controls.BrandCard
+import com.simtop.billionbeers.shared.designsystem.controls.BrandText
 import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersTheme
 
 /** Hosts supply localized/formatted copy and their image loader; layout is shared. */
@@ -41,7 +41,7 @@ fun SharedBeerListItem(
   modifier: Modifier = Modifier,
   titleMaxLines: Int = 2,
 ) {
-  Card(
+  BrandCard(
     onClick = onClick,
     modifier =
       modifier
@@ -56,10 +56,7 @@ fun SharedBeerListItem(
           role = Role.Button
           stateDescription = labels.availability
         },
-    shape = RoundedCornerShape(BillionBeersTheme.spacing.medium),
-    elevation =
-      CardDefaults.cardElevation(defaultElevation = BillionBeersTheme.brand.beerCardElevation),
-    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    containerColor = BillionBeersTheme.colorScheme.surface,
   ) {
     Row(
       modifier =
@@ -84,7 +81,7 @@ fun SharedBeerListItem(
 
       // Beer Details
       Column(modifier = Modifier.weight(1f)) {
-        Text(
+        BrandText(
           text = beer.name,
           style = BillionBeersTheme.brand.beerTitle,
           maxLines = titleMaxLines,
@@ -93,13 +90,10 @@ fun SharedBeerListItem(
 
         Spacer(modifier = Modifier.height(BillionBeersTheme.spacing.extraSmall))
 
-        Text(
+        BrandText(
           text = beer.tagline,
-          style =
-            MaterialTheme.typography.bodyMedium.copy(
-              fontStyle = FontStyle.Normal,
-              color = MaterialTheme.colorScheme.onSurfaceVariant,
-            ),
+          style = BillionBeersTheme.typography.bodyMedium,
+          color = BillionBeersTheme.colorScheme.onSurfaceVariant,
           maxLines = 2,
           overflow = TextOverflow.Ellipsis,
         )
@@ -110,52 +104,14 @@ fun SharedBeerListItem(
           horizontalArrangement = Arrangement.spacedBy(BillionBeersTheme.spacing.small),
           verticalArrangement = Arrangement.spacedBy(BillionBeersTheme.spacing.small),
         ) {
-          Text(
+          BrandText(
             text = labels.abv + "  ·  " + labels.ibu,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = BillionBeersTheme.typography.labelMedium,
+            color = BillionBeersTheme.colorScheme.onSurfaceVariant,
           )
-          if (beer.availability) {
-            BeerChip(
-              text = labels.availability,
-              color = Color(AVAILABLE_BG_COLOR),
-              textColor = Color(AVAILABLE_TEXT_COLOR),
-            )
-          } else {
-            BeerChip(
-              text = labels.availability,
-              color = MaterialTheme.colorScheme.surfaceVariant,
-              textColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-          }
+          BrandAvailabilityBadge(text = labels.availability, available = beer.availability)
         }
       }
     }
   }
 }
-
-@Composable
-private fun BeerChip(text: String, color: Color, textColor: Color, modifier: Modifier = Modifier) {
-  Surface(
-    modifier = modifier,
-    color = color,
-    shape = RoundedCornerShape(BillionBeersTheme.spacing.small),
-  ) {
-    Text(
-      text = text,
-      modifier =
-        Modifier.padding(
-          horizontal = BillionBeersTheme.spacing.small,
-          vertical = BillionBeersTheme.spacing.extraSmall,
-        ),
-      style =
-        MaterialTheme.typography.labelSmall.copy(
-          fontWeight = FontWeight.SemiBold,
-          color = textColor,
-        ),
-    )
-  }
-}
-
-private const val AVAILABLE_BG_COLOR = 0xFFE8F5E9
-private const val AVAILABLE_TEXT_COLOR = 0xFF1B5E20

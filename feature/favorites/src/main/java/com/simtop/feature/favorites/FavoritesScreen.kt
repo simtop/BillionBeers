@@ -5,8 +5,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -15,6 +13,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.billionbeers.shared.designsystem.controls.BrandText
+import com.simtop.billionbeers.shared.designsystem.controls.BrandTopAppBar
 import com.simtop.billionbeers.shared.favorites.SharedFavoritesContent
 import com.simtop.core.core.CommonUiState
 import com.simtop.presentation_utils.R as PresentationUtilsR
@@ -42,7 +42,9 @@ fun FavoritesContent(
   Scaffold(
     modifier = modifier,
     topBar = {
-      TopAppBar(title = { Text(stringResource(PresentationUtilsR.string.favorites_title)) })
+      BrandTopAppBar(
+        title = { BrandText(stringResource(PresentationUtilsR.string.favorites_title)) }
+      )
     },
   ) { paddingValues ->
     SharedFavoritesContent(

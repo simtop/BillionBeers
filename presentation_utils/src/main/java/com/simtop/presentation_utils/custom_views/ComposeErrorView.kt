@@ -3,8 +3,6 @@ package com.simtop.presentation_utils.custom_views
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -12,6 +10,7 @@ import androidx.compose.ui.unit.dp
 import com.simtop.billionbeers.catalog_annotations.CatalogComponent
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.billionbeers.shared.designsystem.controls.BrandIcon
 import com.simtop.billionbeers.shared.presentation.SharedErrorView
 import com.simtop.presentation_utils.R
 
@@ -28,11 +27,11 @@ fun ComposeErrorView(
     modifier = modifier,
     onRetry = onRetry,
     leadingContent = {
-      Icon(
+      BrandIcon(
         imageVector = Icons.Default.Warning,
         contentDescription = null,
         modifier = Modifier.size(64.dp),
-        tint = MaterialTheme.colorScheme.error,
+        tint = BillionBeersTheme.colorScheme.error,
       )
     },
   )

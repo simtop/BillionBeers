@@ -4,7 +4,6 @@ package com.simtop.feature.beerdetail.presentation
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -20,6 +19,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.simtop.billionbeers.core.designsystem.component.showToast
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailEvent as SharedBeerDetailEvent
+import com.simtop.billionbeers.shared.designsystem.controls.BrandCircularProgressIndicator
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.di.DynamicDependencies
 import com.simtop.feature.beerdetail.presentation.di.FeatureDetailComponent
@@ -93,7 +93,7 @@ fun BeerDetailScreenImpl(
       is CommonUiState.Error -> Unit
       CommonUiState.Loading -> {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-          CircularProgressIndicator()
+          BrandCircularProgressIndicator()
         }
       }
       else -> {}

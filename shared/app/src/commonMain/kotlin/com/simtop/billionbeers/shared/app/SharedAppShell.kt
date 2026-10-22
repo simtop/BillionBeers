@@ -12,21 +12,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationRail
-import androidx.compose.material3.NavigationRailItem
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -66,6 +53,18 @@ import com.simtop.billionbeers.shared.beersearch.BeersSearchStyleFilter
 import com.simtop.billionbeers.shared.beersearch.SharedBeersSearchContent
 import com.simtop.billionbeers.shared.beerslist.SharedBeersListContent
 import com.simtop.billionbeers.shared.designsystem.components.rememberNavigationLabel
+import com.simtop.billionbeers.shared.designsystem.controls.BrandButton
+import com.simtop.billionbeers.shared.designsystem.controls.BrandCircularProgressIndicator
+import com.simtop.billionbeers.shared.designsystem.controls.BrandIconButton
+import com.simtop.billionbeers.shared.designsystem.controls.BrandNavigationBar
+import com.simtop.billionbeers.shared.designsystem.controls.BrandNavigationBarItem
+import com.simtop.billionbeers.shared.designsystem.controls.BrandNavigationRail
+import com.simtop.billionbeers.shared.designsystem.controls.BrandNavigationRailItem
+import com.simtop.billionbeers.shared.designsystem.controls.BrandOutlinedTextField
+import com.simtop.billionbeers.shared.designsystem.controls.BrandSurface
+import com.simtop.billionbeers.shared.designsystem.controls.BrandText
+import com.simtop.billionbeers.shared.designsystem.controls.BrandTextButton
+import com.simtop.billionbeers.shared.designsystem.controls.BrandTopAppBar
 import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersTheme
 import com.simtop.billionbeers.shared.favorites.SharedFavoritesContent
 import com.simtop.billionbeers.shared.presentation.FilterPresetFormLabels
@@ -185,8 +184,8 @@ data class SharedAppHost(
   val navigationRequests: Flow<SharedAppNavigationRequest> = emptyFlow(),
   val onNavigationEvent: (SharedAppNavigationEvent) -> Unit = {},
   val messageContent: @Composable (String) -> Unit = { message ->
-    Surface(modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) {
-      Text(text = message, modifier = Modifier.padding(16.dp))
+    BrandSurface(modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) {
+      BrandText(text = message, modifier = Modifier.padding(16.dp))
     }
   },
 )
@@ -328,20 +327,20 @@ fun SharedAppShell(
               }
             }
             if (showNavigation && !showNavigationRail) {
-              NavigationBar {
-                NavigationBarItem(
+              BrandNavigationBar {
+                BrandNavigationBarItem(
                   selected = route == PortableRoute.BeersList,
                   onClick = { navigate(PortableRoute.BeersList) },
                   icon = { host.catalogNavigationIcon(strings.chrome.list) },
                   label = { navigationLabel(strings.chrome.list) },
                 )
-                NavigationBarItem(
+                BrandNavigationBarItem(
                   selected = route == PortableRoute.Favorites,
                   onClick = { navigate(PortableRoute.Favorites) },
                   icon = { host.favoritesNavigationIcon(strings.chrome.favorites) },
                   label = { navigationLabel(strings.chrome.favorites) },
                 )
-                NavigationBarItem(
+                BrandNavigationBarItem(
                   selected = route == PortableRoute.SavedFilterPresets,
                   onClick = { navigate(PortableRoute.SavedFilterPresets) },
                   icon = { host.savedFiltersNavigationIcon(strings.chrome.savedFilters) },
@@ -354,20 +353,20 @@ fun SharedAppShell(
       ) { padding ->
         Row(modifier = Modifier.fillMaxSize().padding(padding)) {
           if (showNavigationRail) {
-            NavigationRail {
-              NavigationRailItem(
+            BrandNavigationRail {
+              BrandNavigationRailItem(
                 selected = navigationRoute == PortableRoute.BeersList,
                 onClick = { navigate(PortableRoute.BeersList) },
                 icon = { host.catalogNavigationIcon(strings.chrome.list) },
                 label = { navigationLabel(strings.chrome.list) },
               )
-              NavigationRailItem(
+              BrandNavigationRailItem(
                 selected = navigationRoute == PortableRoute.Favorites,
                 onClick = { navigate(PortableRoute.Favorites) },
                 icon = { host.favoritesNavigationIcon(strings.chrome.favorites) },
                 label = { navigationLabel(strings.chrome.favorites) },
               )
-              NavigationRailItem(
+              BrandNavigationRailItem(
                 selected = navigationRoute == PortableRoute.SavedFilterPresets,
                 onClick = { navigate(PortableRoute.SavedFilterPresets) },
                 icon = { host.savedFiltersNavigationIcon(strings.chrome.savedFilters) },
@@ -501,13 +500,13 @@ private fun ShellTopBar(
   backIcon: @Composable (String) -> Unit,
   onBack: () -> Unit,
 ) {
-  TopAppBar(
+  BrandTopAppBar(
     navigationIcon = {
       if (showBack) {
-        IconButton(onClick = onBack) { backIcon(back) }
+        BrandIconButton(onClick = onBack) { backIcon(back) }
       }
     },
-    title = { Text(title) },
+    title = { BrandText(title) },
   )
 }
 
@@ -540,7 +539,9 @@ private fun ExpandedCatalogDetail(
       }
       Box(
         modifier =
-          Modifier.fillMaxHeight().width(1.dp).background(MaterialTheme.colorScheme.outlineVariant)
+          Modifier.fillMaxHeight()
+            .width(1.dp)
+            .background(BillionBeersTheme.colorScheme.outlineVariant)
       )
       Box(modifier = Modifier.weight(0.58f).fillMaxHeight()) {
         DetailDestination(
@@ -626,10 +627,10 @@ private fun SearchDestination(
   val viewState = uiState.viewState
   val count = (viewState as? CommonUiState.Success)?.data?.items?.size ?: 0
   Column(Modifier.fillMaxSize()) {
-    OutlinedTextField(
+    BrandOutlinedTextField(
       value = query,
       onValueChange = entry.viewModel::onQueryChange,
-      label = { Text(strings.search.hint) },
+      label = { BrandText(strings.search.hint) },
       singleLine = true,
       modifier = Modifier.fillMaxWidth().padding(12.dp),
     )
@@ -648,7 +649,9 @@ private fun SearchDestination(
         onRetryStyles = entry.viewModel::retryStyles,
       )
       if (activeQuery.search != null || activeQuery.styleId != null) {
-        TextButton(onClick = entry.viewModel::onResetFilters) { Text(strings.search.clearFilters) }
+        BrandTextButton(onClick = entry.viewModel::onResetFilters) {
+          BrandText(strings.search.clearFilters)
+        }
       }
     }
     SaveFilterForm(
@@ -667,7 +670,7 @@ private fun SearchDestination(
         noResultsContent = { ShellHint(strings.search.noResults(it)) },
         errorContent = host.errorContent,
         resultCountContent = {
-          Text(strings.search.resultCount(it), modifier = Modifier.padding(12.dp))
+          BrandText(strings.search.resultCount(it), modifier = Modifier.padding(12.dp))
         },
         loadMoreFailedText = strings.search.loadMoreFailed,
         retryText = strings.search.retry,
@@ -800,9 +803,11 @@ private fun ShellActions(
 ) {
   Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
     Row(Modifier.fillMaxWidth()) {
-      Button(onClick = onSearch, modifier = Modifier.weight(1f)) { Text(strings.chrome.search) }
-      Button(onClick = onBrowse, modifier = Modifier.weight(1f).padding(start = 8.dp)) {
-        Text(strings.chrome.browse)
+      BrandButton(onClick = onSearch, modifier = Modifier.weight(1f)) {
+        BrandText(strings.chrome.search)
+      }
+      BrandButton(onClick = onBrowse, modifier = Modifier.weight(1f).padding(start = 8.dp)) {
+        BrandText(strings.chrome.browse)
       }
     }
     SaveFilterForm(strings, onSaveQuery, modifier = Modifier.padding(top = 8.dp))
@@ -838,12 +843,14 @@ private fun SaveFilterForm(
 
 @Composable
 private fun LoadingContent() {
-  Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+  Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    BrandCircularProgressIndicator()
+  }
 }
 
 @Composable
 private fun ShellHint(text: String) {
   Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-    Text(text, style = MaterialTheme.typography.bodyLarge)
+    BrandText(text, style = BillionBeersTheme.typography.bodyLarge)
   }
 }

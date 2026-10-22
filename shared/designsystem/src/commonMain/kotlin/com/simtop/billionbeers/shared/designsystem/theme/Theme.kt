@@ -2,8 +2,6 @@ package com.simtop.billionbeers.shared.designsystem.theme
 
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
@@ -30,7 +28,7 @@ fun BillionBeersTheme(
     LocalTypography provides resolvedTypography,
   ) {
     MaterialTheme(
-      colorScheme = resolvedColors.toMaterialColorScheme(darkTheme),
+      colorScheme = resolvedColors.material,
       typography = resolvedTypography,
       content = content,
     )
@@ -47,40 +45,9 @@ object BillionBeersTheme {
   val colors: BillionBeersColors
     @Composable @ReadOnlyComposable get() = LocalColors.current
 
+  val colorScheme: ColorScheme
+    @Composable @ReadOnlyComposable get() = MaterialTheme.colorScheme
+
   val typography: androidx.compose.material3.Typography
     @Composable @ReadOnlyComposable get() = LocalTypography.current
-}
-
-private fun BillionBeersColors.toMaterialColorScheme(darkTheme: Boolean): ColorScheme {
-  return if (!darkTheme) {
-    lightColorScheme(
-      primary = primary,
-      onPrimary = onPrimary,
-      primaryContainer = primaryContainer,
-      onPrimaryContainer = onPrimaryContainer,
-      secondary = secondary,
-      onSecondary = onSecondary,
-      background = background,
-      onBackground = onBackground,
-      surface = surface,
-      onSurface = onSurface,
-      error = error,
-      onError = onError,
-    )
-  } else {
-    darkColorScheme(
-      primary = primary,
-      onPrimary = onPrimary,
-      primaryContainer = primaryContainer,
-      onPrimaryContainer = onPrimaryContainer,
-      secondary = secondary,
-      onSecondary = onSecondary,
-      background = background,
-      onBackground = onBackground,
-      surface = surface,
-      onSurface = onSurface,
-      error = error,
-      onError = onError,
-    )
-  }
 }

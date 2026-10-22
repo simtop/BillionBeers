@@ -13,10 +13,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -60,6 +56,11 @@ import com.simtop.billionbeers.shared.beerbrowse.BrowseStrings
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailStrings
 import com.simtop.billionbeers.shared.beerdetail.formatBeerMetric
 import com.simtop.billionbeers.shared.beerdetail.formatServingTemperatureRange
+import com.simtop.billionbeers.shared.designsystem.controls.BrandButton
+import com.simtop.billionbeers.shared.designsystem.controls.BrandIcon
+import com.simtop.billionbeers.shared.designsystem.controls.BrandSurface
+import com.simtop.billionbeers.shared.designsystem.controls.BrandText
+import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersTheme
 import com.simtop.billionbeers.shared.presentation.BeerListItemLabels
 import com.simtop.billionbeers.shared.presentation.SharedBackIcon
 import com.simtop.billionbeers.shared.presentation.SharedBeerListItem
@@ -110,7 +111,11 @@ private fun WebStartupHost() {
       maxLifecycle = if (pageVisible) Lifecycle.State.RESUMED else Lifecycle.State.CREATED,
     )
   CompositionLocalProvider(LocalLifecycleOwner provides lifecycleOwner) {
-    WebStartupContent()
+    BillionBeersTheme(darkTheme = false) {
+      BrandSurface(modifier = Modifier.fillMaxSize(), color = BillionBeersTheme.colors.background) {
+        WebStartupContent()
+      }
+    }
   }
 }
 
@@ -166,7 +171,7 @@ private fun rememberDocumentVisible(): Boolean {
 @Composable
 private fun WebStartupLoading() {
   Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-    Text("Starting Billion Beers")
+    BrandText("Starting Billion Beers")
   }
 }
 
@@ -177,8 +182,8 @@ private fun WebStartupFailure(message: String, retry: () -> Unit) {
       horizontalAlignment = Alignment.CenterHorizontally,
       verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-      Text(message)
-      Button(onClick = retry) { Text("Retry") }
+      BrandText(message)
+      BrandButton(onClick = retry) { BrandText("Retry") }
     }
   }
 }
@@ -350,7 +355,7 @@ private fun webHost(runtime: WebDataRuntime, session: WebRouteSession) =
     errorContent = { state, retry -> WebError(state, retry) },
     backIcon = { description -> SharedBackIcon(description) },
     favoriteIcon = { isFavorite, description ->
-      Text(
+      BrandText(
         if (isFavorite) "♥" else "♡",
         modifier =
           Modifier.semantics {
@@ -361,13 +366,13 @@ private fun webHost(runtime: WebDataRuntime, session: WebRouteSession) =
       )
     },
     catalogNavigationIcon = { description ->
-      Icon(Icons.Filled.Home, contentDescription = description)
+      BrandIcon(Icons.Filled.Home, contentDescription = description)
     },
     favoritesNavigationIcon = { description ->
-      Icon(Icons.Filled.Favorite, contentDescription = description)
+      BrandIcon(Icons.Filled.Favorite, contentDescription = description)
     },
     savedFiltersNavigationIcon = { description ->
-      Icon(Icons.Filled.Bookmark, contentDescription = description)
+      BrandIcon(Icons.Filled.Bookmark, contentDescription = description)
     },
     imageContent = { imageUrl, description, modifier ->
       WebImage(runtime, imageUrl, description, modifier)
@@ -396,7 +401,7 @@ private fun WebBeerRow(runtime: WebDataRuntime, beer: Beer, onClick: () -> Unit)
         runtime,
         beer.imageUrl,
         null,
-        modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh),
+        modifier.background(BillionBeersTheme.colorScheme.surfaceContainerHigh),
         contentScale = ContentScale.Fit,
       )
     },
@@ -444,7 +449,7 @@ private fun WebImagePlaceholder(description: String?, modifier: Modifier) {
     },
     contentAlignment = Alignment.Center,
   ) {
-    Text("Beer", style = MaterialTheme.typography.headlineMedium)
+    BrandText("Beer", style = BillionBeersTheme.typography.headlineMedium)
   }
 }
 
@@ -455,8 +460,8 @@ private fun WebError(state: CommonUiState.Error, retry: () -> Unit) {
       horizontalAlignment = Alignment.CenterHorizontally,
       verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-      Text(state.message ?: "Unable to load beers")
-      Button(onClick = retry) { Text("Retry") }
+      BrandText(state.message ?: "Unable to load beers")
+      BrandButton(onClick = retry) { BrandText("Retry") }
     }
   }
 }

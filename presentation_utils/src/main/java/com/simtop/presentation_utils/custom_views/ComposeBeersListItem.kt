@@ -3,7 +3,6 @@ package com.simtop.presentation_utils.custom_views
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -70,8 +69,7 @@ fun BeerImage(
   // crossfades in from the shimmer instead of flashing a static placeholder first.
   var isLoading by remember(imageUrl) { mutableStateOf(true) }
   val background =
-    if (isLoading) shimmerBrush()
-    else SolidColor(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
+    if (isLoading) shimmerBrush() else SolidColor(BillionBeersTheme.brand.imagePlaceholder)
 
   Box(
     modifier =

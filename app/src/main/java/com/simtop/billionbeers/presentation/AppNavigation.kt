@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
@@ -28,6 +27,7 @@ import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_EXPANDED_L
 import com.simtop.beerdomain.domain.errors.SaveFilterPresetError
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.billionbeers.R
+import com.simtop.billionbeers.shared.designsystem.controls.BrandSnackbarHost
 import com.simtop.core.core.Either
 import com.simtop.feature.beerslist.BeersListScreen
 import com.simtop.navigation.AndroidNavigationActions
@@ -98,7 +98,7 @@ fun AppNavigation(
 
   Scaffold(
     modifier = modifier,
-    snackbarHost = { SnackbarHost(snackbarHostState) },
+    snackbarHost = { BrandSnackbarHost(snackbarHostState) },
     // The destination screens own their top-bar and content insets. Keeping the root inset-free
     // lets those top bars draw behind the status bar instead of placing the entire NavDisplay
     // below it. The compact NavigationBar contributes its measured height to innerPadding.

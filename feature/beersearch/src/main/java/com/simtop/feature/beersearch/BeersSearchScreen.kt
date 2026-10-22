@@ -15,17 +15,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -34,7 +25,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
@@ -58,6 +48,13 @@ import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.billionbeers.shared.beersearch.BeersSearchEvent as SharedBeersSearchEvent
 import com.simtop.billionbeers.shared.beersearch.BeersSearchStyleFilter
 import com.simtop.billionbeers.shared.beersearch.SharedBeersSearchContent
+import com.simtop.billionbeers.shared.designsystem.controls.BrandCircularProgressIndicator
+import com.simtop.billionbeers.shared.designsystem.controls.BrandIcon
+import com.simtop.billionbeers.shared.designsystem.controls.BrandIconButton
+import com.simtop.billionbeers.shared.designsystem.controls.BrandSearchField
+import com.simtop.billionbeers.shared.designsystem.controls.BrandText
+import com.simtop.billionbeers.shared.designsystem.controls.BrandTextButton
+import com.simtop.billionbeers.shared.designsystem.controls.BrandTopAppBar
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.PagedListUiModel
 import com.simtop.presentation_utils.R as PresentationUtilsR
@@ -148,10 +145,12 @@ fun BeersSearchContent(
     modifier = modifier,
     topBar = {
       Column {
-        TopAppBar(
+        BrandTopAppBar(
           navigationIcon = {
-            IconButton(onClick = { if (saveFilter.expanded) saveFilter.close() else onBack() }) {
-              Icon(
+            BrandIconButton(
+              onClick = { if (saveFilter.expanded) saveFilter.close() else onBack() }
+            ) {
+              BrandIcon(
                 Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = stringResource(R.string.search_back),
               )
@@ -165,8 +164,11 @@ fun BeersSearchContent(
               ComposeSaveFilterAction(saveFilter, enabled = canSave)
             }
             if (query.isNotEmpty()) {
-              IconButton(onClick = { onQueryChange("") }) {
-                Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.search_clear))
+              BrandIconButton(onClick = { onQueryChange("") }) {
+                BrandIcon(
+                  Icons.Filled.Close,
+                  contentDescription = stringResource(R.string.search_clear),
+                )
               }
             }
           },
@@ -217,8 +219,8 @@ fun BeersSearchContent(
           onRetryStyles = onRetryStyles,
         )
         if (activeQuery.search != null || activeQuery.styleId != null) {
-          TextButton(onClick = onResetFilters) {
-            Text(stringResource(PresentationUtilsR.string.clear_filters))
+          BrandTextButton(onClick = onResetFilters) {
+            BrandText(stringResource(PresentationUtilsR.string.clear_filters))
           }
         }
       }
@@ -233,7 +235,7 @@ fun BeersSearchContent(
               modifier = Modifier.fillMaxSize().padding(contentPadding),
               contentAlignment = Alignment.Center,
             ) {
-              CircularProgressIndicator()
+              BrandCircularProgressIndicator()
             }
           },
           emptyContent = {
@@ -256,9 +258,9 @@ fun BeersSearchContent(
             )
           },
           resultCountContent = { count ->
-            Text(
+            BrandText(
               text = pluralStringResource(R.plurals.search_result_count, count, count),
-              style = MaterialTheme.typography.labelLarge,
+              style = BillionBeersTheme.typography.labelLarge,
               modifier =
                 Modifier.fillMaxWidth()
                   .padding(
@@ -289,19 +291,12 @@ private fun SearchField(query: String, onQueryChange: (String) -> Unit, autoFocu
   if (autoFocus) {
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
   }
-  TextField(
+  BrandSearchField(
     value = query,
     onValueChange = onQueryChange,
-    placeholder = { Text(stringResource(R.string.search_hint)) },
+    placeholder = { BrandText(stringResource(R.string.search_hint)) },
     singleLine = true,
     modifier = Modifier.fillMaxWidth().focusRequester(focusRequester).testTag(SEARCH_FIELD_TAG),
-    colors =
-      TextFieldDefaults.colors(
-        focusedContainerColor = Color.Transparent,
-        unfocusedContainerColor = Color.Transparent,
-        focusedIndicatorColor = Color.Transparent,
-        unfocusedIndicatorColor = Color.Transparent,
-      ),
   )
 }
 
@@ -311,10 +306,10 @@ private fun CenteredHint(text: String, modifier: Modifier = Modifier) {
     modifier = modifier.padding(BillionBeersTheme.spacing.large),
     contentAlignment = Alignment.Center,
   ) {
-    Text(
+    BrandText(
       text = text,
-      style = MaterialTheme.typography.bodyLarge,
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
+      style = BillionBeersTheme.typography.bodyLarge,
+      color = BillionBeersTheme.colorScheme.onSurfaceVariant,
       textAlign = TextAlign.Center,
     )
   }

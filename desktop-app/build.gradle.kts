@@ -25,6 +25,7 @@ compose.desktop {
 
 dependencies {
   implementation(project(":shared:app"))
+  implementation(project(":shared:designsystem"))
   implementation(project(":shared:beerbrowse"))
   implementation(project(":shared:beerdetail"))
   implementation(compose.desktop.currentOs)

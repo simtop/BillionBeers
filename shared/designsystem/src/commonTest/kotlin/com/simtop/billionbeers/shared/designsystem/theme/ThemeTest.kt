@@ -42,6 +42,20 @@ class ThemeTest {
           "Background" to (colors.onBackground to colors.background),
           "ABV" to (colors.onAbvContainer to colors.abvContainer),
           "IBU" to (colors.onIbuContainer to colors.ibuContainer),
+          "Available" to (colors.onAvailableContainer to colors.availableContainer),
+          "Unavailable" to (colors.material.onSurfaceVariant to colors.material.surfaceVariant),
+          "Secondary container" to
+            (colors.material.onSecondaryContainer to colors.material.secondaryContainer),
+          "Tertiary" to (colors.material.onTertiary to colors.material.tertiary),
+          "Tertiary container" to
+            (colors.material.onTertiaryContainer to colors.material.tertiaryContainer),
+          "Error" to (colors.material.onError to colors.material.error),
+          "Error container" to (colors.material.onErrorContainer to colors.material.errorContainer),
+          "Inverse surface" to (colors.material.inverseOnSurface to colors.material.inverseSurface),
+          "Fixed" to (colors.material.onPrimaryFixedVariant to colors.material.primaryFixedDim),
+          "Lowest surface" to (colors.material.onSurface to colors.material.surfaceContainerLowest),
+          "Highest surface" to
+            (colors.material.onSurface to colors.material.surfaceContainerHighest),
         )
       for ((name, pair) in pairs) {
         val (foreground, background) = pair

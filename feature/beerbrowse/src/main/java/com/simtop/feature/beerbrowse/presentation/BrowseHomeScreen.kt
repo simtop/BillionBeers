@@ -2,7 +2,6 @@ package com.simtop.feature.beerbrowse.presentation
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -23,6 +22,7 @@ import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.billionbeers.shared.beerbrowse.BrowseCenteredHint
 import com.simtop.billionbeers.shared.beerbrowse.BrowseStrings
 import com.simtop.billionbeers.shared.beerbrowse.SharedBrowseHomeContent
+import com.simtop.billionbeers.shared.designsystem.controls.BrandIcon
 import com.simtop.core.core.CommonUiErrorKey
 import com.simtop.core.core.CommonUiState
 import com.simtop.presentation_utils.R
@@ -107,7 +107,7 @@ internal fun BrowseHomeContent(
     onBreweryClick = onBreweryClick,
     onBack = onBack,
     backIcon = { contentDescription ->
-      Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = contentDescription)
+      BrandIcon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = contentDescription)
     },
     onRetryStyles = onRetryStyles,
     onRetryBreweries = onRetryBreweries,

@@ -8,16 +8,8 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -30,6 +22,14 @@ import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeerStyle
 import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.billionbeers.shared.designsystem.components.SharedLazyColumn
+import com.simtop.billionbeers.shared.designsystem.controls.BrandCircularProgressIndicator
+import com.simtop.billionbeers.shared.designsystem.controls.BrandHorizontalDivider
+import com.simtop.billionbeers.shared.designsystem.controls.BrandIconButton
+import com.simtop.billionbeers.shared.designsystem.controls.BrandListItem
+import com.simtop.billionbeers.shared.designsystem.controls.BrandTab
+import com.simtop.billionbeers.shared.designsystem.controls.BrandTabRow
+import com.simtop.billionbeers.shared.designsystem.controls.BrandText
+import com.simtop.billionbeers.shared.designsystem.controls.BrandTopAppBar
 import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersTheme
 import com.simtop.billionbeers.shared.presentation.SharedPagedBeersContent
 import com.simtop.billionbeers.shared.presentation.SharedPagedBeersStrings
@@ -86,16 +86,16 @@ fun SharedBrowseHomeContent(
           .consumeWindowInsets(padding)
           .padding(top = padding.calculateTopPadding())
     ) {
-      TabRow(selectedTabIndex = selectedTab) {
-        Tab(
+      BrandTabRow(selectedTabIndex = selectedTab) {
+        BrandTab(
           selected = selectedTab == TAB_STYLES,
           onClick = { onTabSelected(TAB_STYLES) },
-          text = { Text(strings.stylesTab) },
+          text = { BrandText(strings.stylesTab) },
         )
-        Tab(
+        BrandTab(
           selected = selectedTab == TAB_BREWERIES,
           onClick = { onTabSelected(TAB_BREWERIES) },
-          text = { Text(strings.breweriesTab) },
+          text = { BrandText(strings.breweriesTab) },
         )
       }
 
@@ -113,11 +113,11 @@ fun SharedBrowseHomeContent(
             ) {
               items(items.size) { index ->
                 val style = items[index]
-                ListItem(
-                  headlineContent = { Text(style.name) },
+                BrandListItem(
+                  headlineContent = { BrandText(style.name) },
                   modifier = Modifier.clickable { onStyleClick(style) },
                 )
-                HorizontalDivider()
+                BrandHorizontalDivider()
               }
             }
           }
@@ -134,19 +134,19 @@ fun SharedBrowseHomeContent(
             ) {
               items(items.size) { index ->
                 val brewery = items[index]
-                ListItem(
-                  headlineContent = { Text(brewery.name) },
+                BrandListItem(
+                  headlineContent = { BrandText(brewery.name) },
                   supportingContent = {
                     val foundedYear = brewery.foundedYear
                     when {
                       brewery.countryCode.isNotEmpty() && foundedYear != null ->
-                        Text(strings.breweryFounded(brewery.countryCode, foundedYear))
-                      brewery.countryCode.isNotEmpty() -> Text(brewery.countryCode)
+                        BrandText(strings.breweryFounded(brewery.countryCode, foundedYear))
+                      brewery.countryCode.isNotEmpty() -> BrandText(brewery.countryCode)
                     }
                   },
                   modifier = Modifier.clickable { onBreweryClick(brewery) },
                 )
-                HorizontalDivider()
+                BrandHorizontalDivider()
               }
             }
           }
@@ -213,7 +213,7 @@ private fun <T> BrowseListState(
   when (state) {
     CommonUiState.Loading ->
       Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator()
+        BrandCircularProgressIndicator()
       }
     is CommonUiState.Error -> errorContent(state, onRetry)
     CommonUiState.Empty -> BrowseCenteredHint(emptyText, Modifier)
@@ -229,11 +229,11 @@ private fun BrowseTopAppBar(
   onBack: () -> Unit,
   backIcon: @Composable (String) -> Unit,
 ) {
-  TopAppBar(
+  BrandTopAppBar(
     navigationIcon = {
-      androidx.compose.material3.IconButton(onClick = onBack) { backIcon(back) }
+      BrandIconButton(onClick = onBack) { backIcon(back) }
     },
-    title = { Text(title) },
+    title = { BrandText(title) },
   )
 }
 
@@ -243,10 +243,10 @@ fun BrowseCenteredHint(text: String, modifier: Modifier = Modifier) {
     modifier = modifier.fillMaxSize().padding(BillionBeersTheme.spacing.large),
     contentAlignment = Alignment.Center,
   ) {
-    Text(
+    BrandText(
       text = text,
-      style = MaterialTheme.typography.bodyLarge,
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
+      style = BillionBeersTheme.typography.bodyLarge,
+      color = BillionBeersTheme.colorScheme.onSurfaceVariant,
       textAlign = TextAlign.Center,
       modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
     )
