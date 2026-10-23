@@ -2,7 +2,13 @@
     <string name="filter_preset_limit_reached">Puedes guardar hasta 10 filtros. Elimina uno antes de guardar otro.</string>
     <string name="filter_preset_save_failed">No se pudo guardar el filtro.</string>
     <string name="onboarding_headline">Encuentra tu próxima favorita.</string>
-    <string name="onboarding_body">Explora cervezas por estilo. Guarda las que más te gusten.</string>
+    <string name="onboarding_body">Descubre cervezas y explora sus estilos. Encuentra una que te encante.</string>
     <string name="onboarding_explore">Explorar cervezas</string>
     <string name="onboarding_reassurance">Sin crear una cuenta. Tus favoritas se guardan en este dispositivo.</string>
+    <string name="onboarding_collection_headline">Crea tu propia colección.</string>
+    <string name="onboarding_collection_body">Toca el corazón para guardar una cerveza. Vuelve a tus favoritas cuando quieras.</string>
+    <string name="onboarding_next">Siguiente</string>
+    <string name="onboarding_back">Atrás</string>
+    <string name="onboarding_skip">Omitir</string>
+    <string name="onboarding_page_position">Página %1$d de %2$d</string>
 </resources>

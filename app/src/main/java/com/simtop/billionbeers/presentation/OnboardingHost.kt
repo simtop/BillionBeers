@@ -1,28 +1,23 @@
 package com.simtop.billionbeers.presentation
 
-import android.provider.Settings
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.simtop.billionbeers.R
+import com.simtop.billionbeers.shared.designsystem.controls.BrandCollectionIllustration
 import com.simtop.billionbeers.shared.designsystem.controls.BrandSurface
 import com.simtop.billionbeers.shared.designsystem.controls.BrandWelcomeIllustration
 import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersTheme
 import com.simtop.presentation_utils.core.LocalOnboardingHints
 import com.simtop.presentation_utils.core.OnboardingIntroductions
-import com.simtop.presentation_utils.custom_views.ComposeIntroduction
+import com.simtop.presentation_utils.custom_views.ComposeIntroductionFlow
+import com.simtop.presentation_utils.custom_views.IntroductionPage
 
 private const val ONBOARDING_TRANSITION_MILLIS = 200
 
@@ -73,29 +68,37 @@ fun OnboardingHost(
 internal fun WelcomeScreen(
   onExplore: () -> Unit,
   modifier: Modifier = Modifier,
-  animateEntrance: Boolean = true,
+  initialPage: Int = 0,
 ) {
-  val context = LocalContext.current
-  val animationsEnabled =
-    remember(context) {
-      Settings.Global.getFloat(
-        context.contentResolver,
-        Settings.Global.ANIMATOR_DURATION_SCALE,
-        1f,
-      ) != 0f
-    }
-  var entrancePlayed by rememberSaveable { mutableStateOf(false) }
-  val playEntrance = remember { animateEntrance && animationsEnabled && !entrancePlayed }
-  SideEffect { entrancePlayed = true }
-  ComposeIntroduction(
-    eyebrow = stringResource(R.string.app_name),
-    headline = stringResource(R.string.onboarding_headline),
-    body = stringResource(R.string.onboarding_body),
-    action = stringResource(R.string.onboarding_explore),
-    footnote = stringResource(R.string.onboarding_reassurance),
-    onContinue = onExplore,
-    illustration = { BrandWelcomeIllustration(it) },
-    animateEntrance = playEntrance,
+  val brand = stringResource(R.string.app_name)
+  val footnote = stringResource(R.string.onboarding_reassurance)
+  val pages =
+    listOf(
+      IntroductionPage(
+        eyebrow = brand,
+        headline = stringResource(R.string.onboarding_headline),
+        body = stringResource(R.string.onboarding_body),
+        action = stringResource(R.string.onboarding_next),
+        footnote = footnote,
+        illustration = { BrandWelcomeIllustration(it) },
+      ),
+      IntroductionPage(
+        eyebrow = brand,
+        headline = stringResource(R.string.onboarding_collection_headline),
+        body = stringResource(R.string.onboarding_collection_body),
+        action = stringResource(R.string.onboarding_explore),
+        footnote = footnote,
+        illustration = { BrandCollectionIllustration(it) },
+      ),
+    )
+  val pageDescriptionTemplate = stringResource(R.string.onboarding_page_position)
+  ComposeIntroductionFlow(
+    pages = pages,
+    backLabel = stringResource(R.string.onboarding_back),
+    skipLabel = stringResource(R.string.onboarding_skip),
+    pageDescription = { index -> String.format(pageDescriptionTemplate, index + 1, pages.size) },
+    onComplete = onExplore,
     modifier = modifier,
+    initialPage = initialPage,
   )
 }

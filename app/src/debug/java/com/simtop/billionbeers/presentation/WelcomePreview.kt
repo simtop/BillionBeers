@@ -25,7 +25,7 @@ import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 @Preview(name = "Welcome French", widthDp = 360, heightDp = 800, locale = "fr")
 @Composable
 internal fun WelcomePreview() {
-  BillionBeersTheme { WelcomeScreen(onExplore = {}, animateEntrance = false) }
+  BillionBeersTheme { WelcomeScreen(onExplore = {}) }
 }
 
 @Preview(name = "Welcome landscape", widthDp = 800, heightDp = 360)
@@ -45,5 +45,39 @@ internal fun WelcomeWidePreview() {
 internal fun WelcomeRtlPreview() {
   CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
     WelcomePreview()
+  }
+}
+
+@Preview(name = "Collection light", widthDp = 360, heightDp = 800)
+@Preview(
+  name = "Collection dark",
+  widthDp = 360,
+  heightDp = 800,
+  uiMode = Configuration.UI_MODE_NIGHT_YES,
+)
+@Preview(
+  name = "Collection Spanish large",
+  widthDp = 320,
+  heightDp = 640,
+  locale = "es",
+  fontScale = 2f,
+)
+@Preview(name = "Collection French", widthDp = 360, heightDp = 800, locale = "fr")
+@Composable
+internal fun CollectionWelcomePreview() {
+  BillionBeersTheme { WelcomeScreen(onExplore = {}, initialPage = 1) }
+}
+
+@Preview(name = "Collection wide", widthDp = 840, heightDp = 900)
+@Composable
+internal fun CollectionWelcomeWidePreview() {
+  CollectionWelcomePreview()
+}
+
+@Preview(name = "Collection RTL", widthDp = 360, heightDp = 800)
+@Composable
+internal fun CollectionWelcomeRtlPreview() {
+  CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+    CollectionWelcomePreview()
   }
 }

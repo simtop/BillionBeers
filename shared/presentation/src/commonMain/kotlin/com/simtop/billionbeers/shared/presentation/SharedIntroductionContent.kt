@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -37,6 +38,7 @@ import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersTheme
 
 private const val INTRODUCTION_ENTRANCE_DURATION_MILLIS = 250
 private const val INTRODUCTION_ILLUSTRATION_ASPECT_RATIO = 1.4f
+private const val INTRODUCTION_LARGE_FONT_SCALE = 1.5f
 
 data class IntroductionStrings(
   val eyebrow: String,
@@ -68,7 +70,8 @@ fun SharedIntroductionContent(
       Modifier.fillMaxSize().safeDrawingPadding(),
       contentAlignment = Alignment.Center,
     ) {
-      val shortWindow = maxHeight < 520.dp
+      val compactArtwork =
+        maxHeight < 520.dp || LocalDensity.current.fontScale >= INTRODUCTION_LARGE_FONT_SCALE
       Column(
         modifier =
           Modifier.widthIn(max = 480.dp)
@@ -90,9 +93,9 @@ fun SharedIntroductionContent(
             style = BillionBeersTheme.brand.actionLabel,
             color = BillionBeersTheme.colorScheme.primary,
           )
-          Spacer(Modifier.height(if (shortWindow) 8.dp else 24.dp))
+          Spacer(Modifier.height(if (compactArtwork) 8.dp else 24.dp))
           illustration(
-            Modifier.heightIn(max = if (shortWindow) 140.dp else 280.dp)
+            Modifier.heightIn(max = if (compactArtwork) 140.dp else 280.dp)
               .aspectRatio(INTRODUCTION_ILLUSTRATION_ASPECT_RATIO)
           )
           Spacer(Modifier.height(24.dp))

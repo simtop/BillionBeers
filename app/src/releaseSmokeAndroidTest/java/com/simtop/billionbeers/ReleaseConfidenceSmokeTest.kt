@@ -42,8 +42,11 @@ class ReleaseConfidenceSmokeTest {
 
     launchApp(device)
     // Exercise the real preference adapter on a fresh install before the catalog journey.
-    val explore = device.wait(Until.findObject(By.text("Explore beers")), UI_TIMEOUT_MS)
-    explore?.click()
+    val next = device.wait(Until.findObject(By.text("Next")), UI_TIMEOUT_MS)
+    if (next != null) {
+      next.click()
+      checkNotNull(device.wait(Until.findObject(By.text("Explore beers")), UI_TIMEOUT_MS)).click()
+    }
     assertTrue(
       "Mapped fixture beer did not appear in the catalog",
       device.wait(Until.hasObject(By.text(FIXTURE_NAME)), UI_TIMEOUT_MS),
