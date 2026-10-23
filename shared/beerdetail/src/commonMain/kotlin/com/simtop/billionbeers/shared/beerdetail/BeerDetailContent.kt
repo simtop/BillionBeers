@@ -101,6 +101,7 @@ fun SharedBeerDetailContent(
   headerModifier: Modifier = Modifier,
   scrollBehavior: TopAppBarScrollBehavior? = null,
   scrollState: ScrollState = rememberScrollState(),
+  favoriteHint: @Composable () -> Unit = {},
 ) {
   val favoriteLabel = if (beer.isFavorite) strings.removeFromFavorites else strings.addToFavorites
   val headerTitleStyle = titleTextStyle ?: BillionBeersTheme.brand.detailTitle
@@ -170,6 +171,7 @@ fun SharedBeerDetailContent(
             .padding(BillionBeersTheme.spacing.medium)
             .semantics {}
       ) {
+        favoriteHint()
         BrandText(
           text = beer.tagline,
           style = BillionBeersTheme.typography.titleMedium,

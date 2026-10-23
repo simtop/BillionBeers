@@ -41,6 +41,9 @@ class ReleaseConfidenceSmokeTest {
     assertPackagedBrandFonts(instrumentation.targetContext)
 
     launchApp(device)
+    // Exercise the real preference adapter on a fresh install before the catalog journey.
+    val explore = device.wait(Until.findObject(By.text("Explore beers")), UI_TIMEOUT_MS)
+    explore?.click()
     assertTrue(
       "Mapped fixture beer did not appear in the catalog",
       device.wait(Until.hasObject(By.text(FIXTURE_NAME)), UI_TIMEOUT_MS),

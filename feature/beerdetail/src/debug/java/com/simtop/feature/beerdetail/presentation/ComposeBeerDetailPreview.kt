@@ -3,10 +3,46 @@
 package com.simtop.feature.beerdetail.presentation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.core.designsystem.component.AccessibilityMatrixPreview
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.presentation_utils.R
+import com.simtop.presentation_utils.custom_views.ComposeIntroductionHint
+
+@PreviewLightDark
+@Preview(
+  name = "Favorite hint Spanish large",
+  locale = "es",
+  fontScale = 2f,
+  widthDp = 360,
+  heightDp = 800,
+)
+@Composable
+internal fun FavoriteHintPreview() {
+  BillionBeersTheme {
+    ComposeBeerDetail(
+      beer =
+        Beer.empty.copy(
+          name = "Buzz",
+          tagline = "A light, crisp and bitter IPA.",
+          abv = 4.5,
+          ibu = 60.0,
+        ),
+      onBackClick = {},
+      onToggleAvailability = {},
+      favoriteHint = {
+        ComposeIntroductionHint(
+          text = stringResource(R.string.onboarding_favorite_hint),
+          dismissLabel = stringResource(R.string.onboarding_got_it),
+          onDismiss = {},
+        )
+      },
+    )
+  }
+}
 
 @PreviewLightDark
 @Composable

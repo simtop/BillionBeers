@@ -65,4 +65,6 @@
     <string name="all_styles">Tous les styles</string>
     <string name="clear_style">Effacer le style</string>
     <string name="clear_filters">Effacer les filtres</string>
+    <string name="onboarding_favorite_hint">Cette bière vous plaît ? Touchez le cœur pour la garder dans vos favoris.</string>
+    <string name="onboarding_got_it">Compris</string>
 </resources>

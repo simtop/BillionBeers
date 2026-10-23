@@ -3,4 +3,8 @@
     <string name="title_dynamicfeature" translatable="false">beerdetail</string>
     <string name="filter_preset_limit_reached">You can save up to 10 filters. Delete one before saving another.</string>
     <string name="filter_preset_save_failed">The filter could not be saved.</string>
+    <string name="onboarding_headline">Find your next favorite.</string>
+    <string name="onboarding_body">Explore beers by style. Keep the ones you love.</string>
+    <string name="onboarding_explore">Explore beers</string>
+    <string name="onboarding_reassurance">No account needed. Favorites stay on this device.</string>
 </resources>

@@ -8,7 +8,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -24,6 +27,9 @@ import com.simtop.core.core.CommonUiState
 import com.simtop.core.di.DynamicDependencies
 import com.simtop.feature.beerdetail.presentation.di.FeatureDetailComponent
 import com.simtop.presentation_utils.R
+import com.simtop.presentation_utils.core.LocalOnboardingHints
+import com.simtop.presentation_utils.core.OnboardingIntroductions
+import com.simtop.presentation_utils.custom_views.ComposeIntroductionHint
 import dev.zacsweers.metro.createGraphFactory
 import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 import dev.zacsweers.metrox.viewmodel.assistedMetroViewModel
@@ -36,6 +42,9 @@ fun BeerDetailScreenImpl(
   showBackButton: Boolean = true,
 ) {
   val context = LocalContext.current
+  val hints = LocalOnboardingHints.current
+  var hintChecked by rememberSaveable(beerId) { mutableStateOf(false) }
+  var hintVisible by rememberSaveable(beerId) { mutableStateOf(false) }
 
   val factory = remember {
     val dependencies = context.applicationContext as DynamicDependencies
@@ -52,6 +61,14 @@ fun BeerDetailScreenImpl(
     val lifecycleOwner = LocalLifecycleOwner.current
     val favoriteUpdateFailedMessage = stringResource(R.string.favorite_update_failed)
     val availabilityUpdateFailedMessage = stringResource(R.string.error_failed_to_load_beers)
+
+    LaunchedEffect(beerId, viewState, hints) {
+      val state = viewState
+      if (state is CommonUiState.Success && !hintChecked && hints != null) {
+        hintChecked = true
+        if (!state.data.isFavorite) hintVisible = hints.claim(OnboardingIntroductions.favorites)
+      }
+    }
 
     LaunchedEffect(
       viewModel,
@@ -73,7 +90,7 @@ fun BeerDetailScreenImpl(
                       availabilityUpdateFailedMessage
                   },
               )
-            SharedBeerDetailEvent.FavoriteUpdated -> Unit
+            SharedBeerDetailEvent.FavoriteUpdated -> hintVisible = false
           }
         }
       }
@@ -88,6 +105,12 @@ fun BeerDetailScreenImpl(
           onToggleFavorite = viewModel::updateFavorite,
           modifier = modifier,
           showBackButton = showBackButton,
+          favoriteHint = {
+            OnboardingFavoriteHint(
+              visible = hintVisible && hints != null,
+              onDismiss = { hintVisible = false },
+            )
+          },
         )
       }
       is CommonUiState.Error -> Unit
@@ -98,5 +121,21 @@ fun BeerDetailScreenImpl(
       }
       else -> {}
     }
+  }
+}
+
+@Composable
+private fun OnboardingFavoriteHint(
+  visible: Boolean,
+  onDismiss: () -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  if (visible) {
+    ComposeIntroductionHint(
+      text = stringResource(R.string.onboarding_favorite_hint),
+      dismissLabel = stringResource(R.string.onboarding_got_it),
+      onDismiss = onDismiss,
+      modifier = modifier,
+    )
   }
 }

@@ -18,6 +18,13 @@ com.simtop.billionbeers	CatalogLongContentDesignReviewPreview	light	1.0	en	ltr	c
 com.simtop.billionbeers	CatalogSaveFilterDesignReviewPreview	light	1.0	en	ltr	compact	Light Mode	Themes
 com.simtop.billionbeers	CatalogSaveFilterDesignReviewPreview_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
 com.simtop.billionbeers	CatalogSaveFilterDesignReviewPreview_font150	light	1.5	en	ltr	compact	Catalog Save Large Text	Design Review
+com.simtop.billionbeers	WelcomeLandscapePreview	light	1.0	en	ltr	expanded	Welcome landscape
+com.simtop.billionbeers	WelcomePreview	light	1.0	en	ltr	compact	Welcome light
+com.simtop.billionbeers	WelcomePreview_dark	dark	1.0	en	ltr	compact	Welcome dark
+com.simtop.billionbeers	WelcomePreview_font200_es	light	2.0	es	ltr	compact	Welcome Spanish large
+com.simtop.billionbeers	WelcomePreview_fr	light	1.0	fr	ltr	compact	Welcome French
+com.simtop.billionbeers	WelcomeRtlPreview	light	1.0	en	ltr	compact	Welcome RTL
+com.simtop.billionbeers	WelcomeWidePreview	light	1.0	en	ltr	expanded	Welcome wide
 com.simtop.billionbeers.composefixture.screenshot	ComposeFixturePreview	light	1.0	en	ltr	compact	Compose Multiplatform fixture
 com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_dark_font100_en_ltr_compact	dark	1.0	en	ltr	compact
 com.simtop.billionbeers.core.designsystem	DialogContentAccessibilityMatrixPreview_dark_font100_en_ltr_expanded	dark	1.0	en	ltr	expanded
@@ -210,6 +217,9 @@ com.simtop.feature.beerdetail	DetailScrolledDesignReviewPreview	light	1.0	en	ltr
 com.simtop.feature.beerdetail	DetailScrolledDesignReviewPreview_dark	dark	1.0	en	ltr	compact	Detail Body End Dark	Design Review
 com.simtop.feature.beerdetail	DetailScrolledDesignReviewPreview_font150	light	1.5	en	ltr	compact	Detail Body End Large Text	Design Review
 com.simtop.feature.beerdetail	DetailSparseDesignReviewPreview	light	1.0	en	ltr	compact	Detail Sparse	Design Review
+com.simtop.feature.beerdetail	FavoriteHintPreview	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.feature.beerdetail	FavoriteHintPreview_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.beerdetail	FavoriteHintPreview_font200_es	light	2.0	es	ltr	compact	Favorite hint Spanish large
 com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_dark_font100_en_ltr_compact	dark	1.0	en	ltr	compact
 com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_dark_font100_en_ltr_expanded	dark	1.0	en	ltr	expanded
 com.simtop.feature.beersearch	BeersSearchAccessibilityMatrixPreview_dark_font100_en_rtl_compact	dark	1.0	en	rtl	compact
