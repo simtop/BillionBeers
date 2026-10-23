@@ -2,7 +2,13 @@
     <string name="filter_preset_limit_reached">Vous pouvez enregistrer jusqu\'à 10 filtres. Supprimez-en un avant d\'en ajouter un autre.</string>
     <string name="filter_preset_save_failed">Impossible d\'enregistrer le filtre.</string>
     <string name="onboarding_headline">Trouvez votre prochain coup de cœur.</string>
-    <string name="onboarding_body">Explorez les bières par style. Gardez vos préférées.</string>
+    <string name="onboarding_body">Découvrez les bières et leurs styles. Trouvez celle qui vous plaira.</string>
     <string name="onboarding_explore">Explorer les bières</string>
     <string name="onboarding_reassurance">Sans créer de compte. Vos favoris restent sur cet appareil.</string>
+    <string name="onboarding_collection_headline">Créez votre collection.</string>
+    <string name="onboarding_collection_body">Touchez le cœur pour enregistrer une bière. Retrouvez vos favoris quand vous le souhaitez.</string>
+    <string name="onboarding_next">Suivant</string>
+    <string name="onboarding_back">Retour</string>
+    <string name="onboarding_skip">Passer</string>
+    <string name="onboarding_page_position">Page %1$d sur %2$d</string>
 </resources>

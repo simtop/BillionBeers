@@ -48,6 +48,40 @@ fun BrandWelcomeIllustration(modifier: Modifier = Modifier) {
   }
 }
 
+/**
+ * Saved cards gathered into a collection, with the same visual language as the discovery artwork.
+ */
+@Composable
+@Suppress("MagicNumber") // Coordinates and opacity values for the decorative vector artwork.
+fun BrandCollectionIllustration(modifier: Modifier = Modifier) {
+  val palette = BillionBeersTheme.colorScheme
+  Canvas(modifier.clearAndSetSemantics {}) {
+    val factor = minOf(size.width / 320f, size.height / 230f)
+    translate((size.width - 320f * factor) / 2f, (size.height - 230f * factor) / 2f) {
+      scale(factor, factor, pivot = Offset.Zero) {
+        drawCircle(palette.primaryContainer.copy(alpha = 0.45f), 100f, Offset(160f, 118f))
+        rotate(-12f, Offset(160f, 125f)) {
+          beerCard(Offset(87f, 30f), palette.surfaceVariant, palette.primary, palette.onPrimary)
+        }
+        rotate(9f, Offset(160f, 125f)) {
+          beerCard(Offset(113f, 40f), palette.surface, palette.primaryContainer, palette.primary)
+        }
+        drawCircle(palette.primaryContainer, 29f, Offset(236f, 168f))
+        val heart =
+          Path().apply {
+            moveTo(236f, 182f)
+            cubicTo(202f, 161f, 225f, 143f, 236f, 159f)
+            cubicTo(247f, 143f, 270f, 161f, 236f, 182f)
+            close()
+          }
+        drawPath(heart, palette.primary)
+        drawCircle(palette.primary.copy(alpha = 0.5f), 3f, Offset(55f, 63f))
+        drawCircle(palette.primary.copy(alpha = 0.4f), 2f, Offset(271f, 75f))
+      }
+    }
+  }
+}
+
 @Suppress("MagicNumber") // Glass and paper geometry in the illustration's fixed coordinate space.
 private fun DrawScope.beerCard(origin: Offset, paper: Color, beer: Color, foam: Color) {
   drawRoundRect(

@@ -18,6 +18,12 @@ com.simtop.billionbeers	CatalogLongContentDesignReviewPreview	light	1.0	en	ltr	c
 com.simtop.billionbeers	CatalogSaveFilterDesignReviewPreview	light	1.0	en	ltr	compact	Light Mode	Themes
 com.simtop.billionbeers	CatalogSaveFilterDesignReviewPreview_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
 com.simtop.billionbeers	CatalogSaveFilterDesignReviewPreview_font150	light	1.5	en	ltr	compact	Catalog Save Large Text	Design Review
+com.simtop.billionbeers	CollectionWelcomePreview	light	1.0	en	ltr	compact	Collection light
+com.simtop.billionbeers	CollectionWelcomePreview_dark	dark	1.0	en	ltr	compact	Collection dark
+com.simtop.billionbeers	CollectionWelcomePreview_font200_es	light	2.0	es	ltr	compact	Collection Spanish large
+com.simtop.billionbeers	CollectionWelcomePreview_fr	light	1.0	fr	ltr	compact	Collection French
+com.simtop.billionbeers	CollectionWelcomeRtlPreview	light	1.0	en	ltr	compact	Collection RTL
+com.simtop.billionbeers	CollectionWelcomeWidePreview	light	1.0	en	ltr	expanded	Collection wide
 com.simtop.billionbeers	WelcomeLandscapePreview	light	1.0	en	ltr	expanded	Welcome landscape
 com.simtop.billionbeers	WelcomePreview	light	1.0	en	ltr	compact	Welcome light
 com.simtop.billionbeers	WelcomePreview_dark	dark	1.0	en	ltr	compact	Welcome dark

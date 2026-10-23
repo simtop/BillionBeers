@@ -19,6 +19,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeRight
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.pressBack
@@ -115,9 +116,21 @@ class MainActivityComposeTest {
   fun welcomeSurvivesRecreationThenDismissesAcrossLaunches() {
     resetOnboarding()
     ActivityScenario.launch(MainActivity::class.java).useWithFailureScreenshot { scenario ->
-      composeTestRule.onNodeWithTag("introduction_continue").assertIsDisplayed()
+      composeTestRule.onNodeWithContentDescription("Page 1 of 2").assertIsDisplayed()
       scenario.recreate()
-      composeTestRule.onNodeWithTag("introduction_continue").assertIsDisplayed().performClick()
+      composeTestRule.onNodeWithText("Next").performClick()
+      composeTestRule.onNodeWithText("Build your own collection.").assertIsDisplayed()
+      assertWelcomePending()
+      scenario.recreate()
+      composeTestRule.onNodeWithContentDescription("Page 2 of 2").assertIsDisplayed()
+      composeTestRule.onNodeWithText("Build your own collection.").assertIsDisplayed()
+      composeTestRule.onNodeWithTag("introduction_back").performClick()
+      composeTestRule.onNodeWithContentDescription("Page 1 of 2").assertIsDisplayed()
+      composeTestRule.onNodeWithTag("introduction_pager").performTouchInput { swipeLeft() }
+      composeTestRule.onNodeWithContentDescription("Page 2 of 2").assertIsDisplayed()
+      pressBack()
+      composeTestRule.onNodeWithContentDescription("Page 1 of 2").assertIsDisplayed()
+      completeWelcome()
       composeTestRule.homeScreen { waitUntilNodeWithTextIsDisplayed(fakeBeer.name) }
       scenario.recreate()
       composeTestRule.onNodeWithTag("introduction_continue").assertDoesNotExist()
@@ -130,10 +143,27 @@ class MainActivityComposeTest {
   }
 
   @Test
+  fun welcomeCanBeSkippedFromEitherPage() {
+    for (page in 0..1) {
+      resetOnboarding()
+      ActivityScenario.launch(MainActivity::class.java).useWithFailureScreenshot {
+        if (page == 1) composeTestRule.onNodeWithText("Next").performClick()
+        composeTestRule.onNodeWithTag("introduction_skip").performClick()
+        composeTestRule.homeScreen { waitUntilNodeWithTextIsDisplayed(fakeBeer.name) }
+      }
+      ActivityScenario.launch(MainActivity::class.java).useWithFailureScreenshot {
+        composeTestRule.homeScreen { waitUntilNodeWithTextIsDisplayed(fakeBeer.name) }
+        composeTestRule.onNodeWithTag("introduction_continue").assertDoesNotExist()
+      }
+    }
+  }
+
+  @Test
   fun linkReceivedOnWelcomeOpensDestinationWithoutDismissingWelcomePermanently() {
     resetOnboarding()
     ActivityScenario.launch(MainActivity::class.java).useWithFailureScreenshot { scenario ->
-      composeTestRule.onNodeWithTag("introduction_continue").assertIsDisplayed()
+      composeTestRule.onNodeWithText("Next").performClick()
+      composeTestRule.onNodeWithContentDescription("Page 2 of 2").assertIsDisplayed()
       scenario.onActivity { activity ->
         // ActivityScenario ignores lifecycle events after setIntent changes the launch identity.
         // Deliver the warm callback directly and keep its original intent for recreation tracking.
@@ -163,7 +193,7 @@ class MainActivityComposeTest {
   fun firstDetailHintCanBeDismissedAndDoesNotFollowTheNextBeer() {
     resetOnboarding()
     runMainActivityTest(composeTestRule) {
-      onNodeWithTag("introduction_continue").performClick()
+      completeWelcome()
       homeScreen {
         waitUntilNodeWithTextIsDisplayed(fakeBeer.name)
         clickOnBeer(fakeBeer.name)
@@ -200,7 +230,7 @@ class MainActivityComposeTest {
   fun favoriteHintRemainsAfterFailedSaveAndClosesAfterSuccessfulSave() {
     resetOnboarding()
     runMainActivityTest(composeTestRule) {
-      onNodeWithTag("introduction_continue").performClick()
+      completeWelcome()
       homeScreen {
         waitUntilNodeWithTextIsDisplayed(fakeBeer.name)
         clickOnBeer(fakeBeer.name)
@@ -226,6 +256,22 @@ class MainActivityComposeTest {
         repository.setExceptionToThrow(null)
       }
     }
+  }
+
+  private fun completeWelcome() {
+    composeTestRule.onNodeWithText("Next").performClick()
+    composeTestRule.onNodeWithText("Build your own collection.").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Explore beers").performClick()
+  }
+
+  private fun assertWelcomePending() {
+    val app =
+      InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
+        as BillionBeersApplication
+    assertFalse(
+      checkNotNull(app.appGraph.onboardingController.state.value)
+        .isComplete(com.simtop.presentation_utils.core.OnboardingIntroductions.welcome)
+    )
   }
 
   private fun resetOnboarding() {

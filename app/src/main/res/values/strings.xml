@@ -4,7 +4,13 @@
     <string name="filter_preset_limit_reached">You can save up to 10 filters. Delete one before saving another.</string>
     <string name="filter_preset_save_failed">The filter could not be saved.</string>
     <string name="onboarding_headline">Find your next favorite.</string>
-    <string name="onboarding_body">Explore beers by style. Keep the ones you love.</string>
+    <string name="onboarding_body">Discover beers and explore their styles. Find something you’ll love.</string>
     <string name="onboarding_explore">Explore beers</string>
     <string name="onboarding_reassurance">No account needed. Favorites stay on this device.</string>
+    <string name="onboarding_collection_headline">Build your own collection.</string>
+    <string name="onboarding_collection_body">Tap the heart to save a beer. Come back to your favorites whenever you like.</string>
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_back">Back</string>
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_page_position">Page %1$d of %2$d</string>
 </resources>
