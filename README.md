@@ -12,48 +12,41 @@ dependency checks enforce module boundaries. [ADRs](docs/adr/) explain the desig
 [Run the app](#run-the-android-app) · [Architecture](#architecture) ·
 [Checks](#development-checks) · [Platform support](#platform-support) · [ADRs](docs/adr/)
 
-## App preview
+## App screenshots
 
-These Android UI previews come from the committed Paparazzi screenshot baselines.
-They use fixed sample data and fixture artwork.
+Captured from the Android app running in an emulator, with loaded beer artwork.
 
 <table>
   <tr>
     <th>Catalog</th>
     <th>Beer detail</th>
-    <th>Dark theme</th>
+    <th>Favorites in dark theme</th>
   </tr>
   <tr>
-    <td><img src="imagesForReadme/catalog.png" alt="Light catalog with beer cards, availability, and bottom navigation" width="250"></td>
-    <td><img src="imagesForReadme/detail.png" alt="Beer detail with favorite action, ABV, IBU, and food pairings" width="250"></td>
-    <td><img src="imagesForReadme/dark-theme.png" alt="Catalog in the dark theme with favorites and saved filters tabs" width="250"></td>
+    <td><img src="imagesForReadme/catalog.png" alt="Beer catalog with loaded artwork, ABV, IBU, availability, and bottom navigation" width="250"></td>
+    <td><img src="imagesForReadme/detail.png" alt="The Godfather beer detail with artwork, favorite action, ABV, IBU, and description" width="250"></td>
+    <td><img src="imagesForReadme/dark-theme.png" alt="Three saved beers with loaded artwork in the dark-theme Favorites screen" width="250"></td>
   </tr>
 </table>
 
 <details>
-<summary>Search and browse previews</summary>
+<summary>Search and browse screenshots</summary>
 
 <table>
   <tr>
-    <th>Inline search</th>
+    <th>Search results</th>
     <th>Browse by style</th>
   </tr>
   <tr>
-    <td><img src="imagesForReadme/search.png" alt="Catalog with the inline search field and advanced search action" width="250"></td>
-    <td><img src="imagesForReadme/browse-by-style.png" alt="IPA style results with a save filter action" width="250"></td>
+    <td><img src="imagesForReadme/search.png" alt="Search results for gold with loaded beer artwork, statistics, and result count" width="250"></td>
+    <td><img src="imagesForReadme/browse-by-style.png" alt="IPA style results with loaded beer artwork, statistics, and a save filter action" width="250"></td>
   </tr>
 </table>
 
 </details>
 
-<!-- README PNGs are copies of committed src/test/snapshots/images baselines.
-Refresh them when the corresponding previews change:
-  catalog.png: app / CatalogDesignReviewPreview
-  search.png: app / CatalogInlineSearchDesignReviewPreview
-  detail.png: feature/beerdetail / DetailDesignReviewPreview
-  browse-by-style.png: feature/beerbrowse / BrowseStyleDesignReviewPreview
-  dark-theme.png: app / CatalogDesignReviewPreview_dark
--->
+<!-- README images are unframed Android emulator captures.
+Refresh them with android screen capture after navigating to each screen in the running app. -->
 
 The Android app includes:
 
