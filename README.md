@@ -1,263 +1,259 @@
-# BillionBeers 🍻
+# BillionBeers
 
-A production-shaped, multi-module Android app — a beer catalog — used as a proving ground for modern
-Android architecture. **The shape is the product:** the boundaries that matter here fail the build
-rather than fail a code review, and the decisions that are easy to second-guess are written down as
-ADRs instead of argued twice.
+BillionBeers is a beer catalog built with Jetpack Compose, Metro DI, and Room. Browse by style
+or brewery, search for beers, and save favorites and filters on your device. Availability flags
+are local too. The app reads the remote catalog without changing it.
 
-Compose UI · Metro DI · Room as SSOT · hand-rolled paging · two on-demand dynamic feature modules ·
-architecture rules enforced by Konsist · JVM screenshot tests · dependency verification.
-
-This is a reference application, not a supported domain-neutral project generator.
+The project is also a reference for multi-module Android architecture. Konsist tests and Gradle
+dependency checks enforce module boundaries. [ADRs](docs/adr/) explain the design choices.
 
 [![Google Play](https://img.shields.io/badge/Google%20Play-Get%20it%20now-green?logo=google-play)](https://play.google.com/store/apps/details?id=com.simtop.billionbeers)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/simtop/BillionBeers)
 
----
+[Run the app](#run-the-android-app) · [Architecture](#architecture) ·
+[Checks](#development-checks) · [Platform support](#platform-support) · [ADRs](docs/adr/)
 
-## 📸 Visual Tour
+## App screenshots
 
-Captured from the current build with `scripts/play-listing.sh` — the same assets that go to the
-Play Store, so they cannot quietly drift from the app again.
+Captured from the Android app running in an emulator, with loaded beer artwork.
 
-````carousel
-![Catalog](imagesForReadme/catalog.jpg)
-<!-- slide -->
-![Search as you type](imagesForReadme/search.jpg)
-<!-- slide -->
-![Beer detail](imagesForReadme/detail.jpg)
-<!-- slide -->
-![Browse by style](imagesForReadme/browse-by-style.jpg)
-<!-- slide -->
-![Dark theme](imagesForReadme/dark-theme.jpg)
-````
-
----
-
-## 🏗 Architecture & Design Patterns
-
-The project follows **Clean Architecture** principles with a robust **Multi-module** structure, ensuring high scalability and separation of concerns.
-
-### High-Level Module Dependency
-
-This diagram shows selected Android assembly boundaries. Shared screens and the Desktop, iOS,
-and Web hosts have their own adapters; see the [KMP support matrix](docs/kmp_support_matrix.md)
-for the available evidence and target limits.
-
-Dependencies point **inwards**: features and data both depend on the domain, and the domain depends
-on nothing but pure Kotlin. The load-bearing edges here — features never reaching each other, the
-domain staying Android-free, data never leaking upwards — are checked by
-[Konsist tests](#-enforced-architecture) on every push.
-
-```mermaid
-graph TD
-    App[":app"]
-
-    subgraph FEATURES ["Features — never depend on each other"]
-        List[":feature:beerslist"]
-        Search[":feature:beersearch"]
-        Favorites[":feature:favorites"]
-        Presets[":feature:savedfilters"]
-        Detail[":feature:beerdetail<br/><i>on-demand</i>"]
-        Browse[":feature:beerbrowse<br/><i>on-demand</i>"]
-    end
-
-    subgraph SHARED ["Shared UI"]
-        Nav[":navigation"]
-        PresUtils[":presentation_utils"]
-        Design[":core:designsystem"]
-    end
-
-    subgraph DATA ["Data — implements the domain interfaces"]
-        Data[":beer_data"]
-        Network[":beer_network"]
-        Storage[":beer_storage:api"]
-        DB[":beer_database"]
-    end
-
-    subgraph DOMAIN ["Domain — common Kotlin, zero Android"]
-        Api[":beerdomain:api<br/><i>models · repo interfaces · typed errors</i>"]
-        Fakes[":beerdomain:fakes"]
-    end
-
-    CoreCommon[":core-common<br/><i>common Kotlin · paging · Either · seams</i>"]
-
-    App --> FEATURES
-    App --> DATA
-    FEATURES --> SHARED
-    FEATURES --> Api
-    SHARED --> Api
-    Data --> Network
-    Data --> Storage
-    DB --> Storage
-    Data --> Api
-    Fakes --> Api
-    Api --> CoreCommon
-    SHARED --> CoreCommon
-
-    classDef dyn stroke-dasharray: 5 5
-    class Detail,Browse dyn
-```
-
-> [!NOTE]
-> **The two dashed modules invert their build edge.** Android's `com.android.dynamic-feature`
-> plugin requires an on-demand feature to declare `implementation(project(":app"))`, while `:app`
-> lists it under `dynamicFeatures`. The *code* dependency still runs the direction drawn above —
-> features never reach into `:app`, and cross-feature navigation goes through `:navigation`.
->
-> Shared foundation dependencies (`:core`, `:core-common`, `:presentation_utils`,
-> `:beerdomain:api`) are injected into every feature by the `billionbeers.android.feature`
-> convention plugin rather than hand-declared per module.
-
-### Feature-Level: Unidirectional Data Flow (UDF)
-
-Every feature uses a pure UDF pattern powered by Kotlin Flow and Compose state. There is **no use
-case layer** — ViewModels inject the domain repository interface directly, which is only safe
-because a Konsist rule mechanically forbids a ViewModel from touching anything outside the domain
-layer. The reasoning is written down in [ADR 0003](docs/adr/0003-use-case-policy.md).
-
-```mermaid
-sequenceDiagram
-    participant UI as Compose Screen
-    participant VM as ViewModel
-    participant Pager as Pager (screen-scoped)
-    participant Repo as BeersRepository<br/>(domain interface)
-    participant Impl as Repository impl<br/>(:beer_data)
-
-    UI->>VM: Intent (open screen · scroll to end)
-    VM->>Repo: catalogCacheStatus(policy)
-    Repo-->>VM: Fresh / Stale / Empty
-    Note over VM: A fresh cache skips the fetch entirely —<br/>Room is the source of truth, not the network.
-    VM->>Pager: loadFirstPage() / nextPage()
-    Pager->>Repo: getBeersPageFromApi(page, query)
-    Repo->>Impl: bound by Metro
-    Impl-->>Repo: BeerPage (items + server total)
-    Pager->>Repo: insertPage(...) — page + resume key, one transaction
-    Pager-->>VM: data + PagingState
-    VM->>VM: PagedListReducer folds page into PagedListUiModel<br/>(errors arrive typed, as FetchBeersError)
-    VM-->>UI: StateFlow<CommonUiState<PagedListUiModel<Beer>>>
-    Note over VM,UI: One-shot effects go over<br/>Channel(BUFFERED).receiveAsFlow(),<br/>never SharedFlow — it drops events<br/>with no active collector.
-```
-
----
-
-## 🛡 Enforced Architecture
-
-The point of this repository is that **the conventions are enforced by tooling, not by memory**. A
-diagram that only lives in a README rots; these rules are build checks. The source rules run as
-[Konsist](https://github.com/LemonAppDev/konsist) tests in `:konsist`, complemented by resolved
-Gradle classpath checks. CI runs or adopts the applicable lane verdict under ADR 0008.
-
-| Rule | Test |
-|---|---|
-| Repository interfaces never import data-layer types | `RepositoryBoundaryTest` |
-| Feature modules never depend on other feature modules — cross-feature nav goes through `:navigation` | `FeatureModuleBoundaryTest` |
-| The domain layer has zero Android imports | `DomainLayerPurityTest` |
-| ViewModels depend only on domain types (the precondition that makes "no use cases" safe) | `ViewModelBoundaryTest` |
-| Dynamic-feature code uses shared user-facing resources rather than importing its own module `R` | `DynamicFeatureResourceBoundaryTest` |
-| Dev-app sandboxes depend only on `api` + `fakes` modules, which is what keeps them fast | `DevAppDependencyBoundaryTest` |
-| No module applies `java-test-fixtures` — fixtures live in sibling `:fakes` modules (ADR 0001) | `TestFixturesPluginBoundaryTest` |
-| ViewModels never use `MutableSharedFlow` — it drops one-shot events when nothing is collecting | `OneShotEventBoundaryTest` |
-| Domain models are immutable — no `var`, and no `val` holding a mutable collection | `DomainModelImmutabilityTest` |
-| A module with `src/androidTest/` opts into the managed device — otherwise its tests compile, read as coverage, and never run | `InstrumentedTestOptInBoundaryTest` |
-| Every `src/` directory has a build script beside it — an orphaned source tree is invisible to Gradle but still found by grep | `OrphanedSourceTreeTest` |
-| Test-only libraries never sit on `implementation`/`api` — they ship in the release APK | `TestLibraryBoundaryTest` |
-| Features never declare data-layer modules; resolved compile classpaths also reject transitive leakage | `FeatureDataLayerBoundaryTest` + `checkDataLayerClasspathBoundary` |
-| Production project dependencies and intentional project `api` exposures follow the checked-in role policy | `verifyArchitectureGraph` + architecture-policy fixtures |
-
-Reinforced by:
-
-- **Supply chain** — Gradle dependency verification with a checked-in ledger,
-  `dependency-guard` on the resolved graph, GitHub Actions pinned to SHAs, and gitleaks on every PR
-  range. See [ADR 0006](docs/adr/0006-ci-supply-chain-hardening.md) and
-  [ADR 0007](docs/adr/0007-gradle-dependency-verification.md).
-- **Convention plugins** — module setup lives in `build-logic`, so a new feature module is a plugin
-  id and a namespace, not a copied 80-line build script.
-- **Decision record** — [ADRs](docs/adr/) covering the choices that are easy to second-guess:
-  hand-rolled paging, sibling fixtures, use cases only when they add behavior — and
-  [ADR 0010](docs/adr/0010-non-goals.md), which records the capabilities this project deliberately
-  *doesn't* have (auth, pinning, push, background sync) and the premise each one is waiting on, so
-  a deliberate absence never has to be mistaken for an oversight.
-- **A budget on the build itself, not just the app** — `make build-budget` measures clean,
-  incremental and test builds with gradle-profiler and checks them against
-  `config/build-time-budget.txt`. Clean build is 27s cold and 9s warm; a deep ABI change costs
-  0.95x a leaf one, which says per-build overhead dominates and further module splitting would not
-  make builds faster. It runs locally, never in CI, because a CI wall-clock number mostly measures
-  which runner the job drew. See [ADR 0011](docs/adr/0011-build-time-budget.md).
-- **CI that runs only what a change can break** — a push to a PR reruns the test lanes its diff can
-  affect, plus any lane that was red on the previous head; unaffected green lanes adopt their
-  previous verdict, and a docs-only PR skips the heavy lanes entirely. The rules live in one
-  function, so changing what runs when is a single edit. See
-  [ADR 0008](docs/adr/0008-per-lane-ci-test-selection.md).
-
----
-
-## 🛠 Advanced Technology Stack
-
-This project goes beyond standard libraries, incorporating advanced engineering tools:
-
-- **UI**: Jetpack Compose with a **Component Catalog** (annotation-driven demo system).
-- **DI**: **Metro** — A cutting-edge, high-performance dependency injection framework for dynamic features.
-- **Testing**:
-    - **Paparazzi**: JVM-based Snapshot Testing. It renders your Composables directly on the JVM using Android Studio's `LayoutLib`, allowing for lightning-fast regression testing without emulators.
-    - **Robot Pattern**: Standardized E2E/UI testing architecture for readability.
-- **Data**: Ktor with platform engines (OkHttp on Android/JVM, Darwin on iOS, Fetch on Web),
-  Kotlin Serialization, Room storage on Android/JVM/iOS and IndexedDB on Web, and a
-  **hand-rolled `PagingMediator`** —
-  Paging 3 was deliberately dropped because `PagingData` leaks through every layer
-  ([ADR 0002](docs/adr/0002-hand-rolled-paging.md)).
-- **Errors**: typed sealed errors carried in `Either<DomainError, T>`, converted at the data boundary
-  — never an untyped `Exception` on the left.
-- **Quality**: Konsist (architecture), Detekt, Spotless, Jacoco (Unified Root Reporting),
-  dependency-guard, macrobenchmark perf budgets, and Baseline Profiles.
-
----
-
-## 🚀 Project Evolution
+<table>
+  <tr>
+    <th>Catalog</th>
+    <th>Beer detail</th>
+    <th>Favorites in dark theme</th>
+  </tr>
+  <tr>
+    <td><img src="imagesForReadme/catalog.png" alt="Beer catalog with loaded artwork, ABV, IBU, availability, and bottom navigation" width="250"></td>
+    <td><img src="imagesForReadme/detail.png" alt="The Godfather beer detail with artwork, favorite action, ABV, IBU, and description" width="250"></td>
+    <td><img src="imagesForReadme/dark-theme.png" alt="Three saved beers with loaded artwork in the dark-theme Favorites screen" width="250"></td>
+  </tr>
+</table>
 
 <details>
-<summary><b>Click to explore the technological journey (19 Milestones)</b></summary>
+<summary>Search and browse screenshots</summary>
 
-This repository has served as a technological sandbox over the years. Each milestone below is a
-live branch you can check out and read:
-
-1.  **[Monolithic App with Dagger2](https://github.com/simtop/BillionBeers/tree/simple_coroutines_monolith)**: The original project structure.
-2.  **[Hilt Monolith](https://github.com/simtop/BillionBeers/tree/feature/hilt_monolith)**: Transitioning to modern DI.
-    *   [StateFlow Implementation](https://github.com/simtop/BillionBeers/tree/feature/flow)
-    *   [Paging 3 (Network Only)](https://github.com/simtop/BillionBeers/tree/feature/network_paging)
-    *   [Paging 3 (Network + Room)](https://github.com/simtop/BillionBeers/tree/feature/network_room_paging)
-3.  **[Simple Multi-Module (Hilt)](https://github.com/simtop/BillionBeers/tree/feature/multimodule_hilt)**: First architectural split.
-4.  **[Complete Multi-Module Architecture](https://github.com/simtop/BillionBeers/tree/feature/complete_hilt_multimodule)**: Mature layered separation.
-5.  **[Standard Dynamic Features](https://github.com/simtop/BillionBeers/tree/feature/dynamic_feature)**: Base implementation of Play Core features.
-6.  **[On-Demand Dynamic Features](https://github.com/simtop/BillionBeers/tree/feature/dynamic_feature_on_demand)**: Advanced lazy loading.
-7.  **[SonarQube Integration](https://github.com/simtop/BillionBeers/tree/feature/sonar_qube)**: Static analysis at scale.
-8.  **[SonarQube + Jacoco](https://github.com/simtop/BillionBeers/tree/feature/wip_jacoco_sonarqube)**: Unified coverage reporting.
-9.  **[Jetpack Compose Migration](https://github.com/simtop/BillionBeers/tree/feature/compose)**: Modernizing the entire UI layer.
-10. **[Kotlin DSL (KTS) Migration](https://github.com/simtop/BillionBeers/tree/feat/gradle-kts-conversion)**: Type-safe Gradle configuration.
-11. **[Centralized Version Catalog](https://github.com/simtop/BillionBeers/tree/feature/version_catalog)**: Managing dependencies in a single `toml` file.
-12. **[Build Logic Unification](https://github.com/simtop/BillionBeers/tree/feature/convention-to-precompiled-gradle-scripts)**: Industry-standard precompiled script plugins.
-13. **[Design System Catalog](https://github.com/simtop/BillionBeers/tree/demo-catalog-app)**: Standalone component documentation app.
-14. **[Baseline Profiles](https://github.com/simtop/BillionBeers/tree/baseline-profile)**: DEX layout optimization for app startup.
-15. **[Dependency Auditing](https://github.com/simtop/BillionBeers/tree/dependencies-checker-plugin)**: Custom plugin for unused dep detection.
-16. **[Advanced R8 Aggressiveness](https://github.com/simtop/BillionBeers/tree/feature/r8-rules)**: Maximum code shrinking and obfuscation.
-17. **[KSP Compose Processing](https://github.com/simtop/BillionBeers/tree/feature/compose-manual-update-finished-ksp)**: Transitioning from KAPT to KSP for build speed.
-18. **[Full Compose Navigation](https://github.com/simtop/BillionBeers/tree/feature/nav3-full-compose)**: Migration to type-safe Compose Nav.
-19. **[Assisted Inject Experiments](https://github.com/simtop/BillionBeers/tree/feature/assisted_inject_experiments_hilt)**: Dynamic parameters in DI.
-
-Everything after this point landed on `master` rather than on its own branch — the Metro DI
-migration, Navigation 3, the hand-rolled paging layer, on-demand dynamic-feature install handling,
-the Konsist rule set, Gradle dependency verification, and per-lane CI test selection. Read
-`docs/adr/` for the decisions and `git log` for the work.
+<table>
+  <tr>
+    <th>Search results</th>
+    <th>Browse by style</th>
+  </tr>
+  <tr>
+    <td><img src="imagesForReadme/search.png" alt="Search results for gold with loaded beer artwork, statistics, and result count" width="250"></td>
+    <td><img src="imagesForReadme/browse-by-style.png" alt="IPA style results with loaded beer artwork, statistics, and a save filter action" width="250"></td>
+  </tr>
+</table>
 
 </details>
 
----
+<!-- README images are unframed Android emulator captures.
+Refresh them with android screen capture after navigating to each screen in the running app. -->
 
-## 📊 Current Stack Versions
+The Android app includes:
 
-> [!NOTE]
-> Generated by `make update-docs`, and CI fails if this table drifts from `libs.versions.toml`.
-> So it is accurate by construction rather than by anyone remembering.
+- A paged catalog, inline search, advanced filters, and browsing by style or brewery.
+- Beer details with ABV, IBU, ingredients, and food pairings where available.
+- Local favorites, saved filters, and availability flags, plus a Room-backed Favorites home-screen widget.
+- Light and dark themes, with adaptive list-detail navigation for wider windows.
+- On-demand delivery for the detail and browse features.
+
+## Run the Android app
+
+Use JDK 23 and Android SDK Platform 37. The app runs on Android 9 (API 28) or newer.
+You also need Git LFS for screenshot baselines, Python 3, and Make. Point Gradle at the SDK
+with `local.properties` or `ANDROID_HOME`.
+
+1. Clone the repository and enter its directory.
+
+   ```shell
+   git clone https://github.com/simtop/BillionBeers.git
+   cd BillionBeers
+   ```
+
+2. Install the local Git hooks and fetch LFS assets.
+
+   ```shell
+   make setup
+   ```
+
+3. Build the Android debug app.
+
+   ```shell
+   make build MODULE=:app
+   ```
+
+4. Start an emulator or connect a device with USB debugging enabled, then install the app.
+
+   ```shell
+   make install
+   ```
+
+`make install` uses bundletool local testing to stage the detail and browse features on the device.
+The app installs each feature when you open it. Install `bundletool` first, or let the script install
+it through Homebrew on macOS. The installer expects `ANDROID_HOME` or the default macOS SDK location.
+If you clear the app's data, rerun `make install` to restore the staged features.
+
+To work on the list screen with an in-memory repository, see the
+[beers list dev app](app-dev-beerslist/README.md).
+
+## Platform support
+
+Android is the primary released target. Desktop, iOS, and Web hosts share domain, data, paging,
+and Compose screen code through Kotlin Multiplatform. Their current scope is:
+
+| Target | Current scope | Guide |
+| --- | --- | --- |
+| Android | Released app, on-demand features, and Favorites widget | [Android release evidence](docs/android_release_evidence.md) |
+| Desktop | Local, unsigned macOS arm64 application and DMG | [Desktop host](docs/desktop_host.md) |
+| iOS | Shared framework and unsigned simulator host | [iOS host](docs/ios_host.md) |
+| Web | Wasm browser host, IndexedDB storage, and local static-output verification | [Web host](docs/web_host.md) |
+
+The [KMP support matrix](docs/kmp_support_matrix.md) lists the checks and limitations for each host.
+
+## Architecture
+
+Features depend on domain contracts, which repositories implement in the data layer.
+ViewModels have no dependency on network or storage types. Ktor and Kotlin Serialization handle
+remote reads.
+Room is the source of truth on Android, JVM, and iOS. Web uses IndexedDB behind the storage contract.
+
+The diagrams show selected project dependencies. Solid arrows point from a module to a dependency.
+Grouped boxes summarize several modules. For the full graph, use `make module-graph` and see the
+[architecture reports guide](docs/architecture-reports.md).
+
+### Hosts and shared screens
+
+Each Android feature adapter depends on its matching shared feature module. Desktop, iOS, and Web
+use `:shared:app` to compose the shared screens. Android keeps its navigation host in `:app` so
+detail and browse can remain on-demand features.
+
+```mermaid
+flowchart TB
+    Android[":app"]
+    Desktop[":desktop-app"]
+    IOS[":ios-shared"]
+    Web[":web-app"]
+
+    Regular["Android feature adapters<br/>:feature:beerslist, :feature:beersearch<br/>:feature:favorites, :feature:savedfilters"]
+    Dynamic["On-demand adapters<br/>:feature:beerdetail, :feature:beerbrowse"]
+    Shell[":shared:app"]
+    Shared["Shared screens and ViewModels<br/>:shared:beerslist, :shared:beersearch<br/>:shared:favorites, :shared:savedfilters<br/>:shared:beerdetail, :shared:beerbrowse"]
+
+    Android --> Regular
+    Android -. dynamicFeatures .-> Dynamic
+    Dynamic -->|required by Android plugin| Android
+    Regular -->|matching module only| Shared
+    Dynamic -->|matching module only| Shared
+    Desktop --> Shell
+    IOS --> Shell
+    Web --> Shell
+    Shell --> Shared
+```
+
+The dashed arrow is delivery registration through `dynamicFeatures`. The reverse solid arrow is the
+Gradle dependency that Android's dynamic-feature plugin requires. It does not mean feature source
+code uses app classes. Cross-feature navigation on Android goes through `:navigation`, which exposes
+`:navigation-contract`.
+
+Android UI uses `:core:designsystem`, which exposes the shared tokens in `:shared:designsystem`.
+Shared features use `:shared:designsystem` directly.
+
+### Domain, network, and storage
+
+Hosts assemble the data implementation with network and platform storage. Shared ViewModels depend
+on domain contracts. Both Room and IndexedDB implement the storage contract used by `:beer_data`.
+
+```mermaid
+flowchart TB
+    Screens["Shared feature modules<br/>:shared:beerslist, :shared:beersearch<br/>:shared:favorites, :shared:savedfilters<br/>:shared:beerdetail, :shared:beerbrowse"]
+    Domain[":beerdomain:api"]
+    Common[":core-common"]
+    Data[":beer_data"]
+    Network[":beer_network<br/>Ktor implementation"]
+    NetworkAPI[":beer_network:api"]
+    Storage[":beer_storage:api"]
+    Room[":beer_database<br/>Room on Android, JVM, iOS"]
+    Browser[":beer_storage:browser<br/>IndexedDB on Web"]
+
+    Screens --> Domain
+    Data --> Domain
+    Domain --> Common
+    Data --> Network
+    Data --> NetworkAPI
+    Network --> NetworkAPI
+    Data --> Storage
+    Room --> Storage
+    Browser --> Storage
+```
+
+Shared feature modules do not depend on data implementations or sibling features. The
+[architecture policy](config/architecture/project-dependency-policy.json) enforces the permitted
+production dependencies, including each Android adapter's matching shared feature.
+
+The main design choices are:
+
+- ViewModels expose state through Kotlin Flow. Compose renders that state and sends user actions
+  back to the ViewModel. One-shot events use `Channel(BUFFERED).receiveAsFlow()`.
+- The repository coordinates remote reads and local storage. Hand-rolled paging keeps `PagingData`
+  out of domain contracts. See [ADR 0002](docs/adr/0002-hand-rolled-paging.md).
+- The data layer maps failures to typed sealed errors and returns them in `Either`.
+- ViewModels call domain repository interfaces directly. Add a use case when it owns behavior
+  beyond a repository call. See [ADR 0003](docs/adr/0003-use-case-policy.md).
+- Android retains Play delivery, split installation, and Glance widget synchronization.
+  See [ADR 0015](docs/adr/0015-room-backed-glance-widget-synchronization.md) and
+  [ADR 0016](docs/adr/0016-incremental-kmp-targets-and-platform-adapters.md).
+
+### Enforced boundaries
+
+[Konsist tests](konsist/src/test/kotlin/com/simtop/konsist/) check source and build-script rules.
+Gradle checks resolved dependencies to catch transitive violations as well.
+
+| Boundary | Enforcement |
+| --- | --- |
+| Domain contracts have no Android or data-layer imports, and models are immutable | `DomainLayerPurityTest`, `RepositoryBoundaryTest`, `DomainModelImmutabilityTest` |
+| Features do not depend on sibling features or data implementations | `FeatureModuleBoundaryTest`, `FeatureDataLayerBoundaryTest`, `checkDataLayerClasspathBoundary` |
+| ViewModels depend on domain-layer types | `ViewModelBoundaryTest` |
+| Dynamic features use shared user-facing resources | `DynamicFeatureResourceBoundaryTest` |
+| ViewModels do not use `MutableSharedFlow` for one-shot events | `OneShotEventBoundaryTest` |
+| Production project dependencies and intentional `api` exposures follow the role policy | `verifyArchitectureGraph` |
+
+The suite also checks fixture placement, test-library scope, instrumented-test opt-in, and orphaned
+source trees. [Convention plugins](build-logic/convention/src/main/kotlin/) centralize module setup.
+
+Dependency verification, dependency-guard, and pinned GitHub Actions protect the build's inputs.
+See [ADR 0006](docs/adr/0006-ci-supply-chain-hardening.md) and
+[ADR 0007](docs/adr/0007-gradle-dependency-verification.md).
+CI selects applicable test lanes from the changed paths under
+[ADR 0008](docs/adr/0008-per-lane-ci-test-selection.md).
+
+## Development checks
+
+Run `make help` for the full command list. Scope supported commands with `MODULE=:module`.
+
+| Task | Command |
+| --- | --- |
+| Build a feature | `make build MODULE=:feature:beerslist` |
+| Run a module's tests | `make test MODULE=:feature:beerslist` |
+| Run the full unit-test set, including build logic | `make test` |
+| Check source architecture rules | `make konsist` |
+| Check resolved project dependencies | `make architecture-policy` |
+| Verify screenshot baselines and preview inventory | `make screenshot-verify` |
+| Run app UI tests on the managed emulator | `make ui-test-managed MODULE=:app` |
+| Run Detekt | `make lint` |
+| Run Android Lint | `make android-lint` |
+| Apply Spotless formatting | `make format` |
+| Check Markdown links and the generated version table | `make docs-check` |
+
+App UI tests default to the mock-backed Debug suite. Run minified `releaseSmoke` tests separately
+because the selected variant changes the test sources and runner. See the
+[Android release evidence](docs/android_release_evidence.md) for the commands and results.
+
+For build-time measurements, use `make build-budget` on a quiet local machine and read
+[ADR 0011](docs/adr/0011-build-time-budget.md). Startup performance checks require physical hardware.
+
+## Stack versions
+
+`make update-docs` generates this table from the version catalog and Gradle wrapper.
+`make docs-check` verifies that the table matches those files.
 
 <!-- START_VERSIONS -->
 | Tech | Version |
@@ -269,42 +265,71 @@ the Konsist rule set, Gradle dependency verification, and per-lane CI test selec
 | **Room DB** | 2.8.5 |
 <!-- END_VERSIONS -->
 
----
+## Contributing
 
-To simplify development, we use a standardized **Makefile**. Run `make help` to see all available commands.
+Start with the relevant [ADR](docs/adr/) and the existing feature's code. For changes that persist
+local data across targets, use the [durable-feature change guide](docs/durable_feature_changes.md).
+[ADR 0010](docs/adr/0010-non-goals.md) explains which capabilities are outside the project's scope.
 
-> [!TIP]
-> You can target specific modules using the `MODULE` variable:
-> `make test MODULE=:feature:beerslist`
+Create a branch, keep the change focused, and run the checks that cover the affected behavior.
+For UI changes, verify the screenshots and inspect any updated baselines. Open a pull request
+with the behavior change and validation results. Never commit signing credentials or local configuration.
 
-- **Build/Install**: `make build`, `make install`
-- **Testing**: `make test`, `make ui-test`
+## Project history
 
-App-owned UI tests default to the mock-backed Debug suite. The app confidence smoke selects the
-minified `releaseSmoke` suite with `-PappTestBuildType=releaseSmoke`; keep Debug and smoke app test
-invocations separate because the property controls source roots, runner selection and target variant.
-- **Screenshots**: `make screenshot-record`, `make screenshot-verify`
-- **Analysis**: `make check-unused-deps`, `make check-duplicates`
-- **Benchmarking**: `make benchmark-macro`, `make gradle-benchmark SCENARIO=clean_build`
+Each link points to an exact commit, so the reference stays the same when branches move.
+Dates show the month and year of each commit. Historical builds and API integrations may need
+changes to run today.
 
----
+### Useful checkpoints
 
-## 🤝 Contributing
+| Checkpoint | Month and year | Source | What it shows |
+| --- | --- | --- | --- |
+| Metro DI on Android | April 2026 | [b843c764](https://github.com/simtop/BillionBeers/tree/b843c764c4d2f9c44ba054c95d8c8f779016ef0c) | The migration from Hilt to Metro DI. |
+| Before agent tooling | June 2026 | [4df25d2e](https://github.com/simtop/BillionBeers/tree/4df25d2e182253a1cc45d7e21cb875a9d8a135bd) | The code before tracked agent instructions were added. |
+| Last Android-only tree | September 2026 | [057e3db3](https://github.com/simtop/BillionBeers/tree/057e3db34dcdd88ee8434e1f0a5250753c6186b8) | The final Android-only code before KMP build tooling was added. |
+| First KMP tooling | September 2026 | [316f6d61](https://github.com/simtop/BillionBeers/tree/316f6d61c1814c6d3a74744930a7aaa7171413b9) | An isolated KMP build fixture, before production code moved. |
+| First production KMP module | September 2026 | [5b9ef10e](https://github.com/simtop/BillionBeers/tree/5b9ef10e47e37dbea306d134d97ec7a66038f163) | `core-common` production code moved to common sources. |
+| First shared feature | September 2026 | [7c68d845](https://github.com/simtop/BillionBeers/tree/7c68d8459de286237f079e3cb92808f3ea82a6b9) | The favorites screen and ViewModel moved into shared code. |
+| Web host added | September 2026 | [472b73fd](https://github.com/simtop/BillionBeers/tree/472b73fd51f6ffc4cc1576f8cce74d8bb73b215b) | The Web host and local image proxy, following the Desktop and iOS shells. |
 
-For a change that persists local data across targets, start with the
-[durable-feature change guide](docs/durable_feature_changes.md). It maps saved filters from
-the domain contract through storage, host UI, localization and the relevant checks.
+### Earlier experiments
 
-Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+<details>
+<summary>Android architecture snapshots, October 2020 to March 2026</summary>
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+These commits preserve earlier experiments. Each date identifies the selected snapshot,
+which may be later than the first implementation.
 
----
+| Month and year | Experiment |
+| --- | --- |
+| October 2020 | [Paging 3 with Room](https://github.com/simtop/BillionBeers/tree/9e8bdbf96a4856de0bcb81637677e17af80b9f05) |
+| October 2020 | [Paging 3 with network](https://github.com/simtop/BillionBeers/tree/5d4bfeca904fa4ba89ad022109b4dc83821dab97) |
+| October 2020 | [StateFlow](https://github.com/simtop/BillionBeers/tree/81e95ff9fa2dcca12fda022ce77f4cee4a681087) |
+| December 2020 | [Dagger monolith](https://github.com/simtop/BillionBeers/tree/28e210a139449ac02de27594e4d06a75c0900f53) |
+| January 2021 | [Hilt monolith](https://github.com/simtop/BillionBeers/tree/9fc6733f3f3a7f520211acaf175c644c78b60d2a) |
+| March 2021 | [Initial Hilt modules](https://github.com/simtop/BillionBeers/tree/462f33454fd73be832913c857abd94370581655a) |
+| March 2021 | [Assisted injection](https://github.com/simtop/BillionBeers/tree/a8fcef2859c5d2ed34fb24b95c4d931a0b648c4e) |
+| April 2021 | [Layered Hilt modules](https://github.com/simtop/BillionBeers/tree/14ab86a8b7cc8e7eedf7b0b4fe0199d5bc21c317) |
+| May 2021 | [R8 rules](https://github.com/simtop/BillionBeers/tree/06eccb06549706951e26a215b09e828e9989d030) |
+| May 2021 | [Dynamic features](https://github.com/simtop/BillionBeers/tree/2d21d85223715384517e2aa8e5861dc08590b1b4) |
+| May 2021 | [On-demand features](https://github.com/simtop/BillionBeers/tree/f9a32730e62b98700e406c3f396ee1d32051d133) |
+| June 2021 | [SonarQube and JaCoCo](https://github.com/simtop/BillionBeers/tree/162a238fce3b7203974fa3d2b2839bd57876c402) |
+| November 2021 | [SonarQube](https://github.com/simtop/BillionBeers/tree/aacfab6e2077f71d18884749103f73b077de6912) |
+| January 2022 | [Version catalog](https://github.com/simtop/BillionBeers/tree/96dc415711944f7595805ede75fc0d58bbf50c61) |
+| July 2022 | [Compose migration](https://github.com/simtop/BillionBeers/tree/3ead5f36b8dce137bdcb1726ca86ee478167416b) |
+| May 2025 | [Kotlin build scripts](https://github.com/simtop/BillionBeers/tree/bbe38b5de11b904593b1e1b0da823f6411fd0901) |
+| May 2025 | [KSP processing](https://github.com/simtop/BillionBeers/tree/88e7e69c93b732a53a0aa59bef16e79664f5aea6) |
+| November 2025 | [Precompiled conventions](https://github.com/simtop/BillionBeers/tree/a9536e6d9597ffa51cca3936b4534b0d3f28aedf) |
+| December 2025 | [Compose navigation](https://github.com/simtop/BillionBeers/tree/1a04a1c8769bdceaaf1c95968909d223933312bd) |
+| December 2025 | [Dependency auditing](https://github.com/simtop/BillionBeers/tree/9fd6cb65c00f66626372b50fb9446b88c68d51b3) |
+| January 2026 | [Baseline profiles](https://github.com/simtop/BillionBeers/tree/ed68a42102f34d5c6d3eb99a7927b42baf8f9745) |
+| March 2026 | [Component catalog](https://github.com/simtop/BillionBeers/tree/f9bc5cb09a85ad37837c78ded3207d9e2e75c6f2) |
 
-<p align="center">
-  Built with ❤️ by Simon Topchyan
-</p>
+The version-catalog reference uses the `feature/version_catalog2` snapshot.
+
+</details>
+
+## License
+
+[MIT](LICENSE). Built by Simon Topchyan.
