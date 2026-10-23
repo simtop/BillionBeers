@@ -1,12 +1,9 @@
 ---
 name: play-listing
 description: >-
-  Prepare Google Play store listing assets for BillionBeers - capture fresh, Play-compliant
-  phone screenshots from a device and write/refresh the listing copy (title, short and full
-  description, changelog). Use when asked to update the Play Store listing, refresh the store
-  screenshots, write or rewrite the store description, prepare a release listing, or check
-  whether the listing assets still match the app. Produces files for a manual Play Console
-  upload - it never publishes anything.
+  Prepare or refresh BillionBeers Google Play listing screenshots and copy. Capture real
+  phone, tablet and unfolded foldable UI, render phone marketing frames, and validate
+  separate upload folders. Produces files for manual Play Console upload; never publishes.
 metadata:
   keywords:
     - play store
@@ -19,187 +16,162 @@ metadata:
 
 # Preparing the Play Store listing
 
-Two halves. `scripts/play-listing.sh` does the mechanical work - device state, capture,
-validation. **You** do the judgement: which screens tell the story, and what the copy says.
+Use real captures of the current app. `scripts/play-listing.sh` prepares device state,
+captures JPEGs, and validates assets. `scripts/store-frames.sh` renders phone captions.
+Do not generate or paint app UI. This workflow never publishes; uploads remain manual.
 
-**This never publishes.** It writes files under `fastlane/metadata/android/en-US/`; Simon
-uploads them in the Play Console himself. Do not look for, or add, a publishing API call.
+## Output and upload mapping
 
-## Where things live
+All paths below are relative to `fastlane/metadata/android/<locale>/` (default `en-US`).
 
-```
-fastlane/metadata/android/en-US/
-├── title.txt                        30 chars max
-├── short_description.txt            80 chars max
-├── full_description.txt             4000 chars max
-├── changelogs/<versionCode>.txt     "What's new" for that release
-└── images/phoneScreenshots/*.jpg    2-8 shots, 16:9 or 9:16
-```
-
-That is the [fastlane supply](https://docs.fastlane.tools/actions/supply/) layout. It was
-chosen so the tree stays usable if publishing is ever automated - not because fastlane is
-installed. `build/play-listing-raw/` holds the unconverted PNGs and is throwaway.
-
-## Capturing screenshots
-
-Needs a booted device. For emulator lifecycle, use the `android-cli` skill.
-
-The app must be **installed with its dynamic features staged**, or the detail and browse
-screens will not open:
-
-```bash
-./gradlew :app:bundleDebug --console=plain
-bash scripts/install-local-testing.sh
-```
-
-Then:
-
-```bash
-scripts/play-listing.sh prepare              # 9:16 display, clean status bar, no keyboard
-scripts/play-listing.sh deeplink billionbeers://beers
-scripts/play-listing.sh capture 01-catalog
-# ...navigate, capture, repeat...
-scripts/play-listing.sh reset                # ALWAYS - restores the device
-```
-
-`prepare` does three things that matter:
-
-- **Resizes the display to 1080x1920.** Play requires 16:9 or 9:16. A stock AVD is 1080x2400
-  (9:20) and would be rejected. Resizing beats letterboxing afterwards - the captures stay
-  pixel-native.
-- **Enables SysUI demo mode** - fixed 10:00 clock, full battery, full signal, no notification
-  clutter. Every capture then looks like it came from the same device at the same moment.
-- **Disables the on-screen keyboard.** Otherwise the IME and its "Hold and drag to move
-  toolbar" coach mark cover the search results.
-
-`reset` undoes all three. Run it even if capture failed - the emulator stays resized otherwise.
-
-### Navigating
-
-Because the display size is pinned during a session, **tap coordinates are stable**. On the
-catalog screen at 1080x1920:
-
-| Target | Tap |
+| Folder | Purpose / Play Console destination |
 |---|---|
-| Search icon | `input tap 1005 157` |
-| Browse icon | `input tap 880 157` |
-| First list item | `input tap 540 490` |
+| `images/phoneScreenshots/` | Full phone UI, also suitable for documentation |
+| `images/phoneScreenshotsFramed/` | Captioned phone set; preferred phone upload alternative |
+| `images/sevenInchScreenshots/` | Raw 7-inch tablet upload set |
+| `images/tenInchScreenshots/` | Raw 10-inch tablet upload set |
+| `images/foldableScreenshots/` | Native unfolded UI; local manual selection set |
 
-These assume the catalog screen at 1080x1920 — re-derive them if the app bar changes. The script
-itself is macOS-only (it uses `sips` for image work).
+The first, third and fourth names follow fastlane supply. The framed and foldable folders
+are local conventions, not automatic publishing targets. Google lists phone and tablet
+slots, not a dedicated foldable slot: select unfolded shots for the relevant Console slot
+and keep the final selection at eight or fewer. Never upload both phone alternatives as
+one set. Keep native foldable captures separate rather than stretching them into 16:9.
+For this Play listing, render marketing frames only for phones. Keep tablet and foldable
+sets as raw app captures. This follows Google's large-screen guidance to exclude added
+marketing text. It is a listing choice, not a blanket prohibition on framing other sizes.
+The local foldable folder does not target Fold devices automatically. Google does not
+document a guaranteed screenshot switch when a device unfolds. Describe the upload
+category and keep that targeting limitation explicit in the handoff.
 
-```bash
-ADB="$ANDROID_HOME/platform-tools/adb"
-"$ADB" shell input tap 1005 157        # open search
-"$ADB" shell input text "ipa"          # type a query
-"$ADB" shell input keyevent 4          # back
-```
+Read the locale's `screenshot-manifest.tsv` before refreshing an existing set. The
+[current en-US manifest](../../../fastlane/metadata/android/en-US/screenshot-manifest.tsv)
+records each file's benefit, visible content as alt text, dimensions, size, and SHA-256.
+Use filenames for gallery order. After replacing captures or frames, update the manifest
+and verify its hashes against the final files. Keep this as the asset handoff rather than
+creating a separate upload guide that repeats these instructions.
 
-Two traps, both hit while building this skill:
+`title.txt`, `short_description.txt`, `full_description.txt`, and
+`changelogs/<versionCode>.txt` hold listing copy. Raw PNGs and device restoration state
+live under ignored `build/play-listing-*` directories.
 
-- **Deep links do not pop the back stack.** `deeplink billionbeers://beers` while a detail
-  screen is on top just re-delivers the intent to the running instance and nothing moves. Use
-  `keyevent 4` to walk back, and count your presses - one too many exits to the launcher.
-- **Give images time to load.** Beer artwork arrives over the network; capturing too early
-  leaves grey placeholder squares in the shot. Sleep ~4s after landing on a list, and **look at
-  the capture** before accepting it.
+## Capture workflow
 
-### Deterministic states
+Use the `android-cli` skill for emulator lifecycle, UI inspection and screenshots. Check
+installed command help. Set `ANDROID_SERIAL` when multiple devices are attached; use a
+dedicated emulator to avoid changing a personal device. Install current code with
+`make install GRADLE_RUNNER=./gradlew` so both on-demand features are staged. An ordinary
+APK install is insufficient; clearing app data removes staged splits and requires reinstall.
 
-Do not stumble into error or empty states by unplugging wifi. The app ships seams for exactly
-this, reachable from the **debug drawer** (tap the app-bar title):
+Use `LOCALE` and `PROFILE` consistently on capture/check commands. Profiles:
 
-- **Network fault injection** - drives the error and offline states.
-- **Theme** - light/dark, independent of the system.
-- **Feature flags** - per-flag overrides.
-- **Deep link directory** - the canonical list of routes.
-
-For dark mode specifically, driving the *system* is simpler and does not leave the drawer open:
-
-```bash
-"$ADB" shell "cmd uimode night yes"    # ...capture...
-"$ADB" shell "cmd uimode night no"
-```
-
-### Which screens to shoot
-
-Play shows the first 2-3 in search results, so lead with the strongest. Aim for 5; the
-validator warns below 4 because that is Play's threshold for featuring eligibility. A set that
-works: **catalog** (photo-led list, ABV/IBU, stock states) → **search** (query + result count)
-→ **detail** (hero image, stats, description) → **browse by style** (shows the catalog has
-structure) → **dark mode** (proves the theme is real).
-
-Prefer a *style's beer list* over the styles index - a screen of plain text rows sells nothing.
-
-## Writing the copy
-
-Consumer copy, not engineering copy. Someone browsing Play wants to know what the app does for
-them; they do not care that the architecture is enforced by Konsist. Keep the repo's framing out
-of it — the GitHub About line and the store description are different products.
-
-Ground every claim in a string the app actually ships (`presentation_utils/src/main/res/values/strings.xml`
-is the best single source). The real feature set: paged catalog with ABV/IBU, search-as-you-type,
-browse by style and brewery, a detail screen with food pairing / SRM / serving temperature /
-fermentation / ingredients / glassware, and local stock tracking ("Mark as Empty" / "Refill
-Barrels"). Offline-capable via the Room cache. English, French, Spanish.
-
-Be honest about what it is: free, ad-free, open-source, no accounts, and backed by an open beer
-catalog API rather than live shop inventory. Overselling a demo catalog as a shopping app is
-both wrong and a policy risk.
-
-After editing any text file, run `scripts/play-listing.sh check`.
-
-## Making them marketable
-
-A raw capture shows the UI; a store frame sells the app. `scripts/store-frames.sh` wraps each
-capture in the layout polished listings use - a headline on the brand gradient, with the screen
-in a device mockup below:
-
-```bash
-make store-frames                 # en-US
-make store-frames LOCALE=fr-FR    # any locale that has captions + captures
-```
-
-Headlines live in `fastlane/metadata/android/<locale>/framing-captions.tsv`, one
-`filename<TAB>headline` row per screenshot (`<br>` forces a line break). They sit beside the rest
-of that locale's listing copy on purpose: adding a language is the same move as for any other
-store text, and the layout is shared rather than duplicated per locale.
-
-Output goes to `images/phoneScreenshotsFramed/`, beside the raw captures rather than replacing
-them. **Which set goes where is decided (2026-08-01):**
-
-| Surface | Set | Why |
+| Profile | Pixels / density | Intended window |
 |---|---|---|
-| Play Store listing | **framed** (`phoneScreenshotsFramed/`) | A storefront competes for a thumb-scroll. The headline sells before anyone reads the description, and the first 2-3 shots appear in search results, where a bare screenshot reads as an unfinished listing. |
-| README Visual Tour | **raw** (`phoneScreenshots/`) | Documentation. A reader wants the actual UI, not marketing furniture around it. |
+| `phone` | 1080×1920 / 420 | Compact portrait |
+| `seven-inch` | 1920×1080 / 320 | Smaller expanded landscape |
+| `ten-inch` | 2560×1440 / 320 | Larger expanded landscape |
+| `foldable` | 2208×1840 / 420 | Expanded unfolded |
 
-So keep both sets. Play accepts only one, so never upload them together, and never delete the raw
-set in favour of the framed one — the README renders it.
-
-Rendering is headless Chrome over generated HTML, chosen because it needs no image library and
-gives real control over gradients and type. The palette is lifted from
-`core/designsystem/.../theme/Color.kt`, so reskinning the app means updating three constants at
-the top of the script.
-
-Writing headlines: say what the user gets, not what the screen is called. "Find any beer as you
-type" beats "Search screen". Keep them to two short lines - the frame gives you roughly 40
-characters per line before the type has to shrink.
-
-## Validating
+These are capture window presets, not hardware emulation. On a resizable AVD, select its
+actual phone/tablet/unfolded mode first (inspect `adb emu help resize-display`); use the
+unfolded mode for foldable claims. Record the original mode and restore it separately.
+On other hardware, preserve actual posture and inspect the resulting layout.
 
 ```bash
-scripts/play-listing.sh check
+export ANDROID_SERIAL=emulator-5554
+export PROFILE=phone
+bash scripts/play-listing.sh prepare
+# Install cleanup before navigating, including when capture fails.
+trap 'bash scripts/play-listing.sh reset' EXIT
+bash scripts/play-listing.sh deeplink billionbeers://beers
+# Inspect android layout --pretty; tap current element bounds, not old coordinates.
+bash scripts/play-listing.sh capture 01-catalog
+# ...navigate, inspect, capture...
+bash scripts/play-listing.sh reset
+trap - EXIT
 ```
 
-Checks character counts, screenshot count, dimensions, aspect ratio and file size against
-Play's published limits. Every limit is a named constant in one block at the top of the script,
-with links to Google's pages - **if Play changes a rule, edit there and nowhere else.**
+`prepare` saves original size/density overrides, rotation, theme, demo-mode allowance and
+hardware-keyboard IME setting per serial before changing them. Repeated prepares preserve
+that original state. `reset` restores it. It does not clear app data or disable IMEs.
+Dismiss onboarding if present. Use English app content for `en-US`. Clean the status bar
+with demo mode, dismiss the keyboard, and wait for image loading to finish. Open every
+accepted capture: reject spinners, placeholders, errors, debug drawers, snackbars, keyboard
+coach marks and accidental system UI. Android hardware-keyboard mode can still show an
+IME toolbar: use its visible collapse control, then verify search remains open. Back
+can exit the app if the toolbar has already disappeared.
+Do not use Escape as a generic hide-keyboard action; it can navigate back. A successful
+command does not prove a good shot. Capture refuses to overwrite output when the app
+is not foreground, dimensions differ, or PROFILE differs from the prepared session.
 
-Green output means the assets are uploadable, not that the copy is good. Read it yourself.
+Inspect the current deep-link parser and layout before navigation. Routes may change;
+links can preserve existing navigation state. Use Back or force-stop/relaunch as needed.
+Avoid hard-coded historical tap coordinates. Theme can be set with `adb shell cmd uimode
+night yes/no`; keep it inside the saved capture session so reset restores the original.
 
-## Handing off
+## Choose a useful sequence
 
-Report what changed, where the files are, and what Simon still has to do by hand in the Play
-Console (upload screenshots, paste copy, submit for review). If the screenshots replace visibly
-stale ones, say so - and consider whether `imagesForReadme/` and the README's Visual Tour need
-the same refresh, since they drift from the app for the same reason.
+Before capture, write a short benefit-to-evidence map: one defensible user promise, one
+benefit per image, and the visible behavior that proves it. Use any accessible listing
+performance evidence, but state when it is unavailable. Attractive frames do not prove
+higher conversion; that requires a listing experiment. Ground design choices in the
+current shared design tokens rather than the previous listing's palette.
+
+Phone: catalog → search with a real query → beer detail → populated style/brewery list →
+favorites in dark theme. Replace a weak shot with favorites or filters when it tells a clearer story.
+Aim for five, with actual app UI prominent in the first three.
+
+For each tablet and foldable set, aim for four strong shots. Show catalog/detail together
+in the adaptive two-pane layout, another selected beer, a useful search or browse state,
+and dark mode or favorites. Confirm both panes and expanded navigation are visible rather
+than just enlarging a phone screen. Do not claim split-pane support for a route that
+actually remains single-pane. Inspect the assembled navigation and each feature’s scene
+metadata: a navigation rail alone does not prove list-detail support. Preserve artwork and readable text; do not crop or stretch
+screenshots to manufacture the layout.
+
+## Frames and copy
+
+For a visual refresh, the free [Frontend Design skill](https://github.com/anthropics/skills/tree/main/skills/frontend-design)
+(Apache-2.0; instructions only) is an optional companion. Review its current source and
+license before using it. Apply its subject-specific typography, coherent palette and
+visual critique to our existing HTML renderer; no external image API or new editor is
+required. Keep app artwork and shipped brand colors as the focal point. Use one concrete
+benefit per image and evaluate the sequence at thumbnail size. Screenshot-test fixtures
+can check layout regressions, but use installed-app captures for final marketing assets
+unless fixtures faithfully include real artwork, system UI and current navigation.
+
+```bash
+make store-frames LOCALE=en-US
+make play-listing-check
+make play-listing-test
+```
+
+`framing-captions.tsv` uses `filename<TAB>headline`, with `<br>` for line breaks. Keep
+headlines concise and benefit-led. The renderer uses the shipped Plus Jakarta Sans font
+and preserves the full phone UI without a synthetic device bezel. It checks font readiness
+and layout bounds. Keep caption text under 20% of the canvas. Inspect first and last
+frames and the longest headline; ensure every input has a corresponding current output.
+Do not apply phone framing to large-screen shots.
+
+Write consumer copy from shipped behavior and strings, not architecture or backlog.
+Verify claims against current source and the running app. Mention adaptive tablet and
+foldable layouts only after capturing them. Keep cached content claims distinct from
+first-use offline availability, and local stock tracking distinct from shop inventory.
+Do not invent a release/changelog just because screenshots changed.
+
+## Validation and handoff
+
+Check [Google's current requirements and recommendations](https://support.google.com/googleplay/android-developer/answer/9866151?hl=en)
+when changing capture rules. `scripts/check-play-screenshots.py` owns screenshot limits;
+`play-listing.sh` owns text and graphic dimensions. The validator covers raw and framed
+sets, image format/alpha, dimensions, count and size. General uploads allow ratios up to
+2:1; 1080px+ 16:9/9:16 is promotion guidance. Native unfolded shots can be uploadable
+without meeting that promotion ratio. Distinguish warnings from upload failures. Use the
+conservative general 3840px maximum despite the separate larger tablet allowance.
+
+After rendering, run `scripts/play-listing.sh check` and visually inspect every final
+image (contact sheets are useful). Verify malformed images or excess screenshots fail
+validation when changing the validator. Include short alt text (up to 140 characters per
+shot) and a folder-to-Console mapping in the handoff. State which assets were refreshed,
+what was verified and what remains manual. Preserve unrelated user files, including
+existing README captures; update documentation images only when requested.
