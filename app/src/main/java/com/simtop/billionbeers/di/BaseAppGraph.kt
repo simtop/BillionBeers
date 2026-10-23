@@ -4,6 +4,7 @@ import com.google.android.play.core.splitinstall.SplitInstallManager
 import com.simtop.beerdomain.domain.repositories.BeerCatalogMetadataRepository
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.billionbeers.presentation.OnboardingController
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.FeatureFlagProvider
 import com.simtop.core.core.NetworkFaultController
@@ -23,4 +24,5 @@ interface BaseAppGraph : DynamicDependencies, MetroViewModelMultibindings {
   val networkFaultController: NetworkFaultController
   val featureFlagProvider: FeatureFlagProvider
   val apiEnvironmentController: ApiEnvironmentController
+  val onboardingController: OnboardingController
 }

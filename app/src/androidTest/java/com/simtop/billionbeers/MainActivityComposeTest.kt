@@ -46,6 +46,7 @@ import com.simtop.navigation.DynamicFeature
 import com.simtop.testing_utils_android.withFailureScreenshot
 import dev.zacsweers.metro.createGraphFactory
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
@@ -108,6 +109,132 @@ class MainActivityComposeTest {
     fakePagerFactory = testGraph.beersPagerFactory as FakeBeersPagerFactory
 
     app.activateAppGraph(testGraph)
+  }
+
+  @Test
+  fun welcomeSurvivesRecreationThenDismissesAcrossLaunches() {
+    resetOnboarding()
+    ActivityScenario.launch(MainActivity::class.java).useWithFailureScreenshot { scenario ->
+      composeTestRule.onNodeWithTag("introduction_continue").assertIsDisplayed()
+      scenario.recreate()
+      composeTestRule.onNodeWithTag("introduction_continue").assertIsDisplayed().performClick()
+      composeTestRule.homeScreen { waitUntilNodeWithTextIsDisplayed(fakeBeer.name) }
+      scenario.recreate()
+      composeTestRule.onNodeWithTag("introduction_continue").assertDoesNotExist()
+      composeTestRule.homeScreen { waitUntilNodeWithTextIsDisplayed(fakeBeer.name) }
+    }
+    ActivityScenario.launch(MainActivity::class.java).useWithFailureScreenshot {
+      composeTestRule.homeScreen { waitUntilNodeWithTextIsDisplayed(fakeBeer.name) }
+      composeTestRule.onNodeWithTag("introduction_continue").assertDoesNotExist()
+    }
+  }
+
+  @Test
+  fun linkReceivedOnWelcomeOpensDestinationWithoutDismissingWelcomePermanently() {
+    resetOnboarding()
+    ActivityScenario.launch(MainActivity::class.java).useWithFailureScreenshot { scenario ->
+      composeTestRule.onNodeWithTag("introduction_continue").assertIsDisplayed()
+      scenario.onActivity { activity ->
+        // ActivityScenario ignores lifecycle events after setIntent changes the launch identity.
+        // Deliver the warm callback directly and keep its original intent for recreation tracking.
+        val launchIntent = activity.intent
+        InstrumentationRegistry.getInstrumentation()
+          .callActivityOnNewIntent(activity, deepLinkIntent("billionbeers://favorites"))
+        activity.intent = launchIntent
+      }
+      assertSelectedTab("favorites_tab")
+      scenario.recreate()
+      assertSelectedTab("favorites_tab")
+      composeTestRule.onNodeWithTag("introduction_continue").assertDoesNotExist()
+      val app =
+        InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
+          as BillionBeersApplication
+      assertFalse(
+        checkNotNull(app.appGraph.onboardingController.state.value)
+          .isComplete(com.simtop.presentation_utils.core.OnboardingIntroductions.welcome)
+      )
+    }
+    ActivityScenario.launch(MainActivity::class.java).useWithFailureScreenshot {
+      composeTestRule.onNodeWithTag("introduction_continue").assertIsDisplayed()
+    }
+  }
+
+  @Test
+  fun firstDetailHintCanBeDismissedAndDoesNotFollowTheNextBeer() {
+    resetOnboarding()
+    runMainActivityTest(composeTestRule) {
+      onNodeWithTag("introduction_continue").performClick()
+      homeScreen {
+        waitUntilNodeWithTextIsDisplayed(fakeBeer.name)
+        clickOnBeer(fakeBeer.name)
+      }
+      onNodeWithTag("introduction_hint").assertIsDisplayed()
+      val gotIt =
+        InstrumentationRegistry.getInstrumentation()
+          .targetContext
+          .getString(com.simtop.presentation_utils.R.string.onboarding_got_it)
+      onNodeWithText(gotIt).performClick()
+      onNodeWithTag("introduction_hint").assertDoesNotExist()
+      detailScreen { navigateBack() }
+      homeScreen {
+        waitUntilNodeWithTextIsDisplayed(secondFakeBeer.name)
+        clickOnBeer(secondFakeBeer.name)
+      }
+      detailScreen { waitUntilNodeWithTextIsDisplayed(secondFakeBeer.description) }
+      onNodeWithTag("introduction_hint").assertDoesNotExist()
+    }
+  }
+
+  @Test
+  fun coldBeerLinkBypassesWelcomeAndFavoriteHint() {
+    resetOnboarding()
+    ActivityScenario.launch<MainActivity>(deepLinkIntent("billionbeers://beers/${fakeBeer.id}"))
+      .useWithFailureScreenshot {
+        composeTestRule.detailScreen { waitUntilNodeWithTextIsDisplayed(fakeBeer.description) }
+        composeTestRule.onNodeWithTag("introduction_continue").assertDoesNotExist()
+        composeTestRule.onNodeWithTag("introduction_hint").assertDoesNotExist()
+      }
+  }
+
+  @Test
+  fun favoriteHintRemainsAfterFailedSaveAndClosesAfterSuccessfulSave() {
+    resetOnboarding()
+    runMainActivityTest(composeTestRule) {
+      onNodeWithTag("introduction_continue").performClick()
+      homeScreen {
+        waitUntilNodeWithTextIsDisplayed(fakeBeer.name)
+        clickOnBeer(fakeBeer.name)
+      }
+      onNodeWithTag("introduction_hint").assertIsDisplayed()
+      val repository = FakeBeersRepositoryModule.fakeBeersRepository
+      try {
+        repository.setExceptionToThrow(java.io.IOException("save failed"))
+        onNodeWithTag("toggle_favorite").performClick()
+        val addFavorite =
+          InstrumentationRegistry.getInstrumentation()
+            .targetContext
+            .getString(com.simtop.presentation_utils.R.string.add_to_favorites)
+        onNodeWithContentDescription(addFavorite).assertIsDisplayed()
+        onNodeWithTag("introduction_hint").assertIsDisplayed()
+        repository.setExceptionToThrow(null)
+        onNodeWithTag("toggle_favorite").performClick()
+        waitUntil(timeoutMillis = 5_000) {
+          repository.getBeers().first { it.id == fakeBeer.id }.isFavorite
+        }
+        onNodeWithTag("introduction_hint").assertDoesNotExist()
+      } finally {
+        repository.setExceptionToThrow(null)
+      }
+    }
+  }
+
+  private fun resetOnboarding() {
+    InstrumentationRegistry.getInstrumentation().runOnMainSync {
+      val app =
+        InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
+          as BillionBeersApplication
+      app.appGraph.onboardingController.reset()
+    }
   }
 
   @Test

@@ -63,4 +63,6 @@
     <string name="all_styles">All styles</string>
     <string name="clear_style">Clear style</string>
     <string name="clear_filters">Clear filters</string>
+    <string name="onboarding_favorite_hint">Like this one? Tap the heart to keep it in Favorites.</string>
+    <string name="onboarding_got_it">Got it</string>
 </resources>

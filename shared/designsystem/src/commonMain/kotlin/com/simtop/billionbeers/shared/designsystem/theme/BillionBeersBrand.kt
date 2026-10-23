@@ -46,6 +46,9 @@ object BillionBeersBrand {
         fontFamily = FontFamily.Serif,
       )
 
+  val introductionTitle: TextStyle
+    @Composable @ReadOnlyComposable get() = detailTitle.copy(fontSize = 38.sp, lineHeight = 44.sp)
+
   val compactDetailTitle: TextStyle
     @Composable
     @ReadOnlyComposable

@@ -21,6 +21,7 @@ import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.billionbeers.debug.DebugDrawerHost
 import com.simtop.core.core.ThemeController
 import com.simtop.core.core.ThemeMode
+import com.simtop.navigation.toPortableRoute
 import com.simtop.presentation_utils.core.LocalSplitInstallManager
 import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 
@@ -31,6 +32,7 @@ class MainActivity : ComponentActivity() {
   // URI equality does not identify a delivery: an identical warm link is still a new request.
   private var deepLinkUri by mutableStateOf<android.net.Uri?>(null)
   private var deepLinkDeliveryId by mutableLongStateOf(0L)
+  private var onboardingBypassed by mutableStateOf(false)
 
   override fun onCreate(savedInstanceState: Bundle?) {
     installSplashScreen()
@@ -44,6 +46,9 @@ class MainActivity : ComponentActivity() {
     if (savedInstanceState?.getBoolean(DEEP_LINK_CONSUMED) != true) {
       deepLinkUri = intent?.data
     }
+    onboardingBypassed =
+      savedInstanceState?.getBoolean(ONBOARDING_BYPASSED) == true ||
+        deepLinkUri?.toPortableRoute() != null
     setContent {
       CompositionLocalProvider(
         LocalMetroViewModelFactory provides appGraph.metroViewModelFactory,
@@ -51,11 +56,13 @@ class MainActivity : ComponentActivity() {
       ) {
         BillionBeersTheme(darkTheme = isDarkTheme(appGraph.themeController)) {
           DebugDrawerHost(appGraph = appGraph) {
-            AppNavigation(
-              deepLinkUri = deepLinkUri,
-              deepLinkDeliveryId = deepLinkDeliveryId,
-              onDeepLinkConsumed = ::consumeDeepLink,
-            )
+            OnboardingHost(appGraph.onboardingController, bypassWelcome = onboardingBypassed) {
+              AppNavigation(
+                deepLinkUri = deepLinkUri,
+                deepLinkDeliveryId = deepLinkDeliveryId,
+                onDeepLinkConsumed = ::consumeDeepLink,
+              )
+            }
           }
         }
       }
@@ -67,11 +74,13 @@ class MainActivity : ComponentActivity() {
     setIntent(intent)
     deepLinkDeliveryId++
     deepLinkUri = intent.data
+    if (intent.data?.toPortableRoute() != null) onboardingBypassed = true
   }
 
   override fun onSaveInstanceState(outState: Bundle) {
     // Do not replay the Activity's old Intent over the user's restored navigation stack.
     outState.putBoolean(DEEP_LINK_CONSUMED, deepLinkUri == null)
+    outState.putBoolean(ONBOARDING_BYPASSED, onboardingBypassed)
     super.onSaveInstanceState(outState)
   }
 
@@ -82,6 +91,7 @@ class MainActivity : ComponentActivity() {
 
   private companion object {
     const val DEEP_LINK_CONSUMED = "deep_link_consumed"
+    const val ONBOARDING_BYPASSED = "onboarding_bypassed"
   }
 }
 

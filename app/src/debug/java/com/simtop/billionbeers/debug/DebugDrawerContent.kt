@@ -50,6 +50,17 @@ fun DebugDrawerContent(appGraph: BaseAppGraph, modifier: Modifier = Modifier) {
   Column(modifier = modifier.verticalScroll(rememberScrollState()).padding(16.dp)) {
     Text(text = "Debug Drawer", style = MaterialTheme.typography.titleLarge)
 
+    androidx.compose.material3.TextButton(
+      onClick = {
+        appGraph.onboardingController.reset()
+        context.findActivity()?.let { activity ->
+          activity.startActivity(Intent.makeRestartActivityTask(activity.componentName))
+        }
+      }
+    ) {
+      Text("Replay onboarding")
+    }
+
     Spacer(modifier = Modifier.padding(top = 12.dp))
     SectionTitle("API environment")
     val selectedEnvironment by

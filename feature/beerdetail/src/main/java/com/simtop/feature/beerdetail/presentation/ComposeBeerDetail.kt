@@ -45,6 +45,7 @@ fun ComposeBeerDetail(
   showBackButton: Boolean = true,
   scrollBehavior: TopAppBarScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(),
   scrollState: ScrollState = rememberScrollState(),
+  favoriteHint: @Composable () -> Unit = {},
 ) {
   val context = LocalContext.current
   val locale = LocalConfiguration.current.locales[0]
@@ -124,6 +125,7 @@ fun ComposeBeerDetail(
     scrollState = scrollState,
     showBackButton = showBackButton,
     animationsDisabled = animationsDisabled,
+    favoriteHint = favoriteHint,
   )
 }
 
