@@ -707,11 +707,16 @@ release-preflight: ## Validate release notes for the current Android version cod
 store-frames: ## Render marketing store frames from the captured screenshots. Usage: make store-frames [LOCALE=en-US]
 	@bash scripts/store-frames.sh $(if $(strip $(LOCALE)),$(LOCALE),en-US)
 
+.PHONY: play-listing-test
+play-listing-test: ## Test listing image validation and capture script syntax on macOS.
+	@python3 scripts/test_check_play_screenshots.py
+	@bash -n scripts/play-listing.sh scripts/store-frames.sh
+
 play-listing-check: ## Validate the Play Store listing assets against Play's limits.
 	@bash scripts/play-listing.sh check
 
-play-listing-capture: ## Put a device in capture state for Play screenshots (see the play-listing skill).
-	@bash scripts/play-listing.sh prepare
+play-listing-capture: ## Prepare Play screenshots. PROFILE=phone|seven-inch|ten-inch|foldable; ANDROID_SERIAL selects the device.
+	@bash scripts/play-listing.sh prepare $(if $(strip $(PROFILE)),$(PROFILE),phone)
 
 play-listing-reset: ## Restore a device after `make play-listing-capture`.
 	@bash scripts/play-listing.sh reset
