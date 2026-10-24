@@ -74,7 +74,7 @@ SCREENSHOT_INVENTORY_DIR ?= build/reports/paparazzi/inventory
 DESIGN_REVIEW_SCREEN ?= catalog
 DESIGN_REVIEW_OUTPUT ?= design/reviews/$(DESIGN_REVIEW_SCREEN)/$(shell date -u +%Y%m%dT%H%M%SZ)/baseline
 DESIGN_REVIEW_RUN ?= verify
-.PHONY: detekt-baseline help setup setup-ai-tools update-android-skills build bundle-release release-smoke install desktop-test desktop-run desktop-live desktop-package desktop-package-test desktop-package-smoke desktop-package-verify ios-simulator-evidence web-run web-image-proxy-test web-static-test web-verify ios-compile ios-framework ios-test ios-host-build ios-host-run ios-simulator-open ios-simulator-list ios-simulator-stop clean deep-clean test test-tier-inventory konsist check-data-layer-boundary architecture-policy compose-metrics ui-test ui-test-local ui-test-managed ui-test-managed-newest ui-test-managed-tablet ui-test-managed-ci ui-test-managed-all emulator-create emulator-recreate emulator-start emulator-stop emulator-status emulator-delete screenshot-record screenshot-verify screenshot-clean lint android-lint format check docs-check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline check-gradle-compatibility-flags verification-metadata verification-metadata-reference verification-metadata-candidate health module-graph metro-graph architecture-report repo-doctor benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark build-budget build-budget-check jacoco-report coverage-check update-docs install-profiler install-diffuse new-feature-module new-dev-app release-preflight play-listing-check play-listing-capture play-listing-reset store-frames
+.PHONY: detekt-baseline help setup setup-ai-tools update-android-skills build bundle-release prepare-release-version release-smoke install desktop-test desktop-run desktop-live desktop-package desktop-package-test desktop-package-smoke desktop-package-verify ios-simulator-evidence web-run web-image-proxy-test web-static-test web-verify ios-compile ios-framework ios-test ios-host-build ios-host-run ios-simulator-open ios-simulator-list ios-simulator-stop clean deep-clean test test-tier-inventory konsist check-data-layer-boundary architecture-policy compose-metrics ui-test ui-test-local ui-test-managed ui-test-managed-newest ui-test-managed-tablet ui-test-managed-ci ui-test-managed-all emulator-create emulator-recreate emulator-start emulator-stop emulator-status emulator-delete screenshot-record screenshot-verify screenshot-clean lint android-lint format check docs-check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline check-gradle-compatibility-flags verification-metadata verification-metadata-reference verification-metadata-candidate health module-graph metro-graph architecture-report repo-doctor benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark build-budget build-budget-check jacoco-report coverage-check update-docs install-profiler install-diffuse new-feature-module new-dev-app release-preflight play-listing-check play-listing-capture play-listing-reset store-frames
 
 .PHONY: screenshot-verify-run screenshot-inventory-record
 
@@ -130,7 +130,10 @@ else
 	$(GRADLE_RUNNER) $(MODULE_PREFIX)installDebug
 endif
 
-bundle-release: ## Assemble the release App Bundle with both dynamic features; signing needs keystore.properties or STORE_FILE/STORE_PASSWORD/ALIAS/PASSWORD.
+prepare-release-version: ## Advance the Android release version to today's date and next same-day sequence.
+	python3 scripts/prepare_release_version.py --version-code-key billionbeers.versionCode --version-name-key billionbeers.versionName
+
+bundle-release: prepare-release-version ## Update the release version, then assemble the App Bundle with both dynamic features; signing needs keystore.properties or STORE_FILE/STORE_PASSWORD/ALIAS/PASSWORD.
 	@if [ ! -f keystore.properties ] && [ -z "$$STORE_FILE" ]; then \
 		echo "⚠️  No signing config found: create keystore.properties (STORE_FILE, STORE_PASSWORD, ALIAS, PASSWORD)"; \
 		echo "    or export those as environment variables. The .aab will be unsigned otherwise."; \
@@ -300,6 +303,7 @@ TEST_FLAGS := --no-configuration-cache
 test: ## Run JVM/Android/browser unit suites and build-logic, or the registered tier for MODULE=:module.
 ifeq ($(MODULE_TRIMMED),)
 	@$(MAKE) --no-print-directory new-feature-module-test
+	@$(MAKE) --no-print-directory release-version-test
 	@python3 -I scripts/test_release_preflight.py
 	@python3 .github/scripts/test_extract_failure_screenshots.py
 	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) $(TEST_FLAGS) testDebugUnitTest $(addsuffix :test,$(JVM_TEST_MODULES)) kmpTest --continue
@@ -307,6 +311,10 @@ ifeq ($(MODULE_TRIMMED),)
 else
 	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) $(TEST_FLAGS) -PtestModule=$(MODULE_TRIMMED) testModule --continue
 endif
+
+.PHONY: release-version-test
+release-version-test: ## Verify automatic release versions, date boundaries and Play limits without a build.
+	python3 -I scripts/test_prepare_release_version.py
 
 .PHONY: build-logic-test
 build-logic-test: ## Run standalone convention-plugin tests without repeating app unit suites.
