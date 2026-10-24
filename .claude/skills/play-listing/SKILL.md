@@ -30,19 +30,30 @@ All paths below are relative to `fastlane/metadata/android/<locale>/` (default `
 | `images/phoneScreenshotsFramed/` | Captioned phone set; preferred phone upload alternative |
 | `images/sevenInchScreenshots/` | Raw 7-inch tablet upload set |
 | `images/tenInchScreenshots/` | Raw 10-inch tablet upload set |
-| `images/foldableScreenshots/` | Native unfolded UI; local manual selection set |
+| `images/foldableScreenshots/` | Native unfolded UI; supplemental review/reference set |
 
 The first, third and fourth names follow fastlane supply. The framed and foldable folders
-are local conventions, not automatic publishing targets. Google lists phone and tablet
-slots, not a dedicated foldable slot: select unfolded shots for the relevant Console slot
-and keep the final selection at eight or fewer. Never upload both phone alternatives as
-one set. Keep native foldable captures separate rather than stretching them into 16:9.
+are local conventions, not automatic publishing targets. Google has no dedicated
+foldable slot. Keep unfolded captures as supplemental review/reference assets; do not
+direct them to tablet or computer slots unless they meet that slot's current requirements.
+Do not stretch or crop them to force a fit. Never upload both phone alternatives as one
+set. A foldable folder does not target fold devices or guarantee that Play switches
+screenshots when a device unfolds.
 For this Play listing, render marketing frames only for phones. Keep tablet and foldable
 sets as raw app captures. This follows Google's large-screen guidance to exclude added
 marketing text. It is a listing choice, not a blanket prohibition on framing other sizes.
-The local foldable folder does not target Fold devices automatically. Google does not
-document a guaranteed screenshot switch when a device unfolds. Describe the upload
-category and keep that targeting limitation explicit in the handoff.
+The local foldable folder does not target fold devices automatically. Describe it as a
+supplemental capture set, not an upload destination, in the handoff.
+
+Create computer or Android XR sets only when the Play-distributed app supports that
+device experience and you can capture the real app on that device/profile. The separate
+macOS Compose Desktop package is not evidence of an Android Play computer experience.
+Use the current Play Console requirements for the exact device slot; do not reuse a
+tablet capture without checking the computer slot's requirements and verifying the app
+on a supported computer device. For Android XR, do not imply an XR-optimized experience
+from a compatibility-mode phone UI. Add an XR set only after verifying a real XR
+experience and its listing requirements. Add these destinations to the output map only
+when the app and listing are actually eligible.
 
 Read the locale's `screenshot-manifest.tsv` before refreshing an existing set. The
 [current en-US manifest](../../../fastlane/metadata/android/en-US/screenshot-manifest.tsv)
