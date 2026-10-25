@@ -32,7 +32,7 @@ class OrphanedSourceTreeTest {
    * with a full Gradle distribution during `make build-budget` (ADR 0011).
    */
   private val excludedDirNames =
-    setOf("build", "bin", ".git", ".gradle", ".kotlin", ".idea", "gradle-user-home")
+    setOf("build", "bin", ".git", ".gradle", ".kotlin", ".idea", "gradle-user-home", "design")
 
   @Test
   fun `every source tree belongs to a module with a build script`() {
