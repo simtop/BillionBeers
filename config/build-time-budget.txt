@@ -30,15 +30,13 @@ incremental_leaf   10
 incremental_deep   10
 unit_tests         20
 
-# The modularization guard, and the only line here that survives a change of hardware.
+# Compare two incremental scenarios on the same machine.
 #
-# Measured at 0.95x: an ABI change to `Beer` in `:beerdomain:api` (ten dependent modules) costs
-# essentially the same as one to `MainActivity` in `:app` (no dependents). At ~2.9s per build, both
-# are dominated by Gradle's fixed per-build overhead rather than by compilation, so the fan-out is
-# not what you are paying for.
+# The historical 0.95x ratio compares unused top-level function additions in Beer.kt and
+# MainActivity.kt. The Kotlin mutator does not change Beer or any member used by consumers.
+# This ratio cannot establish the cost of model ABI changes or justify changing module boundaries.
 #
-# The limit is 3x rather than something near 0.95x on purpose: the ratio of two small, noisy numbers
-# is itself noisy, and this is a guard against incremental compilation breaking across module
-# boundaries - the failure where a deep change starts recompiling the world. If it ever trips,
-# the question is "what stopped being incremental", not "which module got slower".
+# The 3x limit catches regressions in these particular scenarios. If it trips, inspect which tasks
+# executed and why. A representative model-change probe needs an edit to a consumed model member
+# or constructor and evidence of which downstream compilation tasks actually executed.
 ratio incremental_deep incremental_leaf 3.0

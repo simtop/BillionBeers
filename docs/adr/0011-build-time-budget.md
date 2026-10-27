@@ -70,35 +70,43 @@ scenario.
 | `incremental_deep` | 2.8s | 2.5s | 3.5s | 35% | 0.3 |
 | `unit_tests` | 4.6s | 4.1s | 6.7s | 56% | 0.8 |
 
-**A clean build with no caches is 27s; with warm caches it is 9s.** That is the answer to the
-question this ADR exists to make answerable.
+On 2026-09-06, the median clean build took 27s with caches disabled and 9s with warm caches.
+These historical measurements do not establish build times for the current graph or toolchain.
 
 The previous baseline, measured 2026-08-07, was `37.3s / 4.3s / 2.3s / 2.5s / 5.6s` for the
 same five scenarios in table order. The change is retained here as dated history rather than
 treated as a regression signal: the cold and warm samples are noisy, machine-specific measurements.
 
-### The finding that contradicts the scenario's own premise
+### The incremental ratio does not measure model changes
 
-`incremental_deep` was added specifically because the pre-existing incremental scenario applied its
-ABI change to `MainActivity.kt` in `:app`, which nothing depends on — the cheapest possible
-incremental build, presented as the representative one. The replacement changes `Beer` in
-`:beerdomain:api`, which ten modules depend on.
+`incremental_deep` was added to compare an API change in `:beerdomain:api` with one in `:app`.
+The historical run measured a ratio of 0.95x, or 2.8s against 3.0s.
 
-The expectation was that the deep change would be substantially more expensive, and that the gap
-would quantify what modularization buys. **This run measured 0.95x — 2.8s against 3.0s.**
+Correction from the 2026-10-27 audit: inspecting the profiler's temporary Kotlin edit showed that
+`apply-abi-change-to` appends an unused top-level function to the selected file. Selecting `Beer.kt`
+does not change the `Beer` class, its constructor, or a member referenced by consumers.
+Kotlin's member-level classpath snapshots can avoid recompilation of consumers unaffected by that
+addition. See [Kotlin incremental compilation](https://kotlinlang.org/docs/gradle-compilation-and-caches.html).
 
-The honest reading is not "incremental compilation is extraordinarily good." It is that at ~2.9s per
-build, **fixed per-build overhead dominates and compilation is not what you are paying for.**
-Configuration, task-graph construction and up-to-date checking swamp the difference between
-recompiling one module and recompiling eleven.
+The ratio therefore compares unused function additions in two modules. It does not establish
+the cost of changing a consumed model signature, the number of consumers recompiled, or the
+benefit of splitting or consolidating modules. The earlier inference that fixed overhead dominates
+all incremental model changes was too broad.
 
-Two consequences follow, and both cut against instinct:
+The scenario tasks are also unscoped. `assembleDebug` assembles every matching Android project,
+including the catalog and dev app. The table is not a measurement of `:app:assembleDebug` alone.
 
-- **Further module splitting will not make incremental builds faster.** There is no compilation time
-  left to parallelise away at this scale. Modules must be justified by boundaries and enforced
-  invariants — which is exactly how ADR 0009 justifies the UI-test tier — never by build speed.
-- **The lever, if build time ever becomes a problem, is per-build overhead**: configuration cache
-  hit rate, plugin configuration cost, task count. Not the graph.
+Keep module boundaries justified by their responsibilities and enforced invariants. Before changing
+them for build speed, measure the affected workflow. For a model-change claim, change a consumed
+member or constructor and record the downstream compilation tasks that execute.
+
+A diagnostic probe on 2026-10-27 temporarily added `val buildAuditMarker: Int = 0` to the `Beer`
+primary constructor. After a baseline build, `make build MODULE=:app GRADLE_RUNNER=./gradlew`, with
+`GRADLE_USER_HOME` set to the checkout's `gradle-user-home`, executed 20 Kotlin compilation tasks
+across 19 modules, including the changed domain module. The build reused its configuration cache
+and took 22.2s. The model was then restored. This single observation confirms that a consumed model
+change can cause downstream compilation. It is not a new timing baseline or evidence that the
+proposed module mergers would improve it.
 
 ## Why the scenarios changed
 
@@ -145,15 +153,14 @@ occasionally checked and true beats a number that is continuously checked and me
 
 ## When to revisit
 
-- **If `incremental_deep / incremental_leaf` ever trips 3x**, the question is what stopped being
-  incremental — an annotation processor without incremental support, a plugin forcing full
-  recompilation — not which module got slower.
+- **If `incremental_deep / incremental_leaf` ever trips 3x**, inspect executed tasks and their
+  invalidation reasons. This threshold covers unused function additions, not every model ABI edit.
 - **If per-build overhead becomes the complaint**, measure configuration time directly
-  (`gradle-profiler --measure-config-time`) before touching the module graph. This ADR's central
-  finding is that the graph is not where the time goes.
+  (`gradle-profiler --measure-config-time`) before touching the module graph. The incremental ratio
+  alone does not distinguish configuration, task checks, and compilation costs.
 - **After a major Gradle, AGP or Kotlin bump**, re-measure and update the table. Nothing forces this
   — that is the acknowledged cost of a local gate — so it needs a trigger, and those bumps are the
-  right one: they move per-build overhead, which this ADR identifies as the dominant term.
+  right one: they can change both configuration and compilation costs.
 - **If a shared build cache or build scans are ever adopted**, re-measure `clean_build_warm` first:
   it is the scenario a remote cache would change most, and its 207% spread today makes it the
   weakest number in the table.
