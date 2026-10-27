@@ -49,7 +49,7 @@ abstract class GenerateModuleGraphTask : DefaultTask() {
     val fanIn = edges.groupingBy { it.target }.eachCount()
     val fanOut = edges.groupingBy { it.source }.eachCount()
     val apiProjectEdgeCount = edges.count { edge ->
-      edge.configurations.any { it.equals("api", ignoreCase = true) }
+      edge.configurations.any { it.endsWith("api", ignoreCase = true) }
     }
     val model =
       linkedMapOf<String, Any>(

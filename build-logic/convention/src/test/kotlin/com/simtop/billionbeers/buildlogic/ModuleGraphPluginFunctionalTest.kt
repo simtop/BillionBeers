@@ -98,6 +98,38 @@ class ModuleGraphPluginFunctionalTest {
     assertEquals(firstJson, jsonPath.readText())
   }
 
+  @Test
+  fun `module graph counts source-set and variant api exports once per project edge`() {
+    writeFixture()
+    writeFile(
+      "a/build.gradle.kts",
+      """
+      configurations.create("commonMainApi")
+      configurations.create("androidMainApi")
+      dependencies {
+        add("commonMainApi", project(":b"))
+        add("androidMainApi", project(":b"))
+      }
+      """.trimIndent(),
+    )
+    writeFile(
+      "c/build.gradle.kts",
+      """
+      configurations.create("debugApi")
+      dependencies {
+        add("debugApi", project(":a"))
+      }
+      """.trimIndent(),
+    )
+
+    runner().withArguments("generateModuleGraph", "--stacktrace").build()
+
+    val json = testProjectDir.resolve("build/reports/module-graph/modules.json").readText()
+    val model = JsonSlurper().parseText(json) as Map<*, *>
+    val summary = model["summary"] as Map<*, *>
+    assertEquals(3, summary["apiProjectEdgeCount"])
+  }
+
   private fun resolvedCytoscapeAssets(): Pair<String, String> {
     val classLoader = javaClass.classLoader
     val properties = Properties()
