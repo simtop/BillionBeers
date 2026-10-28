@@ -144,7 +144,7 @@ class ImpactShadowTest(unittest.TestCase):
         self.assertIn("continue-on-error: true", step)
         self.assertIn("run: make ci-impact-shadow", step)
         self.assertNotIn("impact-shadow.outputs", workflow)
-        self.assertNotIn("ci-impact-shadow", workflow.split("  changes:", 1)[1])
+        self.assertNotIn("ci-impact-shadow", workflow.split("  changes:", 1)[1].split("  secret-scan:", 1)[0])
         self.assertIn("--rerun-tasks --continue", (Path(__file__).resolve().parents[2] / "Makefile").read_text())
 
 

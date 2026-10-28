@@ -155,6 +155,20 @@ timings remain the wall-clock evidence. Apple Gradle commands are profiled; the 
 retains its separate command timing. Screenshot verification keeps `--rerun-tasks` while its
 compilation and execution costs are observed. Diagnostic failures do not suppress test failures.
 
+The `ci-impact-work` artifact joins those candidates with unit, screenshot, and managed-device
+profiles after the lanes finish. The report requires matching run, attempt, checkout, and producer
+identities. Missing, malformed, failed, or carried-forward profiles remain unavailable. Verification
+aggregates delegate to concrete test tasks, so attribution uses module ownership rather than an
+exact aggregate-task-name match. Executed test work, cached/skipped task work, and other work stay
+separate; test tasks from owners absent from the configured inventory remain explicitly unmapped.
+
+Work outside candidate owners is an observation, not a promise that CI can remove it. Full coverage,
+tablet journeys, release smoke, compilation, shared dependencies, and setup still constrain execution.
+The JSON records unobserved configured owners and repeated task invocations across root-build
+commands. Separate build-logic checks stay full and outside this measurement. Summed work can exceed
+wall time because tasks overlap. The aggregate CI gate publishes this diagnostic
+without changing its test verdict or verified-result proof conditions.
+
 Narrower execution requires a separate decision after full-run comparisons and omission probes
 show which failures the candidate set would miss. The acceptance evidence must include resources,
 generated sources, shared helpers, dynamic delivery, renames, and deletions. It must also preserve
