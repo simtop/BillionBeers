@@ -62,6 +62,9 @@ UI_TEST_ARGS = $(if $(strip $(UI_TEST_CLASS)),-Pandroid.testInstrumentationRunne
 
 # One local output filter. Gateway sessions can export GRADLE_RUNNER=./gradlew.
 GRADLE_RUNNER ?= $(shell if command -v rtk >/dev/null 2>&1; then echo "rtk gradlew"; else echo "./gradlew"; fi)
+# -p build-logic does not load the root gradle.properties. Reuse its measured compiler heap
+# instead of falling back to a 512 MB daemon when the convention sources need recompilation.
+BUILD_LOGIC_KOTLIN_DAEMON_ARGS ?= $(shell sed -n 's/^kotlin.daemon.jvmargs=//p' gradle.properties)
 IOS_HOST_DESTINATION ?= platform=iOS Simulator,name=iPhone 17 Pro,OS=26.4
 IOS_SIMULATOR_CONFIDENCE_DIR ?= iosApp/build/ios-simulator-confidence
 NODE_BIN_DIR ?= $(shell node_path="$$(command -v node 2>/dev/null || true)"; if [ -n "$$node_path" ]; then dirname "$$node_path"; else printf '%s' /opt/homebrew/bin; fi)
@@ -318,7 +321,7 @@ release-version-test: ## Verify automatic release versions, date boundaries and 
 
 .PHONY: build-logic-test
 build-logic-test: ## Run standalone convention-plugin tests without repeating app unit suites.
-	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) -p build-logic $(TEST_FLAGS) :convention:test --continue
+	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) -p build-logic "-Pkotlin.daemon.jvmargs=$(BUILD_LOGIC_KOTLIN_DAEMON_ARGS)" $(TEST_FLAGS) :convention:test --continue
 
 .PHONY: ci-report-test
 ci-report-test: ## Test CI diagnosis, evidence parsing, and incremental comment lifecycle.

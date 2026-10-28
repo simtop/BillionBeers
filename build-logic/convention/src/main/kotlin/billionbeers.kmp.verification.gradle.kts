@@ -27,7 +27,13 @@ tasks.register("kmpIosSimulatorTest") {
 
 gradle.projectsEvaluated {
   tasks.named("kmpIosSimulatorTest") {
-    dependsOn(subprojects.mapNotNull { it.tasks.findByName("iosSimulatorArm64Test") })
+    dependsOn(subprojects.mapNotNull { subproject ->
+      if ("iosSimulatorArm64Test" in subproject.tasks.names) {
+        subproject.tasks.named("iosSimulatorArm64Test")
+      } else {
+        null
+      }
+    })
   }
 
   kmpVerificationTasks.forEach { (aggregateName, projectTaskName) ->
@@ -41,9 +47,10 @@ gradle.projectsEvaluated {
           emptySet<String>()
         }
       if (projectTaskName in excludedTasks) return@forEach
+      if (projectTaskName !in subproject.tasks.names) return@forEach
 
       aggregate.configure {
-        dependsOn(subproject.tasks.matching { it.name == projectTaskName })
+        dependsOn(subproject.tasks.named(projectTaskName))
       }
     }
   }

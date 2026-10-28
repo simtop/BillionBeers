@@ -7,6 +7,7 @@ from collections import Counter
 import os
 from pathlib import Path
 import re
+import shlex
 import shutil
 import subprocess
 import tempfile
@@ -124,6 +125,15 @@ class MakeHelpTest(unittest.TestCase):
         self.assertIn("both dynamic features", descriptions["bundle-release"])
         self.assertIn("Gradle check lifecycle", descriptions["check"])
         self.assertIn("registered tier", descriptions["test"])
+
+    def test_standalone_build_logic_inherits_root_kotlin_compiler_heap(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="make-build-logic-memory-") as temporary:
+            directory = Path(temporary)
+            shutil.copy2(ROOT / "Makefile", directory / "Makefile")
+            arguments = "-Xmx1536m -XX:MaxMetaspaceSize=768m"
+            (directory / "gradle.properties").write_text(f"kotlin.daemon.jvmargs={arguments}\n")
+            recipe = run_make("-n", "build-logic-test", directory=directory)
+            self.assertIn(f"-Pkotlin.daemon.jvmargs={arguments}", shlex.split(recipe))
 
 
 if __name__ == "__main__":
