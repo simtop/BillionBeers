@@ -23,7 +23,7 @@ class NativeCacheProbeTest(unittest.TestCase):
         subprocess.run(["git", "init", "-q"], cwd=self.root, check=True)
         subprocess.run(["git", "add", "gradle/libs.versions.toml", "gradle.properties", "build.gradle.kts"], cwd=self.root, check=True)
         self.environment = {"GITHUB_RUN_ID": "123", "RUNNER_OS": "macOS", "RUNNER_ARCH": "ARM64",
-                            "ImageOS": "macos14", "ImageVersion": "20261026.1"}
+                            "ImageOS": "macos14", "ImageVersion": "20261026.1", "RUNNER_TEMP": str(self.root / "temp")}
 
     def identity(self, **environment):
         return MODULE.cache_identity(self.root, self.environment | environment, "Xcode 16.2\nBuild version 16C5032a", self.root)
@@ -45,16 +45,31 @@ class NativeCacheProbeTest(unittest.TestCase):
         (self.root / "gradle.properties").write_text("org.gradle.parallel=false\n")
         self.assertNotEqual(first, self.identity()["key"])
 
-    def test_only_current_compiler_and_dependencies_are_cached_and_locks_are_excluded(self):
-        paths = self.identity()["paths"].splitlines()
-        self.assertEqual(str(self.root / ".konan/dependencies"), paths[0])
-        self.assertEqual(str(self.root / ".konan/kotlin-native-prebuilt-macos-aarch64-2.4.21"), paths[1])
-        self.assertEqual(["!" + str(self.root / ".konan/**/*.lock"), "!" + str(self.root / ".konan/**/*.lck")], paths[2:])
-        self.assertNotIn(".gradle", "\n".join(paths))
+    def test_round_trip_preserves_components_and_symlinks_without_copying_any_locks(self):
+        record = self.identity()
+        source = record["konan_root"]
+        stage = record["staging_root"]
+        for name in record["components"]:
+            directory = source / name / "cache"
+            directory.mkdir(parents=True)
+            (directory / "library.a").write_bytes(b"compiled library")
+            for lock in ("cache.lock", ".lock", "cache.lck"):
+                (directory / lock).write_text("transient")
+            (directory / "alias.a").symlink_to("library.a")
+        MODULE.copy_components(source, stage, record["components"])
+        restored = self.root / "restored"
+        MODULE.copy_components(stage, restored, record["components"])
+        for name in record["components"]:
+            directory = restored / name / "cache"
+            self.assertEqual(b"compiled library", (directory / "alias.a").read_bytes())
+            self.assertTrue((directory / "alias.a").is_symlink())
+            self.assertEqual({"library.a", "alias.a"}, {path.name for path in directory.iterdir()})
+        self.assertNotIn(".gradle", record["paths"])
+        self.assertNotIn("!", record["paths"])
 
     def test_uncertain_identity_rejects_caching(self):
         for changed in ({"GITHUB_RUN_ID": ""}, {"RUNNER_OS": "Linux"}, {"RUNNER_ARCH": "unknown"},
-                        {"ImageOS": ""}, {"ImageVersion": ""}):
+                        {"ImageOS": ""}, {"ImageVersion": ""}, {"RUNNER_TEMP": "relative"}):
             with self.subTest(changed=changed), self.assertRaises(ValueError):
                 self.identity(**changed)
 
@@ -69,7 +84,9 @@ class NativeCacheProbeTest(unittest.TestCase):
             self.assertNotIn("continue-on-error", body)
             self.assertNotIn("if:", body)
         self.assertIn("success() && steps.native-cache-restore.outputs.cache-hit != 'true'", native)
-        self.assertIn("cache-hit", native)
+        self.assertIn("--mode snapshot", native)
+        self.assertIn("--mode restore", native)
+        self.assertLess(native.index("--mode snapshot"), native.index("Save verified isolated Native cache"))
 
 
 if __name__ == "__main__":

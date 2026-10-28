@@ -169,8 +169,9 @@ of parallel task work. The simulator phase also spent most of its task work link
 The job restored Gradle state but downloaded Kotlin/Native components into a fresh `.konan` tree.
 
 The cache experiment preserves only Native dependencies and the currently selected compiler,
-including its library caches. It excludes lock files and keeps Gradle state under its existing
-cache owner. The hypothesis is that these Native components avoid repeated dependency work during
+including its library caches. A staged copy excludes lock files before archiving; cache-action
+negated globs alone do not filter descendants when the tar input is a parent directory. Gradle
+state stays under its existing cache owner. The hypothesis is that these Native components avoid repeated dependency work during
 linking. Archive restore and save time count against any gain.
 
 The probe runs only on the same-repository `codex/native-cache-probe` PR. Its exact key includes the

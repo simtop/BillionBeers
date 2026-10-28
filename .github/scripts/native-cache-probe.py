@@ -8,6 +8,7 @@ import hashlib
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 
 
@@ -40,19 +41,44 @@ def cache_identity(root: Path, environment: dict, xcode_version: str, home: Path
     directory = home / ".konan"
     if "\n" in str(directory) or "\r" in str(directory):
         raise ValueError("invalid compiler cache directory")
-    paths = [str(directory / "dependencies"),
-             str(directory / f"kotlin-native-prebuilt-macos-{host}-{version[1]}"),
-             "!" + str(directory / "**/*.lock"), "!" + str(directory / "**/*.lck")]
-    return {"key": f"native-cache-probe-v1-{architecture}-{run_id}-{digest.hexdigest()}",
-            "paths": "\n".join(paths), "kotlin_version": version[1]}
+    temporary = Path(environment.get("RUNNER_TEMP", ""))
+    if not temporary.is_absolute() or "\n" in str(temporary) or "\r" in str(temporary):
+        raise ValueError("an absolute runner temporary directory is required")
+    staging = temporary / "native-cache-probe"
+    components = ["dependencies", f"kotlin-native-prebuilt-macos-{host}-{version[1]}"]
+    return {"key": f"native-cache-probe-v2-{architecture}-{run_id}-{digest.hexdigest()}",
+            "paths": "\n".join(str(staging / name) for name in components),
+            "kotlin_version": version[1], "components": components,
+            "konan_root": directory, "staging_root": staging}
+
+
+def copy_components(source: Path, destination: Path, components: list) -> None:
+    # Cache actions archive parent directories recursively, so filter the copied files instead
+    # of relying on negated globs to remove descendants from the tar archive.
+    for name in components:
+        directory = source / name
+        if not directory.is_dir() or directory.is_symlink():
+            raise ValueError("a compiler cache component is missing or is a symlink")
+        shutil.copytree(directory, destination / name, dirs_exist_ok=True, symlinks=True,
+                        ignore=shutil.ignore_patterns("*.lock", "*.lck"))
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path.cwd())
+    parser.add_argument("--mode", choices=("identify", "snapshot", "restore"), default="identify")
     args = parser.parse_args()
     xcode = subprocess.check_output(["xcodebuild", "-version"], text=True)
     record = cache_identity(args.root.resolve(), os.environ, xcode, Path.home())
+    if args.mode == "snapshot":
+        staging = record["staging_root"]
+        if staging.exists():
+            shutil.rmtree(staging)
+        copy_components(record["konan_root"], staging, record["components"])
+        return
+    if args.mode == "restore":
+        copy_components(record["staging_root"], record["konan_root"], record["components"])
+        return
     with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
         output.write(f"key={record['key']}\n")
         output.write(f"paths<<NATIVE_CACHE_PROBE_PATHS\n{record['paths']}\nNATIVE_CACHE_PROBE_PATHS\n")
