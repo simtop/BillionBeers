@@ -1,8 +1,6 @@
-package com.simtop.billionbeers.presentation
+package com.simtop.billionbeers.shared.presentation
 
-import com.simtop.presentation_utils.core.IntroductionId
-import com.simtop.presentation_utils.core.OnboardingHints
-import kotlinx.coroutines.CancellationException
+import com.simtop.core.core.runSuspendCatching
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -73,17 +71,5 @@ class OnboardingController(private val store: OnboardingStore, private val scope
   }
 
   private suspend fun <T> recoverStorageFailure(fallback: T, action: suspend () -> T): T =
-    try {
-      action()
-    } catch (exception: CancellationException) {
-      throw exception
-    } catch (_: java.io.IOException) {
-      fallback
-    } catch (_: IllegalStateException) {
-      fallback
-    } catch (_: ClassCastException) {
-      fallback
-    } catch (_: SecurityException) {
-      fallback
-    }
+    runSuspendCatching(action).getOrElse { fallback }
 }

@@ -31,6 +31,7 @@ dependencies {
   commonTestImplementation(libs.coroutinesTest)
   commonTestImplementation(project(":beerdomain:fakes"))
 
+  commonMainImplementation(project(":shared:presentation"))
   commonMainImplementation(project(":shared:app"))
   commonMainImplementation(project(":shared:designsystem"))
   commonMainImplementation(project(":shared:beerbrowse"))

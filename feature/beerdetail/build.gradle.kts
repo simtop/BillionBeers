@@ -16,6 +16,7 @@ android {
 }
 
 dependencies {
+  implementation(project(":shared:presentation"))
   implementation(this.project(":beerdomain:api"))
   implementation(this.project(":shared:beerdetail"))
   implementation(this.project(":presentation_utils"))

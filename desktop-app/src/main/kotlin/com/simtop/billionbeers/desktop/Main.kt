@@ -23,7 +23,10 @@ fun main(args: Array<String>) {
         onCloseRequest = ::exitApplication,
         title = "Billion Beers",
       ) {
-        DesktopShell(runtime = runtime)
+        DesktopShell(
+          runtime = runtime,
+          onboardingFile = File(config.databasePath).resolveSibling("onboarding.txt"),
+        )
       }
     }
   } finally {

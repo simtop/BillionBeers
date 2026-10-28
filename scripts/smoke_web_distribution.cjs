@@ -430,6 +430,24 @@ async function waitForMissingBeer(devtools, hash, language = 'en') {
     node.textContent.trim() === ${JSON.stringify(copy.action)})`);
 }
 
+async function verifyOnboardingReload(devtools) {
+  // Missing-link recovery bypasses welcome for its session but must not consume it.
+  await devtools.send('Page.reload');
+  await waitFor(devtools, `${accessibilityNodesExpression()}.some(n => n.textContent.includes('Find your next favorite.'))`);
+  if (smokeEvidenceDir) {
+    const screenshot = await devtools.send('Page.captureScreenshot', { format: 'png' });
+    await fs.promises.writeFile(path.join(smokeEvidenceDir, 'web-onboarding.png'), Buffer.from(screenshot.data, 'base64'));
+  }
+  await clickControl(devtools, 'Skip');
+  await waitForRouteContent(devtools, '#catalog', 'Web Smoke Lager');
+  await waitFor(devtools, `JSON.parse(localStorage.getItem('billionbeers.completed_introduction_ids') || '[]').includes('welcome')`);
+  await devtools.send('Page.reload');
+  await waitForRouteContent(devtools, '#catalog', 'Web Smoke Lager');
+  if (await evaluate(devtools, `${accessibilityNodesExpression()}.some(n => n.textContent.includes('Find your next favorite.'))`)) {
+    throw new Error('Welcome returned after a completed onboarding reload');
+  }
+}
+
 async function verifyColdMissingBeer(devtools, requests, browserVersion) {
   const hash = '#beer/web-smoke-1';
   const steps = [];
@@ -604,6 +622,7 @@ async function main() {
     await devtools.send('Emulation.setUserAgentOverride', { userAgent: browserVersion.userAgent, acceptLanguage: 'en' });
     await devtools.send('Page.navigate', { url: `http://127.0.0.1:${port}${prefix}#beer/web-smoke-1` });
     const coldMissingBeer = await verifyColdMissingBeer(devtools, requests, browserVersion);
+    await verifyOnboardingReload(devtools);
     const canvasExpression = `(() => {
       const findCanvas = root => {
         const direct = root.querySelector?.('canvas');

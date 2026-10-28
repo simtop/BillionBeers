@@ -1,8 +1,8 @@
 package com.simtop.billionbeers.di
 
 import android.content.Context
-import com.simtop.billionbeers.presentation.OnboardingController
-import com.simtop.billionbeers.presentation.OnboardingStore
+import com.simtop.billionbeers.shared.presentation.OnboardingController
+import com.simtop.billionbeers.shared.presentation.OnboardingStore
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.di.ApplicationContext
 import dev.zacsweers.metro.AppScope

@@ -49,6 +49,8 @@ import com.simtop.billionbeers.shared.designsystem.controls.BrandCard
 import com.simtop.billionbeers.shared.designsystem.controls.BrandIcon
 import com.simtop.billionbeers.shared.designsystem.controls.BrandText
 import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersTheme
+import com.simtop.billionbeers.shared.presentation.OnboardingController
+import com.simtop.billionbeers.shared.presentation.OnboardingStrings
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.runSuspendCatching
 import com.simtop.navigation.contract.PortableRoute
@@ -56,6 +58,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.jetbrains.skia.Image
 import platform.UIKit.UIViewController
 
@@ -70,10 +73,24 @@ public class IosAppSession(languageCode: String = "en") {
   private val strings = IosLocalizedStrings.forLanguage(languageCode)
   private val routeRequests = IosRouteRequestBuffer()
   private val scope = CoroutineScope(SupervisorJob() + runtime.coroutineDispatcherProvider.io)
+  private val onboardingScope =
+    CoroutineScope(SupervisorJob() + runtime.coroutineDispatcherProvider.main)
+  private val onboarding = OnboardingController(IosOnboardingStore(), onboardingScope)
+  private val onboardingStrings = OnboardingStrings.forLanguage(languageCode)
+  private var bypassWelcome by mutableStateOf(false)
   private var closed = false
 
   public val viewController: UIViewController = ComposeUIViewController {
-    IosShell(runtime, strings, routeRequests.routes)
+    IosShell(
+      runtime,
+      strings,
+      iosHost(runtime, isSystemInDarkTheme(), routeRequests.routes, strings)
+        .copy(
+          onboarding = onboarding,
+          onboardingStrings = onboardingStrings,
+          bypassWelcome = bypassWelcome,
+        ),
+    )
   }
 
   /** Delivers a supported URL without exposing repositories or navigation internals to Swift. */
@@ -81,7 +98,12 @@ public class IosAppSession(languageCode: String = "en") {
     if (closed) return
     scope.launch {
       resolveIosDeepLink(url, runtime.repository)?.let { route ->
-        if (!closed) routeRequests.trySend(route)
+        withContext(runtime.coroutineDispatcherProvider.main) {
+          if (!closed) {
+            bypassWelcome = true
+            routeRequests.trySend(route)
+          }
+        }
       }
     }
   }
@@ -90,6 +112,7 @@ public class IosAppSession(languageCode: String = "en") {
     if (!closed) {
       closed = true
       scope.cancel()
+      onboardingScope.cancel()
       routeRequests.close()
       runtime.close()
     }
@@ -100,9 +123,8 @@ public class IosAppSession(languageCode: String = "en") {
 private fun IosShell(
   runtime: IosDataRuntime,
   strings: com.simtop.billionbeers.shared.app.SharedAppStrings,
-  routeRequests: kotlinx.coroutines.flow.Flow<PortableRoute>,
+  host: SharedAppHost,
 ) {
-  val darkTheme = isSystemInDarkTheme()
   // Graph getters for the pager factory and dispatchers are unscoped. Keep the identities stable
   // across host recompositions so SharedAppShell does not discard its navigation state.
   val pagerFactory = remember(runtime) { runtime.pagerFactory }
@@ -114,13 +136,7 @@ private fun IosShell(
     pagerFactory = pagerFactory,
     coroutineDispatcher = coroutineDispatcher,
     strings = strings,
-    host =
-      iosHost(
-        runtime = runtime,
-        darkTheme = darkTheme,
-        routeRequests = routeRequests,
-        strings = strings,
-      ),
+    host = host,
   )
 }
 

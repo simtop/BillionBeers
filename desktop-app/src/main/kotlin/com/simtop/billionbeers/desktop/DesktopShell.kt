@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -48,12 +49,19 @@ import com.simtop.billionbeers.shared.designsystem.controls.BrandCard
 import com.simtop.billionbeers.shared.designsystem.controls.BrandIcon
 import com.simtop.billionbeers.shared.designsystem.controls.BrandText
 import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersTheme
+import com.simtop.billionbeers.shared.presentation.OnboardingController
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.DefaultCoroutineDispatcherProvider
+import java.io.File
 import java.text.NumberFormat
 
 @Composable
-fun DesktopShell(runtime: DesktopDataRuntime) {
+fun DesktopShell(runtime: DesktopDataRuntime, onboardingFile: File) {
+  val scope = rememberCoroutineScope()
+  val onboarding =
+    remember(runtime, onboardingFile) {
+      OnboardingController(DesktopOnboardingStore(onboardingFile), scope)
+    }
   // The pager-factory binding is unscoped, and the dispatcher is created here. Keep both stable
   // for this runtime so an incidental host recomposition preserves SharedAppShell navigation.
   val pagerFactory = remember(runtime) { runtime.pagerFactory }
@@ -73,7 +81,7 @@ fun DesktopShell(runtime: DesktopDataRuntime) {
       pagerFactory = pagerFactory,
       coroutineDispatcher = coroutineDispatcher,
       strings = desktopStrings,
-      host = desktopHost,
+      host = desktopHost.copy(onboarding = onboarding),
     )
   }
 }
