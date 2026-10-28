@@ -122,6 +122,30 @@ gradle.projectsEvaluated {
         }
         .sorted()
     )
+    // Inspect registered names without realizing test tasks or their compiler/linker graphs.
+    val verificationNames = mapOf(
+      "unit" to setOf("test", "testDebugUnitTest", "jvmTest", "testAndroidHostTest", "wasmJsBrowserTest"),
+      "screenshot" to setOf("verifyPaparazziDebug"),
+      "instrumented" to setOf("ciGroupDebugAndroidTest", "ciGroupAndroidDeviceTest"),
+      "native" to setOf("iosSimulatorArm64Test"),
+      "web" to setOf("wasmJsBrowserTest"),
+    )
+    verificationTaskRecords.set(
+      modules.flatMap { module ->
+        val properties = module.extensions.extraProperties
+        val excluded = if (properties.has("kmpVerificationExcludedTasks")) {
+          properties.get("kmpVerificationExcludedTasks") as Set<*>
+        } else {
+          emptySet<String>()
+        }
+        val available = module.tasks.names.filter { it !in excluded }.toSet()
+        verificationNames.flatMap { (tier, names) ->
+          (names intersect available).map { name ->
+            listOf(tier, "${module.path}:$name").joinToString(separator)
+          }
+        }
+      }.sorted()
+    )
     includedBuildNames.set(gradle.includedBuilds.map { it.name }.sorted())
   }
 

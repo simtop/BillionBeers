@@ -131,6 +131,35 @@ head branch. Failed dispatches fail the scheduled workflow and identify the affe
 This scheduled run is a freshness backstop. Normal PR pushes retain the one-run verdict adoption
 behavior above, and merge-group validation still runs the full suite independently.
 
+### 9. Observe module impact before enabling narrower execution
+
+PR formatting checks produce an advisory `ci-impact-shadow` artifact. The report uses the current
+Gradle project graph and registered verification task names on the reporting host, including KMP
+task exclusions. An absent host-specific task is not proof that a target has no tests. The report
+traverses reverse dependencies across every configuration, including runtime, KSP, and test-helper
+edges. Platform source sets constrain the candidate tiers. Production changes include consumers;
+test-only changes stay with their owner. Plain JVM test helpers also invalidate that module's
+screenshots. Android production changes retain app integration candidates because Play delivery
+is not an ordinary app-to-feature compile dependency.
+
+Unknown paths, build changes, and unknown source sets select the complete inventory. An invalid
+model or unavailable diff produces an explicit unavailable report. Neither case changes execution.
+The report writes no workflow outputs and cannot authorize a skipped lane or a verified-result
+proof. Coverage, architecture, build-logic, report checks, tablet journeys, and release smoke keep
+their existing scope. Configured task counts include empty and cached tasks, so they are not test
+counts or estimates of time saved.
+
+The Apple and screenshot lanes also archive Gradle HTML profiles and JSON task summaries. Summed
+task durations include parallel work and must not be reported as wall clock. The existing phase
+timings remain the wall-clock evidence. Apple Gradle commands are profiled; the Xcode host phase
+retains its separate command timing. Screenshot verification keeps `--rerun-tasks` while its
+compilation and execution costs are observed. Diagnostic failures do not suppress test failures.
+
+Narrower execution requires a separate decision after full-run comparisons and omission probes
+show which failures the candidate set would miss. The acceptance evidence must include resources,
+generated sources, shared helpers, dynamic delivery, renames, and deletions. It must also preserve
+complete coverage and distinguish partial test results from a full-suite reuse proof.
+
 ## Consequences
 
 Validated live rather than by argument. A docs-only push skipped all five lanes with the gate

@@ -23,6 +23,12 @@ abstract class GenerateModuleGraphTask : DefaultTask() {
 
   @get:Input abstract val includedBuildNames: ListProperty<String>
 
+  @get:Input abstract val verificationTaskRecords: ListProperty<String>
+
+  init {
+    verificationTaskRecords.convention(emptyList())
+  }
+
   @get:OutputFile abstract val jsonOutput: RegularFileProperty
 
   @get:OutputFile abstract val htmlOutput: RegularFileProperty
@@ -79,6 +85,11 @@ abstract class GenerateModuleGraphTask : DefaultTask() {
               "configurations" to edge.configurations,
               "scopes" to edge.scopes,
             )
+          },
+        "verificationTasks" to
+          listOf("unit", "screenshot", "instrumented", "native", "web").associateWith { tier ->
+            verificationTaskRecords.get().map { it.split(RECORD_SEPARATOR) }
+              .filter { it[0] == tier }.map { it[1] }.distinct().sorted()
           },
         "cycles" to cycles.map { modules -> linkedMapOf("modules" to modules) },
         "summary" to
