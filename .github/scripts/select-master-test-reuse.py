@@ -26,10 +26,15 @@ REQUIRED_JOBS = {
     "Web Tests (Wasm/static)", "Screenshot Tests (Paparazzi)",
     "Instrumented Tests (Gradle Managed Device)", "Native Tests (Apple)", "CI Gate",
 }
-HEAVY_JOBS = {
-    "Unit Tests", "Web Tests (Wasm/static)", "Screenshot Tests (Paparazzi)",
-    "Instrumented Tests (Gradle Managed Device)", "Native Tests (Apple)",
+# These jobs belong to every workflow run but have conditional PR outcomes.
+CONDITIONAL_JOB_CONCLUSIONS = {
+    "Dependency API Compatibility": {"success", "skipped"},
+    "Track failed master CI run": {"skipped"},
 }
+
+
+class ReuseRejected(ValueError):
+    """A fixed validation message that is safe to include in CI logs."""
 
 
 class GitHub:
@@ -47,7 +52,7 @@ class GitHub:
         with urllib.request.urlopen(request, timeout=20) as response:
             data = response.read(2 * 1024 * 1024 + 1)
         if len(data) > 2 * 1024 * 1024:
-            raise ValueError("GitHub API response exceeds 2 MiB")
+            raise ReuseRejected("GitHub API response exceeds 2 MiB")
         return json.loads(data.decode("utf-8"))
 
     def pages(self, path: str, key: str | None):
@@ -57,11 +62,11 @@ class GitHub:
             response = self.get(f"{path}{separator}per_page=100&page={page}")
             items = response if key is None else response.get(key)
             if not isinstance(items, list):
-                raise ValueError("GitHub API returned malformed pagination data")
+                raise ReuseRejected("GitHub API returned malformed pagination data")
             result.extend(items)
             if len(items) < 100:
                 return result
-        raise ValueError("GitHub API pagination exceeded safety bound")
+        raise ReuseRejected("GitHub API pagination exceeded safety bound")
 
     def download(self, path: str):
         request = urllib.request.Request(f"{self.base}/{path}", headers={
@@ -75,13 +80,13 @@ class GitHub:
                 raise
             location = error.headers["Location"]
             if urllib.parse.urlsplit(location).scheme != "https":
-                raise ValueError("non-HTTPS artifact redirect") from error
+                raise ReuseRejected("non-HTTPS artifact redirect") from error
             # Signed storage URL: never forward the repository token to a different host.
             response = urllib.request.urlopen(location, timeout=20)
         with response:
             data = response.read(MAX_ARCHIVE + 1)
         if len(data) > MAX_ARCHIVE:
-            raise ValueError("artifact exceeds size limit")
+            raise ReuseRejected("artifact exceeds size limit")
         return data
 
 
@@ -98,7 +103,7 @@ def unique_json_object(pairs):
     result = {}
     for key, value in pairs:
         if key in result:
-            raise ValueError("proof JSON contains a duplicate key")
+            raise ReuseRejected("proof JSON contains a duplicate key")
         result[key] = value
     return result
 
@@ -108,11 +113,11 @@ def load_proof(api, run, pr, repository):
     artifacts = [a for a in api.pages(f"actions/runs/{run['id']}/artifacts", "artifacts")
                  if a.get("name") == name]
     if len(artifacts) != 1:
-        raise ValueError("proof artifact is missing or duplicated")
+        raise ReuseRejected("proof artifact is missing or duplicated")
     artifact = artifacts[0]
     size = artifact.get("size_in_bytes")
     if artifact.get("expired") or type(size) is not int or not 0 <= size <= MAX_ARCHIVE:
-        raise ValueError("proof artifact is expired or too large")
+        raise ReuseRejected("proof artifact is expired or too large")
     artifact_run = artifact.get("workflow_run")
     if isinstance(artifact_run, dict):
         artifact_identity = {
@@ -122,21 +127,21 @@ def load_proof(api, run, pr, repository):
             "head_sha": run.get("head_sha"),
         }
         if any(artifact_run.get(key) != value for key, value in artifact_identity.items()):
-            raise ValueError("proof artifact belongs to another workflow run or repository")
+            raise ReuseRejected("proof artifact belongs to another workflow run or repository")
     content = api.download(f"actions/artifacts/{artifact['id']}/zip")
     with zipfile.ZipFile(io.BytesIO(content)) as archive:
         entries = archive.infolist()
         if len(entries) != 1 or entries[0].filename != "verified-master-test-result.json":
-            raise ValueError("proof archive has unexpected contents")
+            raise ReuseRejected("proof archive has unexpected contents")
         entry = entries[0]
         if entry.is_dir() or entry.file_size > MAX_JSON or stat.S_ISLNK(entry.external_attr >> 16):
-            raise ValueError("proof archive member is unsafe")
+            raise ReuseRejected("proof archive member is unsafe")
         raw = archive.read(entry)
     if len(raw) != entry.file_size:
-        raise ValueError("proof archive length mismatch")
+        raise ReuseRejected("proof archive length mismatch")
     proof = json.loads(raw.decode("utf-8"), object_pairs_hook=unique_json_object)
     if not isinstance(proof, dict) or proof.get("schema") != 1 or type(proof.get("schema")) is not int:
-        raise ValueError("unsupported proof schema")
+        raise ReuseRejected("unsupported proof schema")
     expected = {
         "repository": repository,
         "repository_id": pr["base"]["repo"]["id"],
@@ -148,12 +153,12 @@ def load_proof(api, run, pr, repository):
         "workflow": ".github/workflows/ci.yml",
     }
     if any(proof.get(k) != v for k, v in expected.items()):
-        raise ValueError("proof identity does not match source run")
+        raise ReuseRejected("proof identity does not match source run")
     for key in ("checkout_sha", "tree_sha", "workflow_blob"):
         if not valid_sha(proof.get(key)):
-            raise ValueError("proof contains malformed git identity")
+            raise ReuseRejected("proof contains malformed git identity")
     if not valid_sha(proof.get("base_sha")):
-        raise ValueError("proof has a malformed PR base SHA")
+        raise ReuseRejected("proof has a malformed PR base SHA")
     # The pull_request workflow checks out GitHub's synthetic merge commit. Verify that the
     # claimed checkout really joins this run's recorded base and PR head; then derive the tree and
     # workflow blob from GitHub's commit/content APIs instead of trusting artifact JSON claims.
@@ -161,19 +166,19 @@ def load_proof(api, run, pr, repository):
     parents = [parent.get("sha") for parent in checkout.get("parents", [])]
     expected_parents = [proof["base_sha"], proof["pr_head"]]
     if parents != expected_parents:
-        raise ValueError("proof checkout is not the source run's synthetic PR merge commit")
+        raise ReuseRejected("proof checkout is not the source run's synthetic PR merge commit")
     if checkout.get("commit", {}).get("tree", {}).get("sha") != proof["tree_sha"]:
-        raise ValueError("proof tree SHA does not match the checkout commit")
+        raise ReuseRejected("proof tree SHA does not match the checkout commit")
     checkout_workflow = api.get(
         f"contents/.github/workflows/ci.yml?ref={urllib.parse.quote(proof['checkout_sha'])}"
     )
     if checkout_workflow.get("sha") != proof["workflow_blob"]:
-        raise ValueError("proof workflow blob does not match the checkout commit")
+        raise ReuseRejected("proof workflow blob does not match the checkout commit")
     base_workflow = api.get(
         f"contents/.github/workflows/ci.yml?ref={urllib.parse.quote(proof['base_sha'])}"
     )
     if base_workflow.get("sha") != proof["workflow_blob"]:
-        raise ValueError("source workflow differs from the trusted PR base workflow")
+        raise ReuseRejected("source workflow differs from the trusted PR base workflow")
     return proof
 
 
@@ -182,20 +187,24 @@ def validate_jobs(api, run):
     by_name = {}
     for job in jobs:
         by_name.setdefault(job.get("name"), []).append(job)
-    if set(by_name) != REQUIRED_JOBS or any(len(items) != 1 for items in by_name.values()):
-        raise ValueError("source run has missing, duplicate, or unexpected required jobs")
+    expected_jobs = REQUIRED_JOBS | CONDITIONAL_JOB_CONCLUSIONS.keys()
+    if expected_jobs - by_name.keys():
+        raise ReuseRejected("source run has missing expected jobs")
+    if by_name.keys() - expected_jobs:
+        raise ReuseRejected("source run has unexpected jobs")
+    if any(len(items) != 1 for items in by_name.values()):
+        raise ReuseRejected("source run has duplicate jobs")
     for name, items in by_name.items():
         job = items[0]
-        if job.get("status") != "completed" or job.get("conclusion") != "success":
-            raise ValueError(f"required job did not succeed: {name}")
-        if name in HEAVY_JOBS and job.get("conclusion") != "success":
-            raise ValueError(f"heavy lane was not executed: {name}")
+        allowed_conclusions = CONDITIONAL_JOB_CONCLUSIONS.get(name, {"success"})
+        if job.get("status") != "completed" or job.get("conclusion") not in allowed_conclusions:
+            raise ReuseRejected(f"source job has an ineligible status or conclusion: {name}")
     gate = by_name["CI Gate"][0]
     steps = {step.get("name"): step for step in gate.get("steps", [])}
     for name in ("Checkout tested source for the verified result proof",
                  "Record verified test result", "Upload verified test result"):
         if steps.get(name, {}).get("conclusion") != "success":
-            raise ValueError(f"proof step did not succeed: {name}")
+            raise ReuseRejected(f"proof step did not succeed: {name}")
 
 
 def select(api, repository, current_sha, event, ref):
@@ -204,13 +213,13 @@ def select(api, repository, current_sha, event, ref):
     repo = api.get("")
     repo_id = repo.get("id")
     if not isinstance(repo_id, int):
-        raise ValueError("repository identity unavailable")
+        raise ReuseRejected("repository identity unavailable")
     commit = api.get(f"commits/{current_sha}")
     tree_sha = commit.get("commit", {}).get("tree", {}).get("sha")
     workflow = api.get("contents/.github/workflows/ci.yml?ref=" + current_sha)
     workflow_blob = workflow.get("sha")
     if not valid_sha(tree_sha) or not valid_sha(workflow_blob):
-        raise ValueError("current master tree/workflow identity unavailable")
+        raise ReuseRejected("current master tree/workflow identity unavailable")
     candidates = api.pages(f"commits/{current_sha}/pulls", None)
     prs = []
     for candidate in candidates:
@@ -224,41 +233,41 @@ def select(api, repository, current_sha, event, ref):
                 and (pr.get("head", {}).get("repo") or {}).get("id") == repo_id):
             prs.append(pr)
     if len(prs) != 1:
-        raise ValueError("current master commit is not one unambiguous same-repository PR merge")
+        raise ReuseRejected("current master commit is not one unambiguous same-repository PR merge")
     pr = api.get(f"pulls/{prs[0]['number']}")
     if (pr.get("merged") is not True or pr.get("merge_commit_sha") != current_sha
             or pr.get("head", {}).get("sha") != prs[0].get("head", {}).get("sha")):
-        raise ValueError("merged PR identity changed during lookup")
+        raise ReuseRejected("merged PR identity changed during lookup")
     merge_parents = [parent.get("sha") for parent in commit.get("parents", [])]
     if not merge_parents:
-        raise ValueError("merged master commit has no verifiable first parent")
+        raise ReuseRejected("merged master commit has no verifiable first parent")
     query = urllib.parse.urlencode({"event": "pull_request", "head_sha": pr["head"]["sha"]})
     runs = api.pages(f"actions/workflows/ci.yml/runs?{query}", "workflow_runs")
     if any(not isinstance(run.get("head_sha"), str) for run in runs):
-        raise ValueError("PR run lookup returned a run without a head SHA")
+        raise ReuseRejected("PR run lookup returned a run without a head SHA")
     if any(run.get("head_sha") != pr["head"]["sha"] for run in runs):
-        raise ValueError("PR run lookup returned a run for another head")
+        raise ReuseRejected("PR run lookup returned a run for another head")
     if any(type(run.get("run_number")) is not int or type(run.get("id")) is not int for run in runs):
-        raise ValueError("PR run lookup returned an unorderable run identity")
+        raise ReuseRejected("PR run lookup returned an unorderable run identity")
     matching = runs
     if not matching:
-        raise ValueError("no eligible PR CI run for merged head")
+        raise ReuseRejected("no eligible PR CI run for merged head")
     latest = max(matching, key=lambda r: (r.get("run_number", -1), r.get("id", -1)))
     if (latest.get("event") != "pull_request" or latest.get("path") != ".github/workflows/ci.yml"
             or (latest.get("head_repository") or {}).get("id") != repo_id
             or (latest.get("pull_requests") and not any(
                 p.get("number") == pr["number"] for p in latest["pull_requests"]
             ))):
-        raise ValueError("newest PR CI run has an unexpected workflow, event, repository, or PR identity")
+        raise ReuseRejected("newest PR CI run has an unexpected workflow, event, repository, or PR identity")
     if (latest.get("run_attempt") != 1 or latest.get("status") != "completed"
             or latest.get("conclusion") != "success"):
-        raise ValueError("newest PR CI run for this head is not successful")
+        raise ReuseRejected("newest PR CI run for this head is not successful")
     validate_jobs(api, latest)
     proof = load_proof(api, latest, pr, repository)
     if proof["base_sha"] != merge_parents[0]:
-        raise ValueError("tested PR base differs from the merged master commit's first parent")
+        raise ReuseRejected("tested PR base differs from the merged master commit's first parent")
     if proof["tree_sha"] != tree_sha or proof["workflow_blob"] != workflow_blob:
-        raise ValueError("tested tree or workflow differs from current master")
+        raise ReuseRejected("tested tree or workflow differs from current master")
     return True, latest["id"], pr["number"]
 
 
@@ -276,7 +285,8 @@ def main():
             if selected:
                 values["eligible"], values["source_run_id"], values["source_pr"] = "true", selected[1], selected[2]
         except Exception as error:  # API, JSON, artifact, or proof failure must only cost CI time.
-            print(f"::warning::Post-merge test reuse unavailable; running full suite ({type(error).__name__}).", file=sys.stderr)
+            reason = str(error) if isinstance(error, ReuseRejected) else type(error).__name__
+            print(f"::warning::Post-merge test reuse unavailable; running full suite ({reason}).", file=sys.stderr)
     if outputs:
         with open(outputs, "a", encoding="utf-8") as stream:
             stream.write(f"eligible={values['eligible']}\n")

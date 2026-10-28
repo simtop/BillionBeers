@@ -106,7 +106,9 @@ then authorize reuse after merge. The tested base must be the merged commit's fi
 the source run must have succeeded on attempt 1 with every heavy lane and required static check
 executed successfully. Missing, stale, skipped, ambiguous, expired, or inconsistent evidence
 runs the full suite. Pull requests, merge groups, and all other events keep the existing
-selection behavior.
+selection behavior. The dependency API job may succeed or skip, while the master-only failure
+reporter must skip in the source PR run. The selector rejects missing, duplicate, or unexpected
+jobs. Logs identify validation rejections without exposing API or parser error details.
 
 The proof is produced inline in the final `CI Gate`, after all required jobs succeed, then uploaded
 as a 30-day artifact. The `changes` job only consumes it for later master validation. The first
