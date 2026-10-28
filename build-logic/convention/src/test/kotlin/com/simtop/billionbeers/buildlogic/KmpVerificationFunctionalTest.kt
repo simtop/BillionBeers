@@ -85,7 +85,12 @@ class KmpVerificationFunctionalTest {
       "sample/build.gradle.kts",
       """
       tasks.register("jvmTest") { doLast {} }
-      tasks.register("wasmJsBrowserTest") { doLast {} }
+      tasks.register("wasmJsBrowserTest") {
+        error("Unrequested browser test was configured")
+      }
+      tasks.register("iosSimulatorArm64Test") {
+        error("Unrequested simulator test was configured")
+      }
       """.trimIndent(),
     )
 
