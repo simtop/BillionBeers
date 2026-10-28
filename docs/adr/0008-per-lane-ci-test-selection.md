@@ -160,6 +160,52 @@ show which failures the candidate set would miss. The acceptance evidence must i
 generated sources, shared helpers, dynamic delivery, renames, and deletions. It must also preserve
 complete coverage and distinguish partial test results from a full-suite reuse proof.
 
+### 10. Preserve verified Kotlin/Native components between CI runs
+
+[Run 40663275577](https://github.com/simtop/BillionBeers/actions/runs/40663275577) produced the first
+hosted task profiles. Apple compilation took 534 seconds, framework linking 644 seconds, and the
+simulator-test command 496 seconds. Most simulator task work also came from linking test binaries.
+The job restored Gradle state but rebuilt Kotlin/Native library caches in a fresh `.konan` tree.
+[Kotlin recommends preserving these components](https://kotlinlang.org/docs/native-improving-compilation-time.html#preserve-downloaded-and-cached-components-between-builds).
+
+A run-isolated probe held the source, configuration, runner image, Xcode, and Gradle cache inputs
+constant. The first attempt missed; a Native-only retry restored its exact entry. Both passed:
+
+| [Run 40705326577](https://github.com/simtop/BillionBeers/actions/runs/40705326577) | Cache restore + copy | Apple compile | Framework links | Host build | Simulator-test command | Snapshot + save | Whole job | Passed cases |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Attempt 1, miss | 0s | 3m10s | 8m47s | 53s | 6m32s | 1m27s | 22m52s | 263 |
+| Attempt 2, hit | 1m02s | 3m17s | 3m29s | 1m26s | 2m51s | 0s | 15m19s | 263 |
+
+The hit restored a 621,201,198-byte compressed archive. XML test identities and test-task outcomes
+matched: all 12 non-empty simulator test tasks executed in both attempts. Each framework link's
+profiled task work fell from about 509 seconds to 177 seconds. The fixture, design-system, and
+presentation test links fell from 350/349/303 seconds to 47/53/64 seconds. These overlapping task
+durations explain the improvement; they are not added to calculate wall time.
+
+The observed whole-job reduction was 7m33s (33%). Removing the miss's 87-second snapshot/save cost
+still leaves a 6m06s (28.5%) gap, above the experiment's 20% threshold after hit transfer overhead.
+Compilation, host build, and simulator boot were slower on the hit, so those phases do not explain
+the gain. This pair establishes successful reuse and a useful measured ceiling, not a steady-state
+speedup estimate; small performance claims still require repeated samples under ADR 0009.
+
+Normal CI therefore preserves only Native dependencies and the selected compiler, including its
+library caches. A staged copy excludes `*.lock` and `*.lck` before archiving; cache-action negated
+globs alone do not filter descendants when the tar input is a parent directory. Gradle state stays
+under its existing cache owner. No simulator, app build output, or test report enters this cache.
+
+The exact key includes architecture, runner image, Xcode, Kotlin, tracked Gradle configuration,
+build-logic sources, and compilation/cache drivers. It is shared across compatible runs. There are
+no restore-prefix keys, and only an exact hit is copied into `.konan`. Unknown identity or cache
+errors retain full Apple verification. Compilation, both framework links, host build, simulator
+tests, report validation, and simulator evidence remain blocking on hits and misses.
+
+A successful full validation can publish a missing entry only on a `master` push or a manual
+`master` run without `pull_request_number`. Manual PR validation also uses the master workflow ref
+but checks out a PR merge tree, so it cannot publish this cache. PRs and merge groups restore only.
+The first successful full master validation seeds the cache; until then, runs compile normally.
+Runner-image changes deliberately require a new entry. If post-merge result reuse keeps skipping
+Native after invalidation, a manual master dispatch with `force_full=true` refreshes it.
+
 ## Consequences
 
 Validated live rather than by argument. A docs-only push skipped all five lanes with the gate
