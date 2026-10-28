@@ -35,9 +35,10 @@ class MainActivity : ComponentActivity() {
   private var onboardingBypassed by mutableStateOf(false)
 
   override fun onCreate(savedInstanceState: Bundle?) {
-    installSplashScreen()
+    val splashScreen = installSplashScreen()
     super.onCreate(savedInstanceState)
     val appGraph = (applicationContext as BillionBeersApplication).appGraph
+    val onboardingController = appGraph.onboardingController
     splitInstallManager = appGraph.splitInstallManager
     enableEdgeToEdge()
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -49,6 +50,10 @@ class MainActivity : ComponentActivity() {
     onboardingBypassed =
       savedInstanceState?.getBoolean(ONBOARDING_BYPASSED) == true ||
         deepLinkUri?.toPortableRoute() != null
+    // Hold the launch surface while ordinary startup would render only a resolving background.
+    splashScreen.setKeepOnScreenCondition {
+      !onboardingBypassed && onboardingController.state.value == null
+    }
     setContent {
       CompositionLocalProvider(
         LocalMetroViewModelFactory provides appGraph.metroViewModelFactory,
@@ -56,7 +61,7 @@ class MainActivity : ComponentActivity() {
       ) {
         BillionBeersTheme(darkTheme = isDarkTheme(appGraph.themeController)) {
           DebugDrawerHost(appGraph = appGraph) {
-            OnboardingHost(appGraph.onboardingController, bypassWelcome = onboardingBypassed) {
+            OnboardingHost(onboardingController, bypassWelcome = onboardingBypassed) {
               AppNavigation(
                 deepLinkUri = deepLinkUri,
                 deepLinkDeliveryId = deepLinkDeliveryId,
