@@ -2,6 +2,7 @@ import org.gradle.testing.jacoco.tasks.JacocoReport
 import org.gradle.testing.jacoco.plugins.JacocoPluginExtension
 import org.jetbrains.kotlin.gradle.targets.wasm.nodejs.WasmNodeJsEnvSpec
 import org.jetbrains.kotlin.gradle.targets.wasm.yarn.WasmYarnRootEnvSpec
+import com.simtop.billionbeers.buildlogic.configureWasmLinkerBudget
 
 buildscript {
     repositories {
@@ -37,8 +38,10 @@ plugins {
     id("jacoco")
 }
 
-tasks.whenTaskAdded {
-    if (name == "clean" && this is Delete) {
+project.configureWasmLinkerBudget()
+
+tasks.withType<Delete>().configureEach {
+    if (name == "clean") {
         delete(rootProject.layout.buildDirectory)
     }
 }
