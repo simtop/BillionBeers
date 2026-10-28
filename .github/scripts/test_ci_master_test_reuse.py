@@ -13,7 +13,7 @@ import urllib.error
 import unittest
 import zipfile
 from email.message import Message
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
@@ -52,8 +52,19 @@ class FakeGitHub:
             "pull_requests": [],
         }
         self.run_list = [self.run]
-        self.jobs = [{"name": name, "status": "completed", "conclusion": "success", "steps": []}
-                     for name in MODULE.REQUIRED_JOBS]
+        # Keep the API fixture independent of the selector's expected-job constants.
+        job_names = (
+            "Code Style Formatting Check", "Detect change scope", "Secret Scan (gitleaks)",
+            "Static Analysis (Detekt)", "Android Lint", "Dependency Guard",
+            "Dependency API Compatibility", "Unit Tests", "Web Tests (Wasm/static)",
+            "Screenshot Tests (Paparazzi)", "Instrumented Tests (Gradle Managed Device)",
+            "Native Tests (Apple)", "CI Gate", "Track failed master CI run",
+        )
+        self.jobs = [
+            {"name": name, "status": "completed",
+             "conclusion": "skipped" if name == "Track failed master CI run" else "success", "steps": []}
+            for name in job_names
+        ]
         gate = next(job for job in self.jobs if job["name"] == "CI Gate")
         gate["steps"] = [{"name": "Checkout tested source for the verified result proof", "conclusion": "success"},
                          {"name": "Record verified test result", "conclusion": "success"},
@@ -121,6 +132,45 @@ class SelectMasterReuseTest(unittest.TestCase):
 
     def test_reuses_only_exact_verified_successful_pr_tree(self):
         self.assertEqual((True, 99, 17), self.select())
+
+    def test_job_fixture_matches_the_complete_workflow_job_inventory(self):
+        workflow = (Path(__file__).resolve().parents[1] / "workflows" / "ci.yml").read_text()
+        workflow_jobs = re.findall(r"^    name: (.+)$", workflow, re.MULTILINE)
+        self.assertCountEqual(workflow_jobs, [job["name"] for job in self.api.jobs])
+
+    def test_dependency_api_job_may_succeed_or_skip_but_must_complete(self):
+        job = next(job for job in self.api.jobs if job["name"] == "Dependency API Compatibility")
+        for conclusion in ("success", "skipped"):
+            with self.subTest(conclusion=conclusion):
+                job["conclusion"] = conclusion
+                self.assertEqual((True, 99, 17), self.select())
+        for conclusion in ("failure", "cancelled", "neutral", None):
+            with self.subTest(conclusion=conclusion):
+                job["conclusion"] = conclusion
+                self.assertRaises(ValueError, self.select)
+        job.update(status="in_progress", conclusion="success")
+        self.assertRaises(ValueError, self.select)
+
+    def test_master_failure_reporter_must_skip_in_a_pr_run(self):
+        job = next(job for job in self.api.jobs if job["name"] == "Track failed master CI run")
+        for conclusion in ("success", "failure", "cancelled", None):
+            with self.subTest(conclusion=conclusion):
+                job["conclusion"] = conclusion
+                self.assertRaises(ValueError, self.select)
+
+    def test_missing_duplicate_and_unknown_jobs_disqualify_reuse(self):
+        for index in range(len(self.api.jobs)):
+            with self.subTest(missing=self.api.jobs[index]["name"]):
+                jobs = self.api.jobs.copy()
+                self.api.jobs.pop(index)
+                self.assertRaises(ValueError, self.select)
+                self.api.jobs = jobs
+            with self.subTest(duplicate=self.api.jobs[index]["name"]):
+                self.api.jobs.append(dict(self.api.jobs[index]))
+                self.assertRaises(ValueError, self.select)
+                self.api.jobs.pop()
+        self.api.jobs.append({"name": "Unexpected job", "status": "completed", "conclusion": "success"})
+        self.assertRaises(ValueError, self.select)
 
     def test_force_full_dispatch_bypasses_reuse_without_constructing_api_client(self):
         with tempfile.NamedTemporaryFile(mode="w+", encoding="utf-8") as output:
@@ -266,7 +316,7 @@ class SelectMasterReuseTest(unittest.TestCase):
         unit["conclusion"] = "skipped"
         self.assertRaises(ValueError, self.select)
         self.setUp()
-        self.api.jobs = self.api.jobs[:-1]
+        self.api.jobs = [job for job in self.api.jobs if job["name"] != "Unit Tests"]
         self.assertRaises(ValueError, self.select)
         self.setUp()
         self.api.jobs.append(dict(self.api.jobs[0]))
@@ -374,6 +424,28 @@ class SelectMasterReuseTest(unittest.TestCase):
         with patch.object(MODULE.urllib.request, "urlopen", side_effect=response):
             self.assertEqual({"id": 7}, MODULE.GitHub("token", REPOSITORY).get(""))
         self.assertEqual("https://api.github.com/repos/simtop/BillionBeers", requests[0].full_url)
+
+    def test_main_reports_safe_rejection_reasons_without_logging_external_error_details(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "github-output"
+            environment = {
+                "GH_TOKEN": "token", "REPO": REPOSITORY, "GITHUB_SHA": SHA["master"],
+                "EVENT_NAME": "push", "GITHUB_REF": "refs/heads/master", "GITHUB_OUTPUT": str(output),
+            }
+            for error, expected in (
+                (MODULE.ReuseRejected("source run has unexpected jobs"), "source run has unexpected jobs"),
+                (OSError("private transport details"), "OSError"),
+                (ValueError("private parser details"), "ValueError"),
+            ):
+                with self.subTest(error=type(error).__name__):
+                    stderr = io.StringIO()
+                    with patch.dict(os.environ, environment, clear=True), \
+                            patch.object(MODULE, "select", side_effect=error), \
+                            redirect_stdout(io.StringIO()), redirect_stderr(stderr):
+                        MODULE.main()
+                    self.assertIn(expected, stderr.getvalue())
+                    self.assertNotIn("private", stderr.getvalue())
+                    self.assertIn("eligible=false", output.read_text())
 
     def test_main_writes_full_suite_output_on_api_error(self):
         with tempfile.TemporaryDirectory() as directory:
