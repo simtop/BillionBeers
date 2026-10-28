@@ -46,8 +46,8 @@ schemes, hosts and path shapes are ignored. URL delivery is forwarded through Sw
 ## UI/resource parity
 
 The shared shell keeps host-owned strings, icons, rows, errors and image content behind
-`SharedAppHost`. iOS selects the complete English or French catalog from the device language
-(`fr-*` selects French); unsupported languages fall back to English. The shell follows the iOS
+`SharedAppHost`. iOS selects the English, Spanish, or French catalog from the device language; unsupported languages
+fall back to English. The shared welcome and favorite hint use the same language selection. The shell follows the iOS
 system light/dark appearance. Custom iOS rows and icons expose localized accessibility labels and
 availability state, while decorative list placeholders are hidden from accessibility.
 

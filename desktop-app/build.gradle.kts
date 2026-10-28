@@ -24,6 +24,7 @@ compose.desktop {
 }
 
 dependencies {
+  implementation(project(":shared:presentation"))
   implementation(project(":shared:app"))
   implementation(project(":shared:designsystem"))
   implementation(project(":shared:beerbrowse"))

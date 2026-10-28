@@ -1,17 +1,14 @@
-package com.simtop.billionbeers.presentation
+package com.simtop.billionbeers.shared.presentation
 
-import com.simtop.presentation_utils.core.IntroductionId
-import com.simtop.presentation_utils.core.OnboardingIntroductions
-import java.io.IOException
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class OnboardingControllerTest {
@@ -69,7 +66,7 @@ class OnboardingControllerTest {
 
   @Test
   fun `read failures enter the app without showing a hint`() = runTest {
-    val store = MemoryStore().apply { readFailure = IOException("unavailable") }
+    val store = MemoryStore().apply { readFailure = IllegalStateException("unavailable") }
     val controller = OnboardingController(store, this)
     runCurrent()
     assertTrue(checkNotNull(controller.state.value).isComplete(OnboardingIntroductions.welcome))
@@ -165,7 +162,7 @@ class OnboardingControllerTest {
     }
 
     override suspend fun write(completedIds: Set<String>) {
-      if (failWrite) throw IOException("unavailable")
+      check(!failWrite) { "unavailable" }
       writes++
       saved = completedIds
     }

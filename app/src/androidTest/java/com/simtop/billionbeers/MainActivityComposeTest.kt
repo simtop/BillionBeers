@@ -181,7 +181,7 @@ class MainActivityComposeTest {
           as BillionBeersApplication
       assertFalse(
         checkNotNull(app.appGraph.onboardingController.state.value)
-          .isComplete(com.simtop.presentation_utils.core.OnboardingIntroductions.welcome)
+          .isComplete(com.simtop.billionbeers.shared.presentation.OnboardingIntroductions.welcome)
       )
     }
     ActivityScenario.launch(MainActivity::class.java).useWithFailureScreenshot {
@@ -270,7 +270,7 @@ class MainActivityComposeTest {
         as BillionBeersApplication
     assertFalse(
       checkNotNull(app.appGraph.onboardingController.state.value)
-        .isComplete(com.simtop.presentation_utils.core.OnboardingIntroductions.welcome)
+        .isComplete(com.simtop.billionbeers.shared.presentation.OnboardingIntroductions.welcome)
     )
   }
 

@@ -112,6 +112,7 @@ android {
 }
 
 dependencies {
+  implementation(project(":shared:presentation"))
   debugImplementation(libs.coil3)
   implementation(this.project(":beerdomain:api"))
   implementation(this.project(":beerdomain:impl"))

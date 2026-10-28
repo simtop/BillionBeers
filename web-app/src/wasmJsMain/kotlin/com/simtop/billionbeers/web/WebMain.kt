@@ -214,6 +214,10 @@ private class WebRouteSession(
   private val runtime: WebDataRuntime,
   private val scope: CoroutineScope,
 ) {
+  val onboarding =
+    com.simtop.billionbeers.shared.presentation.OnboardingController(WebOnboardingStore(), scope)
+  private val bypassWelcomeState = MutableStateFlow(false)
+  val bypassWelcome = bypassWelcomeState.asStateFlow()
   private val routeRequests = Channel<SharedAppNavigationRequest>(Channel.BUFFERED)
   private val routeFlow = routeRequests.receiveAsFlow()
   private val resolutionState = MutableStateFlow<WebRouteResolution?>(null)
@@ -293,8 +297,10 @@ private class WebRouteSession(
         lastObservedHash = window.location.hash
         lastObservedToken = ""
       }
+      if (result is WebRouteResolution.MissingBeer) bypassWelcomeState.value = true
       resolutionState.value = result
       if (result is WebRouteResolution.Ready) {
+        if (result.route != PortableRoute.BeersList) bypassWelcomeState.value = true
         val preset =
           if (result.route == PortableRoute.SavedFilterPresets && !canonicalize) {
             savedFilterHistory.resolve(token)
@@ -324,6 +330,7 @@ private class WebRouteSession(
 @Composable
 private fun WebShell(runtime: WebDataRuntime, session: WebRouteSession) {
   val resolution by session.resolution.collectAsStateWithLifecycle()
+  val bypassWelcome by session.bypassWelcome.collectAsStateWithLifecycle()
   // The graph's unscoped pager-factory getter creates a new instance on every access.
   // Keep shell dependencies stable while external route resolution recomposes this host.
   val repository = remember(runtime) { runtime.repository }
@@ -343,7 +350,9 @@ private fun WebShell(runtime: WebDataRuntime, session: WebRouteSession) {
         coroutineDispatcher = coroutineDispatcher,
         strings = webStrings,
         initialRoute = current.route,
-        host = webHost(runtime, session),
+        host =
+          webHost(runtime, session)
+            .copy(onboarding = session.onboarding, bypassWelcome = bypassWelcome),
         onClose = session::goBack,
       )
   }

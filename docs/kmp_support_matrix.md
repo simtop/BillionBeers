@@ -14,8 +14,22 @@ host rendering, packaging, and release distribution are separate claims; one doe
 
 ## Shared behavior and verification boundaries
 
-The shared product scope is catalog, paging, search, browse/detail, favorites, availability and
-saved filters. For contributor ownership and checks, see the
+The shared product scope is catalog, paging, search, browse/detail, favorites, availability,
+saved filters, and onboarding. `:shared:presentation` owns introduction IDs, completion state,
+the store interface, and the welcome host. Android retains its resource/system-Back adapter;
+the other hosts use the shared welcome flow and favorite hint through `:shared:app`.
+
+Completion remains local to each installation or browser origin. Android keeps the existing
+`onboarding` SharedPreferences file and `completed_introduction_ids` key. Desktop writes
+`onboarding.txt` beside its selected database, including `--data-dir`. iOS uses app UserDefaults.
+Web uses the `billionbeers.completed_introduction_ids` localStorage preference; beer data stays
+in IndexedDB. These small preferences need no catalog schema migration. Browser clearing or
+storage denial can remove completion, and no cross-device synchronization is implied.
+
+Welcome waits for the initial preference read. Read failure permits catalog navigation without
+hints; write failure keeps completion in memory for the session. Supported external routes bypass
+welcome and hints without persisting welcome completion. Android retains its on-demand feature
+delivery and native navigation host. For contributor ownership and checks, see the
 [durable-feature change guide](durable_feature_changes.md).
 Android-only delivery mechanisms remain at the Android edge: Glance widgets, Play dynamic delivery,
 split installation and Android component plumbing are not reproduced on other hosts.
