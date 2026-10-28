@@ -130,6 +130,46 @@ class ModuleGraphPluginFunctionalTest {
     assertEquals(3, summary["apiProjectEdgeCount"])
   }
 
+  @Test
+  fun `module graph exports available test tasks without realizing them and respects opt outs`() {
+    writeFixture()
+    writeFile(
+      "a/build.gradle.kts",
+      """
+      tasks.register("jvmTest") { error("Unrequested test was realized") }
+      tasks.register("wasmJsBrowserTest") { error("Unrequested browser test was realized") }
+      tasks.register("iosSimulatorArm64Test") { error("Unrequested native test was realized") }
+      tasks.register("ciGroupAndroidDeviceTest") { error("Unrequested device test was realized") }
+      tasks.register("unrelatedVerification")
+      """.trimIndent(),
+    )
+    writeFile(
+      "b/build.gradle.kts",
+      """
+      extra["kmpVerificationExcludedTasks"] = setOf("testAndroidHostTest")
+      tasks.register("testAndroidHostTest") { error("Excluded test was realized") }
+      tasks.register("verifyPaparazziDebug") { error("Unrequested screenshots were realized") }
+      tasks.register("testDebugUnitTest") { error("Unrequested unit tests were realized") }
+      """.trimIndent(),
+    )
+    runner().withArguments("generateModuleGraph", "--configuration-cache").build()
+    val json = testProjectDir.resolve("build/reports/module-graph/modules.json").readText()
+    val model = JsonSlurper().parseText(json) as Map<*, *>
+    assertEquals(
+      mapOf(
+        "unit" to listOf(":a:jvmTest", ":a:test", ":a:wasmJsBrowserTest", ":b:test", ":b:testDebugUnitTest", ":c:test"),
+        "screenshot" to listOf(":b:verifyPaparazziDebug"),
+        "instrumented" to listOf(":a:ciGroupAndroidDeviceTest"),
+        "native" to listOf(":a:iosSimulatorArm64Test"),
+        "web" to listOf(":a:wasmJsBrowserTest"),
+      ),
+      model["verificationTasks"],
+    )
+    val second = runner().withArguments("generateModuleGraph", "--configuration-cache").build()
+    assertEquals(TaskOutcome.UP_TO_DATE, second.task(":generateModuleGraph")?.outcome)
+    assertTrue(second.output.contains("Configuration cache entry reused."))
+  }
+
   private fun resolvedCytoscapeAssets(): Pair<String, String> {
     val classLoader = javaClass.classLoader
     val properties = Properties()

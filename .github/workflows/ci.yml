@@ -134,6 +134,28 @@ jobs:
             exit 1
           fi
 
+      # Observation only. No outputs from this step feed changes, test jobs, or proof production.
+      - name: Report test impact candidates in shadow mode
+        id: impact-shadow
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        env:
+          CI_IMPACT_BASE: ${{ github.event.pull_request.base.sha }}
+          GRADLE_RUNNER: ./gradlew
+        run: make ci-impact-shadow
+
+      - name: Archive test impact shadow evidence
+        if: always() && steps.impact-shadow.outcome != 'skipped'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        continue-on-error: true
+        with:
+          name: ci-impact-shadow
+          path: |
+            build/reports/ci-impact-shadow/
+            build/reports/module-graph/modules.json
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Check repository Markdown links and generated indexes
         run: make docs-check
 
@@ -715,8 +737,13 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
+      - name: Clear stale screenshot profiles
+        run: rm -rf build/reports/profile build/reports/ci-task-timings
+
       - name: Verify Screenshot Tests
         id: verify-paparazzi
+        env:
+          GRADLE_RUNNER: ./gradlew --profile
         run: bash .github/scripts/run-timed-command.sh make screenshot-verify
 
       - name: Summarize screenshot failures
@@ -738,6 +765,25 @@ jobs:
             --phase "Paparazzi verification|$SCREENSHOT_OUTCOME|$SCREENSHOT_SECONDS" \
             --json build/ci-phase-timings/screenshot.json
           echo '_Excludes checkout, JDK/Gradle setup, report upload, and skipped phases._' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Summarize screenshot task work
+        if: always()
+        continue-on-error: true
+        env:
+          GRADLE_PROFILE_OUTCOME: ${{ job.status }}
+        run: make ci-gradle-profile-summary
+
+      - name: Archive screenshot Gradle profiles
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: screenshot-gradle-profiles
+          path: |
+            build/reports/profile/
+            build/reports/ci-task-timings/
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Upload Screenshot Failures
         if: always() && steps.verify-paparazzi.outcome == 'failure'
@@ -925,6 +971,7 @@ jobs:
     runs-on: macos-14
     timeout-minutes: 45
     env:
+      GRADLE_RUNNER: ./gradlew --profile
       IOS_RUNTIME: '18.2'
       IOS_DEVICE_NAME: 'BillionBeers iPhone 16'
       IOS_DEVICE_TYPE: 'com.apple.CoreSimulator.SimDeviceType.iPhone-16'
@@ -961,7 +1008,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Clear stale iOS simulator evidence
-        run: rm -rf iosApp/build/ios-simulator-confidence
+        run: rm -rf iosApp/build/ios-simulator-confidence build/reports/profile build/reports/ci-task-timings
 
       - name: Test iOS simulator evidence verifier
         run: python3 scripts/test_verify_ios_simulator_artifacts.py
@@ -1042,6 +1089,25 @@ jobs:
             --phase "Apple simulator tests|$TEST_OUTCOME|$TEST_SECONDS" \
             --json build/ci-phase-timings/native.json
           echo '_Native evidence is compile, framework link, simulator execution, and test reports; no native percentage coverage is claimed._' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Summarize Apple task work
+        if: always()
+        continue-on-error: true
+        env:
+          GRADLE_PROFILE_OUTCOME: ${{ job.status }}
+        run: make ci-gradle-profile-summary
+
+      - name: Archive Apple Gradle profiles
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: native-gradle-profiles
+          path: |
+            build/reports/profile/
+            build/reports/ci-task-timings/
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Archive iOS host build
         if: always()

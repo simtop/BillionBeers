@@ -500,7 +500,12 @@ class ReconcileCiReportTest(unittest.TestCase):
         ci = (root / ".github/workflows/ci.yml").read_text()
         self.assertIn("run: make ci-report-test", ci)
         screenshots = ci.split("  screenshot-tests:")[1].split("  instrumented-tests:")[0]
-        self.assertNotIn("continue-on-error", screenshots)
+        self.assertNotRegex(screenshots, r"(?m)^    continue-on-error:")
+        for name, body in MODULE.re.findall(
+            r"(?ms)^      - name: ([^\n]+)\n(.*?)(?=^      - name:|\Z)", screenshots
+        ):
+            if "continue-on-error" in body:
+                self.assertIn(name, {"Summarize screenshot task work", "Archive screenshot Gradle profiles"})
         self.assertNotIn("Signal Failure", screenshots)
         # Keep step-aware commands from silently drifting when CI steps are renamed.
         step_names = set(MODULE.re.findall(r"- name: (.+)", ci))

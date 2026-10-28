@@ -323,6 +323,18 @@ release-version-test: ## Verify automatic release versions, date boundaries and 
 build-logic-test: ## Run standalone convention-plugin tests without repeating app unit suites.
 	$(BROWSER_TEST_ENV) $(GRADLE_RUNNER) -p build-logic "-Pkotlin.daemon.jvmargs=$(BUILD_LOGIC_KOTLIN_DAEMON_ARGS)" $(TEST_FLAGS) :convention:test --continue
 
+CI_IMPACT_BASE ?= origin/master
+GRADLE_PROFILE_DIR ?= build/reports/profile
+GRADLE_PROFILE_OUTCOME ?= unknown
+
+.PHONY: ci-impact-shadow ci-gradle-profile-summary
+ci-impact-shadow: ## Report affected test-task candidates without changing test execution.
+	$(GRADLE_RUNNER) generateModuleGraph
+	python3 -I .github/scripts/ci-impact-shadow.py --base "$(CI_IMPACT_BASE)"
+
+ci-gradle-profile-summary: ## Summarize task work separately from wall time in Gradle profiles.
+	python3 -I .github/scripts/summarize-gradle-profiles.py "$(GRADLE_PROFILE_DIR)" --outcome "$(GRADLE_PROFILE_OUTCOME)" --json build/reports/ci-task-timings/gradle-profiles.json
+
 .PHONY: ci-report-test
 ci-report-test: ## Test CI diagnosis, evidence parsing, and incremental comment lifecycle.
 	@$(MAKE) --no-print-directory qa-test qa-validate
