@@ -160,30 +160,51 @@ show which failures the candidate set would miss. The acceptance evidence must i
 generated sources, shared helpers, dynamic delivery, renames, and deletions. It must also preserve
 complete coverage and distinguish partial test results from a full-suite reuse proof.
 
-### 10. Test a run-isolated Kotlin/Native cache before adopting it
+### 10. Preserve verified Kotlin/Native components between CI runs
 
 [Run 40663275577](https://github.com/simtop/BillionBeers/actions/runs/40663275577) produced the first
 hosted task profiles. Apple compilation took 534 seconds, framework linking 644 seconds, and the
-simulator-test command 496 seconds. Both framework links individually occupied about 625 seconds
-of parallel task work. The simulator phase also spent most of its task work linking test binaries.
-The job restored Gradle state but downloaded Kotlin/Native components into a fresh `.konan` tree.
+simulator-test command 496 seconds. Most simulator task work also came from linking test binaries.
+The job restored Gradle state but rebuilt Kotlin/Native library caches in a fresh `.konan` tree.
+[Kotlin recommends preserving these components](https://kotlinlang.org/docs/native-improving-compilation-time.html#preserve-downloaded-and-cached-components-between-builds).
 
-The cache experiment preserves only Native dependencies and the currently selected compiler,
-including its library caches. A staged copy excludes lock files before archiving; cache-action
-negated globs alone do not filter descendants when the tar input is a parent directory. Gradle
-state stays under its existing cache owner. The hypothesis is that these Native components avoid repeated dependency work during
-linking. Archive restore and save time count against any gain.
+A run-isolated probe held the source, configuration, runner image, Xcode, and Gradle cache inputs
+constant. The first attempt missed; a Native-only retry restored its exact entry. Both passed:
 
-The probe runs only on the same-repository `codex/native-cache-probe` PR. Its exact key includes the
-workflow run ID, runner architecture and image, Xcode version, and tracked Gradle configuration.
-A retry of the same run can hit its first attempt's cache; another workflow run cannot. No prefix
-restore is allowed. Cache errors leave full Apple verification enabled, and a cache is saved only
-after successful compilation, framework links, host build, simulator tests, and report validation.
+| [Run 40705326577](https://github.com/simtop/BillionBeers/actions/runs/40705326577) | Cache restore + copy | Apple compile | Framework links | Host build | Simulator-test command | Snapshot + save | Whole job | Passed cases |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Attempt 1, miss | 0s | 3m10s | 8m47s | 53s | 6m32s | 1m27s | 22m52s | 263 |
+| Attempt 2, hit | 1m02s | 3m17s | 3m29s | 1m26s | 2m51s | 0s | 15m19s | 263 |
 
-A cache hit must pass those same checks on the same source and demonstrate at least a 20% whole-job
-ceiling after transfer overhead before promotion to normal CI. Profiles must show the intended
-work being removed. Small speedup claims still require repeated normalized samples as described
-in ADR 0009. A failed or unhelpful candidate is removed rather than made a permanent CI dependency.
+The hit restored a 621,201,198-byte compressed archive. XML test identities and test-task outcomes
+matched: all 12 non-empty simulator test tasks executed in both attempts. Each framework link's
+profiled task work fell from about 509 seconds to 177 seconds. The fixture, design-system, and
+presentation test links fell from 350/349/303 seconds to 47/53/64 seconds. These overlapping task
+durations explain the improvement; they are not added to calculate wall time.
+
+The observed whole-job reduction was 7m33s (33%). Removing the miss's 87-second snapshot/save cost
+still leaves a 6m06s (28.5%) gap, above the experiment's 20% threshold after hit transfer overhead.
+Compilation, host build, and simulator boot were slower on the hit, so those phases do not explain
+the gain. This pair establishes successful reuse and a useful measured ceiling, not a steady-state
+speedup estimate; small performance claims still require repeated samples under ADR 0009.
+
+Normal CI therefore preserves only Native dependencies and the selected compiler, including its
+library caches. A staged copy excludes `*.lock` and `*.lck` before archiving; cache-action negated
+globs alone do not filter descendants when the tar input is a parent directory. Gradle state stays
+under its existing cache owner. No simulator, app build output, or test report enters this cache.
+
+The exact key includes architecture, runner image, Xcode, Kotlin, tracked Gradle configuration,
+build-logic sources, and compilation/cache drivers. It is shared across compatible runs. There are
+no restore-prefix keys, and only an exact hit is copied into `.konan`. Unknown identity or cache
+errors retain full Apple verification. Compilation, both framework links, host build, simulator
+tests, report validation, and simulator evidence remain blocking on hits and misses.
+
+A successful full validation can publish a missing entry only on a `master` push or a manual
+`master` run without `pull_request_number`. Manual PR validation also uses the master workflow ref
+but checks out a PR merge tree, so it cannot publish this cache. PRs and merge groups restore only.
+The first successful full master validation seeds the cache; until then, runs compile normally.
+Runner-image changes deliberately require a new entry. If post-merge result reuse keeps skipping
+Native after invalidation, a manual master dispatch with `force_full=true` refreshes it.
 
 ## Consequences
 

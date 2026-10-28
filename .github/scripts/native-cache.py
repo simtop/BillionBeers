@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Identify a run-isolated Kotlin/Native cache experiment; never select tests."""
+"""Identify and stage Kotlin/Native compiler components; never select tests."""
 
 from __future__ import annotations
 
@@ -13,13 +13,10 @@ import subprocess
 
 
 def cache_identity(root: Path, environment: dict, xcode_version: str, home: Path) -> dict:
-    run_id = environment.get("GITHUB_RUN_ID", "")
-    if not run_id.isdigit():
-        raise ValueError("a numeric workflow run id is required")
     architecture = environment.get("RUNNER_ARCH")
     host = {"ARM64": "aarch64", "X64": "x86_64"}.get(architecture)
     if environment.get("RUNNER_OS") != "macOS" or host is None:
-        raise ValueError("the cache probe supports only macOS runners")
+        raise ValueError("the component cache supports only macOS runners")
     if not xcode_version.strip() or not environment.get("ImageOS") or not environment.get("ImageVersion"):
         raise ValueError("the exact Xcode and runner image versions are required")
     catalog = (root / "gradle/libs.versions.toml").read_text()
@@ -29,6 +26,8 @@ def cache_identity(root: Path, environment: dict, xcode_version: str, home: Path
     files = subprocess.check_output([
         "git", "ls-files", "-z", "--", "*.gradle.kts", "gradle.properties",
         "gradle/libs.versions.toml", "gradle/wrapper/gradle-wrapper.properties",
+        "build-logic/**/*.kt", "Makefile", "scripts/ios-framework-build.sh",
+        ".github/workflows/ci.yml", ".github/scripts/native-cache.py",
     ], cwd=root).decode().split("\0")
     digest = hashlib.sha256()
     for value in (architecture, environment["ImageOS"], environment["ImageVersion"], xcode_version):
@@ -44,9 +43,9 @@ def cache_identity(root: Path, environment: dict, xcode_version: str, home: Path
     temporary = Path(environment.get("RUNNER_TEMP", ""))
     if not temporary.is_absolute() or "\n" in str(temporary) or "\r" in str(temporary):
         raise ValueError("an absolute runner temporary directory is required")
-    staging = temporary / "native-cache-probe"
+    staging = temporary / "native-cache-components"
     components = ["dependencies", f"kotlin-native-prebuilt-macos-{host}-{version[1]}"]
-    return {"key": f"native-cache-probe-v2-{architecture}-{run_id}-{digest.hexdigest()}",
+    return {"key": f"native-components-v1-{architecture}-{digest.hexdigest()}",
             "paths": "\n".join(str(staging / name) for name in components),
             "kotlin_version": version[1], "components": components,
             "konan_root": directory, "staging_root": staging}
@@ -81,8 +80,8 @@ def main():
         return
     with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
         output.write(f"key={record['key']}\n")
-        output.write(f"paths<<NATIVE_CACHE_PROBE_PATHS\n{record['paths']}\nNATIVE_CACHE_PROBE_PATHS\n")
-    print(f"Kotlin/Native {record['kotlin_version']} cache probe, isolated to this workflow run.")
+        output.write(f"paths<<NATIVE_COMPONENT_PATHS\n{record['paths']}\nNATIVE_COMPONENT_PATHS\n")
+    print(f"Kotlin/Native {record['kotlin_version']} components keyed by toolchain and build configuration.")
 
 
 if __name__ == "__main__":
