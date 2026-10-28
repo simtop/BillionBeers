@@ -160,6 +160,30 @@ show which failures the candidate set would miss. The acceptance evidence must i
 generated sources, shared helpers, dynamic delivery, renames, and deletions. It must also preserve
 complete coverage and distinguish partial test results from a full-suite reuse proof.
 
+### 10. Test a run-isolated Kotlin/Native cache before adopting it
+
+[Run 40663275577](https://github.com/simtop/BillionBeers/actions/runs/40663275577) produced the first
+hosted task profiles. Apple compilation took 534 seconds, framework linking 644 seconds, and the
+simulator-test command 496 seconds. Both framework links individually occupied about 625 seconds
+of parallel task work. The simulator phase also spent most of its task work linking test binaries.
+The job restored Gradle state but downloaded Kotlin/Native components into a fresh `.konan` tree.
+
+The cache experiment preserves only Native dependencies and the currently selected compiler,
+including its library caches. It excludes lock files and keeps Gradle state under its existing
+cache owner. The hypothesis is that these Native components avoid repeated dependency work during
+linking. Archive restore and save time count against any gain.
+
+The probe runs only on the same-repository `codex/native-cache-probe` PR. Its exact key includes the
+workflow run ID, runner architecture and image, Xcode version, and tracked Gradle configuration.
+A retry of the same run can hit its first attempt's cache; another workflow run cannot. No prefix
+restore is allowed. Cache errors leave full Apple verification enabled, and a cache is saved only
+after successful compilation, framework links, host build, simulator tests, and report validation.
+
+A cache hit must pass those same checks on the same source and demonstrate at least a 20% whole-job
+ceiling after transfer overhead before promotion to normal CI. Profiles must show the intended
+work being removed. Small speedup claims still require repeated normalized samples as described
+in ADR 0009. A failed or unhelpful candidate is removed rather than made a permanent CI dependency.
+
 ## Consequences
 
 Validated live rather than by argument. A docs-only push skipped all five lanes with the gate
