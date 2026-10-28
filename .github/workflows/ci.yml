@@ -503,7 +503,7 @@ jobs:
       # local 2 GiB compiler budget GC-thrashed and failed that link on hosted CI.
       # Bound concurrent Gradle work while giving the separate compiler JVM headroom.
       GRADLE_RUNNER: >-
-        ./gradlew --max-workers=2
+        ./gradlew --profile --max-workers=2
         "-Pkotlin.daemon.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=768m -XX:+HeapDumpOnOutOfMemoryError -Xlog:gc,gc+init:file=/tmp/unit-kotlin-gc-%p.log:time,uptime,level,tags"
     steps:
       - name: Checkout code
@@ -530,6 +530,9 @@ jobs:
         run: |
           free -m
           nproc
+
+      - name: Clear stale unit profiles
+        run: rm -rf build/reports/profile build/reports/ci-task-timings
 
       - name: Run Unit Tests
         id: unit_phase
@@ -601,6 +604,25 @@ jobs:
       - name: Summarize unit test failures
         if: always() && steps.unit_phase.outcome == 'failure'
         run: python3 .github/scripts/summarize-test-failures.py unit --detail
+
+      - name: Summarize unit task work
+        if: always()
+        continue-on-error: true
+        env:
+          GRADLE_PROFILE_OUTCOME: ${{ job.status }}
+        run: make ci-gradle-profile-summary
+
+      - name: Archive unit Gradle profiles
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: unit-gradle-profiles
+          path: |
+            build/reports/profile/
+            build/reports/ci-task-timings/
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Archive Test Reports
         if: always()
@@ -855,6 +877,9 @@ jobs:
       # `system-images` cache - a correct re-introduction has to capture the whole SDK/AVD state
       # (licenses + package registry + the created AVD), and must be proven on a live CI run.
 
+      - name: Clear stale managed-device profiles
+        run: rm -rf build/reports/profile build/reports/ci-task-timings
+
       - name: Run instrumented tests on the managed devices
         id: managed_device_tests
         # The `ci` group is the ATD fast lane. The slower API 37 lane is the `compat` group and
@@ -953,16 +978,25 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
+      - name: Summarize managed-device task work
+        if: always()
+        continue-on-error: true
+        env:
+          GRADLE_PROFILE_OUTCOME: ${{ job.status }}
+        run: make ci-gradle-profile-summary
+
       - name: Archive managed-device Gradle profiles
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: managed-device-gradle-profiles
-          path: build/reports/profile/
+          path: |
+            build/reports/profile/
+            build/reports/ci-task-timings/
           # A failure before Gradle starts should preserve the original test verdict rather than
           # replacing it with an artifact error. A green live run must still prove this is present.
           if-no-files-found: warn
-          retention-days: 7
+          retention-days: 14
 
   native-tests:
     name: Native Tests (Apple)
@@ -1227,7 +1261,7 @@ jobs:
           exit 1
 
       - name: Checkout tested source for the verified result proof
-        if: github.event_name == 'pull_request'
+        if: always() && github.event_name == 'pull_request'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.event.inputs.pull_request_number != '' && format('refs/pull/{0}/merge', github.event.inputs.pull_request_number) || '' }}
@@ -1305,6 +1339,39 @@ jobs:
           path: build/verified-master-test-result/verified-master-test-result.json
           if-no-files-found: error
           retention-days: 30
+
+      # These artifacts are diagnostics only and cannot change lane or proof decisions.
+      - name: Download test impact candidates
+        if: always() && github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ci-impact-shadow
+          path: build/reports/ci-impact-evidence/ci-impact-shadow
+
+      - name: Download measured task profiles
+        if: always() && github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: '*-gradle-profiles'
+          path: build/reports/ci-impact-evidence
+          merge-multiple: false
+
+      - name: Compare impact candidates with observed test work
+        if: always() && github.event_name == 'pull_request'
+        continue-on-error: true
+        run: make ci-impact-work
+
+      - name: Archive measured test impact report
+        if: always() && github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: ci-impact-work
+          path: build/reports/ci-impact-work/
+          if-no-files-found: warn
+          retention-days: 14
 
   master-failure-issue:
     name: Track failed master CI run

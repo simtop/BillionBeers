@@ -40,7 +40,8 @@ Only artifacts relevant to failed steps are linked. Available JUnit reports supp
 class/test identifiers and failure details. Build/setup errors and missing reports link to the
 failed job log without guessing a test assertion or claiming that comparison images exist.
 Recognizable error excerpts come from the failed step's time window in its job log. The CI run
-still provides access to all logs and artifacts; artifacts currently expire after seven days.
+still provides access to all logs and artifacts. JUnit and failure artifacts expire after seven days;
+Gradle profiles and impact reports expire after fourteen days.
 
 Artifacts have no run-attempt field. A report is accepted only when its creation timestamp falls
 inside its known producer job's execution window. Earlier-attempt carried-forward failures retain
@@ -96,3 +97,23 @@ Run `make ci-report-test` for parser, renderer, publisher, and mocked lifecycle 
 always-run formatting lane runs the same target. These tests do not post real comments. Live
 workflow event/permission behavior must be checked after the trusted code reaches the default
 branch; the reporter remains best-effort and cannot change the original `CI Gate` result.
+
+## Test impact observations
+
+PR runs attach `ci-impact-shadow` with conservative candidate tasks and the Gradle module graph.
+The `ci-impact-work` artifact and CI Gate summary compare those candidates with the unit,
+screenshot, and managed-device task profiles from the same run, attempt, and checkout. A skipped
+lane or a report from an earlier retry is unavailable evidence. Failed or malformed profiles do not
+become zero-cost measurements.
+
+The report groups concrete test tasks by the owners of configured verification tasks. This includes
+the device tasks underneath managed-device aggregates and the JVM task underneath Paparazzi
+verification. It separates executed test work in candidate owners, work outside those owners,
+unmapped test work, and other task work. Cached/skipped work and unobserved configured owners remain
+explicit in the JSON. Profiles retain each invocation, including repeat execution across root-build
+commands. The separate build-logic test invocation stays full and outside this measurement.
+
+These are sums of task durations, including parallel work. They cannot estimate wall-clock savings
+or authorize skipped tests. Coverage, architecture, tablet journeys, release smoke, and shared
+compilation/setup retain their full scope. Narrower execution still needs omission probes and a
+separate decision under ADR 0008.

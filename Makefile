@@ -326,14 +326,18 @@ build-logic-test: ## Run standalone convention-plugin tests without repeating ap
 CI_IMPACT_BASE ?= origin/master
 GRADLE_PROFILE_DIR ?= build/reports/profile
 GRADLE_PROFILE_OUTCOME ?= unknown
+CI_IMPACT_EVIDENCE_DIR ?= build/reports/ci-impact-evidence
 
-.PHONY: ci-impact-shadow ci-gradle-profile-summary
+.PHONY: ci-impact-shadow ci-gradle-profile-summary ci-impact-work
 ci-impact-shadow: ## Report affected test-task candidates without changing test execution.
 	$(GRADLE_RUNNER) generateModuleGraph
 	python3 -I .github/scripts/ci-impact-shadow.py --base "$(CI_IMPACT_BASE)"
 
 ci-gradle-profile-summary: ## Summarize task work separately from wall time in Gradle profiles.
 	python3 -I .github/scripts/summarize-gradle-profiles.py "$(GRADLE_PROFILE_DIR)" --outcome "$(GRADLE_PROFILE_OUTCOME)" --json build/reports/ci-task-timings/gradle-profiles.json
+
+ci-impact-work: ## Compare impact candidates with measured test work without selecting tests.
+	python3 -I .github/scripts/ci-impact-work.py "$(CI_IMPACT_EVIDENCE_DIR)" --json build/reports/ci-impact-work/report.json
 
 .PHONY: ci-report-test
 ci-report-test: ## Test CI diagnosis, evidence parsing, and incremental comment lifecycle.
