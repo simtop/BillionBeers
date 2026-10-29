@@ -17,6 +17,7 @@ import com.simtop.core.core.Pager
 import com.simtop.core.core.PagingEvent
 import com.simtop.core.core.PagingState
 import com.simtop.core.core.retryWithErrorState
+import com.simtop.core.core.runSuspendCatching
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -192,7 +193,11 @@ open class BeersListViewModel(
 
   private fun loadFirstPageUnlessCacheIsFresh() {
     viewModelScope.launch {
-      if (beersRepository.catalogCacheStatus() != CatalogCacheStatus.Fresh) {
+      val cacheStatus = runSuspendCatching {
+        beersRepository.catalogCacheStatus()
+      }
+        .getOrDefault(CatalogCacheStatus.Stale)
+      if (cacheStatus != CatalogCacheStatus.Fresh) {
         pager.loadFirstPage()
       }
     }
