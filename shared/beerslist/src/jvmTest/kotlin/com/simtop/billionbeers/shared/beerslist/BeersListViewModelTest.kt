@@ -6,10 +6,12 @@ import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.CatalogCacheStatus
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
+import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
 import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.beerdomain.fakes.FakePager
 import com.simtop.billionbeers.testing_utils.MainDispatcherExtension
+import com.simtop.core.core.CachePolicy
 import com.simtop.core.core.CommonUiErrorKey
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.FLOW_RETRY_DELAY_MILLIS
@@ -18,6 +20,7 @@ import com.simtop.core.core.PagedListUiModel
 import com.simtop.core.core.Pager
 import com.simtop.core.core.PagingEvent
 import com.simtop.core.core.PagingState
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.flow
@@ -238,6 +241,52 @@ class BeersListViewModelTest {
       buildViewModel()
 
       expectThat(fakeBeersPagerFactory.pager.loadFirstPageCallCount).isEqualTo(1)
+    }
+
+  @Test
+  fun `cache status read failure starts a guarded first page load`() =
+    runTest(testDispatcher) {
+      BeersListViewModel(
+        repositoryFailingCacheStatus(IllegalStateException("temporary metadata read failure")),
+        fakeBeersPagerFactory,
+      )
+
+      expectThat(fakeBeersPagerFactory.pager.loadFirstPageCallCount).isEqualTo(1)
+    }
+
+  @Test
+  fun `cache status read failure keeps cached beers visible while loading`() =
+    runTest(testDispatcher) {
+      val beer = Beer.empty.copy(id = "cached", name = "Cached beer")
+      fakeBeersRepository.setBeers(listOf(beer))
+      val model =
+        BeersListViewModel(
+          repositoryFailingCacheStatus(IllegalStateException("temporary metadata read failure")),
+          fakeBeersPagerFactory,
+        )
+
+      model.beerListViewState.test {
+        val state = awaitItem() as CommonUiState.Success
+        expectThat(state.data.items).isEqualTo(listOf(beer))
+        cancelAndIgnoreRemainingEvents()
+      }
+      expectThat(fakeBeersPagerFactory.pager.loadFirstPageCallCount).isEqualTo(1)
+    }
+
+  @Test
+  fun `cache status cancellation does not start a first page load`() =
+    runTest(testDispatcher) {
+      BeersListViewModel(
+        repositoryFailingCacheStatus(CancellationException("startup cancelled")),
+        fakeBeersPagerFactory,
+      )
+
+      expectThat(fakeBeersPagerFactory.pager.loadFirstPageCallCount).isEqualTo(0)
+    }
+
+  private fun repositoryFailingCacheStatus(error: Exception): BeersRepository =
+    object : BeersRepository by fakeBeersRepository {
+      override suspend fun catalogCacheStatus(policy: CachePolicy): CatalogCacheStatus = throw error
     }
 
   // Regression test: PagingState.Loading over an already-shown list is a refresh in progress, so
