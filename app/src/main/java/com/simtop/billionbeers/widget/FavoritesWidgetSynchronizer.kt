@@ -11,7 +11,7 @@ internal class FavoritesWidgetSynchronizer(
 ) {
   @Suppress("TooGenericExceptionCaught")
   suspend fun run() {
-    repository.observeFavoritesWidgetItems().collect {
+    repository.observeFavoritesWidgetItems(onReadFailure = onUpdateFailure).collect {
       try {
         updateWidget()
       } catch (exception: CancellationException) {
