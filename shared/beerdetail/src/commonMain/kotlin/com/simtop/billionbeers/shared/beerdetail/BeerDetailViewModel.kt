@@ -30,6 +30,7 @@ open class BeerDetailViewModel(
   ) : this(beersRepository, initialBeer.id, initialBeer)
 
   private var lastKnownBeer = initialBeer
+  private var lastCommittedBeer = initialBeer
 
   private val _beerDetailViewState =
     MutableStateFlow<CommonUiState<Beer>>(
@@ -50,7 +51,12 @@ open class BeerDetailViewModel(
       viewModelScope.launch {
         try {
           val beer = beersRepository.getBeerById(beerId)
-          if (beer == null) _beerDetailViewState.value = CommonUiState.Error() else setBeer(beer)
+          if (beer == null) {
+            _beerDetailViewState.value = CommonUiState.Error()
+          } else {
+            lastCommittedBeer = beer
+            setBeer(beer)
+          }
         } catch (e: kotlinx.coroutines.CancellationException) {
           throw e
         } catch (_: Exception) {
@@ -65,13 +71,11 @@ open class BeerDetailViewModel(
       val version = ++availabilityUpdateVersion
       availabilityUpdateMutex.withLock {
         val current = currentBeer()
-        val originalAvailability = current.availability
-        val newAvailability = !originalAvailability
+        val newAvailability = !current.availability
         val updated = current.copy(availability = newAvailability)
         setBeer(updated)
         treatResponse(
           result = beersRepository.updateAvailability(updated),
-          originalAvailability = originalAvailability,
           optimisticAvailability = newAvailability,
           version = version,
         )
@@ -84,13 +88,11 @@ open class BeerDetailViewModel(
       val version = ++favoriteUpdateVersion
       favoriteUpdateMutex.withLock {
         val current = currentBeer()
-        val originalFavorite = current.isFavorite
-        val newFavorite = !originalFavorite
+        val newFavorite = !current.isFavorite
         val updated = current.copy(isFavorite = newFavorite)
         setBeer(updated)
         treatFavoriteResponse(
           result = beersRepository.updateFavorite(updated),
-          originalFavorite = originalFavorite,
           optimisticFavorite = newFavorite,
           version = version,
         )
@@ -99,6 +101,7 @@ open class BeerDetailViewModel(
   }
 
   protected fun restoreBeer(beer: Beer) {
+    lastCommittedBeer = beer
     if (beer != currentBeer()) setBeer(beer)
   }
 
@@ -118,24 +121,25 @@ open class BeerDetailViewModel(
 
   private suspend fun treatFavoriteResponse(
     result: Either<UpdateFavoriteError, Unit>,
-    originalFavorite: Boolean,
     optimisticFavorite: Boolean,
     version: Long,
   ) {
     when (result) {
       is Either.Left -> {
         if (version == favoriteUpdateVersion && currentBeer().isFavorite == optimisticFavorite) {
-          setBeer(currentBeer().copy(isFavorite = originalFavorite))
+          setBeer(currentBeer().copy(isFavorite = checkNotNull(lastCommittedBeer).isFavorite))
         }
         _events.send(BeerDetailEvent.ShowError(BeerDetailError.FavoriteUpdate))
       }
-      is Either.Right -> _events.send(BeerDetailEvent.FavoriteUpdated)
+      is Either.Right -> {
+        lastCommittedBeer = checkNotNull(lastCommittedBeer).copy(isFavorite = optimisticFavorite)
+        _events.send(BeerDetailEvent.FavoriteUpdated)
+      }
     }
   }
 
   private suspend fun treatResponse(
     result: Either<UpdateAvailabilityError, Unit>,
-    originalAvailability: Boolean,
     optimisticAvailability: Boolean,
     version: Long,
   ) {
@@ -145,11 +149,14 @@ open class BeerDetailViewModel(
           version == availabilityUpdateVersion &&
             currentBeer().availability == optimisticAvailability
         ) {
-          setBeer(currentBeer().copy(availability = originalAvailability))
+          setBeer(currentBeer().copy(availability = checkNotNull(lastCommittedBeer).availability))
         }
         _events.send(BeerDetailEvent.ShowError(BeerDetailError.AvailabilityUpdate))
       }
-      is Either.Right -> Unit
+      is Either.Right -> {
+        lastCommittedBeer =
+          checkNotNull(lastCommittedBeer).copy(availability = optimisticAvailability)
+      }
     }
   }
 }
