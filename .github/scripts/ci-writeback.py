@@ -270,6 +270,18 @@ def snapshot_screenshots(repo: Path, output_path: Path) -> list[dict]:
     return manifest
 
 
+def validate_screenshot_destination(repo: Path, path: str, status: str) -> None:
+    target = repo / path
+    if not target.parent.resolve().is_relative_to(repo.resolve()):
+        raise WritebackError("screenshot target escapes the trusted checkout")
+    if any((repo / parent).is_symlink() for parent in Path(path).parents):
+        raise WritebackError("screenshot target has a symlink parent")
+    if target.is_symlink():
+        raise WritebackError("screenshot target is a symlink")
+    if status in {"M", "D"} and not target.is_file():
+        raise WritebackError("screenshot update or deletion target is not a regular file")
+
+
 def apply_screenshot_archive(repo: Path, archive_path: Path) -> list[str]:
     if archive_path.is_symlink() or not archive_path.is_file():
         raise WritebackError("screenshot archive is missing or is not a regular file")
@@ -313,6 +325,7 @@ def apply_screenshot_archive(repo: Path, archive_path: Path) -> list[str]:
                     raise WritebackError("screenshot update or deletion must target a tracked image")
                 if status == "A" and (tracked(repo, path) or target.exists() or target.is_symlink()):
                     raise WritebackError("new screenshot path already exists in the source tree")
+                validate_screenshot_destination(repo, path, status)
                 if status == "D":
                     if f"files/{path}" in names:
                         raise WritebackError("deleted screenshot unexpectedly has file contents")
@@ -330,15 +343,10 @@ def apply_screenshot_archive(repo: Path, archive_path: Path) -> list[str]:
         raise WritebackError("screenshot archive is malformed") from error
 
     for status, path, content in normalized:
+        validate_screenshot_destination(repo, path, status)
         target = repo / path
         parent = target.parent
-        if not parent.resolve().is_relative_to(repo.resolve()):
-            raise WritebackError("screenshot target escapes the trusted checkout")
-        if parent.is_symlink():
-            raise WritebackError("screenshot target has a symlink parent")
         if status == "D":
-            if target.is_symlink() or not target.is_file():
-                raise WritebackError("screenshot deletion target is not a regular file")
             target.unlink()
         else:
             parent.mkdir(parents=True, exist_ok=True)

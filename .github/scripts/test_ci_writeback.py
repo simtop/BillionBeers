@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
+import json
 import subprocess
 import sys
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 
 SCRIPT = Path(__file__).with_name("ci-writeback.py")
@@ -245,6 +248,56 @@ class CiWritebackTest(unittest.TestCase):
                 archive.writestr("files/../../outside.png", b"evil")
             with self.assertRaises(MODULE.WritebackError):
                 MODULE.apply_screenshot_archive(repo, archive_path)
+
+    def test_rejects_tracked_screenshot_symlinks_before_writing_any_file(self):
+        for destination in ("outside", "inside", "missing"):
+            with self.subTest(destination=destination), tempfile.TemporaryDirectory() as directory:
+                temporary = Path(directory)
+                repo = temporary / "repo"
+                repo.mkdir()
+                subprocess.run(["git", "init", "-q", str(repo)], check=True)
+                folder = repo / "feature/src/test/snapshots/images"
+                folder.mkdir(parents=True)
+                safe = folder / "Safe.png"
+                safe.write_bytes(b"original screenshot")
+                sentinel = (repo if destination == "inside" else temporary) / "sentinel"
+                if destination != "missing":
+                    sentinel.write_bytes(b"original sentinel")
+                unsafe = folder / "Unsafe.png"
+                unsafe.symlink_to(sentinel)
+                subprocess.run(["git", "-C", str(repo), "add", "--", str(folder)], check=True)
+                archive_path = temporary / "screenshots.zip"
+                entries = []
+                with zipfile.ZipFile(archive_path, "w") as archive:
+                    for target in (safe, unsafe):
+                        path = target.relative_to(repo).as_posix()
+                        content = b"replacement"
+                        entries.append({"status": "M", "path": path, "size": len(content),
+                                        "sha256": hashlib.sha256(content).hexdigest()})
+                        archive.writestr(f"files/{path}", content)
+                    archive.writestr("manifest.json", json.dumps({"schema": 1, "files": entries}))
+
+                with self.assertRaisesRegex(MODULE.WritebackError, "target is a symlink"):
+                    MODULE.apply_screenshot_archive(repo, archive_path)
+
+                self.assertEqual(b"original screenshot", safe.read_bytes())
+                self.assertTrue(unsafe.is_symlink())
+                if destination == "missing":
+                    self.assertFalse(sentinel.exists())
+                else:
+                    self.assertEqual(b"original sentinel", sentinel.read_bytes())
+
+    def test_rejects_screenshot_destination_with_any_symlink_ancestor(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo = Path(directory)
+            real = repo / "real/test/snapshots/images"
+            real.mkdir(parents=True)
+            (repo / "feature").mkdir()
+            (repo / "feature/src").symlink_to(repo / "real", target_is_directory=True)
+            with self.assertRaisesRegex(MODULE.WritebackError, "symlink parent"):
+                MODULE.validate_screenshot_destination(
+                    repo, "feature/src/test/snapshots/images/New.png", "A"
+                )
 
     def test_publishes_format_patch_as_fast_forward_to_exact_source_branch(self):
         with tempfile.TemporaryDirectory() as directory:
