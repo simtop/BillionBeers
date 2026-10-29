@@ -288,6 +288,79 @@ internal class BeerDetailViewModelTest {
     }
 
   @Test
+  fun `two failed favorite writes restore the persisted favorite`() =
+    assertFailedSecondWriteRestoresCommittedBeer(favorite = true, firstWriteFails = true)
+
+  @Test
+  fun `failed favorite write preserves an earlier committed write`() =
+    assertFailedSecondWriteRestoresCommittedBeer(favorite = true, firstWriteFails = false)
+
+  @Test
+  fun `two failed availability writes restore the persisted availability`() =
+    assertFailedSecondWriteRestoresCommittedBeer(favorite = false, firstWriteFails = true)
+
+  @Test
+  fun `failed availability write preserves an earlier committed write`() =
+    assertFailedSecondWriteRestoresCommittedBeer(favorite = false, firstWriteFails = false)
+
+  private fun assertFailedSecondWriteRestoresCommittedBeer(
+    favorite: Boolean,
+    firstWriteFails: Boolean,
+  ) =
+    runTest(testDispatcher) {
+      val initial = fakeBeerModel.copy(isFavorite = false, availability = true)
+      val persisted = FakeBeersRepository(listOf(initial))
+      val repository = mockk<BeersRepository>()
+      val releaseFirst = CompletableDeferred<Unit>()
+      var writes = 0
+      suspend fun shouldCommit(): Boolean {
+        val isFirst = ++writes == 1
+        if (isFirst) releaseFirst.await()
+        return isFirst && !firstWriteFails
+      }
+      coEvery { repository.updateFavorite(any()) } coAnswers
+        {
+          if (shouldCommit()) persisted.updateFavorite(firstArg())
+          else Either.Left(UpdateFavoriteError.Unknown(fakeException))
+        }
+      coEvery { repository.updateAvailability(any()) } coAnswers
+        {
+          if (shouldCommit()) persisted.updateAvailability(firstArg())
+          else Either.Left(UpdateAvailabilityError.Unknown(fakeException))
+        }
+      val model = BeerDetailViewModel(repository, initial)
+      val toggle = if (favorite) model::updateFavorite else model::updateAvailability
+      toggle()
+      testDispatcher.scheduler.runCurrent()
+      toggle()
+      testDispatcher.scheduler.runCurrent()
+      expectThat(writes).isEqualTo(1)
+
+      releaseFirst.complete(Unit)
+      testDispatcher.scheduler.advanceUntilIdle()
+
+      expectThat(writes).isEqualTo(2)
+      expectThat((model.beerDetailViewState.value as CommonUiState.Success).data)
+        .isEqualTo(persisted.getBeerById(initial.id))
+    }
+
+  @Test
+  fun `failed edits after an id lookup restore the loaded flags`() =
+    runTest(testDispatcher) {
+      val loaded = fakeBeerModel.copy(availability = false, isFavorite = true)
+      val repository = FakeBeersRepository(listOf(loaded))
+      val model = BeerDetailViewModel(repository, loaded.id)
+      testDispatcher.scheduler.advanceUntilIdle()
+      repository.setExceptionToThrow(fakeException)
+
+      model.updateAvailability()
+      model.updateFavorite()
+      testDispatcher.scheduler.advanceUntilIdle()
+
+      expectThat(model.beerDetailViewState.value).isEqualTo(CommonUiState.Success(loaded))
+    }
+
+  @Test
   fun `older serialized beer payload receives current default fields`() = runTest {
     val oldPayload =
       "{\"id\":\"1\",\"name\":\"Old\",\"tagline\":\"\",\"description\":\"\",\"imageUrl\":\"\",\"abv\":0.0," +
