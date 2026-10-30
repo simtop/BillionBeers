@@ -169,6 +169,9 @@ com.simtop.feature.beerbrowse	BrowseStyleDesignReviewPreview	light	1.0	en	ltr	co
 com.simtop.feature.beerbrowse	BrowseStyleDesignReviewPreview_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
 com.simtop.feature.beerbrowse	BrowseStyleSaveFilterPreview	light	1.0	en	ltr	compact	Light Mode	Themes
 com.simtop.feature.beerbrowse	BrowseStyleSaveFilterPreview_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.beerdetail	BeerDetailLoadErrorPreview	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.feature.beerdetail	BeerDetailLoadErrorPreview_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.feature.beerdetail	BeerDetailLoadErrorPreview_font200_es	light	2.0	es	ltr	compact	Detail load error Spanish large
 com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_dark_font100_en_ltr_compact	dark	1.0	en	ltr	compact
 com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_dark_font100_en_ltr_expanded	dark	1.0	en	ltr	expanded
 com.simtop.feature.beerdetail	ComposeBeerDetailAccessibilityMatrixPreview_dark_font100_en_rtl_compact	dark	1.0	en	rtl	compact

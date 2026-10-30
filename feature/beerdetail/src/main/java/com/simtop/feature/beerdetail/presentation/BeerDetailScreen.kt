@@ -113,7 +113,13 @@ fun BeerDetailScreenImpl(
           },
         )
       }
-      is CommonUiState.Error -> Unit
+      is CommonUiState.Error ->
+        ComposeBeerDetailLoadError(
+          onBackClick = onBackClick,
+          onRetry = viewModel::retryLoad,
+          modifier = modifier,
+          showBackButton = showBackButton,
+        )
       CommonUiState.Loading -> {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
           BrandCircularProgressIndicator()

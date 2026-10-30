@@ -13,6 +13,7 @@ import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.Either
 import io.mockk.coEvery
 import io.mockk.mockk
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
@@ -285,6 +286,71 @@ internal class BeerDetailViewModelTest {
 
       expectThat((viewModel.beerDetailViewState.value as CommonUiState.Success).data)
         .isEqualTo(secondUpdatedBeer)
+    }
+
+  @Test
+  fun `retry recovers a failed lookup and ignores duplicate in flight requests`() =
+    runTest(testDispatcher) {
+      val repository = mockk<BeersRepository>()
+      val releaseRetry = CompletableDeferred<Beer?>()
+      var reads = 0
+      coEvery { repository.getBeerById(fakeBeerModel.id) } coAnswers
+        {
+          if (++reads == 1) throw fakeException
+          releaseRetry.await()
+        }
+      val model = BeerDetailViewModel(repository, fakeBeerModel.id)
+      testDispatcher.scheduler.runCurrent()
+      expectThat(model.beerDetailViewState.value).isA<CommonUiState.Error>()
+
+      model.retryLoad()
+      model.retryLoad()
+      testDispatcher.scheduler.runCurrent()
+      expectThat(reads).isEqualTo(2)
+      expectThat(model.beerDetailViewState.value).isEqualTo(CommonUiState.Loading)
+      releaseRetry.complete(fakeBeerModel)
+      testDispatcher.scheduler.runCurrent()
+
+      expectThat(model.beerDetailViewState.value).isEqualTo(CommonUiState.Success(fakeBeerModel))
+      model.retryLoad()
+      testDispatcher.scheduler.runCurrent()
+      expectThat(reads).isEqualTo(2)
+    }
+
+  @Test
+  fun `retry resolves a beer that was missing on the first lookup`() =
+    runTest(testDispatcher) {
+      val repository = FakeBeersRepository()
+      val model = BeerDetailViewModel(repository, fakeBeerModel.id)
+      testDispatcher.scheduler.runCurrent()
+      expectThat(model.beerDetailViewState.value).isA<CommonUiState.Error>()
+      repository.setBeers(listOf(fakeBeerModel))
+
+      model.retryLoad()
+      testDispatcher.scheduler.runCurrent()
+
+      expectThat(model.beerDetailViewState.value).isEqualTo(CommonUiState.Success(fakeBeerModel))
+    }
+
+  @Test
+  fun `cancelled lookup propagates cancellation and can be explicitly retried`() =
+    runTest(testDispatcher) {
+      val repository = mockk<BeersRepository>()
+      var reads = 0
+      coEvery { repository.getBeerById(fakeBeerModel.id) } coAnswers
+        {
+          if (++reads == 1) throw CancellationException("lookup cancelled")
+          fakeBeerModel
+        }
+      val model = BeerDetailViewModel(repository, fakeBeerModel.id)
+      testDispatcher.scheduler.runCurrent()
+      expectThat(model.beerDetailViewState.value).isEqualTo(CommonUiState.Loading)
+
+      model.retryLoad()
+      testDispatcher.scheduler.runCurrent()
+
+      expectThat(reads).isEqualTo(2)
+      expectThat(model.beerDetailViewState.value).isEqualTo(CommonUiState.Success(fakeBeerModel))
     }
 
   @Test
