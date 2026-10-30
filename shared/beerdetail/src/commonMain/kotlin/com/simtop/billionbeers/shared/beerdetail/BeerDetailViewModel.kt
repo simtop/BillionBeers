@@ -8,6 +8,7 @@ import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.Either
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,23 +46,28 @@ open class BeerDetailViewModel(
   private val favoriteUpdateMutex = Mutex()
   private var availabilityUpdateVersion = 0L
   private var favoriteUpdateVersion = 0L
+  private var loadJob: Job? = null
 
   init {
-    if (initialBeer == null) {
-      viewModelScope.launch {
-        try {
-          val beer = beersRepository.getBeerById(beerId)
-          if (beer == null) {
-            _beerDetailViewState.value = CommonUiState.Error()
-          } else {
-            lastCommittedBeer = beer
-            setBeer(beer)
-          }
-        } catch (e: kotlinx.coroutines.CancellationException) {
-          throw e
-        } catch (_: Exception) {
+    if (initialBeer == null) retryLoad()
+  }
+
+  fun retryLoad() {
+    if (loadJob?.isActive == true || _beerDetailViewState.value is CommonUiState.Success) return
+    loadJob = viewModelScope.launch {
+      _beerDetailViewState.value = CommonUiState.Loading
+      try {
+        val beer = beersRepository.getBeerById(beerId)
+        if (beer == null) {
           _beerDetailViewState.value = CommonUiState.Error()
+        } else {
+          lastCommittedBeer = beer
+          setBeer(beer)
         }
+      } catch (e: kotlinx.coroutines.CancellationException) {
+        throw e
+      } catch (_: Exception) {
+        _beerDetailViewState.value = CommonUiState.Error()
       }
     }
   }

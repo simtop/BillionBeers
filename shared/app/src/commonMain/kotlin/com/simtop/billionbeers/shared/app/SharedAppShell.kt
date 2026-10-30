@@ -49,6 +49,7 @@ import com.simtop.billionbeers.shared.beerdetail.BeerDetailError
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailEvent
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailStrings
 import com.simtop.billionbeers.shared.beerdetail.SharedBeerDetailContent
+import com.simtop.billionbeers.shared.beerdetail.SharedBeerDetailLoadError
 import com.simtop.billionbeers.shared.beersearch.BeersSearchStyleFilter
 import com.simtop.billionbeers.shared.beersearch.SharedBeersSearchContent
 import com.simtop.billionbeers.shared.beerslist.SharedBeersListContent
@@ -835,7 +836,13 @@ private fun DetailDestination(
   when (val currentState = state) {
     CommonUiState.Loading,
     CommonUiState.Empty -> LoadingContent()
-    is CommonUiState.Error -> host.errorContent(currentState, {})
+    is CommonUiState.Error ->
+      SharedBeerDetailLoadError(
+        onBackClick = onBack,
+        backIcon = { host.backIcon(strings.detailStrings.back) },
+        errorContent = { host.errorContent(currentState, entry.viewModel::retryLoad) },
+        showBackButton = showBackButton,
+      )
     is CommonUiState.Success ->
       SharedBeerDetailContent(
         beer = currentState.data,

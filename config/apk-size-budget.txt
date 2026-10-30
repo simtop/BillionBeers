@@ -1,6 +1,7 @@
 # Maximum APK sizes in bytes, measured from release-smoke manifest.txt.
 # The total includes the base APK and both on-demand feature APKs.
 app/build/outputs/apk/releaseSmoke/app-releaseSmoke.apk 36000000
-feature/beerdetail/build/outputs/apk/releaseSmoke/beerdetail-releaseSmoke.apk 110000
+# Detail load-error UI and retry add 9484 bytes (106596 -> 116080); retain the total cap.
+feature/beerdetail/build/outputs/apk/releaseSmoke/beerdetail-releaseSmoke.apk 120000
 feature/beerbrowse/build/outputs/apk/releaseSmoke/beerbrowse-releaseSmoke.apk 115000
 total 36225000

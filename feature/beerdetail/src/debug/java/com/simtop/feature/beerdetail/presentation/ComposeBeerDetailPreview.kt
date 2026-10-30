@@ -14,6 +14,21 @@ import com.simtop.presentation_utils.custom_views.ComposeIntroductionHint
 
 @PreviewLightDark
 @Preview(
+  name = "Detail load error Spanish large",
+  locale = "es",
+  fontScale = 2f,
+  widthDp = 360,
+  heightDp = 800,
+)
+@Composable
+internal fun BeerDetailLoadErrorPreview() {
+  BillionBeersTheme {
+    ComposeBeerDetailLoadError(onBackClick = {}, onRetry = {})
+  }
+}
+
+@PreviewLightDark
+@Preview(
   name = "Favorite hint Spanish large",
   locale = "es",
   fontScale = 2f,
