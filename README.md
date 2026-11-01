@@ -259,7 +259,7 @@ For build-time measurements, use `make build-budget` on a quiet local machine an
 | Tech | Version |
 | :--- | :--- |
 | **Kotlin** | 2.4.21 |
-| **Gradle** | 9.8.1 |
+| **Gradle** | 9.8.2 |
 | **Compose BOM** | 2026.09.00 |
 | **Metro DI** | 1.4.5 |
 | **Room DB** | 2.8.5 |
