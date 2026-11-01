@@ -15,6 +15,7 @@ apply(plugin = "billionbeers.detekt")
 // Matches android.library / android.application. Its absence here meant dynamic features were the
 // one tier the unused-dependency check never looked at.
 apply(plugin = "billionbeers.unused-dependencies")
+apply(plugin = "billionbeers.dependency-linkage")
 
 registerDataLayerClasspathBoundaryCheck()
 

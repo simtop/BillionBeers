@@ -76,7 +76,7 @@ jobs:
               ./gradlew --max-workers=2
               -Pandroid.experimental.testOptions.managedDevices.maxConcurrentDevices=1
           - lane: apple
-            runner: macos-14
+            runner: macos-15
             timeout: 60
     runs-on: ${{ matrix.runner }}
     timeout-minutes: ${{ matrix.timeout }}
@@ -86,11 +86,11 @@ jobs:
       pull-requests: read
     env:
       GRADLE_RUNNER: ${{ matrix.gradle_runner || './gradlew' }}
-      IOS_RUNTIME: '18.2'
+      IOS_RUNTIME: '18.5'
       IOS_DEVICE_NAME: 'BillionBeers iPhone 16'
       IOS_DEVICE_TYPE: 'com.apple.CoreSimulator.SimDeviceType.iPhone-16'
-      IOS_HOST_DESTINATION: 'platform=iOS Simulator,name=BillionBeers iPhone 16,OS=18.2'
-      XCODE_PATH: '/Applications/Xcode_16.2.app'
+      IOS_HOST_DESTINATION: 'platform=iOS Simulator,name=BillionBeers iPhone 16,OS=18.5'
+      XCODE_PATH: '/Applications/Xcode_16.4.app'
     steps:
       - name: Checkout immutable branch head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7

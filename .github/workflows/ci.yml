@@ -410,7 +410,7 @@ jobs:
     needs: format-check
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -426,22 +426,15 @@ jobs:
           git fetch --no-tags --depth=1 origin "$BASE_SHA"
           if git diff --quiet "$BASE_SHA" HEAD -- \
               gradle/libs.versions.toml app/dependencies/releaseRuntimeClasspath.txt \
-              gradle.properties settings.gradle.kts build.gradle.kts 'build-logic/**' '**/build.gradle.kts'; then
+              gradle.properties settings.gradle.kts build.gradle.kts 'build-logic/**' '**/build.gradle.kts' \
+              '.github/scripts/*dependency*' '.github/scripts/CheckDependencyLinkage.java' Makefile; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No dependency inputs changed; API compatibility check is not applicable."
-            exit 0
-          fi
-          git show "$BASE_SHA:app/dependencies/releaseRuntimeClasspath.txt" > "$RUNNER_TEMP/releaseRuntimeClasspath.before.txt"
-          git show "HEAD:app/dependencies/releaseRuntimeClasspath.txt" > "$RUNNER_TEMP/releaseRuntimeClasspath.after.txt"
-          if cmp -s "$RUNNER_TEMP/releaseRuntimeClasspath.before.txt" "$RUNNER_TEMP/releaseRuntimeClasspath.after.txt"; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "The release runtime dependency graph is unchanged; API compatibility check is not applicable."
             exit 0
           fi
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
       - name: Set up JDK 23
-        if: steps.graph.outputs.changed == 'true'
         uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v5
         with:
           java-version: '23'
@@ -457,19 +450,7 @@ jobs:
         if: steps.graph.outputs.changed == 'true'
         run: chmod +x gradlew
 
-      - name: Resolve before and after release artifacts
-        if: steps.graph.outputs.changed == 'true'
-        env:
-          OLD_GRAPH: ${{ runner.temp }}/releaseRuntimeClasspath.before.txt
-          NEW_GRAPH: ${{ runner.temp }}/releaseRuntimeClasspath.after.txt
-          ARTIFACTS: ${{ runner.temp }}/dependency-api-artifacts
-        run: >-
-          ./gradlew --no-configuration-cache -I .github/scripts/resolve-dependency-api-artifacts.init.gradle
-          -PdependencyApiOldGraph="$OLD_GRAPH" -PdependencyApiNewGraph="$NEW_GRAPH" -PdependencyApiOutput="$ARTIFACTS"
-          :app:resolveDependencyApiArtifacts
-
       - name: Download pinned japicmp
-        if: steps.graph.outputs.changed == 'true'
         env:
           # Digest published for this release asset by the japicmp GitHub release API.
           JAPICMP_SHA256: 77df903fa3131828cdf9a3801688a9a2ddf6111e9bbbd99e06e1afc9b601b78e # gitleaks:allow
@@ -480,17 +461,32 @@ jobs:
             -o "$RUNNER_TEMP/japicmp.jar"
           echo "$JAPICMP_SHA256  $RUNNER_TEMP/japicmp.jar" | sha256sum --check
 
-      - name: Compare changed dependency APIs
+      - name: Verify linkage checker with compiled fixtures
+        run: make dependency-api-test JAPICMP="$RUNNER_TEMP/japicmp.jar"
+
+      - name: Resolve release graphs and compile consumers
         if: steps.graph.outputs.changed == 'true'
         env:
-          OLD_GRAPH: ${{ runner.temp }}/releaseRuntimeClasspath.before.txt
-          NEW_GRAPH: ${{ runner.temp }}/releaseRuntimeClasspath.after.txt
-          ARTIFACTS: ${{ runner.temp }}/dependency-api-artifacts
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          DEPENDENCY_API_DIR: ${{ runner.temp }}/dependency-api
+        run: |
+          make dependency-api-graphs BASE_SHA="$BASE_SHA"
+          make dependency-api-inputs
+
+      - name: Compare APIs and check consumer linkage
+        if: steps.graph.outputs.changed == 'true'
+        env:
+          DEPENDENCY_API_DIR: ${{ runner.temp }}/dependency-api
           JAPICMP: ${{ runner.temp }}/japicmp.jar
-        run: >-
-          python3 .github/scripts/check-dependency-api.py
-          --old-graph "$OLD_GRAPH" --new-graph "$NEW_GRAPH"
-          --artifacts "$ARTIFACTS" --japicmp "$JAPICMP"
+        run: make dependency-api-check
+
+      - name: Archive API changes and observed consumer references
+        if: always() && steps.graph.outputs.changed == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: dependency-api-and-linkage
+          path: ${{ runner.temp }}/dependency-api/artifacts/**/reports/
+          if-no-files-found: warn
 
   unit-tests:
     name: Unit Tests
@@ -1002,15 +998,15 @@ jobs:
     name: Native Tests (Apple)
     needs: [format-check, changes]
     if: needs.changes.outputs.native == 'true'
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 45
     env:
       GRADLE_RUNNER: ./gradlew --profile
-      IOS_RUNTIME: '18.2'
+      IOS_RUNTIME: '18.5'
       IOS_DEVICE_NAME: 'BillionBeers iPhone 16'
       IOS_DEVICE_TYPE: 'com.apple.CoreSimulator.SimDeviceType.iPhone-16'
-      IOS_HOST_DESTINATION: 'platform=iOS Simulator,name=BillionBeers iPhone 16,OS=18.2'
-      XCODE_PATH: '/Applications/Xcode_16.2.app'
+      IOS_HOST_DESTINATION: 'platform=iOS Simulator,name=BillionBeers iPhone 16,OS=18.5'
+      XCODE_PATH: '/Applications/Xcode_16.4.app'
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
