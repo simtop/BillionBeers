@@ -36,7 +36,7 @@ composeMaterialIcons = "1.7.3"
 activityCompose = "1.13.0"
 
 # Networking
-com-squareup-okhttp3 = "5.5.0"
+com-squareup-okhttp3 = "5.5.1"
 io-ktor = "3.6.0"
 
 # Testing
