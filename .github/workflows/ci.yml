@@ -998,15 +998,15 @@ jobs:
     name: Native Tests (Apple)
     needs: [format-check, changes]
     if: needs.changes.outputs.native == 'true'
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 45
     env:
       GRADLE_RUNNER: ./gradlew --profile
-      IOS_RUNTIME: '18.2'
+      IOS_RUNTIME: '18.5'
       IOS_DEVICE_NAME: 'BillionBeers iPhone 16'
       IOS_DEVICE_TYPE: 'com.apple.CoreSimulator.SimDeviceType.iPhone-16'
-      IOS_HOST_DESTINATION: 'platform=iOS Simulator,name=BillionBeers iPhone 16,OS=18.2'
-      XCODE_PATH: '/Applications/Xcode_16.2.app'
+      IOS_HOST_DESTINATION: 'platform=iOS Simulator,name=BillionBeers iPhone 16,OS=18.5'
+      XCODE_PATH: '/Applications/Xcode_16.4.app'
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
