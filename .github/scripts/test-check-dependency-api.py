@@ -19,6 +19,30 @@ SPEC.loader.exec_module(MODULE)
 
 
 class DependencyApiTest(unittest.TestCase):
+    def test_japicmp_tolerates_platform_classes_missing_from_dependency_graph(self) -> None:
+        options = MODULE.japicmp_options("com.squareup.okhttp3", "okhttp-android")
+        self.assertIn("--ignore-missing-classes", options)
+        self.assertIn("--error-on-binary-incompatibility", options)
+
+    def test_serialization_comparison_excludes_only_unstable_api(self) -> None:
+        options = MODULE.japicmp_options("org.jetbrains.kotlinx", "kotlinx-serialization-core-jvm")
+        exclude = options[options.index("--exclude") + 1]
+        self.assertIn("kotlinx.serialization.internal", exclude)
+        self.assertIn("kotlinx.serialization.json.internal", exclude)
+        self.assertIn("kotlinx.serialization.json.io.internal", exclude)
+        self.assertIn("kotlinx.serialization.descriptors.ClassSerialDescriptorBuilder", exclude)
+        self.assertIn("getHasInterfaceContextualSerializers$kotlinx_serialization_core", exclude)
+        self.assertIn("JsonConfiguration", exclude)
+        self.assertIn("@kotlinx.serialization.ExperimentalSerializationApi", exclude)
+        self.assertIn("@kotlinx.serialization.InternalSerializationApi", exclude)
+        self.assertIn("--error-on-binary-incompatibility", options)
+        self.assertIn("--no-error-on-exclusion-incompatibility", options)
+
+    def test_unrelated_dependencies_keep_all_api_checks(self) -> None:
+        options = MODULE.japicmp_options("com.squareup.okhttp3", "okhttp-jvm")
+        self.assertNotIn("--exclude", options)
+        self.assertNotIn("--no-error-on-exclusion-incompatibility", options)
+
     def test_graph_reads_coordinates_and_rejects_duplicates(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             graph = Path(directory) / "graph.txt"
