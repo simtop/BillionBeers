@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import io
 import os
 import subprocess
 import sys
@@ -29,7 +30,8 @@ def read_graph(path: Path) -> dict[tuple[str, str], str]:
 
 
 def changed_modules(old: dict[tuple[str, str], str], new: dict[tuple[str, str], str]):
-    return [(key, old[key], new[key]) for key in sorted(old.keys() & new.keys()) if old[key] != new[key]]
+    return [(key, old.get(key), new.get(key)) for key in sorted(old.keys() | new.keys())
+            if old.get(key) != new.get(key)]
 
 
 def extract_class_jar(path: Path, destination: Path) -> Path | None:
@@ -38,16 +40,29 @@ def extract_class_jar(path: Path, destination: Path) -> Path | None:
     if path.suffix != ".aar":
         return None
     with zipfile.ZipFile(path) as archive:
-        try:
-            data = archive.read("classes.jar")
-        except KeyError:
+        jars = [name for name in archive.namelist()
+                if name == "classes.jar" or (name.startswith("libs/") and name.endswith(".jar"))]
+        if not jars:
             return None
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_bytes(data)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        entries = {}
+        with zipfile.ZipFile(destination, "w") as output:
+            for jar in sorted(jars):
+                with zipfile.ZipFile(io.BytesIO(archive.read(jar))) as embedded:
+                    for name in embedded.namelist():
+                        if not name.endswith(".class") or name.startswith("META-INF/"):
+                            continue
+                        data = embedded.read(name)
+                        if name in entries:
+                            if entries[name] != data:
+                                raise ValueError(f"Conflicting embedded class {name} in {path}")
+                        else:
+                            entries[name] = data
+                            output.writestr(name, data)
     return destination
 
 
-def read_artifacts(manifest: Path, output_dir: Path) -> dict[tuple[str, str, str], Path]:
+def read_artifacts(manifest: Path, output_dir: Path) -> dict[tuple[str, str, str, str], Path]:
     result: dict[tuple[str, str, str], Path] = {}
     with manifest.open() as stream:
         for number, raw in enumerate(stream, start=1):
@@ -67,91 +82,99 @@ def read_artifacts(manifest: Path, output_dir: Path) -> dict[tuple[str, str, str
     return result
 
 
-def japicmp_options(group: str, artifact: str) -> list[str]:
-    options = [
-        "--ignore-missing-classes",
-        "-a", "protected", "--only-incompatible",
-        "--error-on-binary-incompatibility", "--markdown",
-    ]
-    if group == "org.jetbrains.kotlinx" and artifact.startswith("kotlinx-serialization-"):
-        # kotlinx.serialization explicitly provides no compatibility guarantee for
-        # ExperimentalSerializationApi or InternalSerializationApi. Its internals
-        # are also in internal packages or use a module-mangled JVM name; japicmp
-        # otherwise treats those expected changes as breaks during ordinary updates.
-        options.extend([
-            "--exclude",
-            "kotlinx.serialization.internal;kotlinx.serialization.json.internal;"
-            "kotlinx.serialization.json.io.internal;kotlinx.serialization.modules.SerialModuleImpl;"
-            "kotlinx.serialization.descriptors.ClassSerialDescriptorBuilder;"
-            "kotlinx.serialization.modules.SerializersModule#getHasInterfaceContextualSerializers$kotlinx_serialization_core();"
-            "kotlinx.serialization.json.Json#get_schemaCache$kotlinx_serialization_json();"
-            "kotlinx.serialization.json.Json$Default;"
-            "kotlinx.serialization.json.JsonBuilder#build$kotlinx_serialization_json();"
-            "kotlinx.serialization.json.JsonConfiguration;"
-            "kotlinx.serialization.json.JsonLiteral#getCoerceToInlineType$kotlinx_serialization_json();"
-            "@kotlinx.serialization.ExperimentalSerializationApi;"
-            "@kotlinx.serialization.InternalSerializationApi",
-            "--no-error-on-exclusion-incompatibility",
-        ])
-    return options
+def japicmp_options() -> list[str]:
+    # Full ABI report, including internal/experimental APIs. Consumer linkage decides
+    # whether a change blocks the app; no library or missing-class allowlists apply.
+    return ["-a", "protected", "--only-incompatible", "--markdown"]
 
 
-def check(args: argparse.Namespace) -> int:
+def read_consumers(path: Path) -> list[tuple[str, str, Path]]:
+    rows = []
+    for raw in path.read_text().splitlines():
+        side, label, value = raw.split("\t")
+        source = Path(value)
+        if side not in {"consumer", "project", "platform"} or not source.exists():
+            raise ValueError(f"Invalid or missing consumer input: {raw}")
+        rows.append((side, label, source))
+    if not any(side == "project" for side, _, _ in rows):
+        raise ValueError("No compiled release consumer inputs")
+    if not any(side == "platform" for side, _, _ in rows):
+        raise ValueError("Android platform classpath is missing")
+    return list(dict.fromkeys(rows))
+
+
+def check_context(args: argparse.Namespace) -> int:
     old_graph = read_graph(args.old_graph)
     new_graph = read_graph(args.new_graph)
     bumps = changed_modules(old_graph, new_graph)
-    if not bumps:
-        print("No existing release-runtime modules changed versions; japicmp check is not applicable.")
-        return 0
-
     artifacts = read_artifacts(args.artifacts / "artifacts.tsv", args.artifacts)
-    classpaths: dict[str, str] = {}
+    consumers = read_consumers(args.artifacts / "consumers.tsv")
+    reports = args.artifacts / "reports"
+    reports.mkdir(exist_ok=True)
+    inputs = []
+    changed_keys = {key for key, _, _ in bumps}
+    for (side, group, artifact, version), path in sorted(artifacts.items()):
+        inputs.append((side, f"{group}:{artifact}:{version}", path))
+        if (group, artifact) in changed_keys:
+            inputs.append(("changed", f"{group}:{artifact}:{version}", path))
+    inputs.extend(consumers)
+    manifest = reports / "linkage-inputs.tsv"
+    manifest.write_text("".join(f"{side}\t{label}\t{path}\n" for side, label, path in inputs))
+    classpaths = {}
     for side in ("old", "new"):
-        jars = sorted({str(path) for (artifact_side, *_), path in artifacts.items() if artifact_side == side})
-        classpaths[side] = os.pathsep.join(jars)
-
-    failures = []
-    compared = 0
-    skipped = []
+        classpaths[side] = os.pathsep.join(dict.fromkeys(
+            str(path) for kind, _, path in inputs if kind in {side, "platform"}
+        ))
+    empty = reports / "empty.jar"
+    with zipfile.ZipFile(empty, "w"):
+        pass
+    report_errors = False
     for (group, artifact), old_version, new_version in bumps:
         old_jar = artifacts.get(("old", group, artifact, old_version))
         new_jar = artifacts.get(("new", group, artifact, new_version))
-        coordinate = f"{group}:{artifact}:{old_version} -> {new_version}"
-        if old_jar is None or new_jar is None:
-            skipped.append(coordinate + " (no JVM classes in the selected artifact)")
+        if old_jar is None and new_jar is None:
+            print(f"{group}:{artifact}: no JVM classes; platform tests cover other targets.")
             continue
-        compared += 1
-        print(f"\n### {coordinate}")
-        result = subprocess.run(
-            [
-                "java", "-jar", str(args.japicmp),
-                "--old", str(old_jar), "--new", str(new_jar),
-                "--old-classpath", classpaths["old"],
-                "--new-classpath", classpaths["new"],
-                *japicmp_options(group, artifact),
-            ],
-            check=False,
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-        )
-        print(result.stdout, end="" if result.stdout.endswith("\n") else "\n")
+        stem = f"{group}-{artifact}"
+        result = subprocess.run([
+            "java", "-jar", str(args.japicmp), "--old", str(old_jar or empty),
+            "--new", str(new_jar or empty), "--old-classpath", classpaths["old"],
+            "--new-classpath", classpaths["new"], "--xml-file", str(reports / f"{stem}.xml"),
+            *japicmp_options(),
+        ], check=False, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        (reports / f"{stem}.md").write_text(result.stdout)
         if result.returncode:
-            failures.append(coordinate)
+            print(result.stdout)
+            report_errors = True
+        print(f"Full API diff: {reports / f'{stem}.md'}")
+    result = subprocess.run([
+        "java", "-Xmx2g", "--class-path", str(args.japicmp),
+        str(Path(__file__).with_name("CheckDependencyLinkage.java")),
+        str(manifest), str(reports / "linkage-risks.tsv"),
+    ], check=False)
+    if report_errors:
+        print("Japicmp could not complete the full API comparison; inspect the archived report.")
+        return 2
+    return result.returncode
 
-    if skipped:
-        print("\nArtifacts without JVM classes (not compared):")
-        for item in skipped:
-            print(f"- {item}")
-    if compared == 0:
-        print("No changed runtime artifacts contained JVM classes to compare.")
-    if failures:
-        print("\nBinary-incompatible dependency API changes detected:")
-        for item in failures:
-            print(f"- {item}")
-        return 1
-    print(f"\nCompared {compared} changed runtime artifact(s); no binary-incompatible API changes found.")
-    return 0
+
+def check(args: argparse.Namespace) -> int:
+    contexts = args.artifacts / "contexts.tsv"
+    if not contexts.exists():
+        return check_context(args)
+    rows = contexts.read_text().splitlines()
+    if not rows:
+        raise ValueError("No release module classpaths were exported")
+    results = []
+    for row in rows:
+        module, raw_path = row.split("\t")
+        directory = Path(raw_path)
+        print(f"\n## Release runtime context {module}", flush=True)
+        results.append(check_context(argparse.Namespace(
+            old_graph=directory / "before.txt", new_graph=directory / "after.txt",
+            artifacts=directory, japicmp=args.japicmp,
+        )))
+    return max(results)
 
 
 def main() -> int:

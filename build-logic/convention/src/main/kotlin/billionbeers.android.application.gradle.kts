@@ -16,6 +16,7 @@ apply(plugin = "billionbeers.jacoco")
 apply(plugin = "billionbeers.spotless")
 apply(plugin = "billionbeers.detekt")
 apply(plugin = "billionbeers.unused-dependencies")
+apply(plugin = "billionbeers.dependency-linkage")
 
 val libs = billionBeersCatalog()
 val android = the<ApplicationExtension>()

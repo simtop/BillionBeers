@@ -493,6 +493,28 @@ check-unused-deps: ## Detect declared but unused dependencies.
 dependency-guard: ## Verify the app's release runtime dependency graph against its committed baseline.
 	$(GRADLE_RUNNER) :app:dependencyGuard
 
+DEPENDENCY_API_DIR ?= $(CURDIR)/build/dependency-api
+JAPICMP ?= $(DEPENDENCY_API_DIR)/japicmp.jar
+
+.PHONY: dependency-api-graphs dependency-api-inputs dependency-api-check dependency-api-test
+dependency-api-graphs: ## Resolve base/candidate release graphs including on-demand features; requires BASE_SHA.
+	@test -n "$(BASE_SHA)"
+	bash .github/scripts/export-dependency-api-graphs.sh "$(BASE_SHA)" "$(DEPENDENCY_API_DIR)" $(GRADLE_RUNNER)
+
+dependency-api-inputs: ## Compile and export release consumers, platform classes, and both dependency graphs.
+	$(GRADLE_RUNNER) --no-configuration-cache -I .github/scripts/resolve-dependency-api-artifacts.init.gradle \
+		-PdependencyApiOldGraph="$(DEPENDENCY_API_DIR)/before.txt" \
+		-PdependencyApiNewGraph="$(DEPENDENCY_API_DIR)/after.txt" \
+		-PdependencyApiOutput="$(DEPENDENCY_API_DIR)/artifacts" :app:resolveDependencyApiArtifacts
+
+dependency-api-check: ## Report full dependency ABI changes; fail on observed consumer linkage regressions.
+	python3 -I .github/scripts/check-dependency-api.py --old-graph "$(DEPENDENCY_API_DIR)/before.txt" \
+		--new-graph "$(DEPENDENCY_API_DIR)/after.txt" --artifacts "$(DEPENDENCY_API_DIR)/artifacts" --japicmp "$(JAPICMP)"
+
+dependency-api-test: ## Test the dependency guard against compiled binary incompatibility fixtures; requires JAPICMP.
+	python3 -I .github/scripts/test-check-dependency-api.py
+	JAPICMP="$(JAPICMP)" python3 -I .github/scripts/test_dependency_linkage.py
+
 dependency-guard-baseline: ## Re-baseline the dependency graph after an intentional change (review the diff before committing).
 	$(GRADLE_RUNNER) :app:dependencyGuardBaseline
 
