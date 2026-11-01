@@ -67,6 +67,35 @@ def read_artifacts(manifest: Path, output_dir: Path) -> dict[tuple[str, str, str
     return result
 
 
+def japicmp_options(group: str, artifact: str) -> list[str]:
+    options = [
+        "--ignore-missing-classes",
+        "-a", "protected", "--only-incompatible",
+        "--error-on-binary-incompatibility", "--markdown",
+    ]
+    if group == "org.jetbrains.kotlinx" and artifact.startswith("kotlinx-serialization-"):
+        # kotlinx.serialization explicitly provides no compatibility guarantee for
+        # ExperimentalSerializationApi or InternalSerializationApi. Its internals
+        # are also in internal packages or use a module-mangled JVM name; japicmp
+        # otherwise treats those expected changes as breaks during ordinary updates.
+        options.extend([
+            "--exclude",
+            "kotlinx.serialization.internal;kotlinx.serialization.json.internal;"
+            "kotlinx.serialization.json.io.internal;kotlinx.serialization.modules.SerialModuleImpl;"
+            "kotlinx.serialization.descriptors.ClassSerialDescriptorBuilder;"
+            "kotlinx.serialization.modules.SerializersModule#getHasInterfaceContextualSerializers$kotlinx_serialization_core();"
+            "kotlinx.serialization.json.Json#get_schemaCache$kotlinx_serialization_json();"
+            "kotlinx.serialization.json.Json$Default;"
+            "kotlinx.serialization.json.JsonBuilder#build$kotlinx_serialization_json();"
+            "kotlinx.serialization.json.JsonConfiguration;"
+            "kotlinx.serialization.json.JsonLiteral#getCoerceToInlineType$kotlinx_serialization_json();"
+            "@kotlinx.serialization.ExperimentalSerializationApi;"
+            "@kotlinx.serialization.InternalSerializationApi",
+            "--no-error-on-exclusion-incompatibility",
+        ])
+    return options
+
+
 def check(args: argparse.Namespace) -> int:
     old_graph = read_graph(args.old_graph)
     new_graph = read_graph(args.new_graph)
@@ -99,8 +128,7 @@ def check(args: argparse.Namespace) -> int:
                 "--old", str(old_jar), "--new", str(new_jar),
                 "--old-classpath", classpaths["old"],
                 "--new-classpath", classpaths["new"],
-                "-a", "protected", "--only-incompatible",
-                "--error-on-binary-incompatibility", "--markdown",
+                *japicmp_options(group, artifact),
             ],
             check=False,
             text=True,
