@@ -1,28 +1,97 @@
 name: Weekly full PR CI
+run-name: "${{ inputs.pull_request_number && format('Full CI for PR #{0}', inputs.pull_request_number) || 'Dispatch weekly full PR CI' }}"
 
 on:
   schedule:
     - cron: '0 5 * * 1'
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      pull_request_number:
+        description: Run full CI for one open PR. Leave blank to dispatch every eligible PR.
+        type: string
+        required: false
 
+cache-mode: read
 permissions:
-  actions: write
   contents: read
-  pull-requests: read
 
 jobs:
   dispatch:
     name: Dispatch full CI for open PRs
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/master' && !inputs.pull_request_number
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+      pull-requests: read
     steps:
       - name: Checkout trusted master workflow code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: master
+          ref: ${{ github.sha }}
+          persist-credentials: false
 
       - name: Dispatch full CI for open PRs
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
         run: python3 -I .github/scripts/dispatch-weekly-pr-full-ci.py
+
+  resolve:
+    name: Resolve one PR merge commit
+    if: github.event_name == 'workflow_dispatch' && inputs.pull_request_number
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      tested_sha: ${{ steps.merge.outputs.sha }}
+    steps:
+      - name: Pin the merge commit for every CI job
+        id: merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ inputs.pull_request_number }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
+            echo "::error::Expected a positive PR number."
+            exit 1
+          fi
+          pr=$(gh api "repos/$REPOSITORY/pulls/$PR_NUMBER")
+          jq -e --arg repository "$REPOSITORY" '
+            .state == "open" and .base.repo.full_name == $repository and
+            (.base.ref == "master" or .base.ref == "main")
+          ' <<< "$pr" > /dev/null
+          base=$(jq -er '.base.sha' <<< "$pr")
+          head=$(jq -er '.head.sha' <<< "$pr")
+          merge=$(gh api "repos/$REPOSITORY/git/ref/pull/$PR_NUMBER/merge" --jq '.object.sha')
+          if [[ ! "$merge" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::GitHub returned no usable PR merge commit."
+            exit 1
+          fi
+          gh api "repos/$REPOSITORY/git/commits/$merge" |
+            jq -e --arg base "$base" --arg head "$head" '.parents | map(.sha) == [$base, $head]' > /dev/null || {
+              echo "::error::The merge commit does not match the current PR base and head."
+              exit 1
+            }
+          echo "sha=$merge" >> "$GITHUB_OUTPUT"
+          printf 'Validating PR #%s at merge commit %s.\n' "$PR_NUMBER" "$merge" >> "$GITHUB_STEP_SUMMARY"
+
+  validate:
+    name: Validate PR
+    needs: resolve
+    cache-mode: read
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: read
+      # The called workflow declares a write-scoped failure reporter for master pushes.
+      # Its job is skipped on dispatch, and the jobs that check out PR code have read scopes.
+      issues: write
+    uses: ./.github/workflows/ci.yml
+    with:
+      force_full: true
+      pull_request_number: ${{ inputs.pull_request_number }}
+      tested_sha: ${{ needs.resolve.outputs.tested_sha }}

@@ -208,7 +208,7 @@ class VerifyWebReleaseArtifactsTest(unittest.TestCase):
                 "GITHUB_JOB": "web-tests",
                 "GITHUB_SHA": "wrong",
             }
-            with patch.dict(os.environ, environment, clear=False):
+            with patch.dict(os.environ, environment, clear=True):
                 with self.assertRaisesRegex(release.VerificationError, "GITHUB_SHA"):
                     release.create_packet(
                         self.make_distribution(root),
@@ -218,6 +218,31 @@ class VerifyWebReleaseArtifactsTest(unittest.TestCase):
                         source_revision="revision",
                         working_tree="clean",
                     )
+
+    def test_pr_dispatch_records_event_and_tested_revisions(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            event_sha = "a" * 40
+            tested_sha = "b" * 40
+            environment = {key: "fixture" for key in release.PROVENANCE_KEYS} | {
+                "GITHUB_ACTIONS": "true",
+                "GITHUB_SHA": event_sha,
+                "CI_TESTED_SHA": tested_sha,
+            }
+            distribution = self.make_distribution(root)
+            with patch.dict(os.environ, environment, clear=True):
+                manifest = release.create_packet(
+                    distribution, root / "packet", repository=root, browser_smoke_passed=True,
+                    source_revision=tested_sha, working_tree="clean",
+                )
+                with self.assertRaisesRegex(release.VerificationError, "CI_TESTED_SHA"):
+                    release.create_packet(
+                        distribution, root / "wrong", repository=root, browser_smoke_passed=True,
+                        source_revision=event_sha, working_tree="clean",
+                    )
+            self.assertEqual(event_sha, manifest["provenance"]["GITHUB_SHA"])
+            self.assertEqual(tested_sha, manifest["provenance"]["CI_TESTED_SHA"])
+            self.assertEqual(manifest, release.verify_packet(root / "packet"))
 
     def test_manifest_rejects_unsafe_paths(self):
         with tempfile.TemporaryDirectory() as temporary:

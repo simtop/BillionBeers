@@ -148,9 +148,12 @@ def _provenance(source_revision: str) -> dict[str, str]:
         missing = [key for key in PROVENANCE_KEYS if not os.environ.get(key)]
         if missing:
             raise VerificationError("GitHub Actions provenance is incomplete: " + ", ".join(missing))
-        if values["GITHUB_SHA"] != source_revision:
+        if tested_sha := os.environ.get("CI_TESTED_SHA"):
+            values["CI_TESTED_SHA"] = tested_sha
+        expected_key = "CI_TESTED_SHA" if tested_sha else "GITHUB_SHA"
+        if values[expected_key] != source_revision:
             raise VerificationError(
-                f"GITHUB_SHA {values['GITHUB_SHA']} does not match checked-out revision {source_revision}"
+                f"{expected_key} {values[expected_key]} does not match checked-out revision {source_revision}"
             )
     return values
 
@@ -310,9 +313,9 @@ def verify_packet(packet: Path) -> dict[str, object]:
     provenance = manifest.get("provenance", {})
     if not isinstance(provenance, dict):
         raise VerificationError("packet manifest has invalid provenance")
-    github_sha = provenance.get("GITHUB_SHA")
-    if github_sha is not None and github_sha != source_revision:
-        raise VerificationError("packet provenance GITHUB_SHA does not match source revision")
+    expected_key = "CI_TESTED_SHA" if "CI_TESTED_SHA" in provenance else "GITHUB_SHA"
+    if expected_key in provenance and provenance[expected_key] != source_revision:
+        raise VerificationError(f"packet provenance {expected_key} does not match source revision")
     manifest_files = manifest.get("files")
     if not isinstance(manifest_files, list) or not manifest_files:
         raise VerificationError("packet manifest has no files")

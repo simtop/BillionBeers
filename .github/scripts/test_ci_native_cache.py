@@ -114,13 +114,13 @@ class NativeCacheTest(unittest.TestCase):
         condition = " ".join(condition.split()).replace("&&", " and ").replace("||", " or ")
         # Evaluate the actual workflow condition over events, including master dispatches
         # that deliberately check out a PR merge ref instead of trusted master source.
-        expression = re.sub(r"\b(?:github|steps)\.[A-Za-z0-9_.-]+", lambda match: f"values[{match[0]!r}]", condition)
+        expression = re.sub(r"\b(?:github|inputs|steps)\.[A-Za-z0-9_.-]+", lambda match: f"values[{match[0]!r}]", condition)
         defaults = {"github.ref": "refs/heads/master", "github.event_name": "push",
-                    "github.event.inputs.pull_request_number": "",
+                    "inputs.tested_sha": "",
                     "steps.native-cache-restore.outputs.cache-hit": "false",
                     "steps.native-cache-key.outputs.key": "valid-key"}
         cases = [({}, True), ({"github.event_name": "workflow_dispatch"}, True),
-                 ({"github.event_name": "workflow_dispatch", "github.event.inputs.pull_request_number": "42"}, False),
+                 ({"github.event_name": "workflow_dispatch", "inputs.tested_sha": "a" * 40}, False),
                  ({"github.event_name": "pull_request"}, False), ({"github.event_name": "merge_group"}, False),
                  ({"github.ref": "refs/heads/feature"}, False),
                  ({"steps.native-cache-restore.outputs.cache-hit": "true"}, False),
