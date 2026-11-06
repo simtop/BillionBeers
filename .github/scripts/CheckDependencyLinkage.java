@@ -13,6 +13,7 @@ import javassist.bytecode.*;
 public class CheckDependencyLinkage {
     record Input(String side, String label, Path path) {}
     record Reference(String owner, String name, String descriptor, boolean field, Boolean isStatic) {}
+    record BytecodeReferences(Set<Reference> members, Set<String> instantiations) {}
     record Member(CtClass owner, int flags) {}
     static final Pattern DESCRIPTOR = Pattern.compile("L([^;]+);");
     final ClassPool oldPool = new ClassPool(false);
@@ -21,7 +22,7 @@ public class CheckDependencyLinkage {
     final Set<String> externalClasses = new HashSet<>();
     final Map<String, Boolean> affected = new HashMap<>();
     final Map<String, String> externalOrigins = new HashMap<>();
-    final Map<String, Set<Reference>> oldReferences = new HashMap<>();
+    final Map<String, BytecodeReferences> oldReferences = new HashMap<>();
     final Map<String, Set<String>> oldTypes = new HashMap<>();
     final Set<String> visited = new HashSet<>();
     final Set<String> findings = new TreeSet<>();
@@ -136,7 +137,7 @@ public class CheckDependencyLinkage {
         boolean changedConsumer = changed.contains(className);
         if (!affected(ref.owner(), new HashSet<>()) && !changedConsumer) return;
         relevantReferences++;
-        boolean introducedReference = changedConsumer && !oldReferences.get(className).contains(ref);
+        boolean introducedReference = changedConsumer && !oldReferences.get(className).members().contains(ref);
         var missingOld = new TreeSet<String>();
         var before = member(oldPool, ref.owner(), ref, new HashSet<>(), missingOld);
         var missingNew = new TreeSet<String>();
@@ -178,16 +179,19 @@ public class CheckDependencyLinkage {
         while (matcher.find()) types.add(matcher.group(1).replace('/', '.'));
     }
 
-    static Set<Reference> memberReferences(ClassFile file) throws Exception {
+    static BytecodeReferences bytecodeReferences(ClassFile file) throws Exception {
         var cp = file.getConstPool();
         var refs = new HashSet<Reference>();
+        var instantiations = new HashSet<String>();
         for (int i = 1; i < cp.getSize(); i++) {
             Reference ref = reference(cp, i, null);
             if (ref != null) refs.add(ref);
             if (cp.getTag(i) == ConstPool.CONST_MethodHandle) {
                 int kind = cp.getMethodHandleKind(i);
-                refs.add(reference(cp, cp.getMethodHandleIndex(i), kind == ConstPool.REF_invokeStatic
-                    || kind == ConstPool.REF_getStatic || kind == ConstPool.REF_putStatic));
+                Reference target = reference(cp, cp.getMethodHandleIndex(i), kind == ConstPool.REF_invokeStatic
+                    || kind == ConstPool.REF_getStatic || kind == ConstPool.REF_putStatic);
+                refs.add(target);
+                if (kind == ConstPool.REF_newInvokeSpecial && target != null) instantiations.add(target.owner());
             }
         }
         for (MethodInfo method : file.getMethods()) {
@@ -199,10 +203,11 @@ public class CheckDependencyLinkage {
                 if (opcode >= Opcode.GETSTATIC && opcode <= Opcode.INVOKEINTERFACE)
                     refs.add(reference(cp, code.u16bitAt(offset + 1),
                         opcode == Opcode.GETSTATIC || opcode == Opcode.PUTSTATIC || opcode == Opcode.INVOKESTATIC));
+                if (opcode == Opcode.NEW) instantiations.add(cp.getClassInfo(code.u16bitAt(offset + 1)));
             }
         }
         refs.remove(null);
-        return refs;
+        return new BytecodeReferences(refs, instantiations);
     }
 
     static Set<String> referencedTypes(ClassFile file) {
@@ -224,18 +229,28 @@ public class CheckDependencyLinkage {
         if (!visited.add(file.getName())) return;
         String caller = externalOrigins.getOrDefault(file.getName(), origin) + "!" + file.getName();
         boolean changedConsumer = changed.contains(file.getName());
+        BytecodeReferences usage = bytecodeReferences(file);
         if (changedConsumer) {
             CtClass before = oldPool.getOrNull(file.getName());
-            oldReferences.put(file.getName(), before == null ? Set.of() : memberReferences(before.getClassFile2()));
+            oldReferences.put(file.getName(), before == null
+                ? new BytecodeReferences(Set.of(), Set.of()) : bytecodeReferences(before.getClassFile2()));
             oldTypes.put(file.getName(), before == null ? Set.of() : referencedTypes(before.getClassFile2()));
         }
         for (String type : referencedTypes(file)) {
             if (!changed.contains(type) && !changedConsumer) continue;
             CtClass before = oldPool.getOrNull(type);
             CtClass after = newPool.getOrNull(type);
+            boolean wasConcrete = before != null && !Modifier.isAbstract(before.getModifiers());
+            boolean brokenInstantiation = usage.instantiations().contains(type)
+                && after != null && !after.isInterface() && Modifier.isAbstract(after.getModifiers())
+                && (wasConcrete || changedConsumer && !oldReferences.get(file.getName()).instantiations().contains(type));
             relevantReferences++;
-            observed.add(caller + "\t" + type + "\t" + (after != null ? "resolves-in-candidate"
-                : before == null ? "unresolved-in-both-graphs" : "regression"));
+            String resolution = after != null ? "resolves-in-candidate"
+                : before == null ? "unresolved-in-both-graphs" : "regression";
+            observed.add(caller + "\t" + type + "\t" + (brokenInstantiation ? "regression" : resolution));
+            if (brokenInstantiation)
+                finding(caller, type, wasConcrete ? "instantiated class became abstract"
+                    : "updated consumer instantiates an abstract class");
             if (before != null && after == null) finding(caller, type, "previously resolved class is missing");
             if (before == null && after == null && changedConsumer && !oldTypes.get(file.getName()).contains(type))
                 finding(caller, type, "updated consumer introduces an unresolved class reference");
@@ -246,7 +261,7 @@ public class CheckDependencyLinkage {
                     finding(caller, type, "class is no longer public");
             }
         }
-        for (Reference ref : memberReferences(file)) reference(caller, file.getName(), ref);
+        for (Reference ref : usage.members()) reference(caller, file.getName(), ref);
         checkInheritance(caller, file);
     }
 

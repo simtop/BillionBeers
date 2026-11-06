@@ -36,6 +36,10 @@ and new abstract requirements on concrete consumers. Method matching includes th
 so a retained overload does not conceal a removed overload. Inherited members are resolved through
 the class hierarchy. References in descriptors and method handles are included.
 
+The checker flags a class that becomes abstract when consumer bytecode instantiates it through
+`new` or a constructor method handle. A type in a signature, an array element type, or a call to
+a superclass constructor can still refer to an abstract class.
+
 Exit code `0` means no observed linkage regression. Exit code `1` means a consumer has a linkage
 risk. Exit code `2` means analysis could not complete, including missing inputs or an unresolved
 hierarchy needed to decide a regression. Missing compiled consumers never produce a green result.
