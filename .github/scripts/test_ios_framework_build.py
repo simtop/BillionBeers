@@ -50,7 +50,9 @@ with tempfile.TemporaryDirectory() as temporary:
 project = (ROOT / "iosApp/BillionBeers.xcodeproj/project.pbxproj").read_text()
 makefile = (ROOT / "Makefile").read_text()
 workflow_tests = makefile.split("ci-report-test:", 1)[1].split("\n\n", 1)[0]
-assert "scripts/ios-framework-build.sh" in project
+framework_phase = project.split("/* Gradle Framework */ = {", 1)[1].split("\n    };", 1)[0]
+assert "scripts/ios-framework-build.sh" in framework_phase
+assert "alwaysOutOfDate = 1;" in framework_phase
 assert "./gradlew :ios-shared:embedAndSignAppleFrameworkForXcode" not in project
 assert "IOS_HOST_WRITE_VERIFICATION_METADATA=1 $(MAKE)" in makefile
 assert "test_ios_framework_build.py" in workflow_tests

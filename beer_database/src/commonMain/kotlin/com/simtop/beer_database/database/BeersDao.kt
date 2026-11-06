@@ -25,7 +25,10 @@ abstract class BeersDao {
   @Query("SELECT id, availability, is_favorite FROM beers WHERE id IN (:ids)")
   abstract fun observeLocalFlags(ids: List<String>): Flow<List<BeerLocalFlagsDbModel>>
 
-  @Query("SELECT * FROM beers WHERE is_in_catalog = 1")
+  @Query(
+    "SELECT * FROM beers WHERE is_in_catalog = 1 " +
+      "ORDER BY catalog_page IS NULL, catalog_page, catalog_index, name, id"
+  )
   abstract fun getCatalogBeers(): Flow<List<BeerDbModel>>
 
   @Query("SELECT * FROM beers WHERE is_favorite = 1 ORDER BY name, id")
@@ -91,6 +94,8 @@ abstract class BeersDao {
   // Pull-to-refresh update that deliberately omits the availability column: the server's
   // `available`
   // only seeds a row on first insert, and a user's later edit is authoritative and must survive.
+  // Room binds each updated column separately so local flags are excluded from the write.
+  @Suppress("LongParameterList")
   @Query(
     """
         UPDATE beers
@@ -111,7 +116,13 @@ abstract class BeersDao {
         fermentation_method = :fermentationMethod,
         ingredients = :ingredients,
         recommended_glasses = :recommendedGlasses,
-        is_in_catalog = is_in_catalog OR :isInCatalog
+        is_in_catalog = is_in_catalog OR :isInCatalog,
+        catalog_page = CASE
+          WHEN :catalogPage IS NOT NULL AND (catalog_page IS NULL OR catalog_page >= :catalogPage)
+          THEN :catalogPage ELSE catalog_page END,
+        catalog_index = CASE
+          WHEN :catalogPage IS NOT NULL AND (catalog_page IS NULL OR catalog_page >= :catalogPage)
+          THEN :catalogIndex ELSE catalog_index END
         WHERE id = :id
         """
   )
@@ -134,6 +145,8 @@ abstract class BeersDao {
     ingredients: String,
     recommendedGlasses: String,
     isInCatalog: Boolean,
+    catalogPage: Int?,
+    catalogIndex: Int?,
   )
 
   @Transaction
@@ -146,8 +159,20 @@ abstract class BeersDao {
     upsertBeers(beers, isInCatalog = false)
   }
 
-  private suspend fun upsertBeers(beers: List<BeerDbModel>, isInCatalog: Boolean) {
-    val catalogBeers = beers.map { it.copy(isInCatalog = isInCatalog) }
+  private suspend fun upsertBeers(
+    beers: List<BeerDbModel>,
+    isInCatalog: Boolean,
+    pageKey: Int? = null,
+  ) {
+    val catalogPage = pageKey.takeIf { isInCatalog }
+    val firstIndexById = mutableMapOf<String, Int>()
+    val catalogBeers = beers.mapIndexed { index, beer ->
+      beer.copy(
+        isInCatalog = isInCatalog,
+        catalogPage = catalogPage,
+        catalogIndex = catalogPage?.let { firstIndexById.getOrPut(beer.id) { index } },
+      )
+    }
     val results = insertIgnoringConflicts(catalogBeers)
     for (i in results.indices) {
       if (results[i] == -1L) {
@@ -171,6 +196,8 @@ abstract class BeersDao {
           beer.ingredients,
           beer.recommendedGlasses,
           isInCatalog,
+          beer.catalogPage,
+          beer.catalogIndex,
         )
       }
     }
@@ -239,6 +266,7 @@ abstract class BeersDao {
    * A null incoming [nextKey] records a completed surface while retaining the last positive key for
    * diagnostics. A later successful refresh with a continuation reopens a completed surface.
    */
+  @Suppress("LongParameterList") // The page and its bookmark are committed together.
   @Transaction
   open suspend fun insertPage(
     beers: List<BeerDbModel>,
@@ -246,8 +274,9 @@ abstract class BeersDao {
     nextKey: Int?,
     totalCount: Int?,
     refreshedAt: Long,
+    pageKey: Int? = null,
   ) {
-    upsertBeers(beers, isInCatalog = surface.startsWith("catalog:"))
+    upsertBeers(beers, isInCatalog = surface.startsWith("catalog:"), pageKey = pageKey)
     if (surface.startsWith("catalog:")) deleteOtherCatalogPagingStates(surface)
     val existing = getPagingState(surface)
     upsertPagingState(

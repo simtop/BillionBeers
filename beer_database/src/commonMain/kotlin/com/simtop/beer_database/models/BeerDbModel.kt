@@ -34,4 +34,6 @@ data class BeerDbModel(
   @ColumnInfo(name = "recommended_glasses", defaultValue = "[]")
   val recommendedGlasses: String = "[]",
   @ColumnInfo(name = "is_in_catalog", defaultValue = "1") val isInCatalog: Boolean = true,
+  @ColumnInfo(name = "catalog_page") val catalogPage: Int? = null,
+  @ColumnInfo(name = "catalog_index") val catalogIndex: Int? = null,
 )

@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.invisibleToUser
 import androidx.compose.ui.semantics.liveRegion
@@ -203,7 +204,6 @@ private fun IosBeerRow(
         .padding(horizontal = 12.dp, vertical = 4.dp)
         .clickable(onClick = onClick)
         .semantics(mergeDescendants = true) {
-          contentDescription = "${beer.name}. $availability"
           role = Role.Button
           stateDescription = availability
         },
@@ -228,7 +228,11 @@ private fun IosBeerRow(
           style = BillionBeersTheme.typography.labelMedium,
           color = BillionBeersTheme.colorScheme.onSurfaceVariant,
         )
-        BrandAvailabilityBadge(text = availability, available = beer.availability)
+        BrandAvailabilityBadge(
+          text = availability,
+          available = beer.availability,
+          modifier = Modifier.clearAndSetSemantics {},
+        )
       }
     }
   }

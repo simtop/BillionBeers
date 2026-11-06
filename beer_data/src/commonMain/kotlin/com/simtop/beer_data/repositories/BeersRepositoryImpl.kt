@@ -34,6 +34,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.SerializationException
 
 @SingleIn(AppScope::class)
 @Inject
@@ -53,7 +54,13 @@ class BeersRepositoryImpl(
       }
     return withFetchDiagnostics(logger, FetchFailureOrigin.MAPPING) {
       BeerPage(
-        items = remotePage.items.map { beersMapper.fromBeersApiResponseItemToBeer(it) },
+        items =
+          remotePage.items.map { item ->
+            if (item.id.isNullOrBlank()) {
+              throw SerializationException("Beer page contains an item without an ID")
+            }
+            beersMapper.fromBeersApiResponseItemToBeer(item)
+          },
         totalCount = remotePage.totalCount,
       )
     }

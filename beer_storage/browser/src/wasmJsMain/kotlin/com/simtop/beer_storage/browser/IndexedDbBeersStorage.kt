@@ -165,7 +165,7 @@ import kotlinx.serialization.json.Json
       } else if (operation === 'insertAll') {
         const rows = JSON.parse(payload);
         const ids = [...new Set(rows.map(row => row.id))];
-        const existingById = {};
+        const existingById = Object.create(null);
         const committedRows = [];
         let remaining = ids.length;
         const mergeRows = () => {
@@ -202,7 +202,7 @@ import kotlinx.serialization.json.Json
       } else if (operation === 'cacheBeersForDetail') {
         const rows = JSON.parse(payload);
         const ids = [...new Set(rows.map(row => row.id))];
-        const existingById = {};
+        const existingById = Object.create(null);
         const committedRows = [];
         let remaining = ids.length;
         const mergeRows = () => {
@@ -271,7 +271,7 @@ import kotlinx.serialization.json.Json
           const isComplete = incomingNext == null || input.beers.length === 0;
           const beerRequests = input.beers.map(row => beers.get(row.id));
           let remaining = beerRequests.length;
-          const existingRows = {};
+          const existingRows = Object.create(null);
           const committedPaging = {
             surface: input.surface,
             nextKey,
@@ -291,7 +291,7 @@ import kotlinx.serialization.json.Json
               bookmarks.onerror = () => fail(bookmarks.error);
             }
             const committedRows = [];
-            const firstIndexById = {};
+            const firstIndexById = Object.create(null);
             input.beers.forEach((row, index) => {
               if (firstIndexById[row.id] == null) firstIndexById[row.id] = index;
             });
