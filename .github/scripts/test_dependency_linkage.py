@@ -153,6 +153,44 @@ class LinkageTest(unittest.TestCase):
         self.assertEqual(1, result.returncode, report)
         self.assertIn("lib.Api#<init>()V", report)
 
+    def test_precompiled_factory_cannot_instantiate_class_that_became_abstract(self):
+        result, report = self.fixture(
+            "public class Api { public Api() {} }",
+            "public abstract class Api { public Api() {} }",
+            {"app/Client.java": "package app; public class Client { "
+                                "public static void main(String[] args) { other.Factory.create(); } }"},
+            extra_old={"other/Factory.java": "package other; public class Factory { "
+                                             "public static Object create() { return new lib.Api(); } }"},
+        )
+        runtime_classpath = [self.root / name for name in ("consumer.jar", "old-extra.jar", "new.jar")]
+        runtime = subprocess.run(
+            ["java", "-cp", os.pathsep.join(map(str, runtime_classpath)), "app.Client"],
+            capture_output=True, text=True,
+        )
+        self.assertNotEqual(0, runtime.returncode)
+        self.assertIn("InstantiationError: lib.Api", runtime.stderr)
+        self.assertEqual(1, result.returncode, report + result.stderr)
+        self.assertIn("unchanged-dependency!other.Factory\tlib.Api\tinstantiated class became abstract", report)
+
+    def test_constructor_method_handle_cannot_instantiate_class_that_became_abstract(self):
+        result, report = self.fixture(
+            "public class Api {}",
+            "public abstract class Api {}",
+            {"app/Client.java": "package app; public class Client { "
+                                "java.util.function.Supplier<lib.Api> factory() { return lib.Api::new; } }"},
+        )
+        self.assertEqual(1, result.returncode, report + result.stderr)
+        self.assertIn("app.Client\tlib.Api\tinstantiated class became abstract", report)
+
+    def test_abstract_superclass_and_array_element_type_remain_usable(self):
+        result, report = self.fixture(
+            "public class Api {}",
+            "public abstract class Api {}",
+            {"app/Client.java": "package app; public class Client extends lib.Api { "
+                                "lib.Api[] types() { return new lib.Api[1]; } }"},
+        )
+        self.assertEqual(0, result.returncode, report + result.stderr)
+
     def test_reduced_access_blocks(self):
         result, report = self.fixture("public class Api { public void used() {} }",
             "public class Api { private void used() {} }",
