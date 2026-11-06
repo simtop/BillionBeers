@@ -762,6 +762,7 @@ class DependabotPreparationTest(unittest.TestCase):
                       managed_plan)
 
         apple = make_dry_run("apple")
+        self.assertIn(":desktop-app:checkRuntime", apple)
         for task in (":ios-shared:compileKotlinIosArm64", ":ios-shared:compileKotlinIosSimulatorArm64",
                      ":ios-shared:linkDebugFrameworkIosSimulatorArm64", ":ios-shared:linkDebugFrameworkIosArm64"):
             self.assertIn(task, apple)

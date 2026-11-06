@@ -80,7 +80,21 @@ class BenchmarkBudgetParserTest(unittest.TestCase):
         result = self.check(data)
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertIn("SKIP startup:timeToInitialDisplayMs", result.stdout)
+        self.assertIn("report only (emulator)", result.stdout)
         self.assertIn("budgets are not enforced here", result.stdout)
+
+    def test_other_phone_or_sdk_is_reported_without_enforcing_the_reference_budget(self) -> None:
+        for model, device, sdk in (("Pixel 9", "tokay", 37), ("Pixel 8", "shiba", 36)):
+            with self.subTest(device=device, sdk=sdk):
+                data = report(600)
+                data["context"]["build"].update(
+                    model=model, device=device, version={"sdk": sdk},
+                    fingerprint=f"google/{device}/{device}:17/reference/user/release-keys",
+                )
+                result = self.check(data)
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertIn(f"{model} (API {sdk})", result.stdout)
+                self.assertIn("600.0ms - report only (uncalibrated device/API)", result.stdout)
 
     def test_missing_argument_or_file_is_rejected(self) -> None:
         for args in ((), (str(self.path),)):
@@ -146,12 +160,15 @@ class BenchmarkBudgetParserTest(unittest.TestCase):
                 self.assert_rejected(data, diagnostic)
 
     def test_invalid_device_context_is_rejected(self) -> None:
+        build = report()["context"]["build"]
         for context, diagnostic in (
             (None, "no valid device context/build object"),
             ({"build": []}, "no valid device context/build object"),
             ({"build": {"version": []}}, "device build version must be an object"),
-            ({"build": {"model": []}}, "device identifiers must be scalar values"),
-            ({"build": {"model": "Pixel\n8"}}, "device label contains control characters"),
+            ({"build": {"version": {"sdk": 37}, "model": []}}, "must be non-empty strings"),
+            ({"build": build | {"version": {}}}, "positive integer SDK"),
+            ({"build": build | {"device": ""}}, "must be non-empty strings"),
+            ({"build": build | {"model": "Pixel\n8"}}, "device label contains control characters"),
         ):
             with self.subTest(context=context):
                 data = report()

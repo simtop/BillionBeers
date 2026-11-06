@@ -132,8 +132,9 @@ Recording these because the symptom in every case was a number that looked fine.
 machine can fail them with nothing wrong. Mitigated two ways, not solved: budgets sit at roughly
 3–4x the measured median and comfortably above the worst of ten iterations; and the `ratio` check
 between two scenarios in the same run reduces shared hardware variance. It does not eliminate all
-hardware or workload effects. The separate startup budget is now 500 ms on physical devices, as
-documented in `scripts/check-benchmark-budget.sh`, not the earlier emulator-derived 3000 ms policy.
+hardware or workload effects. The separate startup budget is 500 ms on the reference physical
+Pixel 8 (shiba) at API 37. Other device and API combinations produce a report without budget
+enforcement. See `scripts/check-benchmark-budget.sh` for the calibration measurements.
 
 **A local gate depends on someone running it.** Unlike the coverage floor, nothing forces this
 before a merge. Accepted for the same reason `make benchmark-check` is accepted: a number that is

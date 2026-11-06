@@ -10,6 +10,7 @@ import json
 import os
 import plistlib
 import shutil
+import struct
 import subprocess
 import sys
 from pathlib import Path, PurePosixPath
@@ -24,6 +25,15 @@ TARGET = "ios-simulator"
 APP_RELATIVE_PATH = "simulator-app/BillionBeers.app"
 REPORT_RELATIVE_PATH = "native-test-reports"
 APP_BUNDLE_IDENTIFIER = "com.simtop.billionbeers.ios"
+MACH_HEADER_64 = struct.Struct("<8I")
+LOAD_COMMAND = struct.Struct("<2I")
+BUILD_VERSION_BODY = struct.Struct("<4I")
+MH_MAGIC_64 = 0xFEEDFACF
+CPU_TYPE_ARM64 = 0x0100000C
+MH_EXECUTE = 2
+MH_DYLIB = 6
+LC_BUILD_VERSION = 0x32
+PLATFORM_IOSSIMULATOR = 7
 REQUIRED_MODULES = ("core-common", "beer_network", "beer_database", "ios-shared")
 REPORT_RELATIVE_DIR = "build/test-results/iosSimulatorArm64Test"
 PROVENANCE_KEYS = (
@@ -158,7 +168,45 @@ def _provenance(source_revision: str) -> dict[str, str]:
     return values
 
 
-def _validate_app(app: Path) -> list[str]:
+def _validate_simulator_binary(path: Path, expected_type: int) -> None:
+    # The host build produces thin arm64 binaries. Inspect only the header and
+    # load commands so packet verification also works without Xcode.
+    if not path.is_file():
+        raise VerificationError(f"simulator binary is missing: {path}")
+    with path.open("rb") as binary:
+        header = binary.read(MACH_HEADER_64.size)
+        if len(header) != MACH_HEADER_64.size:
+            raise VerificationError(f"truncated Mach-O header: {path}")
+        magic, cpu, _, file_type, count, command_bytes, _, _ = MACH_HEADER_64.unpack(header)
+        if (magic, cpu, file_type) != (MH_MAGIC_64, CPU_TYPE_ARM64, expected_type):
+            raise VerificationError(f"expected a thin arm64 Mach-O of the appropriate type: {path}")
+        end = MACH_HEADER_64.size + command_bytes
+        if end > os.fstat(binary.fileno()).st_size:
+            raise VerificationError(f"truncated Mach-O load commands: {path}")
+
+        platforms = []
+        for _ in range(count):
+            start = binary.tell()
+            if start + LOAD_COMMAND.size > end:
+                raise VerificationError(f"invalid Mach-O load command count: {path}")
+            command, size = LOAD_COMMAND.unpack(binary.read(LOAD_COMMAND.size))
+            if size < LOAD_COMMAND.size or size % 8 or start + size > end:
+                raise VerificationError(f"invalid Mach-O load command size: {path}")
+            if command == LC_BUILD_VERSION:
+                if size < LOAD_COMMAND.size + BUILD_VERSION_BODY.size:
+                    raise VerificationError(f"truncated Mach-O build version: {path}")
+                platform, _, _, tools = BUILD_VERSION_BODY.unpack(binary.read(BUILD_VERSION_BODY.size))
+                if size != LOAD_COMMAND.size + BUILD_VERSION_BODY.size + tools * 8:
+                    raise VerificationError(f"invalid Mach-O build version size: {path}")
+                platforms.append(platform)
+            binary.seek(start + size)
+        if binary.tell() != end:
+            raise VerificationError(f"invalid Mach-O load command region: {path}")
+        if platforms != [PLATFORM_IOSSIMULATOR]:
+            raise VerificationError(f"expected Mach-O platform IOSSIMULATOR: {path}")
+
+
+def _validate_app(app: Path) -> None:
     app = app.resolve()
     if not app.is_dir() or app.suffix != ".app":
         raise VerificationError(f"simulator application bundle does not exist: {app}")
@@ -174,19 +222,18 @@ def _validate_app(app: Path) -> list[str]:
     if info.get("CFBundleIdentifier") != APP_BUNDLE_IDENTIFIER:
         raise VerificationError("Info.plist has an unexpected bundle identifier")
     executable_name = info.get("CFBundleExecutable")
-    if not isinstance(executable_name, str) or not executable_name:
-        raise VerificationError("Info.plist has no executable name")
-    executable = app / executable_name
-    if not executable.is_file() or executable.stat().st_size == 0:
-        raise VerificationError(f"simulator executable is missing or empty: {executable}")
+    if (
+        not isinstance(executable_name, str)
+        or not executable_name
+        or Path(executable_name).name != executable_name
+    ):
+        raise VerificationError("Info.plist has an invalid executable name")
+    _validate_simulator_binary(app / executable_name, MH_EXECUTE)
+    debug_library = app / f"{executable_name}.debug.dylib"
+    if debug_library.exists():
+        _validate_simulator_binary(debug_library, MH_DYLIB)
     framework = app / "Frameworks" / "BillionBeersData.framework"
-    if not framework.is_dir() or not _files(framework):
-        raise VerificationError(f"embedded simulator framework is missing or empty: {framework}")
-    return [
-        info_path.relative_to(app).as_posix(),
-        executable.relative_to(app).as_posix(),
-        framework.relative_to(app).as_posix(),
-    ]
+    _validate_simulator_binary(framework / "BillionBeersData", MH_DYLIB)
 
 
 def _assert_separate(app: Path, reports: Path, output: Path) -> None:

@@ -347,6 +347,7 @@ ci-report-test: ## Test CI diagnosis, evidence parsing, and incremental comment 
 	@python3 -I scripts/test_release_preflight.py
 	@python3 scripts/test_android_test_task.py
 	@$(MAKE) --no-print-directory benchmark-budget-test
+	@$(MAKE) --no-print-directory desktop-package-test
 	@$(MAKE) --no-print-directory build-time-budget-test
 	@python3 scripts/check_skill_format.py
 	@python3 scripts/test_check_skill_format.py
@@ -571,6 +572,7 @@ VERIFICATION_METADATA_NATIVE_TASK_SEPARATOR := :
 VERIFICATION_METADATA_NATIVE_TASK_TWO = $(VERIFICATION_METADATA_NATIVE_TASK_SEPARATOR)$(1)$(VERIFICATION_METADATA_NATIVE_TASK_SEPARATOR)$(2)
 VERIFICATION_METADATA_NATIVE_TASK_THREE = $(VERIFICATION_METADATA_NATIVE_TASK_SEPARATOR)$(1)$(VERIFICATION_METADATA_NATIVE_TASK_SEPARATOR)$(2)$(VERIFICATION_METADATA_NATIVE_TASK_SEPARATOR)$(3)
 VERIFICATION_METADATA_NATIVE_TASKS := \
+	$(call VERIFICATION_METADATA_NATIVE_TASK_TWO,desktop-app,checkRuntime) \
 	$(call VERIFICATION_METADATA_NATIVE_TASK_TWO,core-common,compileKotlinIosArm64) $(call VERIFICATION_METADATA_NATIVE_TASK_THREE,beerdomain,api,compileKotlinIosArm64) \
 	$(call VERIFICATION_METADATA_NATIVE_TASK_THREE,beerdomain,fakes,compileKotlinIosArm64) $(call VERIFICATION_METADATA_NATIVE_TASK_THREE,beer_network,api,compileKotlinIosArm64) \
 	$(call VERIFICATION_METADATA_NATIVE_TASK_THREE,beer_network,fixtures,compileKotlinIosArm64) $(call VERIFICATION_METADATA_NATIVE_TASK_TWO,beer_network,compileKotlinIosArm64) \
@@ -654,6 +656,7 @@ else
 		:app:atdApi35ReleaseSmokeAndroidTest :feature:beerdetail:assembleReleaseSmoke :feature:beerbrowse:assembleReleaseSmoke
 endif
 else ifeq ($(LANE),apple)
+	$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS) :desktop-app:checkRuntime
 	IOS_HOST_WRITE_VERIFICATION_METADATA=1 $(MAKE) GRADLE_RUNNER='$(GRADLE_RUNNER) $(VERIFICATION_WRITE_FLAGS)' ios-compile ios-framework ios-host-build ios-test
 else
 	@echo "Unknown metadata preparation lane: $(LANE)" >&2; exit 2
@@ -701,7 +704,7 @@ benchmark-micro: ## Run microbenchmarks on a connected device.
 benchmark-macro: ## Run macrobenchmarks on a connected device.
 	$(GRADLE_RUNNER) :benchmark:macrobenchmark:connectedCheck
 
-benchmark-check: ## Run macrobenchmarks and fail if results exceed the configured performance budget.
+benchmark-check: ## Run macrobenchmarks and enforce startup budget on the reference Pixel 8, API 37.
 	@set -e; \
 	chmod +x scripts/check-benchmark-budget.sh; \
 	marker=$$(mktemp "$${TMPDIR:-/tmp}/benchmark-check.XXXXXX"); \

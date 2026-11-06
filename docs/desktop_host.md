@@ -26,8 +26,9 @@ make desktop-package-verify
 
 The package is produced under `desktop-app/build/compose/binaries/main/dmg/`, and the corresponding
 application bundle is under `desktop-app/build/compose/binaries/main/app/BillionBeers.app/`. The
-verifier checks the bundle's `Info.plist`, bundle identifier, executable, non-empty Resources
-directory, and DMG presence. On macOS it also checks that the executable is a Mach-O arm64 binary.
+verifier checks the bundle's `Info.plist`, bundle identifier, Mach-O arm64 executable and non-empty
+Resources directory. It verifies the DMG with `hdiutil`, mounts it read-only, checks the app inside
+the image and detaches the volume.
 
 Run the packaged executable through its deterministic headless CLI path with:
 

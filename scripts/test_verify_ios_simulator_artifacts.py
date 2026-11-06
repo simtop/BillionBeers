@@ -6,6 +6,7 @@ import importlib.util
 import json
 import os
 import plistlib
+import struct
 import sys
 import tempfile
 import unittest
@@ -22,13 +23,18 @@ SPEC.loader.exec_module(module)
 
 
 class VerifyIosSimulatorArtifactsTest(unittest.TestCase):
+    @staticmethod
+    def macho(*, file_type: int = 2, cpu: int = 0x0100000C, platform: int = 7) -> bytes:
+        command = struct.pack("<6I", 0x32, 24, platform, 0, 0, 0)
+        return struct.pack("<8I", 0xFEEDFACF, cpu, 0, file_type, 1, len(command), 0, 0) + command
+
     def make_app(self, root: Path) -> Path:
         app = root / "BillionBeers.app"
         (app / "Frameworks" / "BillionBeersData.framework").mkdir(parents=True)
         (app / "Resources").mkdir()
-        (app / "BillionBeers").write_bytes(b"simulator executable")
+        (app / "BillionBeers").write_bytes(self.macho())
         (app / "Frameworks" / "BillionBeersData.framework" / "BillionBeersData").write_bytes(
-            b"framework"
+            self.macho(file_type=6)
         )
         (app / "Resources" / "fixture.dat").write_bytes(b"resource")
         (app / "Info.plist").write_bytes(
@@ -180,7 +186,7 @@ class VerifyIosSimulatorArtifactsTest(unittest.TestCase):
             with self.assertRaisesRegex(module.VerificationError, "unsafe packet path"):
                 module.verify_packet(packet)
 
-    def test_invalid_bundle_metadata_and_missing_framework_are_rejected(self):
+    def test_invalid_bundle_metadata_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             app = self.make_app(root)
@@ -200,6 +206,29 @@ class VerifyIosSimulatorArtifactsTest(unittest.TestCase):
                     provenance={},
                 )
 
+    def test_packet_creation_rejects_wrong_architecture_type_and_load_commands(self):
+        for binary, diagnostic in (
+            (self.macho(cpu=0x01000007), "thin arm64 Mach-O"),
+            (self.macho(file_type=6), "appropriate type"),
+            (self.macho()[:-1], "truncated Mach-O load commands"),
+            (self.macho(platform=2), "IOSSIMULATOR"),
+        ):
+            with self.subTest(diagnostic=diagnostic), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                app = self.make_app(root)
+                (app / "BillionBeers").write_bytes(binary)
+                with self.assertRaisesRegex(module.VerificationError, diagnostic):
+                    self.create_packet(root, app=app)
+
+    def test_packet_verification_rejects_device_framework_and_debug_library(self):
+        for binary in ("Frameworks/BillionBeersData.framework/BillionBeersData", "BillionBeers.debug.dylib"):
+            with self.subTest(binary=binary), tempfile.TemporaryDirectory() as directory:
+                packet = self.create_packet(Path(directory))
+                (packet / module.APP_RELATIVE_PATH / binary).write_bytes(self.macho(file_type=6, platform=2))
+                with self.assertRaisesRegex(module.VerificationError, "IOSSIMULATOR"):
+                    module.verify_packet(packet)
+
+    def test_missing_framework_binary_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             app = self.make_app(root)

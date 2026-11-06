@@ -36,7 +36,7 @@ fi
 # Like config/build-time-budget.txt, this is a property of the reference hardware. A slower physical
 # device can exceed it with nothing wrong; re-calibrate rather than assume a regression.
 #
-# Emulator reports are valid evidence but never gated: an identical-code before/after comparison
+# Other device/API pairs are valid evidence but are report-only. An identical-code comparison
 # swung 160 ms on emulator versus 2.5 ms on Pixel 8. Enforcing a physical-device budget there would
 # either fail constantly or stop meaning anything, as the old 3000 ms budget did.
 budget_ms_for() {
@@ -103,39 +103,51 @@ context = data.get("context")
 if not isinstance(context, dict) or not isinstance(context.get("build"), dict):
     raise SystemExit("error: benchmark report has no valid device context/build object")
 build = context["build"]
-version = build.get("version", {})
+version = build.get("version")
 if not isinstance(version, dict):
     raise SystemExit("error: benchmark report device build version must be an object")
-parts = [build.get("fingerprint", ""), build.get("model", ""), build.get("device", "")]
-if not all(isinstance(part, (str, int, float)) for part in parts):
-    raise SystemExit("error: benchmark report device identifiers must be scalar values")
-blob = " ".join(str(part) for part in parts).lower()
+parts = [build.get(key) for key in ("fingerprint", "model", "device")]
+if not all(isinstance(part, str) and part.strip() for part in parts):
+    raise SystemExit("error: benchmark report fingerprint, model and device must be non-empty strings")
+_, model, device = parts
+sdk = version.get("sdk")
+if type(sdk) is not int or sdk <= 0:
+    raise SystemExit("error: benchmark report must identify a positive integer SDK level")
+blob = " ".join(parts).lower()
 is_emulator = any(marker in blob for marker in ("sdk_gphone", "generic", "emulator", "goldfish", "ranchu"))
-model = str(build.get("model", "?"))
-sdk = str(version.get("sdk", "?"))
 cpu_locked = str(context.get("cpuLocked", "?"))
-if any(c in value for value in (model, sdk, cpu_locked) for c in "\t\r\n"):
+if any(c in value for value in (*parts, cpu_locked) for c in "\t\r\n"):
     raise SystemExit("error: benchmark report device label contains control characters")
+if is_emulator:
+    budget_scope = "emulator"
+elif (model, device, sdk) == ("Pixel 8", "shiba", 37):
+    budget_scope = "reference"
+else:
+    budget_scope = "uncalibrated device/API"
 
 print(f"DEVICE\t{model} (API {sdk}), cpuLocked={cpu_locked}")
-print(f"EMULATOR\t{'yes' if is_emulator else 'no'}")
+print(f"BUDGET_SCOPE\t{budget_scope}")
 for name, metric_name, median in rows:
     print(f"METRIC\t{name}\t{metric_name}\t{median}")
 PY
 )
 
-IS_EMULATOR=""
+BUDGET_SCOPE=""
 DEVICE_LABEL=""
 FAILED=0
 while IFS=$'\t' read -r kind first second third; do
   case "$kind" in
     DEVICE) DEVICE_LABEL="$first" ;;
-    EMULATOR) IS_EMULATOR="$first" ;;
+    BUDGET_SCOPE) BUDGET_SCOPE="$first" ;;
     METRIC)
       key="${first}:${second}"
       budget="$(budget_ms_for "$key")"
       if [ -z "$budget" ]; then
         echo "warning: no budget configured for '$key' (median ${third}ms) - skipping" >&2
+        continue
+      fi
+      if [ "$BUDGET_SCOPE" != "reference" ]; then
+        echo "SKIP $key: ${third}ms - report only ($BUDGET_SCOPE)"
         continue
       fi
       if python3 - "$third" "$budget" <<'PY'
@@ -144,8 +156,6 @@ sys.exit(0 if float(sys.argv[1]) <= float(sys.argv[2]) else 1)
 PY
       then
         echo "OK   $key: ${third}ms <= ${budget}ms budget"
-      elif [ "$IS_EMULATOR" = "yes" ]; then
-        echo "SKIP $key: ${third}ms > ${budget}ms budget - reported, not gated (emulator)"
       else
         echo "FAIL $key: ${third}ms > ${budget}ms budget"
         FAILED=1
@@ -154,7 +164,7 @@ PY
   esac
 done <<< "$REPORT"
 
-if [ -z "$DEVICE_LABEL" ] || [ -z "$IS_EMULATOR" ]; then
+if [ -z "$DEVICE_LABEL" ] || [ -z "$BUDGET_SCOPE" ]; then
   echo "error: validated benchmark report did not provide device evidence" >&2
   exit 1
 fi
@@ -165,8 +175,8 @@ if [ "$FAILED" -eq 1 ]; then
   exit 1
 fi
 
-if [ "$IS_EMULATOR" = "yes" ]; then
-  echo "All benchmarks reported (emulator - budgets are not enforced here)."
-else
+if [ "$BUDGET_SCOPE" = "reference" ]; then
   echo "All benchmarks within budget."
+else
+  echo "All benchmarks reported ($BUDGET_SCOPE - budgets are not enforced here)."
 fi
