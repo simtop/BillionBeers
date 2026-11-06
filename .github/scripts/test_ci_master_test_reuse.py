@@ -138,13 +138,9 @@ class SelectMasterReuseTest(unittest.TestCase):
         workflow_jobs = re.findall(r"^    name: (.+)$", workflow, re.MULTILINE)
         self.assertCountEqual(workflow_jobs, [job["name"] for job in self.api.jobs])
 
-    def test_dependency_api_job_may_succeed_or_skip_but_must_complete(self):
+    def test_dependency_api_job_must_succeed(self):
         job = next(job for job in self.api.jobs if job["name"] == "Dependency API Compatibility")
-        for conclusion in ("success", "skipped"):
-            with self.subTest(conclusion=conclusion):
-                job["conclusion"] = conclusion
-                self.assertEqual((True, 99, 17), self.select())
-        for conclusion in ("failure", "cancelled", "neutral", None):
+        for conclusion in ("skipped", "failure", "cancelled", "neutral", None):
             with self.subTest(conclusion=conclusion):
                 job["conclusion"] = conclusion
                 self.assertRaises(ValueError, self.select)

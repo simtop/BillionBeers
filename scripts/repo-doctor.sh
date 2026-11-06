@@ -9,6 +9,7 @@ repo="${REPO:-${1:-}}"
 requested_branch="${BRANCH:-${2:-}}"
 expected_default_branch="${REPO_DOCTOR_DEFAULT_BRANCH:-master}"
 required_check="${REPO_DOCTOR_REQUIRED_CHECK:-CI Gate}"
+required_check_app="${REPO_DOCTOR_REQUIRED_CHECK_APP_ID:-15368}"
 required_secret="${REPO_DOCTOR_REQUIRED_SECRET:-VERIFICATION_METADATA_DEPLOY_KEY}"
 failures=0
 
@@ -75,14 +76,30 @@ protection_json="$(gh api "repos/$repo/branches/$branch/protection" 2>/dev/null 
 if [[ -z "$protection_json" ]]; then
   fail "branch protection could not be read for $branch"
 else
-  if jq -e --arg check "$required_check" '
+  if jq -e --arg check "$required_check" --argjson app "$required_check_app" '
       .required_status_checks != null and
       .required_status_checks.strict == true and
-      (.required_status_checks.contexts // []) == [$check]
+      (.required_status_checks.contexts // []) == [$check] and
+      (.required_status_checks.checks // []) == [{context: $check, app_id: $app}]
     ' >/dev/null <<<"$protection_json"; then
-    pass "branch protection requires only the strict status check: $required_check"
+    pass "branch protection requires only $required_check from app $required_check_app with strict checks"
   else
-    fail "branch protection does not require exactly one strict status check: $required_check"
+    fail "branch protection must require only $required_check from app $required_check_app with strict checks"
+  fi
+
+  if jq -e '
+    .required_pull_request_reviews != null and
+    ([.required_pull_request_reviews.bypass_pull_request_allowances // {} | .[] | .[]] | length) == 0
+  ' >/dev/null <<<"$protection_json"; then
+    pass 'branch protection requires pull requests without a bypass list'
+  else
+    fail 'branch protection must require pull requests without a bypass list'
+  fi
+
+  if jq -e '.enforce_admins.enabled == true' >/dev/null <<<"$protection_json"; then
+    pass 'branch protection applies to administrators'
+  else
+    fail 'branch protection must apply to administrators'
   fi
 
   if jq -e '.allow_force_pushes.enabled == false and .allow_deletions.enabled == false' \

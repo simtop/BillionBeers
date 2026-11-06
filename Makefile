@@ -343,6 +343,8 @@ ci-impact-work: ## Compare impact candidates with measured test work without sel
 ci-report-test: ## Test CI diagnosis, evidence parsing, and incremental comment lifecycle.
 	@$(MAKE) --no-print-directory qa-test qa-validate
 	@$(MAKE) --no-print-directory make-help-test
+	@$(MAKE) --no-print-directory release-version-test web-image-proxy-test
+	@python3 -I scripts/test_release_preflight.py
 	@python3 scripts/test_android_test_task.py
 	@$(MAKE) --no-print-directory benchmark-budget-test
 	@$(MAKE) --no-print-directory build-time-budget-test

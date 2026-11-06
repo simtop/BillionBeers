@@ -25,10 +25,10 @@ REQUIRED_JOBS = {
     "Static Analysis (Detekt)", "Android Lint", "Dependency Guard", "Unit Tests",
     "Web Tests (Wasm/static)", "Screenshot Tests (Paparazzi)",
     "Instrumented Tests (Gradle Managed Device)", "Native Tests (Apple)", "CI Gate",
+    "Dependency API Compatibility",
 }
 # These jobs belong to every workflow run but have conditional PR outcomes.
 CONDITIONAL_JOB_CONCLUSIONS = {
-    "Dependency API Compatibility": {"success", "skipped"},
     "Track failed master CI run": {"skipped"},
 }
 

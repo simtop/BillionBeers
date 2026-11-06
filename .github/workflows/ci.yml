@@ -243,6 +243,20 @@ jobs:
           echo "### Reused verified PR test result" >> "$GITHUB_STEP_SUMMARY"
           echo "The merged tree matches the successful, full-suite [PR #$SOURCE_PR run $SOURCE_RUN_ID](https://github.com/$REPOSITORY/actions/runs/$SOURCE_RUN_ID)." >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Verify the PR merge parents
+        id: pr-context
+        if: github.event_name == 'pull_request'
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [[ "$(git rev-parse HEAD^1)" == "$PR_BASE" && "$(git rev-parse HEAD^2)" == "$PR_HEAD" ]]; then
+            echo "label=PR $PR_NUMBER base $PR_BASE" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Checkout parents do not match the PR event. Running all test lanes."
+          fi
+
       - name: Classify changed paths
         id: filter
         if: steps.reuse.outputs.eligible != 'true'
@@ -253,8 +267,35 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           BEFORE: ${{ github.event.before }}
           AFTER: ${{ github.event.after }}
+          PR_CONTEXT: ${{ steps.pr-context.outputs.label }}
           REPO: ${{ github.repository }}
         run: bash .github/scripts/detect-change-scope.sh
+
+      - name: Identify the tested PR and selected lanes
+        id: verdict
+        if: steps.pr-context.outputs.label != ''
+        env:
+          PR_CONTEXT: ${{ steps.pr-context.outputs.label }}
+          UNIT: ${{ steps.filter.outputs.unit }}
+          SCREENSHOT: ${{ steps.filter.outputs.screenshot }}
+          INSTRUMENTED: ${{ steps.filter.outputs.instrumented }}
+          NATIVE: ${{ steps.filter.outputs.native }}
+          WEB: ${{ steps.filter.outputs.web }}
+        run: |
+          lanes=""
+          for selected in "$UNIT" "$SCREENSHOT" "$INSTRUMENTED" "$NATIVE" "$WEB"; do
+            case "$selected" in
+              true) lanes+="1" ;;
+              false) lanes+="0" ;;
+              *) exit 0 ;;
+            esac
+          done
+          echo "label=$PR_CONTEXT lanes $lanes" >> "$GITHUB_OUTPUT"
+
+      # Job step names remain readable after the run even when its PR association is empty.
+      - name: ${{ steps.verdict.outputs.label || 'No reusable PR verdict' }}
+        if: steps.verdict.outputs.label != ''
+        run: ':'
 
   secret-scan:
     name: Secret Scan (gitleaks)
@@ -1280,12 +1321,49 @@ jobs:
       - dependency-api
     runs-on: ubuntu-latest
     steps:
-      - name: Fail if any required job failed or was cancelled
-        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+      - name: Require the expected CI jobs to succeed
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          NEEDS_JSON: ${{ toJSON(needs) }}
         run: |
-          echo "One or more CI jobs failed or were cancelled:"
-          echo '${{ toJSON(needs) }}'
-          exit 1
+          python3 -I - <<'PY'
+          import json
+          import os
+
+          needs = json.loads(os.environ["NEEDS_JSON"])
+          expected = {
+              job: "success"
+              for job in ("format-check", "changes", "lint", "android-lint", "dependency-guard")
+          }
+          pr_result = "success" if os.environ["EVENT_NAME"] == "pull_request" else "skipped"
+          expected.update({"secret-scan": pr_result, "dependency-api": pr_result})
+          outputs = needs.get("changes", {}).get("outputs", {})
+          lanes = {
+              "unit": "unit-tests",
+              "screenshot": "screenshot-tests",
+              "instrumented": "instrumented-tests",
+              "native": "native-tests",
+              "web": "web-tests",
+          }
+          errors = []
+          for lane, job in lanes.items():
+              selected = outputs.get(lane)
+              if selected not in ("true", "false"):
+                  errors.append(f"Invalid or missing selection for {lane}")
+              else:
+                  expected[job] = "success" if selected == "true" else "skipped"
+          for job, result in expected.items():
+              actual = needs.get(job, {}).get("result", "missing")
+              if actual != result:
+                  errors.append(f"{job} expected {result}, got {actual}")
+          for job in needs.keys() - expected.keys():
+              actual = needs[job].get("result", "missing")
+              if actual != "success":
+                  errors.append(f"{job} has no skip policy and reported {actual}")
+          for error in errors:
+              print(f"::error::{error}")
+          raise SystemExit(bool(errors))
+          PY
 
       - name: Checkout tested source for the verified result proof
         if: always() && github.event_name == 'pull_request'
@@ -1314,7 +1392,7 @@ jobs:
           needs.format-check.result == 'success' && needs.changes.result == 'success' &&
           needs.secret-scan.result == 'success' && needs.lint.result == 'success' &&
           needs.android-lint.result == 'success' && needs.dependency-guard.result == 'success' &&
-          (needs.dependency-api.result == 'success' || needs.dependency-api.result == 'skipped') &&
+          needs.dependency-api.result == 'success' &&
           needs.unit-tests.result == 'success' && needs.web-tests.result == 'success' &&
           needs.screenshot-tests.result == 'success' && needs.instrumented-tests.result == 'success' &&
           needs.native-tests.result == 'success'

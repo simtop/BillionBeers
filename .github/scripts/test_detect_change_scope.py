@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -23,14 +24,25 @@ def commit(directory: Path, message: str) -> str:
     return git(directory, "rev-parse", "HEAD")
 
 
-def run_detector(directory: Path, *, event: str, action: str, base: str, before: str = "", after: str = "", jobs: str = "") -> dict[str, str]:
+def run_detector(
+    directory: Path, *, event: str, action: str, base: str, before: str = "", after: str = "",
+    jobs: str = "[]", prior_base: str | None = None, prior_pr: int = 42,
+    prior_lanes: str | None = "11111", verified_checkout: bool = True,
+) -> dict[str, str]:
     output = directory / "github-output"
+    previous_jobs = json.loads(jobs)
+    for job in previous_jobs:
+        if job["name"] == "Detect change scope" and prior_lanes is not None:
+            job["steps"] = [{
+                "name": f"PR {prior_pr} base {prior_base or base} lanes {prior_lanes}",
+                "conclusion": "success",
+            }]
     gh = directory / "gh"
     gh.write_text(
         "#!/bin/sh\n"
         "case \"$*\" in\n"
         "  *workflows/ci.yml/runs*) printf '12345\\n' ;;\n"
-        f"  *jobs*) printf '%s\\n' '{jobs}' | jq -c '.[]' ;;\n"
+        f"  *jobs*) printf '%s\\n' '{json.dumps(previous_jobs)}' | jq -c '.[]' ;;\n"
         "  *) exit 1 ;;\n"
         "esac\n"
     )
@@ -39,6 +51,7 @@ def run_detector(directory: Path, *, event: str, action: str, base: str, before:
         "EVENT_NAME": event,
         "EVENT_ACTION": action,
         "BASE_SHA": base,
+        "PR_CONTEXT": f"PR 42 base {base}" if verified_checkout else "",
         "BEFORE": before,
         "AFTER": after,
         "REPO": "example/repository",
@@ -89,6 +102,17 @@ with tempfile.TemporaryDirectory() as temporary:
         "native": "true",
         "web": "false",
     }, native_result
+    current_push = dict(event="pull_request", action="synchronize", base=base, before=docs_head, after=native_head)
+    for missing_evidence in (
+        {"prior_base": "a" * 40}, {"prior_pr": 43}, {"prior_lanes": None},
+        {"verified_checkout": False},
+    ):
+        result = run_detector(repository, **current_push, jobs=jobs, **missing_evidence)
+        assert all(selected == "true" for selected in result.values()), (missing_evidence, result)
+
+    skipped_unit = jobs.replace('"name":"Unit Tests","conclusion":"success"', '"name":"Unit Tests","conclusion":"skipped"')
+    assert run_detector(repository, **current_push, jobs=skipped_unit)["unit"] == "true"
+    assert run_detector(repository, **current_push, jobs=skipped_unit, prior_lanes="01111")["unit"] == "false"
 
     (repository / "feature/src/commonTest").mkdir(parents=True)
     (repository / "feature/src/commonTest/CommonTest.kt").write_text("class CommonTest\n")
@@ -116,6 +140,10 @@ with tempfile.TemporaryDirectory() as temporary:
         ("scripts/test_verify_web_release_artifacts.py", ("web",)),
         ("scripts/web_smoke_devtools.cjs", ("web",)),
         ("scripts/test_web_smoke_devtools.cjs", ("web",)),
+        ("scripts/prepare_release_version.py", ()),
+        ("scripts/release_preflight.py", ()),
+        ("scripts/web-image-proxy.py", ()),
+        ("scripts/test_web_image_proxy.py", ()),
         ("qa/project.config.json", ()),
         ("skills/agent-qa/scripts/project_index.py", ()),
         ("scripts/test_qa_integration.py", ()),
