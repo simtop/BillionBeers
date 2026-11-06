@@ -14,7 +14,6 @@ import sys
 import time
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
 RECONCILE_SPEC = importlib.util.spec_from_file_location(
     "reconcile_ci_report", Path(__file__).with_name("reconcile-ci-report.py")
 )
@@ -159,7 +158,7 @@ def graph_identity(
 
 
 def parent_shas(output_sha: str) -> list[str]:
-    raw = subprocess.check_output(["git", "show", "-s", "--format=%P", output_sha], cwd=ROOT, text=True)
+    raw = subprocess.check_output(["git", "show", "-s", "--format=%P", output_sha], text=True)
     return raw.split()
 
 
@@ -215,6 +214,9 @@ def write_result_main(args) -> int:
     try:
         result, pr = build_result(api, args)
     except LookupError as error:
+        if args.pr_number:
+            print(f"::error::{error}", file=sys.stderr)
+            return 1
         output({"pr_number": "0"})
         print(f"::notice::{error}. The write may complete, but it is not PR-authoritative.")
         return 0
