@@ -17,7 +17,9 @@ REPO=owner/name BRANCH=master make repo-doctor
 
 The doctor verifies:
 
-- `master` is the default branch and its protection requires only the strict `CI Gate` check;
+- `master` is the default branch and its protection requires only the strict `CI Gate` check
+  from GitHub Actions.
+- Changes to `master` require a pull request for every actor, including administrators.
 - force-pushes and branch deletion are blocked;
 - pull-request auto-merge and squash merge are enabled;
 - `ci.yml` contains the `CI Gate` aggregate job and subscribes to `merge_group` checks;
@@ -28,9 +30,13 @@ The doctor verifies:
 - workflow-referenced environments exist. This base intentionally has none because release
   deployment and its approval model belong to the adopting product.
 
-The command only reads GitHub metadata. It never requests, prints or compares secret values. The
-expected branch, check and deploy-key names can be overridden with `REPO_DOCTOR_DEFAULT_BRANCH`,
-`REPO_DOCTOR_REQUIRED_CHECK` and `REPO_DOCTOR_REQUIRED_SECRET` when adapting the repository.
+The command reads GitHub metadata and checks secret names. Override the expected branch, check
+name, check provider app ID, and deploy-key name with `REPO_DOCTOR_DEFAULT_BRANCH`,
+`REPO_DOCTOR_REQUIRED_CHECK`, `REPO_DOCTOR_REQUIRED_CHECK_APP_ID`, and
+`REPO_DOCTOR_REQUIRED_SECRET` when adapting the repository.
+
+The solo-maintainer policy requires a PR and the up-to-date `CI Gate` result. It requires zero
+approving reviews so eligible Dependabot PRs can still auto-merge.
 
 ## Merge queue availability
 

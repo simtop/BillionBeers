@@ -6,6 +6,7 @@
 #   EVENT_NAME    github.event_name
 #   EVENT_ACTION  github.event.action
 #   BASE_SHA      github.event.pull_request.base.sha
+#   PR_CONTEXT    PR number and base from verified synthetic merge parents
 #   BEFORE/AFTER  github.event.before / .after (previous and new PR head on synchronize)
 #   REPO          github.repository
 #   GH_TOKEN      token with actions:read (for the previous run's job conclusions)
@@ -19,8 +20,9 @@
 # - The pushed range is the direct tree diff BEFORE -> AFTER, NOT a merge-base diff: a force-push
 #   that *drops* a code commit changes the tree without adding commits and must still classify
 #   as code.
-# - "Green" means the job succeeded, or was skipped in a run where THIS filter job succeeded (that
-#   skip was itself a sound adoption - induction). The trust anchor is the filter job, not the
+# - "Green" means the job succeeded, or was skipped in a run where THIS filter job succeeded and
+#   explicitly deselected the lane. Both require evidence for the same PR and tested base.
+#   The trust anchor is the filter job, not the
 #   aggregate CI Gate: the filter's decision that lane L could skip does not become unsound because
 #   some other lane M failed. Anchoring on the gate instead made adoption collapse on any red PR -
 #   from the second push onward every unaffected lane rerun, which is the exact case (a PR being
@@ -111,8 +113,8 @@ classify_path() {
     : # the always-run format lane tests this release-smoke guard
   elif [ "$f" = "scripts/verify_web_release_artifacts.py" ] || [ "$f" = "scripts/test_verify_web_release_artifacts.py" ]; then
     a_web=true # the Web lane executes the release verifier and its tests
-  elif [ "$f" = "scripts/verify_web_static.py" ] || [ "$f" = "scripts/test_verify_web_static.py" ] || [ "$f" = "scripts/test_web_image_proxy.py" ] || [ "$f" = "scripts/smoke_web_distribution.cjs" ] || [ "$f" = "scripts/web_smoke_devtools.cjs" ] || [ "$f" = "scripts/test_web_smoke_devtools.cjs" ]; then
-    a_web=true # the Web lane executes the static verifier, image-proxy tests, smoke and their tests
+  elif [ "$f" = "scripts/verify_web_static.py" ] || [ "$f" = "scripts/test_verify_web_static.py" ] || [ "$f" = "scripts/smoke_web_distribution.cjs" ] || [ "$f" = "scripts/web_smoke_devtools.cjs" ] || [ "$f" = "scripts/test_web_smoke_devtools.cjs" ]; then
+    a_web=true # the Web lane executes the static verifier, smoke and their tests
   elif [ "$f" = "scripts/verify_ios_simulator_artifacts.py" ] || [ "$f" = "scripts/test_verify_ios_simulator_artifacts.py" ]; then
     a_native=true # the native lane creates and verifies the simulator evidence packet
   elif [ "$f" = "scripts/test-tier-inventory.sh" ] || [ "$f" = "scripts/test-tier-inventory-test.py" ]; then
@@ -174,7 +176,10 @@ if [[ "${1:-}" == "--self-test" ]]; then
   assert_lanes "feature/src/iosArm64Test/kotlin/NativeTest.kt" false false false true false
   assert_lanes "feature/src/androidTest/kotlin/AndroidTest.kt" false false true false false
   assert_lanes "scripts/verify_web_static.py" false false false false true
-  assert_lanes "scripts/test_web_image_proxy.py" false false false false true
+  assert_lanes "scripts/prepare_release_version.py" false false false false false
+  assert_lanes "scripts/release_preflight.py" false false false false false
+  assert_lanes "scripts/web-image-proxy.py" false false false false false
+  assert_lanes "scripts/test_web_image_proxy.py" false false false false false
   assert_lanes "scripts/smoke_web_distribution.cjs" false false false false true
   assert_lanes "scripts/web_smoke_devtools.cjs" false false false false true
   assert_lanes "scripts/test_web_smoke_devtools.cjs" false false false false true
@@ -202,6 +207,11 @@ fi
 
 if [ "$EVENT_NAME" != "pull_request" ]; then
   emit true true true true true "non-PR event - complete validation"
+  exit 0
+fi
+
+if [ -z "${PR_CONTEXT:-}" ]; then
+  emit true true true true true "unverified PR checkout - failing open"
   exit 0
 fi
 
@@ -248,7 +258,8 @@ fi
 # that, and a lane whose job fell off page 1 would read as renamed - it still fails open, but you
 # would lose adoption with no obvious cause. `jq -s` reassembles the per-page streams into one array.
 JOBS=$(gh api --paginate "repos/$REPO/actions/runs/$PREV_RUN/jobs?per_page=100" \
-  --jq '.jobs[] | {name, conclusion}' | jq -s '.' || true)
+  --jq '.jobs[] | {name, conclusion, steps: (if .name == "Detect change scope" then .steps else [] end)}' \
+  | jq -s '.') || JOBS=""
 # An API failure yields no stdout, which `jq -s` turns into "[]" rather than the empty string - so
 # check both, or a failed fetch would fall through and warn about every job being "renamed".
 if [ -z "$JOBS" ] || [ "$JOBS" = "[]" ]; then
@@ -257,7 +268,20 @@ if [ -z "$JOBS" ] || [ "$JOBS" = "[]" ]; then
 fi
 echo "Previous run $PREV_RUN job conclusions: $JOBS"
 
-concl() { echo "$JOBS" | jq -r --arg n "$1" 'map(select(.name == $n))[0].conclusion // "missing"'; }
+PRIOR_LANES=$(jq -r --arg prefix "$PR_CONTEXT lanes " '
+  [.[] | select(.name == "Detect change scope" and .conclusion == "success")
+       | .steps[]? | select(.conclusion == "success")
+       | .name | select(startswith($prefix)) | ltrimstr($prefix)]
+  | if length == 1 then .[0] else empty end
+' <<< "$JOBS" || true)
+if ! [[ "$PRIOR_LANES" =~ ^[01]{5}$ ]]; then
+  emit true true true true true "previous run lacks evidence for this PR and base - failing open"
+  exit 0
+fi
+
+concl() {
+  jq -r --arg n "$1" 'map(select(.name == $n)) | if length == 1 then .[0].conclusion // "missing" else "missing" end' <<< "$JOBS"
+}
 
 # Every name below is matched against the previous run's job list as a literal string, so renaming
 # a job silently turns its lookup into "missing" -> nothing is ever adopted -> CI just quietly gets
@@ -277,24 +301,22 @@ for n in "Detect change scope" "Unit Tests" "Screenshot Tests (Paparazzi)" \
     echo "::warning::Job '$n' not found in previous run $PREV_RUN - verdict adoption is disabled for it. If this job was renamed, update .github/scripts/detect-change-scope.sh to match."
 done
 
-PREV_FILTER=$(concl "Detect change scope")
-
 was_green() {
   local c; c=$(concl "$1")
-  [ "$c" = "success" ] || { [ "$c" = "skipped" ] && [ "$PREV_FILTER" = "success" ]; }
+  [ "$c" = "success" ] || { [ "$c" = "skipped" ] && [ "$2" = "0" ]; }
 }
 
-decide() { # $1 = affected by this push (true/false), $2 = previous job name
+decide() { # $1 = affected by this push, $2 = previous job name, $3 = prior selection bit
   if [ "$1" = "true" ]; then echo true
-  elif was_green "$2"; then echo false
+  elif was_green "$2" "$3"; then echo false
   else echo true
   fi
 }
 
-UNIT=$(decide "$a_unit" "Unit Tests")
-SCREENSHOT=$(decide "$a_screenshot" "Screenshot Tests (Paparazzi)")
-INSTRUMENTED=$(decide "$a_instrumented" "Instrumented Tests (Gradle Managed Device)")
-NATIVE=$(decide "$a_native" "Native Tests (Apple)")
-WEB=$(decide "$a_web" "Web Tests (Wasm/static)")
+UNIT=$(decide "$a_unit" "Unit Tests" "${PRIOR_LANES:0:1}")
+SCREENSHOT=$(decide "$a_screenshot" "Screenshot Tests (Paparazzi)" "${PRIOR_LANES:1:1}")
+INSTRUMENTED=$(decide "$a_instrumented" "Instrumented Tests (Gradle Managed Device)" "${PRIOR_LANES:2:1}")
+NATIVE=$(decide "$a_native" "Native Tests (Apple)" "${PRIOR_LANES:3:1}")
+WEB=$(decide "$a_web" "Web Tests (Wasm/static)" "${PRIOR_LANES:4:1}")
 emit "$UNIT" "$SCREENSHOT" "$INSTRUMENTED" "$NATIVE" "$WEB" \
   "per-lane: rerunning affected or previously-red lanes, adopting green verdicts from run $PREV_RUN"

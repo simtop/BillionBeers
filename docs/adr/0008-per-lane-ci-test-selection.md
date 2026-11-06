@@ -42,8 +42,9 @@ Apple production/test sources → native; goldens and `screenshot/` test sources
 `src/androidTest/` → instrumented; other `src/test/` → unit; Wasm production/test sources →
 unit, screenshot, instrumented and Web; `scripts/coverage-check.sh`,
 `scripts/test-tier-inventory.sh` and `scripts/test-tier-inventory-test.py` → unit;
-Web verifier, image-proxy and smoke scripts → Web; docs, skills, local notes and other scripts →
-inert; everything else → all five.
+Web verifier and smoke scripts → Web; docs, skills, local notes and other scripts → inert;
+everything else → all five. The always-run formatting job runs the release version, release
+preflight, and local Web image proxy fixtures.
 
 The unit/screenshot split is only sound because the build already partitions them the same way:
 `billionbeers.android.screenshot.gradle.kts` excludes `com.simtop.billionbeers.screenshot.*` from
@@ -55,10 +56,13 @@ with it.**
 `scripts/` is inert. A filter that could classify an edit to itself as inert would be able to skip
 validating its own change.
 
-### 3. "Green" is anchored on the filter job, not the `CI Gate`
+### 3. Lane verdicts belong to one PR and tested base
 
-A lane's previous conclusion of `skipped` counts as green only if the `Detect change scope` job
-succeeded in that run — because that skip was itself a sound adoption (induction).
+The filter verifies the synthetic merge parents against the event's base and head. It records the
+PR number, tested base, and five selection decisions in a successful step name. GitHub's jobs
+API exposes that step even when the run's PR association is empty. A later run adopts verdicts
+only from the same PR and tested base. A skipped lane counts as green only when the previous
+successful filter explicitly deselected it.
 
 Anchoring on the aggregate `CI Gate` instead, as #117 originally did, was measurably wrong. The
 gate goes red when *any* job fails, including ones that say nothing about test freshness. On a PR
@@ -71,6 +75,9 @@ the old one's cases.
 The gate anchor was also periodically forcing a full re-execution. That reduced repeated adoption,
 but it made unaffected lanes rerun on any unrelated gate failure. The weekly full-PR validation in
 §8 now provides a separate freshness bound while keeping per-push adoption anchored to the filter.
+
+The `CI Gate` requires every selected lane and always-run job to succeed. The selector must emit
+all five decisions. The gate also checks that each skip matches the event or lane selection.
 
 ### 4. The pushed range is a direct tree diff, not a merge-base diff
 
@@ -106,8 +113,8 @@ then authorize reuse after merge. The tested base must be the merged commit's fi
 the source run must have succeeded on attempt 1 with every heavy lane and required static check
 executed successfully. Missing, stale, skipped, ambiguous, expired, or inconsistent evidence
 runs the full suite. Pull requests, merge groups, and all other events keep the existing
-selection behavior. The dependency API job may succeed or skip, while the master-only failure
-reporter must skip in the source PR run. The selector rejects missing, duplicate, or unexpected
+selection behavior. The dependency API job must succeed, and the master-only failure reporter
+must skip in the source PR run. The selector rejects missing, duplicate, or unexpected
 jobs. Logs identify validation rejections without exposing API or parser error details.
 
 The proof is produced inline in the final `CI Gate`, after all required jobs succeed, then uploaded
