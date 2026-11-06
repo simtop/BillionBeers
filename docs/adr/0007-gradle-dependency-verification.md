@@ -267,6 +267,16 @@ graph, with bounded isolated equivalence results recorded above.
 
 ### Loop termination and serialization
 
+The four platform lanes run candidate code without the deploy key. The final job checks out
+default-branch tools separately and treats the candidate checkout and lane evidence as data.
+The tools validate the ledger and the prepared patch. The patch may edit the tracked dependency
+baseline and the recorded formatter files, with file types and modes preserved. The tools also
+regenerate the README from the candidate's version files.
+
+The push step alone receives the deploy key, uses GitHub's pinned SSH host key, and checks the
+output is a direct child of the prepared source. The push requires the remote branch to still
+point to that source. The subsequent PR head check uses read access.
+
 The bot's own push re-triggers the workflow. Each write run records immutable write intent in its
 run title and uploads a bounded result artifact containing the PR/repository identity, source and
 output SHAs, graph digest, and four successful lane identities before pushing. If generated files

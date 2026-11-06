@@ -10,9 +10,11 @@ import io
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
+import textwrap
 import unittest
 from pathlib import Path
 from unittest.mock import Mock
@@ -229,6 +231,140 @@ class DependabotPreparationTest(unittest.TestCase):
         for recorded, changed in ((b"", b".github/workflows/ci.yml\0"), (b"secrets.txt\0", b"secrets.txt\0")):
             with self.assertRaises(ValueError):
                 STAGE.allowed_files(recorded, changed)
+
+    def test_trusted_writer_rejects_workflow_patches_and_file_modes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source"
+            source.mkdir()
+            for name in STAGE.GENERATED | STAGE.VERSION_INPUTS | {"build.gradle.kts", "Makefile"}:
+                file = source / name
+                file.parent.mkdir(parents=True, exist_ok=True)
+                file.write_text("original\n")
+            self.git(source, "init", "-q")
+            self.git(source, "add", ".")
+            self.git(source, "commit", "-qm", "candidate")
+            tools = Path(__file__).with_name("stage-dependabot-preparation.py").resolve()
+            recorded = root / "formatting-files"
+            recorded.write_bytes(b"build.gradle.kts\0")
+            prepared = root / "prepared.patch"
+
+            def apply():
+                return subprocess.run(
+                    [sys.executable, "-I", str(tools), str(recorded), "--apply-prepared", str(prepared)],
+                    cwd=source, capture_output=True, text=True, check=False,
+                )
+
+            prepared.touch()
+            result = apply()
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual("", self.git(source, "diff"))
+
+            for name, diagnostic in (("Makefile", "outside its allowlist"),
+                                     ("build.gradle.kts", "changes file modes")):
+                file = source / name
+                file.write_text("changed\n")
+                if name.endswith(".kts"):
+                    file.chmod(0o755)
+                prepared.write_text(self.git(source, "diff", "--binary"))
+                self.git(source, "restore", "--", name)
+                result = apply()
+                self.assertNotEqual(0, result.returncode)
+                self.assertIn(diagnostic, result.stderr)
+                self.assertEqual("", self.git(source, "diff"))
+
+            (source / "build.gradle.kts").write_text("formatted\n")
+            prepared.write_text(self.git(source, "diff", "--binary"))
+            self.git(source, "restore", "--", "build.gradle.kts")
+            result = apply()
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual("formatted\n", (source / "build.gradle.kts").read_text())
+            self.assertEqual("original\n", (source / "Makefile").read_text())
+
+    @staticmethod
+    def git(repo, *arguments):
+        return subprocess.check_output(
+            ["git", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+             "-c", "commit.gpgsign=false", "-c", "core.fileMode=true", *arguments],
+            cwd=repo, text=True, stderr=subprocess.PIPE,
+        )
+
+    def test_readme_step_ignores_candidate_tools(self):
+        tools = Path(__file__).resolve().parents[2]
+        workflow = (tools / ".github/workflows/regen-verification-metadata.yml").read_text()
+        step = workflow.split("- name: Update generated documentation", 1)[1]
+        command = step.split("run: ", 1)[1].splitlines()[0]
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory)
+            for name in {"README.md"} | STAGE.VERSION_INPUTS:
+                file = source / name
+                file.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(tools / name, file)
+            (source / "scripts").mkdir()
+            (source / "scripts/update_readme_versions.sh").write_text("touch executed-candidate-script\n")
+            (source / "Makefile").write_text("update-docs:\n\ttouch executed-candidate-make\n")
+            result = subprocess.run(
+                ["bash", "-c", command], cwd=source, env=os.environ | {"TRUSTED_TOOLS": str(tools)},
+                capture_output=True, text=True,
+            )
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual([], list(source.glob("executed-candidate-*")))
+            self.assertEqual((tools / "README.md").read_bytes(), (source / "README.md").read_bytes())
+
+    def test_push_step_scopes_key_and_leases_the_exact_source(self):
+        workflow = Path(__file__).resolve().parents[1] / "workflows/regen-verification-metadata.yml"
+        step = workflow.read_text().split("- name: Push generated output", 1)[1].split(
+            "- name: Verify published PR head", 1
+        )[0]
+        push = textwrap.dedent(step.split("run: |\n", 1)[1])
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source"
+            source.mkdir()
+            remote = root / "remote.git"
+            self.git(root, "init", "--bare", "-q", str(remote))
+            self.git(source, "init", "-q")
+            self.git(source, "commit", "--allow-empty", "-qm", "source")
+            source_sha = self.git(source, "rev-parse", "HEAD").strip()
+            self.git(source, "push", str(remote), "HEAD:refs/heads/feature")
+            self.git(source, "commit", "--allow-empty", "-qm", "generated")
+            output_sha = self.git(source, "rev-parse", "HEAD").strip()
+            binary = root / "bin"
+            binary.mkdir()
+            git_stub = binary / "git"
+            git_stub.write_text(f"""#!{sys.executable}
+import os, pathlib, shlex, sys
+git = {shutil.which("git")!r}
+args = sys.argv[1:]
+if args[:3] == ["-c", "core.hooksPath=/dev/null", "push"]:
+    assert "DEPLOY_KEY" not in os.environ
+    ssh = shlex.split(os.environ.pop("GIT_SSH_COMMAND"))
+    key = pathlib.Path(ssh[ssh.index("-i") + 1])
+    assert key.read_text() == "fixture-key\\n"
+    assert key.stat().st_mode & 0o777 == 0o600
+    assert "StrictHostKeyChecking=yes" in ssh
+    args[-2] = {str(remote)!r}
+os.execv(git, [git, *args])
+""")
+            git_stub.chmod(0o755)
+            environment = os.environ | {
+                "PATH": f"{binary}:{os.environ['PATH']}", "RUNNER_TEMP": str(root),
+                "BRANCH": "feature", "DEFAULT_BRANCH": "master", "SOURCE_SHA": source_sha,
+                "OUTPUT_SHA": output_sha, "DEPLOY_KEY": "fixture-key", "GITHUB_REPOSITORY": "owner/repo",
+            }
+            result = subprocess.run(["bash", "-c", push], cwd=source, env=environment,
+                                    capture_output=True, text=True)
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual(output_sha, self.git(remote, "rev-parse", "refs/heads/feature").strip())
+            self.git(source, "reset", "--hard", source_sha)
+            self.git(source, "commit", "--allow-empty", "-qm", "stale writer output")
+            environment["OUTPUT_SHA"] = self.git(source, "rev-parse", "HEAD").strip()
+            result = subprocess.run(["bash", "-c", push], cwd=source, env=environment,
+                                    capture_output=True, text=True)
+            self.assertNotEqual(0, result.returncode)
+            self.assertIn("stale info", result.stderr)
+            self.assertEqual(output_sha, self.git(remote, "rev-parse", "refs/heads/feature").strip())
+            self.assertEqual([], list(root.glob("dependency-push.*")))
 
     def test_ci_gate_requires_preparation_for_gradle_but_not_actions_only(self):
         api, reconcile, _, _, _ = self.fixture()
@@ -514,19 +650,24 @@ class DependabotPreparationTest(unittest.TestCase):
             self.assertIn(f"lane: {lane}", flow)
         self.assertIn("needs: lanes", flow)
         self.assertIn("PREPARATION_HEAD", flow)
-        self.assertIn("cmp .platform-evidence/linux/prepared.patch", flow)
         self.assertIn("stage-dependabot-preparation.py", flow)
         self.assertNotIn("git add --", flow)
         caller = (root / ".github/workflows/verification-metadata-compare.yml").read_text()
         self.assertIn("  actions: read", caller)
         self.assertIn("  pull-requests: read", caller)
         self.assertNotIn("contents: write", caller)
-        self.assertIn("if [ -s .platform-evidence/linux/prepared.patch ]; then", flow)
-        self.assertNotIn("VERIFICATION_METADATA_DEPLOY_KEY: ${{ secrets.", flow)
+        writer = flow.split("  merge-and-write:", 1)[1]
+        self.assertIn("ref: ${{ github.event.repository.default_branch }}", writer)
+        self.assertIn("path: preparation-tools\n          persist-credentials: false", writer)
+        self.assertIn("path: preparation-source\n          persist-credentials: false", writer)
+        self.assertIn('--apply-prepared "$evidence/linux/prepared.patch"', writer)
+        self.assertNotIn("ssh-key:", writer)
+        self.assertNotIn("run: make", writer)
+        self.assertNotIn("python3 .github/scripts/", writer)
+        push = writer.split("- name: Push generated output", 1)[1].split("- name: Verify published PR head", 1)[0]
+        self.assertIn("DEPLOY_KEY: ${{ secrets.VERIFICATION_METADATA_DEPLOY_KEY }}", push)
         writer_mode = "(inputs.mode || 'write') == 'write'"
-        self.assertIn(f"ssh-key: ${{{{ {writer_mode} && secrets.VERIFICATION_METADATA_DEPLOY_KEY || '' }}}}", flow)
-        self.assertIn(f"persist-credentials: ${{{{ {writer_mode} }}}}", flow)
-        self.assertIn(f"if: {writer_mode} && steps.reuse.outputs.reuse != 'true'\n        run: make update-docs", flow)
+        self.assertIn('bash -eo pipefail "$TRUSTED_TOOLS/scripts/update_readme_versions.sh"', writer)
         self.assertIn(f"if: success() && {writer_mode}", flow)
         self.assertNotIn("github.event_name == 'pull_request') && secrets.VERIFICATION_METADATA_DEPLOY_KEY", flow)
         self.assertNotIn("pull_request_target", flow.split("on:", 1)[1])
@@ -663,35 +804,6 @@ class DependabotPreparationTest(unittest.TestCase):
         self.assertIn("if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request'", writer)
         self.assertIn("if: github.event.pull_request.user.login == 'dependabot[bot]'", review)
         self.assertIn("max-parallel: 2", writer)
-
-    def test_empty_prepared_patch_is_a_behavioral_no_op(self):
-        root = Path(__file__).resolve().parents[2]
-        flow = (root / ".github/workflows/regen-verification-metadata.yml").read_text()
-        block = re.search(
-            r"(?m)^          if \[ -s \.platform-evidence/linux/prepared\.patch \]; then\n"
-            r"(?P<body>.*?)^          fi$",
-            flow,
-            re.DOTALL,
-        )
-        self.assertIsNotNone(block)
-        with tempfile.TemporaryDirectory() as directory:
-            folder = Path(directory)
-            patch = folder / "prepared.patch"
-            marker = folder / "git-called"
-            fake_git = folder / "git"
-            fake_git.write_text(f"#!/bin/sh\nprintf called > '{marker}'\n")
-            fake_git.chmod(0o755)
-            command = ("if [ -s \"$PATCH_FILE\" ]; then\n"
-                       + block.group("body").replace(
-                           ".platform-evidence/linux/prepared.patch", "$PATCH_FILE"
-                       ) + "\nfi")
-            environment = {**os.environ, "PATH": f"{folder}:{os.environ['PATH']}", "PATCH_FILE": str(patch)}
-            patch.write_bytes(b"")
-            subprocess.run(["bash", "-c", command], env=environment, check=True)
-            self.assertFalse(marker.exists())
-            patch.write_text("diff --git a/a b/a\n")
-            subprocess.run(["bash", "-c", command], env=environment, check=True)
-            self.assertTrue(marker.exists())
 
     def test_actual_lane_dry_runs_cover_full_test_inventory_and_platform_tasks(self):
         root = Path(__file__).resolve().parents[2]
