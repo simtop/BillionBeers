@@ -512,7 +512,7 @@ class IndexedDbBeersStorageBrowserTest {
   }
 
   @Test
-  fun catalogPreservesPageOrderAcrossAlphabeticalNamesAndReopen() = runTest {
+  fun catalogPreservesPageOrderWithJavaScriptPrototypeKeysAcrossReopen() = runTest {
     val databaseName = "billionbeers-catalog-order-${hashCode()}"
     fun beer(id: String, name: String) =
       StoredBeer(
@@ -526,7 +526,7 @@ class IndexedDbBeersStorageBrowserTest {
         foodPairing = emptyList(),
       )
 
-    val firstPage = listOf(beer("first-z", "Zulu"), beer("first-a", "Alpha"))
+    val firstPage = listOf(beer("constructor", "Zulu"), beer("__proto__", "Alpha"), beer("constructor", "Zulu"))
     val secondPage = beer("second-b", "Bravo")
     val storage = IndexedDbBeersStorage(databaseName)
     storage.insertPage(
@@ -544,7 +544,7 @@ class IndexedDbBeersStorageBrowserTest {
       pageKey = 2,
     )
 
-    val expectedCatalog = listOf("first-z", "first-a", "second-b")
+    val expectedCatalog = listOf("constructor", "__proto__", "second-b")
     assertEquals(expectedCatalog, storage.observeCatalogBeers().first().map { it.id })
     assertEquals(
       listOf("Alpha", "Bravo", "Zulu"),

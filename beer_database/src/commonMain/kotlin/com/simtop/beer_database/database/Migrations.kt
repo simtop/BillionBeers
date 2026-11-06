@@ -9,6 +9,7 @@ private const val DATABASE_VERSION_5 = 5
 private const val DATABASE_VERSION_6 = 6
 private const val DATABASE_VERSION_7 = 7
 private const val DATABASE_VERSION_8 = 8
+private const val DATABASE_VERSION_9 = 9
 
 private fun SQLiteConnection.execute(sql: String) {
   prepare(sql).use { it.step() }
@@ -116,6 +117,15 @@ val MIGRATION_7_8 =
     }
   }
 
+/** v8 → v9: persist catalog positions as pages arrive. Older rows keep their local data. */
+val MIGRATION_8_9 =
+  object : Migration(DATABASE_VERSION_8, DATABASE_VERSION_9) {
+    override fun migrate(connection: SQLiteConnection) {
+      connection.execute("ALTER TABLE `beers` ADD COLUMN `catalog_page` INTEGER")
+      connection.execute("ALTER TABLE `beers` ADD COLUMN `catalog_index` INTEGER")
+    }
+  }
+
 /** Every supported upgrade, in order, for all Room hosts and database tests. */
 val ALL_MIGRATIONS: List<Migration> =
   listOf(
@@ -126,4 +136,5 @@ val ALL_MIGRATIONS: List<Migration> =
     MIGRATION_5_6,
     MIGRATION_6_7,
     MIGRATION_7_8,
+    MIGRATION_8_9,
   )

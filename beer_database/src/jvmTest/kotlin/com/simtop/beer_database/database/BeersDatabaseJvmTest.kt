@@ -89,6 +89,51 @@ class BeersDatabaseJvmTest {
     )
 
     assertEquals(123L, db.beersDao().getPagingState("catalog:en")?.refreshedAt)
+    assertEquals(1, db.beersDao().getBeerById("1")?.catalogPage)
+    assertEquals(0, db.beersDao().getBeerById("1")?.catalogIndex)
+  }
+
+  @Test
+  fun catalogOrderSurvivesOutOfOrderWritesRefreshAndReopen() = runBlocking {
+    val file = File(databaseDirectory, "catalog-order.db").absolutePath
+    db.close()
+    db = newFileDatabase(file)
+    val dao = db.beersDao()
+    val zulu = beer("z", name = "Zulu", availability = false)
+    val alpha = beer("a", name = "Alpha")
+    val bravo = beer("b", name = "Bravo")
+
+    dao.insertAll(listOf(beer("legacy-z", name = "Zebra"), beer("legacy-a", name = "Amber")))
+    dao.insertPage(listOf(bravo), "catalog:en", 3, 5, 10L, pageKey = 2)
+    dao.insertPage(listOf(zulu, alpha, zulu), "catalog:en", 2, 5, 20L, pageKey = 1)
+    assertEquals(
+      listOf("z", "a", "b", "legacy-a", "legacy-z"),
+      dao.getCatalogBeers().first().map { it.id },
+    )
+    dao.updateFavorite("z", true)
+    dao.insertPage(
+      listOf(alpha, zulu.copy(availability = true)),
+      "catalog:en",
+      2,
+      5,
+      30L,
+      pageKey = 1,
+    )
+    dao.insertPage(listOf(bravo, zulu), "catalog:en", null, 5, 40L, pageKey = 2)
+    dao.cacheBeersForDetail(listOf(zulu.copy(name = "Detail Zulu")))
+    db.close()
+
+    db = newFileDatabase(file)
+    val reopened = db.beersDao()
+    assertEquals(
+      listOf("a", "z", "b", "legacy-a", "legacy-z"),
+      reopened.getCatalogBeers().first().map { it.id },
+    )
+    val favorite = reopened.getFavoriteBeers().first().single()
+    assertEquals("z", favorite.id)
+    assertFalse(favorite.availability)
+    assertEquals("Detail Zulu", favorite.name)
+    assertTrue(reopened.getPagingState("catalog:en")?.isComplete == true)
   }
 
   @Test
@@ -333,7 +378,7 @@ class BeersDatabaseJvmTest {
   }
 
   @Test
-  fun historicalVersionOneFileMigratesThroughVersionSeven() = runBlocking {
+  fun historicalVersionOneFileMigratesToCurrentVersion() = runBlocking {
     val file = File(databaseDirectory, "version-one.db").absolutePath
     createVersionOneDatabase(file)
     db.close()
@@ -346,6 +391,8 @@ class BeersDatabaseJvmTest {
     assertEquals("[]", migrated.ingredients)
     assertFalse(migrated.isFavorite)
     assertTrue(migrated.isInCatalog)
+    assertEquals(null, migrated.catalogPage)
+    assertEquals(null, migrated.catalogIndex)
   }
 
   @Test

@@ -23,6 +23,48 @@ class BeersDatabaseMigrationTest {
     MigrationTestHelper(InstrumentationRegistry.getInstrumentation(), BeersDatabase::class.java)
 
   @Test
+  fun migrate8To9_preservesLegacyRowsFlagsAndBookmark() {
+    val dbName = "migration-test-8-9"
+    helper.createDatabase(dbName, 8).apply {
+      execSQL(
+        "INSERT INTO beers " +
+          "(id, name, tagline, description, image_url, abv, ibu, food_pairing, availability, is_favorite) " +
+          "VALUES ('legacy', 'Legacy', '', '', '', 0.0, 0.0, '[]', 0, 1)"
+      )
+      execSQL(
+        "INSERT INTO paging_state (surface, next_key, total_count, refreshed_at, is_complete) " +
+          "VALUES ('catalog:en', 2, 20, 123, 0)"
+      )
+      close()
+    }
+
+    helper.runMigrationsAndValidate(dbName, 9, true, MIGRATION_8_9).use { db ->
+      db
+        .query(
+          "SELECT availability, is_favorite, is_in_catalog, catalog_page, catalog_index FROM beers"
+        )
+        .use { cursor ->
+          assertTrue(cursor.moveToFirst())
+          assertEquals(0, cursor.getInt(0))
+          assertEquals(1, cursor.getInt(1))
+          assertEquals(1, cursor.getInt(2))
+          assertTrue(cursor.isNull(3))
+          assertTrue(cursor.isNull(4))
+        }
+      db
+        .query(
+          "SELECT next_key, total_count, refreshed_at FROM paging_state WHERE surface = 'catalog:en'"
+        )
+        .use { cursor ->
+          assertTrue(cursor.moveToFirst())
+          assertEquals(2, cursor.getInt(0))
+          assertEquals(20, cursor.getInt(1))
+          assertEquals(123L, cursor.getLong(2))
+        }
+    }
+  }
+
+  @Test
   fun migrate7To8_indexesFavoritesWithoutChangingRows() {
     val dbName = "migration-test-7-8"
     helper.createDatabase(dbName, 7).apply {
@@ -223,8 +265,8 @@ class BeersDatabaseMigrationTest {
   }
 
   @Test
-  fun migrate1To8_preservesRowsLocalDataAndPagingStateAcrossFullChain() {
-    val dbName = "migration-test-1-6"
+  fun migrate1To9_preservesRowsLocalDataAndPagingStateAcrossFullChain() {
+    val dbName = "migration-test-1-9"
     helper.createDatabase(dbName, 1).apply {
       execSQL(
         "INSERT INTO beers " +
@@ -234,7 +276,7 @@ class BeersDatabaseMigrationTest {
       close()
     }
 
-    val db = helper.runMigrationsAndValidate(dbName, 8, true, *ALL_MIGRATIONS.toTypedArray())
+    val db = helper.runMigrationsAndValidate(dbName, 9, true, *ALL_MIGRATIONS.toTypedArray())
 
     db
       .query(

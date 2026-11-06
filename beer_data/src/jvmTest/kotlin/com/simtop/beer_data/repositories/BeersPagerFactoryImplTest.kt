@@ -116,6 +116,30 @@ class BeersPagerFactoryImplTest {
     }
 
   @Test
+  fun `malformed beer identities reject the entire page before storing rows or bookmarks`() =
+    runTest(testDispatcher) {
+      val valid = apiItem("valid")
+      val catalog = factory.create()
+      for (invalidId in listOf(null, " ")) {
+        beersRemoteSource.setBeersResponse(listOf(valid, valid.copy(id = invalidId)))
+        listOf(catalog, factory.create(BeersQuery(search = "ipa"))).forEach { pager ->
+          pager.loadFirstPage()
+          assertEquals(
+            PagingState.Error(FetchBeersError.Parse, isFirstPage = true),
+            pager.pagingState.value,
+          )
+          assertEquals(0, beersLocalSource.count())
+          assertEquals(null, beersLocalSource.getPagingState("catalog:en"))
+        }
+      }
+
+      beersRemoteSource.setBeersResponse(listOf(valid), totalCount = 1)
+      catalog.loadFirstPage()
+      assertEquals(listOf("valid"), catalog.data.first().map { it.id })
+      assertEquals(List(5) { 1 }, beersRemoteSource.requestedPages)
+    }
+
+  @Test
   fun `failed first-page and append writes report database failures and retry the same page`() =
     runTest(testDispatcher) {
       val failure = IllegalStateException("storage")

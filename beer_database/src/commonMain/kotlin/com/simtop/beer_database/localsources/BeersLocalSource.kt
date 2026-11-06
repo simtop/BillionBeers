@@ -79,7 +79,7 @@ class BeersLocalSourceImpl(
     surface: String,
     nextKey: Int?,
     totalCount: Int?,
-    @Suppress("UNUSED_PARAMETER") pageKey: Int?,
+    pageKey: Int?,
   ) =
     db
       .beersDao()
@@ -89,6 +89,7 @@ class BeersLocalSourceImpl(
         nextKey,
         totalCount,
         epochTimeProvider.epochMillis(),
+        pageKey,
       )
 
   override suspend fun getPagingState(surface: String): StoredPagingState? =
