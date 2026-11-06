@@ -32,8 +32,8 @@ jobs:
         # always-empty.
         run: |
           SINCE=$(date -u -d '35 days ago' +%Y-%m-%dT%H:%M:%SZ)
-          DEFAULT_BRANCH="${{ github.event.repository.default_branch }}"
-          COUNT=$(gh api "repos/${{ github.repository }}/commits?sha=$DEFAULT_BRANCH&since=$SINCE" --jq 'length')
+          COUNT=$(gh api --method GET "repos/$GITHUB_REPOSITORY/commits" \
+            -f sha="$DEFAULT_BRANCH" -f since="$SINCE" --jq 'length')
           echo "Commits on $DEFAULT_BRANCH since $SINCE: $COUNT"
           if [ "$COUNT" -gt 0 ]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
@@ -42,6 +42,7 @@ jobs:
             echo "Nothing merged in the last 35 days - skipping the compat run."
           fi
         env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   compat-tests:
@@ -53,6 +54,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Enable KVM
         # GitHub's Linux runners support nested virtualization, but the device node is not

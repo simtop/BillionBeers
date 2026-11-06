@@ -29,8 +29,8 @@ jobs:
         # so fail here with a message that says why rather than deep in a git error.
         if: github.ref_name == github.event.repository.default_branch
         run: |
-          echo "::error::Dispatch this against a feature branch, not ${{ github.ref_name }}."
-          echo "It commits directly to the branch it runs on."
+          echo "::error::Dispatch this workflow against a feature branch."
+          echo "Trusted writeback publishes formatting changes on that branch."
           exit 1
 
       - name: Checkout branch

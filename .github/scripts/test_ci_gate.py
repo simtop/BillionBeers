@@ -5,12 +5,14 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import tempfile
 import textwrap
 import unittest
 
 
 WORKFLOW = Path(__file__).resolve().parents[1] / "workflows/ci.yml"
-STEP = WORKFLOW.read_text().split("- name: Require the expected CI jobs to succeed", 1)[1]
+WORKFLOW_TEXT = WORKFLOW.read_text()
+STEP = WORKFLOW_TEXT.split("- name: Require the expected CI jobs to succeed", 1)[1]
 GATE = textwrap.dedent(STEP.split("run: |\n", 1)[1].split("\n      - name:", 1)[0])
 ALWAYS = ("format-check", "changes", "lint", "android-lint", "dependency-guard")
 PR_ONLY = ("secret-scan", "dependency-api")
@@ -41,6 +43,37 @@ def run_gate(needs, event="pull_request"):
 
 
 class CiGateTests(unittest.TestCase):
+    def test_secret_scan_passes_the_event_base_as_a_commit_range(self):
+        scan = WORKFLOW_TEXT.split("- name: Scan PR commit range for secrets", 1)[1].split("\n  lint:", 1)[0]
+        self.assertIn("BASE_SHA: ${{ github.event.pull_request.base.sha }}", scan)
+        run = textwrap.dedent(scan.split("run: |\n", 1)[1])
+        self.assertNotIn("${{", run)
+        stubs = "curl() { :; }\nsha256sum() { cat >/dev/null; }\ntar() { :; }\n"
+        with tempfile.TemporaryDirectory() as directory:
+            scanner = Path(directory) / "gitleaks"
+            scanner.write_text("#!/usr/bin/env bash\nprintf '%s\\n' \"$@\"\n")
+            scanner.chmod(0o755)
+            base = "b" * 40
+            environment = os.environ | {
+                "BASE_SHA": base, "GITLEAKS_VERSION": "fixture", "GITLEAKS_SHA256": "fixture",
+            }
+            result = subprocess.run(
+                ["bash", "-c", stubs + run], cwd=directory, env=environment,
+                capture_output=True, text=True,
+            )
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertEqual(
+                ["git", ".", f"--log-opts={base}..HEAD", "--redact", "--verbose", "--no-banner"],
+                result.stdout.splitlines(),
+            )
+            result = subprocess.run(
+                ["bash", "-c", stubs + run], cwd=directory, env=environment | {"BASE_SHA": ""},
+                capture_output=True, text=True,
+            )
+            self.assertNotEqual(0, result.returncode)
+            self.assertIn("Missing pull request base SHA", result.stderr)
+            self.assertEqual("", result.stdout)
+
     def test_docs_pr_and_non_pr_validation_are_valid(self):
         docs = run_gate(fixture())
         self.assertEqual(0, docs.returncode, docs.stdout + docs.stderr)
