@@ -278,7 +278,7 @@ class VerifyIosSimulatorArtifactsTest(unittest.TestCase):
                 "GITHUB_JOB": "native-tests",
                 "GITHUB_SHA": "wrong",
             }
-            with patch.dict(os.environ, environment, clear=False):
+            with patch.dict(os.environ, environment, clear=True):
                 with self.assertRaisesRegex(module.VerificationError, "GITHUB_SHA"):
                     module.create_packet(
                         self.make_app(root),
@@ -303,6 +303,31 @@ class VerifyIosSimulatorArtifactsTest(unittest.TestCase):
             manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
             with self.assertRaisesRegex(module.VerificationError, "GITHUB_SHA"):
                 module.verify_packet(packet)
+
+    def test_pr_dispatch_records_event_and_tested_revisions(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            event_sha = "a" * 40
+            tested_sha = "b" * 40
+            environment = {key: "fixture" for key in module.PROVENANCE_KEYS} | {
+                "GITHUB_ACTIONS": "true",
+                "GITHUB_SHA": event_sha,
+                "CI_TESTED_SHA": tested_sha,
+            }
+            app, reports = self.make_app(root), self.make_reports(root)
+            with patch.dict(os.environ, environment, clear=True):
+                manifest = module.create_packet(
+                    app, reports, root / "packet", repository=root, destination="fixture",
+                    source_revision=tested_sha, working_tree="clean",
+                )
+                with self.assertRaisesRegex(module.VerificationError, "CI_TESTED_SHA"):
+                    module.create_packet(
+                        app, reports, root / "wrong", repository=root, destination="fixture",
+                        source_revision=event_sha, working_tree="clean",
+                    )
+            self.assertEqual(event_sha, manifest["provenance"]["GITHUB_SHA"])
+            self.assertEqual(tested_sha, manifest["provenance"]["CI_TESTED_SHA"])
+            self.assertEqual(manifest, module.verify_packet(root / "packet"))
 
     def test_packet_rejects_unexpected_top_level_file(self):
         with tempfile.TemporaryDirectory() as directory:

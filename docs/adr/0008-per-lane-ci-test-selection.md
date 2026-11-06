@@ -122,11 +122,18 @@ merge-group selection is unaffected.
 
 ### 8. Weekly full validation bounds PR verdict reuse
 
-The `Weekly full PR CI` workflow runs every Monday at 05:00 UTC and dispatches a full CI run for
-each open PR targeting `main` or `master`. The dispatch runs the trusted workflow definition from
-`master`, sets `force_full=true`, and checks out `refs/pull/<number>/merge` in every job. This
-validates the current merge tree, including fork PRs, without running workflow code from an untrusted
-head branch. Failed dispatches fail the scheduled workflow and identify the affected PR numbers.
+The `Weekly full PR CI` workflow runs every Monday at 05:00 UTC and dispatches one run of itself
+for each open PR targeting `main` or `master`, including forks. The dispatcher uses the workflow
+and script from the scheduled master commit. Each PR run resolves its merge commit and verifies
+its parents against the PR's base and head before calling the shared CI workflow. Every CI job
+checks out the pinned commit. The run's concurrency group is specific to the PR and separate from
+master validation. Failed dispatch requests fail the scheduler. Build results appear on the
+individual PR runs.
+
+The shared CI call sets `force_full=true` and uses a GitHub-enforced read-only cache token. Jobs
+that check out the PR run without persisted Git credentials. The Web and iOS packets record the
+dispatch SHA and the tested merge SHA separately. A manual run of `Weekly full PR CI` can validate
+one open PR by supplying its number.
 
 This scheduled run is a freshness backstop. Normal PR pushes retain the one-run verdict adoption
 behavior above, and merge-group validation still runs the full suite independently.
@@ -214,8 +221,7 @@ errors retain full Apple verification. Compilation, both framework links, host b
 tests, report validation, and simulator evidence remain blocking on hits and misses.
 
 A successful full validation can publish a missing entry only on a `master` push or a manual
-`master` run without `pull_request_number`. Manual PR validation also uses the master workflow ref
-but checks out a PR merge tree, so it cannot publish this cache. PRs and merge groups restore only.
+`master` validation of the master commit. PRs, merge groups, and dispatched PR validations restore only.
 The first successful full master validation seeds the cache; until then, runs compile normally.
 Runner-image changes deliberately require a new entry. If post-merge result reuse keeps skipping
 Native after invalidation, a manual master dispatch with `force_full=true` refreshes it.

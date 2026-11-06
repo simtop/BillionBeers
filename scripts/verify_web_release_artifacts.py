@@ -121,9 +121,12 @@ def _provenance(
             raise VerificationError(
                 "GitHub Actions provenance is incomplete: " + ", ".join(missing)
             )
-        if values["GITHUB_SHA"] != source_revision:
+        if tested_sha := os.environ.get("CI_TESTED_SHA"):
+            values["CI_TESTED_SHA"] = tested_sha
+        expected_key = "CI_TESTED_SHA" if tested_sha else "GITHUB_SHA"
+        if values[expected_key] != source_revision:
             raise VerificationError(
-                f"GITHUB_SHA {values['GITHUB_SHA']} does not match checked-out revision {source_revision}"
+                f"{expected_key} {values[expected_key]} does not match checked-out revision {source_revision}"
             )
     return values
 

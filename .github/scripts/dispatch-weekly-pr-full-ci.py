@@ -55,11 +55,10 @@ class GitHub:
 
     def dispatch_full_ci(self, pull_request_number: int) -> None:
         self.request(
-            "actions/workflows/ci.yml/dispatches",
+            "actions/workflows/weekly-pr-full-ci.yml/dispatches",
             {
                 "ref": "master",
                 "inputs": {
-                    "force_full": "true",
                     "pull_request_number": str(pull_request_number),
                 },
             },
