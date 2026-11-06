@@ -468,6 +468,7 @@ jobs:
           PREPARATION_BRANCH: ${{ github.head_ref || github.ref_name }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           PREPARATION_HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          REUSE_PREPARATION: ${{ steps.reuse.outputs.reuse }}
         run: |
           if [ "$PREPARATION_BRANCH" = "$DEFAULT_BRANCH" ]; then
             echo "::error::Refusing to write the default branch."
@@ -480,7 +481,7 @@ jobs:
             echo "::error::PR head changed during preparation; no generated files were pushed."
             exit 1
           fi
-          if [ "${{ steps.reuse.outputs.reuse }}" = true ]; then
+          if [ "$REUSE_PREPARATION" = true ]; then
             output_sha="$PREPARATION_HEAD"
           else
             python3 .github/scripts/stage-dependabot-preparation.py "$RUNNER_TEMP/formatting-files"
@@ -505,10 +506,11 @@ jobs:
           PR_NUMBER: ${{ github.event_name == 'pull_request' && github.event.pull_request.number || 0 }}
           ORIGIN_RUN_ID: ${{ steps.reuse.outputs.origin_run_id }}
           ORIGIN_ATTEMPT: ${{ steps.reuse.outputs.origin_attempt }}
+          OUTPUT_SHA: ${{ steps.commit_output.outputs.output_sha }}
         run: |
           python3 .github/scripts/write-preparation-result.py write-result \
             --branch "$BRANCH" --source-sha "$SOURCE_SHA" \
-            --output-sha "${{ steps.commit_output.outputs.output_sha }}" --pr-number "$PR_NUMBER" \
+            --output-sha "$OUTPUT_SHA" --pr-number "$PR_NUMBER" \
             --current-run-id "$GITHUB_RUN_ID" --evidence .platform-evidence \
             --origin-run-id "${ORIGIN_RUN_ID:-0}" --origin-attempt "${ORIGIN_ATTEMPT:-0}" \
             --output "$RUNNER_TEMP/authoritative-preparation.json"

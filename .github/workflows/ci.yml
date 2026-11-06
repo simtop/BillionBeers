@@ -312,13 +312,14 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ inputs.tested_sha }}
-          persist-credentials: ${{ inputs.tested_sha == '' }}
+          persist-credentials: false
           # Full history so the base..head range below can be resolved; the scan itself is still
           # scoped to just this PR's commits.
           fetch-depth: 0
 
       - name: Scan PR commit range for secrets
         env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
           # Pinned release + verified checksum, in the same spirit as the SHA-pinned actions - a
           # floating install script or action tag is the exact mutable-supply-chain surface this
           # job exists to close. Bump both together when updating.
@@ -326,12 +327,13 @@ jobs:
           GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
         run: |
           set -euo pipefail
+          : "${BASE_SHA:?Missing pull request base SHA}"
           curl -sSL -o gitleaks.tar.gz \
             "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
           echo "${GITLEAKS_SHA256}  gitleaks.tar.gz" | sha256sum -c -
           tar -xzf gitleaks.tar.gz gitleaks
           ./gitleaks git . \
-            --log-opts="origin/${{ github.base_ref }}..HEAD" \
+            --log-opts="${BASE_SHA}..HEAD" \
             --redact --verbose --no-banner
 
   lint:
@@ -1290,14 +1292,12 @@ jobs:
 
       - name: Shut down simulator
         if: always() && steps.simulator.outputs.udid != ''
-        run: xcrun simctl shutdown "${{ steps.simulator.outputs.udid }}" || true
+        env:
+          SIMULATOR_UDID: ${{ steps.simulator.outputs.udid }}
+        run: xcrun simctl shutdown "$SIMULATOR_UDID" || true
 
-  # Single aggregate gate - make THIS the only required status check in branch protection, not the
-  # individual jobs. Why: a `skipped` job (secret-scan is PR-only; future path-filtered lanes will
-  # skip on docs/CI-only changes) reports neither success nor failure, and a *required* skipped
-  # check blocks merge forever. This gate treats `skipped` as fine and fails only on a real
-  # failure or cancellation, so path filtering stays safe and required-checks are managed in one
-  # place. `if: always()` so the gate runs even when an upstream job fails.
+  # Branch protection requires this aggregate gate. It checks the expected verdict for every job,
+  # including intentional skips from lane selection and PR-only checks.
   ci-gate:
     name: CI Gate
     timeout-minutes: 360
