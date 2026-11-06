@@ -104,8 +104,9 @@ python3 scripts/verify_ios_simulator_artifacts.py \
   --verify-packet iosApp/build/ios-simulator-confidence
 ```
 
-Verification rejects missing, extra, changed, unsafe, or symlinked files; invalid bundle metadata or
-embedded framework content; malformed, empty, failing, or skipped native reports; and source/CI SHA
-mismatches. Discard a mismatched packet and rerun the same sequence from a clean checkout of the
+Verification checks for thin arm64 Mach-O binaries targeting the iOS simulator in the host executable,
+its debug library when present, and the embedded Kotlin framework. It also checks bundle metadata,
+file paths and hashes, passing native reports, and matching source and CI revisions. Discard a
+mismatched packet and rerun the same sequence from a clean checkout of the
 intended revision. The packet strengthens exact simulator evidence but does not reconcile the separate
 physical-device/signing prerequisite.

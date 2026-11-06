@@ -156,7 +156,8 @@ managed-device test path. The
 normal CI workflow still executes the managed-device suite; only candidate ledger preparation
 replaces those executions with APK assembly. Apple compiles device and simulator targets, links both
 frameworks, builds the iOS simulator host, and runs `ios-test`, including
-`:ios-shared:iosSimulatorArm64Test`.
+`:ios-shared:iosSimulatorArm64Test`. It also runs `:desktop-app:checkRuntime` to resolve the
+Compose JDK probe used by macOS package builds.
 
 `--dry-run`, task listing, and Gradle's `dependencies` report do not prove artifact closure. The
 lane targets execute the consuming tasks above so Kotlin/Native, Binaryen, Compose resource ZIPs,

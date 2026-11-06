@@ -7,6 +7,7 @@ import argparse
 import plistlib
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 
@@ -29,8 +30,7 @@ def _check_architecture(executable: Path) -> None:
         raise VerificationError(f"executable is not a macOS arm64 binary: {result.stdout.strip()}")
 
 
-def verify_distribution(app: Path, dmg: Path | None = None, require_arm64: bool = True) -> list[str]:
-    app = app.resolve()
+def _verify_app(app: Path, require_arm64: bool) -> list[str]:
     if not app.is_dir() or app.suffix != ".app":
         raise VerificationError(f"application bundle does not exist: {app}")
 
@@ -38,6 +38,9 @@ def verify_distribution(app: Path, dmg: Path | None = None, require_arm64: bool 
     macos = contents / "MacOS"
     resources = contents / "Resources"
     info_path = contents / "Info.plist"
+    for path in (info_path, macos, resources):
+        if not path.resolve().is_relative_to(app):
+            raise VerificationError(f"application entry points outside the bundle: {path}")
     if not info_path.is_file():
         raise VerificationError(f"Info.plist does not exist: {info_path}")
     if not macos.is_dir():
@@ -55,10 +58,16 @@ def verify_distribution(app: Path, dmg: Path | None = None, require_arm64: bool 
     if info.get("CFBundleIdentifier") != "com.simtop.billionbeers.desktop":
         raise VerificationError("Info.plist has an unexpected bundle identifier")
     executable_name = info.get("CFBundleExecutable")
-    if not isinstance(executable_name, str) or not executable_name:
-        raise VerificationError("Info.plist has no executable name")
+    if (
+        not isinstance(executable_name, str)
+        or not executable_name
+        or Path(executable_name).name != executable_name
+    ):
+        raise VerificationError("Info.plist has an invalid executable name")
 
     executable = macos / executable_name
+    if not executable.resolve().is_relative_to(app):
+        raise VerificationError(f"application executable points outside the bundle: {executable}")
     if not executable.is_file() or executable.stat().st_size == 0:
         raise VerificationError(f"application executable is missing or empty: {executable}")
     if not any(resources.iterdir()):
@@ -66,12 +75,46 @@ def verify_distribution(app: Path, dmg: Path | None = None, require_arm64: bool 
     if require_arm64:
         _check_architecture(executable)
 
-    checked = [str(info_path.relative_to(app)), str(executable.relative_to(app))]
+    return [str(info_path.relative_to(app)), str(executable.relative_to(app))]
+
+
+def _hdiutil(operation: str, *args: str) -> None:
+    try:
+        subprocess.run(
+            ["hdiutil", operation, *args], check=True, capture_output=True, text=True,
+        )
+    except subprocess.CalledProcessError as error:
+        raise VerificationError(f"DMG {operation} failed: {error.stderr.strip() or error}") from error
+    except OSError as error:
+        raise VerificationError(f"could not run hdiutil {operation}: {error}") from error
+
+
+def _verify_dmg(dmg: Path, app_name: str, require_arm64: bool) -> list[str]:
+    if not dmg.is_file() or dmg.stat().st_size == 0 or dmg.suffix != ".dmg":
+        raise VerificationError(f"DMG does not exist or is empty: {dmg}")
+    _hdiutil("verify", str(dmg))
+    mount = Path(tempfile.mkdtemp(prefix="billionbeers-dmg-")).resolve()
+    try:
+        _hdiutil("attach", "-readonly", "-nobrowse", "-noautoopen", "-mountpoint", str(mount), str(dmg))
+        try:
+            mounted_app = mount / app_name
+            if mounted_app.is_symlink():
+                raise VerificationError(f"DMG app bundle is a symlink: {mounted_app}")
+            checked = _verify_app(mounted_app, require_arm64)
+            return [str(dmg), *(f"{dmg.name}/{app_name}/{entry}" for entry in checked)]
+        finally:
+            _hdiutil("detach", str(mount))
+    finally:
+        # Do not recursively remove a volume if the detach itself failed.
+        if mount.exists() and not mount.is_mount():
+            mount.rmdir()
+
+
+def verify_distribution(app: Path, dmg: Path | None = None, require_arm64: bool = True) -> list[str]:
+    app = app.resolve()
+    checked = _verify_app(app, require_arm64)
     if dmg is not None:
-        dmg = dmg.resolve()
-        if not dmg.is_file() or dmg.stat().st_size == 0 or dmg.suffix != ".dmg":
-            raise VerificationError(f"DMG does not exist or is empty: {dmg}")
-        checked.append(str(dmg))
+        checked.extend(_verify_dmg(dmg.resolve(), app.name, require_arm64))
     return checked
 
 
