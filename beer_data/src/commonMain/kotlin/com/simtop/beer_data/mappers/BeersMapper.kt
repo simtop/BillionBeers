@@ -3,6 +3,7 @@ package com.simtop.beer_data.mappers
 import com.simtop.beer_network.models.BeersApiResponseItem
 import com.simtop.beer_network.models.BreweryApiResponseItem
 import com.simtop.beer_network.models.NamedEntity
+import com.simtop.beer_network.models.Translation
 import com.simtop.beer_network.models.TypologyApiResponseItem
 import com.simtop.beer_network.network.BeersService
 import com.simtop.beer_storage.api.StoredBeer
@@ -23,14 +24,14 @@ class BeersMapper
 @Inject
 constructor(private val languageProvider: LanguageProvider, private val logger: Logger) {
 
-  fun fromBeersApiResponseItemToBeer(response: BeersApiResponseItem?): Beer {
-    val languageCode = languageProvider.currentLanguageCode()
+  fun fromBeersApiResponseItemToBeer(
+    response: BeersApiResponseItem?,
+    languageCode: String = languageProvider.currentLanguageCode(),
+  ): Beer {
     val translation =
       response?.translations?.find { it.language.code == languageCode }
         ?: response?.translations?.find { it.language.code == BeersService.DEFAULT_LANGUAGE_CODE }
-    if (response?.id == null) logger.logSafely(LogTag.BEERS_MAPPER, MISSING_BEER_ID)
-    if (response?.name == null) logger.logSafely(LogTag.BEERS_MAPPER, MISSING_BEER_NAME)
-    if (translation == null) logger.logSafely(LogTag.BEERS_MAPPER, MISSING_BEER_TRANSLATION)
+    logMissingBeerFields(response, translation)
 
     return Beer(
       id = response?.id ?: "",
@@ -55,6 +56,12 @@ constructor(private val languageProvider: LanguageProvider, private val logger: 
       ingredients = response?.ingredients.localizedNames(languageCode),
       recommendedGlasses = response?.recommendedGlasses.localizedNames(languageCode),
     )
+  }
+
+  private fun logMissingBeerFields(response: BeersApiResponseItem?, translation: Translation?) {
+    if (response?.id == null) logger.logSafely(LogTag.BEERS_MAPPER, MISSING_BEER_ID)
+    if (response?.name == null) logger.logSafely(LogTag.BEERS_MAPPER, MISSING_BEER_NAME)
+    if (translation == null) logger.logSafely(LogTag.BEERS_MAPPER, MISSING_BEER_TRANSLATION)
   }
 
   /**

@@ -131,6 +131,7 @@ class QueryFlagObservationBenchmark {
             search: String?,
             typologyId: String?,
             breweryId: String?,
+            languageCode: String?,
         ) =
             if (page == 1) {
                 BeersPage(

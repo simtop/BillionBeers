@@ -95,9 +95,14 @@ interface BeersRepository {
   /**
    * Fetches one page from the API, carrying the server total for end-detection and "N of M" UI. The
    * default (all-null) [query] fetches the full catalog; setting search/style/brewery fetches that
-   * filtered surface.
+   * filtered surface. [languageCode] pins a caller's paging operation to a language. If omitted,
+   * the repository captures the active language when the request starts.
    */
-  suspend fun getBeersPageFromApi(page: Int, query: BeersQuery = BeersQuery()): BeerPage
+  suspend fun getBeersPageFromApi(
+    page: Int,
+    query: BeersQuery = BeersQuery(),
+    languageCode: String? = null,
+  ): BeerPage
 }
 
 /**

@@ -47,10 +47,25 @@ class BeersRepositoryImpl(
   private val epochTimeProvider: EpochTimeProvider = SystemEpochTimeProvider(),
 ) : BeersRepository, BeerCatalogMetadataRepository, SavedFilterPresetsRepository {
 
-  override suspend fun getBeersPageFromApi(page: Int, query: BeersQuery): BeerPage {
+  override suspend fun getBeersPageFromApi(
+    page: Int,
+    query: BeersQuery,
+    languageCode: String?,
+  ): BeerPage {
+    val requestLanguage =
+      languageCode
+        ?: withFetchDiagnostics(logger, FetchFailureOrigin.REMOTE) {
+          languageProvider.currentLanguageCode()
+        }
     val remotePage =
       withFetchDiagnostics(logger, FetchFailureOrigin.REMOTE) {
-        beersRemoteSource.getListOfBeers(page, query.search, query.styleId, query.breweryId)
+        beersRemoteSource.getListOfBeers(
+          page,
+          query.search,
+          query.styleId,
+          query.breweryId,
+          requestLanguage,
+        )
       }
     return withFetchDiagnostics(logger, FetchFailureOrigin.MAPPING) {
       BeerPage(
@@ -59,7 +74,7 @@ class BeersRepositoryImpl(
             if (item.id.isNullOrBlank()) {
               throw SerializationException("Beer page contains an item without an ID")
             }
-            beersMapper.fromBeersApiResponseItemToBeer(item)
+            beersMapper.fromBeersApiResponseItemToBeer(item, requestLanguage)
           },
         totalCount = remotePage.totalCount,
       )
@@ -167,7 +182,7 @@ class BeersRepositoryImpl(
 
   override suspend fun catalogCacheStatus(policy: CachePolicy): CatalogCacheStatus {
     if (beersStorage.countCatalogEntries() == 0) return CatalogCacheStatus.Empty
-    val state = beersStorage.getPagingState(catalogSurface(languageProvider))
+    val state = beersStorage.getPagingState(catalogSurface(languageProvider.currentLanguageCode()))
     return when {
       // No bookmark for this language: either a legacy cache from before paging_state existed
       // (age unknowable -> treat as stale) or bookmarks that all belong to another language.

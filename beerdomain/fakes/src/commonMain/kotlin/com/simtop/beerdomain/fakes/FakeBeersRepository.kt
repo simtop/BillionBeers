@@ -191,7 +191,11 @@ class FakeBeersRepository(initialBeers: List<Beer> = emptyList()) :
   /** Records every (page, query) the pager fetched, so tests can assert what was requested. */
   val apiRequests = mutableListOf<Pair<Int, BeersQuery>>()
 
-  override suspend fun getBeersPageFromApi(page: Int, query: BeersQuery): BeerPage {
+  override suspend fun getBeersPageFromApi(
+    page: Int,
+    query: BeersQuery,
+    languageCode: String?,
+  ): BeerPage {
     apiRequests += page to query
     return apiPage
   }

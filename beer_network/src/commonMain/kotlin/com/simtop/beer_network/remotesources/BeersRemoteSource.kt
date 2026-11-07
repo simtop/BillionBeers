@@ -12,12 +12,14 @@ interface BeersRemoteSource {
   /**
    * One page of beers. All filters null fetches the full catalog; [search] adds `q=`, [typologyId]
    * `typology.id=`, [breweryId] `brewery.id=` - the server ANDs whichever are present.
+   * [languageCode] carries the language of an ongoing request. Otherwise use the active language.
    */
   suspend fun getListOfBeers(
     page: Int,
     search: String? = null,
     typologyId: String? = null,
     breweryId: String? = null,
+    languageCode: String? = null,
   ): BeersPage
 
   /** All beer styles - 17 rows, unpaged. */
@@ -38,11 +40,12 @@ class BeersRemoteSourceImpl(
     search: String?,
     typologyId: String?,
     breweryId: String?,
+    languageCode: String?,
   ): BeersPage {
     val response =
       service.getListOfBeers(
         page = page,
-        languageCode = languageProvider.currentLanguageCode(),
+        languageCode = languageCode ?: languageProvider.currentLanguageCode(),
         search = search,
         typologyId = typologyId,
         breweryId = breweryId,

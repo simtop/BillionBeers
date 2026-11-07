@@ -44,6 +44,7 @@ class FakeBeersRemoteSource : BeersRemoteSource {
     search: String?,
     typologyId: String?,
     breweryId: String?,
+    languageCode: String?,
   ): BeersPage {
     requestedPages += page
     requestedSearches += search
