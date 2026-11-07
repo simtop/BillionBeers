@@ -81,6 +81,19 @@ Run-level measurements must compare repeated successful and failed runs before c
 ownership. The current evidence shows overlap between Unit's Wasm browser work and the Web lane,
 but does not justify splitting or removing a lane; a phase record is not target-coverage proof.
 
+## Measure the Apple Native component cache
+
+Manually dispatch **Measure Apple Link Cache** from the default branch. Its cold and warm jobs use
+the same commit, runner class, Xcode, Java and Apple task sequence. Both jobs start with a fresh
+Native home and disable Gradle's shared cache and build-output caching. The warm job requires an
+exact hit from the existing Native component cache. The workflow uses that cache in read mode.
+
+Use the archived identity, timings, profiles and test XML from both jobs. Compare results only when
+both jobs pass on the same image and toolchain and report the same test cases. Include cache
+download and copy time when comparing total savings. Use the framework and test-link profiles to
+explain any difference in job time. The procedure also applies after a Kotlin or runner upgrade
+once a successful default-branch CI run has seeded the new key.
+
 ## Runtime and verification
 
 GitHub Actions provides a workflow-level completion trigger, so the reporter does not start a

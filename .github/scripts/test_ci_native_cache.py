@@ -132,6 +132,24 @@ class NativeCacheTest(unittest.TestCase):
         save = native.split("- name: Save verified Native component cache", 1)[1].split("- name:", 1)[0]
         self.assertIn("if: success() && steps.native-cache-snapshot.outcome == 'success'", save)
 
+    def test_measurement_changes_only_native_component_restoration(self):
+        workflows = Path(__file__).resolve().parents[1] / "workflows"
+        workflow = (workflows / "measure-apple-link-cache.yml").read_text()
+        self.assertIn("on:\n  workflow_dispatch:\n", workflow)
+        self.assertIn("cache-mode: read", workflow)
+        self.assertIn("cache: [cold, warm]", workflow)
+        self.assertIn("ref: ${{ github.sha }}", workflow)
+        self.assertIn("cache-disabled: true", workflow)
+        self.assertIn("--no-build-cache", workflow)
+        self.assertNotIn("actions/cache/save", workflow)
+        restore = workflow.split("- name: Restore the exact Native component cache", 1)[1].split("- name:", 1)[0]
+        self.assertIn("if: matrix.cache == 'warm'", restore)
+        self.assertIn("fail-on-cache-miss: true", restore)
+        self.assertNotIn("restore-keys:", restore)
+        self.assertIn('test "$CACHE_HIT" = true', workflow)
+        for target in ("ios-compile", "ios-framework", "ios-host-build", "ios-test"):
+            self.assertIn(f"run: bash .github/scripts/run-timed-command.sh make {target}", workflow)
+
 
 if __name__ == "__main__":
     unittest.main()
