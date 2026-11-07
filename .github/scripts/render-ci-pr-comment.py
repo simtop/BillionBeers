@@ -54,6 +54,7 @@ STEP_RULES = {
     "Run Spotless Check": ("make format", (), None),
     "Run Detekt": ("make lint", (), None),
     "Run Android Lint": ("make android-lint", ("android-lint-reports",), None),
+    "Build, verify and launch the app from the Desktop DMG": ("make desktop-package-smoke", (), None),
     "Run Dependency Guard": ("make dependency-guard", (), None),
     "Test CI reporting": ("make ci-report-test", (), None),
     "Check repository Markdown links and generated indexes": ("make docs-check", (), None),

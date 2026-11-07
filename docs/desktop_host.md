@@ -36,11 +36,14 @@ Run the packaged executable through its deterministic headless CLI path with:
 make desktop-package-smoke
 ```
 
-The smoke launches the bundled macOS arm64 executable with `--cli --data-dir` pointing at an isolated
-temporary directory. It proves packaged process startup, bundled runtime/resource loading, local
-database initialization, and a zero-row local read without contacting the API. The temporary directory
-is removed after the process exits. The smoke is separate from the structural verifier so a bundle
-layout failure and a runtime-launch failure remain diagnosable independently.
+The smoke runs the structural checks and launches the macOS arm64 executable directly from the
+read-only image. It passes `--cli --data-dir` with an isolated temporary directory, then checks
+packaged process startup, bundled runtime and resources, database initialization, and a zero-row
+local read without contacting the API. It removes the temporary data and detaches the image.
+
+CI requires this check for changes to the Desktop app or packaging scripts, Gradle configuration
+or dependency metadata, build conventions, the Makefile, and the CI selector or workflow.
+An explicit full CI dispatch from the default branch also runs the check.
 
 This evidence establishes that the declared package can be assembled, has the expected application
 structure/resources, and can start its offline CLI path. It does not claim GUI launch or rendering,

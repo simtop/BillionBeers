@@ -11,6 +11,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from smoke_desktop_distribution import SmokeError
 from verify_desktop_distribution import VerificationError, verify_distribution
 
 
@@ -57,6 +58,28 @@ class DesktopDistributionVerifierTest(unittest.TestCase):
             self.assertIn(f"{dmg.name}/{app.name}/Contents/MacOS/BillionBeers", checked)
             self.assertEqual(["verify", "attach", "detach"], [call.args[0][1] for call in hdiutil.call_args_list])
             self.assertFalse(Path(hdiutil.call_args.args[0][2]).exists())
+
+    def test_smoke_launches_the_mounted_app_and_detaches_after_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            app = self.make_app(root)
+            dmg = root / "test.dmg"
+            dmg.write_bytes(b"dmg")
+
+            def smoke(mounted_app):
+                self.assertNotEqual(app, mounted_app)
+                self.assertTrue((mounted_app / "Contents/MacOS/BillionBeers").is_file())
+                raise SmokeError("mounted app failed")
+
+            with (
+                patch("verify_desktop_distribution.subprocess.run", side_effect=self.fake_hdiutil(app)) as hdiutil,
+                patch("verify_desktop_distribution.smoke_distribution", side_effect=smoke) as run_smoke,
+            ):
+                with self.assertRaisesRegex(SmokeError, "mounted app failed"):
+                    verify_distribution(app, dmg, require_arm64=False, smoke=True)
+            run_smoke.assert_called_once()
+            self.assertEqual("detach", hdiutil.call_args.args[0][1])
+            self.assertFalse(run_smoke.call_args.args[0].exists())
 
     def test_corrupt_dmg_is_rejected_before_mount(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

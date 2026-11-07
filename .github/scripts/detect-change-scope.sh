@@ -13,6 +13,7 @@
 #   GITHUB_OUTPUT
 #
 # Outputs: unit / screenshot / instrumented / native / web - "true" means that lane runs.
+# --desktop-package writes a separate selection from the exact event range, without verdict adoption.
 #
 # Soundness rules - keep these when editing:
 # - This file must live under .github/ (NOT scripts/): scripts/ is in the safe-list, and an edit
@@ -156,6 +157,33 @@ classify_all() {
     classify_path "$f"
   done <<< "$1"
 }
+
+if [[ "${1:-}" == "--desktop-package" ]]; then
+  case "$EVENT_NAME" in
+    pull_request) base="${PR_CONTEXT:+${BASE_SHA:-}}" ;;
+    push) base="${BEFORE:-}" ;;
+    merge_group) base="${BASE_SHA:-}" ;;
+    workflow_dispatch)
+      # Both a pinned PR merge and a default-branch dispatch can compare the checked-out tree
+      # to its first parent. A full default-branch dispatch explicitly requests packaging.
+      if [ "${FORCE_FULL:-}" = true ] && [ -z "${TESTED_SHA:-}" ]; then base=""
+      else base=HEAD^1
+      fi ;;
+    *) base="" ;;
+  esac
+
+  selected=true
+  if [ -n "$base" ] && git diff --quiet --no-ext-diff --no-renames "$base" HEAD -- \
+    desktop-app/build.gradle.kts desktop-app/src/main \
+    gradle/ gradle.properties build.gradle.kts settings.gradle.kts build-logic/ Makefile \
+    .github/workflows/ci.yml .github/scripts/detect-change-scope.sh \
+    scripts/verify_desktop_distribution.py scripts/smoke_desktop_distribution.py; then
+    selected=false
+  fi
+  printf 'desktop_package=%s\n' "$selected" >> "$GITHUB_OUTPUT"
+  echo "Desktop package selected: $selected"
+  exit 0
+fi
 
 if [[ "${1:-}" == "--self-test" ]]; then
   assert_lanes() {
