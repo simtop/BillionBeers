@@ -10,6 +10,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+from smoke_desktop_distribution import SmokeError, smoke_distribution
+
 
 class VerificationError(Exception):
     pass
@@ -89,7 +91,7 @@ def _hdiutil(operation: str, *args: str) -> None:
         raise VerificationError(f"could not run hdiutil {operation}: {error}") from error
 
 
-def _verify_dmg(dmg: Path, app_name: str, require_arm64: bool) -> list[str]:
+def _verify_dmg(dmg: Path, app_name: str, require_arm64: bool, smoke: bool) -> list[str]:
     if not dmg.is_file() or dmg.stat().st_size == 0 or dmg.suffix != ".dmg":
         raise VerificationError(f"DMG does not exist or is empty: {dmg}")
     _hdiutil("verify", str(dmg))
@@ -101,6 +103,8 @@ def _verify_dmg(dmg: Path, app_name: str, require_arm64: bool) -> list[str]:
             if mounted_app.is_symlink():
                 raise VerificationError(f"DMG app bundle is a symlink: {mounted_app}")
             checked = _verify_app(mounted_app, require_arm64)
+            if smoke:
+                smoke_distribution(mounted_app)
             return [str(dmg), *(f"{dmg.name}/{app_name}/{entry}" for entry in checked)]
         finally:
             _hdiutil("detach", str(mount))
@@ -110,11 +114,15 @@ def _verify_dmg(dmg: Path, app_name: str, require_arm64: bool) -> list[str]:
             mount.rmdir()
 
 
-def verify_distribution(app: Path, dmg: Path | None = None, require_arm64: bool = True) -> list[str]:
+def verify_distribution(
+    app: Path, dmg: Path | None = None, require_arm64: bool = True, *, smoke: bool = False,
+) -> list[str]:
+    if smoke and dmg is None:
+        raise VerificationError("Desktop smoke requires a DMG")
     app = app.resolve()
     checked = _verify_app(app, require_arm64)
     if dmg is not None:
-        checked.extend(_verify_dmg(dmg.resolve(), app.name, require_arm64))
+        checked.extend(_verify_dmg(dmg.resolve(), app.name, require_arm64, smoke))
     return checked
 
 
@@ -123,14 +131,17 @@ def main() -> int:
     parser.add_argument("application", type=Path)
     parser.add_argument("--dmg", type=Path)
     parser.add_argument("--skip-architecture", action="store_true")
+    parser.add_argument("--smoke", action="store_true", help="Launch the app from the mounted DMG.")
     args = parser.parse_args()
     try:
-        checked = verify_distribution(args.application, args.dmg, not args.skip_architecture)
-    except (OSError, VerificationError) as error:
+        checked = verify_distribution(args.application, args.dmg, not args.skip_architecture, smoke=args.smoke)
+    except (OSError, VerificationError, SmokeError) as error:
         print(f"Desktop distribution verification failed: {error}", file=sys.stderr)
         return 1
     print(f"Desktop distribution verification passed: {args.application}")
     print(f"Verified entries: {len(checked)}")
+    if args.smoke:
+        print(f"Desktop package smoke passed from mounted image: {args.dmg}")
     return 0
 
 

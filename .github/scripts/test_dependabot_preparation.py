@@ -615,8 +615,8 @@ os.execv(git, [git, *args])
         reconcile = load("reconcile-ci-report")
         root = Path(__file__).resolve().parents[2]
         workflow = (root / ".github/workflows/ci.yml").read_text()
-        names = set(reconcile.re.findall(r"^\s+name: (.+)$", workflow, reconcile.re.MULTILINE))
-        self.assertTrue(reconcile.CI_REQUIRED_JOBS <= names)
+        names = set(reconcile.re.findall(r"^    name: (.+)$", workflow, reconcile.re.MULTILINE))
+        self.assertEqual(reconcile.CI_REQUIRED_JOBS, names)
         api, reconcile, pr, _ = self.gate_refresh_fixture()
         pr["head"]["sha"] = "b" * 40
         self.assertFalse(MODULE.refresh_failed_ci_gate(api, 44, reconcile))

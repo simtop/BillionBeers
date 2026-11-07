@@ -169,13 +169,17 @@ desktop-package-test: ## Test the Desktop distribution verifiers without buildin
 	python3 scripts/test_verify_desktop_distribution.py
 	python3 scripts/test_smoke_desktop_distribution.py
 
-desktop-package-smoke: desktop-package ## Launch and smoke-test the packaged macOS arm64 Desktop CLI.
-	python3 scripts/smoke_desktop_distribution.py "$(DESKTOP_APP_DIR)"
+define verify_desktop_package
+	@set -- "$(DESKTOP_DMG_DIR)"/*.dmg; \
+	if [ "$$#" -ne 1 ] || [ ! -f "$$1" ]; then echo "Expected exactly one DMG under $(DESKTOP_DMG_DIR)" >&2; exit 1; fi; \
+	python3 scripts/verify_desktop_distribution.py "$(DESKTOP_APP_DIR)" --dmg "$$1" $(1)
+endef
+
+desktop-package-smoke: desktop-package ## Verify the macOS arm64 DMG and smoke-test the app inside it.
+	$(call verify_desktop_package,--smoke)
 
 desktop-package-verify: desktop-package ## Build and structurally verify the macOS arm64 Desktop distribution.
-	@dmg="$$(find "$(DESKTOP_DMG_DIR)" -maxdepth 1 -type f -name '*.dmg' -print -quit)"; \
-	if [ -z "$$dmg" ]; then echo "Desktop distribution DMG not found under $(DESKTOP_DMG_DIR)" >&2; exit 1; fi; \
-	python3 scripts/verify_desktop_distribution.py "$(DESKTOP_APP_DIR)" --dmg "$$dmg"
+	$(call verify_desktop_package)
 
 ##@ Web
 web-image-proxy-test: ## Test the local Web image proxy without contacting the upstream CDN.

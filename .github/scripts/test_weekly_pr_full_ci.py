@@ -122,7 +122,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertNotIn("refs/pull/", workflow)
         self.assertIn("format('full-pr-ci-{0}', inputs.pull_request_number)", workflow)
         self.assertIn("format('{0}-{1}', github.workflow, github.ref)", workflow)
-        self.assertEqual(12, workflow.count("ref: ${{ inputs.tested_sha }}"))
+        self.assertEqual(13, workflow.count("ref: ${{ inputs.tested_sha }}"))
         self.assertEqual(2, workflow.count("CI_TESTED_SHA: ${{ inputs.tested_sha }}"))
         self.assertIn("persist-credentials: ${{ inputs.tested_sha == '' }}", workflow)
         self.assertIn("inputs.tested_sha == '' && github.event_name == 'push'", workflow)

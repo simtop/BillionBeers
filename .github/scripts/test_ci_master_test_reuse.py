@@ -58,11 +58,12 @@ class FakeGitHub:
             "Static Analysis (Detekt)", "Android Lint", "Dependency Guard",
             "Dependency API Compatibility", "Unit Tests", "Web Tests (Wasm/static)",
             "Screenshot Tests (Paparazzi)", "Instrumented Tests (Gradle Managed Device)",
-            "Native Tests (Apple)", "CI Gate", "Track failed master CI run",
+            "Native Tests (Apple)", "Desktop DMG Smoke (macOS)", "CI Gate", "Track failed master CI run",
         )
         self.jobs = [
             {"name": name, "status": "completed",
-             "conclusion": "skipped" if name == "Track failed master CI run" else "success", "steps": []}
+             "conclusion": "skipped" if name in {"Track failed master CI run", "Desktop DMG Smoke (macOS)"}
+             else "success", "steps": []}
             for name in job_names
         ]
         gate = next(job for job in self.jobs if job["name"] == "CI Gate")
@@ -210,7 +211,7 @@ class SelectMasterReuseTest(unittest.TestCase):
     def test_manual_workflow_exposes_boolean_force_full_input(self):
         workflow = (Path(__file__).resolve().parents[1] / "workflows" / "ci.yml").read_text()
         self.assertIn("force_full:", workflow)
-        self.assertIn("description: Run all five test lanes even if a verified test result exists.", workflow)
+        self.assertIn("description: Run all five test lanes and Desktop packaging", workflow)
         self.assertRegex(workflow, r"force_full:\n\s+description:.*?\n\s+type: boolean\n\s+required: false\n\s+default: false")
         self.assertIn("FORCE_FULL: ${{ inputs.force_full }}", workflow)
 

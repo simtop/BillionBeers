@@ -22,6 +22,7 @@ LANES = {
     "instrumented": "instrumented-tests",
     "native": "native-tests",
     "web": "web-tests",
+    "desktop_package": "desktop-package",
 }
 
 
@@ -86,6 +87,16 @@ class CiGateTests(unittest.TestCase):
         result = run_gate(needs)
         self.assertNotEqual(0, result.returncode)
         self.assertIn("web-tests expected success, got skipped", result.stdout)
+
+    def test_desktop_package_must_match_its_path_selection(self):
+        for selected, actual in ((True, "skipped"), (False, "success")):
+            with self.subTest(selected=selected, actual=actual):
+                needs = fixture(selected=("desktop_package",) if selected else ())
+                needs["desktop-package"]["result"] = actual
+                result = run_gate(needs)
+                self.assertNotEqual(0, result.returncode)
+                expected = "success" if selected else "skipped"
+                self.assertIn(f"desktop-package expected {expected}, got {actual}", result.stdout)
 
     def test_missing_lane_selection_fails(self):
         needs = fixture()

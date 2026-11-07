@@ -45,6 +45,7 @@ CI_REQUIRED_JOBS = {
     "Static Analysis (Detekt)", "Android Lint", "Dependency Guard", "Unit Tests",
     "Web Tests (Wasm/static)", "Screenshot Tests (Paparazzi)",
     "Instrumented Tests (Gradle Managed Device)", "Native Tests (Apple)", "CI Gate",
+    "Dependency API Compatibility", "Desktop DMG Smoke (macOS)", "Track failed master CI run",
 }
 
 

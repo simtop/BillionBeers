@@ -18,7 +18,8 @@ def git(directory: Path, *args: str) -> str:
 
 
 def commit(directory: Path, message: str) -> str:
-    changed = [line[3:] for line in git(directory, "status", "--porcelain").splitlines() if line]
+    status = subprocess.check_output(["git", "status", "--porcelain"], cwd=directory, text=True)
+    changed = [line[3:] for line in status.splitlines()]
     git(directory, "add", *changed)
     subprocess.run(["git", "-c", "user.email=ci@example.invalid", "-c", "user.name=CI", "commit", "-m", message], cwd=directory, check=True, stdout=subprocess.DEVNULL)
     return git(directory, "rev-parse", "HEAD")
@@ -61,6 +62,18 @@ def run_detector(
     }
     subprocess.run(["bash", str(SCRIPT)], cwd=directory, env=environment, check=True, stdout=subprocess.DEVNULL)
     return dict(line.split("=", 1) for line in output.read_text().splitlines())
+
+
+def desktop_selected(directory: Path, **inputs: str) -> str:
+    output = directory / "github-output"
+    output.unlink(missing_ok=True)
+    environment = os.environ | {
+        "GITHUB_OUTPUT": str(output), "EVENT_NAME": "pull_request",
+        "PR_CONTEXT": "verified", "BASE_SHA": "", "BEFORE": "", "FORCE_FULL": "", "TESTED_SHA": "",
+    } | inputs
+    subprocess.run(["bash", str(SCRIPT), "--desktop-package"], cwd=directory, env=environment,
+                   check=True, capture_output=True)
+    return output.read_text().strip()
 
 
 with tempfile.TemporaryDirectory() as temporary:
@@ -163,6 +176,38 @@ with tempfile.TemporaryDirectory() as temporary:
         assert result == expected, (verifier, result)
         before_head = verifier_head
 
+    previous = git(repository, "rev-parse", "HEAD")
+    (repository / "README.md").write_text("Updated docs\n")
+    docs = commit(repository, "docs only")
+    assert desktop_selected(repository, BASE_SHA=previous) == "desktop_package=false"
+    assert desktop_selected(repository, EVENT_NAME="push", BEFORE=previous) == "desktop_package=false"
+    assert desktop_selected(repository, BASE_SHA="a" * 40) == "desktop_package=true"
+    assert desktop_selected(repository, EVENT_NAME="workflow_dispatch", FORCE_FULL="true") == "desktop_package=true"
+    android = repository / "app/src/main/kotlin/Screen.kt"
+    android.parent.mkdir(parents=True, exist_ok=True)
+    android.write_text("class Screen\n")
+    android_head = commit(repository, "Android source")
+    assert desktop_selected(repository, BASE_SHA=docs) == "desktop_package=false"
+    docs = android_head
+    for path in (
+        "desktop-app/src/main/resources/icon.icns", "gradle/libs.versions.toml",
+        "gradle/wrapper/gradle-wrapper.properties", "scripts/verify_desktop_distribution.py",
+        "scripts/smoke_desktop_distribution.py", ".github/workflows/ci.yml",
+    ):
+        source = repository / path
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_text("packaging input\n")
+        head = commit(repository, f"change {path}")
+        assert desktop_selected(repository, BASE_SHA=docs) == "desktop_package=true", path
+        assert desktop_selected(repository, EVENT_NAME="push", BEFORE=docs) == "desktop_package=true", path
+        assert desktop_selected(repository, EVENT_NAME="merge_group", BASE_SHA=docs) == "desktop_package=true", path
+        assert desktop_selected(repository, EVENT_NAME="workflow_dispatch", TESTED_SHA=head) == "desktop_package=true", path
+        docs = head
+
+    source.unlink()
+    commit(repository, "remove a packaging input")
+    assert desktop_selected(repository, BASE_SHA=docs) == "desktop_package=true"
+
 workflow = (ROOT / ".github/workflows/ci.yml").read_text()
 report_workflow = (ROOT / ".github/workflows/ci-report.yml").read_text()
 producer_name = next(line.removeprefix("name: ").strip() for line in workflow.splitlines() if line.startswith("name:"))
@@ -177,11 +222,13 @@ for marker in (
     "web: ${{ steps.reuse.outputs.eligible == 'true' && 'false' || steps.filter.outputs.web }}",
     "name: Native Tests (Apple)",
     "name: Web Tests (Wasm/static)",
+    "name: Desktop DMG Smoke (macOS)",
     "needs: [format-check, changes]",
     "make ios-compile",
     "make ios-framework",
     "make ios-test",
     "make web-verify",
+    "make desktop-package-smoke",
     "- native-tests",
     "- web-tests",
 ):

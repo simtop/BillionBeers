@@ -30,6 +30,8 @@ REQUIRED_JOBS = {
 # These jobs belong to every workflow run but have conditional PR outcomes.
 CONDITIONAL_JOB_CONCLUSIONS = {
     "Track failed master CI run": {"skipped"},
+    # A successful CI Gate proves the package job matched its separate path selection.
+    "Desktop DMG Smoke (macOS)": {"success", "skipped"},
 }
 
 
