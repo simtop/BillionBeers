@@ -753,6 +753,19 @@ coverage-check: ## Fail if line coverage dropped below config/coverage-floor.txt
 	$(GRADLE_RUNNER) jacocoRootReport
 	@bash scripts/coverage-check.sh
 
+.PHONY: quality-compass mutation-forge
+COMPASS_THRESHOLD ?= 8
+FORGE_ARGS ?= --all --scan
+
+quality-compass: jacoco-report ## Score Kotlin functions and write a JSON report.
+	@python3 scripts/run-quality-tool.py kotlin-quality-compass --project . --all --reuse-coverage \
+		--coverage-report build/reports/jacoco/jacocoRootReport/jacocoRootReport.xml \
+		--threshold "$(COMPASS_THRESHOLD)" --format json --output build/reports/quality-compass/report.json
+
+mutation-forge: ## Scan for Kotlin mutation sites, or run a focused experiment with FORGE_ARGS.
+	@python3 scripts/run-quality-tool.py kotlin-mutation-forge --project . \
+		--exclude-path '.claude/worktrees/**' $(FORGE_ARGS)
+
 ##@ Documentation
 update-docs: ## Update README.md with the latest library versions from the catalog.
 	@chmod +x scripts/update_readme_versions.sh
