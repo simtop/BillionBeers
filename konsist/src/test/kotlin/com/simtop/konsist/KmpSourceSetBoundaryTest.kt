@@ -6,6 +6,7 @@ import java.io.File
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 
 private val kmpSourceSets =
   setOf(
@@ -49,8 +50,7 @@ class KmpSourceSetBoundaryTest {
     val root = repoRoot()
     val sourceFiles =
       root
-        .walkTopDown()
-        .onEnter { it.name !in setOf("build", "bin", ".git", ".gradle", "generated") }
+        .walkProjectTree(additionalExclusions = setOf("generated"))
         .filter {
           it.isFile && it.extension == "kt" && kmpSourceSet(it.relativeTo(root).path) != null
         }
@@ -69,6 +69,22 @@ class KmpSourceSetBoundaryTest {
         )
       }
     }
+  }
+
+  @Test
+  fun `project scan includes the active checkout and skips nested worktrees`(@TempDir root: File) {
+    val source = "web-app/src/wasmJsTest/kotlin/WebRoutesTest.kt"
+    listOf(source, ".claude/worktrees/other/$source").forEach { relativePath ->
+      val file = root.resolve(relativePath)
+      file.parentFile.mkdirs()
+      file.writeText("package web")
+    }
+
+    val files =
+      root.walkProjectTree().filter(File::isFile).map {
+        it.relativeTo(root).invariantSeparatorsPath
+      }
+    assertEquals(listOf(source), files.toList())
   }
 
   @Test

@@ -18,17 +18,23 @@ internal fun repoRoot(): File {
   return dir ?: error("Could not locate Gradle root (no settings.gradle.kts above user.dir)")
 }
 
+// Match the directory exclusions in :konsist:test inputs so local tooling state, including
+// nested worktrees, cannot affect a cached test result.
+private val projectTreeExcludedDirectories =
+  setOf("build", "bin", ".git", ".gradle", "gradle-user-home", ".claude")
+
+internal fun File.walkProjectTree(additionalExclusions: Set<String> = emptySet()): FileTreeWalk =
+  walkTopDown().onEnter {
+    it.name !in projectTreeExcludedDirectories && it.name !in additionalExclusions
+  }
+
 /**
  * Every `build.gradle.kts` in the project, skipping build output and IDE output trees. `bin/` is
  * excluded because stale IDE output holds *deleted* sources and would make a rule fail on code that
  * no longer exists (AGENTS.md §2).
  */
 internal fun buildScripts(root: File = repoRoot()): List<File> =
-  root
-    .walkTopDown()
-    .onEnter { it.name !in setOf("build", "bin", ".git", ".gradle", "gradle-user-home", ".claude") }
-    .filter { it.isFile && it.name == "build.gradle.kts" }
-    .toList()
+  root.walkProjectTree().filter { it.isFile && it.name == "build.gradle.kts" }.toList()
 
 /**
  * The script's contents with comment lines removed, so a rule matching a string cannot be tripped

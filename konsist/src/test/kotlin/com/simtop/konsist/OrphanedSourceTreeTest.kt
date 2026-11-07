@@ -26,22 +26,13 @@ import org.junit.jupiter.api.Test
  */
 class OrphanedSourceTreeTest {
 
-  /**
-   * Directories that are output, tooling, or version-control state rather than project source.
-   * Mirrors [buildScripts]'s exclusions, plus `gradle-user-home`, which gradle-profiler populates
-   * with a full Gradle distribution during `make build-budget` (ADR 0011).
-   */
-  private val excludedDirNames =
-    setOf("build", "bin", ".git", ".gradle", ".kotlin", ".idea", "gradle-user-home", "design")
-
   @Test
   fun `every source tree belongs to a module with a build script`() {
     val root = repoRoot()
 
     val sourceTrees =
       root
-        .walkTopDown()
-        .onEnter { it.name !in excludedDirNames }
+        .walkProjectTree(additionalExclusions = setOf(".kotlin", ".idea", "design"))
         .filter { it.isDirectory && it.name == "src" }
         .map { it.parentFile }
         .toList()
