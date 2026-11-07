@@ -242,6 +242,8 @@ Run `make help` for the full command list. Scope supported commands with `MODULE
 | Run Android Lint | `make android-lint` |
 | Apply Spotless formatting | `make format` |
 | Check Markdown links and the generated version table | `make docs-check` |
+| Score Kotlin functions by complexity and test coverage | `make quality-compass` |
+| Find Kotlin mutation sites | `make mutation-forge` |
 
 App UI tests default to the mock-backed Debug suite. Run minified `releaseSmoke` tests separately
 because the selected variant changes the test sources and runner. See the
@@ -249,6 +251,29 @@ because the selected variant changes the test sources and runner. See the
 
 For build-time measurements, use `make build-budget` on a quiet local machine and read
 [ADR 0011](docs/adr/0011-build-time-budget.md). Startup performance checks require physical hardware.
+
+### Inspect Kotlin test quality
+
+The Compass and Forge targets download pinned public releases on first use. They verify each ZIP
+against a SHA-256 checksum and cache the tools under `build/quality-tools/`.
+
+Run `make quality-compass` to generate JaCoCo coverage and write
+`build/reports/quality-compass/report.json`. Compass writes the report before it fails the command
+when a score exceeds `COMPASS_THRESHOLD` (default: `8`). Functions without JVM coverage data are
+marked unavailable.
+
+Run `make mutation-forge` to list possible mutations. To test a covered mutation, pass the source
+file and its Gradle test and coverage tasks. For example, `core-common` uses KMP's `jvmTest`:
+
+```sh
+make mutation-forge FORGE_ARGS='--source core-common/src/commonMain/kotlin/com/simtop/core/core/PagedListReducer.kt \
+	--test-task :core-common:jvmTest --coverage-task :core-common:jacocoJvmTestReport \
+	--coverage-report core-common/build/reports/jacoco/jacocoJvmTestReport/jacocoJvmTestReport.xml \
+	--max-mutants 1'
+```
+
+Forge runs the tests on the original code first, then runs each mutation in a temporary copy. A
+surviving mutation fails the command and points to a change the tests did not catch.
 
 ## Stack versions
 
