@@ -66,14 +66,11 @@ class BeersRepositoryTest {
     beersRepository = createRepository()
   }
 
-  private fun createRepository(
-    logger: Logger = recordingLogger,
-    mapper: BeersMapper = BeersMapper(LanguageProvider { "en" }, NoOpLogger()),
-  ) =
+  private fun createRepository(logger: Logger = recordingLogger) =
     BeersRepositoryImpl(
       beersRemoteSource,
       beersLocalSource,
-      mapper,
+      BeersMapper(LanguageProvider { "en" }, NoOpLogger()),
       LanguageProvider { "en" },
       logger,
       EpochTimeProvider { now },
@@ -121,13 +118,11 @@ class BeersRepositoryTest {
   fun `page mapper failures retain the cause and use data-mapping diagnostics`() =
     runTest(testDispatcher) {
       val failure = IllegalStateException("mapping")
-      val mapper = BeersMapper(LanguageProvider { throw failure }, NoOpLogger())
-      val repository = createRepository(mapper = mapper)
-      beersRemoteSource.setBeersResponse(listOf(BeersApiResponseItem(id = "1", name = "Beer")))
+      beersRemoteSource.setBeersResponse(failingRows(failure))
 
       assertSame(
         failure,
-        assertFailsWith<IllegalStateException> { repository.getBeersPageFromApi(1) },
+        assertFailsWith<IllegalStateException> { beersRepository.getBeersPageFromApi(1) },
       )
       assertEquals(
         listOf(
@@ -142,18 +137,19 @@ class BeersRepositoryTest {
       )
     }
 
+  private fun <T> failingRows(failure: Throwable): List<T> =
+    object : AbstractList<T>() {
+      override val size = 1
+
+      override fun get(index: Int): T = throw failure
+    }
+
   @Test
   fun `unpaged mapping failures are not reported as remote failures`() =
     runTest(testDispatcher) {
       val failure = IllegalStateException("mapping")
-      fun <T> failingRows(): List<T> =
-        object : AbstractList<T>() {
-          override val size = 1
-
-          override fun get(index: Int): T = throw failure
-        }
-      beersRemoteSource.typologiesResponse = failingRows()
-      beersRemoteSource.breweriesResponse = failingRows()
+      beersRemoteSource.typologiesResponse = failingRows(failure)
+      beersRemoteSource.breweriesResponse = failingRows(failure)
       val expected =
         listOf(
           LogTag.BEERS_MAPPER to

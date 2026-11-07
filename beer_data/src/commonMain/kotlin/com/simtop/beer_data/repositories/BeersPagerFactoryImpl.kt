@@ -35,12 +35,10 @@ class BeersPagerFactoryImpl(
 
   override fun create(): Pager<Beer, FetchBeersError> {
     return PagingMediator(
-      initialKey = FIRST_PAGE,
-      fetchRemote = fetchPage(BeersQuery()),
+      initialKey = CatalogPageKey(FIRST_PAGE, languageProvider.currentLanguageCode()),
+      fetchRemote = ::fetchCatalogPage,
       classifyError = { it.toFetchBeersError() },
-      // A long-lived pager can survive a language change; resolve its surface when each page is
-      // written so the bookmark follows the language used to map that page's rows.
-      storage = BeersPagingStorage(repository) { catalogSurface(languageProvider) },
+      storage = BeersPagingStorage(repository),
       // Exact resume: the paging_state bookmark records the first uncached page, written in the
       // same transaction as the rows. On a bookmark miss the fallback depends on *why* it missed:
       // - LanguageMismatch (rows fetched under another language): restart from page 1, so
@@ -50,20 +48,25 @@ class BeersPagerFactoryImpl(
       //   row-count estimate (N fully cached pages -> page N+1) keeps its original job.
       nextKeyFromStorage = {
         withFetchDiagnostics(logger, FetchFailureOrigin.STORAGE) {
-          repository.pagingNextKey(catalogSurface(languageProvider))
-            ?: when (repository.catalogCacheStatus()) {
-              CatalogCacheStatus.LanguageMismatch -> FIRST_PAGE
-              else ->
-                repository.countCatalogDBEntries() / BeersService.DEFAULT_ITEMS_PER_PAGE +
-                  FIRST_PAGE
-            }
+          val language = languageProvider.currentLanguageCode()
+          val page =
+            repository.pagingNextKey(catalogSurface(language))
+              ?: when (repository.catalogCacheStatus()) {
+                CatalogCacheStatus.LanguageMismatch -> FIRST_PAGE
+                else ->
+                  repository.countCatalogDBEntries() / BeersService.DEFAULT_ITEMS_PER_PAGE +
+                    FIRST_PAGE
+              }
+          CatalogPageKey(page, language)
         }
       },
       completionFromStorage = {
         withFetchDiagnostics(logger, FetchFailureOrigin.STORAGE) {
-          repository.pagingCompletionTotal(catalogSurface(languageProvider))?.let {
-            StoredPagingCompletion(it.totalCount)
-          }
+          repository
+            .pagingCompletionTotal(catalogSurface(languageProvider.currentLanguageCode()))
+            ?.let {
+              StoredPagingCompletion(it.totalCount)
+            }
         }
       },
     )
@@ -76,27 +79,46 @@ class BeersPagerFactoryImpl(
     // current after detail edits.
     PagingMediator(
       initialKey = FIRST_PAGE,
-      fetchRemote = fetchPage(query),
+      fetchRemote = { page -> fetchPage(page, query) },
       classifyError = { it.toFetchBeersError() },
       storage = QueryPagingStorage(InMemoryPagingStorage(keyOf = Beer::id), repository),
     )
+
+  private suspend fun fetchCatalogPage(key: CatalogPageKey): PageResult<CatalogPageKey, Beer> {
+    val language = languageProvider.currentLanguageCode()
+    // A continuation belongs to one language. If it changed, re-walk the catalog from page 1.
+    val requested = if (key.languageCode == language) key else CatalogPageKey(FIRST_PAGE, language)
+    val result = fetchPage(requested.page, BeersQuery(), language)
+    return PageResult(
+      items = result.items,
+      nextKey = result.nextKey?.let { requested.copy(page = it) },
+      totalCount = result.totalCount,
+      pageKey = requested,
+    )
+  }
 
   /**
    * One page fetch plus the shared nextKey math: with a known total the end is exact (no wasted
    * empty fetch); without it, keep advancing and let the mediator's empty-page probe find the end.
    */
-  private fun fetchPage(query: BeersQuery): suspend (Int) -> PageResult<Int, Beer> = { page ->
-    val beerPage = repository.getBeersPageFromApi(page, query)
+  private suspend fun fetchPage(
+    page: Int,
+    query: BeersQuery,
+    languageCode: String? = null,
+  ): PageResult<Int, Beer> {
+    val beerPage = repository.getBeersPageFromApi(page, query, languageCode)
     val total = beerPage.totalCount
     val nextKey =
       if (total != null && page * BeersService.DEFAULT_ITEMS_PER_PAGE >= total) null else page + 1
-    PageResult(items = beerPage.items, nextKey = nextKey, totalCount = total, pageKey = page)
+    return PageResult(items = beerPage.items, nextKey = nextKey, totalCount = total)
   }
 
   private companion object {
     const val FIRST_PAGE = 1
   }
 }
+
+private data class CatalogPageKey(val page: Int, val languageCode: String)
 
 /**
  * Owns a query's in-memory membership, persists each fetched page for later detail lookup before
@@ -158,28 +180,21 @@ private class QueryPagingStorage(
  * their own in-memory membership and use shared beer records for detail lookup and local flags.
  * They must not reuse this catalog storage or its continuation state.
  */
-private class BeersPagingStorage(
-  private val repository: BeersRepository,
-  private val currentSurface: () -> String,
-) : PagingStorage<Int, Beer> {
+private class BeersPagingStorage(private val repository: BeersRepository) :
+  PagingStorage<CatalogPageKey, Beer> {
 
   override val data: Flow<List<Beer>> = repository.observeCatalogBeers()
 
-  override suspend fun storeFirstPage(page: PageResult<Int, Beer>) =
-    repository.insertPage(
-      page.items,
-      currentSurface(),
-      page.nextKey,
-      page.totalCount,
-      page.pageKey,
-    )
+  override suspend fun storeFirstPage(page: PageResult<CatalogPageKey, Beer>) = append(page)
 
-  override suspend fun append(page: PageResult<Int, Beer>) =
+  override suspend fun append(page: PageResult<CatalogPageKey, Beer>) {
+    val requested = checkNotNull(page.pageKey)
     repository.insertPage(
       page.items,
-      currentSurface(),
-      page.nextKey,
+      catalogSurface(requested.languageCode),
+      page.nextKey?.page,
       page.totalCount,
-      page.pageKey,
+      requested.page,
     )
+  }
 }
