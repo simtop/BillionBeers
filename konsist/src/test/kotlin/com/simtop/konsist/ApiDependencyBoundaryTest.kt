@@ -27,7 +27,6 @@ class ApiDependencyBoundaryTest {
             "SplitInstallManager and SplitInstallSessionState in public APIs"
         ),
       "snapshot-processor/build.gradle.kts" to processorExports,
-      "catalog-processor/build.gradle.kts" to processorExports,
       "testing-utils/build.gradle.kts" to
         mapOf(
           "api(libs.junit.jupiter.api)" to "MainDispatcherExtension implements Jupiter callbacks",

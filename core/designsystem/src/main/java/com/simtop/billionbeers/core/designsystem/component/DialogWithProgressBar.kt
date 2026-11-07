@@ -27,14 +27,14 @@ import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.simtop.billionbeers.catalog_annotations.CatalogComponent
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import io.github.simtop.vitrine.VitrineComponent
 import kotlinx.coroutines.delay
 
 /** Configuration exposed to the catalog and consumers of [DialogWithProgressBar]. */
 data class CatalogSettings(val dismissOnClickOutside: Boolean = false)
 
-@CatalogComponent(
+@VitrineComponent(
   tab = "Utilities",
   name = "Progress Dialog",
   demoContainer = "DialogWithProgressBarDemo",

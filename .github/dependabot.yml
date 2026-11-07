@@ -88,6 +88,7 @@ updates:
           - "com.facebook:ktfmt"
           - "io.gitlab.arturbosch.detekt*"
           - "com.squareup:kotlinpoet*"
+          - "io.github.simtop:vitrine-*"
           - "com.android.tools.build*"
           - "de.mannodermaus*"
           - "io.nlopez.compose.rules*"

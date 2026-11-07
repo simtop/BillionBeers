@@ -9,7 +9,7 @@ binary library.
 - `:shared:designsystem` owns portable semantic color/spacing/typography tokens and Material mapping.
   `:core:designsystem` supplies the Android theme facade, components and preview annotations.
 - `:catalog` owns the interactive catalog shell. Catalog demos remain owned by the module that
-  declares them, while `:catalog-processor` owns discovery and generated providers.
+  declares them. Vitrine discovers the demos and generates the providers.
 - Changes to either surface should be reviewed as design-system changes, even when the code diff is
   small. CODEOWNERS names the current repository owner explicitly so that ownership remains visible
   if the catch-all rule changes.
