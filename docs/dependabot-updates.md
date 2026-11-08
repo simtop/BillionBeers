@@ -50,6 +50,8 @@ count. A later queued, failed, or evidence-missing write blocks a previously gre
 completion collector reruns only CI Gate when its recorded preparation generation is outdated, or
 when its only failure is the exact missing-preparation check. Other failed CI jobs are left untouched.
 A successful write that pushes a generated commit gets normal fresh CI on that new head.
+If Git already shows the pushed commit but GitHub's PR API still reports the old head, the
+writer waits up to 30 seconds for the API. It checks the branch again before accepting the result.
 
 Legacy write runs without the immutable write title or authoritative result artifact cannot establish
 freshness. Dispatch **Regenerate Verification Metadata** again in `write` mode on the current PR

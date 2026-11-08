@@ -580,6 +580,7 @@ jobs:
         if: success() && (inputs.mode || 'write') == 'write' && steps.result.outputs.pr_number != '0'
         env:
           BRANCH: ${{ github.head_ref || github.ref_name }}
+          SOURCE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           OUTPUT_SHA: ${{ steps.commit_output.outputs.output_sha }}
           PR_NUMBER: ${{ steps.result.outputs.pr_number }}
           GITHUB_TOKEN: ${{ github.token }}
@@ -588,7 +589,9 @@ jobs:
           git fetch origin "refs/heads/$BRANCH"
           test "$(git rev-parse FETCH_HEAD)" = "$OUTPUT_SHA"
           python3 -I "$TRUSTED_TOOLS/.github/scripts/write-preparation-result.py" verify-pr-head \
-            --pr-number "$PR_NUMBER" --branch "$BRANCH" --expected-sha "$OUTPUT_SHA"
+            --pr-number "$PR_NUMBER" --branch "$BRANCH" --expected-sha "$OUTPUT_SHA" --previous-sha "$SOURCE_SHA"
+          git fetch origin "refs/heads/$BRANCH"
+          test "$(git rev-parse FETCH_HEAD)" = "$OUTPUT_SHA"
 
       - name: Summarize failed preparation
         if: failure()
