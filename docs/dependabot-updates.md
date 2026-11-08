@@ -50,6 +50,8 @@ count. A later queued, failed, or evidence-missing write blocks a previously gre
 completion collector reruns only CI Gate when its recorded preparation generation is outdated, or
 when its only failure is the exact missing-preparation check. Other failed CI jobs are left untouched.
 A successful write that pushes a generated commit gets normal fresh CI on that new head.
+If Git already shows the pushed commit but GitHub's PR API still reports the old head, the
+writer waits up to 30 seconds for the API. It checks the branch again before accepting the result.
 
 Legacy write runs without the immutable write title or authoritative result artifact cannot establish
 freshness. Dispatch **Regenerate Verification Metadata** again in `write` mode on the current PR
@@ -64,6 +66,11 @@ and bounded results. Each comparison started with empty artifact components whil
 verification policy. This evidence does not cover every future dependency change. The proof runs
 used experimental parallel scheduling; production write preparation continues to run its four cold
 platform lanes serially. Strict verification, graph-approval rules, and ordinary CI remain in force.
+
+Ordinary CI, graph review, and preparation retry JDK setup once after a 20-second wait.
+The Gradle wrapper retries the distribution download once after five seconds and still checks
+the pinned checksum. If a second setup attempt fails, rerun the failed check after the download
+service recovers.
 
 A trusted default-branch completion collector can retry a preparation run once, only when both
 the actual runner-shutdown error and exit 143 are present, the failed step is a platform resolver, no
