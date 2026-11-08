@@ -26,6 +26,7 @@ MERGE = importlib.util.module_from_spec(MERGE_SPEC)
 MERGE_SPEC.loader.exec_module(MERGE)
 PREPARATION = RECONCILE.PREPARATION
 LANES = {"linux", "web", "managed", "apple"}
+PUBLISHED_HEAD_WAIT_SECONDS = 30
 
 
 def same_bot_pr(pr: dict, repository: str, branch: str, source_sha: str) -> bool:
@@ -227,18 +228,24 @@ def write_result_main(args) -> int:
     return 0
 
 
+def verify_pr_head(api, number: int, branch: str, expected_sha: str, previous_sha: str | None = None) -> None:
+    deadline = time.monotonic() + PUBLISHED_HEAD_WAIT_SECONDS
+    while True:
+        pr = api.get(f"pulls/{number}")
+        if same_bot_pr(pr, api.repository, branch, expected_sha):
+            return
+        # Only the post-push caller supplies the old head. Any other identity or head
+        # change is a real race, not evidence that GitHub's PR API is catching up.
+        remaining = deadline - time.monotonic()
+        if not previous_sha or remaining <= 0 or not same_bot_pr(pr, api.repository, branch, previous_sha):
+            raise ValueError("PR identity or head changed during preparation; refusing to push/accept the result")
+        time.sleep(min(2, remaining))
+
+
 def verify_pr_head_main(args) -> int:
-    if not args.pr_number:
-        return 0
-    api = RECONCILE.GitHub(os.environ["GITHUB_TOKEN"], os.environ["GITHUB_REPOSITORY"])
-    pr = api.get(f"pulls/{args.pr_number}")
-    repo = api.repository
-    if (pr.get("state") != "open" or pr.get("user", {}).get("login") != "dependabot[bot]"
-            or pr.get("head", {}).get("ref") != args.branch
-            or pr.get("head", {}).get("sha") != args.expected_sha
-            or (pr.get("head", {}).get("repo") or {}).get("full_name") != repo
-            or pr.get("base", {}).get("repo", {}).get("full_name") != repo):
-        raise ValueError("PR identity or head changed during preparation; refusing to push/accept the result")
+    if args.pr_number:
+        api = RECONCILE.GitHub(os.environ["GITHUB_TOKEN"], os.environ["GITHUB_REPOSITORY"])
+        verify_pr_head(api, args.pr_number, args.branch, args.expected_sha, args.previous_sha)
     return 0
 
 
@@ -265,6 +272,7 @@ def main() -> int:
     verify.add_argument("--pr-number", type=int, required=True)
     verify.add_argument("--branch", required=True)
     verify.add_argument("--expected-sha", required=True)
+    verify.add_argument("--previous-sha", help="Allow the PR API to catch up after a verified push from this head")
     args = parser.parse_args()
     try:
         if args.command == "find-reuse":

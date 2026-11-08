@@ -65,7 +65,8 @@ class GitHub:
         self.base = f"https://api.github.com/repos/{repository}"
 
     def get(self, path: str):
-        return PUBLISH.api_request(self.token, f"{self.base}/{path}")
+        url = f"{self.base}/{path}" if path else self.base
+        return PUBLISH.api_request(self.token, url)
 
     def post(self, path: str) -> None:
         request = urllib.request.Request(f"{self.base}/{path}", data=b"{}", method="POST", headers={

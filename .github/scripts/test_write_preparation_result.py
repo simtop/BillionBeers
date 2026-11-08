@@ -97,6 +97,43 @@ class FakeEvidenceApi:
 
 
 class WritePreparationResultTest(unittest.TestCase):
+    def test_post_push_waits_for_api_to_report_the_published_head(self):
+        output_sha = "b" * 40
+        stale = api_pr()
+        current = api_pr()
+        current["head"]["sha"] = output_sha
+        api = Mock(repository=REPOSITORY)
+        api.get.side_effect = [stale, current]
+        with patch.object(WRITER.time, "monotonic", return_value=0), patch.object(WRITER.time, "sleep") as sleep:
+            WRITER.verify_pr_head(api, 7, BRANCH, output_sha, previous_sha=SHA)
+        self.assertEqual(2, api.get.call_count)
+        sleep.assert_called_once_with(2)
+
+    def test_unrelated_head_or_pr_identity_change_still_fails_immediately(self):
+        output_sha = "b" * 40
+        for change in ("unrelated head", "closed PR", "pre-push check"):
+            with self.subTest(change=change):
+                pr = api_pr()
+                if change == "unrelated head":
+                    pr["head"]["sha"] = "c" * 40
+                if change == "closed PR":
+                    pr["state"] = "closed"
+                api = Mock(repository=REPOSITORY)
+                api.get.return_value = pr
+                previous_sha = None if change == "pre-push check" else SHA
+                with patch.object(WRITER.time, "sleep") as sleep, self.assertRaisesRegex(ValueError, "PR identity or head changed"):
+                    WRITER.verify_pr_head(api, 7, BRANCH, output_sha, previous_sha=previous_sha)
+                api.get.assert_called_once_with("pulls/7")
+                sleep.assert_not_called()
+
+    def test_post_push_fails_when_the_pr_api_never_catches_up(self):
+        api = Mock(repository=REPOSITORY)
+        api.get.return_value = api_pr()
+        with patch.object(WRITER.time, "monotonic", side_effect=[0, 29, 30]), patch.object(WRITER.time, "sleep") as sleep:
+            with self.assertRaisesRegex(ValueError, "PR identity or head changed"):
+                WRITER.verify_pr_head(api, 7, BRANCH, "b" * 40, previous_sha=SHA)
+        sleep.assert_called_once_with(1)
+
     def prepare_graph_identity(self, root: Path, graph_mode: str):
         review = WRITER.PREPARATION.graph_review("a:lib:1\n", "a:lib:1\n", SHA)
         for lane in WRITER.LANES:
