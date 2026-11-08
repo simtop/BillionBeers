@@ -378,6 +378,16 @@ def current_receipt(api, current_run_id: int, source_run_id: int, source_attempt
     return json.loads(raw.decode("utf-8"))
 
 
+def matches_writer(run: dict, writer_id: int, repository: str, branch: str, source_sha: str) -> bool:
+    return (run.get("id") == writer_id
+            and run.get("path") == f".github/workflows/{WRITER_WORKFLOW}"
+            and run.get("event") == "workflow_dispatch"
+            and run.get("head_branch") == branch
+            and run.get("head_sha") == source_sha
+            and (run.get("head_repository") or {}).get("full_name") == repository
+            and RECONCILE.preparation_mode(run) == "write")
+
+
 def dispatch_write(api, source_run_id: int, source_attempt: int, current_run_id: int) -> tuple[dict, dict, str]:
     handoff, actor = current_handoff(api, current_run_id)
     if approval_run_key(handoff) != (source_run_id, source_attempt, True):
@@ -409,23 +419,21 @@ def dispatch_write(api, source_run_id: int, source_attempt: int, current_run_id:
     writer_id = response.get("workflow_run_id")
     if type(writer_id) is not int or writer_id <= 0:
         raise ValueError("workflow dispatch did not return an exact writer run ID")
-    writer = None
     deadline = time.monotonic() + 60
     while time.monotonic() < deadline:
         try:
             writer = api.get(f"actions/runs/{writer_id}")
-            break
         except RECONCILE.API_ERRORS:
-            time.sleep(2)
-    if writer is None:
-        raise ValueError("dispatched writer run ID is not yet available from GitHub")
-    if (writer.get("id") != writer_id or writer.get("path") != f".github/workflows/{WRITER_WORKFLOW}"
-            or writer.get("event") != "workflow_dispatch"
-            or writer.get("head_branch") != pr["head"]["ref"]
-            or writer.get("head_sha") != source_run["head_sha"]
-            or (writer.get("head_repository") or {}).get("full_name") != api.repository
-            or RECONCILE.preparation_mode(writer) != "write"):
-        raise ValueError("dispatch response does not identify the expected exact-head write run")
+            writer = None
+        if writer is not None:
+            if matches_writer(writer, writer_id, api.repository, pr["head"]["ref"], source_run["head_sha"]):
+                break
+            # GitHub can return a new run before its metadata is populated.
+            if writer.get("status") not in {"requested", "queued", "pending", "waiting", "in_progress"}:
+                raise ValueError(f"dispatch response does not identify the expected exact-head write run {writer_id}")
+        time.sleep(2)
+    else:
+        raise ValueError(f"GitHub did not report the expected exact-head write run {writer_id} within 60 seconds")
     latest_source = api.get(f"actions/runs/{source_run_id}")
     if latest_source.get("run_attempt") != source_attempt:
         raise ValueError("review source attempt changed during writer dispatch")
@@ -531,11 +539,7 @@ def dispatch_and_follow(api, source_run_id: int, source_attempt: int, current_ru
         latest_source = api.get(f"actions/runs/{source_run_id}")
         if latest_source.get("run_attempt") != source_attempt:
             raise ValueError("review source attempt changed while following the dispatched writer")
-        if (current.get("id") != writer_id or current.get("path") != f".github/workflows/{WRITER_WORKFLOW}"
-                or current.get("event") != "workflow_dispatch"
-                or current.get("head_branch") != pr["head"]["ref"]
-                or current.get("head_sha") != pr["head"]["sha"]
-                or RECONCILE.preparation_mode(current) != "write"):
+        if not matches_writer(current, writer_id, api.repository, pr["head"]["ref"], pr["head"]["sha"]):
             raise ValueError("exact dispatched writer identity changed while waiting")
         if current.get("status") == "completed":
             if current.get("conclusion") != "success":
