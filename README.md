@@ -286,7 +286,7 @@ surviving mutation fails the command and points to a change the tests did not ca
 | **Kotlin** | 2.4.21 |
 | **Gradle** | 9.8.2 |
 | **Compose BOM** | 2026.09.00 |
-| **Metro DI** | 1.4.5 |
+| **Metro DI** | 1.5.1 |
 | **Room DB** | 2.8.5 |
 <!-- END_VERSIONS -->
 
