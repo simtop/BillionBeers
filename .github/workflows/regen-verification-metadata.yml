@@ -77,7 +77,8 @@ jobs:
               -Pandroid.experimental.testOptions.managedDevices.maxConcurrentDevices=1
           - lane: apple
             runner: macos-15
-            timeout: 60
+            # Cold toolchain bumps compile and link the full native suite before it can finish.
+            timeout: 120
     runs-on: ${{ matrix.runner }}
     timeout-minutes: ${{ matrix.timeout }}
     permissions:
