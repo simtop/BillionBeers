@@ -38,7 +38,7 @@ verification failure before Spotless starts is not diagnosed as a formatting def
 requires successful preparation on the current Dependabot head when the PR changes Gradle inputs.
 It waits for pending preparation and its single eligible shutdown retry on the exact head tested
 by CI, with a 350-minute wait inside GitHub's six-hour job maximum. The four platform lanes have
-individual 35–90 minute limits and the merge job has a 15-minute limit. Queue time and a full retry
+individual 35–120 minute limits and the merge job has a 15-minute limit. Queue time and a full retry
 can exceed the CI Gate's observer bound. Other failures stop the gate. Ordinary strict CI remains
 required after the preparation commit.
 
