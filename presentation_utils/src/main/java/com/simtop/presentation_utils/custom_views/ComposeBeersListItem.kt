@@ -21,15 +21,15 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.request.error
 import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.billionbeers.catalog_annotations.CatalogComponent
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.component.shimmerBrush
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.billionbeers.shared.presentation.BeerListItemLabels
 import com.simtop.billionbeers.shared.presentation.SharedBeerListItem
 import com.simtop.presentation_utils.R
+import io.github.simtop.vitrine.VitrineComponent
 
-@CatalogComponent(tab = "Utilities")
+@VitrineComponent(tab = "Utilities")
 @Composable
 fun ComposeBeersListItem(
   modifier: Modifier = Modifier,
@@ -58,7 +58,7 @@ fun ComposeBeersListItem(
   )
 }
 
-@CatalogComponent(tab = "Utilities")
+@VitrineComponent(tab = "Utilities")
 @Composable
 fun BeerImage(
   imageUrl: String,

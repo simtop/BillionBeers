@@ -62,7 +62,11 @@ dependency-guard = "0.5.0"
 kotlinpoet = "2.4.0"
 cytoscape = "3.34.4"
 
+vitrine = "0.1.0"
+
 [libraries]
+vitrine-annotations = { module = "io.github.simtop:vitrine-annotations", version.ref = "vitrine" }
+vitrine-processor = { module = "io.github.simtop:vitrine-processor", version.ref = "vitrine" }
 # AndroidX Base
 appcompat = { module = "androidx.appcompat:appcompat", version.ref = "androidx-appcompat" }
 coreKtx = { module = "androidx.core:core-ktx", version.ref = "androidx-core-ktx" }

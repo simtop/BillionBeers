@@ -7,14 +7,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.simtop.billionbeers.catalog_annotations.CatalogComponent
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.billionbeers.shared.designsystem.controls.BrandIcon
 import com.simtop.billionbeers.shared.presentation.SharedErrorView
 import com.simtop.presentation_utils.R
+import io.github.simtop.vitrine.VitrineComponent
 
-@CatalogComponent(tab = "Utilities")
+@VitrineComponent(tab = "Utilities")
 @Composable
 fun ComposeErrorView(
   modifier: Modifier = Modifier,

@@ -21,9 +21,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.simtop.billionbeers.catalog_annotations.CatalogProvider
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
-import java.util.ServiceLoader
+import io.github.simtop.vitrine.loadVitrineItems
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,13 +41,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun CatalogApp() {
   val navController = rememberNavController()
-  val allItems = remember {
-    try {
-      ServiceLoader.load(CatalogProvider::class.java).flatMap { it.items }
-    } catch (e: Throwable) {
-      emptyList()
-    }
-  }
+  val allItems = remember { loadVitrineItems() }
 
   val tabs = allItems.map { it.tab }.distinct().sorted()
   var selectedTab by remember { mutableStateOf(tabs.firstOrNull() ?: "") }

@@ -21,7 +21,7 @@ dependencies {
   implementation(this.project(":feature:beerslist"))
   implementation(this.project(":core:designsystem"))
   implementation(this.project(":presentation_utils"))
-  implementation(this.project(":catalog-annotations"))
+  implementation(libs.vitrine.annotations)
 
   // Compose: foundation, material3, ui-tooling-preview and activity-compose come from
   // billionbeers.android.compose.

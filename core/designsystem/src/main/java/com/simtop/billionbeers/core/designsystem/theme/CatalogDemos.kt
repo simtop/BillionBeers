@@ -12,10 +12,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
-import com.simtop.billionbeers.catalog_annotations.CatalogComponent
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
+import io.github.simtop.vitrine.VitrineComponent
 
-@CatalogComponent(tab = "Design System", name = "Colors")
+@VitrineComponent(tab = "Design System", name = "Colors")
 @Composable
 fun ColorCatalogDemo(modifier: Modifier = Modifier) {
   val colorRoles =
@@ -61,7 +61,7 @@ private fun ColorRow(name: String, color: Color) {
 }
 
 /** Catalog-only paired metric colors, including the small-label contrast contract. */
-@CatalogComponent(tab = "Design System", name = "Metric colors")
+@VitrineComponent(tab = "Design System", name = "Metric colors")
 @Composable
 fun MetricColorCatalogDemo(modifier: Modifier = Modifier) {
   Column(
@@ -106,7 +106,7 @@ internal fun MetricColorsPreview() {
   BillionBeersTheme { MetricColorCatalogDemo() }
 }
 
-@CatalogComponent(tab = "Design System", name = "Typography")
+@VitrineComponent(tab = "Design System", name = "Typography")
 @Composable
 fun TypographyCatalogDemo(modifier: Modifier = Modifier) {
   Column(

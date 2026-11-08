@@ -201,6 +201,7 @@ io.coil-kt.coil3:coil-network-core:3.6.3
 io.coil-kt.coil3:coil-network-okhttp-android:3.6.3
 io.coil-kt.coil3:coil-network-okhttp:3.6.3
 io.coil-kt.coil3:coil:3.6.3
+io.github.simtop:vitrine-annotations:0.1.0
 io.ktor:ktor-client-content-negotiation-jvm:3.6.0
 io.ktor:ktor-client-content-negotiation:3.6.0
 io.ktor:ktor-client-core-jvm:3.6.0
