@@ -433,6 +433,13 @@ class ReconcileCiReportTest(unittest.TestCase):
             self.assertEqual(101, len(api.pages("actions/runs/1/jobs?filter=all", "jobs")))
             self.assertIn("&per_page=100&page=2", get.call_args.args[0])
 
+    def test_repository_lookup_does_not_append_a_trailing_slash(self):
+        api = MODULE.GitHub("token", "owner/repo")
+        repository = {"default_branch": "master"}
+        with patch.object(MODULE.PUBLISH, "api_request", return_value=repository) as request:
+            self.assertEqual(repository, api.get(""))
+            request.assert_called_once_with("token", "https://api.github.com/repos/owner/repo")
+
     def test_step_log_does_not_attribute_another_steps_error(self):
         logs = "2026-09-17T12:00:01Z ##[error]wrong step\n2026-09-17T12:01:30Z ##[error]right step\n"
         self.assertEqual("right step", MODULE.RENDER.error_excerpt(MODULE.step_log(logs, job()["steps"][0])))

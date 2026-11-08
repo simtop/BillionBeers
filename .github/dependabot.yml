@@ -105,7 +105,9 @@ updates:
           - "patch"
 
   - package-ecosystem: "github-actions"
-    directory: "/"
+    directories:
+      - "/"
+      - "/.github/actions/setup-jdk"
     schedule:
       interval: "monthly"
     cooldown:

@@ -19,13 +19,13 @@ jobs:
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
 
-      # Only grouped Gradle dependencies are eligible for auto-merge. GitHub Actions changes
+      # Only Gradle dependencies are eligible for auto-merge. GitHub Actions changes
       # always require a human review, even for patch/minor updates. Major Gradle bumps are also
       # excluded, regardless of dependabot.yml's group update-types filter. Requires branch
       # protection on master with required status checks; otherwise `--auto` merges immediately.
       - name: Enable auto-merge for patch/minor updates
         if:
-          steps.metadata.outputs.dependency-group != 'github-actions' &&
+          steps.metadata.outputs.package-ecosystem == 'gradle' &&
           (steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
           steps.metadata.outputs.update-type == 'version-update:semver-minor')
         run: gh pr merge --auto --squash "$PR_URL"
