@@ -7,10 +7,12 @@ import hashlib
 import importlib.util
 import io
 import json
+import os
 import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 
@@ -210,6 +212,47 @@ class WritePreparationResultTest(unittest.TestCase):
                 )
                 with patch.object(WRITER.RECONCILE, "preparation_current", return_value=selection):
                     self.assertIsNone(WRITER.find_reuse(Mock(), api_pr(), RUN_ID + 1, SHA, 0))
+
+    def test_reuse_step_emits_the_full_origin_for_both_direct_and_reused_evidence(self):
+        source = "d" * 40
+        origin = {"id": RUN_ID, "run_number": 1, "run_attempt": ATTEMPT, "head_sha": source,
+                  "head_branch": BRANCH, "head_repository": {"full_name": REPOSITORY},
+                  "path": f".github/workflows/{RECONCILE.PREPARATION.WORKFLOW}", "event": "pull_request",
+                  "display_title": f"Dependency preparation | mode=write | ref={BRANCH}",
+                  "status": "completed", "conclusion": "success"}
+        api = FakeEvidenceApi(origin, full_result(source_sha=source, output_sha=SHA))
+        args = SimpleNamespace(branch=BRANCH, source_sha=SHA, pr_number=7, current_run_id=RUN_ID + 2,
+                               wait_seconds=0)
+        for reused in (False, True):
+            with self.subTest(reused=reused):
+                if reused:
+                    child = dict(origin, id=RUN_ID + 1, run_number=2, run_attempt=1, head_sha=SHA,
+                                 pull_requests=[{"number": 7}])
+                    result = full_result(run_id=child["id"], attempt=1)
+                    result.update(kind="reuse", origin_run_id=RUN_ID, origin_run_attempt=ATTEMPT)
+                    result.pop("lanes")
+                    api.runs[child["id"]] = child
+                    api.results[child["id"]] = result
+                    api.run_list = [origin, child]
+                with patch.dict(os.environ, {"GITHUB_TOKEN": "test-token", "GITHUB_REPOSITORY": REPOSITORY}), \
+                     patch.object(RECONCILE, "GitHub", return_value=api), patch.object(WRITER, "output") as output:
+                    self.assertEqual(0, WRITER.find_reuse_main(args))
+                output.assert_called_once_with({"reuse": "true", "origin_run_id": str(RUN_ID),
+                                                "origin_attempt": str(ATTEMPT), "pr_number": "7"})
+
+    def test_reuse_waits_for_the_parent_that_published_the_current_head(self):
+        source = "d" * 40
+        run = {"id": RUN_ID, "run_number": 1, "run_attempt": ATTEMPT, "head_sha": source,
+               "head_branch": BRANCH, "head_repository": {"full_name": REPOSITORY},
+               "path": f".github/workflows/{RECONCILE.PREPARATION.WORKFLOW}", "event": "pull_request",
+               "display_title": f"Dependency preparation | mode=write | ref={BRANCH}",
+               "status": "in_progress", "conclusion": None}
+        api = FakeEvidenceApi(run, full_result(source_sha=source, output_sha=SHA))
+        with patch.object(WRITER.time, "sleep", side_effect=lambda _: run.update(status="completed", conclusion="success")) as sleep:
+            selected = WRITER.find_reuse(api, api_pr(), RUN_ID + 1, SHA, 120)
+        self.assertEqual(RUN_ID, selected["id"])
+        self.assertTrue(selected["authoritative_valid"])
+        sleep.assert_called_once_with(10)
 
     def test_result_schema_binds_every_lane_and_exact_pr_run_identity(self):
         run = {"id": RUN_ID, "run_attempt": ATTEMPT, "head_sha": SHA}

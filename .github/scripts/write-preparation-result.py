@@ -78,9 +78,11 @@ def find_reuse(api, pr: dict, current_run_id: int, source_sha: str, wait_seconds
         # The push that launched this run can precede completion of the original run by a few
         # seconds. Wait only while such an earlier write is actually still running; if evidence
         # remains unavailable, this caller falls through to the full cold lanes.
-        parent_finalizing = bool(selection and any(
-            run.get("status") != "completed" and run.get("head_sha") != source_sha
-            for run in selection.get("stale_runs", [])
+        parent_finalizing = bool(selection and (
+            (selection.get("status") != "completed" and selection.get("head_sha") != source_sha
+             and result and result.get("output_sha") == source_sha)
+            or any(run.get("status") != "completed" and run.get("head_sha") != source_sha
+                   for run in selection.get("stale_runs", []))
         ))
         remaining = deadline - time.monotonic()
         if not parent_finalizing or remaining <= 0:
@@ -97,7 +99,7 @@ def find_reuse_main(args) -> int:
         if pr:
             selection = find_reuse(api, pr, args.current_run_id, args.source_sha, args.wait_seconds)
             if selection:
-                origin = selection.get("reuse_origin", selection["run"])
+                origin = selection.get("reuse_origin", selection)
                 result.update({"reuse": "true", "origin_run_id": str(origin["id"]),
                                "origin_attempt": str(origin["run_attempt"])})
     except RECONCILE.API_ERRORS + (UnicodeDecodeError, json.JSONDecodeError, TypeError) as error:
