@@ -109,7 +109,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6
         with:
           gradle-version: wrapper
           cache-read-only: ${{ inputs.tested_sha != '' || github.ref_name != github.event.repository.default_branch }}
@@ -366,7 +366,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6
         with:
           gradle-version: wrapper
           cache-read-only: ${{ inputs.tested_sha != '' || github.ref_name != github.event.repository.default_branch }}
@@ -423,7 +423,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6
         with:
           gradle-version: wrapper
           cache-read-only: ${{ inputs.tested_sha != '' || github.ref_name != github.event.repository.default_branch }}
@@ -463,7 +463,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6
         with:
           gradle-version: wrapper
           cache-read-only: ${{ inputs.tested_sha != '' || github.ref_name != github.event.repository.default_branch }}
@@ -514,7 +514,7 @@ jobs:
 
       - name: Setup Gradle
         if: steps.graph.outputs.changed == 'true'
-        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6
         with:
           gradle-version: wrapper
           cache-read-only: ${{ inputs.tested_sha != '' || github.ref_name != github.event.repository.default_branch }}
@@ -589,7 +589,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6
         with:
           gradle-version: wrapper
           cache-read-only: ${{ inputs.tested_sha != '' || github.ref_name != github.event.repository.default_branch }}
@@ -750,7 +750,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6
         with:
           gradle-version: wrapper
           cache-read-only: ${{ inputs.tested_sha != '' || github.ref_name != github.event.repository.default_branch }}
@@ -827,7 +827,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6
         with:
           gradle-version: wrapper
           cache-read-only: ${{ inputs.tested_sha != '' || github.ref_name != github.event.repository.default_branch }}
@@ -940,7 +940,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6
         with:
           gradle-version: wrapper
           cache-read-only: ${{ inputs.tested_sha != '' || github.ref_name != github.event.repository.default_branch }}
@@ -1133,7 +1133,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6
         with:
           gradle-version: wrapper
           cache-read-only: ${{ inputs.tested_sha != '' || github.ref_name != github.event.repository.default_branch }}
@@ -1328,7 +1328,7 @@ jobs:
           distribution: temurin
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6
         with:
           gradle-version: wrapper
           cache-read-only: true
