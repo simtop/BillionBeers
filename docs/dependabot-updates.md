@@ -65,6 +65,11 @@ verification policy. This evidence does not cover every future dependency change
 used experimental parallel scheduling; production write preparation continues to run its four cold
 platform lanes serially. Strict verification, graph-approval rules, and ordinary CI remain in force.
 
+Ordinary CI, graph review, and preparation retry JDK setup once after a 20-second wait.
+The Gradle wrapper retries the distribution download once after five seconds and still checks
+the pinned checksum. If a second setup attempt fails, rerun the failed check after the download
+service recovers.
+
 A trusted default-branch completion collector can retry a preparation run once, only when both
 the actual runner-shutdown error and exit 143 are present, the failed step is a platform resolver, no
 build/policy rejection is present, the open same-repository PR is still authored by Dependabot,

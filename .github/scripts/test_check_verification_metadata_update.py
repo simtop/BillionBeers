@@ -121,10 +121,10 @@ class VerificationMetadataUpdateTest(unittest.TestCase):
                 )[0]
                 self.assertRegex(block, r"(?m)^    cooldown:\n      default-days: 7$")
 
-    def test_actions_group_is_excluded_from_auto_merge_and_wrapper_is_pinned(self) -> None:
+    def test_only_gradle_patch_and_minor_updates_auto_merge_and_wrapper_is_pinned(self) -> None:
         root = Path(__file__).resolve().parents[2]
         workflow = (root / ".github/workflows/dependabot-auto-merge.yml").read_text()
-        self.assertIn("steps.metadata.outputs.dependency-group != 'github-actions'", workflow)
+        self.assertIn("steps.metadata.outputs.package-ecosystem == 'gradle'", workflow)
         self.assertIn("steps.metadata.outputs.update-type == 'version-update:semver-patch'", workflow)
         self.assertIn("steps.metadata.outputs.update-type == 'version-update:semver-minor'", workflow)
 

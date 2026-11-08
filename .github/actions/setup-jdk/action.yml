@@ -1,0 +1,25 @@
+name: Set up JDK 23
+description: Set up Temurin JDK 23 and retry once if setup fails.
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Temurin
+      id: initial
+      continue-on-error: true
+      uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v5
+      with:
+        java-version: '23'
+        distribution: temurin
+
+    - name: Wait before retrying JDK setup
+      if: steps.initial.outcome == 'failure'
+      shell: bash
+      run: sleep 20
+
+    - name: Retry Temurin setup once
+      if: steps.initial.outcome == 'failure'
+      uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v5
+      with:
+        java-version: '23'
+        distribution: temurin

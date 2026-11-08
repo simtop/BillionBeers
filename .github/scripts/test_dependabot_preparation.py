@@ -296,10 +296,18 @@ class DependabotPreparationTest(unittest.TestCase):
         command = step.split("run: ", 1)[1].splitlines()[0]
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory)
-            for name in {"README.md"} | STAGE.VERSION_INPUTS:
-                file = source / name
-                file.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(tools / name, file)
+            readme = source / "README.md"
+            readme.write_text(
+                "# Fixture\n\n<!-- START_VERSIONS -->\nStale versions\n<!-- END_VERSIONS -->\n\nFooter\n"
+            )
+            (source / "gradle/wrapper").mkdir(parents=True)
+            (source / "gradle/libs.versions.toml").write_text(
+                '[versions]\norg-jetbrains-kotlin = "2.0.0"\ncomposeBom = "2026.01.00"\n'
+                'dev-zacsweers-metro = "1.5.1"\nandroidx-room = "2.8.0"\n'
+            )
+            (source / "gradle/wrapper/gradle-wrapper.properties").write_text(
+                "distributionUrl=https://services.gradle.org/distributions/gradle-9.0.0-bin.zip\n"
+            )
             (source / "scripts").mkdir()
             (source / "scripts/update_readme_versions.sh").write_text("touch executed-candidate-script\n")
             (source / "Makefile").write_text("update-docs:\n\ttouch executed-candidate-make\n")
@@ -309,7 +317,15 @@ class DependabotPreparationTest(unittest.TestCase):
             )
             self.assertEqual(0, result.returncode, result.stderr)
             self.assertEqual([], list(source.glob("executed-candidate-*")))
-            self.assertEqual((tools / "README.md").read_bytes(), (source / "README.md").read_bytes())
+            self.assertEqual(
+                "# Fixture\n\n<!-- START_VERSIONS -->\n"
+                "| Tech | Version |\n| :--- | :--- |\n"
+                "| **Kotlin** | 2.0.0 |\n| **Gradle** | 9.0.0 |\n"
+                "| **Compose BOM** | 2026.01.00 |\n| **Metro DI** | 1.5.1 |\n"
+                "| **Room DB** | 2.8.0 |\n"
+                "<!-- END_VERSIONS -->\n\nFooter\n",
+                readme.read_text(),
+            )
 
     def test_push_step_scopes_key_and_leases_the_exact_source(self):
         workflow = Path(__file__).resolve().parents[1] / "workflows/regen-verification-metadata.yml"

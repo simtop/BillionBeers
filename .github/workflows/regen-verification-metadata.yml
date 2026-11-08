@@ -156,10 +156,7 @@ jobs:
 
       - name: Set up JDK 23
         if: steps.reuse.outputs.reuse != 'true'
-        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v5
-        with:
-          java-version: '23'
-          distribution: 'temurin'
+        uses: ./.github/actions/setup-jdk
 
       - name: Setup Gradle cold
         if: steps.reuse.outputs.reuse != 'true'
