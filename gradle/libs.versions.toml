@@ -37,7 +37,7 @@ activityCompose = "1.13.0"
 
 # Networking
 com-squareup-okhttp3 = "5.5.1"
-io-ktor = "3.6.0"
+io-ktor = "3.6.1"
 
 # Testing
 io-mockk = "1.14.11"
