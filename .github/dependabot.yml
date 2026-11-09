@@ -9,6 +9,11 @@ updates:
     open-pull-requests-limit: 10
     commit-message:
       prefix: "chore(deps)"
+    ignore:
+      # Parallel KSP runs can silently lose library symbols in this release.
+      # https://github.com/google/ksp/issues/3286
+      - dependency-name: "com.google.devtools.ksp*"
+        versions: ["2.3.13"]
     groups:
       # gradle/libs.versions.toml has ~130+ entries organized into these same categories
       # (see the comments in [versions]) - mirroring that grouping here keeps monthly PR volume

@@ -287,6 +287,37 @@ class DependencyGraphHandoffTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "expected exact-head write run"):
             MODULE.dispatch_write(self.api, 41, 1, 90)
 
+    def test_waits_for_metadata_of_the_same_dispatched_writer(self):
+        with tempfile.TemporaryDirectory() as directory:
+            receipt = MODULE.prepare_approval(self.api, 41, 1, 90, Path(directory) / "approval-receipt.json")
+        self.api.add_receipt_artifact(receipt)
+        original = self.api.get
+        responses = iter([
+            {**self.api.writer, "status": "queued", "display_title": "", "head_repository": None},
+            {**self.api.writer, "status": "in_progress"},
+        ])
+
+        def get(path):
+            return next(responses) if path == "actions/runs/100" else original(path)
+
+        with patch.object(self.api, "get", side_effect=get), patch.object(MODULE.time, "sleep") as sleep:
+            writer, pr, digest = MODULE.dispatch_write(self.api, 41, 1, 90)
+        self.assertEqual(100, writer["id"])
+        self.assertEqual(7, pr["number"])
+        self.assertEqual(self.api.review["digest"], digest)
+        self.assertEqual(1, len(self.api.posts))
+        sleep.assert_called_once_with(2)
+
+    def test_queued_writer_with_the_wrong_head_cannot_pass_after_the_wait(self):
+        with tempfile.TemporaryDirectory() as directory:
+            receipt = MODULE.prepare_approval(self.api, 41, 1, 90, Path(directory) / "approval-receipt.json")
+        self.api.add_receipt_artifact(receipt)
+        self.api.writer.update({"status": "queued", "head_sha": OUTPUT_SHA})
+        with patch.object(MODULE.time, "monotonic", side_effect=[0, 0, 60]), patch.object(MODULE.time, "sleep"):
+            with self.assertRaisesRegex(ValueError, "expected exact-head write run"):
+                MODULE.dispatch_write(self.api, 41, 1, 90)
+        self.assertEqual(1, len(self.api.posts))
+
     def test_source_rerun_after_receipt_upload_prevents_dispatch(self):
         api = FakeApi()
         with tempfile.TemporaryDirectory() as directory:
