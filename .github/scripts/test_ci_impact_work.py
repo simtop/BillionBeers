@@ -36,13 +36,27 @@ def profile(tier):
                                     task(":outside:compileDebugKotlin", 20, category="Compilation")]}]}
 
 
+def failure_evidence(tier, *modules):
+    return {
+        "schema": 1,
+        "mode": MODULE.REPORT_MODES[tier],
+        "provenance": IDENTITY | {"GITHUB_JOB": MODULE.LANES[tier]},
+        "failures": [{"module": module, "classname": "ExampleTest", "name": "fails", "kind": "failure"}
+                     for module in modules],
+        "unreadable_reports": 0,
+        "fallback_modules": [],
+    }
+
+
 class ImpactWorkTest(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
         self.impact = {"schema": 1, "mode": "shadow", "execution_changed": False, "status": "candidates",
-                       "provenance": {"checkout_sha": IDENTITY["GITHUB_SHA"], "explicit_scenario": False},
+                       "provenance": {"checkout_sha": IDENTITY["GITHUB_SHA"], "explicit_scenario": False,
+                                      "GITHUB_RUN_ID": IDENTITY["GITHUB_RUN_ID"],
+                                      "GITHUB_RUN_ATTEMPT": IDENTITY["GITHUB_RUN_ATTEMPT"]},
                        "changed_files": ["selected/src/main/Screen.kt"],
                        "selections": {tier: selection() for tier in MODULE.LANES}}
         self.write("ci-impact-shadow", "report.json", self.impact)
@@ -94,6 +108,49 @@ class ImpactWorkTest(unittest.TestCase):
                 self.assertEqual("partial", report["status"])
                 self.assertEqual("unavailable", report["lanes"]["unit"]["status"])
                 self.assertNotIn("executed_test_task_seconds", report["lanes"]["unit"])
+
+    def test_failed_lane_compares_junit_even_when_timing_is_unavailable(self):
+        tier = "screenshot"
+        self.write(MODULE.ARTIFACTS[tier], "gradle-profiles.json", profile(tier) | {"lane_outcome": "failure"})
+        self.write(MODULE.ARTIFACTS[tier], "impact-failures.json",
+                   failure_evidence(tier, ":selected", ":outside", ":unregistered"))
+
+        report = MODULE.report(self.root, IDENTITY)
+        lane = report["lanes"][tier]
+        self.assertEqual("unavailable", lane["status"])
+        self.assertEqual("observed", lane["failure_comparison"]["status"])
+        self.assertEqual({"candidate": 1, "outside": 1, "unmapped": 1}, lane["failure_comparison"]["counts"])
+        self.assertIn("| screenshot | observed | 1 | 1 | 1 |", MODULE.render(report))
+
+    def test_failed_lane_without_exact_cases_never_looks_like_zero_omissions(self):
+        tier = "screenshot"
+        self.write(MODULE.ARTIFACTS[tier], "gradle-profiles.json", profile(tier) | {"lane_outcome": "failure"})
+        lane = MODULE.report(self.root, IDENTITY)["lanes"][tier]
+        self.assertEqual("unavailable", lane["failure_comparison"]["status"])
+
+        incomplete = failure_evidence(tier) | {"fallback_modules": [":outside"]}
+        self.write(MODULE.ARTIFACTS[tier], "impact-failures.json", incomplete)
+        report = MODULE.report(self.root, IDENTITY)
+        self.assertEqual("no-testcase-evidence", report["lanes"][tier]["failure_comparison"]["status"])
+        self.assertIn("| screenshot | no-testcase-evidence | — | — | — |", MODULE.render(report))
+
+        incomplete = failure_evidence(tier, ":selected") | {"unreadable_reports": 1}
+        self.write(MODULE.ARTIFACTS[tier], "impact-failures.json", incomplete)
+        lane = MODULE.report(self.root, IDENTITY)["lanes"][tier]
+        self.assertEqual("partial", lane["failure_comparison"]["status"])
+
+    def test_failure_comparison_rejects_stale_and_synthetic_evidence(self):
+        tier = "unit"
+        for key in ("GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT", "GITHUB_SHA", "GITHUB_JOB"):
+            evidence = failure_evidence(tier, ":outside")
+            evidence["provenance"][key] = "mismatch"
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                MODULE.compare_failures(tier, self.impact, evidence, IDENTITY)
+        for provenance in ({"GITHUB_RUN_ATTEMPT": "1"}, {"explicit_scenario": True}):
+            impact = copy.deepcopy(self.impact)
+            impact["provenance"].update(provenance)
+            with self.subTest(provenance=provenance), self.assertRaises(ValueError):
+                MODULE.compare_failures(tier, impact, failure_evidence(tier, ":outside"), IDENTITY)
 
     def test_bad_durations_duplicate_tasks_and_empty_test_observations_are_rejected(self):
         for value in (-1, float("nan"), float("inf"), True, "12"):

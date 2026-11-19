@@ -13,6 +13,7 @@ import re
 LANES = {"unit": "unit-tests", "screenshot": "screenshot-tests", "instrumented": "instrumented-tests"}
 ARTIFACTS = {"unit": "unit-gradle-profiles", "screenshot": "screenshot-gradle-profiles",
              "instrumented": "managed-device-gradle-profiles"}
+REPORT_MODES = {"unit": "unit", "screenshot": "paparazzi", "instrumented": "managed-device"}
 BUCKETS = ("candidate", "outside", "unmapped")
 
 
@@ -108,6 +109,46 @@ def one_json(directory, filename):
     return json.loads(files[0].read_text())
 
 
+def compare_failures(tier, impact, evidence, identity):
+    provenance = impact["provenance"]
+    if (provenance["explicit_scenario"] or
+            any(provenance.get(key) != identity[key] for key in ("GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT"))):
+        raise ValueError("candidate report is not from this CI attempt")
+    expected = identity | {"GITHUB_JOB": LANES[tier]}
+    if (type(evidence["schema"]) is not int or evidence["schema"] != 1 or
+            evidence["mode"] != REPORT_MODES[tier] or evidence["provenance"] != expected):
+        raise ValueError("failure report run, attempt, checkout, or producer does not match")
+
+    selection = impact["selections"][tier]
+    configured = {owner(task) for task in selection["configured_tasks"]}
+    candidates = {owner(task) for task in selection["candidate_tasks"]}
+    unreadable = evidence["unreadable_reports"]
+    fallback = evidence["fallback_modules"]
+    if (type(unreadable) is not int or unreadable < 0 or not isinstance(fallback, list) or
+            not isinstance(evidence["failures"], list)):
+        raise ValueError("invalid JUnit failure evidence")
+    for module in fallback:
+        owner(module)
+
+    counts = dict.fromkeys(BUCKETS, 0)
+    failures = []
+    for failure in evidence["failures"]:
+        module = failure["module"]
+        owner(module)
+        if (failure["kind"] not in ("failure", "error") or
+                any(not isinstance(failure[key], str) or not failure[key].strip() for key in ("classname", "name"))):
+            raise ValueError("invalid failed testcase")
+        bucket = "candidate" if module in candidates else "outside" if module in configured else "unmapped"
+        counts[bucket] += 1
+        failures.append(failure | {"bucket": bucket})
+
+    status = "no-testcase-evidence"
+    if failures:
+        status = "partial" if unreadable or set(fallback) - {failure["module"] for failure in failures} else "observed"
+    return {"status": status, "counts": counts, "failures": failures,
+            "unreadable_reports": unreadable, "screenshot_failure_modules": fallback}
+
+
 def report(directory, identity):
     result = {"schema": 1, "mode": "shadow", "execution_changed": False, "provenance": identity, "lanes": {}}
     try:
@@ -123,11 +164,21 @@ def report(directory, identity):
     except (OSError, ValueError, KeyError, TypeError, AttributeError) as error:
         return result | {"status": "unavailable", "reason": str(error) if isinstance(error, ValueError) else type(error).__name__}
     for tier in LANES:
+        artifact = directory / ARTIFACTS[tier]
+        evidence = {}
         try:
-            evidence = one_json(directory / ARTIFACTS[tier], "gradle-profiles.json")
+            evidence = one_json(artifact, "gradle-profiles.json")
             result["lanes"][tier] = measure_lane(tier, impact["selections"][tier], evidence, identity)
         except (OSError, ValueError, KeyError, TypeError, AttributeError) as error:
             result["lanes"][tier] = {"status": "unavailable", "reason": str(error) if isinstance(error, ValueError) else type(error).__name__}
+        lane_failed = isinstance(evidence, dict) and evidence.get("lane_outcome") == "failure"
+        if lane_failed or any(artifact.rglob("impact-failures.json")):
+            try:
+                failures = one_json(artifact, "impact-failures.json")
+                comparison = compare_failures(tier, impact, failures, identity)
+            except (OSError, ValueError, KeyError, TypeError, AttributeError) as error:
+                comparison = {"status": "unavailable", "reason": str(error) if isinstance(error, ValueError) else type(error).__name__}
+            result["lanes"][tier]["failure_comparison"] = comparison
     measured = sum(lane["status"] == "measured" for lane in result["lanes"].values())
     result["status"] = "complete" if measured == len(LANES) else "partial" if measured else "unavailable"
     return result
@@ -160,6 +211,17 @@ def render(record):
             lines.append(f"{tier}: {executed} executed test-task observations; "
                          f"{len(lane['test_task_observations']) - executed} nonexecuted; "
                          f"{len(lane['unobserved_configured_owners'])} configured owners unobserved.")
+    comparisons = {tier: lane["failure_comparison"] for tier, lane in record["lanes"].items()
+                   if "failure_comparison" in lane}
+    if comparisons:
+        lines.extend(["", "#### Observed JUnit failures", "",
+                      "Outside owners expose possible omissions under module selection. "
+                      "Unmapped owners and incomplete evidence need review.", "",
+                      "| Tier | Evidence | Candidate | Outside | Unmapped |", "|---|---|---:|---:|---:|"])
+        for tier, comparison in comparisons.items():
+            counts = comparison.get("counts", {}) if comparison["status"] in ("observed", "partial") else {}
+            lines.append(f"| {tier} | {comparison['status']} | {counts.get('candidate', '—')} | "
+                         f"{counts.get('outside', '—')} | {counts.get('unmapped', '—')} |")
     lines.extend(["", "Missing, failed, cached, empty, or stale evidence is not proof of saved test execution.", ""])
     return "\n".join(lines)
 

@@ -148,6 +148,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     root = args.root.resolve()
     provenance = {"report_host": platform.system() + "/" + platform.machine()}
+    provenance.update({key: os.environ[key] for key in ("GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT") if key in os.environ})
     try:
         provenance["checkout_sha"] = git(root, "rev-parse", "HEAD").decode().strip()
         provenance["base_sha"] = git(root, "rev-parse", "--verify", args.base + "^{commit}").decode().strip()

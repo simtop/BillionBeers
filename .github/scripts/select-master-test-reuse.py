@@ -21,7 +21,7 @@ MAX_ARCHIVE = 64 * 1024
 MAX_JSON = 16 * 1024
 ARTIFACT_PREFIX = "verified-master-test-result-"
 REQUIRED_JOBS = {
-    "Code Style Formatting Check", "Detect change scope", "Secret Scan (gitleaks)",
+    "Repository Checks", "Detect change scope", "Secret Scan (gitleaks)",
     "Static Analysis (Detekt)", "Android Lint", "Dependency Guard", "Unit Tests",
     "Web Tests (Wasm/static)", "Screenshot Tests (Paparazzi)",
     "Instrumented Tests (Gradle Managed Device)", "Native Tests (Apple)", "CI Gate",

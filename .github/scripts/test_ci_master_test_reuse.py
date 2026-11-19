@@ -54,7 +54,7 @@ class FakeGitHub:
         self.run_list = [self.run]
         # Keep the API fixture independent of the selector's expected-job constants.
         job_names = (
-            "Code Style Formatting Check", "Detect change scope", "Secret Scan (gitleaks)",
+            "Repository Checks", "Detect change scope", "Secret Scan (gitleaks)",
             "Static Analysis (Detekt)", "Android Lint", "Dependency Guard",
             "Dependency API Compatibility", "Unit Tests", "Web Tests (Wasm/static)",
             "Screenshot Tests (Paparazzi)", "Instrumented Tests (Gradle Managed Device)",

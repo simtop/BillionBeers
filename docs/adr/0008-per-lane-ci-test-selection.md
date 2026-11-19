@@ -147,9 +147,9 @@ behavior above, and merge-group validation still runs the full suite independent
 
 ### 9. Observe module impact before enabling narrower execution
 
-PR formatting checks produce an advisory `ci-impact-shadow` artifact. The report uses the current
-Gradle project graph and registered verification task names on the reporting host, including KMP
-task exclusions. An absent host-specific task is not proof that a target has no tests. The report
+Repository Checks produces an advisory `ci-impact-shadow` artifact on each PR. The report uses the
+current Gradle project graph and the verification tasks registered on the reporting host, including
+KMP task exclusions. An absent host-specific task is not proof that a target has no tests. The report
 traverses reverse dependencies across every configuration, including runtime, KSP, and test-helper
 edges. Platform source sets constrain the candidate tiers. Production changes include consumers;
 test-only changes stay with their owner. Plain JVM test helpers also invalidate that module's
@@ -183,10 +183,77 @@ commands. Separate build-logic checks stay full and outside this measurement. Su
 wall time because tasks overlap. The aggregate CI gate publishes this diagnostic
 without changing its test verdict or verified-result proof conditions.
 
+When a unit, screenshot, or managed-device test step fails, the same artifact includes its failed
+JUnit cases by module owner. The comparison requires the candidate report and failure evidence
+from the same run, attempt, and checkout, with the expected lane as producer. A failed case from
+an owner outside the candidates flags a possible omission. Unmapped owners, unreadable reports,
+and failed commands without exact testcases require investigation. A failed lane can produce
+failure evidence even when its timing comparison is unavailable.
+
 Narrower execution requires a separate decision after full-run comparisons and omission probes
 show which failures the candidate set would miss. The acceptance evidence must include resources,
 generated sources, shared helpers, dynamic delivery, renames, and deletions. It must also preserve
 complete coverage and distinguish partial test results from a full-suite reuse proof.
+
+Keep production source changes scoped to the owner and its transitive consumers, including test
+helpers and generators. Retain app integration tests for dynamic routes and use both paths of a
+rename. Treat default strings, localized strings, and drawables as module resources. For example,
+`brand_beer.xml` reaches both the splash screen and the shared image placeholder through XML
+aliases. Kotlin imports alone miss those consumers. A locale exception requires verified test
+locale and fallback behavior, with separate localized coverage and resource validation.
+[Resource qualifiers](https://developer.android.com/guide/topics/resources/providing-resources.html)
+
+If a later pilot needs variant precision, extend the Gradle export with `ResolutionResult` for
+the relevant test and runtime configurations. Use the public AGP Variant API for merged Android
+artifacts, and cover the export with Gradle TestKit. Keep policy in the Python report and include
+packaging and app integration relationships alongside the resolved classpaths.
+[Gradle dependency graph API](https://docs.gradle.org/current/userguide/dependency_graph_resolution.html) ·
+[AGP Variant API](https://developer.android.com/build/extend-agp)
+
+#### November 2026 check
+
+Actions job and step timestamps covered 50 recent PR runs across 24 PRs from November 1 through 9
+UTC. The 23 successful first attempts that executed all five test lanes covered 20 PRs.
+
+| Lane | Median job time | Last prerequisite to finish |
+|---|---:|---:|
+| Unit | 10m53s | 0 of 23 |
+| Screenshot | 6m17s | 1 of 23 |
+| Managed device | 19m42s | 5 of 23 |
+| Native | 29m26s | 17 of 23 |
+| Web | 5m12s | 0 of 23 |
+
+The median from the first job start to the gate completing was 36m52s. For each run, subtracting
+the last unaffected prerequisite's finish from the last prerequisite's finish gives a ceiling for
+making all three candidate-covered jobs instantaneous. The median ceiling was zero. This
+calculation excludes queue time before the first job and assumes the other jobs take the same
+time. A single unit-test-only change had an 8m20s ceiling. The full unit lane would still need its
+coverage command, and the managed-device lane would still need its tablet and release-smoke work.
+[Sample start](https://github.com/simtop/BillionBeers/actions/runs/41290099537) ·
+[Unit-test-only change](https://github.com/simtop/BillionBeers/actions/runs/42380662345) ·
+[Sample end](https://github.com/simtop/BillionBeers/actions/runs/42534919931)
+
+In the last sampled run, the Apple simulator command took 901 seconds. Its Gradle profile
+recorded 2,325 summed seconds of linking and 82 of test tasks. On the first managed-device
+command, device setup accounted for 1,466 summed seconds, compared with 1,278 in test tasks.
+These overlapping task totals explain where the runners spent work. The wall-clock ceiling
+above comes from Actions timestamps. [Sample profiles](https://github.com/simtop/BillionBeers/actions/runs/42534919931)
+
+Seven of eight inspected shadow reports selected the full inventory. Dependency and workflow edits
+accounted for six, and a Detekt baseline edit accounted for the seventh. The one sampled screenshot
+failure had a JUnit case owned by `:app`, which the full fallback included. A controlled replay
+omitting `:app` flagged that case. This verifies the comparison and supplies one failure observation.
+[Screenshot failure](https://github.com/simtop/BillionBeers/actions/runs/42529321206)
+
+Keep module selection in shadow mode. A later execution pilot should first identify a cohort where
+the affected lane is on the critical path, then compare matched full and candidate runs at the
+same checkout and cache conditions. Use at least 30 distinct representative PRs, a provisional
+15% median gate-time improvement, and zero missed known failures in replay and omission probes.
+Report runner minutes and selection overhead alongside wall time. Keep full weekly, merge-group,
+and release validation, and run the full affected tier for uncertain graph or resource inputs.
+Develocity covers Gradle JVM tests, including Android unit tests. Most device tests and Apple
+simulator tests fall outside that scope, and the coverage run needs complete execution.
+[Develocity test compatibility](https://docs.develocity.ai/2026.3/guides/predictive-test-selection/#test-compatibility)
 
 ### 10. Preserve verified Kotlin/Native components between CI runs
 

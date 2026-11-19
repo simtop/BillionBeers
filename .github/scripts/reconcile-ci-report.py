@@ -41,7 +41,7 @@ PREPARATION_RUN_NAME = re.compile(
     r"Dependency preparation \| mode=(write|reference|candidate) \| ref=(.+)"
 )
 CI_REQUIRED_JOBS = {
-    "Code Style Formatting Check", "Detect change scope", "Secret Scan (gitleaks)",
+    "Repository Checks", "Detect change scope", "Secret Scan (gitleaks)",
     "Static Analysis (Detekt)", "Android Lint", "Dependency Guard", "Unit Tests",
     "Web Tests (Wasm/static)", "Screenshot Tests (Paparazzi)",
     "Instrumented Tests (Gradle Managed Device)", "Native Tests (Apple)", "CI Gate",
