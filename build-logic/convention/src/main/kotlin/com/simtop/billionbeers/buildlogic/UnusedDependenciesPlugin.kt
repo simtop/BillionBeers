@@ -1,382 +1,163 @@
 package com.simtop.billionbeers.buildlogic
 
+import java.io.File
+import java.io.IOException
+import java.io.Serializable
+import java.util.zip.ZipFile
+import java.util.zip.ZipInputStream
 import org.gradle.api.DefaultTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.Configuration
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.artifacts.result.ResolvedDependencyResult
+import org.gradle.api.artifacts.result.UnresolvedDependencyResult
 import org.gradle.api.file.ConfigurableFileCollection
-import org.gradle.api.file.RegularFileProperty
-import org.gradle.api.provider.SetProperty
-import org.gradle.api.tasks.*
-import java.io.File
-import java.net.HttpURLConnection
-import java.net.URL
-import java.util.jar.JarFile
+import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Nested
+import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
+import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 
-internal fun mavenPackageCacheKey(groupId: String, artifactId: String, version: String): String =
-    "$groupId:$artifactId:$version"
+private val importPattern = Regex("""^\s*import\s+(?:static\s+)?([\w.]+)""")
 
 internal fun packageMatchesImport(packageName: String, importPath: String): Boolean =
-    importPath == packageName || importPath.startsWith("$packageName.")
+  importPath == packageName || importPath.startsWith("$packageName.")
 
-private data class DependencyPackageMapping(
-    val packages: List<String>,
-    val evidence: String,
-)
-
-/**
- * Helper to fetch package information from Maven Central JARs.
- */
-class MavenCentralPackageFetcher(private val cacheFile: File) {
-
-    private val cache = mutableMapOf<String, List<String>>()
-
-    init {
-        loadCache()
-    }
-
-    private fun loadCache() {
-        if (cacheFile.exists()) {
-            cacheFile.readLines().forEach { line ->
-                if (line.isNotBlank() && line.contains("=")) {
-                    val (dep, packages) = line.split("=", limit = 2)
-                    cache[dep] = packages.split(",").filter { it.isNotBlank() }
-                }
+internal fun dependencyPackages(file: File): Set<String> = buildSet {
+  ZipFile(file).use { archive ->
+    val entries = archive.entries().asSequence()
+    when (file.extension) {
+      "jar" -> entries.mapNotNull { classPackage(it.name) }.forEach { add(it) }
+      "aar" ->
+        entries
+          .filter { it.name == "classes.jar" || (it.name.startsWith("libs/") && it.name.endsWith(".jar")) }
+          .forEach { embeddedJar ->
+            ZipInputStream(archive.getInputStream(embeddedJar)).use { jar ->
+              generateSequence { jar.nextEntry }.mapNotNull { classPackage(it.name) }.forEach { add(it) }
             }
-        }
+          }
     }
-
-    fun saveCache() {
-        cacheFile.parentFile.mkdirs()
-        cacheFile.bufferedWriter().use { writer ->
-            cache.toSortedMap().forEach { (dep, packages) ->
-                writer.write("$dep=${packages.sorted().joinToString(",")}\n")
-            }
-        }
-    }
-
-    fun getPackages(groupId: String, artifactId: String, version: String): List<String> {
-        val key = mavenPackageCacheKey(groupId, artifactId, version)
-
-        // Check cache first
-        cache[key]?.let { return it }
-
-        // Try to fetch from Maven Central
-        val packages = fetchFromMavenCentral(groupId, artifactId, version)
-
-        if (packages.isNotEmpty()) {
-            cache[key] = packages
-        }
-
-        return packages
-    }
-
-    private fun fetchFromMavenCentral(groupId: String, artifactId: String, version: String): List<String> {
-        try {
-            // Download the JAR from Maven Central
-            val groupPath = groupId.replace('.', '/')
-            val jarUrl = "https://repo1.maven.org/maven2/$groupPath/$artifactId/$version/$artifactId-$version.jar"
-
-            val tempFile = File.createTempFile("maven-", ".jar")
-            tempFile.deleteOnExit()
-
-            val connection = URL(jarUrl).openConnection() as HttpURLConnection
-            connection.connectTimeout = 5000
-            connection.readTimeout = 10000
-            connection.instanceFollowRedirects = true
-
-            if (connection.responseCode == 200) {
-                connection.inputStream.use { input ->
-                    tempFile.outputStream().use { output ->
-                        input.copyTo(output)
-                    }
-                }
-
-                // Extract packages from the downloaded JAR
-                return extractPackagesFromJar(tempFile)
-            }
-        } catch (e: Exception) {
-            // Silently fail - we'll use fallback heuristics
-        }
-
-        return emptyList()
-    }
-
-    private fun extractPackagesFromJar(jarFile: File): List<String> {
-        val packages = mutableSetOf<String>()
-
-        try {
-            JarFile(jarFile).use { jar ->
-                jar.entries().asSequence()
-                    .filter { entry ->
-                        !entry.isDirectory &&
-                        entry.name.endsWith(".class") &&
-                        !entry.name.startsWith("META-INF") &&
-                        !entry.name.contains("$") &&
-                        entry.name != "module-info.class" &&
-                        !entry.name.startsWith("android/") &&
-                        !entry.name.startsWith("java/") &&
-                        !entry.name.startsWith("javax/") &&
-                        !entry.name.startsWith("kotlin/")
-                    }
-                    .forEach { entry ->
-                        val packagePath = entry.name
-                            .substringBeforeLast("/")
-                            .replace("/", ".")
-
-                        if (packagePath.isNotEmpty()) {
-                            packages.add(packagePath)
-                        }
-                    }
-            }
-        } catch (e: Exception) {
-            // Ignore
-        }
-
-        return packages.toList()
-    }
+  }
 }
 
-/**
- * Task that detects unused dependencies by analyzing source code imports
- * Uses Maven Central JAR package information, with a group-ID heuristic fallback.
- */
+private fun classPackage(entry: String): String? =
+  entry.takeIf { it.endsWith(".class") && !it.startsWith("META-INF/") }
+    ?.substringBeforeLast('/', missingDelimiterValue = "")
+    ?.takeIf(String::isNotEmpty)
+    ?.replace('/', '.')
+
+data class DependencyArtifact(
+  @get:Input val coordinate: String,
+  @get:InputFile @get:Optional @get:PathSensitive(PathSensitivity.NONE) val file: File?,
+) : Serializable
+
+@DisableCachingByDefault(because = "Reports dependency evidence to the console")
 abstract class DetectUnusedDependenciesTask : DefaultTask() {
+  @get:Input abstract val moduleName: Property<String>
 
-    @get:Input
-    abstract val moduleName: SetProperty<String>
+  @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE)
+  abstract val sourceFiles: ConfigurableFileCollection
 
-    @get:InputFiles
-    abstract val sourceFiles: ConfigurableFileCollection
+  @get:Nested abstract val artifacts: ListProperty<DependencyArtifact>
 
-    @get:Input
-    abstract val declaredDependencies: SetProperty<String>
+  @TaskAction
+  fun detectUnusedDependencies() {
+    val imports = sourceFiles.files.flatMap { file ->
+      file.useLines { lines ->
+        lines.mapNotNull { importPattern.find(it)?.groupValues?.get(1)?.trimEnd('.') }.toList()
+      }
+    }.toSet()
 
-    @get:Internal
-    abstract val cacheFile: RegularFileProperty
-
-    @TaskAction
-    fun detectUnusedDependencies() {
-        val modName = moduleName.get().firstOrNull() ?: "unknown"
-        logger.lifecycle("\n📊 Dependency Analysis for $modName")
-        logger.lifecycle("━".repeat(60))
-
-        // Initialize Maven Central fetcher with cache
-        val cache = cacheFile.get().asFile
-        val fetcher = MavenCentralPackageFetcher(cache)
-
-        // Collect all imports from source files
-        val imports = collectImports()
-        logger.lifecycle("📝 Found ${imports.size} unique imports in source code")
-
-        // Map dependencies to their packages
-        val dependencyPackageMap = mapDependenciesToPackages(fetcher)
-
-        // Save updated cache
-        fetcher.saveCache()
-        logger.lifecycle("💾 Updated package cache: ${cache.absolutePath}")
-
-        // Analyze usage
-        val usedDeps = mutableSetOf<String>()
-        val unusedDeps = mutableSetOf<String>()
-
-        dependencyPackageMap.forEach { (dep, packages) ->
-            val isUsed = packages.packages.any { pkg ->
-                imports.any { import -> packageMatchesImport(pkg, import) }
-            }
-
-            if (isUsed) {
-                usedDeps.add(dep)
-            } else {
-                unusedDeps.add(dep)
-            }
+    val unassessed = mutableListOf<String>()
+    val candidates = mutableListOf<String>()
+    var assessed = 0
+    artifacts.get().groupBy { it.coordinate }.toSortedMap().forEach { (coordinate, evidence) ->
+      val packages =
+        try {
+          if (evidence.any { it.file == null }) emptySet()
+          else evidence.flatMapTo(mutableSetOf()) { dependencyPackages(checkNotNull(it.file)) }
+        } catch (error: IOException) {
+          logger.info("Could not read artifact for $coordinate", error)
+          emptySet()
         }
 
-        // Report results
-        reportResults(usedDeps, unusedDeps, dependencyPackageMap)
+      if (packages.isEmpty()) {
+        unassessed.add(coordinate)
+      } else {
+        assessed++
+        if (imports.none { imported -> packages.any { packageMatchesImport(it, imported) } }) {
+          candidates.add(coordinate)
+        }
+      }
     }
 
-    private fun collectImports(): Set<String> {
-        val imports = mutableSetOf<String>()
-        val importPattern = Regex("""import\s+([\w.]+)(\.\*)?""")
-
-        sourceFiles.files.forEach { file ->
-            if (file.extension in listOf("kt", "java")) {
-                file.readLines().forEach { line ->
-                    importPattern.find(line)?.let { match ->
-                        val importPath = match.groupValues[1]
-                        imports.add(importPath)
-                    }
-                }
-            }
-        }
-
-        return imports
-    }
-
-    private fun mapDependenciesToPackages(
-        fetcher: MavenCentralPackageFetcher
-    ): Map<String, DependencyPackageMapping> {
-        val map = mutableMapOf<String, DependencyPackageMapping>()
-        var fetchedFromMaven = 0
-        var usedFallback = 0
-
-        declaredDependencies.get().forEach { dep ->
-            val parts = dep.split(":")
-            if (parts.size >= 3) {
-                val groupId = parts[0]
-                val artifactId = parts[1]
-                val version = parts[2]
-
-                logger.debug("Resolving packages for $groupId:$artifactId:$version")
-
-                // Try a Maven Central JAR scan.
-                val packages = fetcher.getPackages(groupId, artifactId, version)
-
-                if (packages.isNotEmpty()) {
-                    map[dep] = DependencyPackageMapping(packages, "Maven Central JAR/cache")
-                    fetchedFromMaven++
-                } else {
-                    // Fallback to heuristic
-                    val fallbackPackages = getPackagesForDependencyFallback(dep)
-                    if (fallbackPackages.isNotEmpty()) {
-                        map[dep] = DependencyPackageMapping(fallbackPackages, "group-ID heuristic")
-                        usedFallback++
-                    }
-                }
-            }
-        }
-
-        val unmapped = declaredDependencies.get().size - map.size
-        logger.lifecycle(
-            "📦 Package evidence: $fetchedFromMaven from Maven JAR/cache, " +
-                "$usedFallback from group-ID heuristics, $unmapped unmapped"
-        )
-
-        return map
-    }
-
-    private fun getPackagesForDependencyFallback(dependency: String): List<String> {
-        val parts = dependency.split(":")
-        if (parts.size >= 2) {
-            val groupId = parts[0]
-
-            // Project-specific heuristic: Map "BillionBeers" group to "com.simtop" package
-            if (groupId.startsWith("BillionBeers")) {
-                return listOf(groupId.replace("BillionBeers", "com.simtop"))
-            }
-
-            // Default heuristic: use group ID as base package
-            return listOf(groupId)
-        }
-
-        return emptyList()
-    }
-
-    private fun reportResults(
-        usedDeps: Set<String>,
-        unusedDeps: Set<String>,
-        packageMap: Map<String, DependencyPackageMapping>
-    ) {
-        if (usedDeps.isNotEmpty()) {
-            logger.lifecycle("\n✅ Used Dependencies (${usedDeps.size}):")
-            usedDeps.sorted().forEach { dep ->
-                logger.lifecycle("  - $dep")
-            }
-        }
-
-        if (unusedDeps.isNotEmpty()) {
-            logger.lifecycle("\n⚠️  Potentially Unused Dependencies (${unusedDeps.size}):")
-            unusedDeps.sorted().forEach { dep ->
-                val mapping = packageMap[dep]
-                logger.lifecycle("  - $dep")
-                logger.lifecycle("    Package(s): ${mapping?.packages?.joinToString(", ")}")
-                logger.lifecycle("    Evidence: ${mapping?.evidence ?: "unknown"}")
-                logger.lifecycle("    Not found in any imports")
-                logger.lifecycle("    Review manually; this heuristic does not prove the dependency is unused.\n")
-            }
-        } else {
-            logger.lifecycle("\n✅ All declared dependencies are being used!")
-        }
-
-        logger.lifecycle("━".repeat(60))
-        logger.lifecycle("Summary: ${unusedDeps.size} potentially unused dependencies found\n")
-    }
+    logger.lifecycle("Dependency import check for ${moduleName.get()} (${imports.size} source imports)")
+    logger.lifecycle("Assessed $assessed direct external dependencies using resolved JARs and AARs.")
+    logger.lifecycle("No matching source import (${candidates.size}):")
+    candidates.forEach { logger.lifecycle("  $it") }
+    logger.lifecycle("Unassessed because class evidence was missing (${unassessed.size}):")
+    unassessed.forEach { logger.lifecycle("  $it") }
+    logger.lifecycle(
+      "Review candidates manually. Imports miss resources, generated code, reflection, and runtime use."
+    )
+  }
 }
 
-/**
- * Plugin that registers the manual dependency detection task.
- */
 class UnusedDependenciesPlugin : Plugin<Project> {
-    override fun apply(project: Project) {
-        // Only apply to Android modules
-        project.plugins.withId("com.android.application") {
-            registerTask(project)
-        }
-        project.plugins.withId("com.android.library") {
-            registerTask(project)
-        }
-        project.plugins.withId("com.android.dynamic-feature") {
-            registerTask(project)
-        }
+  override fun apply(project: Project) {
+    listOf("com.android.application", "com.android.library", "com.android.dynamic-feature")
+      .forEach { pluginId -> project.plugins.withId(pluginId) { registerTask(project) } }
+  }
+
+  private fun registerTask(project: Project) {
+    project.tasks.register("detectUnusedDependencies", DetectUnusedDependenciesTask::class.java) {
+      group = "verification"
+      description = "Finds direct external compile dependencies without matching source imports"
+      moduleName.set(project.path)
+      sourceFiles.from(project.fileTree("src") { include("**/*.kt", "**/*.java") })
+      artifacts.set(
+        project.configurations
+          .filter {
+            it.isCanBeResolved &&
+              (it.name == "compileClasspath" || it.name.endsWith("CompileClasspath"))
+          }
+          .flatMap(::directArtifacts)
+          .distinct()
+          .sortedWith(compareBy({ it.coordinate }, { it.file?.path })),
+      )
+    }
+  }
+}
+
+private fun directArtifacts(configuration: Configuration): List<DependencyArtifact> {
+  val incoming = configuration.incoming
+  val dependencies = incoming.resolutionResult.root.dependencies.filterNot { it.isConstraint }
+  val modules = dependencies.filterIsInstance<ResolvedDependencyResult>()
+    .filter { it.selected.id is ModuleComponentIdentifier }
+    .map { dependency ->
+      // Gradle metadata can point a common coordinate at a separate Android or JVM artifact.
+      val variant = generateSequence(dependency.resolvedVariant) { it.externalVariant.orElse(null) }.last()
+      dependency.selected.id.displayName to variant.owner
     }
 
-    private fun registerTask(project: Project) {
-        project.afterEvaluate {
-            val cacheFileLocation = project.rootProject.layout.buildDirectory.file("dependency-package-cache.txt")
+  val owners = modules.map { (_, owner) -> owner }.toSet()
+  val files = incoming.artifactView {
+    componentFilter { it in owners }
+    isLenient = true
+  }.artifacts.artifacts.groupBy({ it.id.componentIdentifier }, { it.file })
 
-            project.tasks.register(
-                "detectUnusedDependencies",
-                DetectUnusedDependenciesTask::class.java
-            ) {
-                group = "verification"
-                description = "Finds potential unused dependencies by comparing imports with package evidence"
-
-                moduleName.set(setOf(project.path))
-                cacheFile.set(cacheFileLocation)
-
-                // Collect source files
-                val sources = project.files()
-                listOf(
-                    "src/main/java",
-                    "src/main/kotlin",
-                    "src/test/java",
-                    "src/test/kotlin",
-                    "src/androidTest/java",
-                    "src/androidTest/kotlin"
-                ).forEach { path ->
-                    val dir = project.file(path)
-                    if (dir.exists()) {
-                        sources.from(project.fileTree(dir))
-                    }
-                }
-                sourceFiles.from(sources)
-
-                // Collect declared dependencies with versions from resolvable configurations
-                val dependencies = mutableSetOf<String>()
-                listOf(
-                    "compileClasspath",
-                    "testCompileClasspath",
-                    "androidTestCompileClasspath",
-                    "debugCompileClasspath",
-                    "releaseCompileClasspath",
-                    "debugRuntimeClasspath",
-                    "releaseRuntimeClasspath"
-                ).forEach { configName ->
-                    try {
-                        val config = project.configurations.findByName(configName)
-                        if (config != null && config.isCanBeResolved) {
-                            config.resolvedConfiguration.firstLevelModuleDependencies.forEach { dep ->
-                                dependencies.add("${dep.moduleGroup}:${dep.moduleName}:${dep.moduleVersion}")
-                            }
-                        }
-                    } catch (e: Exception) {
-                        // Configuration might not be resolvable, skip
-                        project.logger.debug("Could not resolve $configName: ${e.message}")
-                    }
-                }
-
-                declaredDependencies.set(dependencies)
-            }
-        }
-    }
+  val unresolved = dependencies.filterIsInstance<UnresolvedDependencyResult>()
+    .map { DependencyArtifact(it.requested.displayName, null) }
+  return unresolved + modules.flatMap { (coordinate, owner) ->
+    val archives = files[owner].orEmpty().filter { it.extension in setOf("jar", "aar") }
+    if (archives.isEmpty()) listOf(DependencyArtifact(coordinate, null))
+    else archives.map { DependencyArtifact(coordinate, it) }
+  }
 }
