@@ -260,6 +260,7 @@ which check needs attention. **Detect change scope** selects test lanes under
 [ADR 0008](docs/adr/0008-per-lane-ci-test-selection.md). **CI Gate** combines the required results
 and is the check that GitHub requires to merge into `master`.
 
+See the [CI layout](docs/ci-layout.md) for workflow ownership, reports, and where to make CI changes.
 Dependency changes also run [Android linkage checks](docs/dependency-linkage.md).
 For Dependabot failures, see the [dependency update guide](docs/dependabot-updates.md).
 The master CI failure issue closes when CI Gate passes on the current master commit.
