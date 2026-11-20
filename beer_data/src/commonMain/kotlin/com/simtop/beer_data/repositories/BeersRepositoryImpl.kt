@@ -2,8 +2,8 @@ package com.simtop.beer_data.repositories
 
 import com.simtop.beer_data.mappers.BeersMapper
 import com.simtop.beer_network.remotesources.BeersRemoteSource
-import com.simtop.beer_storage.api.BeersStorage
-import com.simtop.beer_storage.api.FilterPresetCapacityReachedException
+import com.simtop.billionbeers.storage.api.BeersStorage
+import com.simtop.billionbeers.storage.api.FilterPresetCapacityReachedException
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.errors.MutateFilterPresetError
 import com.simtop.beerdomain.domain.errors.SaveFilterPresetError
@@ -213,7 +213,7 @@ class BeersRepositoryImpl(
   ): Either<SaveFilterPresetError, Unit> =
     try {
       beersStorage.saveFilterPreset(
-        com.simtop.beer_storage.api.StoredFilterPreset(
+        com.simtop.billionbeers.storage.api.StoredFilterPreset(
           id = preset.id,
           name = preset.name,
           search = preset.query.search,

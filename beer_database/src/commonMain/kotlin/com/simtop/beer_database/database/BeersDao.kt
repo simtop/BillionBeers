@@ -10,8 +10,8 @@ import com.simtop.beer_database.models.BeerDbModel
 import com.simtop.beer_database.models.BeerLocalFlagsDbModel
 import com.simtop.beer_database.models.PagingStateDbModel
 import com.simtop.beer_database.models.SavedFilterPresetDbModel
-import com.simtop.beer_storage.api.FilterPresetCapacityReachedException
-import com.simtop.beer_storage.api.MAX_STORED_FILTER_PRESETS
+import com.simtop.billionbeers.storage.api.FilterPresetCapacityReachedException
+import com.simtop.billionbeers.storage.api.MAX_STORED_FILTER_PRESETS
 import kotlinx.coroutines.flow.Flow
 
 @Dao

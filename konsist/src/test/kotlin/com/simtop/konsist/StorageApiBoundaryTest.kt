@@ -9,7 +9,7 @@ class StorageApiBoundaryTest {
   @Test
   fun `storage api exposes no platform or persistence types`() {
     val root = repoRoot()
-    val sourceRoot = File(root, "beer_storage/api/src")
+    val sourceRoot = File(root, "beer-storage/api/src")
     val forbiddenTokens =
       listOf(
         "android.",

@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test
 /**
  * A dev-app (app-dev-<feature>) exists to build one feature in seconds instead of minutes: it binds
  * the feature under development to :beerdomain:fakes instead of the real data layer, so the heavy
- * :beer_data / :beer_database / :beer_storage:api / :beer_network graph (Room, Retrofit, OkHttp)
+ * :beer_data / :beer_database / :beer-storage:api / :beer_network graph (Room, Retrofit, OkHttp)
  * never enters its compilation. The moment a dev-app declares a dependency on a data-layer module,
  * that guarantee is gone and the dev-app is just a slower copy of :app.
  *
@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test
 class DevAppDependencyBoundaryTest {
 
   private val forbiddenDataLayerModules =
-    listOf(":beer_data", ":beer_database", ":beer_storage:api", ":beer_network")
+    listOf(":beer_data", ":beer_database", ":beer-storage:api", ":beer_network")
 
   // A positive control on the list above: if one of those strings drifts (typo, or the module gets
   // renamed/moved), this fails loudly instead of the rule below silently matching nothing.

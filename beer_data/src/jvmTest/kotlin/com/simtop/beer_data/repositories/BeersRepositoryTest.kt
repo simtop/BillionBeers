@@ -11,8 +11,8 @@ import com.simtop.beer_network.models.EmbeddedImage
 import com.simtop.beer_network.models.TypologyApiResponseItem
 import com.simtop.beer_network.network.BeersServiceHttpException
 import com.simtop.beer_network.network.BeersServiceNetworkException
-import com.simtop.beer_storage.api.MAX_STORED_FILTER_PRESETS
-import com.simtop.beer_storage.api.StoredBeer
+import com.simtop.billionbeers.storage.api.MAX_STORED_FILTER_PRESETS
+import com.simtop.billionbeers.storage.api.StoredBeer
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.errors.MutateFilterPresetError
 import com.simtop.beerdomain.domain.errors.SaveFilterPresetError

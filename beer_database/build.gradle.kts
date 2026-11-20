@@ -26,7 +26,7 @@ kotlin {
 
 dependencies {
   commonMainImplementation(project(":core-common"))
-  commonMainImplementation(project(":beer_storage:api"))
+  commonMainImplementation(project(":beer-storage:api"))
   commonMainImplementation(libs.kotlinx.serialization.json)
   commonMainImplementation(libs.sqliteBundled)
 

@@ -3,9 +3,9 @@ package com.simtop.beer_database.database
 import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import com.simtop.beer_database.localsources.BeersLocalSourceImpl
-import com.simtop.beer_storage.api.FilterPresetCapacityReachedException
-import com.simtop.beer_storage.api.MAX_STORED_FILTER_PRESETS
-import com.simtop.beer_storage.api.StoredFilterPreset
+import com.simtop.billionbeers.storage.api.FilterPresetCapacityReachedException
+import com.simtop.billionbeers.storage.api.MAX_STORED_FILTER_PRESETS
+import com.simtop.billionbeers.storage.api.StoredFilterPreset
 import com.simtop.core.core.SystemEpochTimeProvider
 import java.io.File
 import kotlin.io.path.createTempDirectory

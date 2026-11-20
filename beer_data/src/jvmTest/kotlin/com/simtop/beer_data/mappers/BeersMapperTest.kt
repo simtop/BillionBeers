@@ -9,7 +9,7 @@ import com.simtop.beer_network.models.NamedEntity
 import com.simtop.beer_network.models.NamedTranslation
 import com.simtop.beer_network.models.Translation
 import com.simtop.beer_network.models.TypologyApiResponseItem
-import com.simtop.beer_storage.api.StoredBeer
+import com.simtop.billionbeers.storage.api.StoredBeer
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.core.core.Diagnostic
 import com.simtop.core.core.DiagnosticArea

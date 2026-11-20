@@ -5,9 +5,9 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.simtop.beer_database.database.BeersDatabase
-import com.simtop.beer_storage.api.BeersStorage
-import com.simtop.beer_storage.api.StoredBeer
-import com.simtop.beer_storage.api.StoredBeerLocalFlags
+import com.simtop.billionbeers.storage.api.BeersStorage
+import com.simtop.billionbeers.storage.api.StoredBeer
+import com.simtop.billionbeers.storage.api.StoredBeerLocalFlags
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout

@@ -1,8 +1,8 @@
 package com.simtop.billionbeers.web
 
 import com.simtop.beer_network.network.configureBeersApi
-import com.simtop.beer_storage.api.BeersStorage
-import com.simtop.beer_storage.browser.IndexedDbBeersStorage
+import com.simtop.billionbeers.storage.api.BeersStorage
+import com.simtop.billionbeers.storage.browser.IndexedDbBeersStorage
 import com.simtop.beerdomain.domain.repositories.BeerCatalogMetadataRepository
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
