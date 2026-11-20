@@ -2,7 +2,7 @@ package com.simtop.beer_database.di
 
 import com.simtop.beer_database.database.BeersDatabase
 import com.simtop.beer_database.localsources.BeersLocalSourceImpl
-import com.simtop.beer_storage.api.BeersStorage
+import com.simtop.billionbeers.storage.api.BeersStorage
 import com.simtop.core.core.EpochTimeProvider
 import com.simtop.core.core.SystemEpochTimeProvider
 import dev.zacsweers.metro.AppScope

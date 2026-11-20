@@ -1,0 +1,347 @@
+@file:OptIn(kotlin.js.ExperimentalWasmJsInterop::class)
+
+package com.simtop.billionbeers.storage.browser
+
+import com.simtop.billionbeers.storage.api.StoredBeer
+import kotlin.JsFun
+import kotlin.js.JsString
+import kotlin.time.TimeSource
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
+import kotlin.test.Test
+
+@JsFun("""
+() => {
+  const global = globalThis;
+  const store = global.IDBObjectStore.prototype;
+  const database = global.IDBDatabase.prototype;
+  const originals = {
+    open: global.indexedDB.open,
+    transaction: database.transaction,
+    close: database.close,
+    getAll: store.getAll,
+    get: store.get,
+    put: store.put,
+    delete: store.delete,
+    clear: store.clear,
+    count: store.count,
+    parse: global.JSON.parse,
+    stringify: global.JSON.stringify,
+  };
+  const probe = {};
+  const reset = () => {
+    probe.opens = 0;
+    probe.transactions = 0;
+    probe.closes = 0;
+    probe.failTransactionSetup = false;
+    probe.abortNextPresetMutation = false;
+    probe.presetAborts = 0;
+    probe.getAll = 0;
+    probe.get = 0;
+    probe.put = 0;
+    probe.clear = 0;
+    probe.count = 0;
+    probe.parseCalls = 0;
+    probe.parseChars = 0;
+    probe.stringifyCalls = 0;
+    probe.stringifyChars = 0;
+  };
+  const restore = () => {
+    global.indexedDB.open = originals.open;
+    database.transaction = originals.transaction;
+    database.close = originals.close;
+    store.getAll = originals.getAll;
+    store.get = originals.get;
+    store.put = originals.put;
+    store.delete = originals.delete;
+    store.clear = originals.clear;
+    store.count = originals.count;
+    global.JSON.parse = originals.parse;
+    global.JSON.stringify = originals.stringify;
+    delete global.__billionBeersStorageProbe;
+  };
+  global.indexedDB.open = function (...args) {
+    probe.opens += 1;
+    return originals.open.apply(this, args);
+  };
+  database.transaction = function (...args) {
+    probe.transactions += 1;
+    if (probe.failTransactionSetup) throw new Error('probed transaction setup failure');
+    return originals.transaction.apply(this, args);
+  };
+  database.close = function (...args) {
+    probe.closes += 1;
+    return originals.close.apply(this, args);
+  };
+  store.getAll = function (...args) {
+    probe.getAll += 1;
+    return originals.getAll.apply(this, args);
+  };
+  store.get = function (...args) {
+    probe.get += 1;
+    return originals.get.apply(this, args);
+  };
+  store.put = function (...args) {
+    probe.put += 1;
+    return abortPresetMutation(this, originals.put.apply(this, args));
+  };
+  const abortPresetMutation = (store, request) => {
+    if (store.name === 'filter_presets' && probe.abortNextPresetMutation) {
+      probe.abortNextPresetMutation = false;
+      request.addEventListener('success', () => {
+        probe.presetAborts += 1;
+        store.transaction.abort();
+      });
+    }
+    return request;
+  };
+  store.delete = function (...args) {
+    return abortPresetMutation(this, originals.delete.apply(this, args));
+  };
+  store.clear = function (...args) {
+    probe.clear += 1;
+    return originals.clear.apply(this, args);
+  };
+  store.count = function (...args) {
+    probe.count += 1;
+    return originals.count.apply(this, args);
+  };
+  global.JSON.parse = function (value, ...args) {
+    probe.parseCalls += 1;
+    probe.parseChars += typeof value === 'string' ? value.length : 0;
+    return originals.parse.call(this, value, ...args);
+  };
+  global.JSON.stringify = function (value, ...args) {
+    probe.stringifyCalls += 1;
+    const result = originals.stringify.call(this, value, ...args);
+    probe.stringifyChars += typeof result === 'string' ? result.length : 0;
+    return result;
+  };
+  global.__billionBeersStorageProbe = {probe, reset, restore, originals};
+  reset();
+}
+""")
+internal external fun installStorageProbe()
+
+@JsFun("""
+() => {
+  const state = globalThis.__billionBeersStorageProbe;
+  if (state) state.reset();
+}
+""")
+private external fun resetStorageProbe()
+
+@JsFun("""
+() => {
+  const state = globalThis.__billionBeersStorageProbe;
+  if (state) state.probe.failTransactionSetup = true;
+}
+""")
+internal external fun failNextStorageTransactionSetup()
+
+@JsFun("""
+() => {
+  globalThis.__billionBeersStorageProbe.probe.abortNextPresetMutation = true;
+}
+""")
+internal external fun abortNextPresetMutation()
+
+@JsFun("""
+() => globalThis.__billionBeersStorageProbe.probe.presetAborts
+""")
+internal external fun storageProbePresetAbortCount(): Int
+
+@JsFun("""
+() => {
+  const state = globalThis.__billionBeersStorageProbe;
+  return state ? state.probe.closes : 0;
+}
+""")
+internal external fun storageProbeCloseCount(): Int
+
+@JsFun("""
+() => {
+  const state = globalThis.__billionBeersStorageProbe;
+  return state ? state.probe.getAll : 0;
+}
+""")
+internal external fun storageProbeGetAllCount(): Int
+
+@JsFun("""
+() => {
+  const global = globalThis;
+  const original = global.indexedDB.open;
+  const state = {closeCount: 0, request: null, original};
+  state.request = {
+    result: null,
+    error: new Error('probed blocked open'),
+    onupgradeneeded: null,
+    onblocked: null,
+    onerror: null,
+    onsuccess: null,
+  };
+  global.indexedDB.open = () => state.request;
+  global.__billionBeersBlockedOpenProbe = state;
+}
+""")
+internal external fun installBlockedOpenProbe()
+
+@JsFun("""
+() => {
+  const state = globalThis.__billionBeersBlockedOpenProbe;
+  if (state && state.request.onblocked) state.request.onblocked();
+}
+""")
+internal external fun triggerBlockedOpenProbe()
+
+@JsFun("""
+() => {
+  const state = globalThis.__billionBeersBlockedOpenProbe;
+  if (!state) return;
+  state.request.result = {close: () => { state.closeCount += 1; }};
+  if (state.request.onsuccess) state.request.onsuccess();
+}
+""")
+internal external fun triggerLateBlockedOpenSuccess()
+
+@JsFun("""
+() => {
+  const state = globalThis.__billionBeersBlockedOpenProbe;
+  return state ? state.closeCount : 0;
+}
+""")
+internal external fun blockedOpenProbeCloseCount(): Int
+
+@JsFun("""
+() => {
+  const state = globalThis.__billionBeersBlockedOpenProbe;
+  if (!state) return;
+  globalThis.indexedDB.open = state.original;
+  delete globalThis.__billionBeersBlockedOpenProbe;
+}
+""")
+internal external fun finishBlockedOpenProbe()
+
+@JsFun("""
+() => {
+  const state = globalThis.__billionBeersStorageProbe;
+  if (!state) return '{}';
+  const result = state.originals.stringify.call(JSON, state.probe);
+  state.restore();
+  return result;
+}
+""")
+internal external fun finishStorageProbe(): JsString
+
+class IndexedDbBeersStorageBrowserProbeTest {
+
+  @Test
+  fun browserStorageWorkloadReportsOperationPhasesForOneRow() = runTest {
+    runWorkload(1)
+  }
+
+  @Test
+  fun browserStorageWorkloadReportsOperationPhasesForThirtyTwoRows() = runTest {
+    runWorkload(32)
+  }
+
+  @Test
+  fun browserStorageWorkloadReportsOperationPhasesForOneHundredTwentyEightRows() = runTest {
+    runWorkload(128)
+  }
+
+  @Test
+  fun browserStorageWorkloadReportsOperationPhasesForOneThousandRows() = runTest {
+    runWorkload(1_000)
+  }
+
+  private suspend fun runWorkload(size: Int) {
+    val databaseName = "billionbeers-probe-${hashCode()}-$size"
+    val storage = IndexedDbBeersStorage(databaseName)
+    val catalog = (0 until size).map(::probeBeer)
+    var probeInstalled = false
+    try {
+      storage.insertAll(catalog)
+      installStorageProbe()
+      probeInstalled = true
+
+      val mutationSamples = mutableListOf<Double>()
+      val consumerSamples = mutableListOf<Double>()
+      storage.insertAll(listOf(catalog.first().copy(name = "Probe warmup")))
+      resetStorageProbe()
+      repeat(SAMPLE_COUNT) { sample ->
+        mutationSamples += measureMillis {
+          storage.insertAll(listOf(catalog.first().copy(name = "Probe update $sample")))
+        }
+        consumerSamples += measureMillis {
+          val rows = storage.observeBeers().first { it.size == size }
+          checksum(rows)
+        }
+      }
+      val singleMutationMetrics = finishStorageProbe().toString()
+      probeInstalled = false
+
+      installStorageProbe()
+      probeInstalled = true
+      val burstTime = measureMillis {
+        repeat(BURST_COUNT) { sample ->
+          storage.insertAll(listOf(catalog.first().copy(name = "Probe burst $sample")))
+        }
+      }
+      val burstConsumerTime = measureMillis {
+        checksum(storage.observeBeers().first { it.size == size })
+      }
+      val burstMetrics = finishStorageProbe().toString()
+      probeInstalled = false
+
+      println(
+        "browser-storage-probe rows=$size samples=$SAMPLE_COUNT " +
+          "mutationMedianMs=${median(mutationSamples)} consumerMedianMs=${median(consumerSamples)} " +
+          "singleCounters=$singleMutationMetrics " +
+          "burstCount=$BURST_COUNT burstTimeMs=$burstTime burstConsumerMs=$burstConsumerTime " +
+          "burstCounters=$burstMetrics"
+      )
+    } finally {
+      if (probeInstalled) finishStorageProbe()
+      storage.deleteAll()
+      storage.close()
+    }
+  }
+
+  private fun checksum(rows: List<StoredBeer>) {
+    var checksum = 0
+    repeat(CONSUMER_REPETITIONS) {
+      checksum += rows.sumOf { it.name.length + it.description.length }
+    }
+    check(checksum > 0)
+  }
+
+  private fun probeBeer(index: Int): StoredBeer =
+    StoredBeer(
+      id = "probe-$index",
+      name = "Probe Beer $index",
+      tagline = "Measurement fixture $index",
+      description = "A deterministic browser storage measurement fixture with enough text to exercise serialization.",
+      imageUrl = "https://example.test/probe-$index.png",
+      abv = 4.5,
+      ibu = 20.0,
+      foodPairing = listOf("pretzels", "pizza", "salad"),
+      availability = index % 2 == 0,
+      isFavorite = index % 5 == 0,
+    )
+
+  private suspend fun measureMillis(block: suspend () -> Unit): Double {
+    val start = TimeSource.Monotonic.markNow()
+    block()
+    return start.elapsedNow().inWholeNanoseconds / 1_000_000.0
+  }
+
+  private fun median(values: List<Double>): Double = values.sorted()[values.size / 2]
+
+  private companion object {
+    val CATALOG_SIZES = listOf(1, 32, 128, 1_000)
+    const val SAMPLE_COUNT = 5
+    const val BURST_COUNT = 5
+    const val CONSUMER_REPETITIONS = 100
+  }
+}

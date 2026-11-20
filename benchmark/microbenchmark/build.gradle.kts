@@ -37,6 +37,6 @@ dependencies {
     // BeersMapper's constructor takes LanguageProvider/Logger from core-common.
     "implementation"(this.project(":core-common"))
     "androidTestImplementation"(this.project(":beer_network:api"))
-    "androidTestImplementation"(this.project(":beer_storage:api"))
+    "androidTestImplementation"(this.project(":beer-storage:api"))
     "androidTestImplementation"(libs.roomRuntime)
 }

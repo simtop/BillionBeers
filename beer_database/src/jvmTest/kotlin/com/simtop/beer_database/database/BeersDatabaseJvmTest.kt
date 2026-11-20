@@ -6,7 +6,7 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import com.simtop.beer_database.localsources.BeersLocalSourceImpl
 import com.simtop.beer_database.models.BeerDbModel
 import com.simtop.beer_database.models.SavedFilterPresetDbModel
-import com.simtop.beer_storage.api.StoredBeer
+import com.simtop.billionbeers.storage.api.StoredBeer
 import com.simtop.core.core.EpochTimeProvider
 import java.io.File
 import kotlin.io.path.createTempDirectory

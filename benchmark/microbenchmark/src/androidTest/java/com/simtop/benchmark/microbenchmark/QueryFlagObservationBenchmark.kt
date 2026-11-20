@@ -14,7 +14,7 @@ import com.simtop.beer_database.localsources.BeersLocalSourceImpl
 import com.simtop.beer_network.models.BeersApiResponseItem
 import com.simtop.beer_network.models.BeersPage
 import com.simtop.beer_network.remotesources.BeersRemoteSource
-import com.simtop.beer_storage.api.StoredBeer
+import com.simtop.billionbeers.storage.api.StoredBeer
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.core.core.Either

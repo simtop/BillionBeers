@@ -5,11 +5,11 @@ import com.simtop.beer_database.models.BeerDbModel
 import com.simtop.beer_database.models.PagingStateDbModel
 import com.simtop.beer_database.models.SavedFilterPresetDbModel
 import com.simtop.beer_database.utils.Converters
-import com.simtop.beer_storage.api.BeersStorage
-import com.simtop.beer_storage.api.StoredBeer
-import com.simtop.beer_storage.api.StoredBeerLocalFlags
-import com.simtop.beer_storage.api.StoredFilterPreset
-import com.simtop.beer_storage.api.StoredPagingState
+import com.simtop.billionbeers.storage.api.BeersStorage
+import com.simtop.billionbeers.storage.api.StoredBeer
+import com.simtop.billionbeers.storage.api.StoredBeerLocalFlags
+import com.simtop.billionbeers.storage.api.StoredFilterPreset
+import com.simtop.billionbeers.storage.api.StoredPagingState
 import com.simtop.core.core.EpochTimeProvider
 import com.simtop.core.core.SystemEpochTimeProvider
 import dev.zacsweers.metro.Inject

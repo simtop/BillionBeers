@@ -3,7 +3,9 @@
 
 from __future__ import annotations
 
+from contextlib import redirect_stderr, redirect_stdout
 import importlib.util
+from io import StringIO
 import os
 import subprocess
 import tempfile
@@ -92,11 +94,15 @@ class MainTests(unittest.TestCase):
         api = MODULE.GitHub(REPOSITORY, "token")
         api.open_pull_requests = lambda: [pull_request(4), pull_request(5, branch="fix/other")]
         dispatch = patch.object(api, "dispatch_full_ci", side_effect=[RuntimeError(), None])
+        stdout, stderr = StringIO(), StringIO()
         with patch.dict("os.environ", {"REPOSITORY": REPOSITORY, "GH_TOKEN": "token"}), patch.object(
             MODULE, "GitHub", return_value=api
         ), dispatch as mocked_dispatch:
-            self.assertEqual(1, MODULE.main())
+            with redirect_stdout(stdout), redirect_stderr(stderr):
+                self.assertEqual(1, MODULE.main())
         self.assertEqual([4, 5], [call.args[0] for call in mocked_dispatch.call_args_list])
+        self.assertIn("PR #5: dispatched full CI for its merge ref.", stdout.getvalue())
+        self.assertIn("::error::Failed to dispatch full CI for PRs: 4.", stderr.getvalue())
 
 
 class WorkflowTests(unittest.TestCase):

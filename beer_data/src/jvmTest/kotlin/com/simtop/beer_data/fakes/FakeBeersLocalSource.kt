@@ -1,11 +1,11 @@
 package com.simtop.beer_data.fakes
 
-import com.simtop.beer_storage.api.BeersStorage
-import com.simtop.beer_storage.api.FilterPresetCapacityReachedException
-import com.simtop.beer_storage.api.MAX_STORED_FILTER_PRESETS
-import com.simtop.beer_storage.api.StoredBeer
-import com.simtop.beer_storage.api.StoredFilterPreset
-import com.simtop.beer_storage.api.StoredPagingState
+import com.simtop.billionbeers.storage.api.BeersStorage
+import com.simtop.billionbeers.storage.api.FilterPresetCapacityReachedException
+import com.simtop.billionbeers.storage.api.MAX_STORED_FILTER_PRESETS
+import com.simtop.billionbeers.storage.api.StoredBeer
+import com.simtop.billionbeers.storage.api.StoredFilterPreset
+import com.simtop.billionbeers.storage.api.StoredPagingState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
