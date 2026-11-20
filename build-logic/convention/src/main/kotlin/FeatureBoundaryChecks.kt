@@ -46,7 +46,8 @@ import org.gradle.kotlin.dsl.register
  * Registration happens inside `afterEvaluate`: AGP creates `debugCompileClasspath` while it builds
  * its variants, which is *after* the convention plugin script - applying `com.android.library` /
  * `com.android.dynamic-feature` does not make the configuration exist yet - so `configurations.named`
- * called any earlier throws `Configuration with name 'debugCompileClasspath' not found`.
+ * called any earlier throws `Configuration with name 'debugCompileClasspath' not found`. The
+ * optional unused-dependency plugin uses the same `afterEvaluate` pattern.
  */
 fun Project.registerDataLayerClasspathBoundaryCheck() {
   afterEvaluate {

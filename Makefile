@@ -50,6 +50,7 @@ EMULATOR_RUN = $(EMULATOR_SCRIPT_ENV) bash scripts/emulator.sh
 
 MODULE_TRIMMED := $(strip $(MODULE))
 MODULE_PREFIX = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED):,)
+UNUSED_DEPS_MODULE = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED),:app)
 SCREENSHOT_SCOPED = $(if $(MODULE_TRIMMED),--scoped,)
 UI_TEST_MODULE = $(if $(MODULE_TRIMMED),$(MODULE_TRIMMED),:app)
 UI_TEST_CLASS ?=
@@ -77,7 +78,7 @@ SCREENSHOT_INVENTORY_DIR ?= build/reports/paparazzi/inventory
 DESIGN_REVIEW_SCREEN ?= catalog
 DESIGN_REVIEW_OUTPUT ?= design/reviews/$(DESIGN_REVIEW_SCREEN)/$(shell date -u +%Y%m%dT%H%M%SZ)/baseline
 DESIGN_REVIEW_RUN ?= verify
-.PHONY: detekt-baseline help setup setup-ai-tools update-android-skills build bundle-release prepare-release-version release-smoke install desktop-test desktop-run desktop-live desktop-package desktop-package-test desktop-package-smoke desktop-package-verify ios-simulator-evidence web-run web-image-proxy-test web-static-test web-verify ios-compile ios-framework ios-test ios-host-build ios-host-run ios-simulator-open ios-simulator-list ios-simulator-stop clean deep-clean test test-tier-inventory konsist check-data-layer-boundary architecture-policy compose-metrics ui-test ui-test-local ui-test-managed ui-test-managed-newest ui-test-managed-tablet ui-test-managed-ci ui-test-managed-all emulator-create emulator-recreate emulator-start emulator-stop emulator-status emulator-delete screenshot-record screenshot-verify screenshot-clean lint android-lint format check docs-check check-duplicates dependency-guard dependency-guard-baseline check-gradle-compatibility-flags verification-metadata verification-metadata-reference verification-metadata-candidate health module-graph metro-graph architecture-report repo-doctor benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark build-budget build-budget-check jacoco-report coverage-check update-docs install-profiler install-diffuse new-feature-module new-dev-app release-preflight play-listing-check play-listing-capture play-listing-reset store-frames
+.PHONY: detekt-baseline help setup setup-ai-tools update-android-skills build bundle-release prepare-release-version release-smoke install desktop-test desktop-run desktop-live desktop-package desktop-package-test desktop-package-smoke desktop-package-verify ios-simulator-evidence web-run web-image-proxy-test web-static-test web-verify ios-compile ios-framework ios-test ios-host-build ios-host-run ios-simulator-open ios-simulator-list ios-simulator-stop clean deep-clean test test-tier-inventory konsist check-data-layer-boundary architecture-policy compose-metrics ui-test ui-test-local ui-test-managed ui-test-managed-newest ui-test-managed-tablet ui-test-managed-ci ui-test-managed-all emulator-create emulator-recreate emulator-start emulator-stop emulator-status emulator-delete screenshot-record screenshot-verify screenshot-clean lint android-lint format check docs-check check-duplicates check-unused-deps dependency-guard dependency-guard-baseline check-gradle-compatibility-flags verification-metadata verification-metadata-reference verification-metadata-candidate health module-graph metro-graph architecture-report repo-doctor benchmark-micro benchmark-macro benchmark-check generate-baseline gradle-benchmark build-budget build-budget-check jacoco-report coverage-check update-docs install-profiler install-diffuse new-feature-module new-dev-app release-preflight play-listing-check play-listing-capture play-listing-reset store-frames
 
 .PHONY: screenshot-verify-run screenshot-inventory-record
 
@@ -492,6 +493,9 @@ check: ## Run the Gradle check lifecycle, optionally scoped with MODULE=:module.
 
 check-duplicates: ## Check for duplicate classes in the dependency graph.
 	$(GRADLE_RUNNER) $(MODULE_PREFIX)checkDebugDuplicateClasses
+
+check-unused-deps: ## Check Android dependencies for potential unused entries (defaults to :app).
+	$(GRADLE_RUNNER) -PcheckUnusedDependencies=$(UNUSED_DEPS_MODULE) $(UNUSED_DEPS_MODULE):detectUnusedDependencies
 
 ##@ Dependencies and verification metadata
 dependency-guard: ## Verify the app's release runtime dependency graph against its committed baseline.

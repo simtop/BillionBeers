@@ -7,9 +7,10 @@ Accepted.
 ## Context
 
 The build's conventions live in `build-logic/convention/src/main/kotlin` as **precompiled script
-plugins** — sixteen `billionbeers.*.gradle.kts` files whose plugin id is their filename. One
-**binary plugin** (`DuplicateClassesPlugin`) sits beside them as an ordinary `Plugin<Project>` class,
-so the build already runs both forms and the wiring for either is proven.
+plugins** — sixteen `billionbeers.*.gradle.kts` files whose plugin id is their filename. Two
+**binary plugins** (`DuplicateClassesPlugin`, `UnusedDependenciesPlugin`) sit beside them as
+ordinary `Plugin<Project>` classes, so the build already runs both forms and the wiring for either
+is proven.
 
 This is not the original shape. The project moved *from* binary plugins *to* precompiled scripts
 deliberately, on the grounds that they are simpler, easier to maintain, and faster. That history is
@@ -54,8 +55,8 @@ were both delivered in the precompiled form with no migration at all.
 
 **Conventions stay precompiled script plugins.** No migration, opportunistic or otherwise.
 
-The existing binary plugin stays binary — it is a task-and-extension implementation rather than a
-convention, which is what that form is good at.
+The two existing binary plugins stay binary — they are task-and-extension implementations rather
+than conventions, which is what that form is good at.
 
 **The comparison is a measurement task, not a judgement call.** Before this is reopened, someone
 should measure it on this repo rather than argue from another project's numbers:
