@@ -87,6 +87,15 @@ class ImpactShadowTest(unittest.TestCase):
         record = MODULE.select(self.model, ["feature/detail/src/main/kotlin/Screen.kt"])
         self.assertIn(":app:ciGroupDebugAndroidTest", candidates(record, "instrumented"))
 
+    def test_locale_and_drawable_changes_keep_resource_consumers(self):
+        for path in ("values/strings.xml", "values-fr/strings.xml", "values-es/strings.xml",
+                     "drawable/unused_icon.xml"):
+            with self.subTest(path=path):
+                record = MODULE.select(self.model, [f"shared/detail/src/main/res/{path}"])
+                self.assertIn(":feature:detail:verifyPaparazziDebug", candidates(record, "screenshot"))
+                self.assertIn(":app:ciGroupDebugAndroidTest", candidates(record, "instrumented"))
+                self.assertNotIn(":other:verifyPaparazziDebug", candidates(record, "screenshot"))
+
     def test_cycles_terminate_and_never_lose_a_consumer(self):
         self.model["edges"].append({"source": ":domain", "target": ":feature:detail"})
         record = MODULE.select(self.model, ["shared/detail/src/commonMain/kotlin/Screen.kt"])

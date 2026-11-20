@@ -125,7 +125,9 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(13, workflow.count("ref: ${{ inputs.tested_sha }}"))
         self.assertEqual(2, workflow.count("CI_TESTED_SHA: ${{ inputs.tested_sha }}"))
         self.assertIn("persist-credentials: ${{ inputs.tested_sha == '' }}", workflow)
-        self.assertIn("inputs.tested_sha == '' && github.event_name == 'push'", workflow)
+        tracker = workflow.split("\n  master-failure-issue:\n", 1)[1]
+        self.assertIn("inputs.tested_sha == '' && github.ref == 'refs/heads/master'", tracker)
+        self.assertIn("(github.event_name == 'push' || github.event_name == 'workflow_dispatch')", tracker)
 
     def test_merge_resolver_pins_exact_pr_parents(self):
         workflow = (ROOT / ".github/workflows/weekly-pr-full-ci.yml").read_text()

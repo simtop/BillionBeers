@@ -252,6 +252,18 @@ because the selected variant changes the test sources and runner. See the
 For build-time measurements, use `make build-budget` on a quiet local machine and read
 [ADR 0011](docs/adr/0011-build-time-budget.md). Startup performance checks require physical hardware.
 
+### CI checks
+
+In [BillionBeers CI](.github/workflows/ci.yml), **Repository Checks** runs the tooling tests,
+Spotless, dependency verification checks, and documentation checks. Open the failed step to see
+which check needs attention. **Detect change scope** selects test lanes under
+[ADR 0008](docs/adr/0008-per-lane-ci-test-selection.md). **CI Gate** combines the required results
+and is the check that GitHub requires to merge into `master`.
+
+Dependency changes also run [Android linkage checks](docs/dependency-linkage.md).
+For Dependabot failures, see the [dependency update guide](docs/dependabot-updates.md).
+The master CI failure issue closes when CI Gate passes on the current master commit.
+
 ### Inspect Kotlin test quality
 
 The Compass and Forge targets download pinned public releases on first use. They verify each ZIP

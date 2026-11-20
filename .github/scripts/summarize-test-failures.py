@@ -444,13 +444,32 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--artifact-url")
     parser.add_argument("--detail", action="store_true")
     parser.add_argument("--json", type=Path, help="write a machine-readable failure report")
+    parser.add_argument("--impact-json", type=Path, help="write failure identities for the CI impact report")
     parser.add_argument("--summary", type=Path, default=Path(os.environ["GITHUB_STEP_SUMMARY"]) if os.environ.get("GITHUB_STEP_SUMMARY") else None)
     args = parser.parse_args(argv)
     if args.json:
         args.json.parent.mkdir(parents=True, exist_ok=True)
         args.json.write_text(json.dumps(failures_json(args.root, args.mode), indent=2) + "\n", encoding="utf-8")
     markdown = generate(args.root, args.mode, args.branch, run_url=args.run_url, artifact_url=args.artifact_url, include_detail=args.detail)
-    failures, _, _ = collect(args.root, args.mode)
+    failures, unreadable, fallback_modules = collect(args.root, args.mode)
+    if args.impact_json:
+        evidence = {
+            "schema": 1,
+            "mode": args.mode,
+            "provenance": {
+                key: os.environ.get(key, "")
+                for key in ("GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT", "GITHUB_SHA", "GITHUB_JOB")
+            },
+            "failures": [
+                {"module": failure.module, "classname": failure.classname,
+                 "name": failure.name, "kind": failure.kind}
+                for failure in failures
+            ],
+            "unreadable_reports": len(unreadable),
+            "fallback_modules": fallback_modules,
+        }
+        args.impact_json.parent.mkdir(parents=True, exist_ok=True)
+        args.impact_json.write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")
     for annotation in error_annotations(failures):
         print(annotation)
     publish(markdown, args.summary)

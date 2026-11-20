@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Open or update the single issue tracking failed master CI runs."""
+"""Track CI failures and recovery for the current master commit."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ import tempfile
 from typing import Callable
 
 ISSUE_TITLE = "CI: master branch validation failed"
+ISSUE_AUTHOR = "app/github-actions"
 FAILURE_RESULTS = {"failure", "cancelled"}
 Run = Callable[..., subprocess.CompletedProcess[str]]
 
@@ -41,7 +42,7 @@ def render_body(
     lines.extend(
         [
             "",
-            "This issue is updated with the latest failed master run and can be closed after CI is green.",
+            "This issue closes when CI Gate passes on the current master commit.",
             "",
             "Filed automatically by the BillionBeers CI workflow.",
         ]
@@ -60,7 +61,7 @@ def find_open_issue(repository: str, run: Run = subprocess.run) -> int | None:
             "--state",
             "open",
             "--json",
-            "number,title",
+            "number,title,author",
             "--limit",
             "100",
         ],
@@ -72,16 +73,17 @@ def find_open_issue(repository: str, run: Run = subprocess.run) -> int | None:
         issue["number"]
         for issue in json.loads(result.stdout)
         if issue.get("title") == ISSUE_TITLE
+        and (issue.get("author") or {}).get("login") == ISSUE_AUTHOR
     ]
     return min(matches) if matches else None
 
 
 def upsert_issue(
     repository: str,
+    issue_number: int | None,
     body: str,
-    run: Run = subprocess.run,
+    run: Run,
 ) -> None:
-    issue_number = find_open_issue(repository, run)
     with tempfile.TemporaryDirectory() as temporary_directory:
         body_file = Path(temporary_directory) / "master-ci-failure.md"
         body_file.write_text(body, encoding="utf-8")
@@ -111,16 +113,54 @@ def upsert_issue(
         run(command, check=True)
 
 
+def reconcile_issue(
+    repository: str,
+    run_id: str,
+    run_url: str,
+    commit: str,
+    needs: dict[str, dict[str, str]],
+    run: Run = subprocess.run,
+) -> None:
+    gate = needs.get("ci-gate", {}).get("result")
+    if gate not in {"success", "failure"}:
+        return
+
+    issue_number = find_open_issue(repository, run)
+    if gate == "success" and issue_number is None:
+        return
+
+    # An older run or rerun can finish after master has advanced.
+    head = run(
+        ["gh", "api", f"repos/{repository}/git/ref/heads/master", "--jq", ".object.sha"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    if head != commit:
+        print("Master has advanced. Leaving the CI failure issue unchanged.")
+        return
+
+    if gate == "failure":
+        body = render_body(repository, run_id, run_url, commit, needs)
+        upsert_issue(repository, issue_number, body, run)
+    else:
+        run(
+            [
+                "gh", "issue", "close", str(issue_number), "--repo", repository,
+                "--comment", f"CI Gate passed on master in [run {run_id}]({run_url}).",
+            ],
+            check=True,
+        )
+
+
 def main() -> int:
-    repository = os.environ["REPOSITORY"]
-    body = render_body(
-        repository=repository,
+    reconcile_issue(
+        repository=os.environ["REPOSITORY"],
         run_id=os.environ["RUN_ID"],
         run_url=os.environ["RUN_URL"],
         commit=os.environ["COMMIT_SHA"],
         needs=json.loads(os.environ["NEEDS_JSON"]),
     )
-    upsert_issue(repository, body)
     return 0
 
 

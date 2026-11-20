@@ -41,7 +41,7 @@ class RenderCiPrCommentTest(unittest.TestCase):
         self.assertIn("automatic recovery is limited to one eligible first attempt", body)
 
     def test_gradle_verification_is_not_diagnosed_as_a_format_fix(self):
-        failed = job(name="Code Style Formatting Check", step="Run Spotless Check", diagnostics={
+        failed = job(name="Repository Checks", step="Run Spotless Check", diagnostics={
             "Run Spotless Check": {"error": "Dependency verification failed for configuration"}})
         body = render([failed])
         self.assertIn("before formatting could run", body)

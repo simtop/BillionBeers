@@ -41,7 +41,7 @@ concurrency:
 
 jobs:
   format-check:
-    name: Code Style Formatting Check
+    name: Repository Checks
     runs-on: ubuntu-latest
     steps:
       - name: Reject manual runs outside master
@@ -474,10 +474,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          fetch-depth: 0
 
-      - name: Check dependency graph changes
+      - name: Check dependency and linkage inputs
         id: graph
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -485,8 +483,9 @@ jobs:
           set -euo pipefail
           git fetch --no-tags --depth=1 origin "$BASE_SHA"
           if git diff --quiet "$BASE_SHA" HEAD -- \
-              gradle/libs.versions.toml app/dependencies/releaseRuntimeClasspath.txt \
-              gradle.properties settings.gradle.kts build.gradle.kts 'build-logic/**' '**/build.gradle.kts' \
+              gradle/ gradle.properties gradlew app/dependencies/releaseRuntimeClasspath.txt \
+              settings.gradle.kts build.gradle.kts 'build-logic/**' '**/build.gradle.kts' \
+              .github/workflows/ci.yml .github/actions/setup-jdk/ \
               '.github/scripts/*dependency*' '.github/scripts/CheckDependencyLinkage.java' Makefile; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No dependency inputs changed; API compatibility check is not applicable."
@@ -495,6 +494,7 @@ jobs:
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
       - name: Set up JDK 23
+        if: steps.graph.outputs.changed == 'true'
         uses: ./.github/actions/setup-jdk
 
       - name: Setup Gradle
@@ -509,6 +509,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Download pinned japicmp
+        if: steps.graph.outputs.changed == 'true'
         env:
           # Digest published for this release asset by the japicmp GitHub release API.
           JAPICMP_SHA256: 77df903fa3131828cdf9a3801688a9a2ddf6111e9bbbd99e06e1afc9b601b78e # gitleaks:allow
@@ -520,6 +521,7 @@ jobs:
           echo "$JAPICMP_SHA256  $RUNNER_TEMP/japicmp.jar" | sha256sum --check
 
       - name: Verify linkage checker with compiled fixtures
+        if: steps.graph.outputs.changed == 'true'
         run: make dependency-api-test JAPICMP="$RUNNER_TEMP/japicmp.jar"
 
       - name: Resolve release graphs and compile consumers
@@ -656,7 +658,9 @@ jobs:
 
       - name: Summarize unit test failures
         if: always() && steps.unit_phase.outcome == 'failure'
-        run: python3 .github/scripts/summarize-test-failures.py unit --detail
+        run: >-
+          python3 .github/scripts/summarize-test-failures.py unit --detail
+          --impact-json build/reports/ci-task-timings/impact-failures.json
 
       - name: Summarize unit task work
         if: always()
@@ -827,6 +831,7 @@ jobs:
         run: >-
           python3 .github/scripts/summarize-test-failures.py paparazzi
           --branch "$BRANCH_NAME" --detail
+          --impact-json build/reports/ci-task-timings/impact-failures.json
 
       - name: Summarize screenshot lane timings
         if: always()
@@ -944,6 +949,7 @@ jobs:
           ./gradlew ciGroupDebugAndroidTest ciGroupAndroidDeviceTest --profile
 
       - name: Repeat changed instrumented test classes
+        id: repeat_instrumented_tests
         if: github.event_name == 'pull_request'
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -1008,10 +1014,14 @@ jobs:
         if: >-
           always() &&
           (steps.managed_device_tests.outcome == 'failure' ||
-          steps.managed_device_tests.outcome == 'cancelled' ||
+          steps.repeat_instrumented_tests.outcome == 'failure' ||
+          steps.tablet_tests.outcome == 'failure' ||
           steps.release_smoke_tests.outcome == 'failure' ||
+          steps.managed_device_tests.outcome == 'cancelled' ||
           steps.release_smoke_tests.outcome == 'cancelled')
-        run: python3 .github/scripts/summarize-test-failures.py managed-device --detail
+        run: >-
+          python3 .github/scripts/summarize-test-failures.py managed-device --detail
+          --impact-json build/reports/ci-task-timings/impact-failures.json
 
       - name: Extract failure screenshots from managed-device logcat
         if: always()
@@ -1492,8 +1502,9 @@ jobs:
   master-failure-issue:
     name: Track failed master CI run
     if: >-
-      always() && inputs.tested_sha == '' && github.event_name == 'push' && github.ref == 'refs/heads/master' &&
-      needs.ci-gate.result == 'failure'
+      always() && inputs.tested_sha == '' && github.ref == 'refs/heads/master' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      (needs.ci-gate.result == 'failure' || needs.ci-gate.result == 'success')
     concurrency:
       group: master-ci-failure-issue
       cancel-in-progress: false
@@ -1524,7 +1535,7 @@ jobs:
           ref: ${{ github.sha }}
           persist-credentials: false
 
-      - name: Open or update the master CI failure issue
+      - name: Reconcile the master CI failure issue
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}

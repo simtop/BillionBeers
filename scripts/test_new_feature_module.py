@@ -219,6 +219,8 @@ class NewFeatureModuleTest(unittest.TestCase):
             self.assertEqual([0, 1], sorted(result[2] for result in results), results)
             self.assertTrue((root / "feature/sample/build.gradle.kts").is_file())
             self.assertTrue((root / "shared/sample/build.gradle.kts").is_file())
+            self.assertFalse((root / "feature/sample/sample").exists())
+            self.assertFalse((root / "shared/sample/sample").exists())
             self.assert_clean_transaction_artifacts(root)
 
 

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import importlib.util
 import io
+import json
+import os
 import sys
 import tempfile
 import unittest
@@ -295,6 +297,28 @@ class TestFailureSummaryTest(unittest.TestCase):
             self.assertEqual(0, result)
             self.assertEqual(output.getvalue(), summary.read_text())
             self.assertIn("No failed JUnit testcase was found", output.getvalue())
+
+    def test_impact_evidence_preserves_identity_without_stack_traces(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            write(
+                root,
+                "feature/beersearch/build/test-results/testDebugUnitTest/TEST-search.xml",
+                '<testsuite><testcase classname="SearchTest" name="fails"><error>stack</error></testcase></testsuite>',
+            )
+            write(root, "app/build/test-results/testDebugUnitTest/TEST-malformed.xml", "<")
+            path = root / "evidence" / "impact-failures.json"
+            identity = {"GITHUB_RUN_ID": "123", "GITHUB_RUN_ATTEMPT": "2",
+                        "GITHUB_SHA": "a" * 40, "GITHUB_JOB": "unit-tests"}
+            with patch.dict(os.environ, identity), redirect_stdout(io.StringIO()):
+                self.assertEqual(0, MODULE.main(["unit", "--root", str(root), "--impact-json", str(path),
+                                                 "--summary", str(root / "summary.md")]))
+
+            evidence = json.loads(path.read_text())
+            self.assertEqual(identity, evidence["provenance"])
+            self.assertEqual(1, evidence["unreadable_reports"])
+            self.assertEqual([{"module": ":feature:beersearch", "classname": "SearchTest",
+                               "name": "fails", "kind": "error"}], evidence["failures"])
 
 
 if __name__ == "__main__":
