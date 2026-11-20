@@ -24,7 +24,7 @@ preview cases, plus that one manual case, for 273 tracked screenshot PNGs in the
 | Module | CPS | Repaired KSP |
 |---|---:|---:|
 | `core:designsystem` | 42 | 42 |
-| `presentation_utils` | 10 | 10 |
+| `presentation-utils` | 10 | 10 |
 | `feature:beerbrowse` | 84 | 84 |
 | `feature:beerdetail` | 40 | 40 |
 | `feature:beersearch` | 46 | 46 |

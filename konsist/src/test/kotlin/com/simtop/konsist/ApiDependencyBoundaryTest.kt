@@ -21,7 +21,7 @@ class ApiDependencyBoundaryTest {
         mapOf(
           "commonMainApi(libs.androidx.navigation3.runtime)" to "PortableRoute implements NavKey"
         ),
-      "presentation_utils/build.gradle.kts" to
+      "presentation-utils/build.gradle.kts" to
         mapOf(
           "api(libs.androidPlayCore)" to
             "SplitInstallManager and SplitInstallSessionState in public APIs"

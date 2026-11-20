@@ -33,7 +33,7 @@ Android detail uses exit-until-collapsed behavior. `BeerDetailUiTest` checks act
 
 ## Brand and renderer boundaries
 
-`BillionBeersTheme.brand` exposes shared catalog/beer/detail title roles, hero colors and artwork geometry from `shared/designsystem/.../theme/BillionBeersBrand.kt`. General palette, typography and spacing live beside it. Product copy remains in translated resources; dynamic-feature labels remain in `:presentation_utils`. Keep interaction policies with their screen owners.
+`BillionBeersTheme.brand` exposes shared catalog/beer/detail title roles, hero colors and artwork geometry from `shared/designsystem/.../theme/BillionBeersBrand.kt`. General palette, typography and spacing live beside it. Product copy remains in translated resources; dynamic-feature labels remain in `:presentation-utils`. Keep interaction policies with their screen owners.
 
 The generated Paparazzi runner chooses Pixel 5 for compact and Pixel Tablet for expanded cases. Explicit `@Preview` dimensions/device names currently select a bucket; their exact dimensions are not applied. The preview named landscape renders the tablet configuration, not its requested 844×390 viewport. The runner sets layout-direction metadata but does not explicitly pass `supportsRtl`; confirm mirroring before claiming RTL evidence. The review adapter uses LTR cases and known device buckets. Use a measured native capture when another viewport/direction matters.
 

@@ -9,7 +9,7 @@ on:
         required: false
         default: false
       modules:
-        description: 'Space-separated module paths (e.g., :feature:beerslist :presentation_utils).'
+        description: 'Space-separated module paths (e.g., :feature:beerslist :presentation-utils).'
         required: false
         default: ''
       use_clean:

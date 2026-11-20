@@ -17,8 +17,8 @@ import androidx.compose.ui.unit.dp
 import androidx.test.platform.app.InstrumentationRegistry
 import com.simtop.beerdomain.fakes.fakeBeerModel
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
-import com.simtop.presentation_utils.R as PresentationR
-import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
+import com.simtop.billionbeers.presentation.android.R as PresentationR
+import com.simtop.billionbeers.presentation.android.components.ComposeBeersListItem
 import com.simtop.testing_utils_android.withFailureScreenshot
 import org.junit.Assert.assertTrue
 import org.junit.Rule

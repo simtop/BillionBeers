@@ -42,10 +42,10 @@ class ArchitecturePolicyFunctionalTest {
   @Test
   fun `resolved graph rejects data exposed transitively through api`() {
     writeFixture(
-      includes = listOf(":feature:alpha", ":presentation_utils", ":beer-data"),
+      includes = listOf(":feature:alpha", ":presentation-utils", ":beer-data"),
       dependencies = """
-        project(":feature:alpha") { dependencies { add("implementation", project(":presentation_utils")) } }
-        project(":presentation_utils") { dependencies { add("api", project(":beer-data")) } }
+        project(":feature:alpha") { dependencies { add("implementation", project(":presentation-utils")) } }
+        project(":presentation-utils") { dependencies { add("api", project(":beer-data")) } }
       """.trimIndent(),
     )
 

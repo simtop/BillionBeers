@@ -13,12 +13,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.billionbeers.presentation.android.R as PresentationUtilsR
+import com.simtop.billionbeers.presentation.android.components.ComposeBeersListItem
 import com.simtop.billionbeers.shared.designsystem.controls.BrandText
 import com.simtop.billionbeers.shared.designsystem.controls.BrandTopAppBar
 import com.simtop.billionbeers.shared.favorites.SharedFavoritesContent
 import com.simtop.core.core.CommonUiState
-import com.simtop.presentation_utils.R as PresentationUtilsR
-import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)

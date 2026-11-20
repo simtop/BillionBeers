@@ -20,7 +20,7 @@ dependencies {
   implementation(libs.androidxActivityCompose)
   implementation(this.project(":beerdomain:api"))
   implementation(this.project(":shared:beerbrowse"))
-  implementation(this.project(":presentation_utils"))
+  implementation(this.project(":presentation-utils"))
   implementation(this.project(":core"))
   implementation(this.project(":core:designsystem"))
   implementation(this.project(":navigation"))

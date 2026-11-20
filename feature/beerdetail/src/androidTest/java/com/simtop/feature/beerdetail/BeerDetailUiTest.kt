@@ -28,9 +28,9 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.billionbeers.presentation.android.R
 import com.simtop.feature.beerdetail.presentation.ComposeBeerDetail
 import com.simtop.feature.beerdetail.presentation.DetailScrolledDesignReviewPreview
-import com.simtop.presentation_utils.R
 import com.simtop.testing_utils_android.BaseTestRobot
 import com.simtop.testing_utils_android.withFailureScreenshot
 import org.junit.Assert.assertEquals

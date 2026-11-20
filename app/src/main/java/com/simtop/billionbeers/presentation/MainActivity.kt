@@ -19,10 +19,10 @@ import com.google.android.play.core.splitinstall.SplitInstallManager
 import com.simtop.billionbeers.BillionBeersApplication
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.billionbeers.debug.DebugDrawerHost
+import com.simtop.billionbeers.presentation.android.core.LocalSplitInstallManager
 import com.simtop.core.core.ThemeController
 import com.simtop.core.core.ThemeMode
 import com.simtop.navigation.toPortableRoute
-import com.simtop.presentation_utils.core.LocalSplitInstallManager
 import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 
 class MainActivity : ComponentActivity() {

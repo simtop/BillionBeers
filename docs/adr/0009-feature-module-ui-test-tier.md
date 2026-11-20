@@ -109,7 +109,7 @@ run twelve tests worth ~23s.
 
 **Dynamic features now use the tier without owning user-facing resources.**
 `:feature:beerdetail` and `:feature:beerbrowse` have module-local screen tests, while invariant 5
-keeps the strings those tests need in `:presentation_utils`. The resource boundary, not dynamic
+keeps the strings those tests need in `:presentation-utils`. The resource boundary, not dynamic
 feature status itself, was the constraint. Cross-feature navigation and split-install behaviour
 still stay in `:app`.
 

@@ -1,7 +1,7 @@
 package com.simtop.billionbeers.robots
 
 import androidx.compose.ui.test.junit4.ComposeTestRule
-import com.simtop.presentation_utils.R
+import com.simtop.billionbeers.presentation.android.R
 import com.simtop.testing_utils_android.BaseTestRobot
 
 class BrowseScreenRobot(composeTestRule: ComposeTestRule) :

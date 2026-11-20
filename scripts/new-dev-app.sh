@@ -87,7 +87,7 @@ dependencies {
   implementation(project(":core"))
   implementation(project(":core:designsystem"))
   implementation(project(":navigation"))
-  implementation(project(":presentation_utils"))
+  implementation(project(":presentation-utils"))
 
   implementation(libs.androidPlayCore)
   implementation(libs.androidPlayCoreKtx)
@@ -156,7 +156,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.CompositionLocalProvider
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
-import com.simtop.presentation_utils.core.LocalSplitInstallManager
+import com.simtop.billionbeers.presentation.android.core.LocalSplitInstallManager
 import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 
 class MainActivity : ComponentActivity() {

@@ -133,7 +133,7 @@ dependencies {
   implementation(this.project(":beer-data"))
   implementation(this.project(":beer-database"))
   implementation(this.project(":beer-network"))
-  implementation(this.project(":presentation_utils"))
+  implementation(this.project(":presentation-utils"))
   implementation(libs.ktorClientCore)
   implementation(libs.ktorClientOkhttp)
   implementation(libs.okhttp3)

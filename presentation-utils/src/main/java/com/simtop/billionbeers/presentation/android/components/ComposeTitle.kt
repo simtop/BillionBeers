@@ -1,0 +1,20 @@
+package com.simtop.billionbeers.presentation.android.components
+
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
+import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.billionbeers.shared.presentation.SharedTitle
+import io.github.simtop.vitrine.VitrineComponent
+
+@VitrineComponent(tab = "Utilities")
+@Composable
+fun ComposeTitle(name: String, modifier: Modifier = Modifier) {
+  SharedTitle(name = name, modifier = modifier)
+}
+
+@PreviewLightDark
+@Composable
+internal fun ComposeTitlePreview() {
+  BillionBeersTheme { ComposeTitle("Hello") }
+}

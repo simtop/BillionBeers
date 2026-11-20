@@ -30,7 +30,7 @@
     { "name": "navigation-contract", "match": "exact", "value": ":navigation-contract" },
     { "name": "core", "match": "exact", "value": ":core" },
     { "name": "navigation", "match": "exact", "value": ":navigation" },
-    { "name": "presentation", "match": "exact", "value": ":presentation_utils" },
+    { "name": "presentation", "match": "exact", "value": ":presentation-utils" },
     { "name": "test-support", "match": "exact", "value": ":testing-utils" },
     { "name": "test-support", "match": "exact", "value": ":testing-utils-android" },
     { "name": "catalog", "match": "exact", "value": ":catalog" },

@@ -17,9 +17,9 @@ import androidx.glance.ImageProvider
 import androidx.glance.appwidget.ExperimentalGlanceRemoteViewsApi
 import androidx.glance.appwidget.GlanceRemoteViews
 import androidx.test.platform.app.InstrumentationRegistry
+import com.simtop.billionbeers.presentation.android.R
 import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersDarkColors
 import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersLightColors
-import com.simtop.presentation_utils.R
 import java.io.File
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals

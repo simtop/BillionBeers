@@ -19,15 +19,15 @@ import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.billionbeers.core.designsystem.component.AccessibilityMatrixPreview
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.billionbeers.presentation.android.R
+import com.simtop.billionbeers.presentation.android.components.ComposeErrorView
+import com.simtop.billionbeers.presentation.android.core.resolvedMessage
 import com.simtop.billionbeers.shared.beerbrowse.BrowseCenteredHint
 import com.simtop.billionbeers.shared.beerbrowse.BrowseStrings
 import com.simtop.billionbeers.shared.beerbrowse.SharedBrowseHomeContent
 import com.simtop.billionbeers.shared.designsystem.controls.BrandIcon
 import com.simtop.core.core.CommonUiErrorKey
 import com.simtop.core.core.CommonUiState
-import com.simtop.presentation_utils.R
-import com.simtop.presentation_utils.core.resolvedMessage
-import com.simtop.presentation_utils.custom_views.ComposeErrorView
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 
 private const val TAB_STYLES = 0

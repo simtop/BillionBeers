@@ -468,7 +468,7 @@ class ConventionPluginFunctionalTest {
       listOf(
           ":core",
           ":core-common",
-          ":presentation_utils",
+          ":presentation-utils",
           ":beerdomain:api",
           ":testing-utils",
           if (includeDataLayerBridge) ":bridge" else null,
@@ -477,7 +477,7 @@ class ConventionPluginFunctionalTest {
         .filterNotNull()
         .joinToString(", ") { "\"$it\"" }
     writeAndroidFixture("include($includes)")
-    listOf("core", "core-common", "presentation_utils", "testing-utils").forEach {
+    listOf("core", "core-common", "presentation-utils", "testing-utils").forEach {
       writeFile("$it/build.gradle.kts", "")
     }
     writeFile("beerdomain/api/build.gradle.kts", "")

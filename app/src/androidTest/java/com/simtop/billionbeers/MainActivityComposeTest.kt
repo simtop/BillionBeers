@@ -202,7 +202,7 @@ class MainActivityComposeTest {
       val gotIt =
         InstrumentationRegistry.getInstrumentation()
           .targetContext
-          .getString(com.simtop.presentation_utils.R.string.onboarding_got_it)
+          .getString(com.simtop.billionbeers.presentation.android.R.string.onboarding_got_it)
       onNodeWithText(gotIt).performClick()
       onNodeWithTag("introduction_hint").assertDoesNotExist()
       detailScreen { navigateBack() }
@@ -243,7 +243,7 @@ class MainActivityComposeTest {
         val addFavorite =
           InstrumentationRegistry.getInstrumentation()
             .targetContext
-            .getString(com.simtop.presentation_utils.R.string.add_to_favorites)
+            .getString(com.simtop.billionbeers.presentation.android.R.string.add_to_favorites)
         onNodeWithContentDescription(addFavorite).assertIsDisplayed()
         onNodeWithTag("introduction_hint").assertIsDisplayed()
         repository.setExceptionToThrow(null)
@@ -479,7 +479,9 @@ class MainActivityComposeTest {
       val failureMessage =
         InstrumentationRegistry.getInstrumentation()
           .targetContext
-          .getString(com.simtop.presentation_utils.R.string.failed_to_install_feature)
+          .getString(
+            com.simtop.billionbeers.presentation.android.R.string.failed_to_install_feature
+          )
       composeTestRule.homeScreen { waitUntilNodeWithTextIsDisplayed(failureMessage) }
       composeTestRule.onNodeWithText(fakeBeer.description).assertDoesNotExist()
       assertEquals(
@@ -536,11 +538,15 @@ class MainActivityComposeTest {
       detailScreen {
         waitUntilNodeWithTextIsDisplayed(fakeBeer.description)
         assertToggleButtonShowsMarkAsEmpty()
-        assertAvailabilityActionSemantics(com.simtop.presentation_utils.R.string.beer_available)
+        assertAvailabilityActionSemantics(
+          com.simtop.billionbeers.presentation.android.R.string.beer_available
+        )
         clickToggleAvailability()
         waitUntilToggleButtonShowsRefillBarrels()
         assertToggleButtonShowsRefillBarrels()
-        assertAvailabilityActionSemantics(com.simtop.presentation_utils.R.string.beer_out_of_stock)
+        assertAvailabilityActionSemantics(
+          com.simtop.billionbeers.presentation.android.R.string.beer_out_of_stock
+        )
         navigateBack()
       }
 

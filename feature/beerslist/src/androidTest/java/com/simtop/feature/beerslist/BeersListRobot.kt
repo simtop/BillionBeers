@@ -1,7 +1,7 @@
 package com.simtop.feature.beerslist
 
 import androidx.compose.ui.test.junit4.ComposeTestRule
-import com.simtop.presentation_utils.R as PresentationUtilsR
+import com.simtop.billionbeers.presentation.android.R as PresentationUtilsR
 import com.simtop.testing_utils_android.BaseTestRobot
 
 /** The screen's own tag, kept beside the robot that addresses it rather than inside one test. */

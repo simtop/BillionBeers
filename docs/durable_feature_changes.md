@@ -73,7 +73,7 @@ for changes that leave stored fields and schema intact.
 
 Android saved-filter labels and errors live in [feature resources](../feature/savedfilters/src/main/res/)
 and [app resources](../app/src/main/res/), including English, French and Spanish. Dynamic-feature
-strings retain their separate owner in [presentation_utils](../presentation_utils/src/main/res/).
+strings retain their separate owner in [presentation-utils](../presentation-utils/src/main/res/).
 
 The shared shell accepts `SharedAppStrings`; inspect each provider when a field or label changes:
 [DesktopShell](../desktop-app/src/main/kotlin/com/simtop/billionbeers/desktop/DesktopShell.kt),

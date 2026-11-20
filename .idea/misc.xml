@@ -21,8 +21,6 @@
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.1" />
         <entry key="feature/beerdetail/src/main/res/layout/fragment_detail_beer.xml" value="0.15670289855072464" />
         <entry key="feature/beerslist/src/main/res/layout/fragment_list_beers.xml" value="0.12552083333333333" />
-        <entry key="presentation_utils/src/main/res/layout/row_beer_list.xml" value="0.25" />
-        <entry key="presentation_utils/src/main/res/layout/single_beer_item.xml" value="0.15" />
       </map>
     </option>
   </component>

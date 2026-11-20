@@ -23,7 +23,7 @@ dependencies {
   implementation(this.project(":core"))
   implementation(this.project(":core:designsystem"))
   implementation(this.project(":navigation"))
-  implementation(this.project(":presentation_utils"))
+  implementation(this.project(":presentation-utils"))
 
   implementation(libs.androidPlayCore)
   implementation(libs.androidPlayCoreKtx)
