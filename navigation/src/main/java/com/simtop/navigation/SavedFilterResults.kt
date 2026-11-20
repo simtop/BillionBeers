@@ -11,5 +11,5 @@ data class SavedFilterResults(
   val styleId: String? = null,
   val breweryId: String? = null,
 ) : NavKey {
-  fun toQuery() = com.simtop.beerdomain.domain.models.BeersQuery(search, styleId, breweryId)
+  fun toQuery() = com.simtop.billionbeers.domain.models.BeersQuery(search, styleId, breweryId)
 }

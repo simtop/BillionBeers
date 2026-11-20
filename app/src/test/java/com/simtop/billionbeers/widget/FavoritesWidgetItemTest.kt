@@ -1,6 +1,6 @@
 package com.simtop.billionbeers.widget
 
-import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.billionbeers.domain.models.Beer
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

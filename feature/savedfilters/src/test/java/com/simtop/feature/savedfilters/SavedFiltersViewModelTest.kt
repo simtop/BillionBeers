@@ -1,10 +1,10 @@
 package com.simtop.feature.savedfilters
 
-import com.simtop.beerdomain.domain.errors.MutateFilterPresetError
-import com.simtop.beerdomain.domain.models.BeersQuery
-import com.simtop.beerdomain.domain.models.SavedFilterPreset
-import com.simtop.beerdomain.fakes.FakeSavedFilterPresetsRepository
+import com.simtop.billionbeers.domain.errors.MutateFilterPresetError
+import com.simtop.billionbeers.domain.models.BeersQuery
+import com.simtop.billionbeers.domain.models.SavedFilterPreset
 import com.simtop.billionbeers.testing.MainDispatcherExtension
+import com.simtop.billionbeers.testing.domain.FakeSavedFilterPresetsRepository
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.FLOW_RETRY_DELAY_MILLIS
 import kotlinx.coroutines.CancellationException

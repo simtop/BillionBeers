@@ -165,7 +165,7 @@ on domain contracts. Both Room and IndexedDB implement the storage contract used
 ```mermaid
 flowchart TB
     Screens["Shared feature modules<br/>:shared:beerslist, :shared:beersearch<br/>:shared:favorites, :shared:savedfilters<br/>:shared:beerdetail, :shared:beerbrowse"]
-    Domain[":beerdomain:api"]
+    Domain[":beer-domain:api"]
     Common[":core-common"]
     Data[":beer-data"]
     Network[":beer-network<br/>Ktor implementation"]

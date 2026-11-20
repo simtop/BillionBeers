@@ -19,7 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import com.simtop.beerdomain.domain.models.SavedFilterPreset
+import com.simtop.billionbeers.domain.models.SavedFilterPreset
 import com.simtop.billionbeers.shared.designsystem.components.SharedLazyColumn
 import com.simtop.billionbeers.shared.designsystem.controls.BrandButton
 import com.simtop.billionbeers.shared.designsystem.controls.BrandCircularProgressIndicator

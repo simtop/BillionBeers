@@ -31,11 +31,11 @@
         "shared/presentation/src/commonMain/**/*.kt",
         "shared/designsystem/src/commonMain/**/*.kt",
         "core/designsystem/src/main/**/*.kt",
-        "beerdomain/api/src/commonMain/**/*.kt"
+        "beer-domain/api/src/commonMain/**/*.kt"
       ],
       "fixtures": [
         "app/src/debug/java/com/simtop/billionbeers/presentation/CatalogDesignReviewPreview.kt",
-        "beerdomain/api/src/commonMain/kotlin/com/simtop/beerdomain/domain/models/Beer.kt"
+        "beer-domain/api/src/commonMain/kotlin/com/simtop/billionbeers/domain/models/Beer.kt"
       ],
       "cases": [
         {
@@ -260,11 +260,11 @@
         "shared/designsystem/src/commonMain/**/*.kt",
         "presentation-utils/src/main/res/values*/strings.xml",
         "core/designsystem/src/main/**/*.kt",
-        "beerdomain/api/src/commonMain/**/*.kt"
+        "beer-domain/api/src/commonMain/**/*.kt"
       ],
       "fixtures": [
         "feature/beerdetail/src/debug/java/com/simtop/feature/beerdetail/presentation/DetailDesignReviewPreview.kt",
-        "beerdomain/api/src/commonMain/kotlin/com/simtop/beerdomain/domain/models/Beer.kt"
+        "beer-domain/api/src/commonMain/kotlin/com/simtop/billionbeers/domain/models/Beer.kt"
       ],
       "cases": [
         {
@@ -477,11 +477,11 @@
         "shared/presentation/src/commonMain/**/*.kt",
         "shared/designsystem/src/commonMain/**/*.kt",
         "core/designsystem/src/main/**/*.kt",
-        "beerdomain/api/src/commonMain/**/*.kt"
+        "beer-domain/api/src/commonMain/**/*.kt"
       ],
       "fixtures": [
         "feature/beersearch/src/debug/java/com/simtop/feature/beersearch/SearchSaveFilterPreview.kt",
-        "beerdomain/api/src/commonMain/kotlin/com/simtop/beerdomain/domain/models/Beer.kt"
+        "beer-domain/api/src/commonMain/kotlin/com/simtop/billionbeers/domain/models/Beer.kt"
       ],
       "cases": [
         {
@@ -591,11 +591,11 @@
         "shared/presentation/src/commonMain/**/*.kt",
         "shared/designsystem/src/commonMain/**/*.kt",
         "core/designsystem/src/main/**/*.kt",
-        "beerdomain/api/src/commonMain/**/*.kt"
+        "beer-domain/api/src/commonMain/**/*.kt"
       ],
       "fixtures": [
         "feature/beerbrowse/src/debug/java/com/simtop/feature/beerbrowse/presentation/BrowseSaveFilterPreview.kt",
-        "beerdomain/api/src/commonMain/kotlin/com/simtop/beerdomain/domain/models/Beer.kt"
+        "beer-domain/api/src/commonMain/kotlin/com/simtop/billionbeers/domain/models/Beer.kt"
       ],
       "cases": [
         {
@@ -689,11 +689,11 @@
         "shared/presentation/src/commonMain/**/*.kt",
         "shared/designsystem/src/commonMain/**/*.kt",
         "core/designsystem/src/main/**/*.kt",
-        "beerdomain/api/src/commonMain/**/*.kt"
+        "beer-domain/api/src/commonMain/**/*.kt"
       ],
       "fixtures": [
         "feature/beerbrowse/src/debug/java/com/simtop/feature/beerbrowse/presentation/BrowseSaveFilterPreview.kt",
-        "beerdomain/api/src/commonMain/kotlin/com/simtop/beerdomain/domain/models/Beer.kt"
+        "beer-domain/api/src/commonMain/kotlin/com/simtop/billionbeers/domain/models/Beer.kt"
       ],
       "cases": [
         {

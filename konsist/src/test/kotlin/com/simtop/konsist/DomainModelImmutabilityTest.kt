@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test
  * an `Array` property gets an `equals` that reports two identical models as different - breaking
  * the same recomposition comparison from the opposite direction.
  *
- * Scoped to `com.simtop.beerdomain.domain`, matching [DomainLayerPurityTest]. Konsist's
+ * Scoped to `com.simtop.billionbeers.domain`, matching [DomainLayerPurityTest]. Konsist's
  * `properties()` includes primary-constructor properties, which is where every model here declares
  * its state - verified by mutating a real model and watching this fail, not assumed.
  */
@@ -54,7 +54,7 @@ class DomainModelImmutabilityTest {
         .filter { it.packagee?.name?.let(::isDomainPackage) == true }
         .flatMap { it.classes(includeNested = true) }
     assertTrue(classes.isNotEmpty()) {
-      "No classes found under com.simtop.beerdomain.domain - the domain layout changed and this " +
+      "No classes found under com.simtop.billionbeers.domain - the domain layout changed and this " +
         "rule would pass vacuously"
     }
     return classes
@@ -93,6 +93,6 @@ class DomainModelImmutabilityTest {
   }
 
   private fun isDomainPackage(packageName: String): Boolean =
-    packageName == "com.simtop.beerdomain.domain" ||
-      packageName.startsWith("com.simtop.beerdomain.domain.")
+    packageName == "com.simtop.billionbeers.domain" ||
+      packageName.startsWith("com.simtop.billionbeers.domain.")
 }

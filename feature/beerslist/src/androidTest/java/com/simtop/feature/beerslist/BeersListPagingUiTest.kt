@@ -3,10 +3,10 @@ package com.simtop.feature.beerslist
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.test.junit4.createComposeRule
-import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.fakes.fakeBeerModel
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.billionbeers.domain.models.Beer
 import com.simtop.billionbeers.testing.android.withFailureScreenshot
+import com.simtop.billionbeers.testing.domain.fakeBeerModel
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.PagedListFooter
 import com.simtop.core.core.PagedListUiModel

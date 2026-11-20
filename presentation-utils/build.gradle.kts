@@ -8,7 +8,7 @@ plugins {
 android { namespace = "com.simtop.billionbeers.presentation.android" }
 
 dependencies {
-  implementation(this.project(":beerdomain:api"))
+  implementation(this.project(":beer-domain:api"))
   implementation(this.project(":core"))
   implementation(this.project(":core:designsystem"))
   implementation(this.project(":shared:presentation"))

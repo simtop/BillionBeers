@@ -38,7 +38,7 @@ dependencies {
   implementation(project(":beer-data"))
   implementation(project(":beer-database"))
   implementation(project(":beer-network"))
-  implementation(project(":beerdomain:api"))
+  implementation(project(":beer-domain:api"))
   implementation(project(":core-common"))
   implementation(project(":shared:favorites"))
   implementation(catalog.billionBeersLibrary("lifecycle-viewmodel"))

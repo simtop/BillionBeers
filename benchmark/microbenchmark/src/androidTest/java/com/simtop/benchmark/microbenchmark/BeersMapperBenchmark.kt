@@ -4,7 +4,7 @@ import androidx.benchmark.junit4.BenchmarkRule
 import androidx.benchmark.junit4.measureRepeated
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.simtop.billionbeers.data.mappers.BeersMapper
-import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.billionbeers.domain.models.Beer
 import com.simtop.core.core.LanguageProvider
 import com.simtop.core.core.NoOpLogger
 import org.junit.Rule

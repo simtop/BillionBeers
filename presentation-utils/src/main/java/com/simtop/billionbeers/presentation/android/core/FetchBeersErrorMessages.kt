@@ -2,7 +2,7 @@ package com.simtop.billionbeers.presentation.android.core
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
-import com.simtop.beerdomain.domain.errors.FetchBeersError
+import com.simtop.billionbeers.domain.errors.FetchBeersError
 import com.simtop.billionbeers.presentation.android.R
 import com.simtop.billionbeers.shared.presentation.toCommonUiErrorState
 import com.simtop.core.core.CommonUiErrorKey

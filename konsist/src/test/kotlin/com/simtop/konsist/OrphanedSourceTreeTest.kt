@@ -12,12 +12,12 @@ import org.junit.jupiter.api.Test
  *
  * `settings.gradle.kts` discovers modules by looking for a build script, so a directory that has
  * sources but no script is simply absent from the build. Gradle still *shows* a project for it when
- * it is a parent of an included module - `:beerdomain`, `:feature` and `:benchmark` all appear in
+ * it is a parent of an included module - `:beer-domain`, `:feature` and `:benchmark` all appear in
  * `./gradlew projects` as synthesized containers - which makes the ghost look load-bearing in a
  * project listing while being invisible to every task.
  *
- * Caught on adoption: `beerdomain/src/main/AndroidManifest.xml`, an empty manifest orphaned when
- * `:beerdomain` was split into `:beerdomain:api` and `:beerdomain:fakes` and the parent became a
+ * Caught on adoption: `beer-domain/src/main/AndroidManifest.xml`, an empty manifest orphaned when
+ * `:beer-domain` was split into `:beer-domain:api` and `:beer-domain:fakes` and the parent became a
  * container. Deleted in the same change.
  *
  * Like [DevAppDependencyBoundaryTest] and [InstrumentedTestOptInBoundaryTest], this reads the

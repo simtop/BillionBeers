@@ -28,7 +28,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.rememberLifecycleOwner
 import coil3.compose.AsyncImage
-import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.billionbeers.domain.models.Beer
 import com.simtop.billionbeers.shared.app.SharedAppChromeStrings
 import com.simtop.billionbeers.shared.app.SharedAppFavoritesStrings
 import com.simtop.billionbeers.shared.app.SharedAppHost

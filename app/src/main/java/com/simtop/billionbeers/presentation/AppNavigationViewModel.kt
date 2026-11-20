@@ -1,12 +1,12 @@
 package com.simtop.billionbeers.presentation
 
 import androidx.lifecycle.ViewModel
-import com.simtop.beerdomain.domain.errors.SaveFilterPresetError
-import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.domain.models.BeersQuery
-import com.simtop.beerdomain.domain.repositories.BeersRepository
-import com.simtop.beerdomain.domain.repositories.SavedFilterPresetsRepository
-import com.simtop.beerdomain.domain.usecases.SaveFilterPresetUseCase
+import com.simtop.billionbeers.domain.errors.SaveFilterPresetError
+import com.simtop.billionbeers.domain.models.Beer
+import com.simtop.billionbeers.domain.models.BeersQuery
+import com.simtop.billionbeers.domain.repositories.BeersRepository
+import com.simtop.billionbeers.domain.repositories.SavedFilterPresetsRepository
+import com.simtop.billionbeers.domain.usecases.SaveFilterPresetUseCase
 import com.simtop.core.core.Either
 import com.simtop.navigation.AndroidNavigationContribution
 import dev.zacsweers.metro.AppScope

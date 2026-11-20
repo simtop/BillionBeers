@@ -1,12 +1,12 @@
 package com.simtop.billionbeers.presentation
 
-import com.simtop.beerdomain.domain.errors.SaveFilterPresetError
-import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.domain.models.BeersQuery
-import com.simtop.beerdomain.domain.models.SavedFilterPreset
-import com.simtop.beerdomain.fakes.FakeBeersRepository
-import com.simtop.beerdomain.fakes.FakeSavedFilterPresetsRepository
+import com.simtop.billionbeers.domain.errors.SaveFilterPresetError
+import com.simtop.billionbeers.domain.models.Beer
+import com.simtop.billionbeers.domain.models.BeersQuery
+import com.simtop.billionbeers.domain.models.SavedFilterPreset
 import com.simtop.billionbeers.testing.MainDispatcherExtension
+import com.simtop.billionbeers.testing.domain.FakeBeersRepository
+import com.simtop.billionbeers.testing.domain.FakeSavedFilterPresetsRepository
 import com.simtop.core.core.Either
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first

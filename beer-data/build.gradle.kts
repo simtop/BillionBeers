@@ -21,7 +21,7 @@ kotlin {
 
 dependencies {
   commonMainImplementation(project(":core-common"))
-  commonMainImplementation(project(":beerdomain:api"))
+  commonMainImplementation(project(":beer-domain:api"))
   commonMainImplementation(project(":beer-storage:api"))
   commonMainImplementation(project(":beer-network"))
   commonMainImplementation(project(":beer-network:api"))

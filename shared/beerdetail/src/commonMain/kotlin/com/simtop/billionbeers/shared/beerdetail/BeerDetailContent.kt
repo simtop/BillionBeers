@@ -43,7 +43,7 @@ import androidx.compose.ui.text.lerp
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
-import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.billionbeers.domain.models.Beer
 import com.simtop.billionbeers.shared.designsystem.components.SharedScrollContainer
 import com.simtop.billionbeers.shared.designsystem.controls.BrandExtendedFloatingActionButton
 import com.simtop.billionbeers.shared.designsystem.controls.BrandIconButton

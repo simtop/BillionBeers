@@ -46,7 +46,7 @@ and build cache then supply incrementality for free.
 screen. Cross-feature and app-assembly behaviour stays in `:app`.**
 
 Feature modules opt in with `billionbeers.android.feature.uitest`, which supplies the managed
-device, the Compose test rules, `:beerdomain:fakes` and `:testing-utils-android`.
+device, the Compose test rules, `:beer-domain:fakes` and `:testing-utils-android`.
 
 The split, concretely:
 

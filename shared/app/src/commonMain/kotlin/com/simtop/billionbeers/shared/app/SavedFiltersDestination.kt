@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.simtop.beerdomain.domain.models.SavedFilterPreset
+import com.simtop.billionbeers.domain.models.SavedFilterPreset
 import com.simtop.billionbeers.shared.savedfilters.SharedSavedFiltersContent
 import com.simtop.core.core.CommonUiState
 
@@ -40,7 +40,7 @@ internal fun SavedFilterResultsDestination(
   strings: SharedAppStrings,
   host: SharedAppHost,
   onBack: () -> Unit,
-  onBeerClick: (com.simtop.beerdomain.domain.models.Beer) -> Unit,
+  onBeerClick: (com.simtop.billionbeers.domain.models.Beer) -> Unit,
 ) {
   val viewState by entry.viewModel.viewState.collectAsStateWithLifecycle()
   com.simtop.billionbeers.shared.beerbrowse.SharedBrowseBeersContent(

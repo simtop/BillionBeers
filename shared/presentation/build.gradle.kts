@@ -17,14 +17,14 @@ kotlin {
   sourceSets {
     commonMain.dependencies {
       api(project(":core-common"))
-      api(project(":beerdomain:api"))
+      api(project(":beer-domain:api"))
       implementation(project(":shared:designsystem"))
       implementation(catalog.billionBeersLibrary("lifecycle-viewmodel"))
     }
     jvmTest.dependencies {
       implementation(compose.uiTest)
       implementation(compose.desktop.currentOs)
-      implementation(project(":beerdomain:fakes"))
+      implementation(project(":beer-domain:fakes"))
       implementation(project(":testing-utils"))
       implementation(catalog.billionBeersLibrary("turbine"))
       implementation(catalog.billionBeersLibrary("striktCore"))

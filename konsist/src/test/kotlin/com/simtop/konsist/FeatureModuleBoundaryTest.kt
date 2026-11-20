@@ -49,7 +49,7 @@ class FeatureModuleBoundaryTest {
       assertTrue(directDependencies.isEmpty()) {
         "${feature.script.relativeTo(repoRoot())} declares a direct feature dependency: " +
           directDependencies.joinToString(" | ") +
-          ". Features communicate through :navigation and :beerdomain:api instead."
+          ". Features communicate through :navigation and :beer-domain:api instead."
       }
     }
   }

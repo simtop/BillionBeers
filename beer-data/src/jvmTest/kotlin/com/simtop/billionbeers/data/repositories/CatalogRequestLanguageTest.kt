@@ -1,8 +1,8 @@
 package com.simtop.billionbeers.data.repositories
 
-import com.simtop.beerdomain.domain.models.CatalogCacheStatus
 import com.simtop.billionbeers.data.fakes.FakeBeersLocalSource
 import com.simtop.billionbeers.data.mappers.BeersMapper
+import com.simtop.billionbeers.domain.models.CatalogCacheStatus
 import com.simtop.billionbeers.network.BeersService
 import com.simtop.billionbeers.network.BeersServiceResponse
 import com.simtop.billionbeers.network.models.BeersApiResponseItem

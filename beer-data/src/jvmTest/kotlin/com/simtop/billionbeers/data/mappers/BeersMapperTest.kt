@@ -1,6 +1,6 @@
 package com.simtop.billionbeers.data.mappers
 
-import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.billionbeers.domain.models.Beer
 import com.simtop.billionbeers.network.models.BeersApiResponseItem
 import com.simtop.billionbeers.network.models.BreweryApiResponseItem
 import com.simtop.billionbeers.network.models.EmbeddedImage

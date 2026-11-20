@@ -1,13 +1,13 @@
 package com.simtop.billionbeers.di
 
-import com.simtop.beerdomain.domain.repositories.BeerCatalogMetadataRepository
-import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
-import com.simtop.beerdomain.domain.repositories.BeersRepository
-import com.simtop.beerdomain.domain.repositories.SavedFilterPresetsRepository
-import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
-import com.simtop.beerdomain.fakes.FakeBeersRepository
-import com.simtop.beerdomain.fakes.FakeSavedFilterPresetsRepository
 import com.simtop.billionbeers.data.di.BeersRepositoryModule
+import com.simtop.billionbeers.domain.repositories.BeerCatalogMetadataRepository
+import com.simtop.billionbeers.domain.repositories.BeersPagerFactory
+import com.simtop.billionbeers.domain.repositories.BeersRepository
+import com.simtop.billionbeers.domain.repositories.SavedFilterPresetsRepository
+import com.simtop.billionbeers.testing.domain.FakeBeersPagerFactory
+import com.simtop.billionbeers.testing.domain.FakeBeersRepository
+import com.simtop.billionbeers.testing.domain.FakeSavedFilterPresetsRepository
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.ContributesTo

@@ -4,7 +4,7 @@ android { namespace = "com.simtop.billionbeers.testing.android" }
 
 // The robot base class lives in `main`, not `androidTest`: this module *is* test code, consumed by
 // other modules' androidTest configurations. That is the same shape as :testing-utils (pure JVM)
-// and :beerdomain:fakes - a sibling module rather than Gradle's java-test-fixtures, per ADR 0001.
+// and :beer-domain:fakes - a sibling module rather than Gradle's java-test-fixtures, per ADR 0001.
 //
 // The public robot/rule signatures expose ComposeTestRule, StringRes, and JUnit rule types. Its
 // Espresso, runner and test-core helpers stay internal; Android consumer conventions supply them

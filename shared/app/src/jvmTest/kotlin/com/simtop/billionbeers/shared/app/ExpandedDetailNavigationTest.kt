@@ -18,10 +18,10 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.v2.runSkikoComposeUiTest
 import androidx.compose.ui.unit.dp
-import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
-import com.simtop.beerdomain.fakes.FakeBeersRepository
-import com.simtop.beerdomain.fakes.FakeSavedFilterPresetsRepository
+import com.simtop.billionbeers.domain.models.Beer
+import com.simtop.billionbeers.testing.domain.FakeBeersPagerFactory
+import com.simtop.billionbeers.testing.domain.FakeBeersRepository
+import com.simtop.billionbeers.testing.domain.FakeSavedFilterPresetsRepository
 import com.simtop.core.core.DefaultCoroutineDispatcherProvider
 import kotlin.test.Test
 

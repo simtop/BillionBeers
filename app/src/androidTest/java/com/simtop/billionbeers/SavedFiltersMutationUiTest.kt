@@ -15,11 +15,11 @@ import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
-import com.simtop.beerdomain.domain.errors.MutateFilterPresetError
-import com.simtop.beerdomain.domain.models.BeersQuery
-import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.billionbeers.di.BaseAppGraph
 import com.simtop.billionbeers.di.FakeBeersRepositoryModule
+import com.simtop.billionbeers.domain.errors.MutateFilterPresetError
+import com.simtop.billionbeers.domain.models.BeersQuery
+import com.simtop.billionbeers.domain.models.SavedFilterPreset
 import com.simtop.billionbeers.presentation.MainActivity
 import com.simtop.billionbeers.presentation.android.R as PresentationUtilsR
 import com.simtop.billionbeers.testing.android.withFailureScreenshot

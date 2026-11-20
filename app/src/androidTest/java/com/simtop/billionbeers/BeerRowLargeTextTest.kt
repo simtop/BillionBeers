@@ -15,11 +15,11 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.platform.app.InstrumentationRegistry
-import com.simtop.beerdomain.fakes.fakeBeerModel
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.billionbeers.presentation.android.R as PresentationR
 import com.simtop.billionbeers.presentation.android.components.ComposeBeersListItem
 import com.simtop.billionbeers.testing.android.withFailureScreenshot
+import com.simtop.billionbeers.testing.domain.fakeBeerModel
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test

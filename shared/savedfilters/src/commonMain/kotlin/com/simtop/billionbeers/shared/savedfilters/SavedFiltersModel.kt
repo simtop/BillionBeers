@@ -1,9 +1,9 @@
 package com.simtop.billionbeers.shared.savedfilters
 
-import com.simtop.beerdomain.domain.errors.MutateFilterPresetError
-import com.simtop.beerdomain.domain.models.SavedFilterPreset
-import com.simtop.beerdomain.domain.repositories.SavedFilterPresetsRepository
-import com.simtop.beerdomain.domain.usecases.RenameFilterPresetUseCase
+import com.simtop.billionbeers.domain.errors.MutateFilterPresetError
+import com.simtop.billionbeers.domain.models.SavedFilterPreset
+import com.simtop.billionbeers.domain.repositories.SavedFilterPresetsRepository
+import com.simtop.billionbeers.domain.usecases.RenameFilterPresetUseCase
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.Either
 import com.simtop.core.core.retryWithErrorState

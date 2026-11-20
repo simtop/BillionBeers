@@ -12,7 +12,7 @@ dependencies {
     "implementation"(this.project(":core"))
     "implementation"(this.project(":core-common"))
     "implementation"(this.project(":presentation-utils"))
-    "implementation"(this.project(":beerdomain:api"))
+    "implementation"(this.project(":beer-domain:api"))
 
     "implementation"(libs.billionBeersLibrary("lifecycleRuntimeKtx"))
     "implementation"(libs.billionBeersLibrary("navigationFragmentKtx"))

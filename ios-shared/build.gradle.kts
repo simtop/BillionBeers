@@ -29,7 +29,7 @@ kotlin {
 
 dependencies {
   commonTestImplementation(libs.coroutinesTest)
-  commonTestImplementation(project(":beerdomain:fakes"))
+  commonTestImplementation(project(":beer-domain:fakes"))
 
   commonMainImplementation(project(":shared:presentation"))
   commonMainImplementation(project(":shared:app"))
@@ -38,7 +38,7 @@ dependencies {
   commonMainImplementation(project(":beer-data"))
   commonMainImplementation(project(":beer-database"))
   commonMainImplementation(project(":beer-network"))
-  commonMainImplementation(project(":beerdomain:api"))
+  commonMainImplementation(project(":beer-domain:api"))
   commonMainImplementation(project(":core-common"))
   commonMainImplementation(project(":navigation-contract"))
   commonMainImplementation(compose.ui)

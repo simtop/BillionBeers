@@ -86,8 +86,8 @@ class KmpFeatureFunctionalTest {
       }
       rootProject.name = "kmp-feature-convention-test"
       include(
-        ":beerdomain:api",
-        ":beerdomain:fakes",
+        ":beer-domain:api",
+        ":beer-domain:fakes",
         ":core-common",
         ":shared:designsystem",
         ":shared:sample",
@@ -97,12 +97,12 @@ class KmpFeatureFunctionalTest {
     writeFile("build.gradle.kts", "")
 
     writeStubProject(
-      path = "beerdomain/api",
+      path = "beer-domain/api",
       packageName = "fixture.domain",
       declaration = "const val domainValue: String = \"domain\"",
     )
     writeStubProject(
-      path = "beerdomain/fakes",
+      path = "beer-domain/fakes",
       packageName = "fixture.fakes",
       declaration = "const val fakeValue: String = \"fake\"",
     )

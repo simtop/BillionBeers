@@ -18,9 +18,9 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
-import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.domain.models.BeerStyle
-import com.simtop.beerdomain.domain.models.Brewery
+import com.simtop.billionbeers.domain.models.Beer
+import com.simtop.billionbeers.domain.models.BeerStyle
+import com.simtop.billionbeers.domain.models.Brewery
 import com.simtop.billionbeers.shared.designsystem.components.SharedLazyColumn
 import com.simtop.billionbeers.shared.designsystem.controls.BrandCircularProgressIndicator
 import com.simtop.billionbeers.shared.designsystem.controls.BrandHorizontalDivider

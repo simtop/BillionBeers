@@ -79,7 +79,7 @@ treated as a regression signal: the cold and warm samples are noisy, machine-spe
 
 ### The incremental ratio does not measure model changes
 
-`incremental_deep` was added to compare an API change in `:beerdomain:api` with one in `:app`.
+`incremental_deep` was added to compare an API change in `:beer-domain:api` with one in `:app`.
 The historical run measured a ratio of 0.95x, or 2.8s against 3.0s.
 
 Correction from the 2026-10-27 audit: inspecting the profiler's temporary Kotlin edit showed that

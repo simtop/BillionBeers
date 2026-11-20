@@ -1,8 +1,8 @@
 package com.simtop.feature.beerslist
 
 import androidx.lifecycle.ViewModel
-import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
-import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.billionbeers.domain.repositories.BeersPagerFactory
+import com.simtop.billionbeers.domain.repositories.BeersRepository
 import com.simtop.billionbeers.shared.beerslist.BeersListViewModel as SharedBeersListViewModel
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap

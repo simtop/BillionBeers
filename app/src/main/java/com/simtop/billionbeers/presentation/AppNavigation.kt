@@ -24,9 +24,9 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_EXPANDED_LOWER_BOUND
-import com.simtop.beerdomain.domain.errors.SaveFilterPresetError
-import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.billionbeers.R
+import com.simtop.billionbeers.domain.errors.SaveFilterPresetError
+import com.simtop.billionbeers.domain.models.BeersQuery
 import com.simtop.billionbeers.shared.designsystem.controls.BrandSnackbarHost
 import com.simtop.core.core.Either
 import com.simtop.feature.beerslist.BeersListScreen

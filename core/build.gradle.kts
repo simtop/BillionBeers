@@ -11,7 +11,7 @@ android {
 }
 
 dependencies {
-  api(this.project(":beerdomain:api"))
+  api(this.project(":beer-domain:api"))
   api(this.project(":core-common"))
   implementation(libs.coreKtx)
   implementation(libs.appcompat)

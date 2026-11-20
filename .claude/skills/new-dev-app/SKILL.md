@@ -77,7 +77,7 @@ Before writing anything, read enough of `<gradlePath>` (default `:feature:<featu
    user explicitly asks you to attempt one (it's a real, non-trivial trade-off, not a quick fix).
 3. **What repositories/dependencies does its ViewModel need?** Find the ViewModel's
    `@Inject constructor(...)` params. For each repository-shaped dependency, check whether a fake
-   already exists in a sibling `:module:fakes` module (e.g. `beerdomain:fakes`'s
+   already exists in a sibling `:module:fakes` module (e.g. `beer-domain:fakes`'s
    `FakeBeersRepository`) - reuse it. Only write a brand-new fake if none exists, and keep it as
    small as the existing fakes (in-memory, `MutableStateFlow`-backed, no real logic).
 

@@ -1,8 +1,8 @@
 package com.simtop.billionbeers.web
 
-import com.simtop.beerdomain.domain.errors.FetchBeersError
-import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.domain.models.BeersQuery
+import com.simtop.billionbeers.domain.errors.FetchBeersError
+import com.simtop.billionbeers.domain.models.Beer
+import com.simtop.billionbeers.domain.models.BeersQuery
 import com.simtop.core.core.PagingState
 import kotlin.test.Test
 import kotlin.test.assertContains

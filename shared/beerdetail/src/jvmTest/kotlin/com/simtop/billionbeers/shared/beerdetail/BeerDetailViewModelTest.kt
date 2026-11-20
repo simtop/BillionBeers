@@ -1,14 +1,14 @@
 package com.simtop.billionbeers.shared.beerdetail
 
 import app.cash.turbine.test
-import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
-import com.simtop.beerdomain.domain.errors.UpdateFavoriteError
-import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.domain.repositories.BeersRepository
-import com.simtop.beerdomain.fakes.FakeBeersRepository
-import com.simtop.beerdomain.fakes.fakeBeerModel
-import com.simtop.beerdomain.fakes.fakeException
+import com.simtop.billionbeers.domain.errors.UpdateAvailabilityError
+import com.simtop.billionbeers.domain.errors.UpdateFavoriteError
+import com.simtop.billionbeers.domain.models.Beer
+import com.simtop.billionbeers.domain.repositories.BeersRepository
 import com.simtop.billionbeers.testing.MainDispatcherExtension
+import com.simtop.billionbeers.testing.domain.FakeBeersRepository
+import com.simtop.billionbeers.testing.domain.fakeBeerModel
+import com.simtop.billionbeers.testing.domain.fakeException
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.Either
 import io.mockk.coEvery

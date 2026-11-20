@@ -57,11 +57,11 @@ class ArchitecturePolicyFunctionalTest {
   @Test
   fun `resolved graph rejects domain api depending on an Android layer`() {
     writeFixture(
-      includes = listOf(":beerdomain:api", ":core"),
-      dependencies = "project(\":beerdomain:api\") { dependencies { add(\"implementation\", project(\":core\")) } }",
+      includes = listOf(":beer-domain:api", ":core"),
+      dependencies = "project(\":beer-domain:api\") { dependencies { add(\"implementation\", project(\":core\")) } }",
     )
 
-    val result = runner().withArguments(":beerdomain:api:verifyArchitecturePolicy").buildAndFail()
+    val result = runner().withArguments(":beer-domain:api:verifyArchitecturePolicy").buildAndFail()
 
     assertTrue(result.output.contains("edge is not allowed"), result.output)
   }
@@ -69,11 +69,11 @@ class ArchitecturePolicyFunctionalTest {
   @Test
   fun `resolved graph rejects domain implementation depending on data`() {
     writeFixture(
-      includes = listOf(":beerdomain:impl", ":beer-data"),
-      dependencies = "project(\":beerdomain:impl\") { dependencies { add(\"implementation\", project(\":beer-data\")) } }",
+      includes = listOf(":beer-domain:impl", ":beer-data"),
+      dependencies = "project(\":beer-domain:impl\") { dependencies { add(\"implementation\", project(\":beer-data\")) } }",
     )
 
-    val result = runner().withArguments(":beerdomain:impl:verifyArchitecturePolicy").buildAndFail()
+    val result = runner().withArguments(":beer-domain:impl:verifyArchitecturePolicy").buildAndFail()
 
     assertTrue(result.output.contains("edge is not allowed"), result.output)
   }

@@ -1,7 +1,7 @@
 package com.simtop.billionbeers.desktop
 
-import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.domain.models.BeersQuery
+import com.simtop.billionbeers.domain.models.Beer
+import com.simtop.billionbeers.domain.models.BeersQuery
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailViewModel
 import com.simtop.core.core.CommonUiState
 import java.nio.file.Files

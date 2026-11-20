@@ -3,5 +3,5 @@ plugins {
 }
 
 kotlin {
-  sourceSets { commonMain.dependencies { implementation(project(":beerdomain:impl")) } }
+  sourceSets { commonMain.dependencies { implementation(project(":beer-domain:impl")) } }
 }

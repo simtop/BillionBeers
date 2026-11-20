@@ -26,8 +26,8 @@ import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
-import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.billionbeers.domain.models.Beer
 import com.simtop.billionbeers.presentation.android.R
 import com.simtop.billionbeers.testing.android.BaseTestRobot
 import com.simtop.billionbeers.testing.android.withFailureScreenshot

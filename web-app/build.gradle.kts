@@ -24,7 +24,7 @@ kotlin {
       implementation(compose.materialIconsExtended)
       implementation(compose.components.resources)
       implementation(project(":core-common"))
-      implementation(project(":beerdomain:api"))
+      implementation(project(":beer-domain:api"))
       implementation(project(":beer-network"))
       implementation(project(":beer-network:api"))
       implementation(project(":beer-data"))

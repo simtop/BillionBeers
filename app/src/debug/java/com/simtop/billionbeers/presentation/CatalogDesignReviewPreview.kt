@@ -23,9 +23,9 @@ import coil3.compose.AsyncImagePreviewHandler
 import coil3.compose.LocalAsyncImagePreviewHandler
 import coil3.decode.DataSource
 import coil3.request.SuccessResult
-import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.billionbeers.domain.models.Beer
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.PagedListUiModel
 import com.simtop.feature.beerslist.BeersListContent

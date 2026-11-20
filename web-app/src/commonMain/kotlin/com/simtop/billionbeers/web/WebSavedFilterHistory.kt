@@ -1,6 +1,6 @@
 package com.simtop.billionbeers.web
 
-import com.simtop.beerdomain.domain.models.SavedFilterPreset
+import com.simtop.billionbeers.domain.models.SavedFilterPreset
 
 /** Query snapshots live only for this page session; browser state carries an opaque token. */
 internal class WebSavedFilterHistory(private val sessionId: String) {

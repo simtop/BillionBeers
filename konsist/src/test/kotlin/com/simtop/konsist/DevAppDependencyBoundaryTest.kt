@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test
 
 /**
  * A dev-app (app-dev-<feature>) exists to build one feature in seconds instead of minutes: it binds
- * the feature under development to :beerdomain:fakes instead of the real data layer, so the heavy
+ * the feature under development to :beer-domain:fakes instead of the real data layer, so the heavy
  * :beer-data / :beer-database / :beer-storage:api / :beer-network graph (Room, Retrofit, OkHttp)
  * never enters its compilation. The moment a dev-app declares a dependency on a data-layer module,
  * that guarantee is gone and the dev-app is just a slower copy of :app.
@@ -50,7 +50,7 @@ class DevAppDependencyBoundaryTest {
       }
       assertTrue(violations.isEmpty()) {
         "${script.parentFile.name} depends on data-layer module(s) $violations - dev-apps must use " +
-          ":beerdomain:fakes, not the real data layer, to keep their build fast"
+          ":beer-domain:fakes, not the real data layer, to keep their build fast"
       }
     }
   }

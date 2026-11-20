@@ -1,6 +1,6 @@
 package com.simtop.feature.beerdetail.presentation
 
-import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.billionbeers.domain.repositories.BeersRepository
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailEvent as SharedBeerDetailEvent
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailViewModel as SharedBeerDetailViewModel
 import com.simtop.feature.beerdetail.presentation.di.FeatureDetailScope

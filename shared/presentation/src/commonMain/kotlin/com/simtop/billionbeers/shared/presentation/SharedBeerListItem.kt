@@ -14,7 +14,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
-import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.billionbeers.domain.models.Beer
 import com.simtop.billionbeers.shared.designsystem.controls.BrandAvailabilityBadge
 import com.simtop.billionbeers.shared.designsystem.controls.BrandCard
 import com.simtop.billionbeers.shared.designsystem.controls.BrandText

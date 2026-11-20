@@ -469,7 +469,7 @@ class ConventionPluginFunctionalTest {
           ":core",
           ":core-common",
           ":presentation-utils",
-          ":beerdomain:api",
+          ":beer-domain:api",
           ":testing-utils",
           if (includeDataLayerBridge) ":bridge" else null,
           if (includeDataLayerBridge) ":beer-data" else null,
@@ -480,7 +480,7 @@ class ConventionPluginFunctionalTest {
     listOf("core", "core-common", "presentation-utils", "testing-utils").forEach {
       writeFile("$it/build.gradle.kts", "")
     }
-    writeFile("beerdomain/api/build.gradle.kts", "")
+    writeFile("beer-domain/api/build.gradle.kts", "")
     if (includeDataLayerBridge) {
       writeFile("beer-data/build.gradle.kts", "plugins { id(\"java-library\") }")
       writeFile(

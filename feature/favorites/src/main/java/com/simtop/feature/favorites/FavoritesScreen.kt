@@ -10,9 +10,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.billionbeers.domain.models.Beer
 import com.simtop.billionbeers.presentation.android.R as PresentationUtilsR
 import com.simtop.billionbeers.presentation.android.components.ComposeBeersListItem
 import com.simtop.billionbeers.shared.designsystem.controls.BrandText

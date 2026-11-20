@@ -11,7 +11,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation3.runtime.NavKey
-import com.simtop.beerdomain.domain.models.BeersQuery
+import com.simtop.billionbeers.domain.models.BeersQuery
 import com.simtop.core.di.DynamicDependencies
 import com.simtop.feature.beerbrowse.presentation.di.FeatureBrowseComponent
 import com.simtop.navigation.contract.PortableRoute

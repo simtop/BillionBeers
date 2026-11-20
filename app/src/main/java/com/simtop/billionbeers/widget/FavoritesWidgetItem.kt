@@ -1,6 +1,6 @@
 package com.simtop.billionbeers.widget
 
-import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.billionbeers.domain.models.Beer
 
 data class FavoritesWidgetItem(
   val id: String,

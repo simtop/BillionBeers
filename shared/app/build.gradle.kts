@@ -16,8 +16,8 @@ kotlin {
 
   sourceSets {
     commonMain.dependencies {
-      implementation(project(":beerdomain:api"))
-      implementation(project(":beerdomain:impl"))
+      implementation(project(":beer-domain:api"))
+      implementation(project(":beer-domain:impl"))
       implementation(project(":core-common"))
       implementation(project(":navigation-contract"))
       implementation(project(":shared:designsystem"))
@@ -34,7 +34,7 @@ kotlin {
 
     jvmTest.dependencies {
       implementation(kotlin("test"))
-      implementation(project(":beerdomain:fakes"))
+      implementation(project(":beer-domain:fakes"))
       implementation(project(":testing-utils"))
       implementation(compose.uiTest)
       implementation(compose.desktop.currentOs)

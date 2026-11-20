@@ -1,13 +1,13 @@
 package com.simtop.billionbeers.shared.beersearch
 
 import app.cash.turbine.test
-import com.simtop.beerdomain.domain.errors.FetchBeersError
-import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.domain.models.BeerStyle
-import com.simtop.beerdomain.domain.models.BeersQuery
-import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
-import com.simtop.beerdomain.fakes.FakeBeersRepository
+import com.simtop.billionbeers.domain.errors.FetchBeersError
+import com.simtop.billionbeers.domain.models.Beer
+import com.simtop.billionbeers.domain.models.BeerStyle
+import com.simtop.billionbeers.domain.models.BeersQuery
 import com.simtop.billionbeers.testing.MainDispatcherExtension
+import com.simtop.billionbeers.testing.domain.FakeBeersPagerFactory
+import com.simtop.billionbeers.testing.domain.FakeBeersRepository
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.Either
 import com.simtop.core.core.PagedListUiModel

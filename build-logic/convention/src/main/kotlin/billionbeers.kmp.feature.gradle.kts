@@ -31,14 +31,14 @@ extensions.configure<KotlinMultiplatformExtension> {
   wasmJs { binaries.executable() }
 
   sourceSets.getByName("commonMain").dependencies {
-    implementation(project(":beerdomain:api"))
+    implementation(project(":beer-domain:api"))
     implementation(project(":core-common"))
     implementation(libs.billionBeersLibrary("lifecycle-viewmodel"))
     implementation(project(":shared:designsystem"))
   }
   sourceSets.getByName("jvmTest").dependencies {
     implementation(kotlin("test"))
-    implementation(project(":beerdomain:fakes"))
+    implementation(project(":beer-domain:fakes"))
   }
 }
 

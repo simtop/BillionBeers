@@ -1,6 +1,6 @@
 package com.simtop.billionbeers.web
 
-import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.billionbeers.domain.models.Beer
 import com.simtop.navigation.contract.PortableRoute
 import kotlin.test.Test
 import kotlin.test.assertEquals
