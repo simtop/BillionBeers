@@ -330,12 +330,26 @@ for destination in "$FEATURE_DEST" "$SHARED_DEST"; do
   fi
 done
 
-mv -- "$FEATURE_MODULE" "$FEATURE_DEST"
+# Reserve both destinations with atomic directory creation before publishing staged contents.
+# This keeps a concurrent `mv` from treating an already-created module directory as a parent
+# and succeeding by nesting the second module inside the first.
+if ! mkdir "$FEATURE_DEST"; then
+  echo "error: ${FEATURE_DEST#"$ROOT/"} appeared while the scaffold was being published" >&2
+  exit 1
+fi
+touch "$FEATURE_DEST/$MARKER"
+if ! mkdir "$SHARED_DEST"; then
+  echo "error: ${SHARED_DEST#"$ROOT/"} appeared while the scaffold was being published" >&2
+  exit 1
+fi
+touch "$SHARED_DEST/$MARKER"
+
+cp -a -- "$FEATURE_MODULE/." "$FEATURE_DEST/"
 if [[ "${BILLIONBEERS_SCAFFOLD_TEST_FAIL_AFTER_FIRST_PUBLISH:-}" == "1" ]]; then
   echo "error: injected scaffold publication failure" >&2
   exit 1
 fi
-mv -- "$SHARED_MODULE" "$SHARED_DEST"
+cp -a -- "$SHARED_MODULE/." "$SHARED_DEST/"
 COMMITTED=true
 
 echo "Created feature/$NAME and shared/$NAME."
