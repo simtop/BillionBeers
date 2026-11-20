@@ -17,9 +17,8 @@ import org.junit.jupiter.api.Test
  *
  * Nothing else catches this. `dependency-guard` locks the resolved release classpath, but it was
  * baselined *with* the offending dependency already on it, so the guard faithfully protected the
- * defect. `detectUnusedDependencies` does not run on the pure-JVM modules. The gap is the
- * *direction*: a lock file stops a graph from changing, and says nothing about whether the graph
- * was right when it was locked.
+ * defect. The gap is the *direction*: a lock file stops a graph from changing, and says nothing
+ * about whether the graph was right when it was locked.
  *
  * Reads the version catalog and the build scripts as text, the same approach as
  * [DevAppDependencyBoundaryTest] - Konsist does not scan `.kts` or `.toml`.

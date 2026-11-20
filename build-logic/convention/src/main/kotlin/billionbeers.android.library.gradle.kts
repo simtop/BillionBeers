@@ -10,7 +10,6 @@ apply(plugin = "billionbeers.android.testing")
 apply(plugin = "billionbeers.jacoco")
 apply(plugin = "billionbeers.spotless")
 apply(plugin = "billionbeers.detekt")
-apply(plugin = "billionbeers.unused-dependencies")
 
 val libs = billionBeersCatalog()
 

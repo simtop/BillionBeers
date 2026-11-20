@@ -6,7 +6,6 @@ plugins {
   id("billionbeers.android.screenshot")
 
   id("billionbeers.duplicate-classes")
-  id("billionbeers.unused-dependencies")
   alias(libs.plugins.kotlin.serialization)
   alias(libs.plugins.androidx.baseline.profile)
   alias(libs.plugins.dependency.guard)
