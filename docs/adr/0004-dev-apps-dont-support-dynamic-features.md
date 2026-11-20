@@ -44,7 +44,7 @@ feature can look like it's working right up until the assemble step.
 
 Even setting the hard assemble failure aside, `:feature:beerdetail`'s own
 `implementation(project(":app"))` means merely resolving `app-dev-beerdetail`'s task graph pulls
-in 84 tasks under `:app:`, `:beer_data:`, `:beer-network:`, and `:beer_database:` - the entire real
+in 84 tasks under `:app:`, `:beer-data:`, `:beer-network:`, and `:beer_database:` - the entire real
 app's dependency closure. So even a hypothetical fix for the assemble failure wouldn't deliver the
 seconds-scale build this pattern exists for.
 

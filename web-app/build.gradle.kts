@@ -27,7 +27,7 @@ kotlin {
       implementation(project(":beerdomain:api"))
       implementation(project(":beer-network"))
       implementation(project(":beer-network:api"))
-      implementation(project(":beer_data"))
+      implementation(project(":beer-data"))
       implementation(project(":beer-storage:api"))
       implementation(project(":beer-storage:browser"))
       implementation(project(":shared:app"))

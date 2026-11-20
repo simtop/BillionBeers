@@ -389,7 +389,7 @@ class ConventionPluginFunctionalTest {
     val result = runner().withArguments("checkDataLayerClasspathBoundary").buildAndFail()
 
     assertTrue(result.output.contains("resolves data-layer module(s)"))
-    assertTrue(result.output.contains(":beer_data"))
+    assertTrue(result.output.contains(":beer-data"))
   }
 
   @Test
@@ -472,7 +472,7 @@ class ConventionPluginFunctionalTest {
           ":beerdomain:api",
           ":testing-utils",
           if (includeDataLayerBridge) ":bridge" else null,
-          if (includeDataLayerBridge) ":beer_data" else null,
+          if (includeDataLayerBridge) ":beer-data" else null,
         )
         .filterNotNull()
         .joinToString(", ") { "\"$it\"" }
@@ -482,12 +482,12 @@ class ConventionPluginFunctionalTest {
     }
     writeFile("beerdomain/api/build.gradle.kts", "")
     if (includeDataLayerBridge) {
-      writeFile("beer_data/build.gradle.kts", "plugins { id(\"java-library\") }")
+      writeFile("beer-data/build.gradle.kts", "plugins { id(\"java-library\") }")
       writeFile(
         "bridge/build.gradle.kts",
         """
         plugins { id("java-library") }
-        dependencies { api(project(":beer_data")) }
+        dependencies { api(project(":beer-data")) }
         """.trimIndent(),
       )
     }

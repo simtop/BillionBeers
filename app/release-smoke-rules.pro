@@ -4,7 +4,7 @@
 -keep class androidx.tracing.** { *; }
 -keep class androidx.compose.runtime.** { *; }
 -keep class com.google.android.play.core.splitcompat.** { *; }
--keep class com.simtop.beer_data.di.** { *; }
+-keep class com.simtop.billionbeers.data.di.** { *; }
 -keep class com.simtop.beer_database.di.** { *; }
 -keep class com.simtop.billionbeers.network.di.** { *; }
 -keep class com.simtop.billionbeers.di.** { *; }

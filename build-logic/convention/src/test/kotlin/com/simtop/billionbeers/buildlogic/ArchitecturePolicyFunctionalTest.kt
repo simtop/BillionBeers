@@ -30,8 +30,8 @@ class ArchitecturePolicyFunctionalTest {
   @Test
   fun `resolved graph rejects feature to data`() {
     writeFixture(
-      includes = listOf(":feature:alpha", ":beer_data"),
-      dependencies = "project(\":feature:alpha\") { dependencies { add(\"implementation\", project(\":beer_data\")) } }",
+      includes = listOf(":feature:alpha", ":beer-data"),
+      dependencies = "project(\":feature:alpha\") { dependencies { add(\"implementation\", project(\":beer-data\")) } }",
     )
 
     val result = runner().withArguments(":feature:alpha:verifyArchitecturePolicy").buildAndFail()
@@ -42,16 +42,16 @@ class ArchitecturePolicyFunctionalTest {
   @Test
   fun `resolved graph rejects data exposed transitively through api`() {
     writeFixture(
-      includes = listOf(":feature:alpha", ":presentation_utils", ":beer_data"),
+      includes = listOf(":feature:alpha", ":presentation_utils", ":beer-data"),
       dependencies = """
         project(":feature:alpha") { dependencies { add("implementation", project(":presentation_utils")) } }
-        project(":presentation_utils") { dependencies { add("api", project(":beer_data")) } }
+        project(":presentation_utils") { dependencies { add("api", project(":beer-data")) } }
       """.trimIndent(),
     )
 
     val result = runner().withArguments(":feature:alpha:verifyArchitecturePolicy").buildAndFail()
 
-    assertTrue(result.output.contains("resolves forbidden data module :beer_data"), result.output)
+    assertTrue(result.output.contains("resolves forbidden data module :beer-data"), result.output)
   }
 
   @Test
@@ -69,8 +69,8 @@ class ArchitecturePolicyFunctionalTest {
   @Test
   fun `resolved graph rejects domain implementation depending on data`() {
     writeFixture(
-      includes = listOf(":beerdomain:impl", ":beer_data"),
-      dependencies = "project(\":beerdomain:impl\") { dependencies { add(\"implementation\", project(\":beer_data\")) } }",
+      includes = listOf(":beerdomain:impl", ":beer-data"),
+      dependencies = "project(\":beerdomain:impl\") { dependencies { add(\"implementation\", project(\":beer-data\")) } }",
     )
 
     val result = runner().withArguments(":beerdomain:impl:verifyArchitecturePolicy").buildAndFail()
@@ -81,8 +81,8 @@ class ArchitecturePolicyFunctionalTest {
   @Test
   fun `resolved graph rejects an unapproved project api exposure`() {
     writeFixture(
-      includes = listOf(":core", ":beer_data"),
-      dependencies = "project(\":core\") { dependencies { add(\"api\", project(\":beer_data\")) } }",
+      includes = listOf(":core", ":beer-data"),
+      dependencies = "project(\":core\") { dependencies { add(\"api\", project(\":beer-data\")) } }",
     )
 
     val result = runner().withArguments(":core:verifyArchitecturePolicy").buildAndFail()

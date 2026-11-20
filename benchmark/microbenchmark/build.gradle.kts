@@ -30,7 +30,7 @@ dependencies {
     "implementation"(libs.testCoreKtx)
     "implementation"(libs.junitKtx)
 
-    "implementation"(this.project(":beer_data"))
+    "implementation"(this.project(":beer-data"))
     "implementation"(this.project(":beerdomain:api"))
     "implementation"(this.project(":beer_database"))
     "implementation"(this.project(":beer-network"))

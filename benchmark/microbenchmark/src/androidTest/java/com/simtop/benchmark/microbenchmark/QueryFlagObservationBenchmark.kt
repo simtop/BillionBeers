@@ -6,9 +6,9 @@ import androidx.benchmark.junit4.measureRepeated
 import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.simtop.beer_data.mappers.BeersMapper
-import com.simtop.beer_data.repositories.BeersPagerFactoryImpl
-import com.simtop.beer_data.repositories.BeersRepositoryImpl
+import com.simtop.billionbeers.data.mappers.BeersMapper
+import com.simtop.billionbeers.data.repositories.BeersPagerFactoryImpl
+import com.simtop.billionbeers.data.repositories.BeersRepositoryImpl
 import com.simtop.beer_database.database.BeersDatabase
 import com.simtop.beer_database.localsources.BeersLocalSourceImpl
 import com.simtop.beerdomain.domain.models.Beer
