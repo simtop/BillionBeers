@@ -5,11 +5,11 @@ import com.simtop.beer_data.fakes.FakeBeersLocalSource
 import com.simtop.beer_data.fakes.FakeBeersRemoteSource
 import com.simtop.beer_data.mappers.BeersMapper
 import com.simtop.beer_network.models.BeersApiResponseItem
-import com.simtop.billionbeers.storage.api.BeersStorage
-import com.simtop.billionbeers.storage.api.StoredBeerLocalFlags
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.billionbeers.storage.api.BeersStorage
+import com.simtop.billionbeers.storage.api.StoredBeerLocalFlags
 import com.simtop.core.core.LanguageProvider
 import com.simtop.core.core.NoOpLogger
 import kotlinx.coroutines.ExperimentalCoroutinesApi

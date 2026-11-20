@@ -9,14 +9,14 @@ import com.simtop.beer_network.models.Language
 import com.simtop.beer_network.models.Translation
 import com.simtop.beer_network.network.BeersServiceHttpException
 import com.simtop.beer_network.network.BeersServiceNetworkException
-import com.simtop.billionbeers.storage.api.BeersStorage
-import com.simtop.billionbeers.storage.api.StoredBeer
-import com.simtop.billionbeers.storage.api.StoredPagingState
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.CatalogCacheStatus
 import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.billionbeers.storage.api.BeersStorage
+import com.simtop.billionbeers.storage.api.StoredBeer
+import com.simtop.billionbeers.storage.api.StoredPagingState
 import com.simtop.core.core.Diagnostic
 import com.simtop.core.core.DiagnosticArea
 import com.simtop.core.core.DiagnosticCode

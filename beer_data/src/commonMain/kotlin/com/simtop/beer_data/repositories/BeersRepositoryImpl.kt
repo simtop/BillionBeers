@@ -2,8 +2,6 @@ package com.simtop.beer_data.repositories
 
 import com.simtop.beer_data.mappers.BeersMapper
 import com.simtop.beer_network.remotesources.BeersRemoteSource
-import com.simtop.billionbeers.storage.api.BeersStorage
-import com.simtop.billionbeers.storage.api.FilterPresetCapacityReachedException
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.errors.MutateFilterPresetError
 import com.simtop.beerdomain.domain.errors.SaveFilterPresetError
@@ -21,6 +19,8 @@ import com.simtop.beerdomain.domain.repositories.BeerCatalogMetadataRepository
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.beerdomain.domain.repositories.PagingCompletion
 import com.simtop.beerdomain.domain.repositories.SavedFilterPresetsRepository
+import com.simtop.billionbeers.storage.api.BeersStorage
+import com.simtop.billionbeers.storage.api.FilterPresetCapacityReachedException
 import com.simtop.core.core.CachePolicy
 import com.simtop.core.core.Either
 import com.simtop.core.core.EpochTimeProvider
