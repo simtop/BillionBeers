@@ -4,13 +4,6 @@ import app.cash.turbine.test
 import com.simtop.beer_data.fakes.FakeBeersLocalSource
 import com.simtop.beer_data.fakes.FakeBeersRemoteSource
 import com.simtop.beer_data.mappers.BeersMapper
-import com.simtop.beer_network.models.BeersApiResponseItem
-import com.simtop.beer_network.models.BreweryApiResponseItem
-import com.simtop.beer_network.models.EmbeddedCountry
-import com.simtop.beer_network.models.EmbeddedImage
-import com.simtop.beer_network.models.TypologyApiResponseItem
-import com.simtop.beer_network.network.BeersServiceHttpException
-import com.simtop.beer_network.network.BeersServiceNetworkException
 import com.simtop.beerdomain.domain.errors.FetchBeersError
 import com.simtop.beerdomain.domain.errors.MutateFilterPresetError
 import com.simtop.beerdomain.domain.errors.SaveFilterPresetError
@@ -20,6 +13,13 @@ import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.beerdomain.domain.models.CatalogCacheStatus
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
+import com.simtop.billionbeers.network.BeersServiceHttpException
+import com.simtop.billionbeers.network.BeersServiceNetworkException
+import com.simtop.billionbeers.network.models.BeersApiResponseItem
+import com.simtop.billionbeers.network.models.BreweryApiResponseItem
+import com.simtop.billionbeers.network.models.EmbeddedCountry
+import com.simtop.billionbeers.network.models.EmbeddedImage
+import com.simtop.billionbeers.network.models.TypologyApiResponseItem
 import com.simtop.billionbeers.storage.api.MAX_STORED_FILTER_PRESETS
 import com.simtop.billionbeers.storage.api.StoredBeer
 import com.simtop.core.core.Diagnostic

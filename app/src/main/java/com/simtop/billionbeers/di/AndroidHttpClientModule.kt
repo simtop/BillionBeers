@@ -1,6 +1,6 @@
 package com.simtop.billionbeers.di
 
-import com.simtop.beer_network.network.configureBeersApi
+import com.simtop.billionbeers.network.configureBeersApi
 import com.simtop.core.core.EnvironmentConfig
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesTo

@@ -1,15 +1,15 @@
 package com.simtop.beer_data.mappers
 
-import com.simtop.beer_network.models.BeersApiResponseItem
-import com.simtop.beer_network.models.BreweryApiResponseItem
-import com.simtop.beer_network.models.EmbeddedImage
-import com.simtop.beer_network.models.EmbeddedTypology
-import com.simtop.beer_network.models.Language
-import com.simtop.beer_network.models.NamedEntity
-import com.simtop.beer_network.models.NamedTranslation
-import com.simtop.beer_network.models.Translation
-import com.simtop.beer_network.models.TypologyApiResponseItem
 import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.billionbeers.network.models.BeersApiResponseItem
+import com.simtop.billionbeers.network.models.BreweryApiResponseItem
+import com.simtop.billionbeers.network.models.EmbeddedImage
+import com.simtop.billionbeers.network.models.EmbeddedTypology
+import com.simtop.billionbeers.network.models.Language
+import com.simtop.billionbeers.network.models.NamedEntity
+import com.simtop.billionbeers.network.models.NamedTranslation
+import com.simtop.billionbeers.network.models.Translation
+import com.simtop.billionbeers.network.models.TypologyApiResponseItem
 import com.simtop.billionbeers.storage.api.StoredBeer
 import com.simtop.core.core.Diagnostic
 import com.simtop.core.core.DiagnosticArea

@@ -32,12 +32,12 @@ class ValidateNativeTestReportsTest(unittest.TestCase):
             root = Path(directory)
             self.write_reports(root, {
                 "core-common": '<testsuite tests="0" failures="0" errors="0" skipped="0"/>',
-                "beer_network": '<testsuite tests="1" failures="0" errors="0" skipped="1"/>',
+                "beer-network": '<testsuite tests="1" failures="0" errors="0" skipped="1"/>',
                 "beer_database": '<testsuite>',
             })
             errors = MODULE.validate(root)
             self.assertTrue(any("core-common" in error and "zero" in error for error in errors))
-            self.assertTrue(any("beer_network" in error and "skipped" in error for error in errors))
+            self.assertTrue(any("beer-network" in error and "skipped" in error for error in errors))
             self.assertTrue(any("beer_database" in error and "malformed" in error for error in errors))
 
     def test_requires_reports_for_each_module_with_common_test_sources(self) -> None:

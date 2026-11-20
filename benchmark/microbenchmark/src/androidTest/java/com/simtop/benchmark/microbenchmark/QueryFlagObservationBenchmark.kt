@@ -11,12 +11,12 @@ import com.simtop.beer_data.repositories.BeersPagerFactoryImpl
 import com.simtop.beer_data.repositories.BeersRepositoryImpl
 import com.simtop.beer_database.database.BeersDatabase
 import com.simtop.beer_database.localsources.BeersLocalSourceImpl
-import com.simtop.beer_network.models.BeersApiResponseItem
-import com.simtop.beer_network.models.BeersPage
-import com.simtop.beer_network.remotesources.BeersRemoteSource
-import com.simtop.billionbeers.storage.api.StoredBeer
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
+import com.simtop.billionbeers.network.models.BeersApiResponseItem
+import com.simtop.billionbeers.network.models.BeersPage
+import com.simtop.billionbeers.network.remotesources.BeersRemoteSource
+import com.simtop.billionbeers.storage.api.StoredBeer
 import com.simtop.core.core.Either
 import com.simtop.core.core.LanguageProvider
 import com.simtop.core.core.NoOpLogger
@@ -144,9 +144,9 @@ class QueryFlagObservationBenchmark {
                 BeersPage(items = emptyList(), totalCount = QUERY_RESULT_COUNT)
             }
 
-        override suspend fun getTypologies() = emptyList<com.simtop.beer_network.models.TypologyApiResponseItem>()
+        override suspend fun getTypologies() = emptyList<com.simtop.billionbeers.network.models.TypologyApiResponseItem>()
 
-        override suspend fun getBreweries() = emptyList<com.simtop.beer_network.models.BreweryApiResponseItem>()
+        override suspend fun getBreweries() = emptyList<com.simtop.billionbeers.network.models.BreweryApiResponseItem>()
     }
 
     private companion object {

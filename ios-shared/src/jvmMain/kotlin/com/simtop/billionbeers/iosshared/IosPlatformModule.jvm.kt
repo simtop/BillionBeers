@@ -5,7 +5,7 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import com.simtop.beer_database.database.ALL_MIGRATIONS
 import com.simtop.beer_database.database.BeersDatabase
 import com.simtop.beer_database.database.BeersDatabaseConstructor
-import com.simtop.beer_network.network.configureBeersApi
+import com.simtop.billionbeers.network.configureBeersApi
 import com.simtop.core.core.EnvironmentConfig
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp

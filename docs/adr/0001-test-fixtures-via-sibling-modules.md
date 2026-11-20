@@ -12,7 +12,7 @@ living in a shared `TestingConstants.kt`:
 - Domain fixtures (`fakeBeerModel`, `fakeBeerListModel`, `fakeException`) — types owned by
   `:beerdomain:api`.
 - Network fixtures (`fakeBeersApiResponseItem`, `fakeBeerApiResponse`, `FAKE_JSON`) — types owned
-  by `:beer_network`.
+  by `:beer-network`.
 
 Gradle's `java-test-fixtures` plugin (and its AGP equivalent, `android { testFixtures { enable =
 true } }`) is the standard tool for exactly this: it publishes a `testFixtures` source set as a
@@ -22,7 +22,7 @@ all a consumer needs.
 ## Decision
 
 Use plain sibling Gradle modules instead — `:beerdomain:fakes` (already existed) and
-`:beer_network:fixtures` (added here) — rather than the `java-test-fixtures`/AGP `testFixtures`
+`:beer-network:fixtures` (added here) — rather than the `java-test-fixtures`/AGP `testFixtures`
 mechanism.
 
 ## Why
@@ -31,7 +31,7 @@ Locally benchmarked: enabling `testFixtures` on a module in this project's curre
 setup adds measurable configuration and build-graph overhead (an extra variant, extra dependency
 resolution, extra task-graph nodes) versus a plain sibling module consumed via a normal
 `api`/`implementation` project dependency. The sibling-module approach gives the identical
-consumption story (`testImplementation(project(":beer_network:fixtures"))`) without that cost.
+consumption story (`testImplementation(project(":beer-network:fixtures"))`) without that cost.
 
 ## Consequences
 
@@ -44,6 +44,6 @@ consumption story (`testImplementation(project(":beer_network:fixtures"))`) with
 - The sibling module must use the same plugin (`billionbeers.android.library` vs.
   `billionbeers.jvm.library`) as the module it fixtures for. A pure-JVM fixtures module cannot
   depend on an Android library module — Gradle can't pick between the `debugApiElements` /
-  `releaseApiElements` variants without an Android consumer, so `:beer_network:fixtures` is
+  `releaseApiElements` variants without an Android consumer, so `:beer-network:fixtures` is
   `billionbeers.android.library` even though its one file has no Android dependency, mirroring
-  `:beer_network` itself.
+  `:beer-network` itself.

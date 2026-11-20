@@ -59,15 +59,15 @@ class KmpLibraryFunctionalTest {
 
   @Test
   fun `KMP Android namespaces are derived from distinct project paths`() {
-    writeSettings("include(\":beer_network:api\")")
+    writeSettings("include(\":sample-network:api\")")
     copyRepositoryCatalog()
     writeNamespaceFixture(
       path = ".",
       expectedNamespace = "com.simtop.billionbeers.kmp.kmp_convention_test",
     )
     writeNamespaceFixture(
-      path = "beer_network/api",
-      expectedNamespace = "com.simtop.billionbeers.kmp.beer_network.api",
+      path = "sample-network/api",
+      expectedNamespace = "com.simtop.billionbeers.kmp.sample_network.api",
     )
 
     val result = runner().withArguments("help", "--stacktrace").build()
