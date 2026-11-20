@@ -1,4 +1,4 @@
-package com.simtop.billionbeers.snapshot_processor
+package com.simtop.billionbeers.snapshot.processor
 
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
@@ -80,7 +80,7 @@ private class SnapshotProcessor(
 
   private fun generateInventory(functions: List<KSFunctionDeclaration>, sourceFiles: List<KSFile>) {
     val namespace = options[MODULE_NAMESPACE_OPTION].orEmpty().ifBlank { DEFAULT_NAMESPACE }
-    val snapshotPackage = "com.simtop.billionbeers.snapshot_testing"
+    val snapshotPackage = "com.simtop.billionbeers.snapshot.testing"
     val types =
       InventoryTypes(
         snapshotClass = ClassName(snapshotPackage, "Snapshot"),

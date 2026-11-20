@@ -3,7 +3,7 @@ plugins {
   id("billionbeers.android.compose")
 }
 
-android { namespace = "com.simtop.billionbeers.snapshot_testing" }
+android { namespace = "com.simtop.billionbeers.snapshot.testing" }
 
 dependencies {
   implementation(libs.androidx.compose.runtime)

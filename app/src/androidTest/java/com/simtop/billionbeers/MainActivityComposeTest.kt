@@ -33,6 +33,7 @@ import com.simtop.billionbeers.di.BaseAppGraph
 import com.simtop.billionbeers.di.FakeBeersRepositoryModule
 import com.simtop.billionbeers.fakes.FakeSplitInstallManager
 import com.simtop.billionbeers.presentation.MainActivity
+import com.simtop.billionbeers.testing.android.withFailureScreenshot
 import com.simtop.billionbeers.utils.browseScreen
 import com.simtop.billionbeers.utils.detailScreen
 import com.simtop.billionbeers.utils.homeScreen
@@ -44,7 +45,6 @@ import com.simtop.feature.beersearch.R as SearchR
 import com.simtop.feature.beersearch.SEARCH_FIELD_TAG
 import com.simtop.feature.beerslist.R as CatalogR
 import com.simtop.navigation.DynamicFeature
-import com.simtop.testing_utils_android.withFailureScreenshot
 import dev.zacsweers.metro.createGraphFactory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

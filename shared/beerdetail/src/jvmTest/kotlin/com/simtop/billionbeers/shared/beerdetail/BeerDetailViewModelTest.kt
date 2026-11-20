@@ -8,7 +8,7 @@ import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.beerdomain.fakes.fakeBeerModel
 import com.simtop.beerdomain.fakes.fakeException
-import com.simtop.billionbeers.testing_utils.MainDispatcherExtension
+import com.simtop.billionbeers.testing.MainDispatcherExtension
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.Either
 import io.mockk.coEvery

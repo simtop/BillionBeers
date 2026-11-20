@@ -1,4 +1,4 @@
-package com.simtop.billionbeers.snapshot_testing
+package com.simtop.billionbeers.snapshot.testing
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

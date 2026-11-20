@@ -1,7 +1,7 @@
 package com.simtop.feature.beersearch
 
 import androidx.compose.ui.test.junit4.ComposeTestRule
-import com.simtop.testing_utils_android.BaseTestRobot
+import com.simtop.billionbeers.testing.android.BaseTestRobot
 
 fun searchScreen(composeTestRule: ComposeTestRule, func: SearchScreenRobot.() -> Unit) =
   SearchScreenRobot(composeTestRule).apply { func() }

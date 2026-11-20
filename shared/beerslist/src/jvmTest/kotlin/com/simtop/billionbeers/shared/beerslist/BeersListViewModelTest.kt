@@ -10,7 +10,7 @@ import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
 import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.beerdomain.fakes.FakePager
-import com.simtop.billionbeers.testing_utils.MainDispatcherExtension
+import com.simtop.billionbeers.testing.MainDispatcherExtension
 import com.simtop.core.core.CachePolicy
 import com.simtop.core.core.CommonUiErrorKey
 import com.simtop.core.core.CommonUiState

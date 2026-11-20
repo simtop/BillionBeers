@@ -1,6 +1,6 @@
 plugins { id("billionbeers.android.library") }
 
-android { namespace = "com.simtop.testing_utils_android" }
+android { namespace = "com.simtop.billionbeers.testing.android" }
 
 // The robot base class lives in `main`, not `androidTest`: this module *is* test code, consumed by
 // other modules' androidTest configurations. That is the same shape as :testing-utils (pure JVM)

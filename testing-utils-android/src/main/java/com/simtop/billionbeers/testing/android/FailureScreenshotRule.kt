@@ -1,4 +1,4 @@
-package com.simtop.testing_utils_android
+package com.simtop.billionbeers.testing.android
 
 import android.graphics.Bitmap
 import android.os.Environment

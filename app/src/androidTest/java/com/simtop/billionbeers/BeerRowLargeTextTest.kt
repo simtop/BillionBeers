@@ -19,7 +19,7 @@ import com.simtop.beerdomain.fakes.fakeBeerModel
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.billionbeers.presentation.android.R as PresentationR
 import com.simtop.billionbeers.presentation.android.components.ComposeBeersListItem
-import com.simtop.testing_utils_android.withFailureScreenshot
+import com.simtop.billionbeers.testing.android.withFailureScreenshot
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test

@@ -1,4 +1,4 @@
-package com.simtop.billionbeers.snapshot_testing
+package com.simtop.billionbeers.snapshot.testing
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider

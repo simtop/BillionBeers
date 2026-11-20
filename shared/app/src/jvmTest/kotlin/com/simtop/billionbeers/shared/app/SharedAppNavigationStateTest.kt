@@ -8,7 +8,7 @@ import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
 import com.simtop.beerdomain.fakes.FakeBeersRepository
 import com.simtop.beerdomain.fakes.FakeSavedFilterPresetsRepository
-import com.simtop.billionbeers.testing_utils.MainDispatcherExtension
+import com.simtop.billionbeers.testing.MainDispatcherExtension
 import com.simtop.core.core.DefaultCoroutineDispatcherProvider
 import com.simtop.navigation.contract.BrowseCategory
 import com.simtop.navigation.contract.PortableRoute

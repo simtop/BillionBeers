@@ -1,4 +1,4 @@
-package com.simtop.billionbeers.snapshot_processor
+package com.simtop.billionbeers.snapshot.processor
 
 import java.nio.file.Files
 import java.nio.file.Path
@@ -215,7 +215,7 @@ class SnapshotProcessorFunctionalTest {
 
   private val stubs =
     """
-    package com.simtop.billionbeers.snapshot_testing
+    package com.simtop.billionbeers.snapshot.testing
 
     import androidx.compose.runtime.Composable
 

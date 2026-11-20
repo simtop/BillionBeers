@@ -19,6 +19,8 @@ import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.Brewery
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
 import com.simtop.billionbeers.presentation.android.R
+import com.simtop.billionbeers.testing.android.BaseTestRobot
+import com.simtop.billionbeers.testing.android.withFailureScreenshot
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.PagedListFooter
 import com.simtop.core.core.PagedListUiModel
@@ -26,8 +28,6 @@ import com.simtop.feature.beerbrowse.presentation.BrowseBeersContent
 import com.simtop.feature.beerbrowse.presentation.BrowseHomeContent
 import com.simtop.feature.beerbrowse.presentation.BrowseSaveFilterPreview
 import com.simtop.feature.beerbrowse.presentation.BrowseSelection
-import com.simtop.testing_utils_android.BaseTestRobot
-import com.simtop.testing_utils_android.withFailureScreenshot
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test

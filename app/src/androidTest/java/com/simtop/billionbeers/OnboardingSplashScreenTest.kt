@@ -20,7 +20,7 @@ import com.simtop.billionbeers.di.FakeBeersRepositoryModule
 import com.simtop.billionbeers.presentation.MainActivity
 import com.simtop.billionbeers.shared.presentation.OnboardingController
 import com.simtop.billionbeers.shared.presentation.OnboardingStore
-import com.simtop.testing_utils_android.withFailureScreenshot
+import com.simtop.billionbeers.testing.android.withFailureScreenshot
 import dev.zacsweers.metro.createGraphFactory
 import java.io.IOException
 import java.util.concurrent.CountDownLatch

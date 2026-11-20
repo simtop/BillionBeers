@@ -30,10 +30,10 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.billionbeers.testing.android.withFailureScreenshot
 import com.simtop.core.core.CommonUiState
 import com.simtop.feature.savedfilters.R as SavedFiltersR
 import com.simtop.feature.savedfilters.SavedFiltersContent
-import com.simtop.testing_utils_android.withFailureScreenshot
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test

@@ -810,4 +810,4 @@ install-profiler: ## Install gradle-profiler via Homebrew.
 	brew install gradle-profiler
 
 install-diffuse: ## Install diffuse tool for APK analysis.
-	./snapshot-testing/src/main/java/com/simtop/billionbeers/snapshot_testing/install-diffuse.sh
+	./snapshot-testing/src/main/java/com/simtop/billionbeers/snapshot/testing/install-diffuse.sh

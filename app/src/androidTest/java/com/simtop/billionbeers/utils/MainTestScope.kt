@@ -7,7 +7,7 @@ import com.simtop.billionbeers.robots.BrowseScreenRobot
 import com.simtop.billionbeers.robots.DetailScreenRobot
 import com.simtop.billionbeers.robots.HomeScreenRobot
 import com.simtop.billionbeers.robots.SearchScreenRobot
-import com.simtop.testing_utils_android.FailureScreenshotRule
+import com.simtop.billionbeers.testing.android.FailureScreenshotRule
 
 fun ComposeTestRule.homeScreen(func: HomeScreenRobot.() -> Unit) {
   HomeScreenRobot(this).apply(func)

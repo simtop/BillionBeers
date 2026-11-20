@@ -22,6 +22,7 @@ it disagrees with them. Read the relevant ADR or enforcement test for rationale.
 | Build/perf | `build-logic`: composite build/conventions; `:benchmark:*`: physical-device measurements |
 
 Modules are auto-discovered from build scripts; do not edit `settings.gradle.kts` to add one.
+Use lowercase Gradle project names with hyphens between words and lowercase Kotlin package segments.
 Search `src/`, excluding `bin/` and `build/`: ignored IDE output can contain deleted sources.
 
 ## Enforced boundaries
