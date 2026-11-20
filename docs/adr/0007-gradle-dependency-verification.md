@@ -419,11 +419,34 @@ prevent evidence artifacts from uploading, so completed job logs remain authorit
 
 ## Cost accepted
 
-- The regen workflow runs a full CI-sized task graph on each Gradle-related Dependabot PR head
-  (monthly, grouped) — roughly doubling CI cost for those PRs. Actions-only bumps are path-filtered
-  out. The remaining cost is the price of the reference ledger until a smaller resolution graph is
-  proven equivalent; resolution coverage must not be assumed.
-- A ~1000+ line generated XML file lives in the repo and churns with every bump. Reviewers should
-  treat its diffs as machine output: sanity-check *which* coordinates changed, not the hashes.
-- Verification trusts the ledger's first write (trust-on-first-resolution). It defends against
-  the bytes changing *after* adoption, not against a compromise that predates the ledger.
+- Gradle Dependabot updates require separate metadata resolution across four platform lanes and
+  strict CI on the prepared head. Actions-only bumps bypass Gradle preparation.
+- The generated XML grows as dependencies change. Review which coordinates entered the ledger
+  and investigate any change to previously accepted checksums.
+- Verification trusts the first recorded bytes. It rejects a subsequent change to those bytes
+  even when the dependency coordinates stay the same.
+
+### November 2026 review of failed PR jobs
+
+The 100 `ci.yml` runs listed on November 20 covered November 1 through 20 UTC. Of 26 failed PR
+runs, 22 were on Dependabot branches. Each run can contain multiple failed jobs, and several runs
+can represent the same dependency update. [First run in the sample](https://github.com/simtop/BillionBeers/actions/runs/41274015123) ·
+[Last run in the sample](https://github.com/simtop/BillionBeers/actions/runs/44737685350)
+
+- Six failed PR runs hit Gradle verification before Spotless could run. They came from repeated
+  attempts on two Dependabot branches, for the Metro 1.5.1 and KSP 2.3.13 plugin marker POMs.
+  [Metro failure](https://github.com/simtop/BillionBeers/actions/runs/42495081165/job/128775600048) ·
+  [KSP failure](https://github.com/simtop/BillionBeers/actions/runs/42495080058/job/128775596521)
+- Thirteen failed runs had a failed **Dependency API Compatibility** job. One failed with HTTP 504
+  during JDK setup. The other twelve ran the earlier Japicmp gate that rejected binary API changes
+  across the compared artifacts. Those jobs did not check whether a compiled consumer referenced
+  the changed symbol. [Setup failure](https://github.com/simtop/BillionBeers/actions/runs/42465091363/job/128683172084) ·
+  [Binary API report](https://github.com/simtop/BillionBeers/actions/runs/41294079645/job/124811480692)
+
+[PR 514](https://github.com/simtop/BillionBeers/pull/514) changed the merge decision to use
+[consumer linkage](../dependency-linkage.md). [PR 533](https://github.com/simtop/BillionBeers/pull/533)
+added download retries and fixed how the writer recognized the published head.
+[PR 534](https://github.com/simtop/BillionBeers/pull/534) fixed writer dispatch tracking and
+prepared-head reuse. All six verification failures predate PR 534. Evaluate the next Gradle
+update batch against the current workflow before using the historical failure rate to justify a
+change in verification coverage.
