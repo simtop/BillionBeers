@@ -296,7 +296,8 @@ class SelectMasterReuseTest(unittest.TestCase):
         self.assertRaises(ValueError, self.select)
         self.setUp()
         self.api.run["run_attempt"] = 2
-        self.assertRaises(ValueError, self.select)
+        with self.assertRaisesRegex(ValueError, "requires a first-attempt PR CI run"):
+            self.select()
 
     def test_newer_exact_head_run_with_malformed_identity_blocks_older_green_run(self):
         newer = dict(self.api.run, id=100, run_number=45, path=".github/workflows/other.yml")

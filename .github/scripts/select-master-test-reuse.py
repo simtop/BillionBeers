@@ -261,8 +261,9 @@ def select(api, repository, current_sha, event, ref):
                 p.get("number") == pr["number"] for p in latest["pull_requests"]
             ))):
         raise ReuseRejected("newest PR CI run has an unexpected workflow, event, repository, or PR identity")
-    if (latest.get("run_attempt") != 1 or latest.get("status") != "completed"
-            or latest.get("conclusion") != "success"):
+    if latest.get("run_attempt") != 1:
+        raise ReuseRejected("post-merge reuse requires a first-attempt PR CI run")
+    if latest.get("status") != "completed" or latest.get("conclusion") != "success":
         raise ReuseRejected("newest PR CI run for this head is not successful")
     validate_jobs(api, latest)
     proof = load_proof(api, latest, pr, repository)
