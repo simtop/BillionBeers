@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+from time import sleep
 from urllib.parse import urlencode
 
 
@@ -69,6 +70,16 @@ class Updater:
         return any(run.get("status") != "completed"
                    for page in pages for run in page["workflow_runs"])
 
+    def has_master_ci(self, sha: str) -> bool:
+        query = urlencode({"head_sha": sha, "per_page": 100})
+        pages = api(
+            f"repos/{self.repo}/actions/workflows/ci.yml/runs?{query}", paginate=True
+        )
+        return any(run.get("head_sha") == sha
+                   and run.get("head_branch") == "master"
+                   and run.get("event") in {"push", "workflow_dispatch"}
+                   for page in pages for run in page.get("workflow_runs", []))
+
     def ensure_master_ci(self) -> None:
         if self.base != "master":
             print(f"Skipping master CI fallback for non-master base {self.base}.", flush=True)
@@ -83,14 +94,12 @@ class Updater:
         # GITHUB_TOKEN pushes do not start workflows. Check the exact checked-out master SHA so
         # the updater can restore the post-merge CI run that those pushes may have suppressed.
         master_sha = self.git("rev-parse", "HEAD").stdout.strip()
-        query = urlencode({"head_sha": master_sha, "per_page": 100})
-        pages = api(
-            f"repos/{self.repo}/actions/workflows/ci.yml/runs?{query}", paginate=True
-        )
-        if any(run.get("head_sha") == master_sha
-               and run.get("head_branch") == "master"
-               and run.get("event") in {"push", "workflow_dispatch"}
-               for page in pages for run in page.get("workflow_runs", [])):
+        has_ci = self.has_master_ci(master_sha)
+        if not has_ci:
+            # PR completion can race the visibility of the merge's normal push run in Actions.
+            sleep(20)
+            has_ci = self.has_master_ci(master_sha)
+        if has_ci:
             print(f"CI already exists for master {master_sha}.", flush=True)
             return
 
