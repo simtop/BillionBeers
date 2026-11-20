@@ -16,7 +16,7 @@ convention plugins meant a second module *could not* host instrumented tests at 
   that grew an `androidTest` source set failed with `Unresolved reference 'Paparazzi'`.
 - `PROJECT_TEST_RUNNER` named `com.simtop.billionbeers.di.MockTestRunner`, a class in
   `app/src/androidTest`. Every other module produced a test APK naming a runner it did not contain
-  and died on device with `ClassNotFoundException`. `:beer_database` had privately worked around
+  and died on device with `ClassNotFoundException`. `:beer-database` had privately worked around
   this; nobody had fixed the default.
 
 Both are fixed (#137). The question this ADR settles is what to do with the possibility.
@@ -55,7 +55,7 @@ The split, concretely:
 | Cross-feature navigation, back stack | `:app` | The nav host is there, and invariant 2 forbids feature↔feature deps |
 | Dynamic-feature install gate | `:app` | Needs the bundle and the fake `SplitInstallManager` |
 | Single-screen behaviour needing real layout, IME, or focus | the feature module | Cheap to build, and the module owns the screen |
-| Room migrations | `:beer_database` | Already there |
+| Room migrations | `:beer-database` | Already there |
 | Anything a JVM test can prove | `src/test/` | Faster, no emulator |
 | Anything about a static rendering | Paparazzi | Faster, no emulator |
 
@@ -96,7 +96,7 @@ from app assembly, and shardability.
 | Module | Device task | Tests | Test execution |
 |---|---|---|---|
 | `:app` | 62.3s | 14 | — |
-| `:beer_database` | 45.4s | 6 | — |
+| `:beer-database` | 45.4s | 6 | — |
 | `:feature:beerslist` | 53.1s | 2 | 3.7s |
 
 Of beerslist's 53.1s, only 3.7s is test execution; the remaining ~49s is fixed per-module overhead —
@@ -118,7 +118,7 @@ rejected.** PR #200 tested this split:
 
 - `integration`: `:app`, `:feature:beerbrowse`, `:feature:beerdetail`, and the standalone
   `:app-release-smoke` release task;
-- `standalone`: `:beer_database`, `:feature:beerslist`, and `:feature:beersearch`.
+- `standalone`: `:beer-database`, `:feature:beerslist`, and `:feature:beersearch`.
 
 Stable aggregate semantics and report coverage worked, but performance did not:
 

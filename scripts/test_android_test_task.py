@@ -89,7 +89,7 @@ class AndroidTestTaskTest(unittest.TestCase):
             "ciGroupDebugAndroidTest ciGroupAndroidDeviceTest",
             makefile,
         )
-        self.assertIn(":beer_database:assembleAndroidDeviceTest", makefile)
+        self.assertIn(":beer-database:assembleAndroidDeviceTest", makefile)
 
 
 if __name__ == "__main__":

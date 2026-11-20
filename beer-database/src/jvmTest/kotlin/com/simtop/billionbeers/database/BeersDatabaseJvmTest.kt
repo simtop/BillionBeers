@@ -1,0 +1,464 @@
+package com.simtop.billionbeers.database
+
+import androidx.room.Room
+import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import com.simtop.billionbeers.database.localsources.BeersLocalSourceImpl
+import com.simtop.billionbeers.database.models.BeerDbModel
+import com.simtop.billionbeers.database.models.SavedFilterPresetDbModel
+import com.simtop.billionbeers.storage.api.StoredBeer
+import com.simtop.core.core.EpochTimeProvider
+import java.io.File
+import kotlin.io.path.createTempDirectory
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
+import org.junit.Before
+import org.junit.Test
+
+private fun SQLiteConnection.execute(sql: String) {
+  prepare(sql).use { it.step() }
+}
+
+class BeersDatabaseJvmTest {
+
+  private lateinit var db: BeersDatabase
+  private val databaseDirectory = createTempDirectory("beer-database-test").toFile()
+
+  @Before
+  fun setUp() {
+    db = newInMemoryDatabase()
+  }
+
+  @After
+  fun tearDown() {
+    db.close()
+    databaseDirectory.deleteRecursively()
+  }
+
+  @Test
+  fun insertPageCommitsRowsAndBookmarkTogether() = runBlocking {
+    db.beersDao().insertPage(listOf(beer("1")), "catalog:en", 2, 206, 10L)
+
+    assertEquals(1, db.beersDao().getCount())
+    assertEquals(2, db.beersDao().getPagingState("catalog:en")?.nextKey)
+    assertEquals(206, db.beersDao().getPagingState("catalog:en")?.totalCount)
+  }
+
+  @Test
+  fun insertPagePersistsCompletionAndRefreshCanReopenAfterGrowth() = runBlocking {
+    val dao = db.beersDao()
+    dao.insertPage(listOf(beer("1")), "catalog:en", 2, 50, 10L)
+    dao.insertPage(listOf(beer("50")), "catalog:en", null, 50, 20L)
+
+    assertTrue(dao.getPagingState("catalog:en")?.isComplete == true)
+    assertEquals(2, dao.getPagingState("catalog:en")?.nextKey)
+
+    dao.insertPage(listOf(beer("1")), "catalog:en", 2, 60, 30L)
+
+    assertFalse(dao.getPagingState("catalog:en")?.isComplete == true)
+    assertEquals(2, dao.getPagingState("catalog:en")?.nextKey)
+  }
+
+  @Test
+  fun localSourceUsesInjectedClockForCatalogRefreshTimestamp() = runBlocking {
+    val storage = BeersLocalSourceImpl(db, EpochTimeProvider { 123L })
+
+    storage.insertPage(
+      beers =
+        listOf(
+          StoredBeer(
+            id = "1",
+            name = "Beer",
+            tagline = "",
+            description = "",
+            imageUrl = "",
+            abv = 0.0,
+            ibu = 0.0,
+            foodPairing = emptyList(),
+          )
+        ),
+      surface = "catalog:en",
+      nextKey = 2,
+      totalCount = 1,
+      pageKey = 1,
+    )
+
+    assertEquals(123L, db.beersDao().getPagingState("catalog:en")?.refreshedAt)
+    assertEquals(1, db.beersDao().getBeerById("1")?.catalogPage)
+    assertEquals(0, db.beersDao().getBeerById("1")?.catalogIndex)
+  }
+
+  @Test
+  fun catalogOrderSurvivesOutOfOrderWritesRefreshAndReopen() = runBlocking {
+    val file = File(databaseDirectory, "catalog-order.db").absolutePath
+    db.close()
+    db = newFileDatabase(file)
+    val dao = db.beersDao()
+    val zulu = beer("z", name = "Zulu", availability = false)
+    val alpha = beer("a", name = "Alpha")
+    val bravo = beer("b", name = "Bravo")
+
+    dao.insertAll(listOf(beer("legacy-z", name = "Zebra"), beer("legacy-a", name = "Amber")))
+    dao.insertPage(listOf(bravo), "catalog:en", 3, 5, 10L, pageKey = 2)
+    dao.insertPage(listOf(zulu, alpha, zulu), "catalog:en", 2, 5, 20L, pageKey = 1)
+    assertEquals(
+      listOf("z", "a", "b", "legacy-a", "legacy-z"),
+      dao.getCatalogBeers().first().map { it.id },
+    )
+    dao.updateFavorite("z", true)
+    dao.insertPage(
+      listOf(alpha, zulu.copy(availability = true)),
+      "catalog:en",
+      2,
+      5,
+      30L,
+      pageKey = 1,
+    )
+    dao.insertPage(listOf(bravo, zulu), "catalog:en", null, 5, 40L, pageKey = 2)
+    dao.cacheBeersForDetail(listOf(zulu.copy(name = "Detail Zulu")))
+    db.close()
+
+    db = newFileDatabase(file)
+    val reopened = db.beersDao()
+    assertEquals(
+      listOf("a", "z", "b", "legacy-a", "legacy-z"),
+      reopened.getCatalogBeers().first().map { it.id },
+    )
+    val favorite = reopened.getFavoriteBeers().first().single()
+    assertEquals("z", favorite.id)
+    assertFalse(favorite.availability)
+    assertEquals("Detail Zulu", favorite.name)
+    assertTrue(reopened.getPagingState("catalog:en")?.isComplete == true)
+  }
+
+  @Test
+  fun getBeerByIdReadsThePrimaryKeyRowOrNull() = runBlocking {
+    val dao = db.beersDao()
+    val target = beer("42", name = "Target")
+    dao.insertAll(listOf(beer("1"), target, beer("99")))
+
+    assertEquals(target, dao.getBeerById("42"))
+    assertEquals(null, dao.getBeerById("missing"))
+  }
+
+  @Test
+  fun insertPageMergesBookmarkMonotonicallyAndKeepsExistingTotal() = runBlocking {
+    val dao = db.beersDao()
+    dao.insertPage(listOf(beer("1")), "catalog:en", 5, 206, 10L)
+    dao.insertPage(listOf(beer("1")), "catalog:en", 2, null, 20L)
+
+    assertEquals(5, dao.getPagingState("catalog:en")?.nextKey)
+    assertEquals(206, dao.getPagingState("catalog:en")?.totalCount)
+    assertEquals(20L, dao.getPagingState("catalog:en")?.refreshedAt)
+  }
+
+  @Test
+  fun cacheBeersForDetailPreservesFlagsCatalogMembershipAndBookmark() = runBlocking {
+    val dao = db.beersDao()
+    val catalog = beer("catalog", availability = false, isFavorite = true)
+    dao.insertPage(listOf(catalog), "catalog:en", 4, 100, 10L)
+    val bookmark = dao.getPagingState("catalog:en")
+
+    dao.cacheBeersForDetail(
+      listOf(
+        catalog.copy(name = "Updated", availability = true, isFavorite = false),
+        beer("query"),
+      )
+    )
+
+    assertEquals(2, dao.getCount())
+    assertEquals(listOf("catalog"), dao.getCatalogBeers().first().map(BeerDbModel::id))
+    assertEquals(
+      beer("catalog", name = "Updated", availability = false, isFavorite = true),
+      dao.getBeerById("catalog"),
+    )
+    assertEquals(false, dao.getBeerById("query")?.isInCatalog)
+    assertEquals(bookmark, dao.getPagingState("catalog:en"))
+  }
+
+  @Test
+  fun insertPageInvalidatesOtherLanguageCatalogBookmarks() = runBlocking {
+    val dao = db.beersDao()
+    dao.insertPage(listOf(beer("1")), "catalog:en", 2, 206, 10L)
+    dao.insertPage(listOf(beer("1")), "catalog:fr", 3, 206, 20L)
+
+    assertEquals(null, dao.getPagingState("catalog:en"))
+    assertEquals(3, dao.getPagingState("catalog:fr")?.nextKey)
+    assertEquals(1, dao.countPagingStates())
+  }
+
+  @Test
+  fun localFlagsSurviveCatalogRefreshAndFlowsExposeCommittedFavorites() = runBlocking {
+    val dao = db.beersDao()
+    dao.insertAll(listOf(beer("1", availability = false, isFavorite = true)))
+    dao.insertAll(listOf(beer("1", name = "Refreshed", availability = true, isFavorite = false)))
+
+    val stored = dao.getAllBeers().first().single()
+    assertEquals("Refreshed", stored.name)
+    assertFalse(stored.availability)
+    assertTrue(stored.isFavorite)
+    assertEquals(listOf("Refreshed"), dao.getFavoriteBeers().first().map(BeerDbModel::name))
+  }
+
+  @Test
+  fun uncachedFavoriteStaysAvailableButDoesNotEnterCatalogUntilFetched() = runBlocking {
+    val dao = db.beersDao()
+    val favorite = beer("42", name = "Uncached", isFavorite = true, availability = false)
+
+    dao.upsertFavorite(favorite)
+
+    assertEquals(1, dao.getCount())
+    assertEquals(0, dao.getCatalogCount())
+    assertEquals(emptyList<BeerDbModel>(), dao.getCatalogBeers().first())
+    assertEquals(listOf(favorite.copy(isInCatalog = false)), dao.getFavoriteBeers().first())
+
+    dao.insertPage(listOf(favorite.copy(isFavorite = false)), "catalog:en", 2, 1, 10L)
+
+    assertEquals(1, dao.getCatalogCount())
+    assertTrue(dao.getCatalogBeers().first().single().isFavorite)
+  }
+
+  @Test
+  fun filterPresetsAreBoundedOrderedRenamableAndDeletable() = runBlocking {
+    val dao = db.beersDao()
+    repeat(10) { index ->
+      dao.saveFilterPreset(
+        SavedFilterPresetDbModel(
+          id = "preset-$index",
+          name = "Preset $index",
+          search = "beer $index",
+          styleId = null,
+          breweryId = null,
+          updatedAt = index.toLong(),
+        )
+      )
+    }
+
+    try {
+      dao.saveFilterPreset(SavedFilterPresetDbModel("overflow", "Overflow", null, null, null, 11L))
+      fail("the eleventh preset should be rejected")
+    } catch (_: IllegalArgumentException) {
+      // Expected bounded-storage failure.
+    }
+    dao.renameFilterPreset("preset-0", "Renamed", 12L)
+    dao.deleteFilterPreset("preset-1")
+
+    assertEquals("Renamed", dao.getFilterPresets().first().first().name)
+    assertEquals(9, dao.getFilterPresetCount())
+  }
+
+  @Test
+  fun insertAllWithNoRowsIsANoOp() = runBlocking {
+    val dao = db.beersDao()
+
+    dao.insertAll(emptyList())
+
+    assertEquals(0, dao.getCount())
+    assertEquals(emptyList<BeerDbModel>(), dao.getAllBeers().first())
+  }
+
+  @Test
+  fun insertAllUpdatesAConflictAtItsReturnedIndex() = runBlocking {
+    val dao = db.beersDao()
+    val existing = beer("1", availability = false, isFavorite = true)
+    val newBeer =
+      beer("2", name = "New Catalog")
+        .copy(
+          tagline = "New tagline",
+          description = "New description",
+          imageUrl = "new-image",
+          abv = 6.2,
+          ibu = 41.0,
+          foodPairing = "[\"new food\"]",
+          styleName = "New style",
+          breweryName = "New brewery",
+          srm = 8,
+          releasedYear = 2024,
+          minServingTemperature = 4,
+          maxServingTemperature = 8,
+          fermentationMethod = "lagering",
+          ingredients = "[\"malt\"]",
+          recommendedGlasses = "[\"pint\"]",
+        )
+    val refreshedExisting =
+      existing.copy(
+        name = "Refreshed Catalog",
+        tagline = "Refreshed tagline",
+        description = "Refreshed description",
+        imageUrl = "refreshed-image",
+        abv = 7.1,
+        ibu = 52.0,
+        foodPairing = "[\"refreshed food\"]",
+        availability = true,
+        isFavorite = false,
+        styleName = "Refreshed style",
+        breweryName = "Refreshed brewery",
+        srm = 12,
+        releasedYear = 2025,
+        minServingTemperature = 5,
+        maxServingTemperature = 9,
+        fermentationMethod = "ale",
+        ingredients = "[\"hops\"]",
+        recommendedGlasses = "[\"snifter\"]",
+      )
+
+    dao.insertAll(listOf(existing))
+    dao.insertAll(listOf(newBeer, refreshedExisting))
+
+    assertEquals(
+      listOf(refreshedExisting.copy(availability = false, isFavorite = true), newBeer),
+      dao.getAllBeers().first().sortedBy(BeerDbModel::id),
+    )
+  }
+
+  @Test
+  fun upsertAvailabilityInsertsACompleteRowWhenUncached() = runBlocking {
+    val dao = db.beersDao()
+    val uncached =
+      beer("42", name = "Uncached", availability = false, isFavorite = true)
+        .copy(
+          tagline = "Uncached tagline",
+          description = "Uncached description",
+          imageUrl = "uncached-image",
+          abv = 5.7,
+          ibu = 33.0,
+          foodPairing = "[\"uncached food\"]",
+          styleName = "Uncached style",
+          breweryName = "Uncached brewery",
+          srm = 6,
+          releasedYear = 2023,
+          minServingTemperature = 3,
+          maxServingTemperature = 7,
+          fermentationMethod = "fermentation",
+          ingredients = "[\"grain\"]",
+          recommendedGlasses = "[\"tulip\"]",
+        )
+
+    dao.upsertAvailability(uncached)
+
+    assertEquals(uncached.copy(isInCatalog = false), dao.getAllBeers().first().single())
+  }
+
+  @Test
+  fun upsertAvailabilityUpdatesACachedRowWithoutAddingRows() = runBlocking {
+    val dao = db.beersDao()
+    val cached = beer("cached", availability = true, isFavorite = true)
+    val updated = cached.copy(availability = false)
+    dao.insertAll(listOf(cached))
+
+    dao.upsertAvailability(updated)
+
+    assertEquals(1, dao.getCount())
+    assertEquals(updated, dao.getAllBeers().first().single())
+  }
+
+  @Test
+  fun insertPageRollsBackRowsWhenBookmarkWriteFails() = runBlocking {
+    db.useConnection(false) { connection ->
+      connection.usePrepared(
+        "CREATE TRIGGER fail_paging_state_insert " +
+          "BEFORE INSERT ON paging_state BEGIN SELECT RAISE(ABORT, 'bookmark failure'); END"
+      ) { statement ->
+        statement.step()
+      }
+    }
+
+    try {
+      db.beersDao().insertPage(listOf(beer("rollback")), "catalog:en", 2, 206, 10L)
+      fail("insertPage should roll back when the bookmark write fails")
+    } catch (_: RuntimeException) {
+      assertEquals(0, db.beersDao().getCount())
+      assertEquals(null, db.beersDao().getPagingState("catalog:en"))
+    }
+  }
+
+  @Test
+  fun historicalVersionOneFileMigratesToCurrentVersion() = runBlocking {
+    val file = File(databaseDirectory, "version-one.db").absolutePath
+    createVersionOneDatabase(file)
+    db.close()
+    db = newFileDatabase(file)
+
+    val migrated = db.beersDao().getAllBeers().first().single()
+    assertEquals("1", migrated.id)
+    assertFalse(migrated.availability)
+    assertEquals("", migrated.styleName)
+    assertEquals("[]", migrated.ingredients)
+    assertFalse(migrated.isFavorite)
+    assertTrue(migrated.isInCatalog)
+    assertEquals(null, migrated.catalogPage)
+    assertEquals(null, migrated.catalogIndex)
+  }
+
+  @Test
+  fun localFlagsPersistWhenAFileDatabaseIsReopened() = runBlocking {
+    val file = File(databaseDirectory, "beers.db").absolutePath
+    db.close()
+    db = newFileDatabase(file)
+    db.beersDao().upsertFavorite(beer("1", isFavorite = true))
+    db.close()
+
+    db = newFileDatabase(file)
+    assertEquals(true, db.beersDao().getAllBeers().first().single().isFavorite)
+  }
+
+  private fun createVersionOneDatabase(file: String) {
+    BundledSQLiteDriver().open(file).use { connection ->
+      connection.execute("PRAGMA user_version = 1")
+      connection.execute(
+        "CREATE TABLE IF NOT EXISTS `beers` (" +
+          "`id` TEXT NOT NULL, `name` TEXT NOT NULL, `tagline` TEXT NOT NULL, " +
+          "`description` TEXT NOT NULL, `image_url` TEXT NOT NULL, `abv` REAL NOT NULL, " +
+          "`ibu` REAL NOT NULL, `food_pairing` TEXT NOT NULL, `availability` INTEGER NOT NULL, " +
+          "PRIMARY KEY(`id`))"
+      )
+      connection.execute(
+        "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)"
+      )
+      connection.execute(
+        "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, " +
+          "'6e26c8319f69476d204f3ff558ed2338')"
+      )
+      connection.execute(
+        "INSERT INTO beers " +
+          "(id, name, tagline, description, image_url, abv, ibu, food_pairing, availability) " +
+          "VALUES ('1', 'Legacy', '', '', '', 0.0, 0.0, '[]', 0)"
+      )
+    }
+  }
+
+  private fun newInMemoryDatabase(): BeersDatabase =
+    Room.inMemoryDatabaseBuilder { BeersDatabaseConstructor.initialize() }
+      .setDriver(BundledSQLiteDriver())
+      .build()
+
+  private fun newFileDatabase(file: String): BeersDatabase =
+    Room.databaseBuilder(file) { BeersDatabaseConstructor.initialize() }
+      .setDriver(BundledSQLiteDriver())
+      .addMigrations(*ALL_MIGRATIONS.toTypedArray())
+      .build()
+
+  private fun beer(
+    id: String,
+    name: String = "Beer $id",
+    availability: Boolean = true,
+    isFavorite: Boolean = false,
+  ) =
+    BeerDbModel(
+      id = id,
+      name = name,
+      tagline = "",
+      description = "",
+      imageUrl = "",
+      abv = 0.0,
+      ibu = 0.0,
+      foodPairing = "[]",
+      availability = availability,
+      isFavorite = isFavorite,
+    )
+}

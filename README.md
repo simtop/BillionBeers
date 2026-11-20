@@ -160,18 +160,18 @@ Shared features use `:shared:designsystem` directly.
 ### Domain, network, and storage
 
 Hosts assemble the data implementation with network and platform storage. Shared ViewModels depend
-on domain contracts. Both Room and IndexedDB implement the storage contract used by `:beer_data`.
+on domain contracts. Both Room and IndexedDB implement the storage contract used by `:beer-data`.
 
 ```mermaid
 flowchart TB
     Screens["Shared feature modules<br/>:shared:beerslist, :shared:beersearch<br/>:shared:favorites, :shared:savedfilters<br/>:shared:beerdetail, :shared:beerbrowse"]
     Domain[":beerdomain:api"]
     Common[":core-common"]
-    Data[":beer_data"]
+    Data[":beer-data"]
     Network[":beer-network<br/>Ktor implementation"]
     NetworkAPI[":beer-network:api"]
     Storage[":beer-storage:api"]
-    Room[":beer_database<br/>Room on Android, JVM, iOS"]
+    Room[":beer-database<br/>Room on Android, JVM, iOS"]
     Browser[":beer-storage:browser<br/>IndexedDB on Web"]
 
     Screens --> Domain

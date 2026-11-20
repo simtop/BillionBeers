@@ -7,19 +7,19 @@ import org.junit.jupiter.api.Test
 /**
  * A dev-app (app-dev-<feature>) exists to build one feature in seconds instead of minutes: it binds
  * the feature under development to :beerdomain:fakes instead of the real data layer, so the heavy
- * :beer_data / :beer_database / :beer-storage:api / :beer-network graph (Room, Retrofit, OkHttp)
+ * :beer-data / :beer-database / :beer-storage:api / :beer-network graph (Room, Retrofit, OkHttp)
  * never enters its compilation. The moment a dev-app declares a dependency on a data-layer module,
  * that guarantee is gone and the dev-app is just a slower copy of :app.
  *
  * The invariant lives in build.gradle.kts, not in Kotlin source, and Konsist's project scope does
  * not surface build scripts (they are excluded, and .kts is not scanned at all), so this rule reads
  * the dev-app build files directly. It matches the full project("...") call form on purpose: a bare
- * ":beer_data" would also match the explanatory comment in the build file and fail correct code.
+ * ":beer-data" would also match the explanatory comment in the build file and fail correct code.
  */
 class DevAppDependencyBoundaryTest {
 
   private val forbiddenDataLayerModules =
-    listOf(":beer_data", ":beer_database", ":beer-storage:api", ":beer-network")
+    listOf(":beer-data", ":beer-database", ":beer-storage:api", ":beer-network")
 
   // A positive control on the list above: if one of those strings drifts (typo, or the module gets
   // renamed/moved), this fails loudly instead of the rule below silently matching nothing.

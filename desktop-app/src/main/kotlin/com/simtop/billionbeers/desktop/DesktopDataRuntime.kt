@@ -2,13 +2,13 @@ package com.simtop.billionbeers.desktop
 
 import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
-import com.simtop.beer_database.database.ALL_MIGRATIONS
-import com.simtop.beer_database.database.BeersDatabase
-import com.simtop.beer_database.database.BeersDatabaseConstructor
 import com.simtop.beerdomain.domain.repositories.BeerCatalogMetadataRepository
 import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
 import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.beerdomain.domain.repositories.SavedFilterPresetsRepository
+import com.simtop.billionbeers.database.ALL_MIGRATIONS
+import com.simtop.billionbeers.database.BeersDatabase
+import com.simtop.billionbeers.database.BeersDatabaseConstructor
 import com.simtop.billionbeers.network.configureBeersApi
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.DefaultCoroutineDispatcherProvider

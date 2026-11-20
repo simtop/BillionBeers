@@ -51,6 +51,32 @@ class RoomSchemaCheckTest(unittest.TestCase):
             any("shipped Room schema files are immutable" in item for item in violations)
         )
 
+    def move_schemas_from_legacy_path(self):
+        legacy_dir = self.root / CHECKER.LEGACY_SCHEMA_DIR
+        legacy_dir.parent.mkdir(parents=True)
+        self.schema_dir.rename(legacy_dir)
+        self.git("add", "--all")
+        self.git("commit", "-qm", "put shipped schemas in the old module")
+        self.base = self.git("rev-parse", "HEAD")
+        legacy_dir.rename(self.schema_dir)
+
+    def test_moving_shipped_schema_history_keeps_versions_valid(self):
+        self.move_schemas_from_legacy_path()
+        self.git("add", "--all")
+        self.git("commit", "-qm", "move schemas unchanged")
+
+        self.assertEqual(CHECKER.check_history(self.root, self.base), [])
+
+    def test_moving_and_rewriting_shipped_schema_fails(self):
+        self.move_schemas_from_legacy_path()
+        (self.schema_dir / "2.json").write_text('{"version": 2, "changed": true}\n')
+        self.git("add", "--all")
+        self.git("commit", "-qm", "rewrite moved schema")
+
+        self.assertEqual(CHECKER.check_history(self.root, self.base), [
+            f"{CHECKER.SCHEMA_DIR}/2.json: shipped Room schema files are immutable",
+        ])
+
     def test_adding_new_version_is_allowed_and_existing_versions_are_preserved(self):
         (self.schema_dir / "3.json").write_text('{"version": 3}\n')
         self.git("add", ".")

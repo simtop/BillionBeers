@@ -121,7 +121,7 @@ tasks.register("ideSyncArtifacts") {
 // is fragile twice over: a rename silently drops the exclusion - the module then re-enters the
 // aggregate and nobody notices - and `contains` would also swallow any future module whose name
 // happens to embed one of these strings. Exact paths plus the check below fail loudly instead.
-val coverageExcludedProjects = setOf(":presentation_utils", ":beer_database")
+val coverageExcludedProjects = setOf(":presentation_utils", ":beer-database")
 
 tasks.register<JacocoReport>("jacocoRootReport") {
     // Android debug unit tests + JVM-module `test` + explicitly measured KMP `jvmTest`. The Android

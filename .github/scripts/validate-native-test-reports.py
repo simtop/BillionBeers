@@ -9,7 +9,7 @@ from pathlib import Path
 import sys
 import xml.etree.ElementTree as ET
 
-REQUIRED_MODULES = ("core-common", "beer-network", "beer_database", "ios-shared")
+REQUIRED_MODULES = ("core-common", "beer-network", "beer-database", "ios-shared")
 REPORT_GLOB = "build/test-results/iosSimulatorArm64Test/*.xml"
 
 

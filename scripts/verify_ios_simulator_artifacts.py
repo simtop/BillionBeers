@@ -34,7 +34,7 @@ MH_EXECUTE = 2
 MH_DYLIB = 6
 LC_BUILD_VERSION = 0x32
 PLATFORM_IOSSIMULATOR = 7
-REQUIRED_MODULES = ("core-common", "beer-network", "beer_database", "ios-shared")
+REQUIRED_MODULES = ("core-common", "beer-network", "beer-database", "ios-shared")
 REPORT_RELATIVE_DIR = "build/test-results/iosSimulatorArm64Test"
 PROVENANCE_KEYS = (
     "GITHUB_REPOSITORY",
