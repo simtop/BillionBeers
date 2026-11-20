@@ -1,0 +1,174 @@
+package com.simtop.billionbeers.network
+
+import com.simtop.core.core.EnvironmentConfig
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.MockRequestHandleScope
+import io.ktor.client.engine.mock.respond
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.plugin
+import io.ktor.client.request.HttpRequestData
+import io.ktor.client.request.HttpResponseData
+import io.ktor.client.request.get
+import io.ktor.client.request.url
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.headersOf
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.test.runTest
+
+class KtorBeersServiceTest {
+
+  @Test
+  fun `request preserves documented defaults and percent encodes filters`() = runTest {
+    var requestPath = ""
+    val client = mockClient { request ->
+      requestPath = request.url.encodedPath + "?" + request.url.encodedQuery
+      respond(
+        content = "[]",
+        status = HttpStatusCode.OK,
+        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+      )
+    }
+
+    KtorBeersService(client)
+      .getListOfBeers(
+        page = 2,
+        search = "ipa-._~ & stout",
+        typologyId = "style/1",
+        breweryId = "brewery 1",
+      )
+
+    assertEquals(
+      "/beers?_page=2&_limit=25&translations.language.code=en" +
+        "&q=ipa-._~%20%26%20stout&typology.id=style%2F1&brewery.id=brewery%201",
+      requestPath,
+    )
+    client.close()
+  }
+
+  @Test
+  fun `successful response exposes body status and headers`() = runTest {
+    val client = mockClient {
+      respond(
+        content =
+          "[{\"id\":\"1\",\"name\":\"Buzz\",\"abv\":0.0,\"ibu\":0.0," +
+            "\"translations\":[],\"foodPairing\":[]}]",
+        status = HttpStatusCode.OK,
+        headers =
+          headersOf(
+            HttpHeaders.ContentType to listOf("application/json"),
+            "X-Total-Count" to listOf("1"),
+          ),
+      )
+    }
+
+    val response = KtorBeersService(client).getListOfBeers(1)
+
+    assertEquals(200, response.statusCode)
+    assertEquals("1", response.header("x-total-count"))
+    assertEquals("1", response.body?.single()?.id)
+    client.close()
+  }
+
+  @Test
+  fun `non successful response does not deserialize a body`() = runTest {
+    val client = mockClient {
+      respond(
+        content = "not-json",
+        status = HttpStatusCode.ServiceUnavailable,
+        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+      )
+    }
+
+    val response = KtorBeersService(client).getListOfBeers(1)
+
+    assertEquals(503, response.statusCode)
+    assertEquals(null, response.body)
+    client.close()
+  }
+
+  @Test
+  fun `request failures are classified as network failures`() = runTest {
+    val failure = IllegalStateException("offline")
+    val client = mockClient { throw failure }
+
+    val exception =
+      assertFailsWith<BeersServiceNetworkException> {
+        KtorBeersService(client).getListOfBeers(1)
+      }
+
+    assertEquals(IllegalStateException::class, exception.cause!!::class)
+    assertEquals(failure.message, exception.cause?.message)
+    client.close()
+  }
+
+  @Test
+  fun `request cancellation propagates unchanged`() = runTest {
+    val cancellation = CancellationException("cancelled")
+    val client = mockClient { throw cancellation }
+
+    val exception =
+      assertFailsWith<CancellationException> {
+        KtorBeersService(client).getListOfBeers(1)
+      }
+
+    assertEquals(cancellation.message, exception.message)
+    client.close()
+  }
+
+  @Test
+  fun `shared API configuration applies environment URL and timeouts`() = runTest {
+    var requestHost = ""
+    var requestPath = ""
+    val client =
+      mockClient(
+        EnvironmentConfig(
+          apiBaseUrl = "https://test.brewbuddy.dev/v2/",
+          connectTimeout = 3.seconds,
+          readTimeout = 7.seconds,
+          requestTimeout = 19.seconds,
+        )
+      ) { request ->
+        requestHost = request.url.host
+        requestPath = request.url.encodedPath
+        respond(content = "[]")
+      }
+
+    client.get("beers")
+    assertEquals("test.brewbuddy.dev", requestHost)
+    assertEquals("/v2/beers", requestPath)
+    assertNotNull(client.plugin(HttpTimeout))
+    client.close()
+  }
+
+  @Test
+  fun `malformed successful response propagates serialization failure`() = runTest {
+    val client = mockClient {
+      respond(
+        content = "not-json",
+        status = HttpStatusCode.OK,
+        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+      )
+    }
+
+    assertFailsWith<kotlinx.serialization.SerializationException> {
+      KtorBeersService(client).getListOfBeers(1)
+    }
+    client.close()
+  }
+
+  private fun mockClient(
+    environment: EnvironmentConfig = EnvironmentConfig("https://api.brewbuddy.dev/"),
+    handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData,
+  ): HttpClient =
+    HttpClient(MockEngine) {
+      engine { addHandler(handler) }
+      configureBeersApi(environment)
+    }
+}

@@ -1,10 +1,10 @@
 package com.simtop.beer_data.fakes
 
-import com.simtop.beer_network.models.BeersApiResponseItem
-import com.simtop.beer_network.models.BeersPage
-import com.simtop.beer_network.models.BreweryApiResponseItem
-import com.simtop.beer_network.models.TypologyApiResponseItem
-import com.simtop.beer_network.remotesources.BeersRemoteSource
+import com.simtop.billionbeers.network.models.BeersApiResponseItem
+import com.simtop.billionbeers.network.models.BeersPage
+import com.simtop.billionbeers.network.models.BreweryApiResponseItem
+import com.simtop.billionbeers.network.models.TypologyApiResponseItem
+import com.simtop.billionbeers.network.remotesources.BeersRemoteSource
 
 class FakeBeersRemoteSource : BeersRemoteSource {
 

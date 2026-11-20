@@ -292,7 +292,7 @@ tasks.withType<Test>().configureEach {
     //
     // Consequence, and it is the correct one: a project-wide `./gradlew testDebugUnitTest --tests
     // "*Foo*"` now fails these modules when they hold no match. Every module that does not apply
-    // this plugin already did - :app, :beer_data, :beer_network and :navigation all fail that way -
+    // this plugin already did - :app, :beer_data, :beer-network and :navigation all fail that way -
     // so this ends a silent exemption rather than creating a new sharp edge. Scope the filter to a
     // module (`make test MODULE=:feature:beerslist`) as before.
     val hasCommandLineTestFilter = project.gradle.startParameter.taskRequests

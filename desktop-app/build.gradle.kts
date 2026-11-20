@@ -37,7 +37,7 @@ dependencies {
   implementation(catalog.billionBeersLibrary("kotlinx-coroutines-swing"))
   implementation(project(":beer_data"))
   implementation(project(":beer_database"))
-  implementation(project(":beer_network"))
+  implementation(project(":beer-network"))
   implementation(project(":beerdomain:api"))
   implementation(project(":core-common"))
   implementation(project(":shared:favorites"))
@@ -51,7 +51,7 @@ dependencies {
   implementation(libs.sqliteBundled)
 
   testImplementation(libs.okhttp3Mockwebserver)
-  testImplementation(project(":beer_network:fixtures"))
+  testImplementation(project(":beer-network:fixtures"))
   testImplementation(compose.uiTest)
 }
 

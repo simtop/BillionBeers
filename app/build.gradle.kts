@@ -132,7 +132,7 @@ dependencies {
   implementation(this.project(":navigation-contract"))
   implementation(this.project(":beer_data"))
   implementation(this.project(":beer_database"))
-  implementation(this.project(":beer_network"))
+  implementation(this.project(":beer-network"))
   implementation(this.project(":presentation_utils"))
   implementation(libs.ktorClientCore)
   implementation(libs.ktorClientOkhttp)

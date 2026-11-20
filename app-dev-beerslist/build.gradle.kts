@@ -16,7 +16,7 @@ android {
 
 dependencies {
   // Only the module under active development, plus its fakes - no :beer_data, :beer_database,
-  // :beer_network, or :feature:beerdetail, so this assembles in seconds instead of minutes.
+  // :beer-network, or :feature:beerdetail, so this assembles in seconds instead of minutes.
   implementation(this.project(":feature:beerslist"))
   implementation(this.project(":beerdomain:api"))
   implementation(this.project(":beerdomain:fakes"))

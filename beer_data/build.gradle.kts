@@ -23,8 +23,8 @@ dependencies {
   commonMainImplementation(project(":core-common"))
   commonMainImplementation(project(":beerdomain:api"))
   commonMainImplementation(project(":beer-storage:api"))
-  commonMainImplementation(project(":beer_network"))
-  commonMainImplementation(project(":beer_network:api"))
+  commonMainImplementation(project(":beer-network"))
+  commonMainImplementation(project(":beer-network:api"))
   commonMainImplementation(libs.kotlinx.coroutines.core)
   commonMainImplementation(libs.kotlinx.serialization.json)
 

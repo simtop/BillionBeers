@@ -2,13 +2,13 @@ package com.simtop.beer_data.repositories
 
 import com.simtop.beer_data.fakes.FakeBeersLocalSource
 import com.simtop.beer_data.mappers.BeersMapper
-import com.simtop.beer_network.models.BeersApiResponseItem
-import com.simtop.beer_network.models.Language
-import com.simtop.beer_network.models.Translation
-import com.simtop.beer_network.network.BeersService
-import com.simtop.beer_network.network.BeersServiceResponse
-import com.simtop.beer_network.remotesources.BeersRemoteSourceImpl
 import com.simtop.beerdomain.domain.models.CatalogCacheStatus
+import com.simtop.billionbeers.network.BeersService
+import com.simtop.billionbeers.network.BeersServiceResponse
+import com.simtop.billionbeers.network.models.BeersApiResponseItem
+import com.simtop.billionbeers.network.models.Language
+import com.simtop.billionbeers.network.models.Translation
+import com.simtop.billionbeers.network.remotesources.BeersRemoteSourceImpl
 import com.simtop.core.core.LanguageProvider
 import com.simtop.core.core.NoOpLogger
 import kotlin.test.assertEquals

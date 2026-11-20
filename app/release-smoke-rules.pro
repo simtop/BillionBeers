@@ -6,7 +6,7 @@
 -keep class com.google.android.play.core.splitcompat.** { *; }
 -keep class com.simtop.beer_data.di.** { *; }
 -keep class com.simtop.beer_database.di.** { *; }
--keep class com.simtop.beer_network.di.** { *; }
+-keep class com.simtop.billionbeers.network.di.** { *; }
 -keep class com.simtop.billionbeers.di.** { *; }
 -keep class com.simtop.core.di.** { *; }
 -keep class com.simtop.billionbeers.BillionBeersApplication { *; }

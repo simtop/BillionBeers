@@ -18,7 +18,7 @@ class ViewModelBoundaryTest {
     listOf(
       "com.simtop.beer_data",
       "com.simtop.beer_database",
-      "com.simtop.beer_network",
+      "com.simtop.billionbeers.network",
       "retrofit2",
       "io.ktor",
       "androidx.room",
