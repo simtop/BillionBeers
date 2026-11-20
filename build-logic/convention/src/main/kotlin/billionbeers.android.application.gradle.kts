@@ -15,7 +15,10 @@ apply(plugin = "billionbeers.android.common")
 apply(plugin = "billionbeers.jacoco")
 apply(plugin = "billionbeers.spotless")
 apply(plugin = "billionbeers.detekt")
-apply(plugin = "billionbeers.unused-dependencies")
+val unusedDependencyTarget = providers.gradleProperty("checkUnusedDependencies").orNull
+if (unusedDependencyTarget == project.path) {
+  apply(plugin = "billionbeers.unused-dependencies")
+}
 apply(plugin = "billionbeers.dependency-linkage")
 
 val libs = billionBeersCatalog()

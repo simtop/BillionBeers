@@ -12,17 +12,28 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.jar.JarFile
 
+internal fun mavenPackageCacheKey(groupId: String, artifactId: String, version: String): String =
+    "$groupId:$artifactId:$version"
+
+internal fun packageMatchesImport(packageName: String, importPath: String): Boolean =
+    importPath == packageName || importPath.startsWith("$packageName.")
+
+private data class DependencyPackageMapping(
+    val packages: List<String>,
+    val evidence: String,
+)
+
 /**
- * Helper to fetch package information from Maven Central API
+ * Helper to fetch package information from Maven Central JARs.
  */
 class MavenCentralPackageFetcher(private val cacheFile: File) {
-    
+
     private val cache = mutableMapOf<String, List<String>>()
-    
+
     init {
         loadCache()
     }
-    
+
     private fun loadCache() {
         if (cacheFile.exists()) {
             cacheFile.readLines().forEach { line ->
@@ -33,7 +44,7 @@ class MavenCentralPackageFetcher(private val cacheFile: File) {
             }
         }
     }
-    
+
     fun saveCache() {
         cacheFile.parentFile.mkdirs()
         cacheFile.bufferedWriter().use { writer ->
@@ -42,62 +53,62 @@ class MavenCentralPackageFetcher(private val cacheFile: File) {
             }
         }
     }
-    
+
     fun getPackages(groupId: String, artifactId: String, version: String): List<String> {
-        val key = "$groupId:$artifactId"
-        
+        val key = mavenPackageCacheKey(groupId, artifactId, version)
+
         // Check cache first
         cache[key]?.let { return it }
-        
+
         // Try to fetch from Maven Central
         val packages = fetchFromMavenCentral(groupId, artifactId, version)
-        
+
         if (packages.isNotEmpty()) {
             cache[key] = packages
         }
-        
+
         return packages
     }
-    
+
     private fun fetchFromMavenCentral(groupId: String, artifactId: String, version: String): List<String> {
         try {
             // Download the JAR from Maven Central
             val groupPath = groupId.replace('.', '/')
             val jarUrl = "https://repo1.maven.org/maven2/$groupPath/$artifactId/$version/$artifactId-$version.jar"
-            
+
             val tempFile = File.createTempFile("maven-", ".jar")
             tempFile.deleteOnExit()
-            
+
             val connection = URL(jarUrl).openConnection() as HttpURLConnection
             connection.connectTimeout = 5000
             connection.readTimeout = 10000
             connection.instanceFollowRedirects = true
-            
+
             if (connection.responseCode == 200) {
                 connection.inputStream.use { input ->
                     tempFile.outputStream().use { output ->
                         input.copyTo(output)
                     }
                 }
-                
+
                 // Extract packages from the downloaded JAR
                 return extractPackagesFromJar(tempFile)
             }
         } catch (e: Exception) {
             // Silently fail - we'll use fallback heuristics
         }
-        
+
         return emptyList()
     }
-    
+
     private fun extractPackagesFromJar(jarFile: File): List<String> {
         val packages = mutableSetOf<String>()
-        
+
         try {
             JarFile(jarFile).use { jar ->
                 jar.entries().asSequence()
-                    .filter { entry -> 
-                        !entry.isDirectory && 
+                    .filter { entry ->
+                        !entry.isDirectory &&
                         entry.name.endsWith(".class") &&
                         !entry.name.startsWith("META-INF") &&
                         !entry.name.contains("$") &&
@@ -111,7 +122,7 @@ class MavenCentralPackageFetcher(private val cacheFile: File) {
                         val packagePath = entry.name
                             .substringBeforeLast("/")
                             .replace("/", ".")
-                        
+
                         if (packagePath.isNotEmpty()) {
                             packages.add(packagePath)
                         }
@@ -120,14 +131,14 @@ class MavenCentralPackageFetcher(private val cacheFile: File) {
         } catch (e: Exception) {
             // Ignore
         }
-        
+
         return packages.toList()
     }
 }
 
 /**
  * Task that detects unused dependencies by analyzing source code imports
- * Uses Maven Central API to fetch package information dynamically
+ * Uses Maven Central JAR package information, with a group-ID heuristic fallback.
  */
 abstract class DetectUnusedDependenciesTask : DefaultTask() {
 
@@ -159,7 +170,7 @@ abstract class DetectUnusedDependenciesTask : DefaultTask() {
 
         // Map dependencies to their packages
         val dependencyPackageMap = mapDependenciesToPackages(fetcher)
-        
+
         // Save updated cache
         fetcher.saveCache()
         logger.lifecycle("💾 Updated package cache: ${cache.absolutePath}")
@@ -169,8 +180,8 @@ abstract class DetectUnusedDependenciesTask : DefaultTask() {
         val unusedDeps = mutableSetOf<String>()
 
         dependencyPackageMap.forEach { (dep, packages) ->
-            val isUsed = packages.any { pkg ->
-                imports.any { import -> import.startsWith(pkg) }
+            val isUsed = packages.packages.any { pkg ->
+                imports.any { import -> packageMatchesImport(pkg, import) }
             }
 
             if (isUsed) {
@@ -204,8 +215,8 @@ abstract class DetectUnusedDependenciesTask : DefaultTask() {
 
     private fun mapDependenciesToPackages(
         fetcher: MavenCentralPackageFetcher
-    ): Map<String, List<String>> {
-        val map = mutableMapOf<String, List<String>>()
+    ): Map<String, DependencyPackageMapping> {
+        val map = mutableMapOf<String, DependencyPackageMapping>()
         var fetchedFromMaven = 0
         var usedFallback = 0
 
@@ -215,27 +226,31 @@ abstract class DetectUnusedDependenciesTask : DefaultTask() {
                 val groupId = parts[0]
                 val artifactId = parts[1]
                 val version = parts[2]
-                
+
                 logger.debug("Resolving packages for $groupId:$artifactId:$version")
-                
-                // Try Maven Central API
+
+                // Try a Maven Central JAR scan.
                 val packages = fetcher.getPackages(groupId, artifactId, version)
-                
+
                 if (packages.isNotEmpty()) {
-                    map[dep] = packages
+                    map[dep] = DependencyPackageMapping(packages, "Maven Central JAR/cache")
                     fetchedFromMaven++
                 } else {
                     // Fallback to heuristic
                     val fallbackPackages = getPackagesForDependencyFallback(dep)
                     if (fallbackPackages.isNotEmpty()) {
-                        map[dep] = fallbackPackages
+                        map[dep] = DependencyPackageMapping(fallbackPackages, "group-ID heuristic")
                         usedFallback++
                     }
                 }
             }
         }
 
-        logger.lifecycle("📦 Resolved packages: $fetchedFromMaven from cache/Maven, $usedFallback from heuristics")
+        val unmapped = declaredDependencies.get().size - map.size
+        logger.lifecycle(
+            "📦 Package evidence: $fetchedFromMaven from Maven JAR/cache, " +
+                "$usedFallback from group-ID heuristics, $unmapped unmapped"
+        )
 
         return map
     }
@@ -244,12 +259,12 @@ abstract class DetectUnusedDependenciesTask : DefaultTask() {
         val parts = dependency.split(":")
         if (parts.size >= 2) {
             val groupId = parts[0]
-            
+
             // Project-specific heuristic: Map "BillionBeers" group to "com.simtop" package
             if (groupId.startsWith("BillionBeers")) {
                 return listOf(groupId.replace("BillionBeers", "com.simtop"))
             }
-            
+
             // Default heuristic: use group ID as base package
             return listOf(groupId)
         }
@@ -260,7 +275,7 @@ abstract class DetectUnusedDependenciesTask : DefaultTask() {
     private fun reportResults(
         usedDeps: Set<String>,
         unusedDeps: Set<String>,
-        packageMap: Map<String, List<String>>
+        packageMap: Map<String, DependencyPackageMapping>
     ) {
         if (usedDeps.isNotEmpty()) {
             logger.lifecycle("\n✅ Used Dependencies (${usedDeps.size}):")
@@ -272,11 +287,12 @@ abstract class DetectUnusedDependenciesTask : DefaultTask() {
         if (unusedDeps.isNotEmpty()) {
             logger.lifecycle("\n⚠️  Potentially Unused Dependencies (${unusedDeps.size}):")
             unusedDeps.sorted().forEach { dep ->
-                val packages = packageMap[dep] ?: emptyList()
+                val mapping = packageMap[dep]
                 logger.lifecycle("  - $dep")
-                logger.lifecycle("    Package(s): ${packages.joinToString(", ")}")
+                logger.lifecycle("    Package(s): ${mapping?.packages?.joinToString(", ")}")
+                logger.lifecycle("    Evidence: ${mapping?.evidence ?: "unknown"}")
                 logger.lifecycle("    Not found in any imports")
-                logger.lifecycle("    💡 Consider removing from build.gradle.kts\n")
+                logger.lifecycle("    Review manually; this heuristic does not prove the dependency is unused.\n")
             }
         } else {
             logger.lifecycle("\n✅ All declared dependencies are being used!")
@@ -288,7 +304,7 @@ abstract class DetectUnusedDependenciesTask : DefaultTask() {
 }
 
 /**
- * Plugin that registers the dependency detection task with Maven Central integration
+ * Plugin that registers the manual dependency detection task.
  */
 class UnusedDependenciesPlugin : Plugin<Project> {
     override fun apply(project: Project) {
@@ -313,8 +329,8 @@ class UnusedDependenciesPlugin : Plugin<Project> {
                 DetectUnusedDependenciesTask::class.java
             ) {
                 group = "verification"
-                description = "Detects dependencies declared but not used in source code (uses Maven Central API)"
-                
+                description = "Finds potential unused dependencies by comparing imports with package evidence"
+
                 moduleName.set(setOf(project.path))
                 cacheFile.set(cacheFileLocation)
 
