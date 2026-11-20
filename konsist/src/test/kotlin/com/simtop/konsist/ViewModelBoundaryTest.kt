@@ -17,7 +17,7 @@ class ViewModelBoundaryTest {
   private val forbiddenPackagePrefixes =
     listOf(
       "com.simtop.billionbeers.data",
-      "com.simtop.beer_database",
+      "com.simtop.billionbeers.database",
       "com.simtop.billionbeers.network",
       "retrofit2",
       "io.ktor",

@@ -36,7 +36,7 @@ dependencies {
   commonMainImplementation(project(":shared:designsystem"))
   commonMainImplementation(project(":shared:beerbrowse"))
   commonMainImplementation(project(":beer-data"))
-  commonMainImplementation(project(":beer_database"))
+  commonMainImplementation(project(":beer-database"))
   commonMainImplementation(project(":beer-network"))
   commonMainImplementation(project(":beerdomain:api"))
   commonMainImplementation(project(":core-common"))

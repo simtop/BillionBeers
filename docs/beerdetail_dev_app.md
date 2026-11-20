@@ -47,7 +47,7 @@ generating `app-dev-beerdetail` for `:feature:beerdetail`.
    works.
 5. Confirmed the (separate, secondary) build-time cost too: even just resolving
    `:app-dev-beerdetail:compileDebugKotlin`'s task graph pulls in 84 tasks under `:app:`,
-   `:beer-data:`, `:beer-network:`, and `:beer_database:` - because `:feature:beerdetail`'s own
+   `:beer-data:`, `:beer-network:`, and `:beer-database:` - because `:feature:beerdetail`'s own
    `implementation(project(":app"))` transitively drags in everything `:app` depends on. So even
    setting the assemble failure aside, this would never have been the fast, isolated build the
    dev-app pattern is meant to deliver.

@@ -12,7 +12,7 @@ Every ViewModel in this project launched its coroutines on IO:
 viewModelScope.launch(coroutineDispatcher.io) { … }
 ```
 
-while `:beer-data`, `:beer_database` and `:beer-network` contained no dispatcher calls at all — no
+while `:beer-data`, `:beer-database` and `:beer-network` contained no dispatcher calls at all — no
 `withContext`, no `Dispatchers.`. The threading decision was made as far from the work as it is
 possible to get.
 

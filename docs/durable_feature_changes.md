@@ -26,7 +26,7 @@ contract and its implementations.
 | Domain | [SavedFilterPreset](../beerdomain/api/src/commonMain/kotlin/com/simtop/beerdomain/domain/models/SavedFilterPreset.kt), [SavedFilterPresetsRepository](../beerdomain/api/src/commonMain/kotlin/com/simtop/beerdomain/domain/repositories/SavedFilterPresetsRepository.kt), [errors](../beerdomain/api/src/commonMain/kotlin/com/simtop/beerdomain/domain/errors/) | Immutable product values, preset-specific observation and mutation contract, typed failures. Keep storage records and platform types out of these APIs. |
 | Storage contract | [BeersStorage and StoredFilterPreset](../beer-storage/api/src/commonMain/kotlin/com/simtop/billionbeers/storage/api/BeersStorage.kt) | Portable operations and stored fields, including the storage capacity exception. This contract is independent of Room and browser handles. |
 | Repository | [BeersRepositoryImpl](../beer-data/src/commonMain/kotlin/com/simtop/billionbeers/data/repositories/BeersRepositoryImpl.kt) | The adapter provides both domain contracts while preset consumers depend only on `SavedFilterPresetsRepository`. It owns domain/storage conversion, observation and failure mapping. A storage failure becomes a domain result; cancellation is rethrown. |
-| Room adapter | [entity](../beer_database/src/commonMain/kotlin/com/simtop/beer_database/models/SavedFilterPresetDbModel.kt), [DAO](../beer_database/src/commonMain/kotlin/com/simtop/beer_database/database/BeersDao.kt), [local source](../beer_database/src/commonMain/kotlin/com/simtop/beer_database/localsources/BeersLocalSource.kt) | SQL, capacity transaction, ordering, validation and record conversion on Android/JVM/iOS. |
+| Room adapter | [entity](../beer-database/src/commonMain/kotlin/com/simtop/billionbeers/database/models/SavedFilterPresetDbModel.kt), [DAO](../beer-database/src/commonMain/kotlin/com/simtop/billionbeers/database/BeersDao.kt), [local source](../beer-database/src/commonMain/kotlin/com/simtop/billionbeers/database/localsources/BeersLocalSource.kt) | SQL, capacity transaction, ordering, validation and record conversion on Android/JVM/iOS. |
 | Browser adapter | [IndexedDbBeersStorage](../beer-storage/browser/src/wasmJsMain/kotlin/com/simtop/billionbeers/storage/browser/IndexedDbBeersStorage.kt) | `PresetRecord`, JSON conversion, object-store operations, transaction completion and peer invalidation. Update both Kotlin records and JavaScript payload handling when stored fields change. |
 | Fakes | [FakeBeersRepository](../beerdomain/fakes/src/commonMain/kotlin/com/simtop/beerdomain/fakes/FakeBeersRepository.kt), [FakeBeersLocalSource](../beer-data/src/jvmTest/kotlin/com/simtop/billionbeers/data/fakes/FakeBeersLocalSource.kt) | Observed state and failure behavior used by host/repository tests. Fake failure injection does not prove transaction rollback. |
 | Android UI and entry | [saved-filter feature](../feature/savedfilters/src/main/java/com/simtop/feature/savedfilters/), [AppNavigationViewModel](../app/src/main/java/com/simtop/billionbeers/presentation/AppNavigationViewModel.kt), [AppNavigation](../app/src/main/java/com/simtop/billionbeers/presentation/AppNavigation.kt), [portable routes](../navigation-contract/src/commonMain/kotlin/com/simtop/navigation/contract/Routes.kt) | Screen/ViewModel state, saving from query surfaces, typed-result feedback and portable route payloads. |
@@ -42,22 +42,22 @@ enforcement updated in the same change.
 ## Storage versions and database builders
 
 Room is currently schema **5**, with migrations 1→2→3→4→5. The exported schema belongs to
-`:beer_database`, configured by the [Room convention](../build-logic/convention/src/main/kotlin/billionbeers.room.gradle.kts).
-Inspect [BeersDatabase](../beer_database/src/commonMain/kotlin/com/simtop/beer_database/database/BeersDatabase.kt),
-[Migrations](../beer_database/src/commonMain/kotlin/com/simtop/beer_database/database/Migrations.kt)
-and [schema 5](../beer_database/schemas/com.simtop.beer_database.database.BeersDatabase/5.json).
+`:beer-database`, configured by the [Room convention](../build-logic/convention/src/main/kotlin/billionbeers.room.gradle.kts).
+Inspect [BeersDatabase](../beer-database/src/commonMain/kotlin/com/simtop/billionbeers/database/BeersDatabase.kt),
+[Migrations](../beer-database/src/commonMain/kotlin/com/simtop/billionbeers/database/Migrations.kt)
+and [schema 5](../beer-database/schemas/com.simtop.billionbeers.database.BeersDatabase/5.json).
 
 When a Room schema changes, review the migration list in every runtime builder:
 
-- Android: [BeersDatabaseModule](../beer_database/src/androidMain/kotlin/com/simtop/beer_database/di/BeersDatabaseModule.kt).
+- Android: [BeersDatabaseModule](../beer-database/src/androidMain/kotlin/com/simtop/billionbeers/database/di/BeersDatabaseModule.kt).
 - Desktop: [DesktopDataRuntime](../desktop-app/src/main/kotlin/com/simtop/billionbeers/desktop/DesktopDataRuntime.kt).
 - iOS: [IosPlatformModule.ios](../ios-shared/src/iosMain/kotlin/com/simtop/billionbeers/iosshared/IosPlatformModule.ios.kt).
 - JVM iOS-session runtime: [IosPlatformModule.jvm](../ios-shared/src/jvmMain/kotlin/com/simtop/billionbeers/iosshared/IosPlatformModule.jvm.kt).
 
 Also inspect the migration-aware builders in
-[BeersDatabaseJvmTest](../beer_database/src/jvmTest/kotlin/com/simtop/beer_database/database/BeersDatabaseJvmTest.kt)
-and [BeersDatabaseIosTest](../beer_database/src/iosSimulatorArm64Test/kotlin/com/simtop/beer_database/database/BeersDatabaseIosTest.kt),
-plus [Android migration tests](../beer_database/src/androidTest/java/com/simtop/beer_database/database/BeersDatabaseMigrationTest.kt).
+[BeersDatabaseJvmTest](../beer-database/src/jvmTest/kotlin/com/simtop/billionbeers/database/BeersDatabaseJvmTest.kt)
+and [BeersDatabaseIosTest](../beer-database/src/iosSimulatorArm64Test/kotlin/com/simtop/billionbeers/database/BeersDatabaseIosTest.kt),
+plus [Android migration tests](../beer-database/src/androidTest/java/com/simtop/billionbeers/database/BeersDatabaseMigrationTest.kt).
 Fresh-file tests such as `SavedFilterPersistenceJvmTest` exercise the current schema and are not
 upgrade tests. Android's debug-only destructive fallback does not establish preservation of
 an existing release database. Keep database paths stable and verify upgrades without clearing
@@ -97,7 +97,7 @@ registered target suite; it does not run every target of a KMP module.
 | Change | Checks and examples to inspect |
 |---|---|
 | Domain/repository/storage behavior | `make test MODULE=:beerdomain:api`, `MODULE=:beerdomain:fakes`, `MODULE=:beer-data` or `MODULE=:beer-storage:api`, as affected. [BeersRepositoryTest](../beer-data/src/jvmTest/kotlin/com/simtop/billionbeers/data/repositories/BeersRepositoryTest.kt) covers error mapping, cancellation and retry. |
-| Room persistence/schema | `make test MODULE=:beer_database`; inspect [file-backed failure/reopen tests](../beer_database/src/jvmTest/kotlin/com/simtop/beer_database/database/SavedFilterPersistenceJvmTest.kt). Use `make ui-test-managed MODULE=:beer_database` for Android migration/local-source tests, and `make ios-test` for the existing simulator data suite. These are separate runtime proofs. |
+| Room persistence/schema | `make test MODULE=:beer-database`; inspect [file-backed failure/reopen tests](../beer-database/src/jvmTest/kotlin/com/simtop/billionbeers/database/SavedFilterPersistenceJvmTest.kt). Use `make ui-test-managed MODULE=:beer-database` for Android migration/local-source tests, and `make ios-test` for the existing simulator data suite. These are separate runtime proofs. |
 | Browser persistence | `make test MODULE=:beer-storage:browser`; inspect [IndexedDB tests](../beer-storage/browser/src/wasmJsTest/kotlin/com/simtop/billionbeers/storage/browser/IndexedDbBeersStorageBrowserTest.kt) for capacity, real aborts, reopen and peer observation. Quota, eviction and other browsers remain separate acceptance work. |
 | Android saved-filter UI | `make test MODULE=:feature:savedfilters`, `make screenshot-verify`, and `make ui-test-managed MODULE=:app`. [layout](../app/src/androidTest/java/com/simtop/billionbeers/SavedFiltersLayoutTest.kt) and [mutation feedback](../app/src/androidTest/java/com/simtop/billionbeers/SavedFiltersMutationUiTest.kt) tests cover ten-item reachability, large text, retained drafts and retry. Resource changes also need `make android-lint`. |
 | Shared UI/navigation | `make test MODULE=:shared:app`; inspect [layout](../shared/app/src/jvmTest/kotlin/com/simtop/billionbeers/shared/app/SavedFiltersLayoutTest.kt), [host failure](../shared/app/src/jvmTest/kotlin/com/simtop/billionbeers/shared/app/SavedFiltersHostFailureTest.kt) and [stack](../shared/app/src/jvmTest/kotlin/com/simtop/billionbeers/shared/app/SharedAppNavigationStateTest.kt) tests. Run `make test MODULE=:web-app` for browser routes/history; use `make web-verify` when the Web distribution is affected. |

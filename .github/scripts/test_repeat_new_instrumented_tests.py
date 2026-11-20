@@ -212,7 +212,7 @@ class RepeatNewInstrumentedTestsTest(unittest.TestCase):
     def test_make_places_task_scoped_rerun_after_android_test_task(self):
         for module, expected_task in (
             (":app", ":app:atdApi35DebugAndroidTest"),
-            (":beer_database", ":beer_database:atdApi35AndroidDeviceTest"),
+            (":beer-database", ":beer-database:atdApi35AndroidDeviceTest"),
         ):
             with self.subTest(module=module):
                 result = subprocess.run(

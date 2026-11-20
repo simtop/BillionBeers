@@ -171,7 +171,7 @@ flowchart TB
     Network[":beer-network<br/>Ktor implementation"]
     NetworkAPI[":beer-network:api"]
     Storage[":beer-storage:api"]
-    Room[":beer_database<br/>Room on Android, JVM, iOS"]
+    Room[":beer-database<br/>Room on Android, JVM, iOS"]
     Browser[":beer-storage:browser<br/>IndexedDB on Web"]
 
     Screens --> Domain

@@ -2,9 +2,9 @@ package com.simtop.billionbeers.iosshared
 
 import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
-import com.simtop.beer_database.database.ALL_MIGRATIONS
-import com.simtop.beer_database.database.BeersDatabase
-import com.simtop.beer_database.database.BeersDatabaseConstructor
+import com.simtop.billionbeers.database.ALL_MIGRATIONS
+import com.simtop.billionbeers.database.BeersDatabase
+import com.simtop.billionbeers.database.BeersDatabaseConstructor
 import com.simtop.billionbeers.network.configureBeersApi
 import com.simtop.core.core.EnvironmentConfig
 import io.ktor.client.HttpClient

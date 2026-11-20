@@ -248,8 +248,8 @@ web-run: ## Start the local Wasm browser host and image proxy for manual Web QA.
 
 ##@ iOS
 ios-compile: ## Compile all shared modules for both supported Apple targets.
-	$(GRADLE_RUNNER) :core-common:compileKotlinIosArm64 :beerdomain:api:compileKotlinIosArm64 :beerdomain:impl:compileKotlinIosArm64 :beerdomain:fakes:compileKotlinIosArm64 :beer-network:api:compileKotlinIosArm64 :beer-network:fixtures:compileKotlinIosArm64 :beer-network:compileKotlinIosArm64 :beer-storage:api:compileKotlinIosArm64 :beer_database:compileKotlinIosArm64 :beer-data:compileKotlinIosArm64 :shared:favorites:compileKotlinIosArm64 :shared:savedfilters:compileKotlinIosArm64 :shared:beerslist:compileKotlinIosArm64 :shared:beersearch:compileKotlinIosArm64 :shared:beerbrowse:compileKotlinIosArm64 :shared:beerdetail:compileKotlinIosArm64 :shared:app:compileKotlinIosArm64 :ios-shared:compileKotlinIosArm64 # gitleaks:allow
-	$(GRADLE_RUNNER) :core-common:compileKotlinIosSimulatorArm64 :beerdomain:api:compileKotlinIosSimulatorArm64 :beerdomain:impl:compileKotlinIosSimulatorArm64 :beerdomain:fakes:compileKotlinIosSimulatorArm64 :beer-network:api:compileKotlinIosSimulatorArm64 :beer-network:fixtures:compileKotlinIosSimulatorArm64 :beer-network:compileKotlinIosSimulatorArm64 :beer-storage:api:compileKotlinIosSimulatorArm64 :beer_database:compileKotlinIosSimulatorArm64 :beer-data:compileKotlinIosSimulatorArm64 :shared:favorites:compileKotlinIosSimulatorArm64 :shared:savedfilters:compileKotlinIosSimulatorArm64 :shared:beerslist:compileKotlinIosSimulatorArm64 :shared:beersearch:compileKotlinIosSimulatorArm64 :shared:beerbrowse:compileKotlinIosSimulatorArm64 :shared:beerdetail:compileKotlinIosSimulatorArm64 :shared:app:compileKotlinIosSimulatorArm64 :ios-shared:compileKotlinIosSimulatorArm64
+	$(GRADLE_RUNNER) :core-common:compileKotlinIosArm64 :beerdomain:api:compileKotlinIosArm64 :beerdomain:impl:compileKotlinIosArm64 :beerdomain:fakes:compileKotlinIosArm64 :beer-network:api:compileKotlinIosArm64 :beer-network:fixtures:compileKotlinIosArm64 :beer-network:compileKotlinIosArm64 :beer-storage:api:compileKotlinIosArm64 :beer-database:compileKotlinIosArm64 :beer-data:compileKotlinIosArm64 :shared:favorites:compileKotlinIosArm64 :shared:savedfilters:compileKotlinIosArm64 :shared:beerslist:compileKotlinIosArm64 :shared:beersearch:compileKotlinIosArm64 :shared:beerbrowse:compileKotlinIosArm64 :shared:beerdetail:compileKotlinIosArm64 :shared:app:compileKotlinIosArm64 :ios-shared:compileKotlinIosArm64 # gitleaks:allow
+	$(GRADLE_RUNNER) :core-common:compileKotlinIosSimulatorArm64 :beerdomain:api:compileKotlinIosSimulatorArm64 :beerdomain:impl:compileKotlinIosSimulatorArm64 :beerdomain:fakes:compileKotlinIosSimulatorArm64 :beer-network:api:compileKotlinIosSimulatorArm64 :beer-network:fixtures:compileKotlinIosSimulatorArm64 :beer-network:compileKotlinIosSimulatorArm64 :beer-storage:api:compileKotlinIosSimulatorArm64 :beer-database:compileKotlinIosSimulatorArm64 :beer-data:compileKotlinIosSimulatorArm64 :shared:favorites:compileKotlinIosSimulatorArm64 :shared:savedfilters:compileKotlinIosSimulatorArm64 :shared:beerslist:compileKotlinIosSimulatorArm64 :shared:beersearch:compileKotlinIosSimulatorArm64 :shared:beerbrowse:compileKotlinIosSimulatorArm64 :shared:beerdetail:compileKotlinIosSimulatorArm64 :shared:app:compileKotlinIosSimulatorArm64 :ios-shared:compileKotlinIosSimulatorArm64
 
 ios-framework: ## Link the shared iOS framework for simulator and device.
 	$(GRADLE_RUNNER) :ios-shared:linkDebugFrameworkIosSimulatorArm64 :ios-shared:linkDebugFrameworkIosArm64
@@ -581,15 +581,15 @@ VERIFICATION_METADATA_NATIVE_TASKS := \
 	$(call VERIFICATION_METADATA_NATIVE_TASK_TWO,core-common,compileKotlinIosArm64) $(call VERIFICATION_METADATA_NATIVE_TASK_THREE,beerdomain,api,compileKotlinIosArm64) \
 	$(call VERIFICATION_METADATA_NATIVE_TASK_THREE,beerdomain,fakes,compileKotlinIosArm64) $(call VERIFICATION_METADATA_NATIVE_TASK_THREE,beer-network,api,compileKotlinIosArm64) \
 	$(call VERIFICATION_METADATA_NATIVE_TASK_THREE,beer-network,fixtures,compileKotlinIosArm64) $(call VERIFICATION_METADATA_NATIVE_TASK_TWO,beer-network,compileKotlinIosArm64) \
-	$(call VERIFICATION_METADATA_NATIVE_TASK_THREE,beer-storage,api,compileKotlinIosArm64) $(call VERIFICATION_METADATA_NATIVE_TASK_TWO,beer_database,compileKotlinIosArm64) \
+	$(call VERIFICATION_METADATA_NATIVE_TASK_THREE,beer-storage,api,compileKotlinIosArm64) $(call VERIFICATION_METADATA_NATIVE_TASK_TWO,beer-database,compileKotlinIosArm64) \
 	$(call VERIFICATION_METADATA_NATIVE_TASK_TWO,beer-data,compileKotlinIosArm64) $(call VERIFICATION_METADATA_NATIVE_TASK_TWO,ios-shared,compileKotlinIosArm64) \
 	$(call VERIFICATION_METADATA_NATIVE_TASK_TWO,core-common,compileKotlinIosSimulatorArm64) $(call VERIFICATION_METADATA_NATIVE_TASK_THREE,beerdomain,api,compileKotlinIosSimulatorArm64) \
 	$(call VERIFICATION_METADATA_NATIVE_TASK_THREE,beerdomain,fakes,compileKotlinIosSimulatorArm64) $(call VERIFICATION_METADATA_NATIVE_TASK_THREE,beer-network,api,compileKotlinIosSimulatorArm64) \
 	$(call VERIFICATION_METADATA_NATIVE_TASK_THREE,beer-network,fixtures,compileKotlinIosSimulatorArm64) $(call VERIFICATION_METADATA_NATIVE_TASK_TWO,beer-network,compileKotlinIosSimulatorArm64) \
-	$(call VERIFICATION_METADATA_NATIVE_TASK_THREE,beer-storage,api,compileKotlinIosSimulatorArm64) $(call VERIFICATION_METADATA_NATIVE_TASK_TWO,beer_database,compileKotlinIosSimulatorArm64) \
+	$(call VERIFICATION_METADATA_NATIVE_TASK_THREE,beer-storage,api,compileKotlinIosSimulatorArm64) $(call VERIFICATION_METADATA_NATIVE_TASK_TWO,beer-database,compileKotlinIosSimulatorArm64) \
 	$(call VERIFICATION_METADATA_NATIVE_TASK_TWO,beer-data,compileKotlinIosSimulatorArm64) $(call VERIFICATION_METADATA_NATIVE_TASK_TWO,ios-shared,compileKotlinIosSimulatorArm64) \
 	$(call VERIFICATION_METADATA_NATIVE_TASK_TWO,ios-shared,linkDebugFrameworkIosSimulatorArm64) $(call VERIFICATION_METADATA_NATIVE_TASK_TWO,ios-shared,linkDebugFrameworkIosArm64) \
-	$(call VERIFICATION_METADATA_NATIVE_TASK_TWO,core-common,iosSimulatorArm64Test) $(call VERIFICATION_METADATA_NATIVE_TASK_TWO,beer-network,iosSimulatorArm64Test) $(call VERIFICATION_METADATA_NATIVE_TASK_TWO,beer_database,iosSimulatorArm64Test) $(call VERIFICATION_METADATA_NATIVE_TASK_TWO,ios-shared,iosSimulatorArm64Test) \
+	$(call VERIFICATION_METADATA_NATIVE_TASK_TWO,core-common,iosSimulatorArm64Test) $(call VERIFICATION_METADATA_NATIVE_TASK_TWO,beer-network,iosSimulatorArm64Test) $(call VERIFICATION_METADATA_NATIVE_TASK_TWO,beer-database,iosSimulatorArm64Test) $(call VERIFICATION_METADATA_NATIVE_TASK_TWO,ios-shared,iosSimulatorArm64Test) \
 	$(foreach module,favorites savedfilters beerslist beersearch beerbrowse beerdetail app,$(call VERIFICATION_METADATA_NATIVE_TASK_TWO,shared:$(module),compileKotlinIosArm64)) \
 	$(foreach module,favorites savedfilters beerslist beersearch beerbrowse beerdetail app,$(call VERIFICATION_METADATA_NATIVE_TASK_TWO,shared:$(module),compileKotlinIosSimulatorArm64))
 else
@@ -597,7 +597,7 @@ VERIFICATION_METADATA_NATIVE_TASKS :=
 endif
 VERIFICATION_METADATA_CANDIDATE_DEBUG_DEVICE_TASKS := \
 	:app:assembleDebugAndroidTest \
-	:beer_database:assembleAndroidDeviceTest \
+	:beer-database:assembleAndroidDeviceTest \
 	:feature:beerbrowse:assembleDebugAndroidTest \
 	:feature:beerdetail:assembleDebugAndroidTest \
 	:feature:beerslist:assembleDebugAndroidTest \

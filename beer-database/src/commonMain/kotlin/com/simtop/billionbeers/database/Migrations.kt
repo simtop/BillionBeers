@@ -1,0 +1,140 @@
+package com.simtop.billionbeers.database
+
+import androidx.room.migration.Migration
+import androidx.sqlite.SQLiteConnection
+
+private const val DATABASE_VERSION_3 = 3
+private const val DATABASE_VERSION_4 = 4
+private const val DATABASE_VERSION_5 = 5
+private const val DATABASE_VERSION_6 = 6
+private const val DATABASE_VERSION_7 = 7
+private const val DATABASE_VERSION_8 = 8
+private const val DATABASE_VERSION_9 = 9
+
+private fun SQLiteConnection.execute(sql: String) {
+  prepare(sql).use { it.step() }
+}
+
+/**
+ * v1 → v2: the project's first migration. Purely additive — it creates the `paging_state` bookmark
+ * table and leaves `beers` (and the user-owned availability column) untouched, so an in-place
+ * upgrade preserves the cache. The `CREATE TABLE` statement mirrors Room's generated schema for
+ * [com.simtop.billionbeers.database.models.PagingStateDbModel] exactly; the migration test (schemas
+ * are exported) guards against drift.
+ */
+val MIGRATION_1_2 =
+  object : Migration(1, 2) {
+    override fun migrate(connection: SQLiteConnection) {
+      connection.execute(
+        "CREATE TABLE IF NOT EXISTS `paging_state` (" +
+          "`surface` TEXT NOT NULL, " +
+          "`next_key` INTEGER, " +
+          "`total_count` INTEGER, " +
+          "`refreshed_at` INTEGER NOT NULL, " +
+          "PRIMARY KEY(`surface`))"
+      )
+    }
+  }
+
+/**
+ * v2 → v3: additive detail columns on `beers` (Paging 2.0 Phase 4 §6.5), defaults matching
+ * [com.simtop.billionbeers.database.models.BeerDbModel]'s `defaultValue`s exactly. Existing rows -
+ * including the user-owned availability - are untouched; migrated rows carry the empty defaults
+ * until the next refresh's upsert fills the fields from the embedded API objects.
+ */
+val MIGRATION_2_3 =
+  object : Migration(2, 3) {
+    override fun migrate(connection: SQLiteConnection) {
+      connection.execute("ALTER TABLE `beers` ADD COLUMN `style_name` TEXT NOT NULL DEFAULT ''")
+      connection.execute("ALTER TABLE `beers` ADD COLUMN `brewery_name` TEXT NOT NULL DEFAULT ''")
+      connection.execute("ALTER TABLE `beers` ADD COLUMN `srm` INTEGER")
+      connection.execute("ALTER TABLE `beers` ADD COLUMN `released_year` INTEGER")
+      connection.execute("ALTER TABLE `beers` ADD COLUMN `min_serving_temperature` INTEGER")
+      connection.execute("ALTER TABLE `beers` ADD COLUMN `max_serving_temperature` INTEGER")
+      connection.execute(
+        "ALTER TABLE `beers` ADD COLUMN `fermentation_method` TEXT NOT NULL DEFAULT ''"
+      )
+      connection.execute("ALTER TABLE `beers` ADD COLUMN `ingredients` TEXT NOT NULL DEFAULT '[]'")
+      connection.execute(
+        "ALTER TABLE `beers` ADD COLUMN `recommended_glasses` TEXT NOT NULL DEFAULT '[]'"
+      )
+    }
+  }
+
+/** v3 → v4: additive local favorite state, defaulting existing catalog rows to false. */
+val MIGRATION_3_4 =
+  object : Migration(DATABASE_VERSION_3, DATABASE_VERSION_4) {
+    override fun migrate(connection: SQLiteConnection) {
+      connection.execute("ALTER TABLE `beers` ADD COLUMN `is_favorite` INTEGER NOT NULL DEFAULT 0")
+    }
+  }
+
+/** v4 → v5: local named query presets, independent of the catalog cache. */
+val MIGRATION_4_5 =
+  object : Migration(DATABASE_VERSION_4, DATABASE_VERSION_5) {
+    override fun migrate(connection: SQLiteConnection) {
+      connection.execute(
+        "CREATE TABLE IF NOT EXISTS `filter_presets` (" +
+          "`id` TEXT NOT NULL, " +
+          "`name` TEXT NOT NULL, " +
+          "`search` TEXT, " +
+          "`style_id` TEXT, " +
+          "`brewery_id` TEXT, " +
+          "`updated_at` INTEGER NOT NULL, " +
+          "PRIMARY KEY(`id`))"
+      )
+    }
+  }
+
+/** v5 → v6: existing cached rows remain catalog rows; preference-only rows are marked on insert. */
+val MIGRATION_5_6 =
+  object : Migration(DATABASE_VERSION_5, DATABASE_VERSION_6) {
+    override fun migrate(connection: SQLiteConnection) {
+      connection.execute(
+        "ALTER TABLE `beers` ADD COLUMN `is_in_catalog` INTEGER NOT NULL DEFAULT 1"
+      )
+    }
+  }
+
+/** v6 → v7: distinguish a completed catalog from a missing/legacy continuation bookmark. */
+val MIGRATION_6_7 =
+  object : Migration(DATABASE_VERSION_6, DATABASE_VERSION_7) {
+    override fun migrate(connection: SQLiteConnection) {
+      connection.execute(
+        "ALTER TABLE `paging_state` ADD COLUMN `is_complete` INTEGER NOT NULL DEFAULT 0"
+      )
+    }
+  }
+
+/** v7 → v8: index local favorites in the same order used by the favorites query. */
+val MIGRATION_7_8 =
+  object : Migration(DATABASE_VERSION_7, DATABASE_VERSION_8) {
+    override fun migrate(connection: SQLiteConnection) {
+      connection.execute(
+        "CREATE INDEX IF NOT EXISTS `index_beers_is_favorite_name_id` " +
+          "ON `beers` (`is_favorite`, `name`, `id`)"
+      )
+    }
+  }
+
+/** v8 → v9: persist catalog positions as pages arrive. Older rows keep their local data. */
+val MIGRATION_8_9 =
+  object : Migration(DATABASE_VERSION_8, DATABASE_VERSION_9) {
+    override fun migrate(connection: SQLiteConnection) {
+      connection.execute("ALTER TABLE `beers` ADD COLUMN `catalog_page` INTEGER")
+      connection.execute("ALTER TABLE `beers` ADD COLUMN `catalog_index` INTEGER")
+    }
+  }
+
+/** Every supported upgrade, in order, for all Room hosts and database tests. */
+val ALL_MIGRATIONS: List<Migration> =
+  listOf(
+    MIGRATION_1_2,
+    MIGRATION_2_3,
+    MIGRATION_3_4,
+    MIGRATION_4_5,
+    MIGRATION_5_6,
+    MIGRATION_6_7,
+    MIGRATION_7_8,
+    MIGRATION_8_9,
+  )

@@ -61,7 +61,7 @@ fun Project.registerDataLayerClasspathBoundaryCheck() {
           "Fails if this module's resolved debugCompileClasspath includes a data-layer module, " +
             "even transitively (invariant 13, AGENTS.md)."
         this.projectPath.set(path)
-        this.forbiddenModules.set(setOf(":beer-data", ":beer_database", ":beer-storage:api", ":beer-network"))
+        this.forbiddenModules.set(setOf(":beer-data", ":beer-database", ":beer-storage:api", ":beer-network"))
         this.rootComponent.set(rootComponent)
       }
 

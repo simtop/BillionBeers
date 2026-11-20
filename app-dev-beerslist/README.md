@@ -1,7 +1,7 @@
 # app-dev-beerslist
 
 A minimal Android application module that compiles **only** `:feature:beerslist` against an
-in-memory fake `BeersRepository` - no `:beer-data`, `:beer-network`, `:beer_database`, or
+in-memory fake `BeersRepository` - no `:beer-data`, `:beer-network`, `:beer-database`, or
 `:feature:beerdetail`.
 
 ## Why

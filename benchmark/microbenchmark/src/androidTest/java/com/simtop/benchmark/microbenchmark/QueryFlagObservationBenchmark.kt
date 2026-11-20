@@ -9,8 +9,8 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.simtop.billionbeers.data.mappers.BeersMapper
 import com.simtop.billionbeers.data.repositories.BeersPagerFactoryImpl
 import com.simtop.billionbeers.data.repositories.BeersRepositoryImpl
-import com.simtop.beer_database.database.BeersDatabase
-import com.simtop.beer_database.localsources.BeersLocalSourceImpl
+import com.simtop.billionbeers.database.BeersDatabase
+import com.simtop.billionbeers.database.localsources.BeersLocalSourceImpl
 import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.billionbeers.network.models.BeersApiResponseItem

@@ -10,7 +10,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-SCHEMA_DIR = "beer_database/schemas/com.simtop.beer_database.database.BeersDatabase"
+SCHEMA_DIR = "beer-database/schemas/com.simtop.billionbeers.database.BeersDatabase"
+LEGACY_SCHEMA_DIR = "beer_database/schemas/com.simtop.beer_database.database.BeersDatabase"
 SCHEMA_FILE = re.compile(r"(\d+)\.json$")
 
 
@@ -40,38 +41,31 @@ def schema_versions(paths: list[str]) -> dict[str, int]:
     return versions
 
 
+def schema_entries(root: Path, revision: str, directory: str) -> dict[str, str]:
+    entries = {}
+    for entry in git(root, "ls-tree", "-r", "-z", revision, "--", directory).stdout.split("\0"):
+        if entry:
+            metadata, path = entry.split("\t", 1)
+            entries[path.removeprefix(f"{directory}/")] = metadata
+    return entries
+
+
 def check_history(root: Path, base: str) -> list[str]:
     ensure_base_available(root, base)
-    changed = git(
-        root,
-        "diff",
-        "--name-status",
-        "-z",
-        "--no-renames",
-        f"{base}...HEAD",
-        "--",
-        SCHEMA_DIR,
-    ).stdout.split("\0")
-    changed = [item for item in changed if item]
-    violations = []
-    added = []
-    for index in range(0, len(changed), 2):
-        status, path = changed[index : index + 2]
-        if status != "A":
-            violations.append(f"{status} {path}: shipped Room schema files are immutable")
-        else:
-            added.append(path)
-
-    base_paths = git(
-        root, "ls-tree", "-r", "--name-only", base, "--", SCHEMA_DIR
-    ).stdout.splitlines()
-    base_versions = schema_versions(base_paths)
-    added_versions = schema_versions(added)
+    shipped = schema_entries(root, base, SCHEMA_DIR) or schema_entries(root, base, LEGACY_SCHEMA_DIR)
+    current = schema_entries(root, "HEAD", SCHEMA_DIR)
+    violations = [
+        f"{SCHEMA_DIR}/{path}: shipped Room schema files are immutable"
+        for path, metadata in shipped.items()
+        if current.get(path) != metadata
+    ]
+    base_versions = schema_versions(list(shipped))
+    added_versions = schema_versions(sorted(current.keys() - shipped.keys()))
     max_base_version = max(base_versions.values(), default=0)
     for path, version in added_versions.items():
         if version <= max_base_version:
             violations.append(
-                f"{path}: new schema version must be greater than the shipped maximum "
+                f"{SCHEMA_DIR}/{path}: new schema version must be greater than the shipped maximum "
                 f"({max_base_version})"
             )
     return violations

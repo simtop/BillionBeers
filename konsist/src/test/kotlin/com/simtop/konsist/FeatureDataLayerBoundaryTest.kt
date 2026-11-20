@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test
 /**
  * A feature module reaches persistence and the network only through the repository *interfaces* in
  * `:beerdomain:api`, whose implementations are bound in `:app`'s Metro graph. Declaring
- * `:beer-data`, `:beer_database`, `:beer-storage:api` or `:beer-network` in a feature's build
+ * `:beer-data`, `:beer-database`, `:beer-storage:api` or `:beer-network` in a feature's build
  * script skips that seam: the feature gains Room entities, DTOs and Retrofit services as
  * compile-time types, and the domain boundary becomes advisory.
  *
@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Test
 class FeatureDataLayerBoundaryTest {
 
   private val forbiddenDataLayerModules =
-    listOf(":beer-data", ":beer_database", ":beer-storage:api", ":beer-network")
+    listOf(":beer-data", ":beer-database", ":beer-storage:api", ":beer-network")
 
   // A positive control on the list above: if one of those strings drifts (typo, or the module gets
   // renamed/moved), this fails loudly instead of the rule below silently matching nothing.
