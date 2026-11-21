@@ -41,7 +41,7 @@ incremental_leaf {
 // task overhead there, but does not establish how a model signature change affects consumers.
 incremental_deep {
     tasks = ["assembleDebug"]
-    apply-abi-change-to = "beerdomain/api/src/commonMain/kotlin/com/simtop/beerdomain/domain/models/Beer.kt"
+    apply-abi-change-to = "beer-domain/api/src/commonMain/kotlin/com/simtop/billionbeers/domain/models/Beer.kt"
 }
 
 // Without a mutator this scenario measures nothing: `testDebugUnitTest` is up-to-date after the

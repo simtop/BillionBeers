@@ -102,7 +102,7 @@ owns the Android/Web card layout: title hierarchy, rounded image tile, spacing, 
 and availability chips, and one button action with availability state semantics. It belongs in
 `:shared:presentation` because it consumes a domain beer; generic theme tokens remain in the design
 system. Android's existing catalog previews and translations remain in
-[ComposeBeersListItem](../presentation_utils/src/main/java/com/simtop/presentation_utils/custom_views/ComposeBeersListItem.kt).
+[ComposeBeersListItem](../presentation-utils/src/main/java/com/simtop/billionbeers/presentation/android/components/ComposeBeersListItem.kt).
 Desktop and iOS still use their host rows.
 
 Hosts supply formatted/localized labels and image content. Android retains Coil loading/shimmer

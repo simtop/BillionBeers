@@ -1,6 +1,6 @@
 package com.simtop.billionbeers.iosshared
 
-import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.billionbeers.domain.repositories.BeersRepository
 import com.simtop.navigation.contract.PortableRoute
 import platform.Foundation.NSURL
 

@@ -4,8 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
-import com.simtop.beerdomain.domain.repositories.BeerCatalogMetadataRepository
-import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
+import com.simtop.billionbeers.domain.repositories.BeerCatalogMetadataRepository
+import com.simtop.billionbeers.domain.repositories.BeersPagerFactory
 import com.simtop.billionbeers.shared.beersearch.BeersSearchEvent as SharedBeersSearchEvent
 import com.simtop.billionbeers.shared.beersearch.BeersSearchViewModel as SharedBeersSearchViewModel
 import com.simtop.core.core.CoroutineDispatcherProvider

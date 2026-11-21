@@ -1,7 +1,7 @@
 package com.simtop.feature.beerbrowse.presentation
 
 import androidx.lifecycle.ViewModel
-import com.simtop.beerdomain.domain.repositories.BeerCatalogMetadataRepository
+import com.simtop.billionbeers.domain.repositories.BeerCatalogMetadataRepository
 import com.simtop.billionbeers.shared.beerbrowse.BrowseViewModel as SharedBrowseViewModel
 import com.simtop.feature.beerbrowse.presentation.di.FeatureBrowseScope
 import dev.zacsweers.metro.ContributesIntoMap

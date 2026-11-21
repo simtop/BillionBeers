@@ -1,8 +1,8 @@
 package com.simtop.billionbeers.shared.savedfilters
 
-import com.simtop.beerdomain.domain.models.BeersQuery
-import com.simtop.beerdomain.domain.models.SavedFilterPreset
-import com.simtop.beerdomain.fakes.FakeSavedFilterPresetsRepository
+import com.simtop.billionbeers.domain.models.BeersQuery
+import com.simtop.billionbeers.domain.models.SavedFilterPreset
+import com.simtop.billionbeers.testing.domain.FakeSavedFilterPresetsRepository
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.Either
 import kotlin.test.assertEquals

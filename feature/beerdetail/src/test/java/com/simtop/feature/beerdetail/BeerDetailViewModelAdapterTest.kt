@@ -1,8 +1,8 @@
 package com.simtop.feature.beerdetail
 
-import com.simtop.beerdomain.fakes.FakeBeersRepository
-import com.simtop.beerdomain.fakes.fakeBeerModel
-import com.simtop.billionbeers.testing_utils.MainDispatcherExtension
+import com.simtop.billionbeers.testing.MainDispatcherExtension
+import com.simtop.billionbeers.testing.domain.FakeBeersRepository
+import com.simtop.billionbeers.testing.domain.fakeBeerModel
 import com.simtop.core.core.CommonUiState
 import com.simtop.feature.beerdetail.presentation.BeerDetailViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi

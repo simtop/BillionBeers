@@ -82,12 +82,12 @@ dependencies {
   // Only the module under active development, plus its fakes - keep this list as small as
   // possible so this assembles in seconds. Add whichever fakes module(s) $FEATURE needs.
   implementation(project("$GRADLE_PATH"))
-  implementation(project(":beerdomain:api"))
-  implementation(project(":beerdomain:fakes"))
+  implementation(project(":beer-domain:api"))
+  implementation(project(":beer-domain:fakes"))
   implementation(project(":core"))
   implementation(project(":core:designsystem"))
   implementation(project(":navigation"))
-  implementation(project(":presentation_utils"))
+  implementation(project(":presentation-utils"))
 
   implementation(libs.androidPlayCore)
   implementation(libs.androidPlayCoreKtx)
@@ -156,7 +156,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.CompositionLocalProvider
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
-import com.simtop.presentation_utils.core.LocalSplitInstallManager
+import com.simtop.billionbeers.presentation.android.core.LocalSplitInstallManager
 import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 
 class MainActivity : ComponentActivity() {
@@ -263,8 +263,8 @@ package $PACKAGE.di
 
 // TODO: bind $PASCAL's repositories to fakes here, e.g.:
 //
-// import com.simtop.beerdomain.domain.repositories.BeersRepository
-// import com.simtop.beerdomain.fakes.FakeBeersRepository
+// import com.simtop.billionbeers.domain.repositories.BeersRepository
+// import com.simtop.billionbeers.testing.domain.FakeBeersRepository
 // import dev.zacsweers.metro.AppScope
 // import dev.zacsweers.metro.ContributesTo
 // import dev.zacsweers.metro.Provides

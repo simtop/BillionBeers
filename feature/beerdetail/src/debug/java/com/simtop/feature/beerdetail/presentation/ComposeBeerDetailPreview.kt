@@ -5,12 +5,12 @@ package com.simtop.feature.beerdetail.presentation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.core.designsystem.component.AccessibilityMatrixPreview
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
-import com.simtop.presentation_utils.R
-import com.simtop.presentation_utils.custom_views.ComposeIntroductionHint
+import com.simtop.billionbeers.domain.models.Beer
+import com.simtop.billionbeers.presentation.android.R
+import com.simtop.billionbeers.presentation.android.components.ComposeIntroductionHint
 
 @PreviewLightDark
 @Preview(

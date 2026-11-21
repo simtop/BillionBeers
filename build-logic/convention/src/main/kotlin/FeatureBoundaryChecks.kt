@@ -12,7 +12,7 @@ import org.gradle.kotlin.dsl.register
 
 /**
  * A feature module (regular or on-demand dynamic) reaches persistence and the network only through
- * the repository interfaces in `:beerdomain:api` - invariant 13, AGENTS.md. `FeatureDataLayerBoundaryTest`
+ * the repository interfaces in `:beer-domain:api` - invariant 13, AGENTS.md. `FeatureDataLayerBoundaryTest`
  * (`:konsist`) enforces the direct half of that: it reads each feature's build script text for a
  * `project(":beer-data")`-shaped declaration. What it structurally cannot see is one of those
  * modules arriving *indirectly* - declared by something the feature depends on, rather than by the
@@ -97,7 +97,7 @@ abstract class DataLayerClasspathBoundaryTask : DefaultTask() {
     val violations = forbiddenModules.get().intersect(resolvedProjectPaths)
     check(violations.isEmpty()) {
       "${projectPath.get()} resolves data-layer module(s) $violations on debugCompileClasspath - " +
-        "a feature reaches persistence and the network only through the :beerdomain:api " +
+        "a feature reaches persistence and the network only through the :beer-domain:api " +
         "repository interfaces, whose implementations :app binds (invariant 13, AGENTS.md)."
     }
   }

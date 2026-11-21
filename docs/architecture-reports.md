@@ -19,7 +19,7 @@ build/reports/module-graph/index.html
 
 The JSON and webpage describe direct project dependencies in the configured main Gradle build. An
 edge points from the **consumer to its dependency**. For example,
-`:feature:beerslist -> :beerdomain:api` means the beers-list module declares a project dependency on
+`:feature:beerslist -> :beer-domain:api` means the beers-list module declares a project dependency on
 the domain API module.
 
 The viewer is self-contained and can be opened directly from `file://`. It supports:

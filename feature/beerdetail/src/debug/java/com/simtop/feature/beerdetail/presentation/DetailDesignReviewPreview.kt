@@ -26,8 +26,8 @@ import coil3.compose.AsyncImagePreviewHandler
 import coil3.compose.LocalAsyncImagePreviewHandler
 import coil3.decode.DataSource
 import coil3.request.SuccessResult
-import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.billionbeers.domain.models.Beer
 
 /** Full real detail composition with offline synthetic artwork and fixed enriched data. */
 @Preview(name = "Detail Light", group = "Design Review", showBackground = true)

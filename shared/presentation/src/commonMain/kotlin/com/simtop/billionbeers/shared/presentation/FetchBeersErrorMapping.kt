@@ -1,6 +1,6 @@
 package com.simtop.billionbeers.shared.presentation
 
-import com.simtop.beerdomain.domain.errors.FetchBeersError
+import com.simtop.billionbeers.domain.errors.FetchBeersError
 import com.simtop.core.core.CommonUiErrorKey
 import com.simtop.core.core.CommonUiState
 

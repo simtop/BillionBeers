@@ -76,6 +76,16 @@ com.simtop.billionbeers.core.designsystem	DialogContentPreview_2	light	1.0	en	lt
 com.simtop.billionbeers.core.designsystem	DialogContentPreview_2_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
 com.simtop.billionbeers.core.designsystem	MetricColorsPreview	light	1.0	en	ltr	compact	Light Mode	Themes
 com.simtop.billionbeers.core.designsystem	MetricColorsPreview_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.billionbeers.presentation.android	ComposeBeersListItemPreview_0	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.billionbeers.presentation.android	ComposeBeersListItemPreview_0_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.billionbeers.presentation.android	ComposeBeersListItemPreview_1	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.billionbeers.presentation.android	ComposeBeersListItemPreview_1_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.billionbeers.presentation.android	ComposeErrorViewPreview	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.billionbeers.presentation.android	ComposeErrorViewPreview_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.billionbeers.presentation.android	ComposeTitlePreview	light	1.0	en	ltr	compact	Light Mode	Themes
+com.simtop.billionbeers.presentation.android	ComposeTitlePreview_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
+com.simtop.billionbeers.presentation.android	InstallFailedContentPreview	light	1.0	en	ltr	compact	Light
+com.simtop.billionbeers.presentation.android	InstallFailedContentPreview_dark	dark	1.0	en	ltr	compact	Dark
 com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_dark_font100_en_ltr_compact	dark	1.0	en	ltr	compact
 com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_dark_font100_en_ltr_expanded	dark	1.0	en	ltr	expanded
 com.simtop.feature.beerbrowse	BrowseBeersAccessibilityMatrixPreview_dark_font100_en_rtl_compact	dark	1.0	en	rtl	compact
@@ -338,13 +348,3 @@ com.simtop.feature.savedfilters	SavedFiltersPreview_0	light	1.0	en	ltr	compact	L
 com.simtop.feature.savedfilters	SavedFiltersPreview_0_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
 com.simtop.feature.savedfilters	SavedFiltersPreview_1	light	1.0	en	ltr	compact	Light Mode	Themes
 com.simtop.feature.savedfilters	SavedFiltersPreview_1_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
-com.simtop.presentation_utils	ComposeBeersListItemPreview_0	light	1.0	en	ltr	compact	Light Mode	Themes
-com.simtop.presentation_utils	ComposeBeersListItemPreview_0_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
-com.simtop.presentation_utils	ComposeBeersListItemPreview_1	light	1.0	en	ltr	compact	Light Mode	Themes
-com.simtop.presentation_utils	ComposeBeersListItemPreview_1_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
-com.simtop.presentation_utils	ComposeErrorViewPreview	light	1.0	en	ltr	compact	Light Mode	Themes
-com.simtop.presentation_utils	ComposeErrorViewPreview_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
-com.simtop.presentation_utils	ComposeTitlePreview	light	1.0	en	ltr	compact	Light Mode	Themes
-com.simtop.presentation_utils	ComposeTitlePreview_dark	dark	1.0	en	ltr	compact	Dark Mode	Themes
-com.simtop.presentation_utils	InstallFailedContentPreview	light	1.0	en	ltr	compact	Light
-com.simtop.presentation_utils	InstallFailedContentPreview_dark	dark	1.0	en	ltr	compact	Dark

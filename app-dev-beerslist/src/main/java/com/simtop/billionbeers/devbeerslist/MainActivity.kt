@@ -11,7 +11,7 @@ import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 
 /**
  * Hosts only [BeersListScreen] against a fake, in-memory
- * [com.simtop.beerdomain.domain.repositories.BeersRepository] (see
+ * [com.simtop.billionbeers.domain.repositories.BeersRepository] (see
  * [com.simtop.billionbeers.devbeerslist.di.DevBeersRepositoryModule]) - no network, no database, no
  * beerdetail dynamic feature. The screen just reports taps to its caller, so there is nothing to
  * navigate to here.

@@ -1,7 +1,7 @@
 package com.simtop.billionbeers.web
 
-import com.simtop.beerdomain.domain.models.BeersQuery
-import com.simtop.beerdomain.domain.models.SavedFilterPreset
+import com.simtop.billionbeers.domain.models.BeersQuery
+import com.simtop.billionbeers.domain.models.SavedFilterPreset
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals

@@ -2,7 +2,7 @@ package com.simtop.billionbeers.desktop
 
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
-import com.simtop.beerdomain.domain.models.BeersQuery
+import com.simtop.billionbeers.domain.models.BeersQuery
 import com.simtop.billionbeers.shared.favorites.FavoritesViewModel
 import com.simtop.core.core.CommonUiState
 import java.io.File

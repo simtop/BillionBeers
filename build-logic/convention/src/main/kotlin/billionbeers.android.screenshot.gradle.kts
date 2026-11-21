@@ -102,8 +102,8 @@ val generatePaparazziTest = tasks.register("generatePaparazziTest") {
                 import com.android.resources.NightMode
                 import com.android.resources.UiMode
                 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
-                import com.simtop.billionbeers.snapshot_testing.PreviewConfiguration
-                import com.simtop.billionbeers.snapshot_testing.SnapshotImageEnvironment
+                import com.simtop.billionbeers.snapshot.testing.PreviewConfiguration
+                import com.simtop.billionbeers.snapshot.testing.SnapshotImageEnvironment
                 import ${capturedModuleNamespace}.GeneratedPreviewInventory
                 import java.io.File
                 import org.junit.Rule
@@ -181,7 +181,7 @@ val generatePaparazziTest = tasks.register("generatePaparazziTest") {
                             }
                         }
 
-                        private fun writeInventory(snapshots: List<com.simtop.billionbeers.snapshot_testing.Snapshot>) {
+                        private fun writeInventory(snapshots: List<com.simtop.billionbeers.snapshot.testing.Snapshot>) {
                             val path = System.getProperty("billionbeers.screenshot.inventory") ?: return
                             val inventoryPath = File(path)
                             val file =

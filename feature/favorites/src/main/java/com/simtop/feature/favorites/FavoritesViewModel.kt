@@ -1,7 +1,7 @@
 package com.simtop.feature.favorites
 
 import androidx.lifecycle.ViewModel
-import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.billionbeers.domain.repositories.BeersRepository
 import com.simtop.billionbeers.shared.favorites.FavoritesViewModel as SharedFavoritesViewModel
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoMap

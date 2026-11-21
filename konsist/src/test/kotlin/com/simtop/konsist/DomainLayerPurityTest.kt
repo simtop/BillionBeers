@@ -6,18 +6,18 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
- * :beerdomain:api is the pure-Kotlin domain layer - models, repository interfaces, error types. An
+ * :beer-domain:api is the pure-Kotlin domain layer - models, repository interfaces, error types. An
  * android.* import here means an Android framework type leaked into a layer that every other module
  * (including a future KMP non-Android target) depends on.
  */
 class DomainLayerPurityTest {
 
   @Test
-  fun `beerdomain domain layer has no android imports`() {
+  fun `beer-domain domain layer has no android imports`() {
     val domainFiles =
       Konsist.scopeFromProject().files.filter { it.packagee?.name?.let(::isDomainPackage) == true }
     assertTrue(domainFiles.isNotEmpty()) {
-      "No files were discovered in com.simtop.beerdomain.domain; this boundary would pass vacuously"
+      "No files were discovered in com.simtop.billionbeers.domain; this boundary would pass vacuously"
     }
 
     domainFiles.assertFalse { file ->
@@ -30,8 +30,8 @@ class DomainLayerPurityTest {
     assertTrue(isAndroidFrameworkImport("android.content.Context"))
     assertTrue(isAndroidFrameworkImport("android"))
     assertTrue(!isAndroidFrameworkImport("androidx.annotation.NonNull"))
-    assertTrue(isDomainPackage("com.simtop.beerdomain.domain.model"))
-    assertTrue(!isDomainPackage("com.simtop.beerdomain.domainish.model"))
+    assertTrue(isDomainPackage("com.simtop.billionbeers.domain.model"))
+    assertTrue(!isDomainPackage("com.simtop.billionbeers.domainish.model"))
   }
 
   private fun isAndroidFrameworkImport(importName: String): Boolean =
@@ -41,6 +41,6 @@ class DomainLayerPurityTest {
     packageName == DOMAIN_PACKAGE || packageName.startsWith("$DOMAIN_PACKAGE.")
 
   private companion object {
-    const val DOMAIN_PACKAGE = "com.simtop.beerdomain.domain"
+    const val DOMAIN_PACKAGE = "com.simtop.billionbeers.domain"
   }
 }

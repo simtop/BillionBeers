@@ -64,7 +64,7 @@ class ArchitecturePolicyTest {
 
   @Test
   fun `domain implementation is shared behavior with a narrow dependency boundary`() {
-    assertEquals("domain-impl", policy.roleForPath(":beerdomain:impl"))
+    assertEquals("domain-impl", policy.roleForPath(":beer-domain:impl"))
     assertTrue(policy.allows("domain-impl", "domain-api", "main"))
     assertTrue(policy.allows("domain-impl", "core-common", "main"))
     assertTrue(policy.allows("application", "domain-impl", "main"))

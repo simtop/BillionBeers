@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test
  * That was decided on measured build-time cost, not taste - the plugin adds a variant to every
  * consumer and the ADR records what that did to build times here.
  *
- * The decision was drifting back in on its own: `beerdomain/api/build.gradle.kts` carried a "TODO:
+ * The decision was drifting back in on its own: `beer-domain/api/build.gradle.kts` carried a "TODO:
  * try testFixtures instead" with commented-out `testFixturesImplementation` lines, which is how a
  * settled ADR quietly becomes a suggestion. Deleting the TODO fixes today; this rule fixes the next
  * time.

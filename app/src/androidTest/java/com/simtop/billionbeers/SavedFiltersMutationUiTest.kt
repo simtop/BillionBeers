@@ -15,18 +15,18 @@ import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
-import com.simtop.beerdomain.domain.errors.MutateFilterPresetError
-import com.simtop.beerdomain.domain.models.BeersQuery
-import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.billionbeers.di.BaseAppGraph
 import com.simtop.billionbeers.di.FakeBeersRepositoryModule
+import com.simtop.billionbeers.domain.errors.MutateFilterPresetError
+import com.simtop.billionbeers.domain.models.BeersQuery
+import com.simtop.billionbeers.domain.models.SavedFilterPreset
 import com.simtop.billionbeers.presentation.MainActivity
+import com.simtop.billionbeers.presentation.android.R as PresentationUtilsR
+import com.simtop.billionbeers.testing.android.withFailureScreenshot
 import com.simtop.billionbeers.utils.useWithFailureScreenshot
 import com.simtop.feature.beersearch.SEARCH_FIELD_TAG
 import com.simtop.feature.beerslist.R as CatalogR
 import com.simtop.feature.savedfilters.R as SavedFiltersR
-import com.simtop.presentation_utils.R as PresentationUtilsR
-import com.simtop.testing_utils_android.withFailureScreenshot
 import dev.zacsweers.metro.createGraphFactory
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking

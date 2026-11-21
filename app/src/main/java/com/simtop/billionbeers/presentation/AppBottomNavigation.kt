@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.navigation3.runtime.NavKey
+import com.simtop.billionbeers.presentation.android.R
 import com.simtop.billionbeers.shared.designsystem.components.rememberNavigationLabel
 import com.simtop.billionbeers.shared.designsystem.controls.BrandIcon
 import com.simtop.billionbeers.shared.designsystem.controls.BrandNavigationBar
@@ -16,7 +17,6 @@ import com.simtop.billionbeers.shared.designsystem.controls.BrandNavigationBarIt
 import com.simtop.billionbeers.shared.designsystem.controls.BrandNavigationRail
 import com.simtop.billionbeers.shared.designsystem.controls.BrandNavigationRailItem
 import com.simtop.navigation.contract.PortableRoute
-import com.simtop.presentation_utils.R
 
 @Composable
 fun AppBottomNavigation(

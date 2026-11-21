@@ -30,7 +30,7 @@ import androidx.compose.ui.test.v2.runSkikoComposeUiTest
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.billionbeers.domain.models.Beer
 import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersTheme
 import java.io.File
 import javax.imageio.ImageIO

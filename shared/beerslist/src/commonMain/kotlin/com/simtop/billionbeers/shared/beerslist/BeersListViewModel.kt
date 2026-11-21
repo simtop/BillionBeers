@@ -2,12 +2,12 @@ package com.simtop.billionbeers.shared.beerslist
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.simtop.beerdomain.domain.errors.FetchBeersError
-import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.domain.models.BeersQuery
-import com.simtop.beerdomain.domain.models.CatalogCacheStatus
-import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
-import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.billionbeers.domain.errors.FetchBeersError
+import com.simtop.billionbeers.domain.models.Beer
+import com.simtop.billionbeers.domain.models.BeersQuery
+import com.simtop.billionbeers.domain.models.CatalogCacheStatus
+import com.simtop.billionbeers.domain.repositories.BeersPagerFactory
+import com.simtop.billionbeers.domain.repositories.BeersRepository
 import com.simtop.billionbeers.shared.presentation.toCommonUiErrorState
 import com.simtop.core.core.CommonUiErrorKey
 import com.simtop.core.core.CommonUiState

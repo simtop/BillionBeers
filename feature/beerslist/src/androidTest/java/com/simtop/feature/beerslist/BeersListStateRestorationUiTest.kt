@@ -6,13 +6,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
-import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.fakes.fakeBeerModel
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.billionbeers.domain.models.Beer
+import com.simtop.billionbeers.testing.android.withFailureScreenshot
+import com.simtop.billionbeers.testing.domain.fakeBeerModel
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.PagedListFooter
 import com.simtop.core.core.PagedListUiModel
-import com.simtop.testing_utils_android.withFailureScreenshot
 import org.junit.Rule
 import org.junit.Test
 

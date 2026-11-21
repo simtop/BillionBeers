@@ -24,14 +24,14 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.request.error
 import coil3.request.placeholder
-import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.billionbeers.domain.models.Beer
+import com.simtop.billionbeers.presentation.android.R
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailStrings
 import com.simtop.billionbeers.shared.beerdetail.MAX_BEER_METRIC_FRACTION_DIGITS
 import com.simtop.billionbeers.shared.beerdetail.SharedBeerDetailContent
 import com.simtop.billionbeers.shared.beerdetail.formatServingTemperatureRange
 import com.simtop.billionbeers.shared.designsystem.controls.BrandIcon
-import com.simtop.presentation_utils.R
 import java.text.NumberFormat
 
 @Composable

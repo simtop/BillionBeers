@@ -21,6 +21,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.simtop.billionbeers.core.designsystem.component.showToast
+import com.simtop.billionbeers.presentation.android.R
+import com.simtop.billionbeers.presentation.android.components.ComposeIntroductionHint
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailEvent as SharedBeerDetailEvent
 import com.simtop.billionbeers.shared.designsystem.controls.BrandCircularProgressIndicator
 import com.simtop.billionbeers.shared.presentation.LocalOnboardingHints
@@ -28,8 +30,6 @@ import com.simtop.billionbeers.shared.presentation.OnboardingIntroductions
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.di.DynamicDependencies
 import com.simtop.feature.beerdetail.presentation.di.FeatureDetailComponent
-import com.simtop.presentation_utils.R
-import com.simtop.presentation_utils.custom_views.ComposeIntroductionHint
 import dev.zacsweers.metro.createGraphFactory
 import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 import dev.zacsweers.metrox.viewmodel.assistedMetroViewModel

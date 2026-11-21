@@ -2,8 +2,8 @@ package com.simtop.billionbeers.shared.favorites
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.billionbeers.domain.models.Beer
+import com.simtop.billionbeers.domain.repositories.BeersRepository
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.retryWithErrorState
 import kotlinx.coroutines.flow.SharingStarted

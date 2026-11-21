@@ -18,12 +18,12 @@ dependencies {
   // Only the module under active development, plus its fakes - no :beer-data, :beer-database,
   // :beer-network, or :feature:beerdetail, so this assembles in seconds instead of minutes.
   implementation(this.project(":feature:beerslist"))
-  implementation(this.project(":beerdomain:api"))
-  implementation(this.project(":beerdomain:fakes"))
+  implementation(this.project(":beer-domain:api"))
+  implementation(this.project(":beer-domain:fakes"))
   implementation(this.project(":core"))
   implementation(this.project(":core:designsystem"))
   implementation(this.project(":navigation"))
-  implementation(this.project(":presentation_utils"))
+  implementation(this.project(":presentation-utils"))
 
   implementation(libs.androidPlayCore)
   implementation(libs.androidPlayCoreKtx)

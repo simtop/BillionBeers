@@ -1,6 +1,6 @@
 package com.simtop.billionbeers.data.repositories
 
-import com.simtop.beerdomain.domain.errors.FetchBeersError
+import com.simtop.billionbeers.domain.errors.FetchBeersError
 import com.simtop.billionbeers.network.BeersServiceHttpException
 import com.simtop.billionbeers.network.BeersServiceNetworkException
 import com.simtop.core.core.Diagnostic

@@ -13,8 +13,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.domain.models.BeerStyle
+import com.simtop.billionbeers.domain.models.Beer
+import com.simtop.billionbeers.domain.models.BeerStyle
 import com.simtop.billionbeers.shared.designsystem.components.SharedLazyColumn
 import com.simtop.billionbeers.shared.designsystem.controls.BrandDropdownMenu
 import com.simtop.billionbeers.shared.designsystem.controls.BrandDropdownMenuItem

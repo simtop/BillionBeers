@@ -117,11 +117,11 @@ tasks.register("ideSyncArtifacts") {
 
 // Modules deliberately kept out of the aggregate, by exact project path.
 //
-// This used to be `it.name.contains("presentation_utils")`, a substring match on the *name*, which
+// This used to be `it.name.contains("presentation-utils")`, a substring match on the *name*, which
 // is fragile twice over: a rename silently drops the exclusion - the module then re-enters the
 // aggregate and nobody notices - and `contains` would also swallow any future module whose name
 // happens to embed one of these strings. Exact paths plus the check below fail loudly instead.
-val coverageExcludedProjects = setOf(":presentation_utils", ":beer-database")
+val coverageExcludedProjects = setOf(":presentation-utils", ":beer-database")
 
 tasks.register<JacocoReport>("jacocoRootReport") {
     // Android debug unit tests + JVM-module `test` + explicitly measured KMP `jvmTest`. The Android

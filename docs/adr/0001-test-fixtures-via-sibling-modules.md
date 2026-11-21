@@ -10,7 +10,7 @@ The `:testing-utils` module extraction needed a home for two sets of test fixtur
 living in a shared `TestingConstants.kt`:
 
 - Domain fixtures (`fakeBeerModel`, `fakeBeerListModel`, `fakeException`) — types owned by
-  `:beerdomain:api`.
+  `:beer-domain:api`.
 - Network fixtures (`fakeBeersApiResponseItem`, `fakeBeerApiResponse`, `FAKE_JSON`) — types owned
   by `:beer-network`.
 
@@ -21,7 +21,7 @@ all a consumer needs.
 
 ## Decision
 
-Use plain sibling Gradle modules instead — `:beerdomain:fakes` (already existed) and
+Use plain sibling Gradle modules instead — `:beer-domain:fakes` (already existed) and
 `:beer-network:fixtures` (added here) — rather than the `java-test-fixtures`/AGP `testFixtures`
 mechanism.
 

@@ -1,9 +1,9 @@
 package com.simtop.billionbeers.shared.app
 
 import androidx.compose.ui.unit.dp
-import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
-import com.simtop.beerdomain.fakes.FakeBeersRepository
-import com.simtop.beerdomain.fakes.FakeSavedFilterPresetsRepository
+import com.simtop.billionbeers.testing.domain.FakeBeersPagerFactory
+import com.simtop.billionbeers.testing.domain.FakeBeersRepository
+import com.simtop.billionbeers.testing.domain.FakeSavedFilterPresetsRepository
 import com.simtop.core.core.DefaultCoroutineDispatcherProvider
 import com.simtop.navigation.contract.PortableRoute
 import kotlin.test.Test

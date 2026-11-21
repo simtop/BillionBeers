@@ -2,9 +2,9 @@ package com.simtop.feature.savedfilters
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.simtop.beerdomain.domain.errors.MutateFilterPresetError
-import com.simtop.beerdomain.domain.models.SavedFilterPreset
-import com.simtop.beerdomain.domain.repositories.SavedFilterPresetsRepository
+import com.simtop.billionbeers.domain.errors.MutateFilterPresetError
+import com.simtop.billionbeers.domain.models.SavedFilterPreset
+import com.simtop.billionbeers.domain.repositories.SavedFilterPresetsRepository
 import com.simtop.billionbeers.shared.savedfilters.SavedFiltersModel
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.Either
@@ -60,8 +60,8 @@ class SavedFilterResultsViewModel
 @AssistedInject
 constructor(
   coroutineDispatcher: com.simtop.core.core.CoroutineDispatcherProvider,
-  beersPagerFactory: com.simtop.beerdomain.domain.repositories.BeersPagerFactory,
-  @Assisted query: com.simtop.beerdomain.domain.models.BeersQuery,
+  beersPagerFactory: com.simtop.billionbeers.domain.repositories.BeersPagerFactory,
+  @Assisted query: com.simtop.billionbeers.domain.models.BeersQuery,
 ) :
   com.simtop.billionbeers.shared.presentation.BrowseBeersViewModel(
     coroutineDispatcher,
@@ -73,7 +73,7 @@ constructor(
   @ContributesIntoMap(AppScope::class)
   interface Factory : ManualViewModelAssistedFactory {
     fun create(
-      @Assisted query: com.simtop.beerdomain.domain.models.BeersQuery
+      @Assisted query: com.simtop.billionbeers.domain.models.BeersQuery
     ): SavedFilterResultsViewModel
   }
 }

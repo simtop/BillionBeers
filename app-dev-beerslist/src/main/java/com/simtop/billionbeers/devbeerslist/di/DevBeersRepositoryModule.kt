@@ -1,10 +1,10 @@
 package com.simtop.billionbeers.devbeerslist.di
 
-import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
-import com.simtop.beerdomain.domain.repositories.BeersRepository
-import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
-import com.simtop.beerdomain.fakes.FakeBeersRepository
+import com.simtop.billionbeers.domain.models.Beer
+import com.simtop.billionbeers.domain.repositories.BeersPagerFactory
+import com.simtop.billionbeers.domain.repositories.BeersRepository
+import com.simtop.billionbeers.testing.domain.FakeBeersPagerFactory
+import com.simtop.billionbeers.testing.domain.FakeBeersRepository
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.Provides

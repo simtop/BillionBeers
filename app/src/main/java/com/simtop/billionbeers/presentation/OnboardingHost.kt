@@ -4,12 +4,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.simtop.billionbeers.R
+import com.simtop.billionbeers.presentation.android.components.ComposeIntroductionFlow
+import com.simtop.billionbeers.presentation.android.components.IntroductionPage
 import com.simtop.billionbeers.shared.designsystem.controls.BrandCollectionIllustration
 import com.simtop.billionbeers.shared.designsystem.controls.BrandWelcomeIllustration
 import com.simtop.billionbeers.shared.presentation.OnboardingController
 import com.simtop.billionbeers.shared.presentation.SharedOnboardingHost
-import com.simtop.presentation_utils.custom_views.ComposeIntroductionFlow
-import com.simtop.presentation_utils.custom_views.IntroductionPage
 
 @Composable
 fun OnboardingHost(

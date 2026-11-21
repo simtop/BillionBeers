@@ -25,7 +25,7 @@ val libs = billionBeersCatalog()
 
 dependencies {
     // Fakes for the domain interfaces, so a screen test drives state without the data layer.
-    "androidTestImplementation"(this.project(":beerdomain:fakes"))
+    "androidTestImplementation"(this.project(":beer-domain:fakes"))
 
     // Shared robot base. ComposeTestRule is part of its public constructor contract; the Android
     // convention supplies Espresso, runner and test-core through the instrumentedTest bundle.

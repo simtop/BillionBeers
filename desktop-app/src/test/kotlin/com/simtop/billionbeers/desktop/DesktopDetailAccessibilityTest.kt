@@ -27,7 +27,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.v2.runSkikoComposeUiTest
 import androidx.compose.ui.unit.dp
-import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.billionbeers.domain.models.Beer
 import com.simtop.billionbeers.shared.beerdetail.SharedBeerDetailContent
 import java.io.File
 import javax.imageio.ImageIO

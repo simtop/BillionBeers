@@ -25,14 +25,15 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.pressBack
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_EXPANDED_LOWER_BOUND
-import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.domain.models.BeerStyle
-import com.simtop.beerdomain.domain.models.Brewery
-import com.simtop.beerdomain.fakes.FakeBeersPagerFactory
 import com.simtop.billionbeers.di.BaseAppGraph
 import com.simtop.billionbeers.di.FakeBeersRepositoryModule
+import com.simtop.billionbeers.domain.models.Beer
+import com.simtop.billionbeers.domain.models.BeerStyle
+import com.simtop.billionbeers.domain.models.Brewery
 import com.simtop.billionbeers.fakes.FakeSplitInstallManager
 import com.simtop.billionbeers.presentation.MainActivity
+import com.simtop.billionbeers.testing.android.withFailureScreenshot
+import com.simtop.billionbeers.testing.domain.FakeBeersPagerFactory
 import com.simtop.billionbeers.utils.browseScreen
 import com.simtop.billionbeers.utils.detailScreen
 import com.simtop.billionbeers.utils.homeScreen
@@ -44,7 +45,6 @@ import com.simtop.feature.beersearch.R as SearchR
 import com.simtop.feature.beersearch.SEARCH_FIELD_TAG
 import com.simtop.feature.beerslist.R as CatalogR
 import com.simtop.navigation.DynamicFeature
-import com.simtop.testing_utils_android.withFailureScreenshot
 import dev.zacsweers.metro.createGraphFactory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -202,7 +202,7 @@ class MainActivityComposeTest {
       val gotIt =
         InstrumentationRegistry.getInstrumentation()
           .targetContext
-          .getString(com.simtop.presentation_utils.R.string.onboarding_got_it)
+          .getString(com.simtop.billionbeers.presentation.android.R.string.onboarding_got_it)
       onNodeWithText(gotIt).performClick()
       onNodeWithTag("introduction_hint").assertDoesNotExist()
       detailScreen { navigateBack() }
@@ -243,7 +243,7 @@ class MainActivityComposeTest {
         val addFavorite =
           InstrumentationRegistry.getInstrumentation()
             .targetContext
-            .getString(com.simtop.presentation_utils.R.string.add_to_favorites)
+            .getString(com.simtop.billionbeers.presentation.android.R.string.add_to_favorites)
         onNodeWithContentDescription(addFavorite).assertIsDisplayed()
         onNodeWithTag("introduction_hint").assertIsDisplayed()
         repository.setExceptionToThrow(null)
@@ -479,7 +479,9 @@ class MainActivityComposeTest {
       val failureMessage =
         InstrumentationRegistry.getInstrumentation()
           .targetContext
-          .getString(com.simtop.presentation_utils.R.string.failed_to_install_feature)
+          .getString(
+            com.simtop.billionbeers.presentation.android.R.string.failed_to_install_feature
+          )
       composeTestRule.homeScreen { waitUntilNodeWithTextIsDisplayed(failureMessage) }
       composeTestRule.onNodeWithText(fakeBeer.description).assertDoesNotExist()
       assertEquals(
@@ -536,11 +538,15 @@ class MainActivityComposeTest {
       detailScreen {
         waitUntilNodeWithTextIsDisplayed(fakeBeer.description)
         assertToggleButtonShowsMarkAsEmpty()
-        assertAvailabilityActionSemantics(com.simtop.presentation_utils.R.string.beer_available)
+        assertAvailabilityActionSemantics(
+          com.simtop.billionbeers.presentation.android.R.string.beer_available
+        )
         clickToggleAvailability()
         waitUntilToggleButtonShowsRefillBarrels()
         assertToggleButtonShowsRefillBarrels()
-        assertAvailabilityActionSemantics(com.simtop.presentation_utils.R.string.beer_out_of_stock)
+        assertAvailabilityActionSemantics(
+          com.simtop.billionbeers.presentation.android.R.string.beer_out_of_stock
+        )
         navigateBack()
       }
 

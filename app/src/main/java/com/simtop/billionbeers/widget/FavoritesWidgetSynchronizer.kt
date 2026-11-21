@@ -1,6 +1,6 @@
 package com.simtop.billionbeers.widget
 
-import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.billionbeers.domain.repositories.BeersRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.collect
 

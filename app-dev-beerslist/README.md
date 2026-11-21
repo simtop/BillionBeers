@@ -14,7 +14,7 @@ interactive `BeersListScreen` in the time it takes to compile one feature module
 ## What's fake
 
 `di/DevBeersRepositoryModule.kt` binds `BeersRepository` to `FakeBeersRepository` (from
-`:beerdomain:fakes`), seeded with a handful of sample beers. Edit that file to try out different
+`:beer-domain:fakes`), seeded with a handful of sample beers. Edit that file to try out different
 states (empty list, all beers unavailable, large lists for scroll testing, etc).
 
 ## Known limitation

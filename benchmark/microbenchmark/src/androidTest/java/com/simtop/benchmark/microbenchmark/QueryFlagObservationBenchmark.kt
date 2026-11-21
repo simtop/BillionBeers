@@ -11,8 +11,8 @@ import com.simtop.billionbeers.data.repositories.BeersPagerFactoryImpl
 import com.simtop.billionbeers.data.repositories.BeersRepositoryImpl
 import com.simtop.billionbeers.database.BeersDatabase
 import com.simtop.billionbeers.database.localsources.BeersLocalSourceImpl
-import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.domain.models.BeersQuery
+import com.simtop.billionbeers.domain.models.Beer
+import com.simtop.billionbeers.domain.models.BeersQuery
 import com.simtop.billionbeers.network.models.BeersApiResponseItem
 import com.simtop.billionbeers.network.models.BeersPage
 import com.simtop.billionbeers.network.remotesources.BeersRemoteSource

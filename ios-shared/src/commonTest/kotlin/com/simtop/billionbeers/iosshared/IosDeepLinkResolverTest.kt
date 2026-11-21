@@ -1,8 +1,8 @@
 package com.simtop.billionbeers.iosshared
 
-import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.domain.repositories.BeersRepository
-import com.simtop.beerdomain.fakes.FakeBeersRepository
+import com.simtop.billionbeers.domain.models.Beer
+import com.simtop.billionbeers.domain.repositories.BeersRepository
+import com.simtop.billionbeers.testing.domain.FakeBeersRepository
 import com.simtop.navigation.contract.DeepLinkParser
 import com.simtop.navigation.contract.PortableRoute
 import kotlin.test.Test

@@ -46,7 +46,7 @@ and build cache then supply incrementality for free.
 screen. Cross-feature and app-assembly behaviour stays in `:app`.**
 
 Feature modules opt in with `billionbeers.android.feature.uitest`, which supplies the managed
-device, the Compose test rules, `:beerdomain:fakes` and `:testing-utils-android`.
+device, the Compose test rules, `:beer-domain:fakes` and `:testing-utils-android`.
 
 The split, concretely:
 
@@ -109,7 +109,7 @@ run twelve tests worth ~23s.
 
 **Dynamic features now use the tier without owning user-facing resources.**
 `:feature:beerdetail` and `:feature:beerbrowse` have module-local screen tests, while invariant 5
-keeps the strings those tests need in `:presentation_utils`. The resource boundary, not dynamic
+keeps the strings those tests need in `:presentation-utils`. The resource boundary, not dynamic
 feature status itself, was the constraint. Cross-feature navigation and split-install behaviour
 still stay in `:app`.
 

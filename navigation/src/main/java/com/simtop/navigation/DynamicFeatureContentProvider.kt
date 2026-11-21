@@ -3,7 +3,7 @@ package com.simtop.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.navigation3.runtime.NavKey
-import com.simtop.beerdomain.domain.models.BeersQuery
+import com.simtop.billionbeers.domain.models.BeersQuery
 
 /**
  * Contract implemented by a screen that lives inside a dynamic feature module.

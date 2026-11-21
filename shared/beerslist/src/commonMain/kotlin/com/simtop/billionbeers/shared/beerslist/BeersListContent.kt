@@ -13,7 +13,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import com.simtop.beerdomain.domain.models.Beer
+import com.simtop.billionbeers.domain.models.Beer
 import com.simtop.billionbeers.shared.designsystem.components.SharedLazyColumn
 import com.simtop.billionbeers.shared.designsystem.controls.BrandPullToRefreshBox
 import com.simtop.billionbeers.shared.presentation.InfiniteListHandler

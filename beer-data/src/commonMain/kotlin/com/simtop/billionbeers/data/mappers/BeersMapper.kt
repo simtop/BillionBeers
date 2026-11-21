@@ -1,8 +1,8 @@
 package com.simtop.billionbeers.data.mappers
 
-import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.domain.models.BeerStyle
-import com.simtop.beerdomain.domain.models.Brewery
+import com.simtop.billionbeers.domain.models.Beer
+import com.simtop.billionbeers.domain.models.BeerStyle
+import com.simtop.billionbeers.domain.models.Brewery
 import com.simtop.billionbeers.network.BeersService
 import com.simtop.billionbeers.network.models.BeersApiResponseItem
 import com.simtop.billionbeers.network.models.BreweryApiResponseItem

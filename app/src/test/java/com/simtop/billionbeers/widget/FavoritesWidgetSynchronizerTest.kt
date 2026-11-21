@@ -1,7 +1,7 @@
 package com.simtop.billionbeers.widget
 
-import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.fakes.FakeBeersRepository
+import com.simtop.billionbeers.domain.models.Beer
+import com.simtop.billionbeers.testing.domain.FakeBeersRepository
 import com.simtop.core.core.FLOW_RETRY_DELAY_MILLIS
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi

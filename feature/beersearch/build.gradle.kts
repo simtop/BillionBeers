@@ -13,6 +13,6 @@ dependencies {
   implementation(this.project(":shared:beersearch"))
   implementation(libs.lifecycle.runtime.compose)
 
-  testImplementation(this.project(":beerdomain:fakes"))
+  testImplementation(this.project(":beer-domain:fakes"))
   testImplementation(libs.striktCore)
 }

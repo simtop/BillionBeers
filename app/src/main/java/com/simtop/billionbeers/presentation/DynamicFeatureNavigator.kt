@@ -8,9 +8,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.retain.retain
 import androidx.compose.runtime.setValue
 import androidx.navigation3.runtime.NavKey
+import com.simtop.billionbeers.presentation.android.core.DynamicFeatureLoader
 import com.simtop.navigation.DynamicFeature
 import com.simtop.navigation.dynamicFeatureOrNull
-import com.simtop.presentation_utils.core.DynamicFeatureLoader
 
 private data class PendingDynamicFeature(val key: NavKey, val feature: DynamicFeature)
 

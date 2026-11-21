@@ -30,7 +30,7 @@ import com.simtop.billionbeers.core.designsystem.widget.BrandWidgetContainer
 import com.simtop.billionbeers.core.designsystem.widget.BrandWidgetImage
 import com.simtop.billionbeers.core.designsystem.widget.BrandWidgetText
 import com.simtop.billionbeers.core.designsystem.widget.BrandWidgetTextRole
-import com.simtop.presentation_utils.R
+import com.simtop.billionbeers.presentation.android.R
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi

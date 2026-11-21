@@ -2,10 +2,10 @@ package com.simtop.billionbeers.shared.beerdetail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.simtop.beerdomain.domain.errors.UpdateAvailabilityError
-import com.simtop.beerdomain.domain.errors.UpdateFavoriteError
-import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.domain.repositories.BeersRepository
+import com.simtop.billionbeers.domain.errors.UpdateAvailabilityError
+import com.simtop.billionbeers.domain.errors.UpdateFavoriteError
+import com.simtop.billionbeers.domain.models.Beer
+import com.simtop.billionbeers.domain.repositories.BeersRepository
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.Either
 import kotlinx.coroutines.Job

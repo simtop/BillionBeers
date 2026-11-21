@@ -10,8 +10,8 @@ import org.junit.jupiter.api.Test
  * Dynamic-feature modules ship as on-demand split APKs. A user-facing string declared in the
  * split's own package compiles, but can crash under an instrumented test because a split's resource
  * table is not merged into the resolving context like an installed base module's is. The invariant:
- * every string a dynamic feature renders lives in :presentation_utils (a base module) and is
- * referenced through com.simtop.presentation_utils.R, never the feature's own R.
+ * every string a dynamic feature renders lives in :presentation-utils (a base module) and is
+ * referenced through com.simtop.billionbeers.presentation.android.R, never the feature's own R.
  *
  * Dynamic features are discovered from convention-plugin application in their build scripts. A new
  * on-demand feature therefore cannot silently opt out by being omitted from a hand-maintained list.
@@ -29,7 +29,7 @@ class DynamicFeatureResourceBoundaryTest {
   }
 
   @Test
-  fun `dynamic-feature code references resources through presentation_utils, not its own R`() {
+  fun `dynamic-feature code references resources through presentation-utils, not its own R`() {
     dynamicFeatureModules().forEach { feature ->
       val files =
         Konsist.scopeFromProject().files.filter {

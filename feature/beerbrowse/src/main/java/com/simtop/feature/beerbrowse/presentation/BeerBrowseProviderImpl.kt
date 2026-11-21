@@ -3,7 +3,7 @@ package com.simtop.feature.beerbrowse.presentation
 import androidx.annotation.Keep
 import androidx.compose.runtime.Composable
 import androidx.navigation3.runtime.NavKey
-import com.simtop.beerdomain.domain.models.BeersQuery
+import com.simtop.billionbeers.domain.models.BeersQuery
 import com.simtop.navigation.DynamicFeatureContentProvider
 import com.simtop.navigation.contract.PortableRoute
 

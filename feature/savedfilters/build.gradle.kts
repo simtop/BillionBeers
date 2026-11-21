@@ -6,9 +6,9 @@ plugins {
 android { namespace = "com.simtop.feature.savedfilters" }
 
 dependencies {
-  implementation(project(":beerdomain:api"))
+  implementation(project(":beer-domain:api"))
   implementation(project(":navigation"))
-  implementation(project(":presentation_utils"))
+  implementation(project(":presentation-utils"))
   implementation(project(":core"))
   implementation(project(":shared:presentation"))
   implementation(project(":shared:savedfilters"))
@@ -20,6 +20,6 @@ dependencies {
   implementation(libs.androidx.material3.android)
   implementation(libs.androidx.ui.tooling.preview.android)
 
-  testImplementation(project(":beerdomain:fakes"))
+  testImplementation(project(":beer-domain:fakes"))
   testImplementation(libs.striktCore)
 }

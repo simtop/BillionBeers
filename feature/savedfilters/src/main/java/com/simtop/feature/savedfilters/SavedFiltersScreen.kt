@@ -21,11 +21,15 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.domain.models.BeersQuery
-import com.simtop.beerdomain.domain.models.SavedFilterPreset
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.billionbeers.domain.models.Beer
+import com.simtop.billionbeers.domain.models.BeersQuery
+import com.simtop.billionbeers.domain.models.SavedFilterPreset
+import com.simtop.billionbeers.presentation.android.R as PresentationUtilsR
+import com.simtop.billionbeers.presentation.android.components.ComposeBeersListItem
+import com.simtop.billionbeers.presentation.android.components.ComposeErrorView
+import com.simtop.billionbeers.presentation.android.core.resolvedMessage
 import com.simtop.billionbeers.shared.designsystem.controls.BrandIcon
 import com.simtop.billionbeers.shared.designsystem.controls.BrandSnackbarHost
 import com.simtop.billionbeers.shared.designsystem.controls.BrandText
@@ -37,10 +41,6 @@ import com.simtop.billionbeers.shared.savedfilters.SharedSavedFiltersContent
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.PagedListUiModel
 import com.simtop.navigation.SavedFilterResults
-import com.simtop.presentation_utils.R as PresentationUtilsR
-import com.simtop.presentation_utils.core.resolvedMessage
-import com.simtop.presentation_utils.custom_views.ComposeBeersListItem
-import com.simtop.presentation_utils.custom_views.ComposeErrorView
 import dev.zacsweers.metrox.viewmodel.assistedMetroViewModel
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 import kotlinx.coroutines.flow.collect

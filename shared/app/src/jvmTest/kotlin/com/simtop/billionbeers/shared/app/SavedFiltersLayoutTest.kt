@@ -29,13 +29,13 @@ import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.v2.runSkikoComposeUiTest
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
-import com.simtop.beerdomain.domain.models.BeersQuery
-import com.simtop.beerdomain.domain.models.SavedFilterPreset
-import com.simtop.beerdomain.domain.repositories.SavedFilterPresetsRepository
-import com.simtop.beerdomain.fakes.FakeSavedFilterPresetsRepository
+import com.simtop.billionbeers.domain.models.BeersQuery
+import com.simtop.billionbeers.domain.models.SavedFilterPreset
+import com.simtop.billionbeers.domain.repositories.SavedFilterPresetsRepository
 import com.simtop.billionbeers.shared.beerbrowse.BrowseStrings
 import com.simtop.billionbeers.shared.beerdetail.BeerDetailStrings
 import com.simtop.billionbeers.shared.designsystem.theme.BillionBeersTheme
+import com.simtop.billionbeers.testing.domain.FakeSavedFilterPresetsRepository
 import java.io.File
 import javax.imageio.ImageIO
 import kotlin.test.Test

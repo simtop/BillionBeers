@@ -2,11 +2,11 @@ package com.simtop.feature.beersearch
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
-import com.simtop.beerdomain.domain.models.Beer
-import com.simtop.beerdomain.domain.models.BeerStyle
-import com.simtop.beerdomain.domain.models.BeersQuery
 import com.simtop.billionbeers.core.designsystem.component.PreviewLightDark
 import com.simtop.billionbeers.core.designsystem.theme.BillionBeersTheme
+import com.simtop.billionbeers.domain.models.Beer
+import com.simtop.billionbeers.domain.models.BeerStyle
+import com.simtop.billionbeers.domain.models.BeersQuery
 import com.simtop.core.core.CommonUiState
 import com.simtop.core.core.PagedListUiModel
 

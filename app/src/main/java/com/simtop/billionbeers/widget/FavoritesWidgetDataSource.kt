@@ -1,8 +1,8 @@
 package com.simtop.billionbeers.widget
 
 import android.content.Context
-import com.simtop.beerdomain.domain.repositories.BeersRepository
 import com.simtop.billionbeers.BillionBeersApplication
+import com.simtop.billionbeers.domain.repositories.BeersRepository
 import com.simtop.core.core.retryWithErrorState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged

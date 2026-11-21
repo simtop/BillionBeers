@@ -14,13 +14,13 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.lifecycle.ActivityLifecycleCallback
 import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
 import androidx.test.runner.lifecycle.Stage
-import com.simtop.beerdomain.domain.models.Beer
 import com.simtop.billionbeers.di.BaseAppGraph
 import com.simtop.billionbeers.di.FakeBeersRepositoryModule
+import com.simtop.billionbeers.domain.models.Beer
 import com.simtop.billionbeers.presentation.MainActivity
 import com.simtop.billionbeers.shared.presentation.OnboardingController
 import com.simtop.billionbeers.shared.presentation.OnboardingStore
-import com.simtop.testing_utils_android.withFailureScreenshot
+import com.simtop.billionbeers.testing.android.withFailureScreenshot
 import dev.zacsweers.metro.createGraphFactory
 import java.io.IOException
 import java.util.concurrent.CountDownLatch

@@ -1,8 +1,8 @@
 package com.simtop.billionbeers.robots
 
 import androidx.compose.ui.test.junit4.ComposeTestRule
-import com.simtop.presentation_utils.R
-import com.simtop.testing_utils_android.BaseTestRobot
+import com.simtop.billionbeers.presentation.android.R
+import com.simtop.billionbeers.testing.android.BaseTestRobot
 
 class BrowseScreenRobot(composeTestRule: ComposeTestRule) :
   BaseTestRobot(composeTestRule, supportsActivityRecreation = true) {

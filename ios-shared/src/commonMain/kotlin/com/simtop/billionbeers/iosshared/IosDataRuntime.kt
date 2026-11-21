@@ -1,10 +1,10 @@
 package com.simtop.billionbeers.iosshared
 
-import com.simtop.beerdomain.domain.repositories.BeerCatalogMetadataRepository
-import com.simtop.beerdomain.domain.repositories.BeersPagerFactory
-import com.simtop.beerdomain.domain.repositories.BeersRepository
-import com.simtop.beerdomain.domain.repositories.SavedFilterPresetsRepository
 import com.simtop.billionbeers.database.BeersDatabase
+import com.simtop.billionbeers.domain.repositories.BeerCatalogMetadataRepository
+import com.simtop.billionbeers.domain.repositories.BeersPagerFactory
+import com.simtop.billionbeers.domain.repositories.BeersRepository
+import com.simtop.billionbeers.domain.repositories.SavedFilterPresetsRepository
 import com.simtop.core.core.CoroutineDispatcherProvider
 import com.simtop.core.core.EnvironmentConfig
 import com.simtop.core.core.LanguageProvider

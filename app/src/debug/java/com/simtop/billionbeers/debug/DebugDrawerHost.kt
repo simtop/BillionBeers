@@ -23,7 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.simtop.billionbeers.di.BaseAppGraph
-import com.simtop.presentation_utils.core.LocalDebugDrawerToggle
+import com.simtop.billionbeers.presentation.android.core.LocalDebugDrawerToggle
 import kotlinx.coroutines.launch
 
 /**

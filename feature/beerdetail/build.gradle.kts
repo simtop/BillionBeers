@@ -17,9 +17,9 @@ android {
 
 dependencies {
   implementation(project(":shared:presentation"))
-  implementation(this.project(":beerdomain:api"))
+  implementation(this.project(":beer-domain:api"))
   implementation(this.project(":shared:beerdetail"))
-  implementation(this.project(":presentation_utils"))
+  implementation(this.project(":presentation-utils"))
   implementation(this.project(":core"))
   implementation(this.project(":core:designsystem"))
   implementation(this.project(":navigation"))
@@ -51,7 +51,7 @@ dependencies {
   androidTestImplementation(libs.mockkAndroid)
   androidTestImplementation(libs.junitKtx)
 
-  testImplementation(this.project(":beerdomain:fakes"))
+  testImplementation(this.project(":beer-domain:fakes"))
   testImplementation(libs.striktCore)
   androidTestImplementation(libs.striktCore)
   androidTestImplementation(this.project(":testing-utils-android"))

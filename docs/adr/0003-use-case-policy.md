@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-After the typed-errors work, every use case in `beerdomain/impl/.../usecases/` is a one-line
+After the typed-errors work, every use case in `beer-domain/impl/.../usecases/` is a one-line
 pass-through to `BeersRepository`:
 
 ```kotlin
@@ -64,7 +64,7 @@ Adopt policy 2, **coupled to mechanical boundary enforcement**:
   `UpdateAvailabilityUseCase`. ViewModels inject `BeersRepository` directly.
 - The layer boundary those classes were socially guarding becomes a Konsist rule that fails the
   build: **ViewModels may depend only on domain-layer types** (repository interfaces from
-  `:beerdomain:api`, surviving use cases, domain models) - never on data-layer sources, DTOs,
+  `:beer-domain:api`, surviving use cases, domain models) - never on data-layer sources, DTOs,
   Retrofit services, or DAOs.
 
 The Konsist rule is not optional hardening; it is the load-bearing half of this decision. Deleting

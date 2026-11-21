@@ -4,8 +4,8 @@ import android.os.Environment
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import com.simtop.billionbeers.presentation.MainActivity
+import com.simtop.billionbeers.testing.android.FailureScreenshotRule
 import com.simtop.billionbeers.utils.useWithFailureScreenshot
-import com.simtop.testing_utils_android.FailureScreenshotRule
 import java.io.File
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
