@@ -350,6 +350,12 @@ if [[ "${BILLIONBEERS_SCAFFOLD_TEST_FAIL_AFTER_FIRST_PUBLISH:-}" == "1" ]]; then
   exit 1
 fi
 cp -a -- "$SHARED_MODULE/." "$SHARED_DEST/"
+for destination in "$FEATURE_DEST" "$SHARED_DEST"; do
+  if [[ ! -f "$destination/build.gradle.kts" ]]; then
+    echo "error: ${destination#"$ROOT/"}/build.gradle.kts is missing after scaffold publication" >&2
+    exit 1
+  fi
+done
 COMMITTED=true
 
 echo "Created feature/$NAME and shared/$NAME."
