@@ -145,6 +145,11 @@ one open PR by supplying its number.
 This scheduled run is a freshness backstop. Normal PR pushes retain the one-run verdict adoption
 behavior above, and merge-group validation still runs the full suite independently.
 
+Weekly Full Protect uses a separate Monday schedule in `ci.yml` to test the scheduled commit on
+`master` regardless of the open PR queue. It bypasses post-merge reuse and requires all five test
+lanes plus Desktop packaging. The run summary links its commit. Current-head results use the same
+master failure issue as push and manual runs.
+
 ### 9. Observe module impact before enabling narrower execution
 
 Repository Checks produces an advisory `ci-impact-shadow` artifact on each PR. The report uses the
