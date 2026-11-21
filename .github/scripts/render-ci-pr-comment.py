@@ -23,6 +23,7 @@ def load_script(name: str):
 SUMMARY = load_script("summarize-test-failures")
 MARKER = "<!-- billionbeers-ci:diagnosis -->"
 BAD = {"failure", "cancelled", "timed_out", "action_required", "startup_failure", "stale"}
+SKIKO_LOOKUP_ERROR = "Cannot determine the version of Skiko for Compose"
 # Step names, not lane names: the unit lane also owns architecture and coverage checks.
 # command, relevant artifacts, optional JUnit mode
 STEP_RULES = {
@@ -36,6 +37,10 @@ STEP_RULES = {
     # Compatibility with runs predating ordinary failure propagation in the screenshot step.
     "Signal Failure": ("make screenshot-verify", ("screenshot-test-results", "screenshot-failures"), "paparazzi"),
     "Run instrumented tests on the managed devices": ("make ui-test-managed-ci", ("instrumented-test-reports", "managed-device-gradle-profiles"), "managed-device"),
+    "Run the expanded-width app journey on a managed tablet": (
+        "make ui-test-managed-tablet UI_TEST_CLASS=com.simtop.billionbeers.MainActivityComposeTest#expandedListDetailKeepsTheListVisibleAfterSelection",
+        ("instrumented-test-reports", "managed-device-gradle-profiles"), "managed-device",
+    ),
     "Run minified release confidence smoke tests": ("make release-smoke", ("instrumented-test-reports", "release-confidence-artifacts", "managed-device-gradle-profiles"), "managed-device"),
     "Run Web browser and static distribution verification": (
         "make web-verify",
@@ -103,6 +108,13 @@ def error_excerpt(log: str) -> str:
     for line in lines:
         if re.search(r"\.kts?:\d+:\d+: .+ \[[A-Za-z][A-Za-z0-9]*\]$", line):
             return line[:700]
+    # Resolution can print several lines of dependent projects before the underlying error.
+    for line in lines:
+        if "Dependency verification failed" in line:
+            return line[:700]
+    for line in lines:
+        if SKIKO_LOOKUP_ERROR in line:
+            return line.lstrip("> ")[:700]
     for index, line in enumerate(lines):
         if line == "* What went wrong:":
             detail = []
@@ -209,20 +221,24 @@ def render(data: dict, run_url: str, repository: str, run_id: str) -> str:
             name = step.get("name", "Unknown step")
             lines += [f"**Failed step:** {text(name)}", ""]
             command, _, mode = STEP_RULES.get(name, EMPTY_RULE)
-            verification_error = "Dependency verification failed" in job.get("diagnostics", {}).get(name, {}).get("error", "")
+            details = job.get("diagnostics", {}).get(name, {})
+            error = details.get("error", "")
+            verification_error = "Dependency verification failed" in error
+            skiko_lookup_error = error.startswith(SKIKO_LOOKUP_ERROR)
             if name == "Run Spotless Check" and verification_error:
                 lines += ["Gradle failed verification before formatting could run. Inspect dependency preparation; Format Fix hits the same blocker.", ""]
-            elif command:
+            elif command and not skiko_lookup_error:
                 lines += [f"**Reproduce:** {SUMMARY.inline_code(command)}", ""]
-            details = job.get("diagnostics", {}).get(name, {})
-            if details.get("error"):
-                lines += [SUMMARY.inline_code(details["error"]), ""]
+            if error:
+                lines += [SUMMARY.inline_code(error), ""]
+            if skiko_lookup_error:
+                lines += ["Retry the failed job once. If the lookup fails again, inspect Gradle dependency resolution for this Compose version.", ""]
             failures = [SUMMARY.Failure(**failure) for failure in details.get("failures", [])]
             if failures:
                 lines += ["**Failed tests:**", "", *SUMMARY.failure_lines(failures[:8], include_detail=True), ""]
                 if len(failures) > 8:
                     lines += [f"_{len(failures) - 8} more failures in the report._", ""]
-            elif mode and not job.get("carried_forward") and job.get("conclusion") == "failure":
+            elif mode and not skiko_lookup_error and not job.get("carried_forward") and job.get("conclusion") == "failure":
                 lines += ["No failed testcase was found in the available reports. The failed step's log is authoritative; missing XML alone does not establish the cause.", ""]
             if details.get("unreadable"):
                 lines += ["_Some test reports could not be parsed; the available results may be incomplete._", ""]

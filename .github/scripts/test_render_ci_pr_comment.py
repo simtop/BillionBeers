@@ -91,6 +91,18 @@ class RenderCiPrCommentTest(unittest.TestCase):
             self.assertIn("not evidence of a test assertion failure", body)
             self.assertNotIn("No failed testcase", body)
 
+    def test_cancelled_tablet_journey_links_its_command_and_available_reports(self):
+        failed = job(
+            name="Instrumented Tests (Gradle Managed Device)",
+            step="Run the expanded-width app journey on a managed tablet",
+            conclusion="cancelled",
+            artifacts=[{"name": "instrumented-test-reports", "id": 3}],
+        )
+        body = render([failed])
+        self.assertIn("make ui-test-managed-tablet UI_TEST_CLASS=", body)
+        self.assertIn("#expandedListDetailKeepsTheListVisibleAfterSelection", body)
+        self.assertIn("instrumented-test-reports", body)
+
     def test_web_failure_has_reproduction_command_and_distribution_evidence(self):
         failed = job(
             name="Web Tests (Wasm/static)",
@@ -181,6 +193,22 @@ class RenderCiPrCommentTest(unittest.TestCase):
         excerpt = MODULE.error_excerpt("* What went wrong:\nExecution failed for task ':example:compile'.\n> Unresolved reference: foo\n\n* Try:\n--stacktrace")
         self.assertIn("Unresolved reference", excerpt)
         self.assertNotIn("--stacktrace", excerpt)
+
+    def test_skiko_lookup_after_long_gradle_context_gets_dependency_guidance(self):
+        skiko = "Cannot determine the version of Skiko for Compose '1.12.2'"
+        log = "* What went wrong:\n" + "Required by project ':app'\n" * 10 + f"> {skiko}\n"
+        excerpt = MODULE.error_excerpt(log)
+        self.assertEqual(skiko, excerpt)
+        body = render([job(diagnostics={"Run Unit Tests": {"error": excerpt}})])
+        self.assertIn(skiko, body)
+        self.assertIn("Retry the failed job once", body)
+        self.assertNotIn("No failed testcase", body)
+
+        verification = "Dependency verification failed for configuration ':app:debugRuntimeClasspath'"
+        excerpt_with_verification = MODULE.error_excerpt(log + verification)
+        body = render([job(diagnostics={"Run Unit Tests": {"error": excerpt_with_verification}})])
+        self.assertEqual(verification, excerpt_with_verification)
+        self.assertNotIn("Retry the failed job once", body)
 
     def test_detekt_finding_is_shown_instead_of_gradle_boilerplate(self):
         finding = (

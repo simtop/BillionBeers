@@ -938,6 +938,8 @@ jobs:
 
       - name: Run instrumented tests on the managed devices
         id: managed_device_tests
+        # Leave time for failure reports when device provisioning or test execution stalls.
+        timeout-minutes: 30
         # The `ci` group is the ATD fast lane. The slower API 37 lane is the `compat` group and
         # runs monthly (.github/workflows/weekly-compat.yml). Which devices those mean is defined
         # in build-logic, not here.
@@ -965,6 +967,7 @@ jobs:
 
       - name: Run the expanded-width app journey on a managed tablet
         id: tablet_tests
+        timeout-minutes: 10
         run: >-
           bash .github/scripts/run-timed-command.sh
           env
@@ -1000,12 +1003,15 @@ jobs:
         env:
           MANAGED_DEVICE_OUTCOME: ${{ steps.managed_device_tests.outcome }}
           MANAGED_DEVICE_SECONDS: ${{ steps.managed_device_tests.outputs.elapsed_seconds }}
+          TABLET_OUTCOME: ${{ steps.tablet_tests.outcome }}
+          TABLET_SECONDS: ${{ steps.tablet_tests.outputs.elapsed_seconds }}
           RELEASE_SMOKE_OUTCOME: ${{ steps.release_smoke_tests.outcome }}
           RELEASE_SMOKE_SECONDS: ${{ steps.release_smoke_tests.outputs.elapsed_seconds }}
         run: |
           python3 .github/scripts/render-phase-timings.py \
             --title 'Instrumented lane phase timings' \
             --phase "Debug managed-device tests|$MANAGED_DEVICE_OUTCOME|$MANAGED_DEVICE_SECONDS" \
+            --phase "Expanded-width tablet test|$TABLET_OUTCOME|$TABLET_SECONDS" \
             --phase "Minified release smoke|$RELEASE_SMOKE_OUTCOME|$RELEASE_SMOKE_SECONDS" \
             --json build/ci-phase-timings/instrumented.json
           echo '_Task-level Gradle profiles are attached as a separate artifact._' >> "$GITHUB_STEP_SUMMARY"
@@ -1018,6 +1024,7 @@ jobs:
           steps.tablet_tests.outcome == 'failure' ||
           steps.release_smoke_tests.outcome == 'failure' ||
           steps.managed_device_tests.outcome == 'cancelled' ||
+          steps.tablet_tests.outcome == 'cancelled' ||
           steps.release_smoke_tests.outcome == 'cancelled')
         run: >-
           python3 .github/scripts/summarize-test-failures.py managed-device --detail
