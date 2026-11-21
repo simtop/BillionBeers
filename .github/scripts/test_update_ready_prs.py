@@ -60,6 +60,9 @@ class UpdateTests(unittest.TestCase):
         self.api_patch = patch.object(MODULE, "api", side_effect=self.api)
         self.api_patch.start()
         self.addCleanup(self.api_patch.stop)
+        sleep_patch = patch.object(MODULE, "sleep")
+        self.sleep = sleep_patch.start()
+        self.addCleanup(sleep_patch.stop)
 
     def commit(self, message: str) -> str:
         git(self.author, "add", ".")
@@ -231,7 +234,22 @@ class UpdateTests(unittest.TestCase):
         with patch.object(MODULE, "dispatch_ci") as dispatch:
             self.updater.ensure_master_ci()
         dispatch.assert_not_called()
+        self.sleep.assert_not_called()
         self.assertTrue(any("/workflows/ci.yml/runs?head_sha=" in item for item in self.reads))
+
+    def test_master_ci_visible_after_pr_completion_prevents_duplicate_dispatch(self):
+        self.updater.event_name = "workflow_run"
+        initial = [{"workflow_runs": []}]
+        visible = [{"workflow_runs": [{
+            "head_sha": self.base, "head_branch": "master", "event": "push", "status": "queued",
+        }]}]
+        with patch.object(MODULE, "api", side_effect=[initial, visible]) as actions, patch.object(
+            MODULE, "dispatch_ci"
+        ) as dispatch:
+            self.updater.ensure_master_ci()
+        self.assertEqual(2, actions.call_count)
+        self.sleep.assert_called_once_with(20)
+        dispatch.assert_not_called()
 
     def test_ci_completion_for_a_dispatched_master_run_does_not_recurse(self):
         with patch.object(MODULE, "api", return_value=[{"workflow_runs": [
@@ -338,19 +356,12 @@ class UpdateTests(unittest.TestCase):
         dispatch.assert_not_called()
 
     def test_second_invocation_after_dispatch_does_not_recurse(self):
-        calls = 0
-
-        def runs(*args, **kwargs):
-            nonlocal calls
-            calls += 1
-            if calls == 1:
-                return [{"workflow_runs": []}]
-            return [{"workflow_runs": [{
-                "head_sha": self.base, "head_branch": "master",
-                "event": "workflow_dispatch", "status": "queued",
-            }]}]
-
-        with patch.object(MODULE, "api", side_effect=runs), patch.object(
+        missing = [{"workflow_runs": []}]
+        dispatched = [{"workflow_runs": [{
+            "head_sha": self.base, "head_branch": "master",
+            "event": "workflow_dispatch", "status": "queued",
+        }]}]
+        with patch.object(MODULE, "api", side_effect=[missing, missing, dispatched]), patch.object(
             MODULE, "dispatch_ci"
         ) as dispatch:
             self.updater.ensure_master_ci()
