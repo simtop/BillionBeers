@@ -6,6 +6,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -199,6 +200,35 @@ class NewFeatureModuleTest(unittest.TestCase):
             self.assert_sentinels_unchanged(sentinels)
             self.assert_clean_transaction_artifacts(root)
 
+    def test_copy_success_with_missing_build_file_rolls_back_both_modules(self) -> None:
+        with self.fixture() as (root, cwd, sentinels):
+            cp = shutil.which("cp")
+            self.assertIsNotNone(cp)
+            copy = cwd / "cp"
+            copy.write_text(
+                '#!/usr/bin/env bash\nset -euo pipefail\n"$SCAFFOLD_TEST_CP" "$@"\n'
+                'destination="${!#}"\n'
+                'case "$destination" in\n'
+                '  */feature/sample/) rm -- "$destination/build.gradle.kts" ;;\n'
+                'esac\n'
+            )
+            copy.chmod(0o755)
+            result = subprocess.run(
+                ["bash", str(SCRIPT), "sample", "Sample"], cwd=cwd,
+                env=os.environ | {
+                    "BILLIONBEERS_REPO_ROOT": str(root),
+                    "PATH": f"{cwd}{os.pathsep}{os.environ['PATH']}",
+                    "SCAFFOLD_TEST_CP": cp,
+                }, text=True, capture_output=True, check=False,
+            )
+
+            self.assertNotEqual(0, result.returncode, result)
+            self.assertIn("feature/sample/build.gradle.kts is missing", result.stderr)
+            self.assertFalse((root / "feature/sample").exists())
+            self.assertFalse((root / "shared/sample").exists())
+            self.assert_sentinels_unchanged(sentinels)
+            self.assert_clean_transaction_artifacts(root)
+
     def test_concurrent_invocations_leave_one_complete_pair(self) -> None:
         with self.fixture() as (root, cwd, _):
             environment = os.environ | {"BILLIONBEERS_REPO_ROOT": str(root)}
@@ -217,8 +247,8 @@ class NewFeatureModuleTest(unittest.TestCase):
             results = [process.communicate() + (process.returncode,) for process in processes]
 
             self.assertEqual([0, 1], sorted(result[2] for result in results), results)
-            self.assertTrue((root / "feature/sample/build.gradle.kts").is_file())
-            self.assertTrue((root / "shared/sample/build.gradle.kts").is_file())
+            self.assertTrue((root / "feature/sample/build.gradle.kts").is_file(), results)
+            self.assertTrue((root / "shared/sample/build.gradle.kts").is_file(), results)
             self.assertFalse((root / "feature/sample/sample").exists())
             self.assertFalse((root / "shared/sample/sample").exists())
             self.assert_clean_transaction_artifacts(root)
