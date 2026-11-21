@@ -96,6 +96,48 @@ class ImpactShadowTest(unittest.TestCase):
                 self.assertIn(":app:ciGroupDebugAndroidTest", candidates(record, "instrumented"))
                 self.assertNotIn(":other:verifyPaparazziDebug", candidates(record, "screenshot"))
 
+    def test_locale_pilot_lists_known_cases_for_plain_text_edits(self):
+        edits = (
+            ("presentation-utils/src/main/res/values-es/strings.xml", "home_tab",
+             "NavigationLabelLayoutTest", "AppNavigationRailLabelPreview"),
+            ("presentation-utils/src/main/res/values-fr/strings.xml", "save_filter",
+             "FilterPresetFormLayoutTest", None),
+            ("feature/savedfilters/src/main/res/values-fr/strings.xml", "savedfilters_title",
+             "SavedFiltersLargeTextPreview_font200_fr", None),
+        )
+        for file, key, required, extra in edits:
+            with self.subTest(file=file):
+                before = f'<resources><string name="{key}">Old text</string></resources>'
+                after = before.replace("Old text", "New text")
+                with patch.object(MODULE, "git", side_effect=[before, after]) as git:
+                    report = MODULE.locale_pilot(Path.cwd(), "base", "head", [file])
+                self.assertEqual(["base:" + file, "head:" + file], [call.args[-1] for call in git.call_args_list])
+                self.assertEqual("candidates", report["status"])
+                self.assertEqual([{"file": file, "keys": [key]}], report["changes"])
+                for name in filter(None, (required, extra)):
+                    self.assertTrue(any(name in case["classname"] or name in case["name"] for case in report["cases"]))
+
+    def test_locale_pilot_falls_back_on_mixed_or_structural_changes(self):
+        file = "presentation-utils/src/main/res/values-es/strings.xml"
+        before = '<resources><string name="home_tab">Inicio</string></resources>'
+        mixed = MODULE.locale_pilot(Path.cwd(), "base", "head", [file, file.replace("values-es", "values")])
+        self.assertEqual("full-fallback", mixed["status"])
+        for after in (
+            before,
+            before.replace("Inicio", "%1$s"),
+            before.replace("Inicio", "@string/other"),
+            before.replace("Inicio", "<b>Inicio</b>"),
+            before.replace("home_tab", "renamed"),
+            before.replace('name="home_tab"', 'name="home_tab" formatted="false"'),
+            "<resources/>",
+            "<resources>",
+        ):
+            with self.subTest(after=after), patch.object(MODULE, "git", side_effect=[before, after]):
+                self.assertEqual("full-fallback", MODULE.locale_pilot(Path.cwd(), "base", "head", [file])["status"])
+        other = before.replace("home_tab", "other")
+        with patch.object(MODULE, "git", side_effect=[other, other.replace("Inicio", "Otro")]):
+            self.assertEqual("full-fallback", MODULE.locale_pilot(Path.cwd(), "base", "head", [file])["status"])
+
     def test_cycles_terminate_and_never_lose_a_consumer(self):
         self.model["edges"].append({"source": ":domain", "target": ":feature:detail"})
         record = MODULE.select(self.model, ["shared/detail/src/commonMain/kotlin/Screen.kt"])

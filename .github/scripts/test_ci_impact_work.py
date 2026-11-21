@@ -139,6 +139,26 @@ class ImpactWorkTest(unittest.TestCase):
         lane = MODULE.report(self.root, IDENTITY)["lanes"][tier]
         self.assertEqual("partial", lane["failure_comparison"]["status"])
 
+    def test_locale_pilot_replays_failures_by_case_inside_the_same_module(self):
+        for tier, classname, matched, planned in (
+            ("instrumented", "com.simtop.billionbeers.FilterPresetFormLayoutTest",
+             "frenchLargeTextNameFieldRemainsUsableAndSaveRetainsFailureDraft[catalog]", ""),
+            ("screenshot", "Com_simtop_billionbeersScreenshotTest",
+             "snapshot[AppNavigationLabelPreview_font200_es]", "snapshot[AppNavigationLabelPreview_font200_es]"),
+        ):
+            with self.subTest(tier=tier):
+                evidence = failure_evidence(tier, ":selected", ":selected")
+                evidence["failures"][0].update(classname=classname, name=matched)
+                if tier == "screenshot":
+                    evidence["failures"][1].update(classname=classname, name="snapshot[UnrelatedPreview]")
+                self.impact["locale_pilot"] = {"status": "candidates", "cases": [
+                    {"tier": tier, "module": ":selected", "classname": classname, "name": planned},
+                ]}
+                result = MODULE.compare_failures(tier, self.impact, evidence, IDENTITY)
+                self.assertEqual({"candidate": 2, "outside": 0, "unmapped": 0}, result["counts"])
+                self.assertEqual({"candidate": 1, "outside": 1}, result["locale_pilot_counts"])
+                self.assertEqual(["candidate", "outside"], [f["locale_pilot_bucket"] for f in result["failures"]])
+
     def test_failure_comparison_rejects_stale_and_synthetic_evidence(self):
         tier = "unit"
         for key in ("GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT", "GITHUB_SHA", "GITHUB_JOB"):

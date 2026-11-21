@@ -208,6 +208,15 @@ aliases. Kotlin imports alone miss those consumers. A locale exception requires 
 locale and fallback behavior, with separate localized coverage and resource validation.
 [Resource qualifiers](https://developer.android.com/guide/topics/resources/providing-resources.html)
 
+The Affected Tests locale pilot reads the base and checkout XML for three Android resource
+tables. It reports known cases for plain value changes to Spanish navigation labels, French
+filter form labels, and the French Saved Filters title. Use `make affected-tests` to inspect
+the committed diff against `CI_IMPACT_BASE`. The report falls back to the regular candidates
+for mixed changes, edits outside the listed keys, and structural changes to the XML.
+The measured report compares actual screenshot and device failures with the pilot's cases.
+An observed failure outside the plan calls for review. Lint, linking, test execution, and
+merge requirements continue to use the regular workflow.
+
 If a later pilot needs variant precision, extend the Gradle export with `ResolutionResult` for
 the relevant test and runtime configurations. Use the public AGP Variant API for merged Android
 artifacts, and cover the export with Gradle TestKit. Keep policy in the Python report and include
