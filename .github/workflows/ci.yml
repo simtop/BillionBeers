@@ -1,5 +1,5 @@
 name: BillionBeers CI
-run-name: CI validation for ${{ github.ref_name }}
+run-name: ${{ github.event_name == 'schedule' && 'Weekly Full Protect on master' || format('CI validation for {0}', github.ref_name) }}
 
 on:
   push:
@@ -8,6 +8,8 @@ on:
     branches: [ main, master ]
   merge_group:
     types: [checks_requested]
+  schedule:
+    - cron: '25 5 * * 1'
   workflow_dispatch:
     inputs:
       force_full:
@@ -35,8 +37,9 @@ permissions:
 # in-flight run obsolete, so killing it saves a full emulator boot + 29-module test pass. Master
 # runs are left alone (cancel-in-progress false) so every merged commit retains an independent
 # validation run; exact verified PR results may reduce that run's five heavy lanes.
+# The weekly run has its own group so push runs cannot replace it while it waits for a runner.
 concurrency:
-  group: ${{ inputs.pull_request_number && format('full-pr-ci-{0}', inputs.pull_request_number) || format('{0}-{1}', github.workflow, github.ref) }}
+  group: ${{ github.event_name == 'schedule' && format('weekly-master-ci-{0}', github.ref) || inputs.pull_request_number && format('full-pr-ci-{0}', inputs.pull_request_number) || format('{0}-{1}', github.workflow, github.ref) }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
@@ -55,6 +58,12 @@ jobs:
         with:
           ref: ${{ inputs.tested_sha }}
           persist-credentials: ${{ inputs.tested_sha == '' }}
+
+      - name: Record the weekly validation commit
+        if: github.event_name == 'schedule'
+        run: |
+          printf 'Weekly Full Protect validates [`%s`](%s/%s/commit/%s).\n' \
+            "$GITHUB_SHA" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
 
       # The checker allows newly added artifacts, but rejects checksum edits/removals and any
       # change to the trust policy. Run it on every PR so a ledger edit cannot avoid the guard
@@ -228,7 +237,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           EVENT_NAME: ${{ github.event_name }}
-          FORCE_FULL: ${{ inputs.force_full }}
+          FORCE_FULL: ${{ inputs.force_full || github.event_name == 'schedule' }}
         run: python3 -I .github/scripts/select-master-test-reuse.py
 
       - name: Summarize reused test result
@@ -1374,7 +1383,9 @@ jobs:
           errors = []
           for lane, job in lanes.items():
               selected = outputs.get(lane)
-              if selected not in ("true", "false"):
+              if os.environ["EVENT_NAME"] == "schedule" and selected != "true":
+                  errors.append(f"Weekly Full Protect requires {lane}")
+              elif selected not in ("true", "false"):
                   errors.append(f"Invalid or missing selection for {lane}")
               else:
                   expected[job] = "success" if selected == "true" else "skipped"
@@ -1510,7 +1521,7 @@ jobs:
     name: Track failed master CI run
     if: >-
       always() && inputs.tested_sha == '' && github.ref == 'refs/heads/master' &&
-      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') &&
       (needs.ci-gate.result == 'failure' || needs.ci-gate.result == 'success')
     concurrency:
       group: master-ci-failure-issue

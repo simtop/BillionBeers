@@ -133,7 +133,26 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn("persist-credentials: ${{ inputs.tested_sha == '' }}", workflow)
         tracker = workflow.split("\n  master-failure-issue:\n", 1)[1]
         self.assertIn("inputs.tested_sha == '' && github.ref == 'refs/heads/master'", tracker)
-        self.assertIn("(github.event_name == 'push' || github.event_name == 'workflow_dispatch')", tracker)
+        self.assertIn("github.event_name == 'push' || github.event_name == 'workflow_dispatch'", tracker)
+
+    def test_scheduled_master_selects_every_lane_without_a_pr(self):
+        workflow = (ROOT / ".github/workflows/ci.yml").read_text()
+        self.assertIn("cron: '25 5 * * 1'", workflow)
+        self.assertIn("github.event_name == 'schedule' && format('weekly-master-ci-{0}', github.ref)", workflow)
+        self.assertIn("FORCE_FULL: ${{ inputs.force_full || github.event_name == 'schedule' }}", workflow)
+        tracker = workflow.split("\n  master-failure-issue:\n", 1)[1]
+        self.assertIn("|| github.event_name == 'schedule'", tracker)
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "outputs"
+            script = ROOT / ".github/scripts/detect-change-scope.sh"
+            env = os.environ | {"EVENT_NAME": "schedule", "GITHUB_OUTPUT": str(output), "GITHUB_STEP_SUMMARY": ""}
+            for args in ([], ["--desktop-package"]):
+                result = subprocess.run(["bash", str(script), *args], cwd=ROOT, env=env, capture_output=True, text=True)
+                self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertEqual(
+                {f"{lane}=true" for lane in ("unit", "screenshot", "instrumented", "native", "web", "desktop_package")},
+                set(output.read_text().splitlines()),
+            )
 
     def test_merge_resolver_pins_exact_pr_parents(self):
         workflow = (ROOT / ".github/workflows/weekly-pr-full-ci.yml").read_text()

@@ -11,6 +11,7 @@ pull request test results.
 
 | Work | Where to look |
 | --- | --- |
+| Weekly Full Protect on `master` | [BillionBeers CI](../.github/workflows/ci.yml) runs all five test lanes and the Desktop package smoke each Monday at 05:25 UTC. Each job uses the scheduled event's commit. The regular CI Gate requires every lane and the master failure issue tracks failures on the current head. Use `force_full` for a manual run. |
 | Weekly full checks for open pull requests | [Weekly full PR CI](../.github/workflows/weekly-pr-full-ci.yml) calls the same CI workflow with all test lanes selected. |
 | Failure comments and test reports | [CI PR Diagnosis](../.github/workflows/ci-report.yml) reads workflow results and updates the pull request comment. See [CI diagnostics](ci_diagnostics.md). |
 | Dependabot graph review and preparation | The [dependency update guide](dependabot-updates.md) maps graph review, approval, metadata regeneration, and the checks required before merge. |

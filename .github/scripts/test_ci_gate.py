@@ -88,6 +88,16 @@ class CiGateTests(unittest.TestCase):
         self.assertNotEqual(0, result.returncode)
         self.assertIn("web-tests expected success, got skipped", result.stdout)
 
+    def test_scheduled_validation_requires_every_lane_and_desktop_packaging(self):
+        result = run_gate(fixture("schedule", selected=LANES), "schedule")
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        for lane in LANES:
+            with self.subTest(lane=lane):
+                needs = fixture("schedule", selected=LANES.keys() - {lane})
+                result = run_gate(needs, "schedule")
+                self.assertNotEqual(0, result.returncode)
+                self.assertIn(f"Weekly Full Protect requires {lane}", result.stdout)
+
     def test_desktop_package_must_match_its_path_selection(self):
         for selected, actual in ((True, "skipped"), (False, "success")):
             with self.subTest(selected=selected, actual=actual):
