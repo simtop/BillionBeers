@@ -333,10 +333,12 @@ GRADLE_PROFILE_DIR ?= build/reports/profile
 GRADLE_PROFILE_OUTCOME ?= unknown
 CI_IMPACT_EVIDENCE_DIR ?= build/reports/ci-impact-evidence
 
-.PHONY: ci-impact-shadow ci-gradle-profile-summary ci-impact-work
-ci-impact-shadow: ## Report affected test-task candidates without changing test execution.
+.PHONY: affected-tests ci-impact-shadow ci-gradle-profile-summary ci-impact-work
+affected-tests: ## Report affected tests for the committed diff against CI_IMPACT_BASE.
 	$(GRADLE_RUNNER) generateModuleGraph
 	python3 -I .github/scripts/ci-impact-shadow.py --base "$(CI_IMPACT_BASE)"
+
+ci-impact-shadow: affected-tests
 
 ci-gradle-profile-summary: ## Summarize task work separately from wall time in Gradle profiles.
 	python3 -I .github/scripts/summarize-gradle-profiles.py "$(GRADLE_PROFILE_DIR)" --outcome "$(GRADLE_PROFILE_OUTCOME)" --json build/reports/ci-task-timings/gradle-profiles.json

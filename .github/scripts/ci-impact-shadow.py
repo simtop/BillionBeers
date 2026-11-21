@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Report conservative test-task candidates without controlling CI execution."""
+"""Report affected test candidates without controlling CI execution."""
 
 from __future__ import annotations
 
@@ -12,12 +12,40 @@ import platform
 from pathlib import Path, PurePosixPath
 import re
 import subprocess
+from xml.etree import ElementTree
 
 TIERS = ("unit", "screenshot", "instrumented", "native", "web")
 GLOBAL_CHECKS = (
     "Full coverage floor", "Konsist and resolved architecture checks", "Build-logic tests",
     "Test/report inventories", "Android tablet journey and minified release smoke",
 )
+
+# The pilot only covers checked-in resource keys with verified localized test cases.
+LOCALE_COVERAGE = {
+    "presentation-utils/src/main/res/values-es/strings.xml": (
+        {"home_tab", "favorites_title", "saved_filters_title"},
+        [
+            ("instrumented", ":app", "com.simtop.billionbeers.NavigationLabelLayoutTest", ""),
+            *(
+                ("screenshot", ":app", "com.simtop.billionbeers.screenshot.Com_simtop_billionbeersScreenshotTest",
+                 f"snapshot[{preview}{suffix}]")
+                for preview in ("AppNavigationLabelPreview", "AppNavigationRailLabelPreview")
+                for suffix in ("", "_font150_es", "_font200_es")
+            ),
+        ],
+    ),
+    "presentation-utils/src/main/res/values-fr/strings.xml": (
+        {"save_filter", "filter_name_hint"},
+        [("instrumented", ":app", "com.simtop.billionbeers.FilterPresetFormLayoutTest", "")],
+    ),
+    "feature/savedfilters/src/main/res/values-fr/strings.xml": (
+        {"savedfilters_title"},
+        [("screenshot", ":feature:savedfilters",
+          "com.simtop.billionbeers.screenshot.Com_simtop_feature_savedfiltersScreenshotTest",
+          "snapshot[SavedFiltersLargeTextPreview_font200_fr]")],
+    ),
+}
+NON_PLAIN_TEXT = re.compile(r'[%\\]|^\s*[@?]')
 
 
 def validate_model(model):
@@ -136,6 +164,49 @@ def git(root, *args):
     return subprocess.check_output(["git", *args], cwd=root, stderr=subprocess.DEVNULL)
 
 
+def changed_plain_strings(before, after):
+    previous = ElementTree.fromstring(before)
+    current = ElementTree.fromstring(after)
+    if previous.tag != "resources" or current.tag != "resources" or len(previous) != len(current):
+        return None
+    changed = []
+    for old, new in zip(previous, current):
+        if old.text == new.text:
+            continue
+        if (old.tag != "string" or new.tag != "string" or len(old) or len(new)
+                or set(old.attrib) != {"name"} or old.attrib != new.attrib
+                or any(not value or not value.strip() or NON_PLAIN_TEXT.search(value) for value in (old.text, new.text))):
+            return None
+        changed.append(old.attrib["name"])
+        old.text = new.text
+    if ElementTree.tostring(previous) != ElementTree.tostring(current):
+        return None
+    return changed
+
+
+def locale_pilot(root, base, head, changed_files):
+    files = set(changed_files)
+    if not (files & LOCALE_COVERAGE.keys()):
+        return None
+    if not files <= LOCALE_COVERAGE.keys():
+        return {"status": "full-fallback", "reason": "The diff includes files outside the locale pilot."}
+    changes = []
+    cases = set()
+    for path in sorted(files):
+        try:
+            keys = changed_plain_strings(git(root, "show", f"{base}:{path}"), git(root, "show", f"{head}:{path}"))
+        except (ElementTree.ParseError, subprocess.CalledProcessError):
+            return {"status": "full-fallback", "reason": f"Could not read both resource tables for {path}."}
+        allowed, coverage = LOCALE_COVERAGE[path]
+        if not keys or not set(keys) <= allowed:
+            return {"status": "full-fallback", "reason": f"{path} contains changes outside the pilot's plain strings."}
+        changes.append({"file": path, "keys": sorted(keys)})
+        cases.update(coverage)
+    return {"status": "candidates", "changes": changes,
+            "cases": [dict(tier=tier, module=module, classname=classname, name=name)
+                      for tier, module, classname, name in sorted(cases)]}
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path.cwd())
@@ -158,7 +229,12 @@ def main(argv=None):
             files = git(root, "diff", "--no-renames", "--name-only", "-z", provenance["base_sha"], "HEAD").decode().split("\0")
         graph = (root / args.graph).read_bytes()
         provenance["graph_sha256"] = hashlib.sha256(graph).hexdigest()
-        record = select(json.loads(graph), [path for path in files if path])
+        files = [path for path in files if path]
+        record = select(json.loads(graph), files)
+        if args.changed_file is None:
+            pilot = locale_pilot(root, provenance["base_sha"], provenance["checkout_sha"], files)
+            if pilot is not None:
+                record["locale_pilot"] = pilot
         provenance["explicit_scenario"] = args.changed_file is not None
     except (OSError, ValueError, KeyError, TypeError, subprocess.CalledProcessError) as error:
         record = {"schema": 1, "mode": "shadow", "execution_changed": False, "status": "unavailable",
@@ -167,18 +243,35 @@ def main(argv=None):
     output = root / args.output
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
-    lines = ["### Test impact shadow report", "", "All existing CI decisions and full-suite proofs remain unchanged.",
+    lines = ["### Affected Tests", "", "Advisory report. CI runs its configured test suites.",
              "Configured task counts include empty or cached tasks and do not estimate time saved.",
              "The inventory reflects registered tasks on the reporting host, not a cross-platform execution proof.", "",
              f"Status: `{record['status']}`.", "", "| Tier | Configured tasks | Candidates | Outside candidate set |", "|---|---:|---:|---:|"]
     for tier, selection in record["selections"].items():
         lines.append(f"| {tier} | {len(selection['configured_tasks'])} | {len(selection['candidate_tasks'])} | {len(selection['outside_candidate_set'])} |")
+    if "locale_pilot" in record:
+        pilot = record["locale_pilot"]
+        lines.extend(["", "#### Locale pilot", ""])
+        if pilot["status"] == "candidates":
+            for change in pilot["changes"]:
+                keys = ", ".join(f"`{key}`" for key in change["keys"])
+                lines.append(f"- `{change['file']}` changes {keys}.")
+            lines.extend(["", "| Tier | Module | Case |", "|---|---|---|"])
+            for case in pilot["cases"]:
+                name = case["classname"].rsplit(".", 1)[-1]
+                if case["name"]:
+                    name += "#" + case["name"]
+                lines.append(f"| {case['tier']} | `{case['module']}` | `{name}` |")
+        else:
+            lines.append(pilot["reason"])
     lines.extend(["", "Coverage, architecture, build-logic, report checks, tablet journeys, and release smoke remain full.",
                   "This report is advisory and must not be used as a test execution command.", ""])
     if args.summary:
         with args.summary.open("a", encoding="utf-8") as summary:
             summary.write("\n".join(lines))
-    print(f"Shadow impact report: {record['status']}; execution unchanged.")
+    else:
+        print("\n".join(lines))
+    print(f"Affected Tests report: {output}")
     return 0
 
 

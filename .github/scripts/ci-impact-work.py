@@ -132,6 +132,12 @@ def compare_failures(tier, impact, evidence, identity):
 
     counts = dict.fromkeys(BUCKETS, 0)
     failures = []
+    pilot = impact.get("locale_pilot", {})
+    pilot_counts = None
+    if tier in ("screenshot", "instrumented") and pilot.get("status") == "candidates":
+        planned_cases = {(case["module"], case["classname"], case["name"])
+                         for case in pilot["cases"] if case["tier"] == tier}
+        pilot_counts = {"candidate": 0, "outside": 0}
     for failure in evidence["failures"]:
         module = failure["module"]
         owner(module)
@@ -140,13 +146,21 @@ def compare_failures(tier, impact, evidence, identity):
             raise ValueError("invalid failed testcase")
         bucket = "candidate" if module in candidates else "outside" if module in configured else "unmapped"
         counts[bucket] += 1
-        failures.append(failure | {"bucket": bucket})
+        observed = failure | {"bucket": bucket}
+        if pilot_counts is not None:
+            planned = any((module, failure["classname"], name) in planned_cases for name in (failure["name"], ""))
+            observed["locale_pilot_bucket"] = "candidate" if planned else "outside"
+            pilot_counts[observed["locale_pilot_bucket"]] += 1
+        failures.append(observed)
 
     status = "no-testcase-evidence"
     if failures:
         status = "partial" if unreadable or set(fallback) - {failure["module"] for failure in failures} else "observed"
-    return {"status": status, "counts": counts, "failures": failures,
-            "unreadable_reports": unreadable, "screenshot_failure_modules": fallback}
+    result = {"status": status, "counts": counts, "failures": failures,
+              "unreadable_reports": unreadable, "screenshot_failure_modules": fallback}
+    if failures and pilot_counts is not None:
+        result["locale_pilot_counts"] = pilot_counts
+    return result
 
 
 def report(directory, identity):
@@ -222,6 +236,11 @@ def render(record):
             counts = comparison.get("counts", {}) if comparison["status"] in ("observed", "partial") else {}
             lines.append(f"| {tier} | {comparison['status']} | {counts.get('candidate', '—')} | "
                          f"{counts.get('outside', '—')} | {counts.get('unmapped', '—')} |")
+        for tier, comparison in comparisons.items():
+            if "locale_pilot_counts" in comparison:
+                counts = comparison["locale_pilot_counts"]
+                lines.extend(["", f"Locale pilot, {tier}: {counts['candidate']} observed failures in the plan "
+                              f"and {counts['outside']} outside it. Review failures outside the plan."])
     lines.extend(["", "Missing, failed, cached, empty, or stale evidence is not proof of saved test execution.", ""])
     return "\n".join(lines)
 
